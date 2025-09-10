@@ -82,7 +82,7 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	allComps, err := s.appsHelpers.GetAppComponentsAtConfigVersion(ctx, install.AppID, install.AppConfig.Version)
+	allComps, err := s.appsHelpers.GetAppComponentsAtConfigVersion(ctx, install.AppID, install.AppConfig.Version, install.AppConfig.ComponentIDs)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return

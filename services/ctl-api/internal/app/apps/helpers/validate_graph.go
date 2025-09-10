@@ -2,19 +2,25 @@ package helpers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/dominikbraun/graph"
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 func (h *Helpers) ValidateGraph(ctx context.Context, appID string) error {
-	_, _, err := h.GetGraph(ctx, appID)
-	if err == nil {
-		return nil
+	latestCfg, err := h.GetAppLatestConfig(ctx, appID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get latest config")
 	}
 
+	appCfg, err := h.GetFullAppConfig(ctx, latestCfg.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get app config")
+	}
+
+	_, err = h.GetConfigGraph(ctx, appCfg)
 	edgeErr := &errComponentEdge{}
 	if !errors.As(err, &edgeErr) {
 		return err

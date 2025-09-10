@@ -10,16 +10,17 @@ import (
 )
 
 // This returns all app components for a point in time
-func (h *Helpers) GetAppComponentsAtConfigVersion(ctx context.Context, appID string, appCfgVersion int) ([]app.Component, error) {
+func (h *Helpers) GetAppComponentsAtConfigVersion(ctx context.Context, appID string, appCfgVersion int, componentIDs []string) ([]app.Component, error) {
 	var components []app.Component
 
 	res := h.db.WithContext(ctx).
 		Where(&app.Component{
 			AppID: appID,
 		}).
+		Where("id in ?", componentIDs).
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Where("version <= ?", appCfgVersion)
+			return db.Where("version <= ?", appCfgVersion).Limit(1)
 		}).
 		Scopes(PreloadComponentConfigConnections).
 		Find(&components)
