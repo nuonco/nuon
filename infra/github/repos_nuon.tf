@@ -449,7 +449,7 @@ module "runner" {
 module "byoc" {
   source           = "./modules/repository"
   name             = "byoc"
-  description      = "Nuon, but make it BYOC."
+  description      = "An app config where Nuon deploys the Nuon control and data plane into your cloud account."
   required_checks  = []
   is_public        = true
   owning_team_id   = github_team.nuon.id
