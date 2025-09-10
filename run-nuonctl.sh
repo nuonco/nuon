@@ -141,6 +141,9 @@ function exec_and_cleanup() {
 # Check if we should build locally
 if [ "${NUONCTL_LOCAL:-}" = "true" ]; then
   EXEC_PATH=$(build_locally)
+
+  export RUN_NUONCTL_VERSION=local
+  export RUN_NUONCTL_PATH=$EXEC_PATH
   exec_and_cleanup $EXEC_PATH $@
 else
     # Use the install script for the regular flow
@@ -170,5 +173,7 @@ else
     EXEC_PATH=/tmp/nuonctl-$(date +%s)
     cp $INSTALL_DIR/nuonctl $EXEC_PATH 
 
+    export RUN_NUONCTL_VERSION=$LATEST_VERSION
+    export RUN_NUONCTL_PATH=$EXEC_PATH
     exec_and_cleanup $EXEC_PATH $@
 fi
