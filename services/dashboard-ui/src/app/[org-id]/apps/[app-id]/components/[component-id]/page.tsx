@@ -1,21 +1,17 @@
 import type { Metadata } from 'next'
-import { Suspense, type FC } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
   BuildComponentButton,
-  ComponentBuildHistory,
-  ComponentConfiguration,
-  ComponentDependencies,
   DashboardContent,
   ErrorFallback,
   Loading,
-  Pagination,
   Section,
-  Text,
 } from '@/components'
-import { getApp, getComponent, getComponentBuilds } from '@/lib'
-import type { TComponent, TComponentConfig, TBuild } from '@/types'
-import { nueQueryData } from '@/utils'
+import { getApp, getComponent } from '@/lib'
+import { Builds } from './builds'
+import { Config } from './config'
+import { Dependencies } from './dependencies'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -73,10 +69,7 @@ export default async function AppComponent({ params, searchParams }) {
                     />
                   }
                 >
-                  <LoadComponentDependencies
-                    component={component}
-                    orgId={orgId}
-                  />
+                  <Dependencies component={component} orgId={orgId} />
                 </Suspense>
               </ErrorBoundary>
             </Section>
@@ -92,7 +85,7 @@ export default async function AppComponent({ params, searchParams }) {
                   />
                 }
               >
-                <LoadComponentConfig componentId={componentId} orgId={orgId} />
+                <Config componentId={componentId} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
           </Section>
@@ -105,7 +98,7 @@ export default async function AppComponent({ params, searchParams }) {
                   <Loading variant="stack" loadingText="Loading builds..." />
                 }
               >
-                <LoadComponentBuilds
+                <Builds
                   appId={appId}
                   componentId={componentId}
                   orgId={orgId}
@@ -117,87 +110,5 @@ export default async function AppComponent({ params, searchParams }) {
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-const LoadComponentBuilds: FC<{
-  appId: string
-  componentId: string
-  orgId: string
-  limit?: string
-  offset?: string
-}> = async ({ appId, componentId, orgId, limit = '6', offset }) => {
-  const params = new URLSearchParams({
-    offset,
-    limit,
-    component_id: componentId,
-  }).toString()
-  const { data: builds, headers } = await nueQueryData<TBuild[]>({
-    orgId,
-    path: `builds${params ? '?' + params : params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
-  })
-
-  const pageData = {
-    hasNext: headers?.get('x-nuon-page-next') || 'false',
-    offset: headers?.get('x-nuon-page-offset') || '0',
-  }
-
-  return (
-    <div className="flex flex-col gap-4 w-full">
-      <ComponentBuildHistory
-        appId={appId}
-        componentId={componentId}
-        initBuilds={builds || []}
-        orgId={orgId}
-        shouldPoll
-      />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={parseInt(limit)}
-      />
-    </div>
-  )
-}
-
-const LoadComponentConfig: FC<{ componentId: string; orgId: string }> = async ({
-  componentId,
-  orgId,
-}) => {
-  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
-    {
-      orgId,
-      path: `components/${componentId}/configs/latest`,
-    }
-  )
-
-  return error ? (
-    <Text>{error?.error}</Text>
-  ) : (
-    <ComponentConfiguration config={componentConfig} isNotTruncated />
-  )
-}
-
-const LoadComponentDependencies: FC<{
-  component: TComponent
-  orgId: string
-}> = async ({ component, orgId }) => {
-  const { data, error } = await nueQueryData<Array<TComponent>>({
-    orgId,
-    path: `components/${component?.id}/dependencies`,
-  })
-
-  return (
-    <div className="flex items-center gap-4">
-      {error ? (
-        <Text>{error?.error}</Text>
-      ) : (
-        <ComponentDependencies deps={data} name={component?.name} />
-      )}
-    </div>
   )
 }
