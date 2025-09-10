@@ -75,6 +75,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// install readme
 	api.GET("/v1/installs/:install_id/readme", s.GetInstallReadme)
 
+	// install drifts
+	api.GET("/v1/installs/:install_id/drifted-objects", s.GetDriftedObjects)
+
 	// install state
 	api.GET("/v1/installs/:install_id/state", s.GetInstallState)
 	api.GET("/v1/installs/:install_id/state-history", s.GetInstallStateHistory)
