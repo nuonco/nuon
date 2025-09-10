@@ -1,7 +1,7 @@
 package audit
 
 type runnerMiddleware struct {
-	baseMiddleware
+	*baseMiddleware
 }
 
 func (m *runnerMiddleware) Name() string {
@@ -10,10 +10,6 @@ func (m *runnerMiddleware) Name() string {
 
 func NewRunner(params Params) *runnerMiddleware {
 	return &runnerMiddleware{
-		baseMiddleware: baseMiddleware{
-			l:       params.L,
-			db:      params.DB,
-			context: "runner",
-		},
+		baseMiddleware: newBaseMiddleware(params, "runner"),
 	}
 }
