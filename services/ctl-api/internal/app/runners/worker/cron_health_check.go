@@ -51,17 +51,26 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 	runnerStatus := "active"
 	healthCheckStatus := "ok"
 	changed := false
+	runnerType := "unknown"
 
 	defer func() {
 		tags := metrics.ToTags(map[string]string{
 			"health_check_status":   healthCheckStatus,
 			"runner_status":         runnerStatus,
 			"runner_status_changed": strconv.FormatBool(changed),
+			"runner_type":           runnerType,
 		})
 		// write metrics now
 		w.mw.Incr(ctx, "runner.health_check", tags...)
 		w.mw.Timing(ctx, "runner.health_check.latency", time.Now().Sub(startTS), tags...)
 	}()
+
+	runner, err := activities.AwaitGetByRunnerID(ctx, req.RunnerID)
+	if err != nil {
+		healthCheckStatus = "unable_to_get_runner"
+		return errors.Wrap(err, "unable to get runner by id")
+	}
+	runnerType = string(runner.RunnerGroup.Type)
 
 	noopHealthCheck, err := w.isNoopHealthCheck(ctx, req.RunnerID)
 	if err != nil {
