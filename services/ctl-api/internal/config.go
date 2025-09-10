@@ -53,6 +53,8 @@ func init() {
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
+
+	config.RegisterDefault("enable_endpoint_auditing", false)
 }
 
 type Config struct {
@@ -185,6 +187,7 @@ type Config struct {
 	ForceDebugMode              bool `config:"force_debug_mode"`
 	LogRequestBody              bool `config:"log_request_body"`
 	EnableHttpBinDebugEndpoints bool `config:"enable_httpbin_debug_endpoints"`
+	EnableEndpointAuditing      bool `config:"enable_endpoint_auditing"`
 }
 
 func NewConfig() (*Config, error) {
