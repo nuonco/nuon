@@ -81,14 +81,16 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 
 type Params struct {
 	fx.In
-	L  *zap.Logger
-	DB *gorm.DB `name:"psql"`
+	L   *zap.Logger
+	DB  *gorm.DB `name:"psql"`
+	Cfg *internal.Config
 }
 
-func New(l *zap.Logger, db *gorm.DB, contex string) *baseMiddleware {
+func newBaseMiddleware(params Params, context string) *baseMiddleware {
 	return &baseMiddleware{
-		l:       l,
-		db:      db,
-		context: contex,
+		l:       params.L,
+		db:      params.DB,
+		context: context,
+		cfg:     params.Cfg,
 	}
 }
