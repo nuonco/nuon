@@ -38,6 +38,11 @@ export type TPaginationPageData = {
   offset: string
 }
 
+export type TPaginationParams = {
+  offset?: number | string;
+  limit?: number | string;
+};
+
 // fetch wrapper types
 export type TAPIError = {
   description: string;

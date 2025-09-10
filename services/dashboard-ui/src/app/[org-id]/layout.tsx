@@ -13,7 +13,7 @@ export default async function OrgLayout({ children, params }) {
     cookieStore.get('is-sidebar-open')?.value === 'true'
   )
   const { ['org-id']: orgId } = await params
-  const [org, orgs, apiVersion] = await Promise.all([
+  const [org, orgs, { data: apiVersion }] = await Promise.all([
     getOrg({ orgId }).catch((error) => {
       console.error(error)
       notFound()
@@ -22,13 +22,7 @@ export default async function OrgLayout({ children, params }) {
       console.error(error)
       notFound()
     }),
-    getAPIVersion().catch((error) => {
-      console.error(error)
-      return {
-        git_ref: 'unknown',
-        version: 'unknown',
-      }
-    }),
+    getAPIVersion(),
   ])
 
   return (
