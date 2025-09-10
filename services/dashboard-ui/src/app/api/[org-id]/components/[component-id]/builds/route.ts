@@ -3,17 +3,19 @@ import { getComponentBuilds } from '@/lib'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = async (
-  req: NextRequest,
+  request: NextRequest,
   { params }: TRouteRes<'org-id' | 'component-id'>
 ) => {
   const { ['org-id']: orgId, ['component-id']: componentId } = await params
+  const { searchParams } = new URL(request.url)
+  const limit = searchParams.get('limit') || undefined
+  const offset = searchParams.get('offset') || undefined
 
-  let builds = []
-  try {
-    builds = await getComponentBuilds({ orgId, componentId })
-  } catch (error) {
-    console.error(error)
-  }
-
-  return NextResponse.json(builds)
+  const response = await getComponentBuilds({
+    orgId,
+    componentId,
+    offset,
+    limit,
+  })
+  return NextResponse.json(response)
 }
