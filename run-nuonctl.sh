@@ -35,7 +35,7 @@ function write_metrics() {
     args_tags=$(printf "args:%s," "$@" | sed 's/,$//')
   fi
 
-curl -X POST "https://api.datadoghq.com/api/v2/series" \
+curl -X POST "https://us5.datadoghq.com/api/v2/series" \
 -H "Accept: application/json" \
 -H "Content-Type: application/json" \
 -H "DD-API-KEY: ${DD_API_KEY}" \
