@@ -22,7 +22,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   } = await params
   const [install, installWorkflow] = await Promise.all([
     getInstall({ installId, orgId }),
-    getInstallWorkflow({ installWorkflowId, orgId })
+    getInstallWorkflow({ installWorkflowId, orgId }),
   ])
 
   return {
@@ -43,7 +43,10 @@ export default async function InstallWorkflow({ params }) {
     getInstall({ installId, orgId }),
     getInstallWorkflow({ installWorkflowId, orgId }),
   ])
-  
+
+  const workflowSteps =
+    installWorkflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
+
   return (
     <DashboardContent
       breadcrumb={[
@@ -89,9 +92,11 @@ export default async function InstallWorkflow({ params }) {
               </Text>
               <Text variant="med-18">
                 {
-                  installWorkflow?.steps?.filter(
+                  workflowSteps.filter(
                     (s) =>
-                      s?.execution_type === 'approval' && !s?.approval?.response && s?.status?.status !== 'discarded'
+                      s?.execution_type === 'approval' &&
+                      !s?.approval?.response &&
+                      s?.status?.status !== 'discarded'
                   )?.length
                 }
               </Text>
@@ -101,7 +106,7 @@ export default async function InstallWorkflow({ params }) {
               <Text variant="reg-12" isMuted>
                 Total steps
               </Text>
-              <Text variant="med-18">{installWorkflow?.steps?.length}</Text>
+              <Text variant="med-18">{workflowSteps.length}</Text>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -110,7 +115,7 @@ export default async function InstallWorkflow({ params }) {
               </Text>
               <Text variant="med-18">
                 {
-                  installWorkflow?.steps?.filter(
+                  workflowSteps.filter(
                     (s) =>
                       s?.status?.status === 'success' ||
                       s?.status?.status === 'active' ||
@@ -121,9 +126,7 @@ export default async function InstallWorkflow({ params }) {
               </Text>
             </div>
           </div>
-          {installWorkflow?.steps?.some(
-            (s) => s?.execution_type === 'approval'
-          ) ? (
+          {workflowSteps.some((s) => s?.execution_type === 'approval') ? (
             <div className="flex flex-col gap-3">
               {installWorkflow?.approval_option === 'prompt' &&
               !installWorkflow?.finished ? (
@@ -133,7 +136,7 @@ export default async function InstallWorkflow({ params }) {
                   </Text>
                   <WorkflowApproveAllModal workflow={installWorkflow} />
                 </>
-              ) : installWorkflow?.steps?.some(
+              ) : workflowSteps.some(
                   (s) => s?.approval?.response?.type === 'deny'
                 ) ? (
                 <Text className="text-red-600 dark:text-red-400">
@@ -150,7 +153,8 @@ export default async function InstallWorkflow({ params }) {
       }
       statues={
         <div className="flex flex-col gap-3 items-end">
-          {!installWorkflow?.finished && installWorkflow?.status?.status !== "cancelled" ? (
+          {!installWorkflow?.finished &&
+          installWorkflow?.status?.status !== 'cancelled' ? (
             <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
           ) : null}
 
