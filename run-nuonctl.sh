@@ -154,6 +154,8 @@ else
     fi
 
     if [ -f "$INSTALL_DIR/nuonctl" ]; then
+      export RUN_NUONCTL_VERSION="check-version"
+      export RUN_NUONCTL_PATH="check-version"
       CURRENT_VERSION=`exec $INSTALL_DIR/nuonctl version`
       echo "calculating latest version..."
       LATEST_VERSION=$(curl -s $BASE_URL/latest.txt)
