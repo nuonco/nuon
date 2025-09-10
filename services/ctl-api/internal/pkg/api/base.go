@@ -7,11 +7,14 @@ import (
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
@@ -27,6 +30,8 @@ type API struct {
 	// created after initializing
 	srv     *http.Server
 	handler *gin.Engine
+
+	db *gorm.DB
 }
 
 func (a *API) init() error {
@@ -81,6 +86,31 @@ func (a *API) registerServices() error {
 		if err := method(a.handler); err != nil {
 			return fmt.Errorf("unable to register routes: %w", err)
 		}
+	}
+
+	routes := []app.EndpointAudit{}
+
+	for _, route := range a.handler.Routes() {
+		routes = append(routes, app.EndpointAudit{
+			Method: route.Method,
+			Name:   a.name,
+			Route:  route.Path,
+		})
+	}
+
+	ctx := context.Background()
+	if res := a.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "deleted_at"},
+				{Name: "method"},
+				{Name: "name"},
+				{Name: "route"},
+			},
+			UpdateAll: true,
+		}).
+		Create(&routes); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to write routes")
 	}
 
 	return nil
