@@ -23,6 +23,8 @@ type EndpointAudit struct {
 	Name       string            `json:"name,omitzero" gorm:"not null;default null" temporaljson:"name,omitzero,omitempty"`
 	Route      string            `json:"route,omitzero" gorm:"not null;default null" temporaljson:"route,omitzero,omitempty"`
 	LastUsedAt generics.NullTime `json:"last_used_at,omitzero" gorm:"type:timestamp;default:null" temporaljson:"last_used_at,omitzero,omitempty"`
+
+	Deprecated bool `json:"deprecated,omitzero" gorm:"not null;default:false" temporaljson:"deprecated,omitzero,omitempty"`
 }
 
 func (a *EndpointAudit) BeforeCreate(tx *gorm.DB) error {

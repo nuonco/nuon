@@ -1,5 +1,7 @@
 package audit
 
+import "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
+
 type runnerMiddleware struct {
 	*baseMiddleware
 }
@@ -10,6 +12,6 @@ func (m *runnerMiddleware) Name() string {
 
 func NewRunner(params Params) *runnerMiddleware {
 	return &runnerMiddleware{
-		baseMiddleware: newBaseMiddleware(params, "runner"),
+		baseMiddleware: newBaseMiddleware(params, api.APIContextTypeRunner.String()),
 	}
 }
