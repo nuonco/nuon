@@ -13,7 +13,6 @@ import { AdminBtn } from '@/components/AdminActionButton'
 import { Button } from '@/components/Button'
 import { Grid } from '@/components/Grid'
 import { Modal } from '@/components/Modal'
-import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
 import {
   addSupportUsersToOrg,
@@ -38,6 +37,7 @@ import {
   invalidateInstallRunnerToken,
   invalidateOrgRunnerToken,
 } from '@/components/admin-actions'
+import { useOrg } from '@/hooks/use-org'
 
 type TAdminAction = {
   action: () => Promise<any>

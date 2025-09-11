@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+// TODO(nnnat): old types replace with types below
 export type TRouteParams<S extends string | number | symbol = string> = Record<
   S,
   string
@@ -25,6 +26,24 @@ export interface ILayoutProps<
 }
 
 export interface IRouteProps extends IPageProps {}
+// -- end old types ---
+
+// nextjs types
+export type TParams<Keys extends string> = Promise<Record<Keys, string>>;
+
+export type TRouteProps<Keys extends string, T = {}> = {
+  params: TParams<Keys>;
+} & T;
+
+export type TPageProps<Keys extends string, T = {}> = {
+  params: TParams<Keys>;
+  searchParams: Promise<Record<string, string>>;
+} & T;
+
+export type TLayoutProps<Keys extends string, T = {}> = {
+  children: ReactNode;
+  params: TParams<Keys>;
+} & T;
 
 export type TNavLink = {
   icon?: React.ReactNode

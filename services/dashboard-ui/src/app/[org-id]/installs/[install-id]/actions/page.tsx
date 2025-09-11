@@ -69,7 +69,7 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
               </Link>
             </Text>
           </span>
-          <InstallStatuses initInstall={install} shouldPoll />
+          <InstallStatuses />
 
           <InstallManagementDropdown
             orgId={orgId}

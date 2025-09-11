@@ -6,6 +6,7 @@ import {
   DashboardContent,
   ErrorFallback,
   Loading,
+  Notice,
   StatusBadge,
   RunnerHealthChart,
   RunnerMeta,
@@ -48,6 +49,7 @@ export default async function OrgRunner({ params, searchParams }) {
   if (org?.features?.['org-runner']) {
     return (
       <DashboardContent
+        banner={runner?.status === "error" ? <Notice className="!border-none !rounded-none">Buld runner is unhealthy</Notice> : null}
         breadcrumb={[{ href: `/${orgId}/runner`, text: 'Build runner' }]}
         heading={org?.name}
         headingUnderline={org?.id}
@@ -65,6 +67,7 @@ export default async function OrgRunner({ params, searchParams }) {
           </span>
         }
       >
+      
         <div className="flex-auto md:grid md:grid-cols-12 divide-x">
           <div className="divide-y flex flex-col flex-auto col-span-8">
             <Section className="flex-initial" heading="Health">

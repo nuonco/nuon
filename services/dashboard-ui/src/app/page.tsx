@@ -1,23 +1,19 @@
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { getOrgIdFromCookie } from "@/actions/orgs/org-session-cookie";
 import { Dashboard, Text } from '@/components'
-import type { TOrg } from "@/types";
 import { auth0 } from '@/lib/auth'
-import { nueQueryData } from "@/utils/query-data";
+import { getOrgs } from "@/lib"
 
 export default async function Home() {
-  const cookieStore = await cookies();
   const session = await auth0.getSession();
 
   if (session) {
-    const orgSession = cookieStore.get("org-session");
-    const { data: orgs } = await nueQueryData<TOrg[]>({
-      path: "orgs",
-    });
+    const orgId = await getOrgIdFromCookie()
+    const { data: orgs } = await getOrgs();
 
     if (orgs && orgs?.length) {
-      if (orgSession && orgs.some((org) => org.id === orgSession?.value)) {
-        redirect(`/${orgSession?.value}/apps`);
+      if (orgId && orgs.some((org) => org.id === orgId)) {
+        redirect(`/${orgId}/apps`);
       } else {
         redirect(`/${orgs?.at(0)?.id}/apps`);
       }
