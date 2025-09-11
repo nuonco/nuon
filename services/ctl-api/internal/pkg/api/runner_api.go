@@ -14,6 +14,7 @@ func NewRunnerAPI(params Params) (*API, error) {
 		configuredMiddlewares: params.Cfg.RunnerMiddlewares,
 		l:                     params.L,
 		db:                    params.DB,
+		endpointAudit:         params.EndpointAudit,
 	}
 
 	if err := api.init(); err != nil {

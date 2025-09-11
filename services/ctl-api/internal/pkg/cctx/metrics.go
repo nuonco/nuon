@@ -18,6 +18,7 @@ type MetricContext struct {
 	DBQueryCount int
 	IsPanic      bool
 	IsTimeout    bool
+	IsDeprecated bool
 }
 
 func MetricsContextFromGinContext(ctx ValueContext) (*MetricContext, error) {

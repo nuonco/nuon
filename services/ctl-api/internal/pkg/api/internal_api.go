@@ -14,6 +14,7 @@ func NewInternalAPI(params Params) (*API, error) {
 		l:                     params.L,
 		configuredMiddlewares: params.Cfg.InternalMiddlewares,
 		db:                    params.DB,
+		endpointAudit:         params.EndpointAudit,
 	}
 
 	if err := api.init(); err != nil {
