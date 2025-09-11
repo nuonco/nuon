@@ -15,13 +15,11 @@ import { Loading } from '@/components/Loading'
 import { Duration } from '@/components/Time'
 import { EventStatus } from '@/components/Timeline'
 import { Text } from '@/components/Typography'
-import type { TOTELLog, TInstallActionWorkflowRun } from '@/types'
+import { useInstallActionRun } from '@/hooks/use-install-action-run'
+import type { TOTELLog } from '@/types'
 
-interface IActionLogsSection {
-  workflowRun: TInstallActionWorkflowRun
-}
-
-export const ActionLogsSection: FC<IActionLogsSection> = ({ workflowRun }) => {
+export const ActionLogsSection = () => {
+  const { installActionRun } = useInstallActionRun()
   const { error, isLoading, logs } = useLogs()
   const [showStream, setShowStream] = useState(false)
 
@@ -69,7 +67,7 @@ export const ActionLogsSection: FC<IActionLogsSection> = ({ workflowRun }) => {
       ) : (
         <div className="flex flex-col gap-3">
           {Object.keys(logSteps).map((step) => {
-            const workflowStep = workflowRun?.steps?.find(
+            const actionRunStep = installActionRun?.steps?.find(
               (s) =>
                 s?.id === logSteps[step]?.at(0)?.log_attributes?.step_run_id
             )
@@ -82,13 +80,13 @@ export const ActionLogsSection: FC<IActionLogsSection> = ({ workflowRun }) => {
                 key={step}
                 heading={
                   <span className="flex gap-3 items-center">
-                    <EventStatus status={workflowStep?.status} />
+                    <EventStatus status={actionRunStep?.status} />
                     <Text variant="med-14">{step}</Text>
-                    {workflowStep?.status === 'finished' ||
-                    workflowStep.status === 'error' ? (
+                    {actionRunStep?.status === 'finished' ||
+                    actionRunStep.status === 'error' ? (
                       <Duration
                         className="ml-2"
-                        nanoseconds={workflowStep?.execution_duration}
+                        nanoseconds={actionRunStep?.execution_duration}
                         variant="reg-12"
                       />
                     ) : null}
