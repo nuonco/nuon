@@ -4,7 +4,6 @@ import {
   DashboardContent,
   Loading,
   Empty,
-  InstallWorkflowSteps,
 } from '@/components'
 import { ErrorBoundary } from '@/components/common/ErrorBoundry'
 import { WorkflowHeader } from '@/components/workflows/WorkflowHeader'
@@ -41,9 +40,6 @@ export default async function InstallWorkflow({ params }) {
     getInstallById({ installId, orgId }),
     getWorkflowById({ workflowId: workflowId, orgId }),
   ])
-
-  const workflowSteps =
-    installWorkflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
 
   return (
     <DashboardContent
