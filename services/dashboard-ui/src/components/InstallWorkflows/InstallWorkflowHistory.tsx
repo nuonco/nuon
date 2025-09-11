@@ -2,17 +2,18 @@
 
 import classNames from 'classnames'
 import { DateTime } from 'luxon'
-import { usePathname } from 'next/navigation'
-import React, { type FC, useEffect } from 'react'
-import { revalidateData } from '@/components/actions'
 import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
 import { SpinnerSVG } from '@/components/Loading'
+import { Notice } from '@/components/Notice'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstallWorkflow } from '@/types'
-import { POLL_DURATION, removeSnakeCase, sentanceCase } from '@/utils'
+import { removeSnakeCase, sentanceCase } from '@/utils'
 import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
 import {
   CaretRight,
@@ -59,35 +60,41 @@ function parseInstallWorkflowsByDate(
   }, {})
 }
 
-export interface IInstallWorkflowHistory {
-  installWorkflows: Array<TInstallWorkflow>
-  pollDuration?: number
-  shouldPoll?: boolean
+export interface IInstallWorkflowHistory extends IPollingProps {
+  initWorkflows: Array<TInstallWorkflow>
+  pagination: {
+    offset: string
+    limit: number
+  }
 }
 
-export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
-  installWorkflows,
-  pollDuration = POLL_DURATION,
+export const InstallWorkflowHistory = ({
+  initWorkflows,
+  pagination,
+  pollInterval = 5000,
   shouldPoll = false,
-}) => {
+}: IInstallWorkflowHistory) => {
   const { org } = useOrg()
-  const workflowHistory = parseInstallWorkflowsByDate(installWorkflows)
+  const { install } = useInstall()
+  const queryParams = useQueryParams({
+    offset: pagination?.offset,
+    limit: pagination.limit,
+  })
+  const { data, error } = usePolling({
+    dependencies: [queryParams],
+    initData: initWorkflows,
+    path: `/api/orgs/${org.id}/installs/${install.id}/workflows${queryParams}`,
+    pollInterval,
+    shouldPoll,
+  })
 
-  const path = usePathname()
-
-  useEffect(() => {
-    const refreshData = () => {
-      revalidateData({ path })
-    }
-    if (shouldPoll) {
-      const pollBuild = setInterval(refreshData, pollDuration)
-
-      return () => clearInterval(pollBuild)
-    }
-  }, [installWorkflows, shouldPoll])
+  const workflowHistory = parseInstallWorkflowsByDate(data)
 
   return (
     <div className="flex flex-col gap-2">
+      {error ? (
+        <Notice>{error?.error || 'Error loading workflows'}</Notice>
+      ) : null}
       {Object.keys(workflowHistory).map((k) => (
         <div key={k} className="flex flex-col gap-2">
           <Text
@@ -209,11 +216,15 @@ export const InstallWorkflowHistory: FC<IInstallWorkflowHistory> = ({
   )
 }
 
-export const YAStatus: FC<{
+export const YAStatus = ({
+  status,
+  isSkipped = false,
+  isRetried = false,
+}: {
   status: TInstallWorkflow['status']['status']
   isSkipped?: boolean
   isRetried?: boolean
-}> = ({ status, isSkipped = false, isRetried = false }) => {
+}) => {
   const isSuccess =
     status === 'active' || status === 'success' || status === 'approved'
   const isError = status === 'error'

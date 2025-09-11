@@ -10,7 +10,7 @@ export interface IPollingProps {
 }
 
 interface IUsePolling<T> {
-  dependencies?: Array<string>; // extra dependencies for re-polling
+  dependencies?: Array<any>; // extra dependencies for re-polling
   headers?: Record<string, string>;
   initData?: T | null;
   initIsLoading?: boolean;
