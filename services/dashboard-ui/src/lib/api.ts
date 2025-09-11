@@ -42,7 +42,23 @@ export async function api<T>({
 
     response = await fetch(`${API_URL}${pathVersion}/${path}`, fetchOpts)
 
-    const data = await response.json()
+    // Handle empty response bodies (common with DELETE requests)
+    let data = null
+    const contentType = response.headers.get('content-type')
+    const contentLength = response.headers.get('content-length')
+
+    // Only try to parse JSON if there's actually content
+    if (contentLength !== '0' && contentType?.includes('application/json')) {
+      const text = await response.text()
+      if (text) {
+        try {
+          data = JSON.parse(text)
+        } catch (parseError) {
+          console.warn('Failed to parse response as JSON:', parseError)
+          data = text // Return as text if JSON parsing fails
+        }
+      }
+    }
 
     if (response.ok) {
       return {
@@ -69,7 +85,10 @@ export async function api<T>({
 
       return {
         data: null,
-        error: data,
+        error: data || {
+          error: 'Unknown error',
+          description: 'No error details provided',
+        },
         status: response.status,
         headers: response.headers,
       }
