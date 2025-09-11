@@ -1,3 +1,6 @@
+export { getInstallActionRunById } from './get-install-action-run-by-id'
+export { getInstallActionById } from './get-install-action-by-id'
+export { getInstallActionsLatestRuns } from './get-install-actions-latest-runs'
 export * from './get-installs'
 export * from './get-install'
 export * from './get-install-by-id'
