@@ -85,7 +85,7 @@ export default async function SandboxRuns({ params }) {
           text: 'Sandbox',
         },
         {
-          href: `/${orgId}/installs/${install.id}/runs/${sandboxRun.id}`,
+          href: `/${orgId}/installs/${install.id}/${sandboxRun.id}`,
           text: sandboxRun.id,
         },
       ]}
