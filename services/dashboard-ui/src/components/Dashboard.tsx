@@ -160,6 +160,7 @@ export const Dashboard: FC<{
 
 export const DashboardContent: FC<{
   breadcrumb: Array<TLink>
+  banner?: React.ReactNode | null
   children: React.ReactElement
   heading?: React.ReactElement | string
   headingUnderline?: React.ReactElement | string
@@ -168,6 +169,7 @@ export const DashboardContent: FC<{
   meta?: React.ReactElement | null
 }> = ({
   breadcrumb,
+  banner = null,
   children,
   heading,
   headingUnderline,
@@ -177,6 +179,7 @@ export const DashboardContent: FC<{
 }) => {
   return (
     <>
+      {banner}
       <header className="flex justify-between items-center border-b px-6 py-4 h-[75px] bg-white/50 dark:bg-white/[.02]">
         <BreadcrumbNav links={breadcrumb} />
         <div>

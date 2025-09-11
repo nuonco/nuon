@@ -83,14 +83,14 @@ export default async function InstallWorkflow({ params }) {
         </span>
       }
       headingUnderline={installWorkflow?.id}
-      meta={
-        <div className="pb-6 flex flex-col gap-4">
+      headingMeta={
+        <div className="flex flex-col gap-2 mt-4">
           <div className="flex gap-8">
             <div className="flex flex-col gap-1">
               <Text variant="reg-12" isMuted>
                 Pending approvals
               </Text>
-              <Text variant="med-18">
+              <Text variant="med-18" isMuted>
                 {
                   workflowSteps.filter(
                     (s) =>
@@ -106,14 +106,16 @@ export default async function InstallWorkflow({ params }) {
               <Text variant="reg-12" isMuted>
                 Total steps
               </Text>
-              <Text variant="med-18">{workflowSteps.length}</Text>
+              <Text variant="med-18" isMuted>
+                {workflowSteps.length}
+              </Text>
             </div>
 
             <div className="flex flex-col gap-1">
               <Text variant="reg-12" isMuted>
                 Completed steps
               </Text>
-              <Text variant="med-18">
+              <Text variant="med-18" isMuted>
                 {
                   workflowSteps.filter(
                     (s) =>
@@ -126,37 +128,43 @@ export default async function InstallWorkflow({ params }) {
               </Text>
             </div>
           </div>
-          {workflowSteps.some((s) => s?.execution_type === 'approval') ? (
-            <div className="flex flex-col gap-3">
-              {installWorkflow?.approval_option === 'prompt' &&
-              !installWorkflow?.finished ? (
-                <>
-                  <Text>
-                    Automatically approve all changes waiting for approval
+          <div className="pt-3 flex flex-col gap-4">
+            {workflowSteps.some((s) => s?.execution_type === 'approval') ? (
+              <div className="flex flex-col gap-3">
+                {installWorkflow?.approval_option === 'prompt' &&
+                !installWorkflow?.finished ? (
+                  <></>
+                ) : workflowSteps.some(
+                    (s) => s?.approval?.response?.type === 'deny'
+                  ) ? (
+                  <Text className="text-red-600 dark:text-red-400">
+                    Changes have been denied
                   </Text>
-                  <WorkflowApproveAllModal workflow={installWorkflow} />
-                </>
-              ) : workflowSteps.some(
-                  (s) => s?.approval?.response?.type === 'deny'
-                ) ? (
-                <Text className="text-red-600 dark:text-red-400">
-                  Changes have been denied
-                </Text>
-              ) : (
-                <Text className="text-green-600 dark:text-green-400">
-                  All changes have been approved
-                </Text>
-              )}
-            </div>
-          ) : null}
+                ) : (
+                  <Text className="text-green-600 dark:text-green-400">
+                    All changes have been approved
+                  </Text>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
       }
       statues={
         <div className="flex flex-col gap-3 items-end">
-          {!installWorkflow?.finished &&
-          installWorkflow?.status?.status !== 'cancelled' ? (
-            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
-          ) : null}
+          <div className="flex items-center gap-4">
+            {installWorkflow?.approval_option === 'prompt' &&
+            !installWorkflow?.finished ? (
+              <WorkflowApproveAllModal
+                workflow={installWorkflow}
+                buttonVariant="primary"
+              />
+            ) : null}
+            {!installWorkflow?.finished &&
+            installWorkflow?.status?.status !== 'cancelled' ? (
+              <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
+            ) : null}
+          </div>
 
           <InstallWorkflowActivity
             installWorkflow={installWorkflow}

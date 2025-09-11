@@ -6,7 +6,7 @@ import { SlidersHorizontal } from '@phosphor-icons/react/dist/ssr'
 import { DeployComponentsModal } from '../InstallComponents/DeployComponentsModal'
 import { DeleteComponentsModal } from '../InstallComponents/DeleteComponentsModal'
 import { Dropdown } from '@/components/Dropdown'
-import { useOrg } from '@/components/Orgs'
+import { useOrg } from '@/hooks/use-org'
 
 interface IInstallComponentsManagementDropdown {}
 
