@@ -15,7 +15,7 @@ import {
   SquaresFour,
   UsersThree,
 } from '@phosphor-icons/react'
-import { useOrg } from '@/components/Orgs'
+import { useOrg } from '@/hooks/use-org'
 import { Link } from './Link'
 import { Text } from './Typography'
 

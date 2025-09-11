@@ -13,7 +13,7 @@ import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { removeUserFromOrg } from '@/components/org-actions'
 import type { TAccount } from '@/types'
-import { useOrg } from './org-context'
+import { useOrg } from '@/hooks/use-org'
 
 interface ITeamMembersTable {
   members: Array<TAccount>

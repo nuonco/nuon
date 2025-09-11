@@ -3,7 +3,7 @@
 import React, { type FC } from 'react'
 import { LockLaminated } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
-import { useOrg } from '@/components/Orgs'
+import { useOrg } from '@/hooks/use-org'
 
 export const BreakGlassLink: FC<{ installId: string }> = ({ installId }) => {
   const { org } = useOrg()

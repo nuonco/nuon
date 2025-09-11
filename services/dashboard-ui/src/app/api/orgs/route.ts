@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { buildQueryParams } from '@/utils/build-query-params'
-import { nueQueryData } from '@/utils'
+import { getOrgs } from '@/lib'
 
 export const GET = async (request: NextRequest) => {
   const { searchParams } = new URL(request.url)
@@ -8,15 +7,10 @@ export const GET = async (request: NextRequest) => {
   const offset = searchParams.get('offset') || undefined
   const q = searchParams.get('q') || undefined
 
-  const res = await nueQueryData({
-    path: `orgs${buildQueryParams({ limit, offset, q })}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
-  })
+  const response = await getOrgs({ limit, offset, q })
 
   return NextResponse.json({
-    ...res,
-    headers: Object.fromEntries(res.headers.entries()),
+    ...response,
+    headers: Object.fromEntries(response.headers.entries()),
   })
 }

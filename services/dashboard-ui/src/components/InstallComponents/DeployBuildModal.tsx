@@ -13,6 +13,7 @@ import { Notice } from '@/components/Notice'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { deployComponentBuild } from '@/components/install-actions'
+import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
 import type { TBuild } from '@/types'
 import { trackEvent } from '@/utils'
@@ -33,10 +34,10 @@ export const InstallDeployBuildModal: FC<{
   initDeployDeps = false,
 }) => {
   const params = useParams<Record<'org-id' | 'install-id', string>>()
-  const orgId = params['org-id']
   const installId = params['install-id']
   const router = useRouter()
   const { user } = useUser()
+  const { org } = useOrg()
   const [planOnly, setPlanOnly] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [buildId, setBuildId] = useState<string>(initBuildId)
@@ -84,7 +85,6 @@ export const InstallDeployBuildModal: FC<{
                 <BuildOptions
                   buildId={buildId}
                   componentId={componentId}
-                  orgId={orgId}
                   setBuildId={setBuildId}
                 />
               </div>
@@ -136,7 +136,7 @@ export const InstallDeployBuildModal: FC<{
                         deployComponentBuild({
                           buildId,
                           installId,
-                          orgId,
+                          orgId: org?.id,
                           deployDeps,
                           planOnly,
                         })
@@ -145,18 +145,23 @@ export const InstallDeployBuildModal: FC<{
                               event: 'component_deploy',
                               user,
                               status: 'ok',
-                              props: { orgId, installId, componentId, buildId },
+                              props: {
+                                orgId: org?.id,
+                                installId,
+                                componentId,
+                                buildId,
+                              },
                             })
                             setIsLoading(false)
                             setIsKickedOff(true)
 
                             if (workflowId) {
                               router.push(
-                                `/${orgId}/installs/${installId}/workflows/${workflowId}`
+                                `/${org?.id}/installs/${installId}/workflows/${workflowId}`
                               )
                             } else {
                               router.push(
-                                `/${orgId}/installs/${installId}/workflows`
+                                `/${org?.id}/installs/${installId}/workflows`
                               )
                             }
 
@@ -168,7 +173,7 @@ export const InstallDeployBuildModal: FC<{
                               user,
                               status: 'error',
                               props: {
-                                orgId,
+                                orgId: org?.id,
                                 installId,
                                 componentId,
                                 buildId,
@@ -215,15 +220,15 @@ export const InstallDeployBuildModal: FC<{
 const BuildOptions: FC<{
   buildId?: string
   componentId: string
-  orgId: string
   setBuildId: (id: string) => void
-}> = ({ buildId, componentId, orgId, ...props }) => {
+}> = ({ buildId, componentId, ...props }) => {
+  const { org } = useOrg()
   const {
     data: builds,
     isLoading,
     error,
   } = useQuery<TBuild[]>({
-    path: `/api/${orgId}/components/${componentId}/builds`,
+    path: `/api/orgs/${org.id}/components/${componentId}/builds`,
   })
 
   return (
@@ -237,13 +242,13 @@ const BuildOptions: FC<{
           <Loading loadingText="Loading builds..." />
         </div>
       ) : builds && builds?.length ? (
-        builds.map((build) => (
+        builds.map((build, idx) => (
           <RadioInput
             className="mt-0.5"
             key={build?.id}
             name="build-id"
             value={build?.id}
-            defaultChecked={buildId === build?.id}
+            defaultChecked={buildId === build?.id || idx === 0}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               props.setBuildId(e.target?.value)
             }}

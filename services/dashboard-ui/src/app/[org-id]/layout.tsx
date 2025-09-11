@@ -1,10 +1,11 @@
 // @ts-nocheck
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { Layout, OrgProvider } from '@/components'
+import { Layout } from '@/components/Layout'
 import { REFRESH_PAGE_INTERVAL, REFRESH_PAGE_WARNING } from '@/configs/app'
 import { getAPIVersion, getOrg, getOrgs } from '@/lib'
 import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
+import { OrgProvider } from "@/providers/org-provider";
 import { VERSION } from '@/utils'
 
 export default async function OrgLayout({ children, params }) {
