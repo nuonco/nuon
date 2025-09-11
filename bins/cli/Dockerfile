@@ -36,9 +36,12 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-cli \
 
 FROM golang:1.24-alpine AS final
 
-WORKDIR /src/bins/${SERVICE}
+ARG BIN_NAME=nuon
+ARG SERVICE=cli
 
-COPY --from=build /bin/${SERVICE} /bin/${BIN_NAME}
+WORKDIR /src/bins/${BIN_NAME}
+
+COPY --from=build /bin/${BIN_NAME} /bin/${BIN_NAME}
 
 ENTRYPOINT ["/bin/nuon"]
 
