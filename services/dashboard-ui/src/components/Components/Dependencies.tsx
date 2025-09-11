@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom'
 import { Button } from '@/components/Button'
 import { Link } from '@/components/Link'
 import { Modal } from '@/components/Modal'
-import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
+import { useOrg } from '@/hooks/use-org'
 // eslint-disable-next-line import/no-cycle
 import type { TComponent } from '@/types'
 

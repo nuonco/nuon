@@ -13,8 +13,8 @@ import { ReprovisionModal } from './ReprovisionModal'
 import { InstallAuditHistoryModal } from './InstallAuditHistoryModal'
 import { SyncSecretsModal } from './SyncSecretsModal'
 import { Dropdown } from '@/components/Dropdown'
-import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
+import { useOrg } from '@/hooks/use-org'
 import type { TInstall } from '@/types'
 
 interface IInstallManagementDropdown {

@@ -1,3 +1,4 @@
+// TODO(nnnat): replace with getOrgById
 import type { TOrg } from '@/types'
 import { queryData } from '@/utils'
 import type { IGetOrg } from '../shared-interfaces'

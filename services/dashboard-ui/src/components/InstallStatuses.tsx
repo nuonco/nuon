@@ -1,43 +1,17 @@
 'use client'
 
 import classNames from 'classnames'
-import React, { type FC, useEffect, useState } from 'react'
 import { StatusBadge } from '@/components/Status'
-// import { revalidateInstallData } from '@/components/install-actions'
-import type { TInstall } from '@/types'
-import { POLL_DURATION } from '@/utils'
+import { useInstall } from '@/hooks/use-install'
 
 export interface IInstallStatus {
-  initInstall: TInstall
   isCompact?: boolean
   isCompositeStatus?: boolean
   isStatusTextHidden?: boolean
-  shouldPoll?: boolean
 }
 
-export const InstallStatuses: FC<IInstallStatus> = ({
-  initInstall,
-  isCompact = false,
-  shouldPoll = false,
-}) => {
-  const [install, updateInstall] = useState<TInstall>(initInstall)
-
-  useEffect(() => {
-    const fetchInstall = () => {
-      fetch(`/api/${initInstall.org_id}/installs/${initInstall.id}`)
-        .then((res) =>
-          res.json().then((i) => {
-            updateInstall(i)
-          })
-        )
-        .catch(console.error)
-      // revalidateInstallData({ installId: install.id, orgId: install.org_id })
-    }
-    if (shouldPoll) {
-      const pollInstall = setInterval(fetchInstall, POLL_DURATION)
-      return () => clearInterval(pollInstall)
-    }
-  }, [install, shouldPoll])
+export const InstallStatuses = ({ isCompact = false }: IInstallStatus) => {
+  const { install } = useInstall()
 
   return (
     <div
@@ -45,7 +19,7 @@ export const InstallStatuses: FC<IInstallStatus> = ({
         'gap-6 items-center': !isCompact,
         '': isCompact,
       })}
-    >      
+    >
       <StatusBadge
         label="Runner"
         status={install.runner_status}
