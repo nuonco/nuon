@@ -3,15 +3,18 @@
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { FaGithub } from 'react-icons/fa'
-import { Plus, TestTube } from '@phosphor-icons/react'
+import { Plus, TestTube, XCircle } from '@phosphor-icons/react'
+import { Button } from '@/components/Button'
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { Dropdown } from '@/components/Dropdown'
-import { useOrg, ConnectGithubModal } from '@/components/Orgs'
+import { useOrg } from '@/components/Orgs'
 import { OrgStatus } from '@/components/OrgStatus'
 import { Text } from '@/components/Typography'
+import { ConnectGithubModal } from '@/components/vcs-conntections/ConnectGithubModal'
+import { VCSConnections } from '@/components/vcs-conntections/VCSConnections'
 import type { TOrg } from '@/types'
-import { OrgAvatar } from '@/components/Orgs/OrgAvatar'
-import { OrgsNav } from '@/components/Orgs/OrgsNav'
+import { OrgAvatar } from './OrgAvatar'
+import { OrgsNav } from './OrgsNav'
 
 export interface IOrgSummary {
   org: TOrg
@@ -57,25 +60,6 @@ export const OrgSummary: FC<IOrgSummary> = ({
   )
 }
 
-const OrgVCSConnections: FC<Pick<TOrg, 'vcs_connections'>> = ({
-  vcs_connections,
-}) => {
-  return (
-    <>
-      {vcs_connections?.length &&
-        vcs_connections?.map((vcs) => (
-          <Text
-            key={vcs?.id}
-            className="flex gap-2 py-4 items-center font-mono text-sm text-cool-grey-600 dark:text-cool-grey-500"
-          >
-            <FaGithub className="text-lg" />
-            {vcs?.github_account_name || vcs?.github_install_id}
-          </Text>
-        ))}
-    </>
-  )
-}
-
 export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
   return (
     <div className="flex flex-col gap-4 mx-4 py-4 border-cool-grey-600 dark:border-cool-grey-500 border-b border-dotted ">
@@ -85,7 +69,7 @@ export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
       </div>
 
       <div>
-        <OrgVCSConnections vcs_connections={org.vcs_connections} />
+        <VCSConnections vcsConnections={org.vcs_connections} />
       </div>
     </div>
   )

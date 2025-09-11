@@ -14,7 +14,7 @@ import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { connectGitHubToOrg } from '@/components/org-actions'
 import { GITHUB_APP_NAME } from '@/utils'
-import { useOrg } from './org-context'
+import { useOrg } from '@/components/Orgs/org-context'
 
 interface IConnectGithubModal {}
 
