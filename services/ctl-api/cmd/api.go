@@ -59,6 +59,8 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 	providers = append(providers,
+		fx.Provide(api.NewEndpointAudit),
+
 		// add middlewares
 		fx.Provide(middlewares.AsMiddleware(stderr.New)),
 		fx.Provide(middlewares.AsMiddleware(global.New)),

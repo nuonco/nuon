@@ -15,9 +15,10 @@ type Params struct {
 	LC         fx.Lifecycle
 	Shutdowner fx.Shutdowner
 
-	Services    []Service                `group:"services"`
-	Middlewares []middlewares.Middleware `group:"middlewares"`
-	L           *zap.Logger
-	Cfg         *internal.Config
-	DB          *gorm.DB `name:"psql"`
+	Services      []Service                `group:"services"`
+	Middlewares   []middlewares.Middleware `group:"middlewares"`
+	L             *zap.Logger
+	Cfg           *internal.Config
+	DB            *gorm.DB `name:"psql"`
+	EndpointAudit *EndpointAudit
 }
