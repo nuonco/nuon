@@ -156,7 +156,7 @@ export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']
 
-// action workflows
+// old action workflows types
 export type TActionWorkflow = components['schemas']['app.ActionWorkflow']
 export type TActionConfig = components['schemas']['app.ActionWorkflowConfig']
 export type TActionConfigStep =
@@ -169,6 +169,14 @@ export type TInstallActionWorkflowRun =
   components['schemas']['app.InstallActionWorkflowRun']
 export type TInstallActionWorkflow =
   components['schemas']['app.InstallActionWorkflow']
+
+// new action types
+export type TAction = components["schemas"]["app.ActionWorkflow"];;
+export type TInstallActionRun =
+  components["schemas"]["app.InstallActionWorkflowRun"];
+export type TInstallAction =
+  components["schemas"]["app.InstallActionWorkflow"];
+
 
 // App / Install Readme
 export type TReadme = components['schemas']['service.Readme']
