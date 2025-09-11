@@ -10,7 +10,7 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { inviteUserToOrg } from '@/components/org-actions'
-import { useOrg } from './org-context'
+import { useOrg } from '@/hooks/use-org'
 
 interface IOrgInviteModal {}
 

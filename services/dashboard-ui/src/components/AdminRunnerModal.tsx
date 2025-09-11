@@ -22,7 +22,6 @@ import { Link } from '@/components/Link'
 import { Loading, SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { useOrg } from '@/components/Orgs'
 import { jobHrefPath, jobName } from '@/components/Runners/helpers'
 import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
@@ -36,6 +35,7 @@ import {
   mngShutdownRunnerVM,
   mngUpdateRunner,
 } from '@/components/admin-actions'
+import { useOrg } from '@/hooks/use-org'
 import type { TRunner, TRunnerHeartbeat, TRunnerJob, TInstall } from '@/types'
 
 export const AdminRunnerModal: FC<{
