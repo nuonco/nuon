@@ -51,12 +51,13 @@ env_secrets:
     name: dashboard-ui-datadog-api-key
     key: datadog_api_key
 disable_watch: true
+watch_ignore:
+  - '\/node_modules/'
+  - '.next/'
 local_startup_cmds: []
 local_build_cmds:
-  - npm install --no-save
-  - npm run build -- --no-lint
 local_cmds:
-  - npm start
+  - npm run dev
 namespace: dashboard-ui
 docker_cmds:
   # the entrypoint of the container is already run start

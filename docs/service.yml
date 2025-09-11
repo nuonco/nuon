@@ -8,4 +8,10 @@ local_startup_cmds: []
 local_cmds:
   - npx --yes mintlify dev --no-open --port 3333
 disable_config_map: true
-docker_cmds: []
+docker_cmds:
+  - cmd: mint
+    args:
+      - dev
+      - --port=3333
+    ports:
+     - 3333

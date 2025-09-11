@@ -12,3 +12,6 @@ namespace: wiki
 sources:
   - src: wiki/
     dst: wiki/
+docker_cmds:
+  - ports:
+     - 4321
