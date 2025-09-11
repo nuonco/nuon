@@ -1,5 +1,6 @@
 export * from './get-apps'
 export * from './get-app'
+export * from './get-app-by-id'
 export * from './get-app-components'
 export * from './get-app-configs'
 export * from './get-app-latest-config'

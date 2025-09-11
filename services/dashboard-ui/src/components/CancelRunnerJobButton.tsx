@@ -8,9 +8,9 @@ import { Check } from '@phosphor-icons/react'
 import { Button, type IButton } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
-import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
 import { cancelRunnerJob } from '@/components/runner-actions'
+import { useOrg } from '@/hooks/use-org'
 import { trackEvent } from '@/utils'
 
 export type TCancelJobType =

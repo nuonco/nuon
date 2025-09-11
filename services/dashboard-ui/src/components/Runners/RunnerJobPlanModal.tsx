@@ -7,8 +7,8 @@ import { Button } from '@/components/Button'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { useOrg } from '@/components/Orgs'
 import { CodeViewer, JsonView } from '@/components/Code'
+import { useOrg } from '@/hooks/use-org'
 
 interface IRunnerJobPlanModal {
   buttonText?: string

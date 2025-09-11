@@ -14,7 +14,7 @@ import { Text } from '@/components/Typography'
 import { removeVCSConnection } from '@/actions/vcs-conntection/remove-vcs-connection'
 import { useServerAction } from '@/hooks/use-server-action'
 import type { TVCSConnection } from '@/types'
-import { useOrg } from '@/components/Orgs/org-context'
+import { useOrg } from '@/hooks/use-org'
 
 export const RemoveVCSConnection = ({
   connection,

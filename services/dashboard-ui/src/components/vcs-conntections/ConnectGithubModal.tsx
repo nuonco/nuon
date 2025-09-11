@@ -13,8 +13,8 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { connectGitHubToOrg } from '@/components/org-actions'
-import { GITHUB_APP_NAME } from '@/utils'
-import { useOrg } from '@/components/Orgs/org-context'
+import { GITHUB_APP_NAME } from '@/configs/github-app'
+import { useOrg } from '@/hooks/use-org'
 
 interface IConnectGithubModal {}
 

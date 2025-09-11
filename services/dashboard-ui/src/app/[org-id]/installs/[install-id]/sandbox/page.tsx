@@ -95,7 +95,7 @@ export default async function InstallComponent({ params, searchParams }) {
               </Link>
             </Text>
           </span>
-          <InstallStatuses initInstall={install} shouldPoll />
+          <InstallStatuses />
 
           <InstallManagementDropdown
             orgId={orgId}

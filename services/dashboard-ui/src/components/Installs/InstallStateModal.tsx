@@ -9,7 +9,7 @@ import { JsonView } from '@/components/Code'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { useOrg } from '@/components/Orgs'
+import { useOrg } from '@/hooks/use-org'
 import type { TInstall } from '@/types'
 
 interface IInstallStateModal {
