@@ -1,6 +1,15 @@
 ---
 type: artifact
 
+env: {}
+env_secrets: {}
+disable_config_map: true
+local_startup_cmds: []
+local_build_cmds:
+  - rm -f ~/bin/nuon-dev
+  - go build -o ~/bin/nuon-dev
+local_cmds: []
+
 base_images:
   - src: Dockerfile.build
     name: BUILD_IMAGE
