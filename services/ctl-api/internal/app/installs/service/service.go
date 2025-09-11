@@ -31,9 +31,11 @@ type Params struct {
 	AppsHelpers      *appshelpers.Helpers
 	FeaturesClient   *features.Features
 	EvClient         eventloop.Client
+	EndpointAudit    *api.EndpointAudit
 }
 
 type service struct {
+	api.RouteRegister
 	v                *validator.Validate
 	l                *zap.Logger
 	db               *gorm.DB
@@ -48,107 +50,107 @@ type service struct {
 
 var _ api.Service = (*service)(nil)
 
-func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// get all installs across orgs
-	api.GET("/v1/installs", s.GetOrgInstalls)
+	ge.GET("/v1/installs", s.GetOrgInstalls)
 
 	// get / create installs for an app
-	api.GET("/v1/apps/:app_id/installs", s.GetAppInstalls)
-	api.POST("/v1/apps/:app_id/installs", s.CreateInstall)
+	ge.GET("/v1/apps/:app_id/installs", s.GetAppInstalls)
+	ge.POST("/v1/apps/:app_id/installs", s.CreateInstall)
 
 	// individual installs
-	api.GET("/v1/installs/:install_id", s.GetInstall)
-	api.PATCH("/v1/installs/:install_id", s.UpdateInstall)
-	api.DELETE("/v1/installs/:install_id", s.DeleteInstall)
-	api.POST("/v1/installs/:install_id/reprovision", s.ReprovisionInstall)
+	ge.GET("/v1/installs/:install_id", s.GetInstall)
+	ge.PATCH("/v1/installs/:install_id", s.UpdateInstall)
+	ge.DELETE("/v1/installs/:install_id", s.DeleteInstall)
+	ge.POST("/v1/installs/:install_id/reprovision", s.ReprovisionInstall)
 
-	api.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
-	api.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
-	api.POST("/v1/installs/:install_id/retry-workflow", s.RetryWorkflow) // Deprecated, use workflows instead
+	ge.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
+	ge.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
+	ge.POST("/v1/installs/:install_id/retry-workflow", s.RetryWorkflow) // Deprecated, use workflows instead
 
 	// install deploys
-	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
-	api.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
-	api.GET("/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy)
-	api.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
+	ge.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
+	ge.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
+	ge.GET("/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy)
+	ge.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
 
 	// install readme
-	api.GET("/v1/installs/:install_id/readme", s.GetInstallReadme)
+	ge.GET("/v1/installs/:install_id/readme", s.GetInstallReadme)
 
 	// install drifts
-	api.GET("/v1/installs/:install_id/drifted-objects", s.GetDriftedObjects)
+	ge.GET("/v1/installs/:install_id/drifted-objects", s.GetDriftedObjects)
 
 	// install state
-	api.GET("/v1/installs/:install_id/state", s.GetInstallState)
-	api.GET("/v1/installs/:install_id/state-history", s.GetInstallStateHistory)
+	ge.GET("/v1/installs/:install_id/state", s.GetInstallState)
+	ge.GET("/v1/installs/:install_id/state-history", s.GetInstallStateHistory)
 
 	// install sandbox
-	api.POST("/v1/installs/:install_id/reprovision-sandbox", s.ReprovisionInstallSandbox)
-	api.POST("/v1/installs/:install_id/deprovision-sandbox", s.DeprovisionInstallSandbox)
-	api.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
-	api.GET("/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun)
+	ge.POST("/v1/installs/:install_id/reprovision-sandbox", s.ReprovisionInstallSandbox)
+	ge.POST("/v1/installs/:install_id/deprovision-sandbox", s.DeprovisionInstallSandbox)
+	ge.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
+	ge.GET("/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun)
 
 	// install inputs
-	api.GET("/v1/installs/:install_id/inputs", s.GetInstallInputs)
-	api.POST("/v1/installs/:install_id/inputs", s.CreateInstallInputs)
-	api.GET("/v1/installs/:install_id/inputs/current", s.GetInstallCurrentInputs)
-	api.PATCH("/v1/installs/:install_id/inputs", s.UpdateInstallInputs)
+	ge.GET("/v1/installs/:install_id/inputs", s.GetInstallInputs)
+	ge.POST("/v1/installs/:install_id/inputs", s.CreateInstallInputs)
+	ge.GET("/v1/installs/:install_id/inputs/current", s.GetInstallCurrentInputs)
+	ge.PATCH("/v1/installs/:install_id/inputs", s.UpdateInstallInputs)
 
 	// install components
-	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
-	api.GET("/v1/installs/:install_id/components/summary", s.GetInstallComponentSummary)
-	api.POST("/v1/installs/:install_id/components/teardown-all", s.TeardownInstallComponents)
-	api.POST("/v1/installs/:install_id/components/deploy-all", s.DeployInstallComponents)
-	api.GET("/v1/installs/:install_id/components/:component_id", s.GetInstallComponent)
-	api.POST("/v1/installs/:install_id/components/:component_id/teardown", s.TeardownInstallComponent)
-	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
-	api.GET("/v1/installs/:install_id/components/:component_id/outputs", s.GetInstallComponentOutputs)
-	api.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
-	api.POST("/v1/installs/:install_id/sync-secrets", s.SyncSecrets)
+	ge.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
+	ge.GET("/v1/installs/:install_id/components/summary", s.GetInstallComponentSummary)
+	ge.POST("/v1/installs/:install_id/components/teardown-all", s.TeardownInstallComponents)
+	ge.POST("/v1/installs/:install_id/components/deploy-all", s.DeployInstallComponents)
+	ge.GET("/v1/installs/:install_id/components/:component_id", s.GetInstallComponent)
+	ge.POST("/v1/installs/:install_id/components/:component_id/teardown", s.TeardownInstallComponent)
+	ge.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
+	ge.GET("/v1/installs/:install_id/components/:component_id/outputs", s.GetInstallComponentOutputs)
+	ge.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
+	ge.POST("/v1/installs/:install_id/sync-secrets", s.SyncSecrets)
 
 	// install events
-	api.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
-	api.GET("/v1/installs/:install_id/events/:event_id", s.GetInstallEvent)
+	ge.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
+	ge.GET("/v1/installs/:install_id/events/:event_id", s.GetInstallEvent)
 
 	// workflows
-	api.GET("/v1/installs/:install_id/workflows", s.GetWorkflows)
-	api.GET("/v1/workflows/:workflow_id", s.GetWorkflow)
-	api.PATCH("/v1/workflows/:workflow_id", s.UpdateWorkflow)
-	api.GET("/v1/workflows/:workflow_id/steps", s.GetWorkflowSteps)
-	api.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id", s.GetWorkflowStep)
-	api.POST("/v1/workflows/:workflow_id/cancel", s.CancelWorkflow)
-	api.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id", s.GetWorkflowStepApproval)
-	api.POST("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/response", s.CreateWorkflowStepApprovalResponse)
-	api.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/contents", s.GetWorkflowStepApprovalContents)
+	ge.GET("/v1/installs/:install_id/workflows", s.GetWorkflows)
+	ge.GET("/v1/workflows/:workflow_id", s.GetWorkflow)
+	ge.PATCH("/v1/workflows/:workflow_id", s.UpdateWorkflow)
+	ge.GET("/v1/workflows/:workflow_id/steps", s.GetWorkflowSteps)
+	ge.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id", s.GetWorkflowStep)
+	ge.POST("/v1/workflows/:workflow_id/cancel", s.CancelWorkflow)
+	ge.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id", s.GetWorkflowStepApproval)
+	ge.POST("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/response", s.CreateWorkflowStepApprovalResponse)
+	ge.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/contents", s.GetWorkflowStepApprovalContents)
 	// retry workflow
-	api.POST("/v1/workflows/:workflow_id/retry", s.RetryOwnerWorkflow)
+	ge.POST("/v1/workflows/:workflow_id/retry", s.RetryOwnerWorkflow)
 
 	// deprecated
-	api.GET("/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow)
-	api.PATCH("/v1/install-workflows/:install_workflow_id", s.UpdateInstallWorkflow)
-	api.GET("/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps)
-	api.GET("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep)
-	api.POST("/v1/install-workflows/:install_workflow_id/cancel", s.CancelInstallWorkflow)
-	api.GET("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval)
-	api.POST("/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id/response", s.CreateInstallWorkflowStepApprovalResponse)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow, api.APIContextTypePublic, true)
+	s.PATCH(ge, "/v1/install-workflows/:install_workflow_id", s.UpdateInstallWorkflow, api.APIContextTypePublic, true)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps, api.APIContextTypePublic, true)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep, api.APIContextTypePublic, true)
+	s.POST(ge, "/v1/install-workflows/:install_workflow_id/cancel", s.CancelInstallWorkflow, api.APIContextTypePublic, true)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval, api.APIContextTypePublic, true)
+	s.POST(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id/response", s.CreateInstallWorkflowStepApprovalResponse, api.APIContextTypePublic, true)
 
 	// install runner group
-	api.GET("/v1/installs/:install_id/runner-group", s.GetInstallRunnerGroup)
+	ge.GET("/v1/installs/:install_id/runner-group", s.GetInstallRunnerGroup)
 
 	// phone home
-	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
+	ge.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
 
 	// install stacks
-	api.GET("/v1/installs/:install_id/stack", s.GetInstallStackByInstallID)
-	api.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
-	api.GET("/v1/installs/:install_id/stack-runs", s.GetInstallStackRuns)
+	ge.GET("/v1/installs/:install_id/stack", s.GetInstallStackByInstallID)
+	ge.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
+	ge.GET("/v1/installs/:install_id/stack-runs", s.GetInstallStackRuns)
 
 	// install config
-	api.POST("/v1/installs/:install_id/configs", s.CreateInstallConfig)
-	api.PATCH("/v1/installs/:install_id/configs/:config_id", s.UpdateInstallConfig)
+	ge.POST("/v1/installs/:install_id/configs", s.CreateInstallConfig)
+	ge.PATCH("/v1/installs/:install_id/configs/:config_id", s.UpdateInstallConfig)
 
 	// install audit logs
-	api.GET("/v1/installs/:install_id/audit_logs", s.GetInstallAuditLogs)
+	ge.GET("/v1/installs/:install_id/audit_logs", s.GetInstallAuditLogs)
 
 	return nil
 }
@@ -183,6 +185,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister: api.RouteRegister{
+			EndpointAudit: params.EndpointAudit,
+		},
 		cfg:              params.Cfg,
 		l:                params.L,
 		v:                params.V,
