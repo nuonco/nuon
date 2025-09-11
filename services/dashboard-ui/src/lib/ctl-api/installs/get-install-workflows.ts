@@ -1,16 +1,14 @@
-import type { TInstallWorkflow } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetInstall } from '../shared-interfaces'
+import { api } from "@/lib/api";
+import type { TWorkflow, TPaginationParams } from "@/types";
+import { buildQueryParams } from "@/utils/build-query-params";
 
-export interface IGetInstallWorkflows extends IGetInstall {}
-
-export async function getInstallWorkflows({
+export const getInstallWorkflows = ({
   installId,
+  limit,
+  offset,
   orgId,
-}: IGetInstallWorkflows) {
-  return queryData<Array<TInstallWorkflow>>({
-    errorMessage: 'Unable to get install workflows.',
-    path: `installs/${installId}/workflows`,
+}: { installId: string; orgId: string } & TPaginationParams) =>
+  api<TWorkflow[]>({
+    path: `installs/${installId}/workflows${buildQueryParams({ limit, offset })}`,
     orgId,
-  })
-}
+  });

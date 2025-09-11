@@ -16,7 +16,14 @@ import { Empty } from '@/components/Empty'
 import { Section } from '@/components/Card'
 import { Duration } from '@/components/Time'
 import { Text } from '@/components/Typography'
-import type { TInstallWorkflow, TInstallWorkflowStep, TInstall } from '@/types'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import type {
+  TInstallWorkflow,
+  TInstallWorkflowStep,
+  TWorkflowStep,
+  TInstall,
+} from '@/types'
 import { removeSnakeCase, sentanceCase } from '@/utils'
 import { YAStatus } from './InstallWorkflowHistory'
 import { StepDetails, getStepType } from './StepDetails'
@@ -29,21 +36,20 @@ export interface IPollStepDetails {
 }
 
 interface IInstallWorkflowSteps {
-  install: TInstall
   installWorkflow: TInstallWorkflow
-  orgId: string
 }
 
 export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
-  install,
   installWorkflow,
 }) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
   const path = usePathname()
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
   const queryTargetId = searchParams.get('target')
-  const orgId = params?.['org-id'] as string
+  const orgId = org.id
   const workflowSteps = installWorkflow?.steps?.filter(
     (s) => s?.execution_type !== 'hidden'
   )
@@ -116,11 +122,6 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
     <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x h-full">
       <div className="md:col-span-4 overflow-auto" ref={scrollableRef}>
         <Section
-          heading={
-            <span>
-              {removeSnakeCase(sentanceCase(installWorkflow?.type))} plan{' '}
-            </span>
-          }
           className="flex flex-col gap-2"
           childrenClassName="flex flex-col gap-4"
         >
@@ -131,10 +132,15 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
                   workflowSteps?.filter(
                     (step) => step?.execution_type !== 'hidden'
                   ) || []
-                const groupedSteps = Object.groupBy(
-                  steps,
-                  (step) => step.group_idx
-                )
+                const groupedSteps = steps.reduce((acc, step) => {
+                  const key = step.group_idx
+                  if (!acc[key]) {
+                    acc[key] = []
+                  }
+                  acc[key].push(step)
+                  return acc
+                }, {})
+
                 const sortedGroups = Object.entries(groupedSteps)
                   .sort(([, a], [, b]) => a[0].group_idx - b[0].group_idx)
                   .map(([groupId, groupSteps]) =>

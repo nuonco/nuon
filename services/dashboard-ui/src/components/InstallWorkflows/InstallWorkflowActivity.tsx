@@ -1,40 +1,19 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
-import React, { type FC, useEffect } from 'react'
 import { useUser } from '@auth0/nextjs-auth0'
 import { ArrowSquareOut } from '@phosphor-icons/react'
-import { revalidateData } from '@/components/actions'
 import { Link } from '@/components/Link'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
 
 interface IInstallWorkflowActivity {
   installWorkflow: TInstallWorkflow
-  shouldPoll?: boolean
-  pollDuration?: number
 }
 
-export const InstallWorkflowActivity: FC<IInstallWorkflowActivity> = ({
+export const InstallWorkflowActivity = ({
   installWorkflow,
-  shouldPoll = false,
-  pollDuration = SHORT_POLL_DURATION,
-}) => {
-  const path = usePathname()
+}: IInstallWorkflowActivity) => {
   const { user, isLoading } = useUser()
-
-  useEffect(() => {
-    const refreshData = () => {
-      revalidateData({ path })
-    }
-    if (shouldPoll) {
-      const pollBuild = setInterval(refreshData, pollDuration)
-
-      return () => clearInterval(pollBuild)
-    }
-  }, [installWorkflow, shouldPoll])
-
   const workflowSteps =
     installWorkflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
 
