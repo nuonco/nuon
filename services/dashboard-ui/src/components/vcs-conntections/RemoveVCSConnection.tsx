@@ -26,9 +26,13 @@ export const RemoveVCSConnection = ({
   const [confirm, setConfirm] = useState<string>('')
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+
+  const connectionName = connection?.github_account_name || connection?.github_install_id;
   const { data, error, isLoading, execute, status } = useServerAction({
     action: removeVCSConnection,
   })
+
+  
 
   const handleClose = () => {
     setIsKickedOff(false)
@@ -75,8 +79,7 @@ export const RemoveVCSConnection = ({
                   GitHub connection:
                   <span className="ml-2 flex items-center gap-1 text-red-600 dark:text-red-400">
                     <FaGithub className="text-lg" />
-                    {connection?.github_account_name ||
-                      connection?.github_install_id}
+                    {connectionName}
                   </span>
                 </Text>
                 <div className="flex flex-col gap-2">
@@ -109,8 +112,7 @@ export const RemoveVCSConnection = ({
                   <Text variant="med-14">
                     To verify, type{' '}
                     <span className="text-red-800 dark:text-red-500 mx-1">
-                      {connection?.github_account_name ||
-                        connection?.github_install_id}
+                      {connectionName}
                     </span>{' '}
                     below
                   </Text>
@@ -133,7 +135,7 @@ export const RemoveVCSConnection = ({
                 <Button
                   className="text-sm flex items-center gap-2 font-medium"
                   disabled={
-                    confirm !== connection?.github_account_name ||
+                    confirm !== connectionName ||
                     isLoading ||
                     isKickedOff
                   }
