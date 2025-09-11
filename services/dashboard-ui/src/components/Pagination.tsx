@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { type FC } from 'react'
 import { ArrowLeft, ArrowRight } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
-import { useOrg } from '@/components/Orgs'
+import { useOrg } from '@/hooks/use-org'
 import type { TPagination } from '@/lib'
 
 interface IPagination {

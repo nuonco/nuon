@@ -1,5 +1,6 @@
 export * from './get-installs'
 export * from './get-install'
+export * from './get-install-by-id'
 export * from './get-install-components'
 export * from './get-install-component'
 export * from './get-install-component-deploys'
