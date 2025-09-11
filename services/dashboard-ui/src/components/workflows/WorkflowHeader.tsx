@@ -34,7 +34,7 @@ export const WorkflowHeader = ({
 
   return (
     <header className="px-6 py-8 flex flex-col pt-6 gap-6 border-b">
-      {error ? (
+      {error?.error ? (
         <Notice>{error?.error || 'Unable to load workflow'}</Notice>
       ) : null}
       <div className="flex items-start justify-between gap-4">
