@@ -15,13 +15,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type baseMiddleware struct {
-	l       *zap.Logger
-	db      *gorm.DB
-	context string
-	cfg     *internal.Config
+	l             *zap.Logger
+	db            *gorm.DB
+	context       string
+	cfg           *internal.Config
+	endpointAudit *api.EndpointAudit
 }
 
 func (m baseMiddleware) Name() string {
@@ -54,11 +57,17 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			}
 		}
 
+		deprecated := m.endpointAudit.IsDeprecated(
+			ctx.Request.Method,
+			m.context,
+			ctx.FullPath(),
+		)
 		ea := app.EndpointAudit{
 			Method:     ctx.Request.Method,
 			Name:       m.context,
 			Route:      ctx.FullPath(),
 			LastUsedAt: generics.NewNullTime(time.Now()),
+			Deprecated: deprecated,
 		}
 		if res := m.db.WithContext(ctx).
 			Clauses(clause.OnConflict{
@@ -68,7 +77,10 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 					{Name: "name"},
 					{Name: "route"},
 				},
-				UpdateAll: true,
+				DoUpdates: clause.AssignmentColumns([]string{
+					"last_used_at",
+					"deprecated",
+				}),
 			}).
 			Create(&ea); res.Error != nil {
 			ctx.Error(stderr.ErrSystem{
@@ -76,21 +88,31 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 				Description: "unable to emit api endpoint auditing",
 			})
 		}
+		if deprecated {
+			metricsCtx, err := cctx.MetricsContextFromGinContext(ctx)
+			if err != nil {
+				m.l.Error("no metrics context found")
+				return
+			}
+			metricsCtx.IsDeprecated = true
+		}
 	}
 }
 
 type Params struct {
 	fx.In
-	L   *zap.Logger
-	DB  *gorm.DB `name:"psql"`
-	Cfg *internal.Config
+	L             *zap.Logger
+	DB            *gorm.DB `name:"psql"`
+	Cfg           *internal.Config
+	EndpointAudit *api.EndpointAudit
 }
 
 func newBaseMiddleware(params Params, context string) *baseMiddleware {
 	return &baseMiddleware{
-		l:       params.L,
-		db:      params.DB,
-		context: context,
-		cfg:     params.Cfg,
+		l:             params.L,
+		db:            params.DB,
+		context:       context,
+		cfg:           params.Cfg,
+		endpointAudit: params.EndpointAudit,
 	}
 }
