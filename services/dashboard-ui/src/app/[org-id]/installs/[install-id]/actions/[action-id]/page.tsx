@@ -4,7 +4,6 @@ import { ErrorBoundary } from 'react-error-boundary'
 import {
   ActionTriggerButton,
   ActionTriggerType,
-  Badge,
   ClickToCopy,
   CodeViewer,
   Config,
@@ -12,33 +11,30 @@ import {
   ConfigurationVariables,
   ErrorFallback,
   Expand,
-  InstallWorkflowRunHistory,
   Loading,
   DashboardContent,
-  Pagination,
   Section,
   StatusBadge,
   Text,
   ToolTip,
   Truncate,
 } from '@/components'
-import { getInstall, getInstallActionWorkflowRecentRun } from '@/lib'
-import type { TInstallActionWorkflow } from '@/types'
-import { nueQueryData } from '@/utils'
+import { getInstallActionById, getInstallById } from '@/lib'
+import { ActionRuns } from './action-runs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
     ['org-id']: orgId,
     ['install-id']: installId,
-    ['action-id']: actionWorkflowId,
+    ['action-id']: actionId,
   } = await params
-  const [install, action] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getInstallActionWorkflowRecentRun({ actionWorkflowId, installId, orgId }),
+  const [{ data: install }, { data: installAction }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getInstallActionById({ actionId, installId, orgId }),
   ])
 
   return {
-    title: `${install.name} | ${action.action_workflow?.name}`,
+    title: `${install.name} | ${installAction.action_workflow?.name}`,
   }
 }
 
@@ -46,12 +42,12 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
   const {
     ['org-id']: orgId,
     ['install-id']: installId,
-    ['action-id']: actionWorkflowId,
+    ['action-id']: actionId,
   } = await params
   const sp = await searchParams
-  const [install, actionWithRecentRuns] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getInstallActionWorkflowRecentRun({ actionWorkflowId, installId, orgId }),
+  const [{ data: install }, { data: installAction }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getInstallActionById({ actionId, installId, orgId }),
   ])
 
   return (
@@ -67,15 +63,15 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
           text: 'Actions',
         },
         {
-          href: `/${orgId}/installs/${install.id}/actions/${actionWorkflowId}`,
-          text: actionWithRecentRuns?.action_workflow?.name,
+          href: `/${orgId}/installs/${install.id}/actions/${actionId}`,
+          text: installAction?.action_workflow?.name,
         },
       ]}
-      heading={actionWithRecentRuns.action_workflow?.name}
-      headingUnderline={actionWithRecentRuns.action_workflow?.id}
+      heading={installAction.action_workflow?.name}
+      headingUnderline={installAction.action_workflow?.id}
       statues={
         <div className="flex gap-6 items-start justify-start">
-          {actionWithRecentRuns?.runs?.length ? (
+          {installAction?.runs?.length ? (
             <>
               <span className="flex flex-col gap-2">
                 <Text className="text-cool-grey-600 dark:text-cool-grey-500">
@@ -83,13 +79,13 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
                 </Text>
                 <StatusBadge
                   description={
-                    actionWithRecentRuns.runs?.[0]?.status_v2
+                    installAction.runs?.[0]?.status_v2
                       ?.status_human_description ||
-                    actionWithRecentRuns?.runs?.[0]?.status_description
+                    installAction?.runs?.[0]?.status_description
                   }
                   status={
-                    actionWithRecentRuns.runs?.[0]?.status_v2?.status ||
-                    actionWithRecentRuns?.runs?.[0]?.status ||
+                    installAction.runs?.[0]?.status_v2?.status ||
+                    installAction?.runs?.[0]?.status ||
                     'noop'
                   }
                 />
@@ -101,13 +97,11 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
                 </Text>
 
                 <ActionTriggerType
-                  triggerType={
-                    actionWithRecentRuns.runs?.[0]?.triggered_by_type
-                  }
+                  triggerType={installAction.runs?.[0]?.triggered_by_type}
                   componentName={
-                    actionWithRecentRuns.runs?.[0]?.run_env_vars?.COMPONENT_NAME
+                    installAction.runs?.[0]?.run_env_vars?.COMPONENT_NAME
                   }
-                  componentPath={`/${orgId}/installs/${installId}/components/${actionWithRecentRuns.runs?.[0]?.run_env_vars?.COMPONENT_ID}`}
+                  componentPath={`/${orgId}/installs/${installId}/components/${installAction.runs?.[0]?.run_env_vars?.COMPONENT_ID}`}
                 />
               </span>
             </>
@@ -125,16 +119,14 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
               </ToolTip>
             </Text>
           </span>
-          {actionWithRecentRuns?.action_workflow?.configs?.[0]?.triggers?.find(
+          {installAction?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
           ) ? (
             <ActionTriggerButton
-              actionWorkflow={actionWithRecentRuns?.action_workflow}
+              actionWorkflow={installAction?.action_workflow}
               installId={installId}
               orgId={orgId}
-              workflowConfigId={
-                actionWithRecentRuns.action_workflow?.configs?.[0]?.id
-              }
+              workflowConfigId={installAction.action_workflow?.configs?.[0]?.id}
             />
           ) : null}
         </div>
@@ -151,8 +143,8 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
                 />
               }
             >
-              <LoadRunHistory
-                actionWorkflowId={actionWorkflowId}
+              <ActionRuns
+                actionId={actionId}
                 installId={installId}
                 orgId={orgId}
                 offset={sp['offset'] || '0'}
@@ -164,7 +156,7 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
           <Section className="flex-initial" heading="Latest configured steps">
             <div className="flex flex-col gap-2">
-              {actionWithRecentRuns?.action_workflow?.configs?.[0]?.steps
+              {installAction?.action_workflow?.configs?.[0]?.steps
                 ?.sort((a, b) => b?.idx - a?.idx)
                 ?.reverse()
                 ?.map((s) => {
@@ -212,53 +204,5 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-const LoadRunHistory = async ({
-  actionWorkflowId,
-  installId,
-  orgId,
-  limit = '6',
-  offset,
-}: {
-  actionWorkflowId: string
-  installId: string
-  orgId: string
-  limit?: string
-  offset?: string
-}) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
-  const { data: actionWithRecentRuns, headers } =
-    await nueQueryData<TInstallActionWorkflow>({
-      orgId,
-      path: `installs/${installId}/action-workflows/${actionWorkflowId}/recent-runs${params ? '?' + params : params}`,
-      headers: {
-        'x-nuon-pagination-enabled': true,
-      },
-    })
-
-  const pageData = {
-    hasNext: headers?.get('x-nuon-page-next') || 'false',
-    offset: headers?.get('x-nuon-page-offset') || '0',
-  }
-
-  return actionWithRecentRuns ? (
-    <div className="flex flex-col gap-4 w-full">
-      <InstallWorkflowRunHistory
-        orgId={orgId}
-        installId={installId}
-        actionsWithRecentRuns={actionWithRecentRuns}
-        shouldPoll
-      />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={parseInt(limit)}
-      />
-    </div>
-  ) : (
-    <Text>Unable to load action run history.</Text>
   )
 }
