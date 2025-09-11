@@ -26,7 +26,7 @@ type API struct {
 	port                  string
 	name                  string
 	configuredMiddlewares []string
-
+	endpointAudit         *EndpointAudit
 	// created after initializing
 	srv     *http.Server
 	handler *gin.Engine
@@ -91,10 +91,14 @@ func (a *API) registerServices() error {
 	routes := []app.EndpointAudit{}
 
 	for _, route := range a.handler.Routes() {
+		deprecated := a.endpointAudit.IsDeprecated(route.Method, a.name, route.Path)
+
 		routes = append(routes, app.EndpointAudit{
 			Method: route.Method,
 			Name:   a.name,
 			Route:  route.Path,
+			// Deprecated: set to true if the route is deprecated
+			Deprecated: deprecated,
 		})
 	}
 
@@ -107,7 +111,9 @@ func (a *API) registerServices() error {
 				{Name: "name"},
 				{Name: "route"},
 			},
-			UpdateAll: true,
+			DoUpdates: clause.AssignmentColumns([]string{
+				"deprecated",
+			}),
 		}).
 		Create(&routes); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to write routes")

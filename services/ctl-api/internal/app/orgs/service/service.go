@@ -34,9 +34,11 @@ type Params struct {
 	AnalyticsClient analytics.Writer
 	Helpers         *helpers.Helpers
 	Features        *features.Features
+	EndpointAudit   *api.EndpointAudit
 }
 
 type service struct {
+	api.RouteRegister
 	v               *validator.Validate
 	l               *zap.Logger
 	db              *gorm.DB
@@ -49,31 +51,32 @@ type service struct {
 	analyticsClient analytics.Writer
 	helpers         *helpers.Helpers
 	features        *features.Features
+	endpointAudit   *api.EndpointAudit
 }
 
 var _ api.Service = (*service)(nil)
 
-func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// global routes
-	api.POST("/v1/orgs", s.CreateOrg)
-	api.GET("/v1/orgs", s.GetCurrentUserOrgs)
+	ge.POST("/v1/orgs", s.CreateOrg)
+	ge.GET("/v1/orgs", s.GetCurrentUserOrgs)
 
 	// update your current org
-	api.GET("/v1/orgs/current", s.GetOrg)
-	api.DELETE("/v1/orgs/current", s.DeleteOrg)
-	api.PATCH("/v1/orgs/current", s.UpdateOrg)
-	api.POST("/v1/orgs/current/user", s.CreateUser)
-	api.POST("/v1/orgs/current/remove-user", s.RemoveUser)
+	ge.GET("/v1/orgs/current", s.GetOrg)
+	ge.DELETE("/v1/orgs/current", s.DeleteOrg)
+	ge.PATCH("/v1/orgs/current", s.UpdateOrg)
+	ge.POST("/v1/orgs/current/user", s.CreateUser)
+	ge.POST("/v1/orgs/current/remove-user", s.RemoveUser)
 
 	// accounts
-	api.GET("/v1/orgs/current/accounts", s.GetOrgAccounts)
+	ge.GET("/v1/orgs/current/accounts", s.GetOrgAccounts)
 
 	// invites
-	api.GET("/v1/orgs/current/invites", s.GetOrgInvites)
-	api.POST("/v1/orgs/current/invites", s.CreateOrgInvite)
+	ge.GET("/v1/orgs/current/invites", s.GetOrgInvites)
+	ge.POST("/v1/orgs/current/invites", s.CreateOrgInvite)
 
 	// runners
-	api.GET("/v1/orgs/current/runner-group", s.GetOrgRunnerGroup)
+	ge.GET("/v1/orgs/current/runner-group", s.GetOrgRunnerGroup)
 
 	return nil
 }
@@ -122,6 +125,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister: api.RouteRegister{
+			EndpointAudit: params.EndpointAudit,
+		},
 		l:               params.L,
 		v:               params.V,
 		db:              params.DB,

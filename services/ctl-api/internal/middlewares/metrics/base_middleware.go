@@ -58,6 +58,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			"within_target_latency:" + strconv.FormatBool(withinTargetLatency),
 			"is_panic:" + strconv.FormatBool(ctxObj.IsPanic),
 			"is_timeout:" + strconv.FormatBool(ctxObj.IsTimeout),
+			"is_deprecated:" + strconv.FormatBool(ctxObj.IsDeprecated),
 		}
 
 		m.writer.Incr("api.request.status", tags)
