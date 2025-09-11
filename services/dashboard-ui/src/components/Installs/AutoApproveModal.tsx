@@ -10,13 +10,13 @@ import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { useOrg } from '@/components/Orgs'
 import { Text } from '@/components/Typography'
 import {
   createInstallConfig,
   updateInstallConfig,
   updateInstallManagedBy,
 } from '@/components/install-actions'
+import { useOrg } from '@/hooks/use-org'
 import type { TInstall } from '@/types'
 import { trackEvent } from '@/utils'
 import { ConfirmUpdateModal } from './ConfirmUpdateModal'

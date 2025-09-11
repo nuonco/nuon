@@ -1,5 +1,6 @@
 export * from './get-orgs'
 export * from './get-org'
+export * from './get-org-by-id'
 export * from './post-org'
 export * from './nue-get-org'
 export * from './get-org-runner-group'

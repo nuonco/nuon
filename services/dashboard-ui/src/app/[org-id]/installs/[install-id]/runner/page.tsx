@@ -89,7 +89,7 @@ export default async function Runner({ params, searchParams }) {
               </Link>
             </Text>
           </span>
-          <InstallStatuses initInstall={install} shouldPoll />
+          <InstallStatuses />
 
           <InstallManagementDropdown
             orgId={orgId}
