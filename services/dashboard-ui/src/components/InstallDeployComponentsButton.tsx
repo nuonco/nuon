@@ -14,6 +14,7 @@ import { useOrg } from '@/components/Orgs'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { deployComponentBuild } from '@/components/install-actions'
+import { useQuery } from '@/hooks/use-query'
 import type { TBuild } from '@/types'
 import { trackEvent } from '@/utils'
 
@@ -157,26 +158,13 @@ const BuildOptions: FC<{
   orgId: string
   setBuildId: (id: string) => void
 }> = ({ componentId, orgId, ...props }) => {
-  const [builds, setBuilds] = useState<Array<TBuild>>()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>()
-
-  useEffect(() => {
-    fetch(`/api/${orgId}/components/${componentId}/builds`)
-      .then((res) =>
-        res.json().then((blds) => {
-          setBuilds(
-            (blds as Array<TBuild>).filter((b) => b.status === 'active')
-          )
-          setIsLoading(false)
-        })
-      )
-      .catch((err) => {
-        console.error(err?.message)
-        setIsLoading(false)
-        setError('Unable to load component builds')
-      })
-  }, [])
+  const {
+    data: builds,
+    isLoading,
+    error,
+  } = useQuery<TBuild[]>({
+    path: `/api/${orgId}/components/${componentId}/builds`,
+  })
 
   return (
     <div className="w-full max-h-[250px] overflow-y-auto">
@@ -185,7 +173,7 @@ const BuildOptions: FC<{
       </Text>
       {error ? (
         <div className="p-3">
-          <Notice>{error}</Notice>
+          <Notice>{error?.error}</Notice>
         </div>
       ) : isLoading ? (
         <div className="p-3 text-sm">

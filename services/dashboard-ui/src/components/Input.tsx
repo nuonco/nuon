@@ -97,7 +97,7 @@ export const Input: FC<
           'bg-cool-grey-200 text-cool-grey-500 dark:bg-dark-grey-300 dark:text-dark-grey-900 cursor-not-allowed':
             props?.disabled,
           '!pl-8 !pr-3.5': isSearch,
-          [`${classNames}`]: Boolean(classNames),
+          [`${className}`]: Boolean(className),
         }
       )}
       {...props}
