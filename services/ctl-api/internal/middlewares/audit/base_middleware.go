@@ -31,7 +31,7 @@ func (m baseMiddleware) Name() string {
 	return "audit"
 }
 
-var routeBlacklist = map[string]struct{}{
+var skipRoutes = map[string]struct{}{
 	"/livez":   {},
 	"/version": {},
 	"/docs/":   {},
@@ -43,14 +43,12 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// skip if in blacklist
-		if _, ok := routeBlacklist[ctx.FullPath()]; ok {
+		if _, ok := skipRoutes[ctx.FullPath()]; ok {
 			ctx.Next()
 			return
 		}
 
-		// or route starts with any values in blacklist
-		for route := range routeBlacklist {
+		for route := range skipRoutes {
 			if strings.HasPrefix(ctx.FullPath(), route) {
 				ctx.Next()
 				return
