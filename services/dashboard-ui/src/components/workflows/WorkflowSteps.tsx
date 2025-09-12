@@ -25,13 +25,13 @@ export const WorkflowSteps = ({
   })
 
   return (
-    <div>
+    <>
       {error?.error ? (
         <Notice className="!rounded-none !border-none">
           {error?.error || 'Unabled to load workflow steps'}
         </Notice>
       ) : null}
       <InstallWorkflowSteps installWorkflow={workflow} />
-    </div>
+    </>
   )
 }

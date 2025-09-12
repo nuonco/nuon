@@ -22,7 +22,6 @@ import {
   Text,
   Time,
   ClickToCopyButton,
-  CodeViewer,
 } from '@/components'
 import {
   TerraformWorkspace,
@@ -31,12 +30,13 @@ import {
 import {
   getInstall,
   getInstallSandboxRuns,
-  getInstallSandboxRun,
+  getInstallSandboxRunById,
   getRunnerJob,
   getOrg,
 } from '@/lib'
 import type { TAppConfig, TSandboxRun } from '@/types'
 import { nueQueryData } from '@/utils'
+import { SandboxRuns } from './sandbox-runs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -202,7 +202,7 @@ export default async function InstallComponent({ params, searchParams }) {
                   />
                 }
               >
-                <LoadSandboxHistory
+                <SandboxRuns
                   installId={installId}
                   orgId={orgId}
                   offset={sp['offset'] || '0'}
@@ -240,55 +240,14 @@ const LoadSandboxConfig: FC<{
   )
 }
 
-const LoadSandboxHistory: FC<{
-  installId: string
-  orgId: string
-  limit?: string
-  offset?: string
-}> = async ({ installId, orgId, limit = '6', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
-  const { data: sandboxRuns, headers } = await nueQueryData<TSandboxRun[]>({
-    orgId,
-    path: `installs/${installId}/sandbox-runs${params ? '?' + params : params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
-  })
-
-  const pageData = {
-    hasNext: headers?.get('x-nuon-page-next') || 'false',
-    offset: headers?.get('x-nuon-page-offset') || '0',
-  }
-
-  return sandboxRuns ? (
-    <div className="flex flex-col gap-4 w-full">
-      <SandboxHistory
-        installId={installId}
-        orgId={orgId}
-        initSandboxRuns={sandboxRuns}
-        shouldPoll
-      />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={parseInt(limit)}
-      />
-    </div>
-  ) : (
-    <Text>Unable to load sandbox history.</Text>
-  )
-}
-
 const LoadLatestOutputs: FC<{
   installSandboxRunId: string
   installId: string
   orgId: string
-}> = async ({ installId, orgId, installSandboxRunId }) => {
-  const sandboxRun = await getInstallSandboxRun({
-    installId,
+}> = async ({ installId, orgId, installSandboxRunId: runId }) => {
+  const { data: sandboxRun } = await getInstallSandboxRunById({
     orgId,
-    installSandboxRunId,
+    runId,
   })
   const runnerJob = await getRunnerJob({
     orgId,

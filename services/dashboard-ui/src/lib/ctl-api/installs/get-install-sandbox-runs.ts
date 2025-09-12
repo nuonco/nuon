@@ -1,16 +1,17 @@
-import type { TSandboxRun } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetInstall } from '../shared-interfaces'
+import { api } from "@/lib/api";
+import type { TSandboxRun, TPaginationParams } from "@/types";
+import { buildQueryParams } from "@/utils/build-query-params";
 
-export interface IGetInstallSandboxRuns extends IGetInstall {}
-
-export async function getInstallSandboxRuns({
+export const getInstallSandboxRuns = ({
   installId,
   orgId,
-}: IGetInstallSandboxRuns) {
-  return queryData<Array<TSandboxRun>>({
-    errorMessage: 'Unable to get install sandbox runs',
+  limit,
+  offset,
+}: {
+  installId: string;
+  orgId: string;
+} & TPaginationParams) =>
+  api<TSandboxRun[]>({
+    path: `installs/${installId}/sandbox-runs${buildQueryParams({ limit, offset })}`,
     orgId,
-    path: `installs/${installId}/sandbox-runs`,
-  })
-}
+  });
