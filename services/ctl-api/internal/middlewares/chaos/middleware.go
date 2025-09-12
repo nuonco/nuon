@@ -1,9 +1,9 @@
 package chaos
 
 import (
-	"fmt"
 	"math/rand/v2"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
@@ -37,7 +37,7 @@ var skipRoutes = map[string]struct{}{
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if m.cfg.ChaosErrorRate < 1 {
+		if m.cfg.ChaosRate < 1 {
 			ctx.Next()
 		}
 
@@ -62,7 +62,11 @@ func (m middleware) Handler() gin.HandlerFunc {
 			}
 		}
 
-		if rand.IntN(m.cfg.ChaosErrorRate)+1 != 1 {
+		if m.cfg.ChaosSleep > 0 && rand.IntN(m.cfg.ChaosRate)+1 == 1 {
+			time.Sleep(m.cfg.ChaosSleep)
+		}
+
+		if rand.IntN(m.cfg.ChaosRate)+1 != 1 {
 			ctx.Next()
 			return
 		}
@@ -76,7 +80,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 		}
 
 		selectedError := errorTypes[rand.IntN(len(errorTypes))]
-		fmt.Printf("Chaos thanos triggered: %s\n", selectedError)
 
 		// Execute the selected error
 		m.errors[selectedError](ctx, m.l)
@@ -122,4 +125,3 @@ func New(params Params) *middleware {
 		allowedRoutes: allowedRoutes,
 	}
 }
-
