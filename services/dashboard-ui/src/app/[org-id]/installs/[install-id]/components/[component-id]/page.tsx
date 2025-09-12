@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { CaretRight } from '@phosphor-icons/react/dist/ssr'
+import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   ClickToCopyButton,
   ComponentConfiguration,
@@ -10,12 +11,10 @@ import {
   DashboardContent,
   Duration,
   ErrorFallback,
-  InstallComponentDeploys,
   InstallDeployLatestBuildButton,
   InstallComponentManagementDropdown,
   Link,
   Loading,
-  Pagination,
   StatusBadge,
   Section,
   Text,
@@ -26,20 +25,15 @@ import {
   ValuesFileModal,
 } from '@/components/InstallSandbox'
 import {
-  getComponent,
-  getInstall,
+  getInstallById,
   getInstallComponentOutputs,
   getLatestComponentBuild,
-  getInstallComponent,
+  getInstallComponentById,
   getOrg,
 } from '@/lib'
-import type {
-  TComponent,
-  TComponentConfig,
-  TInstall,
-  TInstallDeploy,
-} from '@/types'
+import type { TComponent, TComponentConfig, TInstall } from '@/types'
 import { nueQueryData } from '@/utils'
+import { Deploys } from './deploys'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -47,13 +41,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['install-id']: installId,
     ['component-id']: componentId,
   } = await params
-  const [install, component] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getComponent({ componentId, orgId }),
+  const [{ data: install }, { data: installComponent }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getInstallComponentById({ componentId, installId, orgId }),
   ])
 
   return {
-    title: `${install.name} | ${component.name}`,
+    title: `${installComponent?.component?.name} | ${install.name} | Nuon`,
   }
 }
 
@@ -64,12 +58,28 @@ export default async function InstallComponent({ params, searchParams }) {
     ['component-id']: componentId,
   } = await params
   const sp = await searchParams
-  const [org, install, component, installComponent] = await Promise.all([
-    getOrg({ orgId }),
-    getInstall({ installId, orgId }),
-    getComponent({ componentId, orgId }),
-    getInstallComponent({ orgId, installId, componentId }),
-  ])
+  const [org, { data: install }, { data: installComponent, error, status }] =
+    await Promise.all([
+      getOrg({ orgId }),
+      getInstallById({ installId, orgId }),
+      getInstallComponentById({ orgId, installId, componentId }),
+    ])
+
+  if (error) {
+    console.error(
+      'Error rendering install component page: ',
+      `API status: ${status}`,
+      error
+    )
+    if (status === 404) {
+      notFound()
+    } else {
+      // TODO(nnnat): show error message
+      notFound()
+    }
+  }
+
+  const component = installComponent?.component
 
   return (
     <DashboardContent
@@ -97,7 +107,10 @@ export default async function InstallComponent({ params, searchParams }) {
             installId={installId}
             orgId={orgId}
           />
-          <InstallComponentManagementDropdown component={component} />
+          <InstallComponentManagementDropdown
+            componentId={installComponent?.component_id}
+            componentName={installComponent?.component?.name}
+          />
         </div>
       }
     >
@@ -110,7 +123,7 @@ export default async function InstallComponent({ params, searchParams }) {
                   href={`/${orgId}/apps/${component.app_id}/components/${component.id}`}
                 >
                   Details
-                  <CaretRight />
+                  <CaretRightIcon />
                 </Link>
               </Text>
             }
@@ -206,7 +219,7 @@ export default async function InstallComponent({ params, searchParams }) {
                   />
                 }
               >
-                <LoadDeployHistory
+                <Deploys
                   component={component}
                   installId={installId}
                   orgId={orgId}
@@ -218,49 +231,6 @@ export default async function InstallComponent({ params, searchParams }) {
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-const LoadDeployHistory: FC<{
-  component: TComponent
-  installId: string
-  orgId: string
-  limit?: string
-  offset?: string
-}> = async ({ component, installId, orgId, limit = '6', offset }) => {
-  const params = new URLSearchParams({ offset, limit }).toString()
-  const { data: deploys, headers } = await nueQueryData<TInstallDeploy[]>({
-    orgId,
-    path: `installs/${installId}/components/${component?.id}/deploys${params ? '?' + params : params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
-  })
-
-  const pageData = {
-    hasNext: headers?.get('x-nuon-page-next') || 'false',
-    offset: headers?.get('x-nuon-page-offset') || '0',
-  }
-
-  return deploys ? (
-    <div className="flex flex-col gap-4 w-full">
-      <InstallComponentDeploys
-        component={component}
-        initDeploys={deploys}
-        installId={installId}
-        installComponentId={component.id}
-        orgId={orgId}
-        shouldPoll
-      />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={parseInt(limit)}
-      />
-    </div>
-  ) : (
-    <Text>Unable to load deploy history.</Text>
   )
 }
 
@@ -366,7 +336,7 @@ const LatestBuild = async ({ component, orgId }) => {
             href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
           >
             Details
-            <CaretRight />
+            <CaretRightIcon />
           </Link>
         </Text>
       }
