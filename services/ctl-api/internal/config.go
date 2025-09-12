@@ -188,6 +188,11 @@ type Config struct {
 	LogRequestBody              bool `config:"log_request_body"`
 	EnableHttpBinDebugEndpoints bool `config:"enable_httpbin_debug_endpoints"`
 	EnableEndpointAuditing      bool `config:"enable_endpoint_auditing"`
+
+	// chaos configuration
+	ChaosErrorRate int      `config:"chaos_error_rate"`
+	ChaosErrors    []string `config:"chaos_errors"`
+	ChaosRoutes    []string `config:"chaos_routes"`
 }
 
 func NewConfig() (*Config, error) {

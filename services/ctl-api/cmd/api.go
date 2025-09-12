@@ -22,6 +22,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/admin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/audit"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/chaos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/cors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
@@ -87,6 +88,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(middlewares.AsMiddleware(audit.NewRunner)),
 		fx.Provide(middlewares.AsMiddleware(panicker.New)),
 		fx.Provide(middlewares.AsMiddleware(tracer.New)),
+		fx.Provide(middlewares.AsMiddleware(chaos.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),
