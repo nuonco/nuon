@@ -88,37 +88,6 @@ func (a *API) registerServices() error {
 		}
 	}
 
-	routes := []app.EndpointAudit{}
-
-	for _, route := range a.handler.Routes() {
-		deprecated := a.endpointAudit.IsDeprecated(route.Method, a.name, route.Path)
-
-		routes = append(routes, app.EndpointAudit{
-			Method: route.Method,
-			Name:   a.name,
-			Route:  route.Path,
-			// Deprecated: set to true if the route is deprecated
-			Deprecated: deprecated,
-		})
-	}
-
-	ctx := context.Background()
-	if res := a.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{
-				{Name: "deleted_at"},
-				{Name: "method"},
-				{Name: "name"},
-				{Name: "route"},
-			},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"deprecated",
-			}),
-		}).
-		Create(&routes); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to write routes")
-	}
-
 	return nil
 }
 
@@ -127,6 +96,40 @@ func (a *API) lifecycleHooks(shutdowner fx.Shutdowner) fx.Hook {
 		OnStart: func(_ context.Context) error {
 			if err := a.start(shutdowner); err != nil {
 				a.l.Error("error starting server", zap.Error(err), zap.String("name", a.name))
+			}
+
+			if a.cfg.EnableEndpointAuditing {
+
+				routes := []app.EndpointAudit{}
+
+				for _, route := range a.handler.Routes() {
+					deprecated := a.endpointAudit.IsDeprecated(route.Method, a.name, route.Path)
+
+					routes = append(routes, app.EndpointAudit{
+						Method: route.Method,
+						Name:   a.name,
+						Route:  route.Path,
+						// Deprecated: set to true if the route is deprecated
+						Deprecated: deprecated,
+					})
+				}
+
+				ctx := context.Background()
+				if res := a.db.WithContext(ctx).
+					Clauses(clause.OnConflict{
+						Columns: []clause.Column{
+							{Name: "deleted_at"},
+							{Name: "method"},
+							{Name: "name"},
+							{Name: "route"},
+						},
+						DoUpdates: clause.AssignmentColumns([]string{
+							"deprecated",
+						}),
+					}).
+					Create(&routes); res.Error != nil {
+					return errors.Wrap(res.Error, "unable to write routes")
+				}
 			}
 
 			return nil
