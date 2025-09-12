@@ -9,6 +9,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=gobase-apt \
     git \
     curl \
     protobuf-compiler \
+    libx11-dev \
     jq && rm -rf /var/lib/apt/lists/*
 
 # Get golangci-lint from the official image
