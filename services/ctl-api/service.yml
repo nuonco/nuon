@@ -186,3 +186,4 @@ docker_env:
   CLICKHOUSE_DB_PASSWORD: ctl-api
   CLICKHOUSE_DB_NAME: ctl_api
   CLICKHOUSE_DB_USE_TLS: false
+  TEMPORAL_UI_URL: http://host.docker.internal:8233
