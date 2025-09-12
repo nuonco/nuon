@@ -2,8 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { CaretRight } from '@phosphor-icons/react'
-import { EmptyStateGraphic } from '@/components/EmptyStateGraphic'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
@@ -41,7 +40,8 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'syncing' ||
       status === 'deploying' ||
       status === 'available' ||
-      status === 'pending-approval',
+      status === 'pending-approval' ||
+      status === 'drifted',
   }
 
   return (
@@ -122,7 +122,7 @@ export const TimelineEvent: FC<ITimelineEvent> = ({
                 ),
               })}
             />
-            {href && <CaretRight />}
+            {href && <CaretRightIcon />}
           </span>
         </div>
 
