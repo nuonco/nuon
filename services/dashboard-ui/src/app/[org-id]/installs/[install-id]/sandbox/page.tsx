@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { CaretRight, FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { CaretRightIcon, FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -13,47 +13,34 @@ import {
   InstallManagementDropdown,
   Link,
   Loading,
-  JsonView,
   Notice,
-  Pagination,
   ReprovisionSandboxModal,
-  SandboxHistory,
   Section,
   Text,
   Time,
-  ClickToCopyButton,
 } from '@/components'
 import {
   TerraformWorkspace,
   ValuesFileModal,
 } from '@/components/InstallSandbox'
-import {
-  getInstall,
-  getInstallSandboxRuns,
-  getInstallSandboxRunById,
-  getRunnerJob,
-  getOrg,
-} from '@/lib'
-import type { TAppConfig, TSandboxRun } from '@/types'
+import { getInstallById } from '@/lib'
+import type { TAppConfig } from '@/types'
 import { nueQueryData } from '@/utils'
 import { SandboxRuns } from './sandbox-runs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install: any = await getInstall({ installId, orgId })
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return {
-    title: `${install.name} | Sandbox`,
+    title: `Sandbox | ${install.name} | Nuon`,
   }
 }
 
 export default async function InstallComponent({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const [install, org] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getOrg({ orgId }),
-  ])
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return (
     <DashboardContent
@@ -113,7 +100,7 @@ export default async function InstallComponent({ params, searchParams }) {
               <Text>
                 <Link href={`/${orgId}/apps/${install.app_id}`}>
                   Details
-                  <CaretRight />
+                  <CaretRightIcon />
                 </Link>
               </Text>
             }
@@ -137,52 +124,30 @@ export default async function InstallComponent({ params, searchParams }) {
                 />
               </Suspense>
             </ErrorBoundary>
-            {org?.features?.['terraform-workspace'] || (
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading latest sandbox outputs..."
-                    />
-                  }
-                >
-                  <LoadLatestOutputs
-                    installId={installId}
-                    orgId={orgId}
-                    installSandboxRunId={
-                      install?.install_sandbox_runs?.at(0)?.id
-                    }
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            )}
           </Section>
 
-          {org?.features?.['terraform-workspace'] && (
-            <Section
-              className="flex-initial"
-              childrenClassName="flex flex-col gap-4"
-            >
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Section heading="Terraform state">
-                      <Loading
-                        variant="stack"
-                        loadingText="Loading latest Terraform workspace..."
-                      />
-                    </Section>
-                  }
-                >
-                  <TerraformWorkspace
-                    orgId={orgId}
-                    workspace={install?.sandbox?.terraform_workspace}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            </Section>
-          )}
+          <Section
+            className="flex-initial"
+            childrenClassName="flex flex-col gap-4"
+          >
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={
+                  <Section heading="Terraform state">
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading latest Terraform workspace..."
+                    />
+                  </Section>
+                }
+              >
+                <TerraformWorkspace
+                  orgId={orgId}
+                  workspace={install?.sandbox?.terraform_workspace}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
         </div>
 
         <div className="divide-y flex flex-col md:col-span-4">
@@ -238,29 +203,4 @@ const LoadSandboxConfig: FC<{
       <ValuesFileModal valuesFiles={data?.sandbox?.variables_files} />
     </>
   )
-}
-
-const LoadLatestOutputs: FC<{
-  installSandboxRunId: string
-  installId: string
-  orgId: string
-}> = async ({ installId, orgId, installSandboxRunId: runId }) => {
-  const { data: sandboxRun } = await getInstallSandboxRunById({
-    orgId,
-    runId,
-  })
-  const runnerJob = await getRunnerJob({
-    orgId,
-    runnerJobId: sandboxRun?.runner_jobs?.at(0)?.id,
-  }).catch(console.error)
-
-  return runnerJob ? (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <Text variant="med-12">Outputs</Text>
-        <ClickToCopyButton textToCopy={JSON.stringify(runnerJob.outputs)} />
-      </div>
-      <JsonView data={runnerJob.outputs} />
-    </div>
-  ) : null
 }
