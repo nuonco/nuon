@@ -71,6 +71,11 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		if len(m.cfg.ChaosErrors) == 0 {
+			ctx.Next()
+			return
+		}
+
 		allowedErrors := m.GetAllowedErrors()
 
 		// Chaos triggered! Select random error type
@@ -87,11 +92,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 }
 
 func (m *middleware) GetAllowedErrors() map[string]func(*gin.Context, *zap.Logger) {
-	// get a new map from errors where only allowed errors are present
-	if len(m.cfg.ChaosErrors) == 0 {
-		return m.errors
-	}
-
 	newErrors := make(map[string]func(*gin.Context, *zap.Logger))
 	for _, err := range m.cfg.ChaosErrors {
 		if fn, ok := m.errors[err]; ok {
