@@ -3,6 +3,34 @@
 # Exit on error
 set -e
 
+function display_message() {
+  local root=`dirname "${BASH_SOURCE[0]}"`
+  local message_file="$root/bins/nuonctl/message.txt"
+  local message=$(cat "$message_file")
+  local message_shasum=$(echo "$message" | shasum -a 256 | awk '{print $1}')
+  local cached_message_file="/tmp/.nuonctl-message-shasum"
+    
+  # Check if the message has been seen before by comparing its shasum
+  local previous_shasum=""
+  if [ -f "$cached_message_file" ]; then
+      previous_shasum=$(cat "$cached_message_file")
+  fi
+    
+  # If message hasn't been seen or is different from previous version
+  if [ "$previous_shasum" != "$message_shasum" ]; then
+      # Display the message
+      echo "$message"
+
+      # Prompt for user input
+      echo
+      read -p "Enter any key to continue: " user_choice
+
+      # Record the new message shasum and timestamp
+      echo "$message_shasum" > "$cached_message_file"
+  fi
+}
+display_message
+
 DD_API_KEY=758a582665d6506f1420e5680925a091
 DD_APP_KEY=284530e2c85aa36ed529b125c269d4b986883f08
 
