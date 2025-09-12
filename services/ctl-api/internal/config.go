@@ -190,9 +190,10 @@ type Config struct {
 	EnableEndpointAuditing      bool `config:"enable_endpoint_auditing"`
 
 	// chaos configuration
-	ChaosErrorRate int      `config:"chaos_error_rate"`
-	ChaosErrors    []string `config:"chaos_errors"`
-	ChaosRoutes    []string `config:"chaos_routes"`
+	ChaosRate   int           `config:"chaos_rate"`
+	ChaosErrors []string      `config:"chaos_errors"`
+	ChaosRoutes []string      `config:"chaos_routes"`
+	ChaosSleep  time.Duration `config:"chaos_sleep"`
 }
 
 func NewConfig() (*Config, error) {
