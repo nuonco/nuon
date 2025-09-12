@@ -13,7 +13,7 @@ To add a new Waypoint plugin, follow these steps:
 1. Copy [waypoint-plugin-exp](waypoint-plugin-exp)
 1. Update the BIN arg in the Earthfile
 1. Add the infra for deploying the plugin by updating these files. For each file, you can copy the TF from another plugin and update the name.
-    1. [infra/artifacts/ecr.tf](../infra/artifacts/ecr.tf)
-    1. [infra/artifacts/github_actions.tf](../infra/artifacts/github_actions.tf)
-    1. [infra/artifacts/outputs.tf](../infra/artifacts/outputs.tf)
-1. Update [pkg/plugins](../pkg/plugins)...
+   1. [infra/artifacts/ecr.tf](../infra/artifacts/ecr.tf)
+   1. [infra/artifacts/github_actions.tf](../infra/artifacts/github_actions.tf)
+   1. [infra/artifacts/outputs.tf](../infra/artifacts/outputs.tf)
+1. Update [pkg/plugins](../pkg/plugins).
