@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
-  CalendarBlank,
-  CaretLeft,
-  CaretRight,
-  Timer,
+  CalendarBlankIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  TimerIcon,
 } from '@phosphor-icons/react/dist/ssr'
 import {
   ApprovalStep,
@@ -30,13 +31,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
-import {
-  getComponentBuild,
-  getComponent,
-  getInstall,
-  getInstallDeploy,
-  getInstallWorkflow,
-} from '@/lib'
+import { getInstallById, getInstallDeployById, getWorkflowById } from '@/lib'
 import type { TBuild, TComponentConfig } from '@/types'
 import { CANCEL_RUNNER_JOBS, sizeToMbOrGB, nueQueryData } from '@/utils'
 
@@ -44,20 +39,16 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   const {
     ['org-id']: orgId,
     ['install-id']: installId,
-    ['component-id']: componentId,
     ['deploy-id']: deployId,
   } = await params
-  const [deploy, component] = await Promise.all([
-    getInstallDeploy({
-      installDeployId: deployId,
-      installId,
-      orgId,
-    }),
-    getComponent({ componentId, orgId }),
-  ])
+  const { data: deploy } = await getInstallDeployById({
+    deployId,
+    installId,
+    orgId,
+  })
 
   return {
-    title: `${component.name} | ${deploy.install_deploy_type}`,
+    title: `${deploy?.install_deploy_type} | ${deploy?.component_name} | Nuon`,
   }
 }
 
@@ -68,25 +59,36 @@ export default async function InstallComponentDeploy({ params }) {
     ['component-id']: componentId,
     ['deploy-id']: deployId,
   } = await params
-  const [component, deploy, install] = await Promise.all([
-    getComponent({
-      componentId,
-      orgId,
-    }),
-    getInstallDeploy({
-      installDeployId: deployId,
-      installId,
-      orgId,
-    }),
-    getInstall({ installId, orgId }),
-  ])
+  const [{ data: deploy, error, status }, { data: install }] =
+    await Promise.all([
+      getInstallDeployById({
+        deployId,
+        installId,
+        orgId,
+      }),
+      getInstallById({ installId, orgId }),
+    ])
 
-  const installWorkflow = await getInstallWorkflow({
-    installWorkflowId: deploy?.install_workflow_id,
+  if (error) {
+    console.error(
+      'Error rendering install deploy page: ',
+      `API status: ${status}`,
+      error
+    )
+    if (status === 404) {
+      notFound()
+    } else {
+      // TODO(nnnat): show error message
+      notFound()
+    }
+  }
+
+  const { data: workflow } = await getWorkflowById({
+    workflowId: deploy?.install_workflow_id,
     orgId,
-  }).catch(console.error)
-  const step = installWorkflow
-    ? installWorkflow?.steps
+  })
+  const step = workflow
+    ? workflow?.steps
         ?.filter(
           (s) =>
             s?.step_target_id === deploy?.id && s?.execution_type === 'approval'
@@ -99,30 +101,30 @@ export default async function InstallComponentDeploy({ params }) {
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
         {
-          href: `/${orgId}/installs/${install.id}`,
-          text: install.name,
+          href: `/${orgId}/installs/${installId}`,
+          text: install?.name,
         },
         {
           href: `/${orgId}/installs/${install?.id}/components`,
           text: 'Components',
         },
         {
-          href: `/${orgId}/installs/${install.id}/components/${deploy.component_id}`,
-          text: component.name,
+          href: `/${orgId}/installs/${install?.id}/components/${componentId}`,
+          text: deploy?.component_name,
         },
         {
-          href: `/${orgId}/installs/${install.id}/components/${deploy.component_id}/deploys/${deploy.id}`,
-          text: deploy.id,
+          href: `/${orgId}/installs/${install?.id}/components/${componentId}/deploys/${deploy?.id}`,
+          text: deploy?.id,
         },
       ]}
-      heading={`${component.name} ${deploy.install_deploy_type}`}
+      heading={`${deploy?.component_name} ${deploy.install_deploy_type}`}
       headingUnderline={deploy.id}
       headingMeta={
         deploy?.install_workflow_id ? (
           <Link
             href={`/${orgId}/installs/${installId}/workflows/${deploy?.install_workflow_id}?target=${step?.id}`}
           >
-            <CaretLeft />
+            <CaretLeftIcon />
             View workflow
           </Link>
         ) : null
@@ -130,14 +132,14 @@ export default async function InstallComponentDeploy({ params }) {
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
-            <CalendarBlank />
-            <Time time={deploy.created_at} />
+            <CalendarBlankIcon />
+            <Time time={deploy?.created_at} />
           </Text>
           <Text>
-            <Timer />
+            <TimerIcon />
             <Duration
-              beginTime={deploy.created_at}
-              endTime={deploy.updated_at}
+              beginTime={deploy?.created_at}
+              endTime={deploy?.updated_at}
             />
           </Text>
         </div>
@@ -176,7 +178,7 @@ export default async function InstallComponentDeploy({ params }) {
             <Text className="text-cool-grey-600 dark:text-cool-grey-500">
               Component
             </Text>
-            <Text variant="med-12">{component.name}</Text>
+            <Text variant="med-12">{deploy?.component_name}</Text>
             <Text variant="mono-12">
               <ToolTip alignment="right" tipContent={deploy.component_id}>
                 <ClickToCopy>
@@ -238,17 +240,20 @@ export default async function InstallComponentDeploy({ params }) {
               </ErrorBoundary>
             ) : null}
 
-            {component ? (
-              <InstallComponentManagementDropdown component={component} />
+            {deploy?.component_name ? (
+              <InstallComponentManagementDropdown
+                componentId={deploy?.component_id}
+                componentName={deploy?.component_name}
+              />
             ) : null}
             {CANCEL_RUNNER_JOBS &&
             deploy?.status !== 'active' &&
             deploy?.status !== 'error' &&
             deploy?.status !== 'inactive' &&
             deploy?.runner_jobs?.length &&
-            installWorkflow &&
-            !installWorkflow?.finished ? (
-              <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
+            workflow &&
+            !workflow?.finished ? (
+              <InstallWorkflowCancelModal installWorkflow={workflow} />
             ) : null}
           </div>
         </div>
@@ -256,7 +261,7 @@ export default async function InstallComponentDeploy({ params }) {
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
-          {installWorkflow &&
+          {workflow &&
           step &&
           step?.approval &&
           !step?.approval?.response &&
@@ -269,7 +274,7 @@ export default async function InstallComponentDeploy({ params }) {
               <ApprovalStep
                 step={step}
                 approval={step.approval}
-                workflowId={installWorkflow?.id}
+                workflowId={workflow?.id}
               />
             </Section>
           ) : null}
@@ -278,7 +283,7 @@ export default async function InstallComponentDeploy({ params }) {
             <OperationLogsSection heading="Deploy logs" />
           </LogStreamProvider>
 
-          {installWorkflow &&
+          {workflow &&
           step &&
           step?.approval &&
           step?.approval?.response &&
@@ -291,7 +296,7 @@ export default async function InstallComponentDeploy({ params }) {
               <ApprovalStep
                 step={step}
                 approval={step.approval}
-                workflowId={installWorkflow?.id}
+                workflowId={workflow?.id}
               />
             </Section>
           ) : null}
@@ -303,10 +308,10 @@ export default async function InstallComponentDeploy({ params }) {
             actions={
               <Text>
                 <Link
-                  href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${deploy.build_id}`}
+                  href={`/${orgId}/apps/${install?.app_id}/components/${componentId}/builds/${deploy.build_id}`}
                 >
                   Details
-                  <CaretRight />
+                  <CaretRightIcon />
                 </Link>
               </Text>
             }
@@ -331,10 +336,10 @@ export default async function InstallComponentDeploy({ params }) {
             actions={
               <Text>
                 <Link
-                  href={`/${orgId}/apps/${component.app_id}/components/${component.id}`}
+                  href={`/${orgId}/apps/${install?.app_id}/components/${componentId}`}
                 >
                   Details
-                  <CaretRight />
+                  <CaretRightIcon />
                 </Link>
               </Text>
             }
@@ -387,9 +392,12 @@ const LoadComponentBuild: FC<{ buildId: string; orgId: string }> = async ({
   buildId,
   orgId,
 }) => {
-  const build = await getComponentBuild({ buildId, orgId }).catch(console.error)
+  const { data: build, error } = await nueQueryData<TBuild>({
+    orgId,
+    path: `components/builds/${buildId}`,
+  })
 
-  return build ? (
+  return build && !error ? (
     <div className="flex items-start justify-start gap-6">
       <span className="flex flex-col gap-2">
         <StatusBadge
