@@ -297,3 +297,33 @@ module "mirror" {
     aws = aws.infra-shared-prod
   }
 }
+
+module "docs" {
+  source = "../modules/ecr"
+
+  name = "docs"
+  tags = {
+    artifact      = "docs"
+    artifact_type = "binary"
+  }
+
+  region = local.aws_settings.region
+  providers = {
+    aws = aws.infra-shared-prod
+  }
+}
+
+module "website" {
+  source = "../modules/ecr"
+
+  name = "website"
+  tags = {
+    artifact      = "website"
+    artifact_type = "binary"
+  }
+
+  region = local.aws_settings.region
+  providers = {
+    aws = aws.infra-shared-prod
+  }
+}

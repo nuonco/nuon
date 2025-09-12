@@ -39,5 +39,15 @@ output "artifacts" {
       bucket_prefix   = "runner"
       ecr             = module.runner.all
     }
+
+    "website" = {
+      bucket_prefix   = "website"
+      ecr             = module.website.all
+    }
+
+    "docs" = {
+      bucket_prefix   = "docs"
+      ecr             = module.website.all
+    }
   }
 }

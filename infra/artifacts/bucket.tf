@@ -9,6 +9,8 @@ locals {
     "terraform-provider-nuon/*",
     "sandbox/*",
     "stacks/*",
+    "docs/*",
+    "website/*",
   ]
 
 }
