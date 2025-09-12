@@ -1,48 +1,40 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
 import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
-import type { TSandboxRun } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQueryParams } from '@/hooks/use-query-params'
+import type { TSandboxRun, TPaginationParams } from '@/types'
 
-export interface ISandboxHistory {
+export interface ISandboxHistory extends IPollingProps, TPaginationParams {
   installId: string
   initSandboxRuns: Array<TSandboxRun>
   orgId: string
-  shouldPoll?: boolean
 }
 
-export const SandboxHistory: FC<ISandboxHistory> = ({
+export const SandboxHistory = ({
   installId,
   initSandboxRuns,
+  pollInterval = 5000,
   shouldPoll = false,
   orgId,
-}) => {
-  const [sandboxRuns, setSandboxRuns] = useState(initSandboxRuns)
-  const searchParams = useSearchParams()
-
-  const fetchSandboxRuns = () => {
-    fetch(
-      `/api/${orgId}/installs/${installId}/sandbox-runs${searchParams ? '?' + searchParams.toString() : searchParams.toString()}`
-    )
-      .then((res) => res.json().then(({ data }) => setSandboxRuns(data)))
-      .catch(console.error)
-  }
-
-  useEffect(() => {
-    if (shouldPoll) {
-      const pollSandboxRuns = setInterval(fetchSandboxRuns, SHORT_POLL_DURATION)
-      return () => clearInterval(pollSandboxRuns)
-    }
-  }, [sandboxRuns, orgId, shouldPoll])
-
-  useEffect(() => {
-    fetchSandboxRuns()
-  }, [searchParams])
+  offset,
+  limit,
+}: ISandboxHistory) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const params = useQueryParams({ offset, limit })
+  const { data: sandboxRuns } = usePolling({
+    dependencies: [params],
+    initData: initSandboxRuns,
+    path: `/api/orgs/${org.id}/installs/${install.id}/sandbox/runs${params}`,
+    pollInterval,
+    shouldPoll,
+  })
 
   return (
     <Timeline
