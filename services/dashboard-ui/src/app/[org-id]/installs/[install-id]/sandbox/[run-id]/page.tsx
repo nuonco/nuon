@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -7,11 +7,8 @@ import {
   AppSandboxVariables,
   ApprovalStep,
   ClickToCopy,
-  CodeViewer,
   DashboardContent,
   Duration,
-  ErrorFallback,
-  InstallDeployIntermediateData,
   InstallWorkflowCancelModal,
   Loading,
   Link,
@@ -26,12 +23,11 @@ import {
   ToolTip,
 } from '@/components'
 import {
-  getInstall,
-  getInstallSandboxRun,
-  getInstallWorkflow,
-  getRunnerJobPlan,
+  getInstallById,
+  getInstallSandboxRunById,
+  getWorkflowById,
 } from '@/lib'
-import { CANCEL_RUNNER_JOBS, sentanceCase, nueQueryData } from '@/utils'
+import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -39,13 +35,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['install-id']: installId,
     ['run-id']: runId,
   } = await params
-  const [install, sandboxRun] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getInstallSandboxRun({ installId, installSandboxRunId: runId, orgId }),
+  const [{ data: install }, { data: sandboxRun }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getInstallSandboxRunById({ runId, orgId }),
   ])
 
   return {
-    title: `${install.name} | ${sandboxRun.run_type}`,
+    title: `${sandboxRun.run_type} | ${install.name} | Nuon`,
   }
 }
 
@@ -55,21 +51,22 @@ export default async function SandboxRuns({ params }) {
     ['install-id']: installId,
     ['run-id']: runId,
   } = await params
-  const [install, sandboxRun] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getInstallSandboxRun({
-      installId,
+  const [{ data: install }, { data: sandboxRun }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getInstallSandboxRunById({
       orgId,
-      installSandboxRunId: runId,
+      runId,
     }),
   ])
 
-  const installWorkflow = await getInstallWorkflow({
+  const { data: workflow } = await getWorkflowById({
     orgId,
-    installWorkflowId: sandboxRun?.install_workflow_id,
-  }).catch(console.error)
-  const step = installWorkflow
-    ? installWorkflow?.steps?.filter((s) => s?.step_target_id === sandboxRun?.id)?.at(-1)
+    workflowId: sandboxRun?.install_workflow_id,
+  })
+  const step = workflow
+    ? workflow?.steps
+        ?.filter((s) => s?.step_target_id === sandboxRun?.id)
+        ?.at(-1)
     : null
 
   return (
@@ -164,20 +161,20 @@ export default async function SandboxRuns({ params }) {
           sandboxRun?.runner_jobs?.at(0)?.status !== 'finished' &&
           sandboxRun?.runner_jobs?.at(0)?.status !== 'failed' &&
           sandboxRun?.runner_jobs?.at(0)?.id &&
-          installWorkflow &&
-          !installWorkflow?.finished ? (
-            <InstallWorkflowCancelModal installWorkflow={installWorkflow} />
+          workflow &&
+          !workflow?.finished ? (
+            <InstallWorkflowCancelModal installWorkflow={workflow} />
           ) : null}
         </div>
       }
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
-          {installWorkflow &&
+          {workflow &&
           step &&
           step?.approval &&
           !step?.approval?.response &&
-          step?.status?.status !== 'auto-skipped'? (
+          step?.status?.status !== 'auto-skipped' ? (
             <Section
               className="border-b"
               childrenClassName="flex flex-col gap-6"
@@ -186,7 +183,7 @@ export default async function SandboxRuns({ params }) {
               <ApprovalStep
                 step={step}
                 approval={step.approval}
-                workflowId={installWorkflow?.id}
+                workflowId={workflow?.id}
               />
             </Section>
           ) : null}
@@ -197,11 +194,11 @@ export default async function SandboxRuns({ params }) {
             />
           </LogStreamProvider>
 
-          {installWorkflow &&
+          {workflow &&
           step &&
           step?.approval &&
           step?.approval?.response &&
-          step?.status?.status !== 'auto-skipped'? (
+          step?.status?.status !== 'auto-skipped' ? (
             <Section
               className="border-t"
               childrenClassName="flex flex-col gap-6"
@@ -210,7 +207,7 @@ export default async function SandboxRuns({ params }) {
               <ApprovalStep
                 step={step}
                 approval={step.approval}
-                workflowId={installWorkflow?.id}
+                workflowId={workflow?.id}
               />
             </Section>
           ) : null}
@@ -241,42 +238,8 @@ export default async function SandboxRuns({ params }) {
               </div>
             </Section>
           ) : null}
-
-          {/* <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-              fallback={
-              <Section>
-              <Loading
-              loadingText="Loading intermediate data..."
-              variant="stack"
-              />
-              </Section>
-              }
-              >
-              <LoadSandboxRunPlan
-              install={install}
-              orgId={orgId}
-              runnerJobId={sandboxRun?.runner_jobs?.at(0)?.id}
-              />
-              </Suspense>
-              </ErrorBoundary> */}
         </div>
       </div>
     </DashboardContent>
   )
-}
-
-const LoadSandboxRunPlan = async ({ install, orgId, runnerJobId }) => {
-  const plan = await getRunnerJobPlan({ orgId, runnerJobId }).catch(
-    console.error
-  )
-  return plan ? (
-    <Section heading="Sandbox indermediate data">
-      {JSON.stringify(plan)}
-      <InstallDeployIntermediateData
-        install={install}
-        data={plan?.waypointPlan?.variables?.intermediaData}
-      />
-    </Section>
-  ) : null
 }
