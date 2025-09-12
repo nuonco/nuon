@@ -142,6 +142,33 @@ cd services/dashboard-ui && npm test
 3. **Local Development**: Check service-specific README files in `/services/` and `/bins/`
 4. **Documentation**: Visit the `/docs/` directory or internal wiki
 
+## Go Development Best Practices
+
+When working with Go code in this repository, agents should follow these practices:
+
+### Code Formatting
+- **Always run `go fmt` after editing Go files** to ensure consistent formatting
+- This prevents formatting inconsistencies and maintains code quality
+- Example workflow:
+  ```bash
+  # After making changes to a Go file
+  go fmt ./path/to/file.go
+  
+  # Or format entire directory
+  go fmt ./services/ctl-api/...
+  ```
+
+### Code Quality
+- Follow existing code patterns and conventions in each service
+- Use proper error handling with meaningful error messages
+- Add appropriate logging with structured fields
+- Ensure proper imports and avoid unused dependencies
+
+### API Development
+- Use proper Swagger annotations for all HTTP endpoints
+- Include both `@Security APIKey` and `@Security OrgID` for authenticated endpoints
+- Follow the established route patterns in each service
+
 ## Notes for Claude
 
 - This is a complex enterprise platform with many interconnected services
@@ -150,6 +177,33 @@ cd services/dashboard-ui && npm test
 - The `/bins/nuonctl/scripts/` directory contains many operational scripts
 - Infrastructure code is in `/infra/` with Terraform modules
 - Example applications and templates are in `/seed/`
+- **CRITICAL**: Always run `go fmt` after making any changes to Go files
+
+## User Journey & Onboarding System
+
+The Nuon platform implements a comprehensive guided onboarding system:
+
+### Architecture Overview
+- **Backend**: Journey tracking in `ctl-api` with JSONB-stored user journey steps
+- **Frontend**: Contextual modals in `dashboard-ui` that guide users through key actions
+- **Integration**: Real-time journey updates via AccountProvider polling
+
+### Journey Flow
+1. **Account Creation** → User signs up
+2. **Organization Creation** → User creates first org  
+3. **App Configuration** → User runs `nuon apps sync` → Navigate to app page
+4. **Install Creation** → User creates first install → Complete onboarding
+
+### Key Implementation Details
+- Journey steps store entity IDs (app_id, install_id) for navigation
+- Modal system prevents infinite reopen loops via dismissal tracking  
+- Cross-service journey updates via dependency injection
+- Non-blocking: Journey failures never break core functionality
+
+### Files to Reference
+- **Backend**: `services/ctl-api/internal/app/accounts/helpers/update_user_journey_step.go`
+- **Frontend**: `services/dashboard-ui/src/components/Apps/*Modal.tsx`
+- **Data Structure**: `services/ctl-api/internal/app/user_journey.go`
 
 ## Project Status
 
