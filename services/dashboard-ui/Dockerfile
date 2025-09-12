@@ -1,4 +1,4 @@
-FROM node:20-alpine as deps
+FROM node:20-alpine AS deps
 
 WORKDIR /src
 
@@ -38,7 +38,7 @@ ENV NUON_API_URL=https://api.stage.nuon.co
 
 RUN npm run test -- -t=30000
 
-FROM deps as build
+FROM deps AS build
 
 ARG NUON_API_URL=https://api.stage.nuon.co
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
@@ -47,7 +47,7 @@ ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
 npm run build -- --no-lint
 
-FROM build as final
+FROM build AS final
 
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
 ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
