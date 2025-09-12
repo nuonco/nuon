@@ -46,6 +46,7 @@ export type TInstallComponentSummary =
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
 }
+export type TDeploy = TInstallDeploy
 export type TInstallDeployPlanIntermediateData = {
   nuon: {
     app: { id: string; secrets: Record<string, string> }

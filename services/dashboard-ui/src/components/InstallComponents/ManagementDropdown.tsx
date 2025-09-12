@@ -1,21 +1,21 @@
 'use client'
 
-import React, { type FC } from 'react'
-import { SlidersHorizontal } from '@phosphor-icons/react'
+import { SlidersHorizontalIcon } from '@phosphor-icons/react'
 import { Dropdown } from '@/components/Dropdown'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
-import type { TComponent } from '@/types'
 import { DeleteComponentModal } from './DeleteComponentModal'
 import { InstallDeployBuildModal } from './DeployBuildModal'
 
 interface IInstallComponentManagementDropdown {
-  component: TComponent
+  componentName: string
+  componentId: string
 }
 
-export const InstallComponentManagementDropdown: FC<
-  IInstallComponentManagementDropdown
-> = ({ component }) => {
+export const InstallComponentManagementDropdown = ({
+  componentName,
+  componentId,
+}: IInstallComponentManagementDropdown) => {
   const { org } = useOrg()
   return org?.features?.['install-delete-components'] ? (
     <Dropdown
@@ -24,7 +24,7 @@ export const InstallComponentManagementDropdown: FC<
       id="mgmt-install"
       text={
         <>
-          <SlidersHorizontal />
+          <SlidersHorizontalIcon />
           Manage
         </>
       }
@@ -35,13 +35,13 @@ export const InstallComponentManagementDropdown: FC<
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
           Controls
         </Text>
-        <InstallDeployBuildModal componentId={component?.id} />
+        <InstallDeployBuildModal componentId={componentId} />
         <>
           <hr className="my-2" />
           <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
             Remove
           </Text>
-          <DeleteComponentModal component={component} />
+          <DeleteComponentModal componentName={componentName} />
         </>
       </div>
     </Dropdown>
