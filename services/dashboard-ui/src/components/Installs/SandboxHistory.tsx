@@ -28,7 +28,7 @@ export const SandboxHistory = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const params = useQueryParams({ offset, limit })
-  const { data: sandboxRuns } = usePolling({
+  const { data: sandboxRuns } = usePolling<TSandboxRun[]>({
     dependencies: [params],
     initData: initSandboxRuns,
     path: `/api/orgs/${org.id}/installs/${install.id}/sandbox/runs${params}`,

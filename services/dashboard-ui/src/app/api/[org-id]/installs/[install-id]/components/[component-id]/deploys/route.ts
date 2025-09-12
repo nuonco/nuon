@@ -12,16 +12,11 @@ export const GET = async (
     ['component-id']: componentId,
   } = await params
 
-  let deploys = []
-  try {
-    deploys = await getInstallComponentDeploys({
-      orgId,
-      installId,
-      componentId,
-    })
-  } catch (error) {
-    console.error(error)
-  }
+  const response = await getInstallComponentDeploys({
+    orgId,
+    installId,
+    componentId,
+  })
 
-  return NextResponse.json(deploys)
+  return NextResponse.json(response)
 }
