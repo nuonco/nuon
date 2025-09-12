@@ -1,3 +1,3 @@
 # Nuon CLI
 
-Our public facing CLI.
+Our public CLI.
