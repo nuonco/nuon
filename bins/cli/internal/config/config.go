@@ -30,6 +30,7 @@ type Config struct {
 	OrgID            string `mapstructure:"org_id"`
 	DisableTelemetry bool   `mapstructure:"disable_telemetry"`
 	Debug            bool   `mapstructure:"debug"`
+	Preview          bool   `mapstructure:"preview"`
 
 	// internal configuration, not designed to be used by users
 	GitHubAppName   string        `mapstructure:"github_app_name"`
@@ -47,6 +48,7 @@ func NewConfig(customFilepath string) (*Config, error) {
 		APIURL:         defaultAPIURL,
 		GitHubAppName:  defaultGitHubAppName,
 		Debug:          Debug(),
+		Preview:        Preview(),
 		CleanupTimeout: defaultCleanupTimeout,
 	}
 
