@@ -231,6 +231,12 @@ const BuildOptions: FC<{
     path: `/api/orgs/${org.id}/components/${componentId}/builds`,
   })
 
+  useEffect(() => {
+    if (!buildId && builds?.length) {
+      props.setBuildId(builds?.at(0)?.id)
+    }
+  }, [builds])
+
   return (
     <div className="w-full max-h-[450px] overflow-y-auto">
       {error ? (
