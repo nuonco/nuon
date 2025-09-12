@@ -1,5 +1,5 @@
 ---
-type: service
+type: artifact
 color: red
 env: {}
 env_secrets: {}
