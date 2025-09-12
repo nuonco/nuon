@@ -179,3 +179,120 @@ The dashboard is containerized and deployed to Kubernetes:
 - Auto-scaling based on traffic
 
 This service provides the primary user interface for the entire Nuon platform, enabling users to manage complex cloud deployments through an intuitive web interface.
+
+## User Journey Modal System
+
+The dashboard implements a sophisticated modal system for guided user onboarding:
+
+### Modal Architecture Pattern
+Journey-based modals use layout-level wrapper components that conditionally render based on user journey state:
+
+```typescript
+// Layout wrapper pattern
+export const PageWithModal = ({ children }) => {
+  const { account } = useAccount()
+  const [showModal, setShowModal] = useState(false)
+  const [userDismissed, setUserDismissed] = useState(false) // CRITICAL: Prevents reopen loops
+  
+  useEffect(() => {
+    const shouldShow = journeyConditionsMet && !userDismissed
+    setShowModal(shouldShow)
+  }, [account, userDismissed])
+  
+  const handleClose = () => {
+    setShowModal(false)
+    setUserDismissed(true) // Prevents immediate reopening
+    await refreshAccount() // Check for journey updates
+  }
+}
+```
+
+### Current Modal Implementations
+
+#### App Creation Modal
+- **Location**: `src/components/Apps/AppsPageWithModal.tsx`
+- **Trigger**: User has no apps and `app_created` step incomplete
+- **Behavior**: Guides user to create first app
+- **Navigation**: On `app_created` completion with app ID → navigate to app page
+
+#### Install Creation Modal  
+- **Location**: `src/components/Apps/AppPageWithInstallModal.tsx`
+- **Trigger**: User on app page, `app_created` complete, `install_created` incomplete
+- **Behavior**: Guides user to create first install
+- **Navigation**: Modal hides when `install_created` step completes
+
+### Critical Modal State Management
+
+**Problem**: Modal reopen loops after dismissal
+**Root Cause**: useEffect reopens modal after `refreshAccount()` if journey conditions still met
+**Solution**: Track manual dismissal separately from journey completion
+
+```typescript
+// CRITICAL PATTERN: Always track user dismissal
+const [userDismissed, setUserDismissed] = useState(false)
+
+// Modal shows only if conditions met AND not manually dismissed
+const shouldShow = journeyConditionsMet && !userDismissed
+
+const handleClose = async () => {
+  setShowModal(false)
+  setUserDismissed(true) // Prevents loop
+  await refreshAccount() // Safe to refresh now
+}
+```
+
+### Journey Step Interface
+Frontend interfaces must match backend journey structure:
+
+```typescript
+interface UserJourney {
+  name: string
+  title: string
+  steps: Array<{
+    name: string
+    title: string
+    complete: boolean
+    app_id?: string      // For navigation to specific app
+    install_id?: string  // For navigation to specific install
+  }>
+}
+```
+
+### Modal Component Patterns
+
+#### Close Button Configuration
+```typescript
+<Modal
+  isOpen={isOpen}
+  onClose={onClose}
+  showCloseButton={false} // Only action button for guided flow
+  actions={<Button onClick={onClose}>Got it</Button>}
+>
+```
+
+#### Layout Integration
+```typescript
+// In layout.tsx
+<AppProvider>
+  <PageWithModal>
+    {children}
+  </PageWithModal>  
+</AppProvider>
+```
+
+### Journey-Based Navigation
+When journey steps complete with entity IDs, trigger automatic navigation:
+
+```typescript
+// Navigation on journey completion
+if (appCreatedStep?.complete && appCreatedStep?.app_id) {
+  router.push(`/${orgId}/apps/${appCreatedStep.app_id}`)
+}
+```
+
+### Best Practices
+- **Non-blocking**: Modals are always dismissible
+- **Contextual**: Only show on relevant pages
+- **Progressive**: Guide users through logical flow
+- **State-safe**: Prevent infinite reopen loops
+- **Entity-aware**: Use stored IDs for specific navigation
