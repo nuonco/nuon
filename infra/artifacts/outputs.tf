@@ -47,7 +47,7 @@ output "artifacts" {
 
     "docs" = {
       bucket_prefix   = "docs"
-      ecr             = module.website.all
+      ecr             = module.docs.all
     }
   }
 }
