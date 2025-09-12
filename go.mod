@@ -136,6 +136,7 @@ require (
 	go.temporal.io/sdk v1.25.1
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
+	golang.design/x/clipboard v0.7.1
 	golang.org/x/net v0.42.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sync v0.16.0
@@ -177,6 +178,7 @@ require (
 	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.27.0 // indirect
 	github.com/DataDog/sketches-go v1.4.7 // indirect
 	github.com/DataDog/zstd v1.5.6 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/charmbracelet/colorprofile v0.3.1 // indirect
 	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta.2 // indirect
@@ -218,6 +220,9 @@ require (
 	go.opentelemetry.io/collector/semconv v0.125.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/exp/shiny v0.0.0-20250606033433-dcc06ee1d476 // indirect
+	golang.org/x/image v0.28.0 // indirect
+	golang.org/x/mobile v0.0.0-20250606033058-a2a15c67f36f // indirect
 )
 
 require (
