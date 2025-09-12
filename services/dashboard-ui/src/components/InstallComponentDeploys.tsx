@@ -2,53 +2,42 @@
 
 'use client'
 
-import React, { type FC, useEffect } from 'react'
 import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Truncate, Text } from '@/components/Typography'
-import { revalidateInstallData } from '@/components/install-actions'
-import type { TComponent, TInstallDeploy } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useQueryParams } from '@/hooks/use-query-params'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TComponent, TDeploy, TPaginationParams } from '@/types'
 
-export interface IInstallComponentDeploys {
+export interface IInstallComponentDeploys
+  extends TPaginationParams,
+    IPollingProps {
   component: TComponent
-  installId: string
-  installComponentId: string
-  initDeploys: Array<TInstallDeploy>
-  shouldPoll?: boolean
-  orgId: string
+  initDeploys: TDeploy[]
 }
 
-export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
+export const InstallComponentDeploys = ({
   component,
-  installId,
-  installComponentId,
-  initDeploys: deploys,
+
+  initDeploys,
+  limit,
+  offset,
+  pollInterval = 5000,
   shouldPoll = false,
-  orgId,
-}) => {
-  //  const [deploys, setInstallComponentDeploys] = useState(initDeploys)
-
-  useEffect(() => {
-    const fetchInstallComponentDeploys = () => {
-      /* fetch(
-       *   `/api/${orgId}/installs/${installId}/components/${component.id}/deploys`
-       * )
-       *   .then((res) => res.json().then((b) => setInstallComponentDeploys(b)))
-       *   .catch(console.error) */
-
-      revalidateInstallData({ installId, orgId })
-    }
-
-    if (shouldPoll) {
-      const pollDeploys = setInterval(
-        fetchInstallComponentDeploys,
-        SHORT_POLL_DURATION
-      )
-      return () => clearInterval(pollDeploys)
-    }
-  }, [deploys, shouldPoll])
+}: IInstallComponentDeploys) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const params = useQueryParams({ limit, offset })
+  const { data: deploys } = usePolling<TDeploy[]>({
+    dependencies: [params],
+    initData: initDeploys,
+    path: `/api/orgs/${org.id}/installs/${install.id}/components/${component?.id}/deploys${params}`,
+    pollInterval,
+    shouldPoll,
+  })
 
   return (
     <Timeline
@@ -93,7 +82,7 @@ export const InstallComponentDeploys: FC<IInstallComponentDeploys> = ({
             (d?.status_v2?.status &&
               (d?.status_v2?.status as string) !== 'queued') ||
             (d?.status && (d?.status as string) !== 'queued')
-              ? `/${orgId}/installs/${installId}/components/${installComponentId}/deploys/${d.id}`
+              ? `/${org.id}/installs/${install.id}/components/${component.id}/deploys/${d.id}`
               : null,
           isMostRecent: i === 0,
         }

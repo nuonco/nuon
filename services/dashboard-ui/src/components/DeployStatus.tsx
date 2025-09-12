@@ -1,50 +1,35 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
-import React, { type FC, useEffect } from 'react'
 import { StatusBadge } from '@/components/Status'
-import { revalidateData } from '@/components/actions'
-import type { TInstallDeploy } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TDeploy } from '@/types'
 
-export interface IDeployStatus {
+export interface IDeployStatus extends IPollingProps {
   descriptionAlignment?: 'center' | 'left' | 'right'
   descriptionPosition?: 'bottom' | 'top'
-  initDeploy: TInstallDeploy
-  shouldPoll?: boolean
+  initDeploy: TDeploy
 }
 
-export const DeployStatus: FC<IDeployStatus> = ({
-  initDeploy: deploy,
+export const DeployStatus = ({
+  initDeploy,
+  pollInterval = 5000,
   shouldPoll = false,
   ...props
-}) => {
-  const path = usePathname()
+}: IDeployStatus) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const { data: deploy } = usePolling<TDeploy>({
+    initData: initDeploy,
+    path: `/api/orgs/${org.id}/installs/${install.id}/deploys/${initDeploy.id}`,
+    pollInterval,
+    shouldPoll,
+  })
   const status = deploy?.status_v2 || {
     status: deploy?.status || 'Unknown',
     status_human_description: deploy?.status_description || undefined,
   }
-
-  useEffect(() => {
-    const fetchDeploy = () => {
-      revalidateData({ path })
-    }
-    if (shouldPoll) {
-      const pollDeploy = setInterval(fetchDeploy, SHORT_POLL_DURATION)
-
-      if (
-        status.status === 'active' ||
-        status.status === 'error' ||
-        status.status === 'cancelled' ||
-        status.status === 'not-attempted' ||
-        status.status === 'noop'
-      ) {
-        clearInterval(pollDeploy)
-      }
-
-      return () => clearInterval(pollDeploy)
-    }
-  }, [deploy, shouldPoll])
 
   return (
     <StatusBadge

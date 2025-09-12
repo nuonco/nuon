@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, TrashSimple } from '@phosphor-icons/react'
+import { CheckIcon, TrashSimpleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { CheckboxInput, Input } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
@@ -12,15 +12,14 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { deleteComponent } from '@/components/install-actions'
-import { TComponent } from '@/types'
 import { sentanceCase, trackEvent } from '@/utils'
 
 interface IDeleteComponentModal {
-  component: TComponent
+  componentName: string
 }
 
 export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
-  component,
+  componentName,
 }) => {
   const params =
     useParams<Record<'org-id' | 'install-id' | 'component-id', string>>()
@@ -56,7 +55,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
             <Modal
               className="!max-w-2xl"
               isOpen={isOpen}
-              heading={`Teardown ${component?.name}`}
+              heading={`Teardown ${componentName}`}
               onClose={() => {
                 setIsOpen(false)
               }}
@@ -65,7 +64,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                 {error ? <Notice>{sentanceCase(error)}</Notice> : null}
                 <span className="flex flex-col gap-1">
                   <Text variant="med-18">
-                    Are you sure you want to teardown {component.name}?
+                    Are you sure you want to teardown {componentName}?
                   </Text>
                   <Text variant="reg-12">
                     Tearing down components will affect the working nature of
@@ -197,11 +196,11 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                   variant="danger"
                 >
                   {isKickedOff ? (
-                    <Check size="18" />
+                    <CheckIcon size="18" />
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : (
-                    <TrashSimple size="18" />
+                    <TrashSimpleIcon size="18" />
                   )}{' '}
                   Teardown component
                 </Button>
@@ -217,7 +216,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
           setIsOpen(true)
         }}
       >
-        <TrashSimple size="16" /> Teardown component
+        <TrashSimpleIcon size="16" /> Teardown component
       </Button>
     </>
   )
