@@ -284,7 +284,10 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               <JsonView data={plan} />
             )}
           </div>
-          <ApprovalButtons />
+          {workflowApproveOption === 'prompt' &&
+          step?.status?.status === 'approval-awaiting' ? (
+            <ApprovalButtons />
+          ) : null}
         </div>
       ) : null}
     </>
