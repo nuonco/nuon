@@ -256,7 +256,6 @@ byoc_synthetics:
   instances:
     byoc:
       nuon-dev-main-us-west-2: nuon-dev-main-us-west-2.nuon.run
-      byoc-neubird-prod: deployment-manager.tools.neubird.ai
     retool:
       nuon-prod: byoc.retool.com
       nuon-dev-2: byoc.retool.dev
