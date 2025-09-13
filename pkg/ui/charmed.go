@@ -13,11 +13,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var special = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
-var checkMark = lipgloss.NewStyle().SetString("✓").
-	Foreground(special).
-	PaddingRight(1).
-	String()
+var (
+	special   = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
+	checkMark = lipgloss.NewStyle().SetString("✓").
+			Foreground(special).
+			PaddingRight(1).
+			String()
+)
 
 var shellSymbol = lipgloss.NewStyle().SetString("$").
 	Foreground(special).
@@ -57,7 +59,7 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 		"github_app_key",
 	}
 	maxKLen := 0
-	for k, _ := range env {
+	for k := range env {
 		if len(k) > maxKLen {
 			maxKLen = len(k)
 		}
