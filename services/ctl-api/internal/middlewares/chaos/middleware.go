@@ -39,6 +39,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if m.cfg.ChaosRate < 1 {
 			ctx.Next()
+			return
 		}
 
 		if _, ok := skipRoutes[ctx.FullPath()]; ok {
