@@ -1,41 +1,33 @@
 import type { Metadata } from 'next'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   DashboardContent,
   Link,
   Loading,
-  InstallHistory,
   InstallPageSubNav,
   InstallStatuses,
-  InstallWorkflowHistory,
   InstallManagementDropdown,
-  Pagination,
   Section,
   Text,
   Time,
 } from '@/components'
-import { getInstall, getInstallEvents, getOrg, getInstallWorkflows } from '@/lib'
-import { TInstallWorkflow } from '@/types'
-import { nueQueryData } from '@/utils'
-import { InstallWorkflows } from "./install-workflows";
+import { getInstallById } from '@/lib'
+import { InstallWorkflows } from './install-workflows'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install = await getInstall({ installId, orgId })
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return {
-    title: `${install.name} | Workflows`,
+    title: `Workflows | ${install.name} | Nuon`,
   }
 }
 
 export default async function Install({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const [install, org] = await Promise.all([
-    getInstall({ installId, orgId }),
-    getOrg({ orgId }),
-  ])
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return (
     <DashboardContent
@@ -109,57 +101,3 @@ export default async function Install({ params, searchParams }) {
     </DashboardContent>
   )
 }
-
-/* const LoadInstallWorkflows: FC<{
- *   installId: string
- *   orgId: string
- *   offset?: string
- *   limit?: string
- * }> = async ({ installId, orgId, offset, limit = '20' }) => {
- *   const params = new URLSearchParams({ offset, limit }).toString()
- *   const {
- *     data: installWorkflows,
- *     error,
- *     headers,
- *   } = await nueQueryData<Array<TInstallWorkflow>>({
- *     orgId,
- *     path: `installs/${installId}/workflows${params ? '?' + params : params}`,
- *     headers: {
- *       'x-nuon-pagination-enabled': true,
- *     },
- *   })
- * 
- *   const pageData = {
- *     hasNext: headers.get('x-nuon-page-next') || 'false',
- *     offset: headers?.get('x-nuon-page-offset') || '0',
- *   }
- * 
- *   return installWorkflows ? (
- *     <div className="flex flex-col gap-4">
- *       <InstallWorkflowHistory installWorkflows={installWorkflows} shouldPoll />
- *       <Pagination
- *         param="workflows"
- *         pageData={pageData}
- *         position="center"
- *         limit={20}
- *       />
- *     </div>
- *   ) : (
- *     <Text>No install history yet.</Text>
- *   )
- * }
- * 
- * const LoadInstallHistory: FC<{ installId: string; orgId: string }> = async ({
- *   installId,
- *   orgId,
- * }) => {
- *   const events = await getInstallEvents({ installId, orgId })
- *   return (
- *     <InstallHistory
- *       initEvents={events}
- *       installId={installId}
- *       orgId={orgId}
- *       shouldPoll
- *     />
- *   )
- * } */

@@ -53,10 +53,11 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
 		}).
-		Preload("ComponentConfigConnection.Component").
+		Preload("ComponentConfigConnection.Component").    
 		Preload("RunnerJob", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews)
 		}).
+    Preload("LogStream").
 		First(&bld, "id = ?", bldID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)

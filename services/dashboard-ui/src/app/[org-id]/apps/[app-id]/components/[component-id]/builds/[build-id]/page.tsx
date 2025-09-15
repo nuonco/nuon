@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { CalendarBlank, Timer } from '@phosphor-icons/react/dist/ssr'
+import { CalendarBlankIcon, TimerIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   BuildStatus,
   CancelRunnerJobButton,
@@ -20,16 +20,16 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
-import { getApp, getComponent, getComponentBuild } from '@/lib'
+import { getAppById, getComponentById, getComponentBuildById } from '@/lib'
 import type { TComponentConfig } from '@/types'
 import { CANCEL_RUNNER_JOBS, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['component-id']: componentId } = await params
-  const component = await getComponent({ componentId, orgId })
+  const { data: component} = await getComponentById({ componentId, orgId })
 
   return {
-    title: `${component.name} | Build`,
+    title: `Build | ${component.name} | Nuon`,
   }
 }
 
@@ -41,10 +41,10 @@ export default async function AppComponent({ params }) {
     ['build-id']: buildId,
   } = await params
 
-  const [app, build, component] = await Promise.all([
-    getApp({ appId, orgId }),
-    getComponentBuild({ buildId, orgId }),
-    getComponent({ componentId, orgId }),
+  const [{ data: app}, {data: build}, {data: component}] = await Promise.all([
+    getAppById({ appId, orgId }),
+    getComponentBuildById({ componentId, buildId, orgId }),
+    getComponentById({ componentId, orgId }),
   ])
 
   return (
@@ -67,11 +67,11 @@ export default async function AppComponent({ params }) {
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
-            <CalendarBlank />
+            <CalendarBlankIcon />
             <Time time={build.created_at} />
           </Text>
           <Text>
-            <Timer />
+            <TimerIcon />
             <Duration beginTime={build.created_at} endTime={build.updated_at} />
           </Text>
         </div>

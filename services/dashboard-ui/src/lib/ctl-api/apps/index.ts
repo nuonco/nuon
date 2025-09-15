@@ -1,3 +1,4 @@
+export * from './components'
 export * from './get-apps'
 export * from './get-app'
 export * from './get-app-by-id'
