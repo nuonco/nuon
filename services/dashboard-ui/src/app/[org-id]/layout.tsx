@@ -1,9 +1,10 @@
 // @ts-nocheck
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
+import { Empty } from '@/components/Empty'
 import { Layout } from '@/components/Layout'
 import { REFRESH_PAGE_INTERVAL, REFRESH_PAGE_WARNING } from '@/configs/app'
-import { getAPIVersion, getOrg, getOrgs } from '@/lib'
+import { getAPIVersion, getOrgById, getOrgs } from '@/lib'
 import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
 import { OrgProvider } from "@/providers/org-provider";
 import { VERSION } from '@/utils'
@@ -14,8 +15,8 @@ export default async function OrgLayout({ children, params }) {
     cookieStore.get('is-sidebar-open')?.value === 'true'
   )
   const { ['org-id']: orgId } = await params
-  const [org, orgs, { data: apiVersion }] = await Promise.all([
-    getOrg({ orgId }).catch((error) => {
+  const [{data: org, error, status }, { data: orgs}, { data: apiVersion }] = await Promise.all([
+    getOrgById({ orgId }).catch((error) => {
       console.error(error)
       notFound()
     }),
@@ -25,6 +26,10 @@ export default async function OrgLayout({ children, params }) {
     }),
     getAPIVersion(),
   ])
+
+  if (error) {
+    notFound()
+  }
 
   return (
     <AutoRefreshProvider
