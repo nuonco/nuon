@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { CaretRight } from '@phosphor-icons/react/dist/ssr'
+import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   DashboardContent,
   Link,
@@ -8,20 +8,20 @@ import {
   Section,
   Text,
 } from '@/components'
-import { getOrg } from '@/lib'
+import { getOrgById } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
 
   return {
-    title: `${org.name} | Releases`,
+    title: `Releases | ${org.name} | Nuon`,
   }
 }
 
 export default async function OrgReleases({ params }) {
   const { ['org-id']: orgId } = await params
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
 
   if (org?.features?.['org-support']) {
     return (
@@ -71,7 +71,7 @@ export default async function OrgReleases({ params }) {
                   target="_blank"
                   className="text-base"
                 >
-                  Check it out <CaretRight />
+                  Check it out <CaretRightIcon />
                 </Link>
               </div>
             </Section>

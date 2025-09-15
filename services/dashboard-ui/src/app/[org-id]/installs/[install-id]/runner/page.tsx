@@ -21,23 +21,23 @@ import {
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
-import { getInstall, getRunner } from '@/lib'
+import { getInstallById, getRunner } from '@/lib'
 import type { TRunnerGroupSettings } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install = await getInstall({ installId, orgId })
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return {
-    title: `Runner | ${install?.name}`,
+    title: `Runner | ${install?.name} | Nuon`,
   }
 }
 
 export default async function Runner({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const install = await getInstall({ installId, orgId })
+  const { data: install } = await getInstallById({ installId, orgId })
   const [runner, { data: settings }] = await Promise.all([
     getRunner({
       orgId,

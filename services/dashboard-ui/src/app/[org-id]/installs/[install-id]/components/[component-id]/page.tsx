@@ -29,7 +29,7 @@ import {
   getInstallComponentOutputs,
   getLatestComponentBuild,
   getInstallComponentById,
-  getOrg,
+  getOrgById,
 } from '@/lib'
 import type { TComponent, TComponentConfig, TInstall } from '@/types'
 import { nueQueryData } from '@/utils'
@@ -58,12 +58,15 @@ export default async function InstallComponent({ params, searchParams }) {
     ['component-id']: componentId,
   } = await params
   const sp = await searchParams
-  const [org, { data: install }, { data: installComponent, error, status }] =
-    await Promise.all([
-      getOrg({ orgId }),
-      getInstallById({ installId, orgId }),
-      getInstallComponentById({ orgId, installId, componentId }),
-    ])
+  const [
+    { data: org },
+    { data: install },
+    { data: installComponent, error, status },
+  ] = await Promise.all([
+    getOrgById({ orgId }),
+    getInstallById({ installId, orgId }),
+    getInstallComponentById({ orgId, installId, componentId }),
+  ])
 
   if (error) {
     console.error(

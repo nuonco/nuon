@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
@@ -8,7 +9,7 @@ import {
   Loading,
   Section,
 } from '@/components'
-import { getApp, getComponent } from '@/lib'
+import { getAppById, getComponentById } from '@/lib'
 import { Builds } from './builds'
 import { Config } from './config'
 import { Dependencies } from './dependencies'
@@ -19,13 +20,13 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['app-id']: appId,
     ['component-id']: componentId,
   } = await params
-  const [app, component] = await Promise.all([
-    getApp({ appId, orgId }),
-    getComponent({ componentId, orgId }),
+  const [{ data: app }, { data: component }] = await Promise.all([
+    getAppById({ appId, orgId }),
+    getComponentById({ componentId, orgId }),
   ])
 
   return {
-    title: `${app.name} | ${component.name}`,
+    title: `${component.name} | ${app.name} | Nuon`,
   }
 }
 
@@ -36,10 +37,17 @@ export default async function AppComponent({ params, searchParams }) {
     ['component-id']: componentId,
   } = await params
   const sp = await searchParams
-  const [app, component] = await Promise.all([
-    getApp({ appId, orgId }),
-    getComponent({ componentId, orgId }),
-  ])
+  const [{ data: app }, { data: component, error, status }] = await Promise.all(
+    [getAppById({ appId, orgId }), getComponentById({ componentId, orgId })]
+  )
+
+  if (error) {
+    if (status === 404) {
+      notFound()
+    } else {
+      notFound()
+    }
+  }
 
   return (
     <DashboardContent
@@ -99,7 +107,6 @@ export default async function AppComponent({ params, searchParams }) {
                 }
               >
                 <Builds
-                  appId={appId}
                   componentId={componentId}
                   orgId={orgId}
                   offset={sp['offset'] || '0'}
