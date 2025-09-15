@@ -11,14 +11,14 @@ import {
   Pagination,
   Section,
 } from '@/components'
-import { getOrg } from '@/lib'
-// TODO(nnnat): move segment init script to org dashboard
+import { getOrgById } from '@/lib'
 import type { TApp } from '@/types'
+// TODO(nnnat): move segment init script to org dashboard
 import { SegmentAnalyticsSetOrg, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
 
   return {
     title: `${org.name} | Apps`,
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function Apps({ params, searchParams }) {
   const { ['org-id']: orgId } = await params
   const sp = await searchParams
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
 
   return (
     <>
