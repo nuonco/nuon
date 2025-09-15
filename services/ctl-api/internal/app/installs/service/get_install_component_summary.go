@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
@@ -165,7 +166,7 @@ func (s *service) getInstallsComponentsInBatches(ctx *gin.Context, installID str
 			Where("install_id = ?", installID).
 			Limit(batchSize).
 			Offset(offset).
-			Find(&installComponents)
+			Find(&installComponentsBatch)
 
 		if tx.Error != nil {
 			return nil, fmt.Errorf("unable to get install components for install %s: %w", installID, tx.Error)
@@ -178,6 +179,32 @@ func (s *service) getInstallsComponentsInBatches(ctx *gin.Context, installID str
 		} else {
 			offset += batchSize
 		}
+	}
+
+	installComponentIDs := make([]string, 0, len(installComponents))
+	for _, ic := range installComponents {
+		installComponentIDs = append(installComponentIDs, ic.ID)
+	}
+
+	driftedObjects := make([]app.DriftedObject, 0)
+	if len(installComponentIDs) > 0 {
+		res := s.db.WithContext(ctx).
+			Where("install_component_id IN ?", installComponentIDs).
+			Find(&driftedObjects)
+		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
+		}
+	}
+
+	driftedObjMap := make(map[string][]app.DriftedObject)
+	for _, obj := range driftedObjects {
+		if obj.InstallComponentID != nil {
+			driftedObjMap[*obj.InstallComponentID] = append(driftedObjMap[*obj.InstallComponentID], obj)
+		}
+	}
+
+	for i := range installComponents {
+		installComponents[i].DriftedObjects = driftedObjMap[installComponents[i].ID]
 	}
 
 	return installComponents, nil
