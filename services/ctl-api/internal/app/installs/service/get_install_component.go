@@ -44,7 +44,7 @@ func (s *service) GetInstallComponent(ctx *gin.Context) {
 func (s *service) getInstallComponent(ctx context.Context, installID, componentID string) (*app.InstallComponent, error) {
 	installCmp := app.InstallComponent{}
 	res := s.db.WithContext(ctx).
-    Preload("Component").
+		Preload("Component").
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Order("install_deploys.created_at DESC").Limit(1)
@@ -58,6 +58,15 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
+
+	driftedObj := make([]app.DriftedObject, 0)
+	res = s.db.WithContext(ctx).
+		Where("install_component_id = ?", installCmp.ID).
+		Find(&driftedObj)
+	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
+	}
+	installCmp.DriftedObjects = driftedObj
 
 	return &installCmp, nil
 }
