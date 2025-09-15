@@ -78,8 +78,8 @@ type Install struct {
 	RunnerID                            string                 `json:"runner_id,omitzero" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
 	CloudPlatform                       CloudPlatform          `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
 	RunnerType                          AppRunnerType          `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
-
-	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
+	DriftedObjects                      []DriftedObject        `json:"drifted_objects,omitzero" gorm:"-" temporaljson:"drifted_objects,omitzero,omitempty"`
+	Links                               map[string]any         `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
 	// TODO(jm): deprecate these fields once the terraform provider has been updated
 	Status            string `json:"status,omitzero" gorm:"-" temporaljson:"status,omitzero,omitempty"`

@@ -82,5 +82,14 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 
+	driftedObj := make([]app.DriftedObject, 0)
+	res = s.db.WithContext(ctx).
+		Where("install_id = ?", install.ID).
+		Find(&driftedObj)
+	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
+	}
+	install.DriftedObjects = driftedObj
+
 	return &install, nil
 }
