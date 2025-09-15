@@ -17,23 +17,23 @@ import {
   Section,
   Text,
 } from '@/components'
-import { getRunner, getOrg } from '@/lib'
+import { getRunner, getOrgById } from '@/lib'
 import type { TRunnerGroupSettings } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
 
   return {
-    title: `${org.name} | Build runner`,
+    title: `Build runner | ${org.name} | Nuon`,
   }
 }
 
 export default async function OrgRunner({ params, searchParams }) {
   const { ['org-id']: orgId } = await params
   const sp = await searchParams
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
   const [runner, { data: settings }] = await Promise.all([
     getRunner({
@@ -49,7 +49,13 @@ export default async function OrgRunner({ params, searchParams }) {
   if (org?.features?.['org-runner']) {
     return (
       <DashboardContent
-        banner={runner?.status === "error" ? <Notice className="!border-none !rounded-none">Buld runner is unhealthy</Notice> : null}
+        banner={
+          runner?.status === 'error' ? (
+            <Notice className="!border-none !rounded-none">
+              Buld runner is unhealthy
+            </Notice>
+          ) : null
+        }
         breadcrumb={[{ href: `/${orgId}/runner`, text: 'Build runner' }]}
         heading={org?.name}
         headingUnderline={org?.id}
@@ -67,7 +73,6 @@ export default async function OrgRunner({ params, searchParams }) {
           </span>
         }
       >
-      
         <div className="flex-auto md:grid md:grid-cols-12 divide-x">
           <div className="divide-y flex flex-col flex-auto col-span-8">
             <Section className="flex-initial" heading="Health">
