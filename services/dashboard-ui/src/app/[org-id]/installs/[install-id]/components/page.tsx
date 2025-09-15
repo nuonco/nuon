@@ -17,23 +17,23 @@ import {
   Text,
   Time,
 } from '@/components'
-import { getInstall } from '@/lib'
+import { getInstallById } from '@/lib'
 import type { TInstall, TInstallComponentSummary } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install = await getInstall({ installId, orgId })
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return {
-    title: `${install.name} | Components`,
+    title: `Components | ${install.name} | Nuon`,
   }
 }
 
 export default async function InstallComponents({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const install = await getInstall({ orgId, installId })
+  const { data: install } = await getInstallById({ orgId, installId })
 
   return (
     <DashboardContent
