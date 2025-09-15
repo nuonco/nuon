@@ -20,23 +20,39 @@ import {
   Time,
   Markdown,
 } from '@/components'
-import { getInstall, getInstallCurrentInputs, getInstallReadme } from '@/lib'
+import {
+  getInstallById,
+  getInstallCurrentInputs,
+  getInstallReadme,
+} from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install = await getInstall({ installId, orgId })
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return {
-    title: `${install.name} | Overview`,
+    title: `Overview | ${install.name} | Nuon`,
   }
 }
 
 export default async function Install({ params }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install = await getInstall({ installId, orgId }).catch((err) => {
+  const {
+    data: install,
+    error,
+    status,
+  } = await getInstallById({ installId, orgId }).catch((err) => {
     console.error(err)
     notFound()
   })
+
+  if (error) {
+    if (status === 404) {
+      notFound()
+    } else {
+      notFound()
+    }
+  }
 
   return (
     <DashboardContent

@@ -13,22 +13,22 @@ import {
   Text,
 } from '@/components'
 import { API_URL } from '@/configs/api'
-import { getOrg } from '@/lib'
+import { getOrgById } from '@/lib'
 import type { TAccount, TInvite } from '@/types'
 import { getFetchOpts } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
 
   return {
-    title: `${org.name} | Team`,
+    title: `Team | ${org.name} | Nuon`,
   }
 }
 
 export default async function OrgTeam({ params }) {
   const { ['org-id']: orgId } = await params
-  const org = await getOrg({ orgId })
+  const { data: org } = await getOrgById({ orgId })
 
   if (org?.features?.['org-settings']) {
     return (
