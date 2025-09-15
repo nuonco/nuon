@@ -11,16 +11,16 @@ import {
   Pagination,
   Section,
 } from '@/components'
-import { getOrg } from '@/lib'
+import { getOrgById } from '@/lib'
 import type { TInstall } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const org = await getOrg({ orgId })
+  const { data: org} = await getOrgById({ orgId })
 
   return {
-    title: `${org.name} | Installs`,
+    title: `Installs | ${org.name} | Nuon`,
   }
 }
 

@@ -1,44 +1,40 @@
 'use client'
 
-import React, { type FC, useEffect } from 'react'
 import { Empty } from '@/components/Empty'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
-import { revalidateAppData } from '@/components/app-actions'
-import type { TBuild } from '@/types'
-import { SHORT_POLL_DURATION } from '@/utils'
+import { useApp } from '@/hooks/use-app'
+import { useOrg } from '@/hooks/use-org'
+import { useQueryParams } from '@/hooks/use-query-params'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TBuild, TPaginationParams } from '@/types'
 
-export interface IComponentBuildHistory {
-  appId: string
+export interface IComponentBuildHistory
+  extends IPollingProps,
+    TPaginationParams {
   componentId: string
   initBuilds: Array<TBuild>
-  orgId: string
-  shouldPoll?: boolean
 }
 
-export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
-  appId,
+export const ComponentBuildHistory = ({
   componentId,
-  initBuilds: builds,
+  initBuilds,
+  pollInterval = 5000,
   shouldPoll = false,
-  orgId,
-}) => {
-  //const [builds, setComponentBuilds] = useState(initBuilds)
-
-  useEffect(() => {
-    const fetchComponentBuilds = () => {
-      /* fetch(`/api/${orgId}/components/${componentId}/builds`)
-       *   .then((res) => res.json().then((b) => setComponentBuilds(b)))
-       *   .catch(console.error) */
-      revalidateAppData({ appId, orgId })
-    }
-
-    if (shouldPoll) {
-      const pollBuilds = setInterval(fetchComponentBuilds, SHORT_POLL_DURATION)
-      return () => clearInterval(pollBuilds)
-    }
-  }, [builds, componentId, orgId, shouldPoll])
+  offset,
+  limit,
+}: IComponentBuildHistory) => {
+  const { app } = useApp()
+  const { org } = useOrg()
+  const params = useQueryParams({ offset, limit })
+  const { data: builds } = usePolling({
+    dependencies: [params],
+    initData: initBuilds,
+    path: `/api/orgs/${org.id}/components/${componentId}/builds${params}`,
+    pollInterval,
+    shouldPoll,
+  })
 
   return (
     <Timeline
@@ -82,7 +78,10 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
               {b?.vcs_connection_commit?.message &&
               b?.vcs_connection_commit?.sha ? (
                 <span className="">
-                  <ToolTip tipContent={`SHA: ${b?.vcs_connection_commit?.sha}`} alignment="right">
+                  <ToolTip
+                    tipContent={`SHA: ${b?.vcs_connection_commit?.sha}`}
+                    alignment="right"
+                  >
                     <Text
                       className="truncate !block w-20 !text-[11px]"
                       variant="mono-12"
@@ -90,7 +89,10 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
                       # {b?.vcs_connection_commit?.sha}
                     </Text>
                   </ToolTip>
-                  <Text className="!text-[11px] font-normal pr-2 !block max-w-[250px] truncate" isMuted>
+                  <Text
+                    className="!text-[11px] font-normal pr-2 !block max-w-[250px] truncate"
+                    isMuted
+                  >
                     <span className="truncate">
                       {b?.vcs_connection_commit?.message}
                     </span>
@@ -108,7 +110,7 @@ export const ComponentBuildHistory: FC<IComponentBuildHistory> = ({
           (b?.status_v2?.status &&
             (b?.status_v2?.status as string) !== 'queued') ||
           (b?.status && b?.status !== 'queued')
-            ? `/${orgId}/apps/${appId}/components/${b.component_id}/builds/${b.id}`
+            ? `/${org.id}/apps/${app.id}/components/${b.component_id}/builds/${b.id}`
             : null,
         isMostRecent: i === 0,
       }))}

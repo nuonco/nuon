@@ -2,16 +2,14 @@ import { ComponentBuildHistory, Pagination } from '@/components'
 import { getComponentBuilds } from '@/lib'
 
 export const Builds = async ({
-  appId,
   componentId,
   orgId,
-  limit = '6',
+  limit = 6,
   offset,
 }: {
-  appId: string
   componentId: string
   orgId: string
-  limit?: string
+  limit?: number
   offset?: string
 }) => {
   const { data: builds, headers } = await getComponentBuilds({
@@ -29,17 +27,17 @@ export const Builds = async ({
   return (
     <div className="flex flex-col gap-4 w-full">
       <ComponentBuildHistory
-        appId={appId}
         componentId={componentId}
         initBuilds={builds || []}
-        orgId={orgId}
+        offset={pageData?.offset}
+        limit={limit}
         shouldPoll
       />
       <Pagination
         param="offset"
         pageData={pageData}
         position="center"
-        limit={parseInt(limit)}
+        limit={limit}
       />
     </div>
   )

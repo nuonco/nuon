@@ -11,15 +11,19 @@ export const Dependencies = async ({
 }) => {
   const { data, error } = await api<TComponent[]>({
     orgId,
-    path: `components/${component?.id}/dependencies`,
+    path: `apps/${component?.app_id}/components`,
   })
+
+  const deps = data
+    ? data?.filter((comp) => component?.dependencies?.includes(comp?.id))
+    : []
 
   return (
     <div className="flex items-center gap-4">
-      {error ? (
-        <Text>{error?.error}</Text>
+      {deps && !error ? (
+        <ComponentDependencies deps={deps} name={component?.name} />
       ) : (
-        <ComponentDependencies deps={data} name={component?.name} />
+        <Text>{error?.error}</Text>
       )}
     </div>
   )

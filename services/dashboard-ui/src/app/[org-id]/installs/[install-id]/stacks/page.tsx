@@ -15,22 +15,22 @@ import {
   Time,
   StacksTable,
 } from '@/components'
-import { getInstall } from '@/lib'
+import { getInstallById } from '@/lib'
 import type { TInstallStack } from '@/types'
 import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install: any = await getInstall({ installId, orgId })
+  const { data: install }: any = await getInstallById({ installId, orgId })
 
   return {
-    title: `${install.name} | Stacks`,
+    title: `Stacks | ${install.name} | Nuon`,
   }
 }
 
 export default async function InstallStack({ params }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const install = await getInstall({ installId, orgId })
+  const { data: install } = await getInstallById({ installId, orgId })
 
   return (
     <DashboardContent
