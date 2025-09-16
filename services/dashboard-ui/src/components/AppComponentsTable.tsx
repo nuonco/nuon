@@ -2,7 +2,7 @@
 
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRight } from '@phosphor-icons/react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { AppConfigGraph } from '@/components/Apps'
 import {
   BuildAllComponentsButton,
@@ -13,15 +13,19 @@ import {
 import { ComponentTypeFilterDropdown } from '@/components/Components/NewComponentTypeFilter'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
-import { DataTableSearch, Table } from '@/components/DataTable'
+import { Table } from '@/components/DataTable'
 import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
+import { useApp } from '@/hooks/use-app'
+import { useOrg } from '@/hooks/use-org'
+import { useQueryParams } from '@/hooks/use-query-params'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+
 // eslint-disable-next-line import/no-cycle
-import type { TBuild, TComponent, TComponentConfig } from '@/types'
+import type { TBuild, TComponent, TPaginationParams } from '@/types'
 
 type TDataComponent = {
   deps: Array<TComponent>
-  config?: TComponentConfig
   latestBuild?: TBuild
 } & TComponent
 
@@ -52,19 +56,34 @@ function parseComponentsToTableData(
   }))
 }
 
-export interface IAppComponentsTable {
+export interface IAppComponentsTable extends IPollingProps, TPaginationParams {
   appId: string
-  components: Array<TDataComponent>
+  initComponents: Array<TDataComponent>
   orgId: string
   configId: string
 }
 
 export const AppComponentsTable: FC<IAppComponentsTable> = ({
   appId,
-  components,
+  initComponents: components,
   configId,
   orgId,
+  /* pollInterval = 5000,
+   * shouldPoll = false,
+   * offset,
+   * limit, */
 }) => {
+  /* const { org } = useOrg()
+   * const { app } = useApp()
+   * const params = useQueryParams({ limit, offset })
+   * const { data: components } = usePolling<TComponent[]>({
+   *   dependencies: [params],
+   *   initData: initComponents,
+   *   path: `/api/orgs/${org.id}/apps/${app.id}/components${params}`,
+   *   pollInterval,
+   *   shouldPoll,
+   * }) */
+
   const [data, updateData] = useState(parseComponentsToTableData(components))
   const [columnFilters, setColumnFilters] = useState([
     {
@@ -133,11 +152,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         header: 'Build',
         accessorKey: 'build',
         cell: (props) => (
-          <StatusBadge
-            shouldPoll={props?.row.index === 0}
-            pollDuration={10000}
-            status={props.getValue<string>()}
-          />
+          <StatusBadge pollDuration={10000} status={props.getValue<string>()} />
         ),
       },
       {
@@ -153,7 +168,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             href={`/${orgId}/apps/${appId}/components/${props.row.original.componentId}`}
             variant="ghost"
           >
-            <CaretRight />
+            <CaretRightIcon />
           </Link>
         ),
       },

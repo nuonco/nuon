@@ -123,6 +123,7 @@ const LoadAppComponents: FC<{
           }
         })
     ))
+  
 
   const pageData = {
     hasNext: headers?.get('x-nuon-page-next') || 'false',
@@ -134,7 +135,7 @@ const LoadAppComponents: FC<{
   ) : components ? (
     <div className="flex flex-col gap-4 w-full">
       <AppComponentsTable
-        components={hydratedComponents}
+        initComponents={hydratedComponents}
         appId={appId}
         configId={configId}
         orgId={orgId}
