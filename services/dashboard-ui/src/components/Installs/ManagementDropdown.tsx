@@ -16,6 +16,7 @@ import { Dropdown } from '@/components/Dropdown'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstall } from '@/types'
+import { GenerateInstallConfigModal } from './GenerateInstallConfigModal'
 
 interface IInstallManagementDropdown {
   hasInstallComponents?: boolean
@@ -55,6 +56,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         <InstallAuditHistoryModal installId={install.id} orgId={org.id} />
         <InstallStateModal install={install} />
         <AutoApproveModal install={install} />
+        <GenerateInstallConfigModal installId={install.id} orgId={org.id} />
 
         <hr className="my-2" />
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
