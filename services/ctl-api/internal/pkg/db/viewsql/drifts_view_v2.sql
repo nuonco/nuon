@@ -21,17 +21,21 @@ latest_drifted_sandbox_runs AS (
 ),
 latest_deploy_status AS (
     SELECT
+        id,
         install_component_id,
         status,
+        created_at,
         ROW_NUMBER() OVER (PARTITION BY install_component_id ORDER BY created_at DESC) as rn
     FROM
         install_deploys
 ),
 latest_sandbox_status AS (
     SELECT
+        id,
         install_id,
         install_sandbox_id,
         status,
+        created_at,
         ROW_NUMBER() OVER (PARTITION BY install_sandbox_id ORDER BY created_at DESC) as rn
     FROM
         install_sandbox_runs
@@ -62,7 +66,7 @@ LEFT JOIN
     latest_deploy_status lds ON id.install_component_id = lds.install_component_id AND lds.rn = 1
 WHERE
     id.status = 'drifted'
-    AND (lds.status != 'no-drift' OR lds.status IS NULL)
+    AND (lds.status IS NULL OR lds.status = 'drifted')  -- Only include drifted status
 
 UNION ALL
 
@@ -87,7 +91,7 @@ LEFT JOIN
     latest_sandbox_status lss ON isr.install_sandbox_id = lss.install_sandbox_id AND lss.rn = 1
 WHERE
     isr.status = 'drifted'
-    AND (lss.status != 'no-drift' OR lss.status IS NULL)
+    AND (lss.status IS NULL OR lss.status = 'drifted')  -- Only include drifted status
 
 ORDER BY
     target_type, target_id;
