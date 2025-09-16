@@ -1,80 +1,82 @@
-import React, { type FC } from 'react'
+'use client'
+
 import { Badge } from '@/components/Badge'
 import { Empty } from '@/components/Empty'
-import { Pagination } from '@/components/Pagination'
 import { Timeline } from '@/components/Timeline'
 import { ToolTip } from '@/components/ToolTip'
 import { Truncate } from '@/components/Typography'
-import { getRunnerJobs, type TRunnerJobGroup } from '@/lib'
+import { useOrg } from '@/hooks/use-org'
+import { useQueryParams } from '@/hooks/use-query-params'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TRunnerJob, TPaginationParams } from '@/types'
 import { jobHrefPath, jobName, jobOperation } from './helpers'
 
-interface IRunnerPastJobs {
-  orgId: string
+interface IRunnerPastJobs extends IPollingProps, TPaginationParams {
+  groups?: TRunnerJob['group'][]
+  initRunnerJobs: TRunnerJob[]
   runnerId: string
-  offset: string
-  groups?: Array<TRunnerJobGroup>
 }
 
-export const RunnerPastJobs: FC<IRunnerPastJobs> = async ({
+export const RunnerPastJobs = ({
   groups = ['actions', 'build', 'deploy', 'operations', 'sandbox', 'sync'],
+  initRunnerJobs,
+  limit,
   offset,
-  orgId,
+  pollInterval = 10000,
+  shouldPoll = false,
   runnerId,
-}) => {
-  const { runnerJobs, pageData } = await getRunnerJobs({
-    orgId,
-    runnerId,
-    options: {
-      groups,
-      limit: '10',
-      offset,
-    },
+}: IRunnerPastJobs) => {
+  const { org } = useOrg()
+  const params = useQueryParams({ ['past-jobs']: offset, limit, groups })
+  const { data: runnerJobs } = usePolling<TRunnerJob[]>({
+    dependencies: [params],
+    initData: initRunnerJobs,
+    path: `/api/orgs/${org.id}/runners/${runnerId}/jobs${params}`,
+    pollInterval,
+    shouldPoll,
   })
 
   return (
-    <div className="flex flex-col gap-6">
-      <Timeline
-        emptyContent={
-          <Empty
-            emptyMessage="Waiting on runner to pick up jobs."
-            emptyTitle="No runner jobs yet"
-            variant="history"
-          />
-        }
-        events={runnerJobs.map((job, i) => {
-          const hrefPath = jobHrefPath(job)
-          const name = jobName(job)
+    <Timeline
+      emptyContent={
+        <Empty
+          emptyMessage="Waiting on runner to pick up jobs."
+          emptyTitle="No runner jobs yet"
+          variant="history"
+        />
+      }
+      events={runnerJobs.map((job, i) => {
+        const hrefPath = jobHrefPath(job)
+        const name = jobName(job)
 
-          return {
-            id: job?.id,
-            status: job?.status,
-            underline: (
-              <>
-                {name ? (
-                  name?.length >= 12 ? (
-                    <ToolTip tipContent={name} alignment="right">
-                      <Truncate variant="small">{name}</Truncate>
-                    </ToolTip>
-                  ) : (
-                    name
-                  )
+        return {
+          id: job?.id,
+          status: job?.status,
+          underline: (
+            <>
+              {name ? (
+                name?.length >= 12 ? (
+                  <ToolTip tipContent={name} alignment="right">
+                    <Truncate variant="small">{name}</Truncate>
+                  </ToolTip>
                 ) : (
-                  <span>Unknown</span>
-                )}{' '}
-                /
-                <span className="!inline truncate max-w-[100px]">
-                  {job?.group}
-                </span>
-                <Badge className="text-[11px]">{job?.operation}</Badge>
-              </>
-            ),
-            time: job?.updated_at,
-            href: hrefPath !== '' ? `/${orgId}/${hrefPath}` : null,
-            isMostRecent: i === 0,
-          }
-        })}
-      />
-      <Pagination param="past-jobs" pageData={pageData} />
-    </div>
+                  name
+                )
+              ) : (
+                <span>Unknown</span>
+              )}{' '}
+              /
+              <span className="!inline truncate max-w-[100px]">
+                {job?.group}
+              </span>
+              <Badge className="text-[11px]">{job?.operation}</Badge>
+            </>
+          ),
+          time: job?.updated_at,
+          href: hrefPath !== '' ? `/${org.id}/${hrefPath}` : null,
+          isMostRecent: i === 0,
+        }
+      })}
+    />
   )
 }
