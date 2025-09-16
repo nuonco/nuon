@@ -1,22 +1,33 @@
+'use client'
+
 import classNames from 'classnames'
-import React, { type FC } from 'react'
 import { EmptyStateGraphic } from '@/components/EmptyStateGraphic'
 import { Time } from '@/components/Time'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
+import { useOrg } from '@/hooks/use-org'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TRunnerHealthCheck } from '@/types'
-import { getRunnerHealthChecks } from '@/lib'
 
-interface IRunnerHealthChart {
-  orgId: string
+interface IRunnerHealthChart extends IPollingProps {
   runnerId: string
+  initRunnerHealthChecks: TRunnerHealthCheck[]
 }
 
-export const RunnerHealthChart: FC<IRunnerHealthChart> = async ({
-  orgId,
+export const RunnerHealthChart = ({
+  initRunnerHealthChecks,
   runnerId,
-}) => {
-  const healthchecks = await getRunnerHealthChecks({ orgId, runnerId })
+  pollInterval = 60000,
+  shouldPoll = false,
+}: IRunnerHealthChart) => {
+  const { org } = useOrg()
+  const { data: healthchecks } = usePolling<TRunnerHealthCheck[]>({
+    initData: initRunnerHealthChecks,
+    path: `/api/orgs/${org.id}/runners/${runnerId}/health-checks`,
+    pollInterval,
+    shouldPoll,
+  })
+
   const checkLength = healthchecks?.length
   const checkFirstThrid = Math.ceil(checkLength / 3)
   const checkSecondThrid = Math.ceil((checkLength * 2) / 3)

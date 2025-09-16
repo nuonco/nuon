@@ -1,15 +1,15 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
-import { CaretRight } from '@phosphor-icons/react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { ID, Text } from '@/components/Typography'
-import type { TRunner, TRunnerHeartbeat } from '@/types'
+import { useOrg } from '@/hooks/use-org'
+import { usePolling } from '@/hooks/use-polling'
+import type { TRunner, TRunnerMngHeartbeat, TRunnerSettings } from '@/types'
 import { isLessThan15SecondsOld } from '@/utils/time-utils'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
@@ -17,79 +17,60 @@ interface IRunnerStepDetails extends IPollStepDetails {
   platform?: string
 }
 
-export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
+export const RunnerStepDetails = ({
   step,
   shouldPoll = false,
-  pollDuration = 5000,
   platform = 'aws',
-}) => {
-  const params = useParams<Record<'org-id', string>>()
-  const orgId = params?.['org-id']
-  const [runner, setRunner] = useState<TRunner>()
-  const [runnerHeartbeat, setRunnerHeartbeat] = useState<TRunnerHeartbeat>()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>()
+}: IRunnerStepDetails) => {
+  const { org } = useOrg()
+  const {
+    data: runner,
+    error,
+    isLoading: isRunnerLoading,
+  } = usePolling<TRunner>({
+    initIsLoading: true,
+    path: `/api/orgs/${org.id}/runners/${step?.step_target_id}`,
+    pollInterval: 20000,
+    shouldPoll,
+  })
 
-  const fetchData = () => {
-    Promise.all([
-      fetch(`/api/${orgId}/runners/${step?.step_target_id}`).then((r) =>
-        r.json()
-      ),
-
-      fetch(
-        `/api/${orgId}/runners/${step?.step_target_id}/latest-heart-beat`
-      ).then((r) => r.json()),
-    ]).then(([run, heart]) => {
-      setIsLoading(false)
-      if (run?.error) {
-        setError(run?.error?.error)
-      } else {
-        setError(undefined)
-        setRunner(run.data)
-      }
-
-      if (heart?.error) {
-        if (heart?.status !== 404) {
-          setError(heart?.error?.error)
-        }
-      } else {
-        setError(undefined)
-        setRunnerHeartbeat(heart?.data)
-      }
+  const { data: settings, isLoading: isSettingsLoading } =
+    usePolling<TRunnerSettings>({
+      initIsLoading: true,
+      path: `/api/orgs/${org.id}/runners/${step?.step_target_id}/settings`,
+      pollInterval: 20000,
+      shouldPoll,
     })
-  }
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const { data: heartbeats, isLoading: isHeartbeatLoading } =
+    usePolling<TRunnerMngHeartbeat>({
+      path: `/api/orgs/${org.id}/runners/${step?.step_target_id}/heartbeat`,
+      pollInterval: 5000,
+      shouldPoll,
+    })
 
-  useEffect(() => {
-    if (shouldPoll) {
-      const pollData = setInterval(fetchData, pollDuration)
-
-      return () => clearInterval(pollData)
-    }
-  }, [shouldPoll])
+  const runnerHeartbeat =
+    heartbeats?.install ?? heartbeats?.org ?? heartbeats?.[''] ?? undefined
 
   return (
     <div className="flex flex-col gap-8">
-      {isLoading ? (
+      {isRunnerLoading || isSettingsLoading ? (
         <div className="border rounded-md p-6">
           <Loading loadingText="Loading runner details..." variant="stack" />
         </div>
       ) : (
         <>
-          {error ? <Notice>{error}</Notice> : null}{' '}
-          {runner ? (
+          {error?.error ? <Notice>{error?.error}</Notice> : null}{' '}
+          {runner !== null ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">
                 <Text variant="med-14">Install runner</Text>
                 <Link
                   className="text-sm gap-0"
-                  href={`/${orgId}/installs/${step?.owner_id}/runner`}
+                  href={`/${org.id}/installs/${step?.owner_id}/runner`}
                 >
                   View details
-                  <CaretRight />
+                  <CaretRightIcon />
                 </Link>
               </div>
 
@@ -105,7 +86,6 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                       }
                       description={runner?.status_description}
                       descriptionAlignment="left"
-                      shouldPoll
                       isWithoutBorder
                     />
 
@@ -115,7 +95,6 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                         status="connected"
                         description="Connected to runner"
                         descriptionAlignment="left"
-                        shouldPoll
                         isWithoutBorder
                       />
                     ) : (
@@ -123,7 +102,6 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                         status="not-connected"
                         description="Waiting on connection"
                         descriptionAlignment="left"
-                        shouldPoll
                         isWithoutBorder
                       />
                     )}
@@ -153,7 +131,7 @@ export const RunnerStepDetails: FC<IRunnerStepDetails> = ({
                     <Text className="text-cool-grey-600 dark:text-cool-grey-500">
                       Platform
                     </Text>
-                    <Text>{platform}</Text>
+                    <Text>{settings?.platform || 'aws'}</Text>
                   </span>
                   <span className="flex flex-col gap-2">
                     <Text className="text-cool-grey-600 dark:text-cool-grey-500">

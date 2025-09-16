@@ -153,6 +153,8 @@ export type TRunner = components['schemas']['app.Runner']
 export type TRunnerJob = components['schemas']['app.RunnerJob']
 export type TRunnerHealthCheck = components['schemas']['app.RunnerHealthCheck']
 export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
+export type TRunnerMngHeartbeat = { mng: TRunnerHeartbeat, install: TRunnerHeartbeat, org: TRunnerHeartbeat };
+export type TRunnerSettings = components['schemas']['app.RunnerGroupSettings']
 
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']
