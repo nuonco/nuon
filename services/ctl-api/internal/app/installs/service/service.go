@@ -152,6 +152,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// install audit logs
 	ge.GET("/v1/installs/:install_id/audit_logs", s.GetInstallAuditLogs)
 
+	// install cli config
+	ge.GET("/v1/installs/:install_id/generate-cli-install-config", s.GenerateCLIInstallConfig)
+
 	return nil
 }
 
