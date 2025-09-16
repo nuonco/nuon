@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
@@ -18,13 +17,12 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 	planOnly bool,
 ) (*app.Workflow, error) {
 	approvalOption := app.InstallApprovalOptionPrompt
-	installConfig := app.InstallConfig{}
-	resp := s.db.WithContext(ctx).Where("install_id = ?", installID).First(&installConfig)
-	if resp.Error != nil && resp.Error != gorm.ErrRecordNotFound {
-		return nil, errors.Wrap(resp.Error, "unable to find install config")
+	installConfig, err := s.GetLatestInstallConfig(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to set approval option")
 	}
 
-	if resp.Error != gorm.ErrRecordNotFound {
+	if installConfig != nil {
 		approvalOption = installConfig.ApprovalOption
 	}
 
