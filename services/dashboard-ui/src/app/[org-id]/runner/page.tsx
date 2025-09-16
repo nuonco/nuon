@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
@@ -8,18 +8,16 @@ import {
   Loading,
   Notice,
   StatusBadge,
-  RunnerHealthChart,
-  RunnerMeta,
-  RunnerPastJobs,
-  RunnerUpcomingJobs,
   ShutdownRunnerModal,
   UpdateRunnerModal,
   Section,
   Text,
 } from '@/components'
-import { getRunner, getOrgById } from '@/lib'
-import type { TRunnerGroupSettings } from '@/types'
-import { nueQueryData } from '@/utils'
+import { getRunnerById, getRunnerSettingsById, getOrgById } from '@/lib'
+import { Activity } from './activity'
+import { Details } from './details'
+import { Health } from './health'
+import { UpcomingJobs } from './upcoming-jobs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -35,16 +33,20 @@ export default async function OrgRunner({ params, searchParams }) {
   const sp = await searchParams
   const { data: org } = await getOrgById({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
-  const [runner, { data: settings }] = await Promise.all([
-    getRunner({
+  const [{ data: runner, error }, { data: settings }] = await Promise.all([
+    getRunnerById({
       orgId,
       runnerId,
     }),
-    nueQueryData<TRunnerGroupSettings>({
+    getRunnerSettingsById({
       orgId,
-      path: `runners/${runnerId}/settings`,
+      runnerId,
     }),
   ])
+
+  if (error) {
+    notFound()
+  }
 
   if (org?.features?.['org-runner']) {
     return (
@@ -68,7 +70,6 @@ export default async function OrgRunner({ params, searchParams }) {
               status={org?.status}
               description={org?.status_description}
               descriptionAlignment="right"
-              shouldPoll
             />
           </span>
         }
@@ -85,12 +86,23 @@ export default async function OrgRunner({ params, searchParams }) {
                     />
                   }
                 >
-                  <RunnerHealthChart runnerId={runnerId} orgId={orgId} />
+                  <Health runnerId={runnerId} orgId={orgId} />
                 </Suspense>
               </ErrorBoundary>
             </Section>
             <Section className="flex-initial">
-              <RunnerMeta orgId={orgId} runner={runner} />
+              <ErrorBoundary fallbackRender={ErrorFallback}>
+                <Suspense
+                  fallback={
+                    <Loading
+                      variant="stack"
+                      loadingText="Loading runner details..."
+                    />
+                  }
+                >
+                  <Details orgId={orgId} runner={runner} settings={settings} />
+                </Suspense>
+              </ErrorBoundary>
             </Section>
             <Section heading="Completed jobs">
               <ErrorBoundary fallbackRender={ErrorFallback}>
@@ -102,7 +114,7 @@ export default async function OrgRunner({ params, searchParams }) {
                     />
                   }
                 >
-                  <RunnerPastJobs
+                  <Activity
                     runnerId={runnerId}
                     orgId={orgId}
                     offset={(sp['past-jobs'] as string) || '0'}
@@ -134,7 +146,7 @@ export default async function OrgRunner({ params, searchParams }) {
                     />
                   }
                 >
-                  <RunnerUpcomingJobs
+                  <UpcomingJobs
                     runnerId={runnerId}
                     orgId={orgId}
                     offset={(sp['upcoming-jobs'] as string) || '0'}

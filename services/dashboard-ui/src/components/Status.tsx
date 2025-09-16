@@ -23,7 +23,6 @@ export interface IStatusBadge extends IStatus {
   descriptionAlignment?: 'center' | 'left' | 'right'
   descriptionPosition?: 'bottom' | 'top'
   isWithoutBorder?: boolean
-  shouldPoll?: boolean
   pollDuration?: number
 }
 
@@ -36,7 +35,6 @@ export const StatusBadge: FC<IStatusBadge> = ({
   isWithoutBorder = false,
   label,
   status = 'unknown',
-  shouldPoll = false,
   pollDuration = POLL_DURATION,
 }) => {
   const isActive =
@@ -71,16 +69,16 @@ export const StatusBadge: FC<IStatusBadge> = ({
 
   const path = usePathname()
 
-  useEffect(() => {
-    const refreshData = () => {
-      revalidateData({ path })
-    }
-    if (shouldPoll) {
-      const pollBuild = setInterval(refreshData, pollDuration)
+  /* useEffect(() => {
+   *   const refreshData = () => {
+   *     revalidateData({ path })
+   *   }
+   *   if (shouldPoll) {
+   *     const pollBuild = setInterval(refreshData, pollDuration)
 
-      return () => clearInterval(pollBuild)
-    }
-  }, [status, shouldPoll])
+   *     return () => clearInterval(pollBuild)
+   *   }
+   * }, [status, shouldPoll]) */
 
   const Status = (
     <span
