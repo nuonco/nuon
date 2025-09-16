@@ -31,6 +31,7 @@ type AppPermissionsConfig struct {
 	ProvisionRole   AppAWSIAMRoleConfig `json:"provision_aws_iam_role,omitzero" gorm:"-" temporaljson:"provision_role,omitzero,omitempty"`
 	MaintenanceRole AppAWSIAMRoleConfig `json:"maintenance_aws_iam_role,omitzero" gorm:"-" temporaljson:"maintenance_role,omitzero,omitempty"`
 	DeprovisionRole AppAWSIAMRoleConfig `json:"deprovision_aws_iam_role,omitzero" gorm:"-" temporaljson:"deprovision_role,omitzero,omitempty"`
+	BreakGlassRole  AppAWSIAMRoleConfig `json:"break_glass_aws_iam_role,omitzero" gorm:"-" temporaljson:"break_glass_role,omitzero,omitempty"`
 }
 
 func (a *AppPermissionsConfig) BeforeCreate(tx *gorm.DB) error {
@@ -55,6 +56,8 @@ func (a *AppPermissionsConfig) AfterQuery(tx *gorm.DB) error {
 			a.ProvisionRole = role
 		case AWSIAMRoleTypeRunnerMaintenance:
 			a.MaintenanceRole = role
+		case AWSIAMRoleTypeRunnerBreakGlass:
+			a.BreakGlassRole = role
 		default:
 		}
 	}
