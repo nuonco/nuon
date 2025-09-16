@@ -28,7 +28,7 @@ func (d *DriftedObject) UseView() bool {
 }
 
 func (d *DriftedObject) ViewVersion() string {
-	return "v1"
+	return "v2"
 }
 
 func (d *DriftedObject) Views(db *gorm.DB) []migrations.View {
