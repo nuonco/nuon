@@ -78,7 +78,7 @@ type Runner struct {
 	StatusDescription string       `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
 
 	RunnerGroupID string      `json:"runner_group_id,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
-	RunnerGroup   RunnerGroup `json:"-" temporaljson:"runner_group,omitzero,omitempty"`
+	RunnerGroup   RunnerGroup `json:"runner_group,omitzero" temporaljson:"runner_group,omitzero,omitempty"`
 
 	Name        string `json:"name,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"name,omitzero,omitempty"`
 	DisplayName string `json:"display_name,omitzero" gorm:"not null;default null" temporaljson:"display_name,omitzero,omitempty"`
