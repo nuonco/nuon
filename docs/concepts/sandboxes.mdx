@@ -1,33 +1,43 @@
 ---
-title: 'Sandboxes'
-description: "Sandboxes manage the base layer infrastructure for your application in each customer's cloud account."
+title: "Sandboxes"
+description:
+  "Sandboxes manage the base layer infrastructure for your application in each
+  customer's cloud account."
 ---
 
 ## What is a Sandbox?
 
-Sandboxes create a consistent, isolated environment that your application can be guaranteed to work with, across hundreds or
-thousands of different installs. They are responsible for defining the basic networking, permissioning, and compute
-primitives to power the App.
+Sandboxes create a consistent, isolated environment that your application can be
+guaranteed to work with, across hundreds or thousands of different installs.
+They are responsible for defining the basic networking, permissioning, and
+compute primitives to power the App.
 
-In a shared responsiblity model, a customer may provide some infrastructure in the Sandbox, such as an
-existing network or compute cluster. In this case, Sandboxes enable you to leverage this customer infrastructure,
-while also having a consistent way to deploy and manage your App in any account.
+In a shared responsiblity model, a customer may provide some infrastructure in
+the Sandbox, such as an existing network or compute cluster. In this case,
+Sandboxes enable you to leverage this customer infrastructure, while also having
+a consistent way to deploy and manage your App in any account.
 
 <Note>
 Sandboxes ensure you can install your App into any account - whether a completely new account with no prior provisioning, or an account with other workflows.
 
-Sandboxes can ensure isolation, reproducability and repeatability with each install - regardless of the account.
+Sandboxes can ensure isolation, reproducability and repeatability with each
+install - regardless of the account.
+
 </Note>
 
 ## How is a Sandbox configured?
 
-A Sandbox is configured in a `sandbox.toml` file inside the root of your App Config directory. 
-To configure a Sandbox, specify a repo and the correct parameters for your Sandbox.
+A Sandbox is configured in a `sandbox.toml` file inside the root of your App
+Config directory. To configure a Sandbox, specify a repo and the correct
+parameters for your Sandbox.
 
-Inputs and variables, either inline in the `sandbox.toml` or a `tfvars` file, can be used to configure the Sandbox, and these are passed to the Terraform code that is run by the Sandbox.
+Inputs and variables, either inline in the `sandbox.toml` or a `tfvars` file,
+can be used to configure the Sandbox, and these are passed to the Terraform code
+that is run by the Sandbox.
 
-You can configure Sandboxes to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+You can configure Sandboxes to use either a public repo (using a `public_repo`
+block) or a private GitHub repo (using a `connected_repo` block). Read more
+about VCS configuration [here](/guides/vcs).
 
 ```toml sandbox.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
@@ -50,17 +60,21 @@ internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
 contents = "./sandbox.tfvars"
 ```
 
-You can configure Sandboxes to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+You can configure Sandboxes to use either a public repo (using a `public_repo`
+block) or a private GitHub repo (using a `connected_repo` block). Read more
+about VCS configuration [here](/guides/vcs).
 
 ## Nuon Managed Sandboxes
 
-We maintain managed Sandboxes for each [platform](/concepts/platforms) that we support. Each platform has both a
-turnkey (where all resources are provisioned) and a bring-your-own-vpc sandbox.
-These sandboxes are designed to be a stable, configurable starting point and most relevant options around the network,
+We maintain managed Sandboxes for each [platform](/concepts/platforms) that we
+support. Each platform has both a turnkey (where all resources are provisioned)
+and a bring-your-own-vpc sandbox. These sandboxes are designed to be a stable,
+configurable starting point and most relevant options around the network,
 cluster and compute are configurable.
 
-We publish each Sandbox as a GitHub repository and you can find detailed documentation for each Sandbox there. These repositories are what you will reference in your `sandbox.toml`.
+We publish each Sandbox as a GitHub repository and you can find detailed
+documentation for each Sandbox there. These repositories are what you will
+reference in your `sandbox.toml`.
 
 [AWS EKS Sandbox](https://github.com/nuonco/aws-eks-sandbox)
 
@@ -68,11 +82,36 @@ We publish each Sandbox as a GitHub repository and you can find detailed documen
 
 [AWS Min Sandbox](https://github.com/nuonco/aws-min-sandbox)
 
+[Azure AKS Sandbox](https://github.com/nuonco/azure-aks-sandbox)
+
+## Runner Types
+
+Update the `runner.toml` in your App Config to specify the type of Cloud runner
+to use for your App. The runner is responsible for executing the deployment of
+your App into the customer's account.
+
+```toml runner.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+
+runner_type = "aws"
+helm_driver = "configmap"
+```
+
+```toml runner.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+
+runner_type = "azure"
+helm_driver = "configmap"
+```
+
 ## Sandbox Outputs
 
-Sandbox outputs are made accessible to all components [using variables](/guides/using-variables).
+Sandbox outputs are made accessible to all components
+[using variables](/guides/using-variables).
 
-You can use any output from your selected Sandbox by setting a config value on your component. In this example, we are using the `account.region` output from the Sandbox to configure a Helm chart component:
+You can use any output from your selected Sandbox by setting a config value on
+your component. In this example, we are using the `account.region` output from
+the Sandbox to configure a Helm chart component:
 
 ```toml components/e2e_helm.toml
 name   = "e2e_helm"
@@ -90,25 +129,46 @@ account_region = "{{.nuon.install.sandbox.outputs.account.region}}"
 
 ## Configure Sandboxes
 
-Each managed Sandbox has a set of variable inputs. Most variables are either supplied by the Nuon platform during install, via inputs, or by setting default values.
+Each managed Sandbox has a set of variable inputs. Most variables are either
+supplied by the Nuon platform during install, via inputs, or by setting default
+values.
 
 ### Use Default Values
 
-To configure a Sandbox parameter with a default value for your App, add a `vars` block to your `sandbox.toml` file, or a `sandbox.tfvars` file in the same directory as your `sandbox.toml`. The values in this block will be used as defaults for all installs of this App.:
+To configure a Sandbox parameter with a default value for your App, add a `vars`
+block to your `sandbox.toml` file, or the mandatory `sandbox.tfvars` file in the
+same directory as your `sandbox.toml`. The values in this block will be used as
+defaults for all installs of this App.:
 
 ```toml sandbox.toml
 [vars]
-cluster_version = "1.33" # default in 1.32
-min_size = "3" # default is 2
-max_size = "6" # default is 5
+cluster_name         = "n-{{.nuon.install.id}}"
+enable_nuon_dns      = "true"
+public_root_domain   = "{{ .nuon.install.id }}.nuon.run"
+internal_root_domain = "internal.{{ .nuon.install.id }}.nuon.run"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
+```
+
+```toml sandbox.tfvars
+additional_namespaces = ["grafana"]
+
+min_size = 2
+max_size = 3
+desired_capacity = 2
 ```
 
 ### Use Inputs
 
-Inputs allow you to collect customer input in the dashboard at App Install for values such as resource IDs, tokens and more. These Inputs are accesible
-to all Components and your Sandbox, [using variables](/guides/using-variables#inputs).
+Inputs allow you to collect customer input in the dashboard at App Install for
+values such as resource IDs, tokens and more. These Inputs are accesible to all
+Components and your Sandbox, [using variables](/guides/using-variables#inputs).
 
-To configure a Sandbox parameter using an Input, you can define an Input in your `inputs.toml` file and then reference it in your `sandbox.toml` file. In this example, we define a root domain Input and use it to set the `public_root_domain` variable in the Sandbox:
+To configure a Sandbox parameter using an Input, you can define an Input in your
+`inputs.toml` file and then reference it in your `sandbox.toml` file. In this
+example, we define a root domain Input and use it to set the
+`public_root_domain` variable in the Sandbox:
 
 ```toml inputs.toml
 [[group]]
@@ -131,10 +191,13 @@ public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
 
 ## Create a Custom Sandbox
 
-While our [open source Sandboxes](#nuon-managed-sandboxes) are a great starting point, you can always fork them, or create your own Sandbox to support customizing.
+While our [open source Sandboxes](#nuon-managed-sandboxes) are a great starting
+point, you can always fork them, or create your own Sandbox to support
+customizing.
 
-To use a custom Sandbox, simply update your App Config's `sandbox.toml` to point to your new Sandbox code. Custom Sandboxes can also use private GitHub repos, that are connected to Nuon.
-
+To use a custom Sandbox, simply update your App Config's `sandbox.toml` to point
+to your new Sandbox code. Custom Sandboxes can also use private GitHub repos,
+that are connected to Nuon.
 
 ```toml sandbox.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
@@ -152,4 +215,5 @@ branch = "main"
 If one of our managed Sandboxes does not work for you, and you are considering creating a custom Sandbox, we would love to hear about your use case!
 
 Please [get in touch](mailto:team@nuon.co).
+
 </Note>
