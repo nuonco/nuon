@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -72,8 +71,10 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 	}
 
 	cmpIDs := make([]string, 0, len(ics))
+	installCmpIDs := make([]string, 0, len(ics))
 	for _, ic := range install.InstallComponents {
 		cmpIDs = append(cmpIDs, ic.ComponentID)
+		installCmpIDs = append(installCmpIDs, ic.ID)
 	}
 
 	// Fetch the latest builds for the components
@@ -101,7 +102,18 @@ func (s *service) GetInstallComponentSummary(ctx *gin.Context) {
 		return
 	}
 
-	installSummary := s.buildSummary(ctx, ics, compMap, builds, depComps)
+	driftedObjects := make([]app.DriftedObject, 0)
+	if len(installCmpIDs) > 0 {
+		res := s.db.WithContext(ctx).
+			Where("install_component_id IN ?", installCmpIDs).
+			Find(&driftedObjects)
+		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+			ctx.Error(fmt.Errorf("unable to get drifted objects: %w", res.Error))
+			return
+		}
+	}
+
+	installSummary := s.buildSummary(ctx, ics, compMap, builds, depComps, driftedObjects)
 
 	ctx.JSON(http.StatusOK, installSummary)
 }
@@ -210,16 +222,6 @@ func (s *service) getInstallsComponentsInBatches(ctx *gin.Context, installID str
 	return installComponents, nil
 }
 
-func filterLatestDeploy(deploys []app.InstallDeploy) *app.InstallDeploy {
-	sort.SliceStable(deploys, func(i, j int) bool {
-		return deploys[i].CreatedAt.After(deploys[j].CreatedAt)
-	})
-	if len(deploys) > 0 {
-		return &deploys[0]
-	}
-	return nil
-}
-
 func filterBuildByComponentID(builds []app.ComponentBuild, componentID string) *app.ComponentBuild {
 	for _, b := range builds {
 		if b.ComponentID == componentID {
@@ -238,8 +240,17 @@ func filterAppID(installComponents []app.InstallComponent) string {
 	return ""
 }
 
-func (s *service) buildSummary(ctx context.Context, installComponents []app.InstallComponent, compMap map[string]*app.ComponentConfigConnection, builds []app.ComponentBuild, depComps map[string][]app.Component) []app.InstallComponentSummary {
+func (s *service) buildSummary(ctx context.Context, installComponents []app.InstallComponent, compMap map[string]*app.ComponentConfigConnection, builds []app.ComponentBuild, depComps map[string][]app.Component, driftedObjects []app.DriftedObject) []app.InstallComponentSummary {
 	summaries := make([]app.InstallComponentSummary, 0, len(installComponents))
+
+	// Create a map to track which install component IDs have drifted objects
+	driftedComponentIDs := make(map[string]bool)
+	for _, obj := range driftedObjects {
+		if obj.InstallComponentID != nil {
+			driftedComponentIDs[*obj.InstallComponentID] = true
+		}
+	}
+
 	for _, ic := range installComponents {
 		build := filterBuildByComponentID(builds, ic.ComponentID)
 		buildStatus := app.ComponentBuildStatusBuilding
@@ -248,6 +259,8 @@ func (s *service) buildSummary(ctx context.Context, installComponents []app.Inst
 			buildStatus = build.Status
 			buildStatusDescription = build.StatusDescription
 		}
+
+		hasDrift := driftedComponentIDs[ic.ID]
 
 		summaries = append(summaries, app.InstallComponentSummary{
 			ID:                      ic.ID,
@@ -259,8 +272,8 @@ func (s *service) buildSummary(ctx context.Context, installComponents []app.Inst
 			BuildStatusDescription:  buildStatusDescription,
 			ComponentConfig:         compMap[ic.ComponentID],
 			Dependencies:            depComps[ic.ComponentID],
+			DriftedStatus:           hasDrift,
 		})
-
 	}
 
 	return summaries
