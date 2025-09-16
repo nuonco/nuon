@@ -69,6 +69,7 @@ type InstallComponentSummary struct {
 	BuildStatusDescription  string                     `json:"build_status_description"`
 	ComponentConfig         *ComponentConfigConnection `json:"component_config"`
 	Dependencies            []Component                `json:"dependencies"`
+	DriftedStatus           bool                       `json:"drifted_status"`
 }
 
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
