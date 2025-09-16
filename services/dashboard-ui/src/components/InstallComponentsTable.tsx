@@ -1,8 +1,8 @@
 'use client'
 
-import React, { type FC, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRight, Minus } from '@phosphor-icons/react'
+import { CaretRightIcon, MinusIcon } from '@phosphor-icons/react'
 import { AppConfigGraph } from '@/components/Apps'
 import {
   ComponentDependencies,
@@ -19,22 +19,41 @@ import { StatusBadge } from '@/components/Status'
 import { Table } from '@/components/DataTable'
 import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
-// eslint-disable-next-line import/no-cycle
-import type { TInstall, TInstallComponentSummary } from '@/types'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useQueryParams } from '@/hooks/use-query-params'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TInstallComponentSummary, TPaginationParams } from '@/types'
 
-export interface IInstallComponentsTable {
-  installComponents: Array<TInstallComponentSummary>
-  install: TInstall
-  installId: string
-  orgId: string
+export interface IInstallComponentsTable
+  extends IPollingProps,
+    TPaginationParams {
+  initInstallComponents: Array<TInstallComponentSummary>
+
+  q?: string
+  types?: string
 }
 
-export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
-  install,
-  installComponents,
-  installId,
-  orgId,
-}) => {
+export const InstallComponentsTable = ({
+  initInstallComponents,
+  pollInterval = 10000,
+  shouldPoll = false,
+  offset,
+  limit,
+  q,
+  types,
+}: IInstallComponentsTable) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const params = useQueryParams({ q, offset, limit, types })
+  const { data: installComponents } = usePolling<TInstallComponentSummary[]>({
+    dependencies: [params],
+    initData: initInstallComponents,
+    path: `/api/orgs/${org.id}/installs/${install.id}/components/summary${params}`,
+    pollInterval,
+    shouldPoll,
+  })
+
   const [data, updateData] = useState(installComponents)
   const [columnFilters, setColumnFilters] = useState([
     {
@@ -62,7 +81,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
-              href={`/${orgId}/installs/${installId}/components/${props.row.original.component_id}`}
+              href={`/${org.id}/installs/${install?.id}/components/${props.row.original.component_id}`}
             >
               <Text variant="med-14">{props.getValue<string>()}</Text>
             </Link>
@@ -84,7 +103,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
               />
             </Text>
           ) : (
-            <Minus />
+            <MinusIcon />
           ),
       },
       {
@@ -97,7 +116,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
               description={props.row?.original?.deploy_status_description}
             />
           ) : (
-            <Minus />
+            <MinusIcon />
           ),
       },
       {
@@ -111,7 +130,7 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
                 <ComponentDependencies
                   deps={props?.row?.original?.dependencies}
                   name={props.row.original?.component_name}
-                  installId={installId}
+                  installId={install.id}
                 />
               </div>
             ) : (
@@ -126,13 +145,12 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         cell: (props) =>
           props.getValue<string>() ? (
             <StatusBadge
-              shouldPoll={props?.row.index === 0}
               status={props.getValue<string>()}
               description={props.row?.original?.build_status_description}
               descriptionAlignment="right"
             />
           ) : (
-            <Minus />
+            <MinusIcon />
           ),
       },
       /* {
@@ -145,10 +163,10 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
         enableSorting: false,
         cell: (props) => (
           <Link
-            href={`/${orgId}/installs/${installId}/components/${props.row.original.component_id}`}
+            href={`/${org.id}/installs/${install.id}/components/${props.row.original.component_id}`}
             variant="ghost"
           >
-            <CaretRight />
+            <CaretRightIcon />
           </Link>
         ),
       },
@@ -209,8 +227,8 @@ export const InstallComponentsTable: FC<IInstallComponentsTable> = ({
                 appId={install?.app_id}
                 configId={install?.app_config_id}
               />
-              <DeployComponentsModal installId={installId} orgId={orgId} />
-              <DeleteComponentsModal installId={installId} orgId={orgId} />
+              <DeployComponentsModal installId={install.id} orgId={org.id} />
+              <DeleteComponentsModal installId={install.id} orgId={org.id} />
             </div>
           </div>
           <ComponentTypeFilterDropdown isNotDropdown />

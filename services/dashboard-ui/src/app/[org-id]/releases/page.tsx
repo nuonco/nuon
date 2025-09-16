@@ -38,7 +38,6 @@ export default async function OrgReleases({ params }) {
               status={org?.status}
               description={org?.status_description}
               descriptionAlignment="right"
-              shouldPoll
             />
           </span>
         }
