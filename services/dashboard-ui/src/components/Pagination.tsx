@@ -3,15 +3,15 @@
 import classNames from 'classnames'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React, { type FC } from 'react'
-import { ArrowLeft, ArrowRight } from '@phosphor-icons/react'
+import { ArrowLeftIcon, ArrowRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { useOrg } from '@/hooks/use-org'
-import type { TPagination } from '@/lib'
+import type { TPaginationPageData } from '@/types'
 
 interface IPagination {
   limit?: number
   param?: string
-  pageData?: TPagination
+  pageData?: TPaginationPageData
   position?: 'center' | 'left' | 'right'
 }
 
@@ -61,7 +61,7 @@ export const Pagination: FC<IPagination> = ({
             className="text-sm flex items-center gap-1 !p-2"
             title="previous"
           >
-            <ArrowLeft />
+            <ArrowLeftIcon />
           </Button>
 
           <Button
@@ -73,7 +73,7 @@ export const Pagination: FC<IPagination> = ({
             className="text-sm flex items-center gap-1 !p-2"
             title="next"
           >
-            <ArrowRight />
+            <ArrowRightIcon />
           </Button>
         </>
       )}

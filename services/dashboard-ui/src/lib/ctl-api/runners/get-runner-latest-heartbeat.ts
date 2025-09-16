@@ -1,16 +1,14 @@
-import type { TRunnerHeartbeat } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetRunner } from '../shared-interfaces'
+import { api } from "@/lib/api";
+import type { TRunnerMngHeartbeat } from "@/types";
 
-export interface IGetRunnerLatestHeartbeat extends IGetRunner {}
-
-export async function getRunnerLatestHeartbeat({
-  orgId,
+export const getRunnerLatestHeartbeat = ({
   runnerId,
-}: IGetRunnerLatestHeartbeat) {
-  return queryData<TRunnerHeartbeat>({
-    errorMessage: 'Unable to retrieve latest runner heartbeat.',
+  orgId,
+}: {
+  runnerId: string;
+  orgId: string;
+}) =>
+  api<TRunnerMngHeartbeat>({
+    path: `runners/${runnerId}/heart-beats/latest`,
     orgId,
-    path: `runners/${runnerId}/latest-heart-beat`,
-  })
-}
+  });

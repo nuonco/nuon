@@ -1,0 +1,41 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`getRunnerSettingsById should handle response status codes from GET runners/:id/settings endpoint > 400 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`getRunnerSettingsById should handle response status codes from GET runners/:id/settings endpoint > 401 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`getRunnerSettingsById should handle response status codes from GET runners/:id/settings endpoint > 403 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`getRunnerSettingsById should handle response status codes from GET runners/:id/settings endpoint > 404 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`getRunnerSettingsById should handle response status codes from GET runners/:id/settings endpoint > 500 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
