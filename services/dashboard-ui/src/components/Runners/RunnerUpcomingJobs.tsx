@@ -1,38 +1,45 @@
-import React, { type FC } from 'react'
+'use client'
+
 import {
   CancelRunnerJobButton,
   type TCancelJobType,
 } from '@/components/CancelRunnerJobButton'
 import { Config, ConfigContent } from '@/components/Config'
 import { EmptyStateGraphic } from '@/components/EmptyStateGraphic'
-import { Pagination } from '@/components/Pagination'
 import { ToolTip } from '@/components/ToolTip'
 import { Text, Truncate } from '@/components/Typography'
-import { getRunnerJobs, type TRunnerJobGroup } from '@/lib'
+import { useOrg } from '@/hooks/use-org'
+import { useQueryParams } from '@/hooks/use-query-params'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TRunnerJob, TPaginationParams } from '@/types'
 import { jobName } from './helpers'
 
-interface IRunnerUpcomingJobs {
-  groups?: Array<TRunnerJobGroup>
-  offset: string
-  orgId: string
+interface IRunnerUpcomingJobs extends IPollingProps, TPaginationParams {
+  initRunnerJobs: TRunnerJob[]
   runnerId: string
 }
 
-export const RunnerUpcomingJobs: FC<IRunnerUpcomingJobs> = async ({
-  groups = ['actions', 'build', 'deploy', 'operations', 'sandbox', 'sync'],
+export const RunnerUpcomingJobs = ({
+  initRunnerJobs,
+  limit,
   offset,
-  orgId,
+  pollInterval = 5000,
   runnerId,
-}) => {
-  const { runnerJobs, pageData } = await getRunnerJobs({
-    orgId,
-    runnerId,
-    options: {
-      groups,
-      statuses: ['available', 'queued'],
-      limit: '10',
-      offset,
-    },
+  shouldPoll = false,
+}: IRunnerUpcomingJobs) => {
+  const { org } = useOrg()
+  const params = useQueryParams({
+    ['upcoming-jobs']: offset,
+    limit,
+    groups: ['actions', 'build', 'deploy', 'operations', 'sandbox', 'sync'],
+    statuses: ['available', 'queued'],
+  })
+  const { data: runnerJobs, error } = usePolling<TRunnerJob[]>({
+    dependencies: [params],
+    initData: initRunnerJobs,
+    path: `/api/orgs/${org.id}/runners/${runnerId}/jobs${params}`,
+    pollInterval,
+    shouldPoll,
   })
 
   return (
@@ -74,7 +81,7 @@ export const RunnerUpcomingJobs: FC<IRunnerUpcomingJobs> = async ({
                   <div className="">
                     <CancelRunnerJobButton
                       runnerJobId={job?.id}
-                      orgId={orgId}
+                      orgId={org.id}
                       jobType={job.group as TCancelJobType}
                     />
                   </div>
@@ -82,11 +89,6 @@ export const RunnerUpcomingJobs: FC<IRunnerUpcomingJobs> = async ({
               )
             })}
           </div>
-          <Pagination
-            param="upcoming-jobs"
-            pageData={pageData}
-            position="right"
-          />
         </div>
       ) : (
         <div className="m-auto flex flex-col items-center max-w-[200px] my-6">

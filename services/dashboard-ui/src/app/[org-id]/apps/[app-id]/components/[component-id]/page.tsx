@@ -26,7 +26,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   ])
 
   return {
-    title: `${component.name} | ${app.name} | Nuon`,
+    title: `${component?.name} | ${app?.name} | Nuon`,
   }
 }
 
@@ -53,20 +53,20 @@ export default async function AppComponent({ params, searchParams }) {
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app.name },
+        { href: `/${orgId}/apps/${app.id}`, text: app?.name },
         { href: `/${orgId}/apps/${app.id}/components`, text: 'Components' },
         {
           href: `/${orgId}/apps/${app.id}/components/${component.id}`,
-          text: component.name,
+          text: component?.name,
         },
       ]}
-      heading={component.name}
-      headingUnderline={component.id}
+      heading={component?.name}
+      headingUnderline={componentId}
       statues={<BuildComponentButton componentName={component?.name} />}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="divide-y flex flex-col md:col-span-8">
-          {component.dependencies && (
+          {component?.dependencies && (
             <Section className="flex-initial" heading="Dependencies">
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense

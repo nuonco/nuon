@@ -1,10 +1,12 @@
+'use client'
+
 import { DateTime } from 'luxon'
-import React, { type FC } from 'react'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { ID, Text } from '@/components/Typography'
-import type { TRunner, TRunnerHeartbeat, TRunnerGroupSettings } from '@/types'
-import { nueQueryData } from '@/utils'
+import { useOrg } from '@/hooks/use-org'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TRunner, TRunnerMngHeartbeat, TRunnerSettings } from '@/types'
 
 function isLessThan15SecondsOld(timestampStr: string) {
   const date = DateTime.fromISO(timestampStr)
@@ -14,25 +16,43 @@ function isLessThan15SecondsOld(timestampStr: string) {
   return diffInSeconds >= 0 && diffInSeconds < 15
 }
 
-interface IRunnerMeta {
-  orgId: string
-  runner: TRunner
+interface IRunnerMeta extends IPollingProps {
+  initHeartbeat: TRunnerMngHeartbeat
+  initRunner: TRunner
+  initSettings: TRunnerSettings
   installId?: string
 }
 
-export const RunnerMeta: FC<IRunnerMeta> = async ({ orgId, runner }) => {
-  const [{ data: heartbeats }, { data: settings }] = await Promise.all([
-    nueQueryData<{ install: TRunnerHeartbeat; mng: TRunnerHeartbeat }>({
-      orgId,
-      path: `runners/${runner?.id}/heart-beats/latest`,
-    }),
-    nueQueryData<TRunnerGroupSettings>({
-      orgId,
-      path: `runners/${runner?.id}/settings`,
-    }),
-  ])
+export const RunnerMeta = ({
+  initHeartbeat,
+  initRunner,
+  initSettings,
+  shouldPoll = false,
+}: IRunnerMeta) => {
+  const { org } = useOrg()
+  const { data: runner } = usePolling<TRunner>({
+    initData: initRunner,
+    path: `/api/orgs/${org.id}/runners/${initRunner.id}`,
+    pollInterval: 20000,
+    shouldPoll,
+  })
 
-  const runnerHeartbeat = heartbeats?.install || undefined
+  const { data: settings } = usePolling<TRunnerSettings>({
+    initData: initSettings,
+    path: `/api/orgs/${org.id}/runners/${initRunner.id}/settings`,
+    pollInterval: 20000,
+    shouldPoll,
+  })
+
+  const { data: heartbeats } = usePolling<TRunnerMngHeartbeat>({
+    initData: initHeartbeat,
+    path: `/api/orgs/${org.id}/runners/${initRunner.id}/heartbeat`,
+    pollInterval: 5000,
+    shouldPoll,
+  })
+
+  const runnerHeartbeat =
+    heartbeats.install ?? heartbeats?.org ?? heartbeats[''] ?? undefined
 
   return (
     <div className="grid md:grid-cols-3 gap-8 items-start justify-start">
@@ -47,7 +67,6 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({ orgId, runner }) => {
             status="connected"
             description="Connected to runner"
             descriptionAlignment="left"
-            shouldPoll
             isWithoutBorder
           />
         ) : (
@@ -55,7 +74,6 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({ orgId, runner }) => {
             status="not-connected"
             description="Not connected to runner"
             descriptionAlignment="left"
-            shouldPoll
             isWithoutBorder
           />
         )}
@@ -63,7 +81,6 @@ export const RunnerMeta: FC<IRunnerMeta> = async ({ orgId, runner }) => {
           status={runner?.status === 'active' ? 'healthy' : 'unhealthy'}
           description={runner?.status_description}
           descriptionAlignment="left"
-          shouldPoll
           isWithoutBorder
         />
       </span>

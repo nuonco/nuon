@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
@@ -10,10 +11,6 @@ import {
   InstallPageSubNav,
   Link,
   Loading,
-  RunnerMeta,
-  RunnerHealthChart,
-  RunnerPastJobs,
-  RunnerUpcomingJobs,
   Section,
   ShutdownRunnerModal,
   UpdateRunnerModal,
@@ -21,9 +18,11 @@ import {
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
-import { getInstallById, getRunner } from '@/lib'
-import type { TRunnerGroupSettings } from '@/types'
-import { nueQueryData } from '@/utils'
+import { getInstallById, getRunnerById, getRunnerSettingsById } from '@/lib'
+import { Activity } from './activity'
+import { Details } from './details'
+import { Health } from './health'
+import { UpcomingJobs } from './upcoming-jobs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -38,16 +37,20 @@ export default async function Runner({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
   const { data: install } = await getInstallById({ installId, orgId })
-  const [runner, { data: settings }] = await Promise.all([
-    getRunner({
+  const [{ data: runner, error }, { data: settings }] = await Promise.all([
+    getRunnerById({
       orgId,
       runnerId: install.runner_id,
     }),
-    nueQueryData<TRunnerGroupSettings>({
+    getRunnerSettingsById({
       orgId,
-      path: `runners/${install?.runner_id}/settings`,
+      runnerId: install.runner_id,
     }),
   ])
+
+  if (error) {
+    notFound()
+  }
 
   return (
     <DashboardContent
@@ -112,7 +115,7 @@ export default async function Runner({ params, searchParams }) {
                   />
                 }
               >
-                <RunnerHealthChart runnerId={runner.id} orgId={orgId} />
+                <Health runnerId={runner.id} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
           </Section>
@@ -126,11 +129,7 @@ export default async function Runner({ params, searchParams }) {
                   />
                 }
               >
-                <RunnerMeta
-                  orgId={orgId}
-                  installId={installId}
-                  runner={runner}
-                />
+                <Details orgId={orgId} runner={runner} settings={settings} />
               </Suspense>
             </ErrorBoundary>
           </Section>
@@ -144,7 +143,7 @@ export default async function Runner({ params, searchParams }) {
                   />
                 }
               >
-                <RunnerPastJobs
+                <Activity
                   runnerId={runner.id}
                   orgId={orgId}
                   offset={(sp['past-jobs'] as string) || '0'}
@@ -177,7 +176,7 @@ export default async function Runner({ params, searchParams }) {
                   />
                 }
               >
-                <RunnerUpcomingJobs
+                <UpcomingJobs
                   runnerId={runner.id}
                   orgId={orgId}
                   offset={(sp['upcoming-jobs'] as string) || '0'}
