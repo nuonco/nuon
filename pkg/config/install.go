@@ -37,15 +37,15 @@ type InputGroup map[string]string
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name           string                `mapstructure:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
-	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty"`
+	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty"`
 	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty"`
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "name of the install")
-	addDescription(schema, "aws_account", "AWS account related configuration")
 	addDescription(schema, "approval_option", "approval option for the install, can be 'approve_all' or 'prompt'")
+	addDescription(schema, "aws_account", "AWS account related configuration")
 	addDescription(schema, "inputs", "list of inputs")
 }
 
@@ -154,9 +154,15 @@ func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, erro
 	upstreamInputs := upstreamInstall.FlattenedInputs()
 
 	for key, val := range installInputs {
+		current, ok := upstreamInputs[key]
+		if !ok {
+			// we skip inputs not present in the upstream state
+			// as this only happens for sensetive inputs.
+			continue
+		}
 		inputDiffs = append(inputDiffs, diff.NewDiff(
 			diff.WithKey(key),
-			diff.WithStringDiff(upstreamInputs[key], val),
+			diff.WithStringDiff(current, val),
 		))
 	}
 	diffs = append(diffs, diff.NewDiff(
