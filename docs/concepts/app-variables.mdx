@@ -1,9 +1,20 @@
 ---
-title: 'App Variables'
-description: "App Variables allow you to store values in the API to be used across installs of an app."
+title: "App Variables"
+description:
+  "App Variables allow you to store values through the API to be used across
+  installs of an app."
 ---
 
-App Variables are values that you can store in the API to be used across all installs of an app.
+App Variables are values that you can store in the API to be used across all
+installs of an app.
+
+App Variables are meant for sensitive values that you want to manage through the
+API, but do not want included in the App Config as an Input or Secret. For
+example, an API key where you don't want it visible in the App Config's
+inputs.toml file as part of a git-backed repo.
+
+Nuon's API stores App Variables in the Nuon data plane which is a PostgreSQL
+database with no encryption.
 
 ## Defining App Variables
 
@@ -27,8 +38,12 @@ nuon variables delete --id=apsmsj5rucsdc758c2cs6x7geu
 
 ## Using App Variables
 
-App Variables are included in the install state, and are available in job plans. Using our example secret named `external_api_key`, you could interpolate it's value in your app config using `{{ .nuon.app.variables.external_api_key }}`.
+App Variables are included in the install state, and are available in job plans.
+Using our example secret named `external_api_key`, you could interpolate it's
+value in your app config using `{{ .nuon.app.variables.external_api_key }}`.
 
 <Note>
-If you add or a update an app default after an install has been created. You will need to update that install's state before the value will be included in plans. Running a deploy or sandbox provision will trigger a state update.
+	If you add or a update an App Variable after an install has been created, you
+	will need to update that install's state before the value will be included in
+	plans. Running a deploy or sandbox provision will trigger a state update.
 </Note>
