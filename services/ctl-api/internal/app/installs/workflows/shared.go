@@ -186,14 +186,16 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
 
-		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreDeployComponent, sg)
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, preDeploySteps...)
+		if !flw.PlanOnly {
+			preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreDeployComponent, sg)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, preDeploySteps...)
 
+		}
 		// sync image
-		if comp.Type.IsImage() {
+		if comp.Type.IsImage() && !flw.PlanOnly {
 			deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 				Type: signals.OperationExecuteDeployComponentSyncImage,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
@@ -206,6 +208,10 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 
 			steps = append(steps, deployStep)
 		} else {
+			if flw.PlanOnly && comp.Type == app.ComponentTypeExternalImage || comp.Type == app.ComponentTypeDockerBuild {
+				continue
+			}
+
 			planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 				Type: signals.OperationExecuteDeployComponentSyncAndPlan,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
@@ -231,11 +237,13 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				steps = append(steps, planStep, applyPlanStep)
 			}
 		}
-		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg)
-		if err != nil {
-			return nil, err
+		if !flw.PlanOnly {
+			postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, postDeploySteps...)
 		}
-		steps = append(steps, postDeploySteps...)
 	}
 
 	return steps, nil
@@ -309,21 +317,26 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg)
-	if err != nil {
-		return nil, err
+	var lifecycleSteps []*app.WorkflowStep
+	if !flw.PlanOnly {
+		lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, lifecycleSteps...)
 	}
-	steps = append(steps, lifecycleSteps...)
 	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, deploySteps...)
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg)
-	if err != nil {
-		return nil, err
+	if !flw.PlanOnly {
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, lifecycleSteps...)
 	}
-	steps = append(steps, lifecycleSteps...)
 
 	return steps, nil
 }
