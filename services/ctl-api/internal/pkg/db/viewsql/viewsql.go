@@ -25,6 +25,9 @@ var InstallStatesViewV1 string
 //go:embed drifts_view_v1.sql
 var DriftsViewV1 string
 
+//go:embed drifts_view_v2.sql
+var DriftsViewV2 string
+
 //go:embed app_configs_view_v2.sql
 var AppConfigViewV2 string
 
