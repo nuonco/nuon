@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getComponentBuilds } from '@/lib'
-import { TRouteRes } from '@/app/api/[org-id]/types'
+import type { TRouteProps } from '@/types'
 
 export const GET = async (
   request: NextRequest,
-  { params }: TRouteRes<'orgId' | 'componentId'>
+  { params }: TRouteProps<'orgId' | 'componentId'>
 ) => {
   const { orgId, componentId } = await params
   const { searchParams } = new URL(request.url)
