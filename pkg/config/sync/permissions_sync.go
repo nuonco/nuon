@@ -25,6 +25,14 @@ func (s sync) getAppPermissionsRequest() *models.ServiceCreateAppPermissionsConf
 		req.MaintenanceRole = s.awsIAMRoleToRequest(s.cfg.Permissions.MaintenanceRole)
 	}
 
+	if s.cfg.BreakGlass != nil && len(s.cfg.BreakGlass.Roles) > 0 {
+		breakGlassRoles := make([]*models.ServiceAppAWSIAMRoleConfig, 0, len(s.cfg.BreakGlass.Roles))
+		for _, role := range s.cfg.BreakGlass.Roles {
+			breakGlassRoles = append(breakGlassRoles, s.awsIAMRoleToRequest(role))
+		}
+		req.BreakGlassRoles = breakGlassRoles
+	}
+
 	return req
 }
 
