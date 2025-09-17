@@ -1,14 +1,16 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CodeBlock } from '@phosphor-icons/react'
+import { CodeBlockIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { CodeViewer, JsonView } from '@/components/Code'
+import { JsonView } from '@/components/Code'
 import { useOrg } from '@/hooks/use-org'
+import { useQuery } from '@/hooks/use-query'
+import type { TRunnerJobPlan } from '@/types'
 
 interface IRunnerJobPlanModal {
   buttonText?: string
@@ -16,32 +18,12 @@ interface IRunnerJobPlanModal {
   runnerJobId: string
 }
 
-export const RunnerJobPlanModal: FC<IRunnerJobPlanModal> = ({
+export const RunnerJobPlanModal = ({
   buttonText = 'View job plan',
   headingText = 'Runner job plan',
   runnerJobId,
-}) => {
-  const { org } = useOrg()
+}: IRunnerJobPlanModal) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [plan, setPlan] = useState()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState()
-
-  useEffect(() => {
-    if (isOpen) {
-      fetch(`/api/${org?.id}/runner-jobs/${runnerJobId}/plan`).then((r) =>
-        r.json().then((res) => {
-          setIsLoading(false)
-          if (res?.error) {
-            setError(res?.error?.error || 'Unable to fetch job plan')
-          } else {
-            setError(undefined)
-            setPlan(res.data)
-          }
-        })
-      )
-    }
-  }, [isOpen])
 
   return (
     <>
@@ -55,14 +37,7 @@ export const RunnerJobPlanModal: FC<IRunnerJobPlanModal> = ({
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-4">
-                {error ? <Notice>{error}</Notice> : null}
-                {isLoading ? (
-                  <Loading loadingText="Loading job plan..." variant="stack" />
-                ) : (
-                  <JsonView data={plan} />
-                )}
-              </div>
+              <RunnerJobPlan runnerJobId={runnerJobId} />
               <div className="mt-4 flex gap-3 justify-end">
                 <Button
                   onClick={() => {
@@ -83,9 +58,32 @@ export const RunnerJobPlanModal: FC<IRunnerJobPlanModal> = ({
           setIsOpen(true)
         }}
       >
-        <CodeBlock size="16" />
+        <CodeBlockIcon size="16" />
         {buttonText}
       </Button>
     </>
+  )
+}
+
+// TODO(nnnat): temp until we update to the stratus modal style
+const RunnerJobPlan = ({ runnerJobId }: { runnerJobId: string }) => {
+  const { org } = useOrg()
+  const {
+    data: plan,
+    error,
+    isLoading,
+  } = useQuery<TRunnerJobPlan>({
+    // TODO(nnnnat): remove once the endpoint is fixed with the correct content-type
+    path: `/api/${org.id}/runner-jobs/${runnerJobId}/plan`,
+  })
+  return (
+    <div className="flex flex-col gap-4">
+      {error ? <Notice>{error?.error}</Notice> : null}
+      {isLoading ? (
+        <Loading loadingText="Loading job plan..." variant="stack" />
+      ) : (
+        <JsonView data={plan} />
+      )}
+    </div>
   )
 }
