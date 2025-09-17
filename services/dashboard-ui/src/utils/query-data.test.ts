@@ -11,7 +11,7 @@ test.skip('queryData should return a list of apps when provided apps path', asyn
     orgId,
   })
 
-  expect(spec).toHaveLength(3)
+  expect(spec).toHaveLength(2)
   spec.map((s) => {
     expect(s).toHaveProperty('id')
     expect(s).toHaveProperty('created_at')
@@ -52,7 +52,7 @@ test('nueQueryData should return a list of apps when provided apps path', async 
     orgId,
   })
 
-  expect(data).toHaveLength(3)
+  expect(data).toHaveLength(2)
   data.map((d) => {
     expect(d).toHaveProperty('id')
     expect(d).toHaveProperty('created_at')

@@ -12,6 +12,6 @@ export const GET = async (
     orgId,
     path: `runner-jobs/${runnerJobId}/plan`,
   })
-
+  
   return NextResponse.json(res)
 }

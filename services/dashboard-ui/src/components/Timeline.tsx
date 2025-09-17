@@ -27,7 +27,8 @@ export const EventStatus: FC<{ status?: string }> = ({
       status === 'cancelled' ||
       status === 'not-attempted' ||
       status === 'discarded' ||
-      status === 'deprovisioned',
+      status === 'deprovisioned' ||
+      status === 'auto-skipped',
     'bg-orange-800 dark:bg-orange-500':
       status === 'executing' ||
       status === 'waiting' ||
