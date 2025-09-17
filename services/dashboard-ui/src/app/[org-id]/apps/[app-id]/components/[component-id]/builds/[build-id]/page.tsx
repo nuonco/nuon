@@ -46,7 +46,7 @@ export default async function AppComponent({ params }) {
     getComponentBuildById({ componentId, buildId, orgId }),
     getComponentById({ componentId, orgId }),
   ])
-
+  
   return (
     <DashboardContent
       breadcrumb={[

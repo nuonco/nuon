@@ -2,17 +2,15 @@
 
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRight, Timer, CalendarBlank, Minus } from '@phosphor-icons/react'
+import { CaretRightIcon, TimerIcon, CalendarBlankIcon, MinusIcon } from '@phosphor-icons/react'
 import { ActionTriggerType } from '@/components/ActionTriggerType'
-import { Badge } from '@/components/Badge'
-import { DataTableSearch, Table } from '@/components/DataTable'
+import { Table } from '@/components/DataTable'
 import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
 import { Time, Duration } from '@/components/Time'
 import { ID, Text } from '@/components/Typography'
 import { InstallActionTriggerFilter } from '@/components/InstallActionTriggerFilter'
-// eslint-disable-next-line import/no-cycle
 import type {
   TActionWorkflow,
   TInstallActionWorkflow,
@@ -43,8 +41,8 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
   orgId,
 }) => {
   const [data, updateData] = useState(parseActionData(actions))
-  const [columnFilters, setColumnFilters] = useState([])
-  const [globalFilter, setGlobalFilter] = useState('')
+  const [columnFilters] = useState([])
+  const [globalFilter] = useState('')
 
   useEffect(() => {
     updateData(parseActionData(actions))
@@ -68,20 +66,20 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
         ),
       },
       {
-        header: 'Time since last run',
+        header: 'Last run',
         accessorKey: 'latest_run.updated_at',
         cell: (props) =>
           props.row.original?.latest_run ? (
             <Text>
-              <CalendarBlank size={18} />
+              <CalendarBlankIcon size={18} />
               <Time time={props.getValue<string>()} format="relative" />
             </Text>
           ) : (
-            <Minus />
+            <MinusIcon />
           ),
       },
       {
-        header: 'Run duration',
+        header: 'Duration',
         accessorKey: 'latest_run.execution_time',
         cell: (props) =>
           props.row.original?.latest_run &&
@@ -89,15 +87,15 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
             'queued' &&
           (props.row.original?.latest_run?.status as string) !== 'queued' ? (
             <Text>
-              <Timer size={18} />
+              <TimerIcon size={18} />
               <Duration nanoseconds={props.getValue<number>()} />
             </Text>
           ) : (
-            <Minus />
+            <MinusIcon />
           ),
       },
       {
-        header: 'Recent trigger',
+        header: 'Last trigger',
         id: 'trigger_by_type',
         accessorKey: 'latest_run.triggered_by_type',
         cell: (props) =>
@@ -110,7 +108,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
               componentPath={`/${orgId}/installs/${installId}/components/${props?.row?.original?.latest_run?.run_env_vars?.COMPONENT_ID}`}
             />
           ) : (
-            <Minus />
+            <MinusIcon />
           ),
       },
       {
@@ -126,7 +124,7 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
                 }
               />
             ) : (
-              <Minus />
+              <MinusIcon />
             )}
           </div>
         ),
@@ -139,26 +137,13 @@ export const InstallActionWorkflowsTable: FC<IInstallActionWorkflowsTable> = ({
             href={`/${orgId}/installs/${installId}/actions/${props.row.original.action_workflow.id}`}
             variant="ghost"
           >
-            <CaretRight />
+            <CaretRightIcon />
           </Link>
         ),
       },
     ],
     []
   )
-
-  const handleTriggerFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setColumnFilters(() => [{ id: 'trigger_by_type', value: value }])
-  }
-
-  const clearTriggerFilter = () => {
-    setColumnFilters(() => [])
-  }
-
-  const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value || '')
-  }
 
   return (
     <Table

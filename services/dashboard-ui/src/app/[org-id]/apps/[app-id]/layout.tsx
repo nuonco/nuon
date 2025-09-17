@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { getAppById } from '@/lib'
 import { AppProvider } from '@/providers/app-provider'
 import type { TLayoutProps } from '@/types'
@@ -13,6 +14,7 @@ export default async function AppLayout({ children, params }: IAppLayout) {
 
   if (error) {
     console.error('error fetching app by id', error)
+    notFound()
   }
 
   return (

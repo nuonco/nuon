@@ -9,16 +9,13 @@ import {
   ComponentDependencies,
   CodeViewer,
   DashboardContent,
-  Duration,
   ErrorFallback,
   InstallDeployLatestBuildButton,
   InstallComponentManagementDropdown,
   Link,
   Loading,
-  StatusBadge,
   Section,
   Text,
-  Time,
 } from '@/components'
 import {
   TerraformWorkspace,
@@ -27,11 +24,15 @@ import {
 import {
   getInstallById,
   getInstallComponentOutputs,
-  getLatestComponentBuild,
   getInstallComponentById,
   getOrgById,
 } from '@/lib'
-import type { TComponent, TComponentConfig, TInstall } from '@/types'
+import type {
+  TAppConfig,
+  TComponent,
+  TComponentConfig,
+  TInstall,
+} from '@/types'
 import { nueQueryData } from '@/utils'
 import { Deploys } from './deploys'
 
@@ -266,23 +267,16 @@ const LoadComponentConfig: FC<{
   install: TInstall
   componentId: string
   orgId: string
-}> = async ({ componentId, orgId }) => {
-  /* const { data: config, error } = await nueQueryData<TAppConfig>({
-   *    orgId,
-   *    path: `apps/${install?.app_id}/config/${install?.app_config_id}?recurse=true`,
-   *  })
+}> = async ({ componentId, install, orgId }) => {
+  const { data: config, error } = await nueQueryData<TAppConfig>({
+    orgId,
+    path: `apps/${install?.app_id}/config/${install?.app_config_id}?recurse=true`,
+  })
 
-
-   *  const componentConfig = config?.component_config_connections?.find(
-   *    (c) => c.component_id === componentId
-   *  ) */
-
-  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
-    {
-      orgId,
-      path: `components/${componentId}/configs/latest`,
-    }
+  const componentConfig = config?.component_config_connections?.find(
+    (c) => c.component_id === componentId
   )
+
   return error ? (
     <Text>{error?.error}</Text>
   ) : componentConfig ? (
@@ -321,55 +315,5 @@ const LoadComponentDependencies: FC<{
         />
       )}
     </div>
-  )
-}
-
-const LatestBuild = async ({ component, orgId }) => {
-  const build = await getLatestComponentBuild({
-    componentId: component?.id,
-    orgId,
-  })
-
-  return (
-    <Section
-      className="flex-initial"
-      actions={
-        <Text>
-          <Link
-            href={`/${orgId}/apps/${component.app_id}/components/${component.id}/builds/${build.id}`}
-          >
-            Details
-            <CaretRightIcon />
-          </Link>
-        </Text>
-      }
-      heading="Latest build"
-    >
-      <div className="flex items-end justify-between">
-        <div className="flex items-start justify-start gap-6">
-          <span className="flex flex-col gap-2">
-            <StatusBadge
-              description={build.status_description}
-              status={build.status}
-              label="Status"
-            />
-          </span>
-
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Build date
-            </Text>
-            <Time time={build.created_at} />
-          </span>
-
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Build duration
-            </Text>
-            <Duration beginTime={build.created_at} endTime={build.updated_at} />
-          </span>
-        </div>
-      </div>
-    </Section>
   )
 }

@@ -41,8 +41,14 @@ export const LogStreamProvider: FC<ILogStreamProvider> = ({
 
   useEffect(() => {
     const refreshLogStream = () => {
-      fetch(`/api/${initLogStream?.org_id}/log-streams/${initLogStream?.id}`)
-        .then((res) => res.json().then((ls) => updateStream(ls)))
+      fetch(`/api/orgs/${initLogStream?.org_id}/log-streams/${initLogStream?.id}`)
+        .then((res) => res.json().then(({ data, error }) => {
+          if (error) {
+            setError(error?.error)
+          } else {
+            updateStream(data)
+          }
+        }))
         .catch((err) => setError(err))
     }
 

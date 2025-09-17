@@ -155,6 +155,7 @@ export type TRunnerHealthCheck = components['schemas']['app.RunnerHealthCheck']
 export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
 export type TRunnerMngHeartbeat = { mng: TRunnerHeartbeat, install: TRunnerHeartbeat, org: TRunnerHeartbeat };
 export type TRunnerSettings = components['schemas']['app.RunnerGroupSettings']
+export type TRunnerJobPlan = Record<string, any>;
 
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']
