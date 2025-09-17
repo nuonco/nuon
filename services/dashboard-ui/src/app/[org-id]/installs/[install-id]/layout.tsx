@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { getInstallById } from '@/lib'
 import { InstallProvider } from '@/providers/install-provider'
 import type { TLayoutProps } from '@/types'
@@ -16,6 +17,7 @@ export default async function InstallLayout({
 
   if (error) {
     console.error('error fetching install by id', error)
+    notFound()
   }
 
   return (

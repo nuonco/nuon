@@ -11,10 +11,9 @@ import {
   Pagination,
   Section,
 } from '@/components'
-import { getOrgById } from '@/lib'
-import type { TApp } from '@/types'
+import { getOrgById, getApps } from '@/lib'
 // TODO(nnnat): move segment init script to org dashboard
-import { SegmentAnalyticsSetOrg, nueQueryData } from '@/utils'
+import { SegmentAnalyticsSetOrg } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -56,21 +55,19 @@ export default async function Apps({ params, searchParams }) {
 
 const LoadApps: FC<{
   orgId: string
-  limit?: string
+  limit?: number
   offset?: string
   q?: string
-}> = async ({ orgId, limit = '10', offset, q }) => {
-  const params = new URLSearchParams({ offset, limit, q }).toString()
+}> = async ({ orgId, limit = 10, offset, q }) => {
   const {
     data: apps,
     error,
     headers,
-  } = await nueQueryData<TApp[]>({
+  } = await getApps({
     orgId,
-    path: `apps${params ? '?' + params : params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
+    offset,
+    limit,
+    q,
   })
 
   const pageData = {
@@ -87,7 +84,7 @@ const LoadApps: FC<{
         param="offset"
         pageData={pageData}
         position="center"
-        limit={parseInt(limit)}
+        limit={limit}
       />
     </div>
   ) : (

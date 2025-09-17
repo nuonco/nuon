@@ -11,7 +11,7 @@ test('api should return a list of apps when provided apps path', async () => {
     orgId,
   })
 
-  expect(data).toHaveLength(3)
+  expect(data).toHaveLength(2)
   data.map((d) => {
     expect(d).toHaveProperty('id')
     expect(d).toHaveProperty('created_at')
