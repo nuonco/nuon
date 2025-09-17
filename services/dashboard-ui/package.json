@@ -8,7 +8,7 @@
     "build": "cross-env NODE_ENV=production next build",
     "prebuild": "npm run generate-api-types",
     "generate-api-types": "openapi-typescript ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
-    "generate-api-mocks": "msw-auto-mock ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./test/mock-api-handlers.js -m 5 --node --base-url $NUON_API_URL",
+    "generate-api-mocks": "msw-auto-mock ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./test/mock-api-handlers.js -m 3 --node --base-url $NUON_API_URL",
     "start": "next start -p 4000",
     "start-mock-api": "tsx test/mock-express-api.ts",
     "lint": "next lint",

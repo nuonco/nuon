@@ -13,24 +13,22 @@ import {
   Pagination,
   Section,
 } from '@/components'
-import { getApp, getAppLatestInputConfig } from '@/lib'
-import type { TActionWorkflow } from '@/types'
-import { nueQueryData } from '@/utils'
+import { getAppById, getAppLatestInputConfig, getActions } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const app = await getApp({ appId, orgId })
+  const { data: app } = await getAppById({ appId, orgId })
 
   return {
-    title: `${app.name} | Actions`,
+    title: `Actions | ${app.name} | Nuon`,
   }
 }
 
 export default async function AppWorkflows({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
-  const [app, inputCfg] = await Promise.all([
-    getApp({ appId, orgId }),
+  const [{ data: app }, inputCfg] = await Promise.all([
+    getAppById({ appId, orgId }),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
 
@@ -75,24 +73,24 @@ export default async function AppWorkflows({ params, searchParams }) {
   )
 }
 
+// TODO(nnnnat): move to server component file
 const LoadAppActions: FC<{
   appId: string
   orgId: string
-  limit?: string
+  limit?: number
   offset?: string
   q?: string
-}> = async ({ appId, orgId, limit = '10', offset, q }) => {
-  const params = new URLSearchParams({ offset, limit, q }).toString()
+}> = async ({ appId, orgId, limit = 10, offset, q }) => {
   const {
     data: actions,
     error,
     headers,
-  } = await nueQueryData<TActionWorkflow[]>({
+  } = await getActions({
+    appId,
+    limit,
+    offset,
     orgId,
-    path: `apps/${appId}/action-workflows${params ? '?' + params : params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
+    q,
   })
 
   const pageData = {
@@ -108,7 +106,7 @@ const LoadAppActions: FC<{
         param="offset"
         pageData={pageData}
         position="center"
-        limit={parseInt(limit)}
+        limit={limit}
       />
     </div>
   ) : (

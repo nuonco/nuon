@@ -1,13 +1,12 @@
+import { api } from '@/lib/api'
 import type { TVCSConnection } from '@/types'
-import { queryData } from '@/utils'
 
 export interface IGetVCSConnections {
   orgId: string
 }
 
 export async function getVCSConnections({ orgId }: IGetVCSConnections) {
-  return queryData<Array<TVCSConnection>>({
-    errorMessage: 'Unable to retrieve connected version control systems',
+  return api<TVCSConnection[]>({
     orgId,
     path: `vcs/connections`,
   })
