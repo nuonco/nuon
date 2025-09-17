@@ -28,6 +28,7 @@ export async function api<T>({
       cache: 'no-store',
       method,
       headers: {
+        Accept: 'application/json',
         Authorization: `Bearer ${session?.tokenSet?.accessToken}`,
         'Content-Type': 'application/json',
         'X-Nuon-Org-ID': orgId || '',
@@ -50,6 +51,7 @@ export async function api<T>({
     // Only try to parse JSON if there's actually content
     if (contentLength !== '0' && contentType?.includes('application/json')) {
       const text = await response.text()
+
       if (text) {
         try {
           data = JSON.parse(text)

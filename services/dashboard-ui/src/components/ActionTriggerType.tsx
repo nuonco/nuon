@@ -18,19 +18,21 @@ export const ActionTriggerType: FC<IActionTriggerType> = ({
 }) => {
   return (
     <Badge
-      className={classNames('inline-flex gap-1', {
+      className={classNames('inline-flex !gap-0 !text-nowrap', {
         [`${className}`]: Boolean(className),
       })}
       variant="code"
     >
-      {triggerType}
+      <span className="inline-flex truncate max-w-[125px]">
+        <span className="block truncate">{triggerType}</span>
+      </span>
       {(triggerType === 'pre-deploy-component' ||
         triggerType === 'post-deploy-component') &&
       componentName ? (
         componentPath ? (
           <>
             :
-            <Link className="inline-flex" href={componentPath}>
+            <Link className="inline-flex ml-1" href={componentPath}>
               {componentName}
             </Link>
           </>

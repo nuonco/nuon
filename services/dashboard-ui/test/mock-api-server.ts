@@ -57,4 +57,4 @@ export const nextProxyHandlers = [
   }),
 ]
 
-export const server = setupServer(...handlers, ...nextProxyHandlers)
+export const server = setupServer(...handlers)

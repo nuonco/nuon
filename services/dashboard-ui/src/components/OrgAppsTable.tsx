@@ -2,9 +2,9 @@
 
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRight, Minus } from '@phosphor-icons/react'
+import { CaretRightIcon, MinusIcon } from '@phosphor-icons/react'
 import { AppSandboxRepoDirLink } from '@/components/AppSandbox'
-import { DataTableSearch, Table } from '@/components/DataTable'
+import { Table } from '@/components/DataTable'
 import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
 import { Link } from '@/components/Link'
@@ -96,14 +96,16 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
               isGithubConnected={props.row.original.isGithubConnected}
             />
           ) : (
-            <Minus />
+            <MinusIcon />
           )
         },
       },
       {
         header: 'Runner',
         accessorKey: 'runner_type',
-        cell: (props) => <Text>{props.getValue<string>() || <Minus />}</Text>,
+        cell: (props) => (
+          <Text>{props.getValue<string>() || <MinusIcon />}</Text>
+        ),
       },
       {
         id: 'test',
@@ -113,7 +115,7 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
             href={`/${orgId}/apps/${props.row.original.appId}`}
             variant="ghost"
           >
-            <CaretRight />
+            <CaretRightIcon />
           </Link>
         ),
       },
