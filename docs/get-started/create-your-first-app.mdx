@@ -21,17 +21,29 @@ Choose from the following options to get started:
 	repository](https://github.com/nuonco/example-app-configs).
 </Note>
 
-## More Complex Apps
+## Other App Configs to Explore
 
-For more complex App Config examples that run on Kubernetes but without
-step-by-step guides, clone the
-[example-app-configs repository](https://github.com/nuonco/example-app-configs)
-for these additional App Configs:
+For more App Config examples, clone the
+[example-app-configs repository](https://github.com/nuonco/example-app-configs).
+Then run the following commands:
 
-- Collaboration platform vendor [Mattermost](https://mattermost.com)
-- Cloud Development Environment platform vendor [Coder](https://coder.com). Read
+```sh
+brew install nuonco/tap/nuon
+nuon login
+cd example-app-configs/<app directory>
+nuon apps create --name <app directory>
+nuon apps sync
+```
+
+Example App Configs:
+
+- Observability software vendor [Grafana](https://grafana.com). Read the blog post on [Installing Grafana with Nuon](https://nuon.co/blog/installing-grafana-with-nuon/)
+- [httpbin](https://httpbingo.org/) on an AWS EC2 VM as a service using a Docker container
+- Collaboration software vendor [Mattermost](https://mattermost.com)
+- Design software vendor [Penpot](https://penpot.com)
+- Cloud Development Environment software vendor [Coder](https://coder.com). Read
   the blog post on
-  [Deploying Coder with Nuon](https://nuon.co/blog/installing-coder-with-nuon/)
+  [Installing Coder with Nuon](https://nuon.co/blog/installing-coder-with-nuon/)
 
 ## Prerequisites
 
