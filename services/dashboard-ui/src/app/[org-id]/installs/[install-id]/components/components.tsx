@@ -43,9 +43,7 @@ export const InstallComponents = async ({
   ) : data ? (
     <div className="flex flex-col gap-4">
       <InstallComponentsTable
-        initInstallComponents={data.sort((a, b) =>
-          a?.component_id.localeCompare(b.component_id)
-        )}
+        initInstallComponents={data}
         offset={offset}
         limit={limit}
         types={types}

@@ -1,6 +1,6 @@
-import { api } from "@/lib/api";
-import type { TWorkflowStep, TPaginationParams } from "@/types";
-import { buildQueryParams } from "@/utils/build-query-params";
+import { api } from '@/lib/api'
+import type { TWorkflowStep, TPaginationParams } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getWorkflowSteps = ({
   workflowId,
@@ -11,4 +11,4 @@ export const getWorkflowSteps = ({
   api<TWorkflowStep[]>({
     path: `workflows/${workflowId}/steps${buildQueryParams({ limit, offset })}`,
     orgId,
-  });
+  })

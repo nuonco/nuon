@@ -55,7 +55,7 @@ export const InstallComponentsTable = ({
   })
 
   const [data, updateData] = useState(installComponents)
-  const [columnFilters, setColumnFilters] = useState([
+  const [columnFilters] = useState([
     {
       id: 'component_config.type',
       value: [
@@ -67,7 +67,7 @@ export const InstallComponentsTable = ({
       ],
     },
   ])
-  const [globalFilter, setGlobalFilter] = useState('')
+  const [globalFilter] = useState('')
 
   useEffect(() => {
     updateData(installComponents)
@@ -153,11 +153,6 @@ export const InstallComponentsTable = ({
             <MinusIcon />
           ),
       },
-      /* {
-       *   header: 'Config',
-       *   accessorKey: 'configVersion',
-       *   cell: (props) => <Text>{props.getValue<number>()}</Text>,
-       * }, */
       {
         id: 'test',
         enableSorting: false,
@@ -173,47 +168,6 @@ export const InstallComponentsTable = ({
     ],
     []
   )
-
-  const handleTypeFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { checked, value } = e.target
-    setColumnFilters((state) => {
-      const values = [...state?.at(0)?.value]
-      const index = values?.indexOf(value)
-
-      if (checked && index < 0) {
-        values.push(value)
-      } else if (index > -1) {
-        values.splice(index, 1)
-      }
-
-      return [{ id: 'component_config.type', value: values }]
-    })
-  }
-
-  const handleTypeOnlyFilter = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setColumnFilters([
-      { id: 'component_config.type', value: [e?.currentTarget?.value] },
-    ])
-  }
-
-  const clearTypeFilter = () => {
-    setColumnFilters([
-      {
-        id: 'component_config.type',
-        value: [
-          'docker_build',
-          'external_image',
-          'helm_chart',
-          'terraform_module',
-          'kubernetes_manifest',
-        ],
-      },
-    ])
-  }
-
-  const handleGlobleFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value || '')
-  }
 
   return (
     <Table
