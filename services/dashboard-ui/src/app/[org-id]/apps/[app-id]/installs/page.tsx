@@ -14,24 +14,23 @@ import {
   Pagination,
   Section,
 } from '@/components'
-import { getApp, getAppLatestInputConfig } from '@/lib'
-import type { TApp, TInstall } from '@/types'
-import { nueQueryData } from '@/utils'
+import { getAppById, getAppLatestInputConfig, getInstallsByAppId } from '@/lib'
+import type { TApp } from '@/types'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const app = await getApp({ appId, orgId })
+  const { data: app } = await getAppById({ appId, orgId })
 
   return {
-    title: `${app.name} | Installs`,
+    title: `Installs | ${app.name} | Nuon`,
   }
 }
 
 export default async function AppInstalls({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
-  const [app, inputCfg] = await Promise.all([
-    getApp({ appId, orgId }).catch((error) => {
+  const [{ data: app }, inputCfg] = await Promise.all([
+    getAppById({ appId, orgId }).catch((error) => {
       console.error(error)
       notFound()
     }),
@@ -82,25 +81,25 @@ export default async function AppInstalls({ params, searchParams }) {
   )
 }
 
+// TODO(nnnnat): move to server component file
 const LoadAppInstalls: FC<{
   app: TApp
   appId: string
   orgId: string
-  limit?: string
+  limit?: number
   offset?: string
   q?: string
-}> = async ({ app, appId, orgId, limit = '10', offset, q }) => {
-  const params = new URLSearchParams({ offset, limit, q }).toString()
+}> = async ({ app, appId, orgId, limit = 10, offset, q }) => {
   const {
     data: installs,
     error,
     headers,
-  } = await nueQueryData<TInstall[]>({
+  } = await getInstallsByAppId({
+    appId,
+    limit,
+    offset,
     orgId,
-    path: `apps/${appId}/installs${params ? '?' + params : params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
+    q,
   })
 
   const pageData = {
@@ -120,7 +119,7 @@ const LoadAppInstalls: FC<{
         param="offset"
         pageData={pageData}
         position="center"
-        limit={parseInt(limit)}
+        limit={limit}
       />
     </div>
   ) : (

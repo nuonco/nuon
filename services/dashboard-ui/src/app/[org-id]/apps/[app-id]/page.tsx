@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { type FC, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
-  AppConfigGraph,
   AppCreateInstallButton,
   AppInputConfig,
   AppInputConfigModal,
@@ -20,29 +19,27 @@ import {
   Markdown,
 } from '@/components'
 import {
-  getApp,
+  getAppById,
   getAppLatestConfig,
   getAppLatestInputConfig,
   getAppLatestRunnerConfig,
   getAppLatestSandboxConfig,
 } from '@/lib'
 import type { IGetApp } from '@/lib/ctl-api/shared-interfaces'
-import type { TApp } from '@/types'
-import { nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const app = await getApp({ appId, orgId })
+  const { data: app } = await getAppById({ appId, orgId })
 
   return {
-    title: `${app.name} | Config`,
+    title: `Configuration | ${app.name} | Nuon`,
   }
 }
 
 export default async function App({ params }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const [app, appConfig, inputCfg] = await Promise.all([
-    getApp({ appId, orgId }),
+  const [{ data: app }, appConfig, inputCfg] = await Promise.all([
+    getAppById({ appId, orgId }),
     getAppLatestConfig({ appId, orgId }).catch(console.error),
     getAppLatestInputConfig({ appId, orgId }).catch(console.error),
   ])
@@ -192,11 +189,4 @@ const LoadAppRunnerConfig: FC<{ appId: string; orgId: string }> = async ({
       </Text>
     </div>
   )
-}
-
-const LoadAppConfigGraph: FC<{ app: TApp; configId: string }> = async ({
-  app,
-  configId,
-}) => {
-  return <AppConfigGraph appId={app?.id} configId={configId} />
 }

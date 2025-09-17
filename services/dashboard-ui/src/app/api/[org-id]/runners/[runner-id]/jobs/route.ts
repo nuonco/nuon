@@ -6,6 +6,6 @@ export const GET = async (
   { params }: TRouteRes<'org-id' | 'runner-id'>
 ) => {
   return NextResponse.json({
-    depricated: 'use the new /api/orgs/:id/runners/:id/jobs endpoint',
+    deprecated: 'use the new /api/orgs/:id/runners/:id/jobs endpoint',
   })
 }
