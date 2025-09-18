@@ -31,7 +31,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
-import { getInstallById, getInstallDeployById, getWorkflowById } from '@/lib'
+import { getInstallById, getDeployById, getWorkflowById } from '@/lib'
 import type { TBuild, TComponentConfig } from '@/types'
 import { CANCEL_RUNNER_JOBS, sizeToMbOrGB, nueQueryData } from '@/utils'
 
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['install-id']: installId,
     ['deploy-id']: deployId,
   } = await params
-  const { data: deploy } = await getInstallDeployById({
+  const { data: deploy } = await getDeployById({
     deployId,
     installId,
     orgId,
@@ -61,7 +61,7 @@ export default async function InstallComponentDeploy({ params }) {
   } = await params
   const [{ data: deploy, error, status }, { data: install }] =
     await Promise.all([
-      getInstallDeployById({
+      getDeployById({
         deployId,
         installId,
         orgId,

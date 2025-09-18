@@ -243,13 +243,13 @@ const LoadLatestOutputs: FC<{
   installId: string
   orgId: string
 }> = async ({ componentId, installId, orgId }) => {
-  const outputs = await getInstallComponentOutputs({
+  const { data: outputs, error } = await getInstallComponentOutputs({
     componentId,
     installId,
     orgId,
-  }).catch(console.error)
+  })
 
-  return outputs ? (
+  return outputs && !error ? (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <Text variant="med-12">Outputs</Text>
