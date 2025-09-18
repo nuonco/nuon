@@ -73,6 +73,7 @@ func (a *actInterceptor) ExecuteActivity(
 			status = "error_validation"
 		}
 
+		tags[status] = status
 		return nil, err
 	}
 
