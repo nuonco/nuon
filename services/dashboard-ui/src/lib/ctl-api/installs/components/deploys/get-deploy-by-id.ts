@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import type { TDeploy } from "@/types";
 
-export const getInstallDeployById = ({
+export const getDeployById = ({
   installId,
   deployId,
   orgId,

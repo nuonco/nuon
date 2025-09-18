@@ -1,6 +1,6 @@
-import { api } from "@/lib/api";
-import type { TInstallAction, TPaginationParams } from "@/types";
-import { buildQueryParams } from "@/utils/build-query-params";
+import { api } from '@/lib/api'
+import type { TInstallAction, TPaginationParams } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getInstallActionsLatestRuns = ({
   installId,
@@ -12,4 +12,4 @@ export const getInstallActionsLatestRuns = ({
   api<TInstallAction[]>({
     path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q })}`,
     orgId,
-  });
+  })

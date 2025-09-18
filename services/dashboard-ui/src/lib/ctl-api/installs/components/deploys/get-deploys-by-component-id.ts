@@ -2,7 +2,7 @@ import { api } from "@/lib/api";
 import type { TDeploy, TPaginationParams } from "@/types";
 import { buildQueryParams } from "@/utils/build-query-params";
 
-export const getInstallComponentDeploys = ({
+export const getDeploysByComponentId = ({
   installId,
   componentId,
   orgId,
