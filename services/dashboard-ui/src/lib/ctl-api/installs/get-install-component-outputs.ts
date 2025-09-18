@@ -1,19 +1,16 @@
+import { api } from '@/lib/api'
 import type { TInstallComponentOutputs } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetInstall } from '../shared-interfaces'
 
-export interface IGetInstallComponentOutputs extends IGetInstall {
-  componentId: string
-}
-
-export async function getInstallComponentOutputs({
+export const getInstallComponentOutputs = async ({
   componentId,
   installId,
   orgId,
-}: IGetInstallComponentOutputs) {
-  return queryData<TInstallComponentOutputs>({
-    errorMessage: 'Unable to retrieve install component outputs.',
+}: {
+  componentId: string
+  installId: string
+  orgId: string
+}) =>
+  api<TInstallComponentOutputs>({
     orgId,
     path: `installs/${installId}/components/${componentId}/outputs`,
   })
-}

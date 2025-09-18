@@ -1,15 +1,15 @@
 import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
-import { getInstallDeployById } from './get-install-deploy-by-id'
+import { getDeployById } from './get-deploy-by-id'
 
-describe('getInstallDeployById should handle response status codes from GET installs/:id/deploys/:deployId endpoint', () => {
+describe('getDeployById should handle response status codes from GET installs/:id/deploys/:deployId endpoint', () => {
   const installId = 'test-install-id'
   const deployId = 'test-deploy-id'
   const orgId = 'test-org-id'
 
   test('200 status', async () => {
-    const { data: deploy, status } = await getInstallDeployById({
+    const { data: deploy, status } = await getDeployById({
       installId,
       deployId,
       orgId,
@@ -19,7 +19,7 @@ describe('getInstallDeployById should handle response status codes from GET inst
   })
 
   test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await getInstallDeployById({
+    const { error, status } = await getDeployById({
       installId,
       deployId,
       orgId,

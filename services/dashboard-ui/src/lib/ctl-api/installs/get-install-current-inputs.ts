@@ -1,16 +1,14 @@
+import { api } from '@/lib/api'
 import type { TInstallInputs } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetInstall } from '../shared-interfaces'
 
-export interface IGetInstallCurrentInputs extends IGetInstall {}
-
-export async function getInstallCurrentInputs({
+export const getInstallCurrentInputs = async ({
   installId,
   orgId,
-}: IGetInstallCurrentInputs) {
-  return queryData<TInstallInputs>({
-    errorMessage: 'Unable to retrieve current install inputs.',
+}: {
+  installId: string
+  orgId: string
+}) =>
+  api<TInstallInputs>({
     orgId,
     path: `installs/${installId}/inputs/current`,
   })
-}
