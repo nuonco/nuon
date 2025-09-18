@@ -11,7 +11,6 @@ import (
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/config/refs"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -62,9 +61,14 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get install stack")
 	}
 
-	envVars, err := p.getEnvVars(ctx, run)
+	builtInEnvVars, err := p.getBuiltinEnvVars(ctx, run)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get env vars")
+	}
+
+	overrideEnvVars, err := p.getOverrideEnvVars(ctx, run)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get override env vars")
 	}
 
 	plan := &plantypes.ActionWorkflowRunPlan{
@@ -74,21 +78,9 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 			"action.name": run.ActionWorkflowConfig.ActionWorkflow.Name,
 			"action.id":   run.ActionWorkflowConfig.ActionWorkflow.ID,
 		},
-		Steps:      make([]*plantypes.ActionWorkflowRunStepPlan, 0),
-		EnvVars:    envVars,
-		RunEnvVars: map[string]string{},
-	}
-
-	for k, v := range hstoreToMap(run.RunEnvVars) {
-		renderedVal, err := render.Render(v, stateMap)
-		if err != nil {
-			l.Error("error rendering run env-var",
-				zap.String("env-var", v),
-				zap.Error(err))
-			return nil, err
-		}
-
-		plan.RunEnvVars[k] = renderedVal
+		Steps:           make([]*plantypes.ActionWorkflowRunStepPlan, 0),
+		BuiltinEnvVars:  builtInEnvVars,
+		OverrideEnvVars: overrideEnvVars,
 	}
 
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
