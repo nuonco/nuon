@@ -1,7 +1,7 @@
 'use client'
 
 import { useUser } from '@auth0/nextjs-auth0'
-import { ArrowSquareOut } from '@phosphor-icons/react'
+import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
 import { Text } from '@/components/Typography'
 import type { TInstallWorkflow } from '@/types'
@@ -73,7 +73,7 @@ export const InstallWorkflowActivity = ({
           href={`/admin/temporal/namespaces/installs/workflows/${installWorkflow?.owner_id}-execute-workflow-${installWorkflow?.id}`}
           target="_blank"
         >
-          View in Temporal <ArrowSquareOut />
+          View in Temporal <ArrowSquareOutIcon />
         </Link>
       ) : null}
     </div>
