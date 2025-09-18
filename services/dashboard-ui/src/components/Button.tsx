@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { type FC, forwardRef } from 'react'
 
 const defaultStyles =
-  'bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10'
+  'bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10 text-sm'
 
 const cautionStyles =
   'bg-fuchsia-700 hover:bg-fuchsia-600 focus:bg-fuchsia-600 active:bg-fuchsia-800' +
@@ -15,6 +15,7 @@ export type TButtonVariant =
   | 'caution'
   | 'danger'
   | 'secondary'
+| 'menu'
 
 export interface IButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   hasCustomPadding?: boolean
@@ -55,7 +56,8 @@ export const Button = forwardRef<HTMLButtonElement, IButton>(
             'cursor-not-allowed !text-cool-grey-500 !bg-primary-900 hover:!bg-primary-900':
               props.disabled && variant === 'primary',
             'cursor-not-allowed !text-cool-grey-500 !bg-red-900 hover:!bg-red-900':
-              props.disabled && variant === 'danger',
+            props.disabled && variant === 'danger',
+            [`${defaultStyles} border-transparent text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full`]: variant === 'menu',
             [`${className}`]: Boolean(className),
           }
         )}
