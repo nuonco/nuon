@@ -1,62 +1,74 @@
 ---
-title: 'Components'
-description: 'Connect and configure your App using your existing container images, infrastructure as code, and DevOps automation.' 
+title: "Components"
+description:
+  "Connect and configure your App using your existing container images, Helm
+  charts, Kubernetes Manifests and Terraform code."
 ---
 
-Nuon supports several different Component types that allow you to connect your existing DevOps automation, 
-infrastructure as code, and containers to your app.
+Nuon supports several different Component types that allow you to connect your
+existing container images, Helm charts, Kubernetes Manifests and Terraform code
+to your app.
 
 ## What is a Component?
 
-A Component represents a part of your App. Nuon supports the following Component types:
+A Component represents a part of your App. Nuon supports the following Component
+types:
 
-* [Docker](/guides/docker-build-components) - Any Dockerfile that can be built
-* [Container Images](/guides/container-image-components) - Any prebuilt OCI image
-* [Helm Charts](/guides/helm-chart-components) - Any Helm chart located in a repository
-* [Terraform](/guides/terraform-components) - Any Terraform module
-* [Kubernetes Manifest](/guides/kubernetes-manifest-components) - Any raw kubernetes manifest
+- [Helm Charts](/guides/helm-chart-components) - Any Helm chart located in a
+  repository
+- [Terraform](/guides/terraform-components) - Any Terraform module
+- [Kubernetes Manifest](/guides/kubernetes-manifest-components) - Any raw
+  kubernetes manifest
+- [Docker](/guides/docker-build-components) - Any Dockerfile that can be built
+- [Container Images](/guides/container-image-components) - Any prebuilt OCI
+  image
 
 ## How do you configure a Component?
 
-A Component is configured in an individual `<component name>.toml` file inside a directory called `components` in the root of your App Config directory. e.g., a Helm chart Component named `whoami` would be defined in a file named `whoami.toml` inside a directory named `components`.
+A Component is configured in an individual `<component name>.toml` file inside a
+directory called `components` in the root of your App Config directory. e.g., a
+Helm chart Component named `grafana` would be defined in a file named
+`grafana.toml` inside a directory named `components`.
 
-Alternatively, you can nest individual Component files inside directories inside the `components` directory. For example, you could have a directory named `infra` inside the `components` directory, and define an S3 Bucket Component named `buckets.toml`.
+Additional Component configuration files can be added to the `components`
+directory or another directory in the App Config directory, and referenced in
+the Component's config file. e.g., you can have a `values.yaml` file for a Helm
+chart Component to deploy observability platform from Grafana Labs located in
+`components/values/grafana`
 
-Additional Component configuration files can be added to the `components` directory or another directory in the App Config directory like `src`, and referenced in the Component's config file. e.g., you can have a `values.yaml` file for a Helm chart Component located the root of the `components` directory.
-
-You can configure Components to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+You can configure Components to use either a public repo (using a `public_repo`
+block) or a private GitHub repo (using a `connected_repo` block). Read more
+about VCS configuration [here](/guides/vcs).
 
 <CodeGroup>
-```toml components/whoami.toml
+```toml components/grafana.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=helm
-name           = "whoami"
+name           = "grafana"
 type           = "helm_chart"
-chart_name     = "whoami"
-namespace      = "whoami"
+chart_name     = "grafana"
+namespace      = "grafana"
 storage_driver = "configmap"
+dependencies   = ["prometheus"]
 
-[public_repo]
-repo      = "nuonco/demo"
-directory = "eks-simple/src/components/whoami"
-branch    = "main"
+[public_repo] repo = "grafana/helm-charts" directory = "charts/grafana" branch =
+"main"
 
-[[values_file]]
-contents = "./values/whoami.yaml"
-```
+[[values_file]] contents = "./values/grafana/values.yaml"
+
+````
 </CodeGroup>
 
-By default, every Component must have a `git` repository to store its source files, but you can include them in the App Config directory and reference the same App Config repo in the Component TOML file. e.g., a Terraform Component named `lamdba` that uses a `variables.tf` file and Python code can be located in the App Config directory's `src` directory and referenced as the Public Repo in the Component's config file:
+By default, every Component must have a `git` repository to store its source files, but you can include them in the App Config directory and reference the same App Config repo in the Component TOML file. This example shows a Component that uses the same repo as the App Config to store its AWS Terraform module to create the certificate in AWS:
 
 <CodeGroup>
-```toml components/lamdba.toml
+```toml components/certificate.toml
 [public_repo]
-repo      = "acme-co/my-app"
-directory = "src/components/lamdba"
+repo      = "nuonco/example-app-configs"
+directory = "grafana/src/components/certificate"
 branch    = "main"
-```
-</CodeGroup>
+````
 
+</CodeGroup>
 
 ## Component Management
 
@@ -65,117 +77,87 @@ The [CLI](/cli) exposes many operational commands to manage components.
 To see all available commands, run: `nuon components --help`.
 
 <Note>
-Make sure to select an App using `nuon apps select` before using the `nuon components` commands, or pass the `-a` flag to each 
-`nuon component` command.
+	Make sure to select an App using `nuon apps select` before using the `nuon
+	components` commands, or pass the `-a` flag to each `nuon component` command.
 </Note>
-
-### Pinning a Component
-
-You can pin a Component, which will set its ID as a default argument to all `nuon component` commands. This is helpful to avoid 
-having to pass `-c` to each command.
-
-<CodeGroup>
-```sh nuon
-nuon components select
-```
-</CodeGroup>
-
-<Note>
-Each example below assumes you have run `nuon components select` first.
-</Note>
-
-To show the currently pinned Component:
-
-<CodeGroup>
-```sh nuon
-nuon components current
-```
-</CodeGroup>
 
 ### Component Management Commands
 
-Commands for working with Components:
-
 <Note>
-Components can only be created using a configuration file.
+	There no longer is a `nuon components select` command to pin a Component.
+	Instead, pass the `-c` flag to each command to specify the Component by its ID
+	or name.
 </Note>
 
-**Get a Component**
-<CodeGroup>
-```sh nuon
-nuon components get 
-```
-</CodeGroup>
+Commands for working with Components:
+
+<Note>Components can only be created using a configuration file.</Note>
 
 **List Components** - List Components for an App.
 
+<CodeGroup>```sh nuon nuon components list ```</CodeGroup>
+
+**Get a Component**
+
 <CodeGroup>
 ```sh nuon
-nuon components list
+nuon components get -c <component_id or component_name>
 ```
 </CodeGroup>
 
 **Delete a Component** - Delete a Component.
 
 <Note>
-It is not recommended to delete Components using the CLI. Instead, manage them using config files.
+	It is not recommended to delete Components using the CLI. Instead, manage them
+	using config files.
 </Note>
 
-<CodeGroup>
-```sh nuon
-nuon components delete -c component_id
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon components delete -c component_id ```</CodeGroup>
 
 **Print a Component config** - Print the latest configuration for a Component.
 
 <CodeGroup>
 ```sh nuon
-nuon components latest-config
+nuon components latest-config -c <component_id or component_name>
 ```
 </CodeGroup>
 
 ### Component Builds
 
-All Components must be built before releasing. The release commands support an `-auto-build` flag which will trigger a 
+All Components must be built before releasing. Syncing an App Config for the
+first time or if a Component configuration has changed will also trigger a
+Build. The release commands support an `-auto-build` flag which will trigger a
 Build.
 
 **Create a Build** - Create a Build using the latest Component configuration.
 
-<CodeGroup>
-```sh nuon
-nuon builds create -c component_id
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon builds create -c component_id ```</CodeGroup>
 
 **List Builds** - List Builds for a Component.
 
 <CodeGroup>
 ```sh nuon
-nuon builds list
+nuon builds list -c <component_id or component_name>
 ```
 </CodeGroup>
+
+<Note>
+	If you do not pass the `-c` flag, all Builds for all Components in the
+	currently selected App will be listed.
+</Note>
 
 **Get a Build** - Print out Build details.
 
 <CodeGroup>
 ```sh nuon
-nuon builds get -b <build-id>
+nuon builds get -b <build-id> -c <component_id or component_name>
 ```
 </CodeGroup>
 
-**Logs** - Show logs for a Build.
+**Logs** - Show logs for a Build by opening the Dashboard.
 
 <CodeGroup>
 ```sh nuon
-nuon builds logs -b <build-id>
-```
-</CodeGroup>
-
-**Print Plan** - Print a Build plan with configuration for the Build.
-
-<CodeGroup>
-```sh nuon
-nuon builds print-plan -b <build-id>
+nuon builds logs -b <build-id> -c <component_id or component_name>
 ```
 </CodeGroup>
