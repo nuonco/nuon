@@ -22,7 +22,7 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		return errors.Wrap(err, "unable to get execution env")
 	}
 
-	for k, v := range h.state.plan.EnvVars {
+	for k, v := range h.state.plan.BuiltinEnvVars {
 		l.Debug(fmt.Sprintf("setting built-in env-var %s", k), zap.String("value", v))
 	}
 	for k, v := range builtInEnv {
@@ -33,6 +33,9 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 	}
 	for k, v := range h.state.run.RunEnvVars {
 		l.Debug(fmt.Sprintf("setting extra env-var %s", k), zap.String("value", v))
+	}
+	for k, v := range h.state.plan.OverrideEnvVars {
+		l.Debug(fmt.Sprintf("setting override env-var %s", k), zap.String("value", v))
 	}
 
 	var cmd string
@@ -61,10 +64,11 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		command.WithArgs(args[0:]),
 		command.WithCmd(cmd),
 		command.WithInheritedEnv(),
-		command.WithEnv(h.state.plan.EnvVars),
+		command.WithEnv(h.state.plan.BuiltinEnvVars),
 		command.WithEnv(builtInEnv),
 		command.WithEnv(envVars),
 		command.WithEnv(h.state.run.RunEnvVars),
+		command.WithEnv(h.state.plan.OverrideEnvVars),
 		command.WithArgs(args),
 		command.WithStdout(lOut),
 		command.WithStderr(lErr),
