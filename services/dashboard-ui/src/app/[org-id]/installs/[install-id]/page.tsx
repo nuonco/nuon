@@ -142,11 +142,12 @@ const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
   installId,
   orgId,
 }) => {
-  const installReadme = await getInstallReadme({ installId, orgId }).catch(
-    console.error
-  )
+  const { data: installReadme, error } = await getInstallReadme({
+    installId,
+    orgId,
+  })
 
-  return installReadme ? (
+  return installReadme && !error ? (
     <div className="flex flex-col gap-3">
       {installReadme?.warnings?.length
         ? installReadme?.warnings?.map((warn, i) => (
@@ -166,7 +167,10 @@ const LoadInstallCurrentInputs: FC<{
   installId: string
   orgId: string
 }> = async ({ installId, orgId }) => {
-  const currentInputs = await getInstallCurrentInputs({ installId, orgId })
+  const { data: currentInputs } = await getInstallCurrentInputs({
+    installId,
+    orgId,
+  })
 
   return (
     <>
