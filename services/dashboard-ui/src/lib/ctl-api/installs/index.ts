@@ -1,33 +1,27 @@
-export { getInstallActionRunById } from './get-install-action-run-by-id'
-export { getInstallActionById } from './get-install-action-by-id'
-export { getInstallActionsLatestRuns } from './get-install-actions-latest-runs'
-export { getInstallComponentById } from './get-install-component-by-id'
+export * from './actions'
+export * from './components'
+export * from './sandbox'
+
+// install components
+export * from './get-install-component-outputs'
+
+// install query
 export * from './get-installs'
-export * from './get-install'
 export * from './get-install-by-id'
-export * from './get-install-components'
-export * from './get-install-component'
-export * from './get-install-component-deploys'
-export { getInstallDeployById } from './get-install-deploy-by-id'
-export * from './get-install-events'
+
+export * from './get-install-current-inputs'
 export * from './get-install-readme'
-export * from './get-install-runner-group'
-export * from './get-install-action-workflow-runs'
-export * from './get-install-action-workflow-run'
-export * from './get-install-sandbox-run-by-id'
+
+// workflows
+export * from './get-install-workflows'
+
+// TODO(nnnnat): mutations
+export * from './deploy-components'
+export * from './deploy-component-build'
 export * from './reprovision-install'
 export * from './reprovision-sandbox'
 export * from './run-install-action-workflow'
-export * from './get-install-action-workflow-latest-run'
-export * from './get-install-action-workflow-recent-run'
-export * from './deploy-components'
-export * from './deploy-component-build'
-export * from './get-install-current-inputs'
-export * from './get-install-component-outputs'
 export * from './create-install'
 export * from './teardown-install-components'
 export * from './update-install'
 export * from './forget-install'
-export * from './get-install-sandbox-runs'
-export * from './get-install-workflows'
-export * from './get-install-workflow'
