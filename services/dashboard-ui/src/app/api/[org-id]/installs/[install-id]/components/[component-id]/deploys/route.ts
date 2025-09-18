@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getInstallComponentDeploys } from '@/lib'
+import { getDeploysByComponentId } from '@/lib'
 import { TRouteRes } from '@/app/api/[org-id]/types'
 
 export const GET = async (
@@ -12,7 +12,7 @@ export const GET = async (
     ['component-id']: componentId,
   } = await params
 
-  const response = await getInstallComponentDeploys({
+  const response = await getDeploysByComponentId({
     orgId,
     installId,
     componentId,

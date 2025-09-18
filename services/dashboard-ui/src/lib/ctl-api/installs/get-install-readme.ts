@@ -1,17 +1,14 @@
+import { api } from '@/lib/api'
 import type { TReadme } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetInstall } from '../shared-interfaces'
 
-export interface IGetInstallReadme extends IGetInstall {}
-
-export async function getInstallReadme({
-  orgId,
+export const getInstallReadme = ({
   installId,
-}: IGetInstallReadme) {
-  return queryData<TReadme>({
-    errorMessage: 'Unable to retrieve the install README.',
-    orgId,
+  orgId,
+}: {
+  installId: string
+  orgId: string
+}) =>
+  api<TReadme>({
     path: `installs/${installId}/readme`,
-    abortTimeout: 100000,
+    orgId,
   })
-}
