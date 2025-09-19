@@ -1,43 +1,37 @@
 ---
-title: 'Actions'
+title: "Actions"
 description: "Remotely execute custom workflows in installs."
-icon: 'code'
+icon: "code"
 ---
 
-Actions allows you to define and remotely execute custom workflows in installs. You can automate common tasks, implement healthchecks, and even automate runbooks to handle incidents.
+Actions allows you to define and remotely execute custom workflows in installs.
+You can automate common tasks, implement healthchecks, and even automate
+runbooks to handle incidents.
 
-# Configuring Workflows
+# Configuring Action Workflows
 
-Action workflows can be configured in your app's TOML config. For example, to define an HTTP healthcheck:
+Action workflows can be configured in your app's TOML config. For example, to
+define an HTTP healthcheck:
 
 <CodeGroup>
 ```toml actions/http_healthcheck.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
 
-name    = "http_healthcheck"
-timeout = "0m15s"
+name = "http_healthcheck" timeout = "0m15s"
 
-[[triggers]]
-type          = "cron"
-cron_schedule = "*/5 * * * *"
+[[triggers]] type = "cron" cron_schedule = "_/5 _ \* \* \*"
 
-[[triggers]]
-type = "manual"
+[[triggers]] type = "manual"
 
-[[steps]]
-name    = "healthcheck"
-command = "./healthcheck"
+[[steps]] name = "healthcheck" command = "./healthcheck"
 
-[steps.public_repo]
-repo      = "nuonco/actions"
-branch    = "main"
-directory = "common"
+[steps.public_repo] repo = "nuonco/actions" branch = "main" directory = "common"
 
-[steps.env_vars]
-ENDPOINT             = "https://your-app.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-METHOD               = "HEAD"
-EXPECTED_STATUS_CODE = "200"
-```
+[steps.env_vars] ENDPOINT =
+"https://your-app.{{.nuon.install.sandbox.outputs.public_domain.name}}" METHOD =
+"HEAD" EXPECTED_STATUS_CODE = "200"
+
+````
 
 ```toml actions/<your-action>.toml
 #:schema https://api.nuon.co/v1/general/config-schema
@@ -48,33 +42,73 @@ display_name = "Your App"
 
 [[actions]]
 source = "./actions/alb_healthcheck.toml"
-```
+````
+
 </CodeGroup>
 
-Once configured and synced, you will see the workflow in the "Actions" tab for your app.
+Once configured and synced, you will see the workflow in the "Actions" tab for
+your app.
 
 Following that example, we can describe the parts of a workflow.
 
 ## Timeout
 
-Each workflow must have a timeout limiting how long it can run. The maxiumum allowed timeout is 30 minutes. Timeouts must be provided as valid Golang time.Duration strings.
+Each workflow must have a timeout limiting how long it can run. The maxiumum
+allowed timeout is 30 minutes. Timeouts must be provided as valid Golang
+time.Duration strings.
 
-The example workflow will timeoute after 15 seconds, more than enough time to make a simple HTTP request.
+The example workflow will timeoute after 15 seconds, more than enough time to
+make a simple HTTP request.
 
-## Triggers
+## Action Triggers
 
-Actions can be triggered manually, on a cron, or by install events. You can define multiple triggers for an action.
+Action triggers are now available for all workflows. You can now use the
+following set of triggers:
 
-| Trigger Type | Attributes | Description |
-|------------|-------------|-------------|
-| **manual** | | Manually triggered the CLI or Vendor Dashboard |
-| **cron** | cron_schedule | Scheduled to run at specific time intervals defined by a crontab |
-| **pre-sandbox-run** | | Executes before a sandbox run begins |
-| **post-sandbox-run** | | Executes after a sandbox run completes |
-| **pre-deploy** | | Executes before a component deploy begins |
-| **post-deploy** | | Executes after a component deploy completes |
+- `pre-provision`
+- `post-provision`
+- `pre-reprovision`
+- `post-reprovision`
+- `pre-deprovision`
+- `post-deprovision`
+- `pre-deploy-all-components`
+- `post-deploy-all-components`
+- `pre-teardown-all-components`
+- `post-teardown-all-components`
+- `pre-deprovision-sandbox`
+- `post-deprovision-sandbox`
+- `pre-reprovision-sandbox`
+- `post-reprovision-sandbox`
+- `pre-update-inputs`
+- `post-update-inputs`
+- `pre-secrets-sync`
+- `post-secrets-sync`
 
-The example action defines two triggers. It will run every five minutes, and can also be triggered manually at any time.
+Each workflow trigger is called at the beginning or end of the workflow. In some
+cases, such as `pre-provision` or `pre-reprovision` that include a stack-run,
+the trigger will be called right after the runner is healthy.
+
+The following triggers require a `component_name` field to be set, as they are
+tied to a specific component:
+
+- `pre-deploy-component`
+- `post-deploy-component`
+- `post-teardown-component`
+- `pre-teardown-component`
+
+<Note>
+	`pre-component-deploy` and `post-component-deploy` have been renamed to
+	`pre-deploy-component` and `post-deploy-component` for consistency with other
+	triggers. `pre-sandbox-run` and `post-sandbox-run` have been deprecated, in
+	favor of `pre|post-reprovision`, `pre|post-provision`, and
+	`pre|post-deprovision`
+</Note>
+
+Actions can be triggered manually, on a cron, or by install events. You can
+define multiple triggers for an action.
+
+The example action defines two triggers. It will run every five minutes, and can
+also be triggered manually at any time.
 
 ```toml actions/<action-name>.toml
 [[triggers]]
@@ -87,9 +121,14 @@ type = "manual"
 
 ## Steps
 
-Each step in an action requires a command to be run. You can optionally load a script from a repo and provide env vars to configure the environment the command will run in.
+Each step in an action requires a command to be run. You can optionally load a
+script from a repo and provide env vars to configure the environment the command
+will run in.
 
-The example action is pretty simple, so it has only one step. It loads a curl script from our [open-source repo of commonly-used scripts](https://github.com/nuonco/actions), and sets a few env vars to configure it.
+The example action is pretty simple, so it has only one step. It loads a curl
+script from our
+[open-source repo of commonly-used scripts](https://github.com/nuonco/actions),
+and sets a few env vars to configure it.
 
 ```toml actions/<action-name>.toml
 [[steps]]
@@ -109,4 +148,6 @@ EXPECTED_STATUS_CODE = "200"
 
 # Monitoring Workflow Runs
 
-Actions workflow runs can be monitored on the "Actions" tab in each Install. You can see a list of all workflow runs, and inspect each run to see logs, what triggered the run, and whether is succeeded or not.
+Actions workflow runs can be monitored on the "Actions" tab in each Install. You
+can see a list of all workflow runs, and inspect each run to see logs, what
+triggered the run, and whether is succeeded or not.
