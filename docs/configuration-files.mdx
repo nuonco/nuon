@@ -1,29 +1,22 @@
 ---
-title: 'Configuration Files'
-description: 'Configure apps using `.toml` configuration files'
+title: "Configuration Files"
+description: "Configure apps using `.toml` configuration files"
 ---
 
-Config files allow you to define a BYOC application using `.toml` files.
-Under the hood, Nuon will handle keeping your configuration in sync.
+Config files allow you to define a BYOC application using `.toml` files. Under
+the hood, Nuon will handle keeping your configuration in sync.
 
 ## Create an app
 
-**Create a local App directory** - Create a directory and name it after your App. This directory will contain your App's configuration files.
+**Create a local App directory** - Create a directory and name it after your
+App. This directory will contain your App's configuration files.
 
-<CodeGroup>
-```sh nuon
-mkdir your-app
-cd your-app
-```
-</CodeGroup>
+<CodeGroup>```sh nuon mkdir your-app cd your-app ```</CodeGroup>
 
-Config files are used to sync the configuration for a single App. For consistency, use the same name as the directory you created above.
+Config files are used to sync the configuration for a single App. For
+consistency, use the same name as the directory you created above.
 
-<CodeGroup>
-```sh nuon
-nuon apps create --name=your-app
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps create --name=your-app ```</CodeGroup>
 
 ## Sync an App
 
@@ -35,8 +28,10 @@ nuon apps sync
 
 ## Breaking up Config Files
 
-Since configs can get complex as your application grows, we follow a structured approach to organize your configuration files.
-Create a `components` directory in your project root with individual files for each component. e.g., `components/helm_deploy.toml`.
+Since configs can get complex as your application grows, we follow a structured
+approach to organize your configuration files. Create a `components` directory
+in your project root with individual files for each component. e.g.,
+`components/helm_deploy.toml`.
 
 ```toml components/helm_deploy.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=helm
@@ -56,8 +51,8 @@ contents = "./whoami.yaml"
 ```
 
 <Note>
-  When loading a component from a source, the `components` prefix is not needed
-  for each field, like it is in the main config file.
+	When loading a component from a source, the `components` prefix is not needed
+	for each field, like it is in the main config file.
 </Note>
 ## Reference
 
@@ -87,7 +82,8 @@ type = "string"
 ```
 
 <Note>
-  Inputs are not required, unless you are using a Sandbox that requires Inputs. e.g., `root_domain` for the `aws-eks-sandbox`.
+	Inputs are not required, unless you are using a Sandbox that requires Inputs.
+	e.g., `root_domain` for the `aws-eks-sandbox`.
 </Note>
 
 ### Sandbox Config
@@ -116,22 +112,56 @@ contents = "./sandbox.tfvars"
 ```
 
 <Note>
-  Notice how variables can be defined in the `vars` block and with `var_file`.
+	Notice how variables can be defined in the `vars` block and with `var_file`.
 </Note>
 
 ### Install Config
 
-You can create and manage [Installs](/concepts/installs) by creating `<install>.toml` files
-in an `installs` directory managed separately from the app configs. An Install config must declare a `name` field and
-any relevant install-specific configuration.
+You can create and manage [Installs](/concepts/installs) by creating
+`<install>.toml` files in an `installs` directory managed separately from the
+app configs. An Install config must declare a `name` field and any relevant
+install-specific configuration.
 
-The inputs are defined as a list of input groups. This is just for logical grouping, and inputs
-from different groups can be defined together. Note that if an input is defined multiple times,
-the last defined value would be used.
+The inputs are defined as a list of input groups. This is just for logical
+grouping, and inputs from different groups can be defined together. Note that if
+an input is defined multiple times, the last defined value would be used.
+
+When you generate a config, inputs will be grouped together, reflecting the
+input groups you have defined in the app config. Sensitive inputs will be
+excluded, to avoid saving them in plain text in version control. When syncing
+install config files, sensitive inputs will be ignored. They can still be
+managed manually via the Dashboard.
 
 <Note>
-  Currently only AWS installs are supported using Install config files.
+	Currently only AWS installs are supported using Install config files.
 </Note>
+
+**Generate an Install Config File**
+
+To manage existing installs using CI, use the CLI command
+`nuon installs generate-config` to export an existing install to stdout. Create
+a TOML config file for the install in the `installs` folder of your app's config
+and paste the stout.
+
+```bash
+mkdir -p installs
+touch installs/<install-name>.toml
+nuon installs generate-config -i <install-name> | tee installs/<install-name>.toml
+```
+
+**Update an Install**
+
+The `nuon installs sync` command can be used with a single install config file
+or with a directory containing multiple install config files.
+
+```bash
+nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
+```
+
+In the dashboard, see the newly-created workflow to track the install's upgrade
+process.
+
+**An Example Install Config File**
 
 ```toml installs/install.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=install
@@ -154,18 +184,20 @@ approval_option = "prompt" # set this to "approve-all" to enable auto approval
 ```
 
 <Note>
-  All input values should be defined as strings. They will be parsed into the correct type by Nuon.
+	All input values should be defined as strings. They will be parsed into the
+	correct type by Nuon.
 </Note>
 
 ### Component Config
 
-You can define components by creating `<component>.toml` files in a `components` directory. Components must declare
-a `type` field and any relevant component-specific configuration.
+You can define components by creating `<component>.toml` files in a `components`
+directory. Components must declare a `type` field and any relevant
+component-specific configuration.
 
 <Note>
-  Each component will have dependencies automatically defined based on the order
-  in the config file. Learn more about depencencies
-  [here](/guides/component-dependencies).
+	Each component will have dependencies automatically defined based on the order
+	in the config file. Learn more about depencencies
+	[here](/guides/component-dependencies).
 </Note>
 
 ### Terraform Module Component
@@ -266,7 +298,8 @@ region = "us-west-2"
 
 ### Kubernetes Manifest Component
 
-To define a [kubernetes manifest component](/guides/kubernetes-manifest-components) use the
+To define a
+[kubernetes manifest component](/guides/kubernetes-manifest-components) use the
 `kubernetes_manifest` type.
 
 ```toml helm.toml

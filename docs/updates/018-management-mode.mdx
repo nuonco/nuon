@@ -9,19 +9,23 @@ _Sep 8, 2025_
 
 ## Management Mode
 
-Management mode is a standalone runner process that runs on the install runner VM and is responsible for
-monitoring and managing the health of the VM as well as the runner process itself. Read more about how to enable this for
-your installs here: [Runner Management Mode](/guides/runner-management-mode).
+Management mode is a standalone runner process that runs on the install runner
+VM and is responsible for monitoring and managing the health of the VM as well
+as the runner process itself. Read more about how to enable this for your
+installs here: [Runner Management Mode](/guides/runner-management-mode).
 
 ## Stack Config Breaking Change
 
-We fixed a bug where the `runner_nested_template_url` is now recognized, where as before it was ignored.
+We fixed a bug where the `runner_nested_template_url` is now recognized, where
+as before it was ignored.
 
 <Warning>
-This requires a config update for any apps that currently define a `runner_nested_template_url` in their `stack.toml`, as older versions of the nested template could be invalid or not work.
+	This requires a config update for any apps that currently define a
+	`runner_nested_template_url` in their `stack.toml`, as older versions of the
+	nested template could be invalid or not work.
 </Warning>
 
-We recommend using the latest nested template url: 
+We recommend using the latest nested template url:
 
 ```toml
 runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/runner/asg/stack.yaml"
@@ -29,8 +33,9 @@ runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/
 
 ## Sensitive Inputs and Install Config Files
 
-When you generate a config, inputs will now be grouped together, reflecting the input groups you have defined in the app
-config. Senstive inputs will be excluded, to avoid saving them in plain text in version control.
+When you generate a config, inputs will now be grouped together, reflecting the
+input groups you have defined in the app config. Sensitive inputs will be
+excluded, to avoid saving them in plain text in version control.
 
 ```toml
 name = "my_install"
@@ -47,14 +52,15 @@ name = "my_install"
   number_type = "10"
 ```
 
-When syncing install config files, sensitive inputs will be ignored. They can still be managed manually via the
-Dashboard.
+When syncing install config files, sensitive inputs will be ignored. They can
+still be managed manually via the Dashboard.
 
 ## App Variables
 
-App Variables is a feature that allows you to define values you can use across all installs of an app. The
-values are not managed in the app config itself, and therefore do not need to be stored in version control, and are not
-displayed to your customer during the install process.
+App Variables is a feature that allows you to define values you can use across
+all installs of an app. The values are not managed in the app config itself, and
+therefore do not need to be stored in version control, and are not displayed to
+your customer during the install process.
 
 You can create app variables via the CLI.
 
@@ -84,12 +90,14 @@ echo $MY_VAR
 MY_VAR="{{.nuon.app.variables.my_var}}"
 ```
 
-Learn more about App Variables here: [Concepts - App Variables](/concepts/app-variables).
+Learn more about App Variables here:
+[Concepts - App Variables](/concepts/app-variables).
 
 ## Orderable Action Triggers
 
-It is often useful to be able to define an explicit order for actions. We are introducing a new optional field ,`index`,
-on action triggers that allows you to define an order for actions with the same trigger. For example, you can define a
+It is often useful to be able to define an explicit order for actions. We are
+introducing a new optional field ,`index`, on action triggers that allows you to
+define an order for actions with the same trigger. For example, you can define a
 trigger like this in one action:
 
 ```toml
@@ -114,6 +122,8 @@ This will result in the actions running in the order defined by `index`.
 
 ## Bug Fixes
 
-- Nested Runner ASG Cloudformation Stack is now respected and used during install stack re/provisions.
+- Nested Runner ASG Cloudformation Stack is now respected and used during
+  install stack re/provisions.
 - Fixed a bug causing workflow cancellation to intermittently fail.
-- Fixed a bug where large plans could cause failures when being checked for noop plans.
+- Fixed a bug where large plans could cause failures when being checked for noop
+  plans.
