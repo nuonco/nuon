@@ -4,22 +4,28 @@ description: Use READMEs to support operating Installs.
 icon: code
 ---
 
-App READMEs allow you to define documentation for an App that can be rendered per-install. This guide will get you started using READMEs to support operating installs of your apps.
+App READMEs allow you to define documentation for an App that can be rendered
+per-install. This guide will get you started using READMEs to support operating
+installs of your apps.
 
 ## Adding a README to an App
 
-To add a README to an App, define the `readme` field in your App Config. We'll start with something simple.
+To add a README to an App, define the `readme` field in your App Config. We'll
+start with something simple.
 
 ```toml metadata.toml
 name = "My App"
 readme = "This is the README for My App."
 ```
 
-Sync your config, and you should see this rendered on the Overview of each install of that app.
+Sync your config, and you should see this rendered on the Overview of each
+install of that app.
 
 ## Formatting
 
-READMEs are technically just a string field, but our rendering in the Dashboard supports Markdown. You can also use TOML's multi-line strings to make formatting easier. Let's use both to add some more structure and content.
+READMEs are technically just a string field, but our rendering in the Dashboard
+supports Markdown. You can also use TOML's multi-line strings to make formatting
+easier. Let's use both to add some more structure and content.
 
 ```toml metadata.toml
 name = "My App"
@@ -44,11 +50,32 @@ This app consists of the following components.
 """
 ```
 
-<Note>Because Markdown accepts HTML, you can also use HTML/CSS/JS. However, we can't gaurantee that all valid HTML/CSS/JS will work when rendered in the Dashboard. Proceed with caution.</Note>
+<Note>
+	Because Markdown accepts HTML, you can also use HTML/CSS/JS. However, we can't
+	gaurantee that all valid HTML/CSS/JS will work when rendered in the Dashboard.
+	Proceed with caution.
+</Note>
+
+## Reference a README.md file
+
+To cleanly separate markdown from TOML, you can reference a `README.md` file in
+your App Config directory. This is often easier to manage, especially for longer
+documents.
+
+```toml metadata.toml
+version = "v2"
+
+description = "Grafana App Config"
+display_name = "Grafana App Config"
+readme       = "./README.md"
+```
 
 ## Variables
 
-READMEs support variables. These will be rendered server-side in the context of each install, just as they are in component and actions fields. We will use variables here to add some install info. We can also parametrize the app info, to make sure the README is up to date if we change the app config later.
+READMEs support variables. These will be rendered server-side in the context of
+each install, just as they are in component and actions fields. We will use
+variables here to add some install info. We can also parametrize the app info,
+to make sure the README is up to date if we change the app config later.
 
 ```toml metadata.toml
 name = "My App"
@@ -70,7 +97,10 @@ This app consists of the following components.
 
 ```
 
-Additionally, because READMEs are designed to be rendered on a webpage, and variables use Golang templating, you have access to the full power of [Golang's templating language](https://pkg.go.dev/text/template). Let's use that to add component statuses.
+Additionally, because READMEs are designed to be rendered on a webpage, and
+variables use Golang templating, you have access to the full power of
+[Golang's templating language](https://pkg.go.dev/text/template). Let's use that
+to add component statuses.
 
 ```toml metadata.toml
 name = "My App"
@@ -103,8 +133,10 @@ __No app components are active in this install. You may need to run "Deploy Comp
 
 ```
 
-Because the Dashboard polls the Control Plane, you will get get near-real-time statuses for each component.
+Because the Dashboard polls the Control Plane, you will get get near-real-time
+statuses for each component.
 
 ## Conclusion
 
-You should now have the basic info you need to get started creating READMEs for your own apps.
+You should now have the basic info you need to get started creating READMEs for
+your own apps.
