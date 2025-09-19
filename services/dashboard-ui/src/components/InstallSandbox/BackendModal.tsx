@@ -1,9 +1,11 @@
 'use client'
 
-import { API_URL } from '@/configs/api'
-import { createFileDownload } from '@/utils/file-download'
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
+
+import { useUser } from "@auth0/nextjs-auth0"
+import { API_URL } from '@/configs/api'
+import { createFileDownload } from '@/utils/file-download'
 import { Button } from '@/components/Button'
 import { Modal } from '@/components/Modal'
 import { BracketsCurly, FileArrowDown } from '@phosphor-icons/react'
@@ -18,7 +20,7 @@ interface IBackendModal {
 export const BackendModal: FC<IBackendModal> = ({
   orgId,
   workspace,
-  token,
+  token  
 }) => {
   const [isOpen, setIsOpen] = useState(false)
 
