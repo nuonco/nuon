@@ -1,39 +1,61 @@
-import React, { FC } from 'react'
-import {
-  getWorkspaceStates,
-  getWorkspaceState,
-  getWorkspaceStateResources,
-} from '@/lib'
 import { SectionHeader } from '@/components/Card'
 import { JsonView } from '@/components/Code'
 import { Empty } from '@/components/Empty'
-import { Time } from '@/components/Time'
 import { DataTable } from '@/components/InstallSandbox/Table'
 import { Tabs, Tab } from '@/components/InstallSandbox/Tabs'
 import { Text, Code } from '@/components/Typography'
 import { getToken } from '@/components/admin-actions'
+import {
+  getTerraformState,
+  getTerraformStates,
+  getTerraformWorkspaceLock,
+} from '@/lib'
+import type { TTerraformState } from '@/types'
 import { BackendModal } from './BackendModal'
 import { UnlockModal } from './UnlockStateModal'
-import { nueQueryData } from '@/utils'
+
+function getResourceAddresses(state: TTerraformState['values']['root_module']) {
+  const addresses = []
+
+  // Top-level resources
+  if (state.resources && Array.isArray(state.resources)) {
+    for (const res of state.resources) {
+      if (res.address) addresses.push(res.address)
+    }
+  }
+
+  // Resources in child_modules
+  if (state.child_modules && Array.isArray(state.child_modules)) {
+    for (const mod of state.child_modules) {
+      if (mod.resources && Array.isArray(mod.resources)) {
+        for (const res of mod.resources) {
+          if (res.address) addresses.push(res.address)
+        }
+      }
+    }
+  }
+
+  return addresses
+}
 
 export interface ITerraformWorkspace {
   orgId: string
   workspace: any
 }
 
-export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
+export const TerraformWorkspace = async ({
   orgId,
   workspace,
-}) => {
-  const [states, tokenRes, lockRes] = await Promise.all([
-    getWorkspaceStates({
+}: ITerraformWorkspace) => {
+  const [{ data: states }, tokenRes, { data: lock }] = await Promise.all([
+    getTerraformStates({
       orgId,
       workspaceId: workspace?.id,
-    }).catch(console.error),
+    }),
     getToken().catch(console.error),
-    nueQueryData({
+    getTerraformWorkspaceLock({
       orgId,
-      path: `terraform-workspaces/${workspace?.id}/lock`,
+      workspaceId: workspace?.id,
     }),
   ])
 
@@ -48,25 +70,13 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
   )
 
   if (states.length) {
-    const [currentRevision, resources] = await Promise.all([
-      getWorkspaceState({
-        orgId,
-        workspaceId: workspace?.id,
-        stateId: states.at(0)?.id,
-      }).catch(console.error),
-      getWorkspaceStateResources({
-        workspaceId: workspace?.id,
-        stateId: states[0]?.id,
-        orgId,
-      }).catch(console.error),
-    ])
-
-    const revisions = states?.map((state: any, idx: number) => {
-      return [
-        <Text key={idx}>{state.revision}</Text>,
-        <Time key={idx} time={state.created_at} />,
-      ]
+    const { data: currentRevision } = await getTerraformState({
+      orgId,
+      workspaceId: workspace?.id,
+      stateId: states?.at(0)?.id,
     })
+
+    const resources = getResourceAddresses(currentRevision?.values?.root_module)
 
     const resourceList = resources?.map((resource, idx) => {
       return [
@@ -80,16 +90,6 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
           </Text>
         </span>,
       ]
-    })
-
-    const datasourceList = resources?.map((datasource, idx) => {
-      if (datasource.mode == 'data') {
-        return [
-          <Text key={idx}>{datasource.type}</Text>,
-          <Text key={idx}>{datasource.name}</Text>,
-          <Text key={idx}>{datasource.instances.length}</Text>,
-        ]
-      }
     })
 
     const outputs = currentRevision?.values?.outputs || []
@@ -110,26 +110,28 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
     ])
 
     contents = (
-      <Tabs>
-        {resourceList && (
-          <Tab title="Resources list">
-            <div className="flex flex-col gap-4">
-              <Text>State addresses</Text>
+      <>
+        <Tabs>
+          {resourceList && (
+            <Tab title="Resources list">
+              <div className="flex flex-col gap-4">
+                <Text>State addresses</Text>
 
-              <div className="flex flex-col divide-y">{resourceList}</div>
-            </div>
-          </Tab>
-        )}
+                <div className="flex flex-col divide-y">{resourceList}</div>
+              </div>
+            </Tab>
+          )}
 
-        {outputList && (
-          <Tab title="Outputs">
-            <DataTable
-              headers={['Name & Type', 'Value']}
-              initData={outputList}
-            />
-          </Tab>
-        )}
-      </Tabs>
+          {outputList && (
+            <Tab title="Outputs">
+              <DataTable
+                headers={['Name & Type', 'Value']}
+                initData={outputList}
+              />
+            </Tab>
+          )}
+        </Tabs>
+      </>
     )
   }
 
@@ -139,12 +141,8 @@ export const TerraformWorkspace: FC<ITerraformWorkspace> = async ({
         heading="Terraform state"
         actions={
           <div className="flex items-center gap-4">
-            {lockRes?.data ? (
-              <UnlockModal
-                workspace={workspace}
-                orgId={orgId}
-                lock={lockRes?.data}
-              />
+            {lock ? (
+              <UnlockModal workspace={workspace} orgId={orgId} lock={lock} />
             ) : null}
             <BackendModal
               orgId={orgId}
