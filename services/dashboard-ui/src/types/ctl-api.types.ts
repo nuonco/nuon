@@ -221,3 +221,48 @@ export type TAPIVersion = {
   git_ref: string
   version: string
 }
+
+
+// terraform workspaces
+export type TTerraformWorkspaceState = components["schemas"]["app.TerraformWorkspaceStateJSON"]
+export type TTerraformWorkspaceLock = components["schemas"]["app.TerraformWorkspaceLock"] 
+export type TTerraformState = {
+  format_version: string;
+  terraform_version: string;
+  values: {
+    outputs?: {
+      [key: string]: {
+        sensitive: boolean;
+        value: any;
+        type: string;
+      };
+    };
+    root_module?: {
+      resources?: Array<{
+        address: string;
+        mode: string;
+        type: string;
+        name: string;
+        provider_name: string;
+        schema_version: number;
+        values: Record<string, any>;
+        sensitive_values: Record<string, any>;
+      }>;
+      child_modules?: Array<{
+        resources?: Array<{
+          address: string;
+          mode: string;
+          type: string;
+          name: string;
+          provider_name: string;
+          schema_version: number;
+          index?: number | string;
+          values: Record<string, any>;
+          sensitive_values: Record<string, any>;
+          depends_on?: string[];
+        }>;
+        address?: string;
+      }>;
+    };
+  };
+};
