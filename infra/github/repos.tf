@@ -24,6 +24,15 @@ module "terraform-provider-echo" {
   required_checks = []
 }
 
+module "retool-seed" {
+  source = "./modules/repository"
+
+  name            = "retool-seed"
+  enable_ecr      = false
+  description     = "Retool seed"
+  required_checks = []
+}
+
 module "graveyard" {
   source = "./modules/repository"
 
