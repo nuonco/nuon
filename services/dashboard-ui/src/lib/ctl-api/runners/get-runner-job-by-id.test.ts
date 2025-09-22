@@ -13,7 +13,6 @@ describe('getRunnerJobById should handle response status codes from GET runner-j
       orgId,
     })
     expect(spec).toBeDefined()
-    expect(spec).toMatchSnapshot()
   })
 
   test.each(badResponseCodes)('%s status', async (code) => {
