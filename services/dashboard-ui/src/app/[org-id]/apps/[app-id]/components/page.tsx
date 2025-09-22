@@ -9,8 +9,7 @@ import {
   Loading,
   Section,
 } from '@/components'
-import { getAppById, getAppLatestInputConfig, getAppLatestConfig } from '@/lib'
-import type { TAppConfig } from '@/types'
+import { getAppById, getAppConfigs } from '@/lib'
 import { AppComponents } from './components'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -25,10 +24,9 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function AppComponentsPage({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
-  const [{ data: app }, appConfig, inputCfg] = await Promise.all([
+  const [{ data: app }, { data: configs }] = await Promise.all([
     getAppById({ appId, orgId }),
-    getAppLatestConfig({ appId, orgId }).catch(console.error),
-    getAppLatestInputConfig({ appId, orgId }).catch(console.error),
+    getAppConfigs({ appId, orgId }),
   ])
 
   return (
@@ -41,13 +39,8 @@ export default async function AppComponentsPage({ params, searchParams }) {
       heading={app.name}
       headingUnderline={app.id}
       statues={
-        inputCfg ? (
-          <AppCreateInstallButton
-            platform={app?.cloud_platform}
-            inputConfig={inputCfg}
-            appId={appId}
-            orgId={orgId}
-          />
+        app?.cloud_platform === 'aws' || app.cloud_platform === 'azure' ? (
+          <AppCreateInstallButton platform={app?.cloud_platform} />
         ) : null
       }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
@@ -61,7 +54,7 @@ export default async function AppComponentsPage({ params, searchParams }) {
           >
             <AppComponents
               appId={appId}
-              configId={(appConfig as TAppConfig)?.id}
+              configId={configs?.at(0)?.id}
               orgId={orgId}
               offset={sp['offset'] || '0'}
               q={sp['q'] || ''}

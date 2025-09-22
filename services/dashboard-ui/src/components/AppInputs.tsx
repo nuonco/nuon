@@ -2,7 +2,7 @@
 
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowsOutSimple, Check, Minus } from '@phosphor-icons/react'
+import { ArrowsOutSimpleIcon, CheckIcon, MinusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Expand } from '@/components/Expand'
 import { Modal } from '@/components/Modal'
@@ -78,17 +78,17 @@ export const AppInputConfig: FC<IAppInputConfig> = ({
                       </ToolTip>
                     ) : (
                       <Text className="text-sm">
-                        {input.default || <Minus />}
+                        {input.default || <MinusIcon />}
                       </Text>
                     )}
                   </div>
 
                   <Text className="text-sm">
-                    {input.required ? <Check /> : <Minus />}
+                    {input.required ? <CheckIcon /> : <MinusIcon />}
                   </Text>
 
                   <Text className="text-sm">
-                    {input.sensitive ? <Check /> : <Minus />}
+                    {input.sensitive ? <CheckIcon /> : <MinusIcon />}
                   </Text>
                 </div>
               ))}
@@ -131,7 +131,7 @@ export const AppInputConfigModal: FC<IAppInputConfig & { appName: string }> = ({
         title="Expand install inputs"
         variant="ghost"
       >
-        <ArrowsOutSimple />
+        <ArrowsOutSimpleIcon />
       </Button>
     </>
   )

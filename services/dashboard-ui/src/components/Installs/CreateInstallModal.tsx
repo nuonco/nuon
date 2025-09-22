@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Cube, CaretLeft } from '@phosphor-icons/react'
+import { CubeIcon, CaretLeftIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { RadioInput } from '@/components/Input'
 import { InstallForm } from '@/components/InstallForm'
@@ -12,12 +12,13 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
+import { useQuery } from '@/hooks/use-query'
 import { createAppInstall } from '../app-actions'
-import type { TApp, TAppInputConfig } from '@/types'
+import type { TApp, TAppConfig } from '@/types'
 
 interface ICreateInstallModal {}
 
-export const CreateInstallModal: FC<ICreateInstallModal> = ({}) => {
+export const CreateInstallModal = ({}: ICreateInstallModal) => {
   const [isOpen, setIsOpen] = useState(false)
   const [app, selectApp] = useState<TApp | undefined>()
 
@@ -44,7 +45,7 @@ export const CreateInstallModal: FC<ICreateInstallModal> = ({}) => {
               contentClassName="px-0 py-0"
             >
               {app ? (
-                <CreateInstallFromApp
+                <LoadAppConfigs
                   app={app}
                   onClose={onClose}
                   selectApp={selectApp}
@@ -62,40 +63,32 @@ export const CreateInstallModal: FC<ICreateInstallModal> = ({}) => {
           setIsOpen(true)
         }}
       >
-        <Cube size={16} /> Create install
+        <CubeIcon size={16} /> Create install
       </Button>
     </>
   )
 }
 
-const AppSelect: FC<{ onClose: () => void; selectApp: (app: TApp) => void }> = (
-  props
-) => {
+const AppSelect = (props: {
+  onClose: () => void
+  selectApp: (app: TApp) => void
+}) => {
   const { org } = useOrg()
-  const [isLoading, setIsLoading] = useState(true)
-  const [apps, setApps] = useState<Array<TApp> | undefined>()
-  const [error, setError] = useState<string>()
-
-  useEffect(() => {
-    fetch(`/api/${org?.id}/apps`).then((r) =>
-      r.json().then((res) => {
-        setIsLoading(false)
-        if (res?.error) {
-          setError(res?.error?.error || 'Unable to fetch your apps')
-        } else {
-          setApps(res?.data)
-        }
-      })
-    )
-  }, [])
+  const {
+    data: apps,
+    isLoading,
+    error,
+  } = useQuery<TApp[]>({
+    path: `/api/orgs/${org.id}/apps`,
+  })
 
   return isLoading ? (
     <div className="p-6">
       <Loading loadingText="Loading apps..." variant="stack" />
     </div>
-  ) : error ? (
+  ) : error?.error ? (
     <div className="p-6">
-      <Notice>{error}</Notice>
+      <Notice>{error?.error || 'Unable to load apps'}</Notice>
     </div>
   ) : (
     <div>
@@ -140,40 +133,48 @@ const AppSelect: FC<{ onClose: () => void; selectApp: (app: TApp) => void }> = (
   )
 }
 
-const CreateInstallFromApp: FC<{
+interface ICreateInstallFromApp {
   app: TApp
   onClose: () => void
   selectApp: (app: undefined) => void
-}> = ({ app, ...props }) => {
-  const { org } = useOrg()
-  const [fetchTry, setFetchTry] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [inputConfig, setInputConfig] = useState<TAppInputConfig | undefined>()
-  const [error, setError] = useState<string>()
-  const router = useRouter()
-
-
-  const fetchAppInputs = () => {
-    setFetchTry(prev => prev++);
-    fetch(`/api/${org?.id}/apps/${app?.id}/input-configs/latest`).then((r) =>
-      r.json().then((res) => {
-        setIsLoading(false)
-        if (res?.error) {
-          setError('Unable to fetch app input configs')
-          if (fetchTry < 5) {
-            fetchAppInputs()
-          }
-        } else {
-          setError(undefined)
-          setInputConfig(res.data)
-        }
-      })
-    )
 }
-  
-  useEffect(() => {
-    fetchAppInputs()
-  }, [])
+
+const LoadAppConfigs = ({ app, ...props }: ICreateInstallFromApp) => {
+  const { org } = useOrg()
+  const {
+    data: configs,
+    isLoading,
+    error,
+  } = useQuery<TAppConfig[]>({
+    path: `/api/orgs/${org?.id}/apps/${app?.id}/configs`,
+  })
+  return isLoading ? (
+    <div className="p-6">
+      <Loading loadingText="Loading configs..." variant="stack" />
+    </div>
+  ) : error?.error ? (
+    <div className="p-6">
+      <Notice>{error?.error || 'Unable to load app configs'}</Notice>
+    </div>
+  ) : (
+    <CreateInstallFromApp app={app} configId={configs?.at(0)?.id} {...props} />
+  )
+}
+
+const CreateInstallFromApp = ({
+  app,
+  configId,
+  ...props
+}: ICreateInstallFromApp & { configId: string }) => {
+  const router = useRouter()
+  const { org } = useOrg()
+  const {
+    data: config,
+    isLoading,
+    error,
+  } = useQuery<TAppConfig>({
+    path: `/api/orgs/${org?.id}/apps/${app?.id}/configs/${configId}?recurse=true`,
+  })
 
   return (
     <div>
@@ -181,9 +182,9 @@ const CreateInstallFromApp: FC<{
         <div className="p-6">
           <Loading loadingText="Loading configs..." variant="stack" />
         </div>
-      ) : error ? (
+      ) : error?.error ? (
         <div className="p-6">
-          <Notice>{error}</Notice>
+          <Notice>{error?.error}</Notice>
         </div>
       ) : (
         <>
@@ -194,7 +195,7 @@ const CreateInstallFromApp: FC<{
                 props.selectApp(undefined)
               }}
             >
-              <CaretLeft size="16" />
+              <CaretLeftIcon size="16" />
               Back
             </Button>
           </div>
@@ -216,10 +217,26 @@ const CreateInstallFromApp: FC<{
               props.onClose()
             }}
             platform={app?.runner_config.app_runner_type}
-            inputConfig={inputConfig}
+            inputConfig={{
+              ...config.input,
+              input_groups: nestInputsUnderGroups(
+                config.input?.input_groups,
+                config.input?.inputs
+              ),
+            }}
           />
         </>
       )}
     </div>
   )
+}
+
+function nestInputsUnderGroups(
+  groups: TAppConfig['input']['input_groups'],
+  inputs: TAppConfig['input']['inputs']
+) {
+  return groups.map((group) => ({
+    ...group,
+    app_inputs: inputs.filter((input) => input.group_id === group.id),
+  }))
 }

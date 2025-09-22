@@ -1,46 +1,28 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { PencilSimpleLine } from '@phosphor-icons/react'
+import { PencilSimpleLineIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { InstallForm } from '@/components/InstallForm'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { updateInstall, updateInstallManagedBy } from '@/components/install-actions'
-import type { TInstall, TAppInputConfig } from '@/types'
+import {
+  updateInstall,
+  updateInstallManagedBy,
+} from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useQuery } from '@/hooks/use-query'
+import type { TAppConfig } from '@/types'
 import { ConfirmUpdateModal } from './ConfirmUpdateModal'
 
-interface IEditModal {
-  install: TInstall
-  orgId: string
-}
-
-export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
+export const EditModal = () => {
+  const { install } = useInstall()
   const [isOpen, setIsOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [inputConfig, setInputConfig] = useState<TAppInputConfig | undefined>()
-  const [error, setError] = useState<string>()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (isOpen) {
-      fetch(`/api/${orgId}/apps/${install?.app_id}/input-configs/latest`).then(
-        (r) =>
-          r.json().then((res) => {
-            setIsLoading(false)
-            if (res?.error) {
-              setError(res?.error?.error || 'Unable to fetch app input configs')
-            } else {
-              setInputConfig(res.data)
-            }
-          })
-      )
-    }
-  }, [isOpen])
 
   return (
     <>
@@ -55,45 +37,11 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
               }}
               contentClassName="px-0 py-0"
             >
-              {isLoading ? (
-                <div className="p-6">
-                  <Loading loadingText="Loading configs..." variant="stack" />
-                </div>
-              ) : error ? (
-                <div className="p-6">
-                  <Notice>{error}</Notice>
-                </div>
-              ) : (
-                <InstallForm
-                  onSubmit={(formData) => {
-                    const res = updateInstall({
-                      installId: install.id,
-                      orgId,
-                      formData,
-                    })
-                    updateInstallManagedBy({
-                      installId: install?.id,
-                      orgId: orgId,
-                      managedBy: install?.metadata?.managed_by,
-                    })
-                    return res
-                  }}
-                  onSuccess={(workflowId) => {
-                    if (workflowId) {
-                      router.push(
-                        `/${orgId}/installs/${install.id}/workflows/${workflowId}`
-                      )
-                    } else {
-                      router.push(`/${orgId}/installs/${install.id}/workflows`)
-                    }
-                  }}
-                  onCancel={() => {
-                    setIsOpen(false)
-                  }}
-                  inputConfig={inputConfig}
-                  install={install}
-                />
-              )}
+              <EditForm
+                onClose={() => {
+                  setIsOpen(false)
+                }}
+              />
             </Modal>,
             document.body
           )
@@ -113,9 +61,83 @@ export const EditModal: FC<IEditModal> = ({ install, orgId }) => {
           setIsConfirmOpen(true)
         }}
       >
-        <PencilSimpleLine size="16" />
+        <PencilSimpleLineIcon size="16" />
         Edit inputs
       </Button>
     </>
   )
+}
+
+const EditForm = ({ onClose }: { onClose: () => void }) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+
+  const {
+    data: config,
+    isLoading,
+    error,
+  } = useQuery({
+    path: `/api/orgs/${org.id}/apps/${install?.app_id}/configs/${install?.app_config_id}?recurse=true`,
+  })
+
+  const router = useRouter()
+  return (
+    <>
+      {isLoading ? (
+        <div className="p-6">
+          <Loading loadingText="Loading configs..." variant="stack" />
+        </div>
+      ) : error?.error ? (
+        <div className="p-6">
+          <Notice>{error?.error || 'Unable to load app config'}</Notice>
+        </div>
+      ) : (
+        <InstallForm
+          onSubmit={(formData) => {
+            const res = updateInstall({
+              installId: install.id,
+              orgId: org.id,
+              formData,
+            })
+            updateInstallManagedBy({
+              installId: install?.id,
+              orgId: org.id,
+              managedBy: install?.metadata?.managed_by,
+            })
+            return res
+          }}
+          onSuccess={(workflowId) => {
+            if (workflowId) {
+              router.push(
+                `/${org.id}/installs/${install.id}/workflows/${workflowId}`
+              )
+            } else {
+              router.push(`/${org.id}/installs/${install.id}/workflows`)
+            }
+          }}
+          onCancel={onClose}
+          inputConfig={{
+            ...config.input,
+            input_groups: nestInputsUnderGroups(
+              config.input?.input_groups,
+              config.input?.inputs
+            ),
+          }}
+          install={install}
+        />
+      )}
+    </>
+  )
+}
+
+function nestInputsUnderGroups(
+  groups: TAppConfig['input']['input_groups'],
+  inputs: TAppConfig['input']['inputs']
+) {
+  return groups
+    ? groups.map((group) => ({
+        ...group,
+        app_inputs: inputs.filter((input) => input.group_id === group.id),
+      }))
+    : []
 }
