@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
+import { getIsSidebarOpenFromCookie } from "@/actions/layout/main-sidebar-cookie";
 import { Empty } from '@/components/Empty'
 import { Layout } from '@/components/Layout'
 import { REFRESH_PAGE_INTERVAL, REFRESH_PAGE_WARNING } from '@/configs/app'
@@ -11,9 +12,7 @@ import { VERSION } from '@/utils'
 
 export default async function OrgLayout({ children, params }) {
   const cookieStore = await cookies()
-  const isSidebarOpen = Boolean(
-    cookieStore.get('is-sidebar-open')?.value === 'true'
-  )
+  const isSidebarOpen = getIsSidebarOpenFromCookie()
   const { ['org-id']: orgId } = await params
   const [{data: org, error, status }, { data: orgs}, { data: apiVersion }] = await Promise.all([
     getOrgById({ orgId }).catch((error) => {
