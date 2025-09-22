@@ -98,6 +98,8 @@ env:
   ORG_RUNNER_HELM_CHART_DIR: $NUON_ROOT/bins/runner/bundle/helm
   MAX_REQUEST_DURATION: 10s
   ENABLE_HTTPBIN_DEBUG_ENDPOINTS: true
+  SERVICE_TYPE: api
+  SERVICE_DEPLOYMENT: local
 
   # The following fields control local behavior and can be changed by adding a ~/.nuonctl-env.yml file:
   #
@@ -125,13 +127,12 @@ env:
   ENABLE_PROFILING: false
   PROFILING_PORT: 6060
   ENABLE_ENDPOINT_AUDITING: true
-  
+
   # chaos rate greater than 0 to enable
   CHAOS_RATE: 0
   CHAOS_ERRORS: panic,bad_gateway,service_unavailable,internal_server_error,timeout
   # CHAOS_ROUTES: get_/v1/orgs,get_/v1/apps
   # CHAOS_SLEEP: 1s
-
 
 env_secrets:
   GITHUB_APP_KEY:
