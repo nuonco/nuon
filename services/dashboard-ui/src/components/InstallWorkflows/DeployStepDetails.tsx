@@ -23,7 +23,7 @@ export const DeployStepDetails = ({
     error,
   } = usePolling<TInstallDeploy>({
     initIsLoading: true,
-    path: `/api/${org.id}/installs/${step?.owner_id}/deploys/${step?.step_target_id}`,
+    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/deploys/${step?.step_target_id}`,
     pollInterval,
     shouldPoll,
   })
