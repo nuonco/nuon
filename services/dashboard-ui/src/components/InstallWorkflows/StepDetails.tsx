@@ -1,9 +1,9 @@
-import React, { useState, type FC } from 'react'
+import React from 'react'
 import { Expand } from '@/components/Expand'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { Text, Code } from '@/components/Typography'
-import type { TInstallWorkflowStep, TInstall } from '@/types'
+import type { TInstallWorkflowStep } from '@/types'
 import { sentanceCase } from '@/utils'
 import { ApprovalStep } from './ApproveStep'
 import { YAStatus } from './InstallWorkflowHistory'
@@ -16,7 +16,6 @@ import { RetryButtons } from './RetryButtons'
 
 export function getStepType(
   step: TInstallWorkflowStep,
-  install: TInstall,
   workflowApproveOption: 'prompt' | 'approve-all'
 ): React.ReactNode {
   let stepDetails = <Loading loadingText="Waiting on step..." variant="page" />
@@ -33,14 +32,7 @@ export function getStepType(
       break
 
     case 'install_stack_versions':
-      stepDetails = (
-        <StackStep
-          step={step}
-          install={install}
-          appId={install?.app_id}
-          shouldPoll
-        />
-      )
+      stepDetails = <StackStep step={step} shouldPoll />
       break
 
     case 'install_action_workflow_runs':
@@ -155,10 +147,13 @@ export function getStepType(
   )
 }
 
-export const StepDetails: FC<{
+export const StepDetails = ({
+  children,
+  activeStepIndex = 0,
+}: {
   children: React.ReactNode
   activeStepIndex: number
-}> = ({ children, activeStepIndex = 0 }) => {
+}) => {
   const steps = React.Children.toArray(children)
 
   return <div>{steps[activeStepIndex]}</div>
