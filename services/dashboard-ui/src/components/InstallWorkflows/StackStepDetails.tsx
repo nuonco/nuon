@@ -1,8 +1,5 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
-import { CaretRight } from '@phosphor-icons/react'
 import { ClickToCopyButton } from '@/components/ClickToCopy'
 import { ConfigurationVariables } from '@/components/ComponentConfig'
 import { Link } from '@/components/Link'
@@ -11,53 +8,31 @@ import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Time } from '@/components/Time'
 import { Text, Code } from '@/components/Typography'
-import type { TAppStackConfig, TInstallStack, TInstall } from '@/types'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { usePolling } from '@/hooks/use-polling'
+import { useQuery } from '@/hooks/use-query'
+import type { TAppStackConfig, TInstallStack } from '@/types'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
-interface IStackStepDetails extends IPollStepDetails {
-  install: TInstall
-  appId: string
-}
-
-export const StackStep: FC<IStackStepDetails> = ({
-  install,
-  appId,
+export const StackStep = ({
+  pollInterval = 5000,
   step,
   shouldPoll = false,
-  pollDuration = 5000,
-}) => {
+}: IPollStepDetails) => {
   const isGenerateStep = step?.name === 'generate install stack'
-  const params = useParams<Record<'org-id', string>>()
-  const orgId = params?.['org-id']
-  const [stack, setData] = useState<TInstallStack>()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>()
-
-  const fetchData = () => {
-    fetch(`/api/${orgId}/installs/${step?.owner_id}/stack`).then((r) =>
-      r.json().then((res) => {
-        setIsLoading(false)
-        if (res?.error) {
-          setError(res?.error?.error)
-        } else {
-          setError(undefined)
-          setData(res.data)
-        }
-      })
-    )
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    if (shouldPoll) {
-      const pollData = setInterval(fetchData, pollDuration)
-
-      return () => clearInterval(pollData)
-    }
-  }, [shouldPoll])
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const {
+    data: stack,
+    isLoading,
+    error,
+  } = usePolling<TInstallStack>({
+    initIsLoading: true,
+    path: `/api/${org.id}/installs/${step?.owner_id}/stack`,
+    pollInterval,
+    shouldPoll,
+  })
 
   return (
     <>
@@ -67,14 +42,14 @@ export const StackStep: FC<IStackStepDetails> = ({
         </div>
       ) : (
         <>
-          {error ? <Notice>{error}</Notice> : null}
+          {error?.error ? <Notice>{error?.error}</Notice> : null}
           {stack ? (
             isGenerateStep ? (
-              <GenerateStack stack={stack} appId={appId} orgId={orgId} />
+              <GenerateStack stack={stack} />
             ) : install?.app_runner_config.app_runner_type === 'aws' ? (
               <AwaitStack stack={stack} />
             ) : (
-              <AwaitAzureStack install={install} stack={stack} />
+              <AwaitAzureStack stack={stack} />
             )
           ) : null}
         </>
@@ -83,46 +58,29 @@ export const StackStep: FC<IStackStepDetails> = ({
   )
 }
 
-const GenerateStack: FC<{
-  stack: TInstallStack
-  appId: string
-  orgId: string
-}> = ({ stack, appId, orgId }) => {
-  const [stackConfig, setStackConfig] = useState<TAppStackConfig>()
-  const [isLoading, setIsLoading] = useState(!Boolean(stackConfig))
-  const [error, setError] = useState<string>()
-
-  const fetchStackConfig = () => {
-    fetch(
-      `/api/${orgId}/apps/${appId}/configs/${
-        stack?.versions?.at(0).app_config_id
-      }`
-    ).then((r) =>
-      r.json().then((res) => {
-        setIsLoading(false)
-        if (res?.error) {
-          setError(res?.error?.error)
-        } else {
-          setError(undefined)
-          setStackConfig(res.data?.stack)
-        }
-      })
-    )
-  }
-
-  useEffect(() => {
-    if (stack?.versions && !stackConfig) {
-      fetchStackConfig()
-    }
-  }, [stack])
+const GenerateStack = ({ stack }: { stack: TInstallStack }) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const {
+    data: stackConfig,
+    isLoading,
+    error,
+  } = useQuery<TAppStackConfig>({
+    dependencies: [stack],
+    path: `/api/${org.id}/apps/${install?.app_id}/configs/${
+      stack?.versions?.at(0).app_config_id
+    }`,
+  })
 
   return (
     <>
       {isLoading ? (
-        <Loading loadingText="Loading stack infromation..." variant="page" />
+        <Loading loadingText="Loading stack infromation..." variant="stack" />
       ) : (
         <>
-          {error ? <Notice>{error}</Notice> : null}
+          {error?.error ? (
+            <Notice>{error?.error || 'Unable to load stack config'}</Notice>
+          ) : null}
           {stack ? (
             <>
               <>
@@ -153,7 +111,7 @@ const GenerateStack: FC<{
   )
 }
 
-const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
+const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
   return (
     <>
       <div className="border rounded-md shadow flex flex-col">
@@ -271,10 +229,8 @@ const AwaitStack: FC<{ stack: TInstallStack }> = ({ stack }) => {
   )
 }
 
-const AwaitAzureStack: FC<{ install: TInstall; stack: TInstallStack }> = ({
-  stack,
-  install,
-}) => {
+const AwaitAzureStack = ({ stack }: { stack: TInstallStack }) => {
+  const { install } = useInstall()
   return (
     <>
       <div className="border rounded-md shadow flex flex-col">

@@ -1,70 +1,51 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
-import { CaretRight } from '@phosphor-icons/react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { StatusBadge } from '@/components/Status'
 import { Text } from '@/components/Typography'
+import { useOrg } from '@/hooks/use-org'
+import { usePolling } from '@/hooks/use-polling'
 import type { TInstallDeploy } from '@/types'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
-export const DeployStepDetails: FC<IPollStepDetails> = ({
+export const DeployStepDetails = ({
+  pollInterval = 5000,
   step,
   shouldPoll = false,
-  pollDuration = 5000,
-}) => {
-  const params = useParams<Record<'org-id', string>>()
-  const orgId = params?.['org-id']
-  const [deploy, setData] = useState<TInstallDeploy>()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>()
-
-  const fetchData = () => {
-    fetch(
-      `/api/${orgId}/installs/${step?.owner_id}/deploys/${step?.step_target_id}`
-    ).then((r) =>
-      r.json().then((res) => {
-        setIsLoading(false)
-        if (res?.error) {
-          setError(res?.error?.error)
-        } else {
-          setError(undefined)
-          setData(res.data)
-        }
-      })
-    )
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    if (shouldPoll) {
-      const pollData = setInterval(fetchData, pollDuration)
-
-      return () => clearInterval(pollData)
-    }
-  }, [shouldPoll])
+}: IPollStepDetails) => {
+  const { org } = useOrg()
+  const {
+    data: deploy,
+    isLoading,
+    error,
+  } = usePolling<TInstallDeploy>({
+    initIsLoading: true,
+    path: `/api/${org.id}/installs/${step?.owner_id}/deploys/${step?.step_target_id}`,
+    pollInterval,
+    shouldPoll,
+  })
 
   return (
     <>
-    { step?.execution_type === 'approval' && step?.status?.status === 'auto-skipped' ? (
+      {step?.execution_type === 'approval' &&
+      step?.status?.status === 'auto-skipped' ? (
         <div className="flex flex-col gap-2">
-        <Text variant="reg-14">Plan had no changes, skipping deployent.</Text>
-        <br></br>
+          <Text variant="reg-14">Plan had no changes, skipping deployent.</Text>
+          <br></br>
         </div>
-    ) : null }
-    {isLoading ? (
+      ) : null}
+      {isLoading ? (
         <div className="border rounded-md p-6">
-            <Loading loadingText="Loading deploy details..." variant="stack" />
+          <Loading loadingText="Loading deploy details..." variant="stack" />
         </div>
       ) : (
         <>
-          {error ? <Notice>{error}</Notice> : null}         
+          {error?.error ? (
+            <Notice>{error?.error || 'Unable to load deploy'}</Notice>
+          ) : null}
           {deploy ? (
             <div className="flex flex-col gap-8">
               <>
@@ -76,19 +57,19 @@ export const DeployStepDetails: FC<IPollStepDetails> = ({
                         {deploy?.status !== 'queued' ? (
                           <Link
                             className="text-sm gap-0"
-                            href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}`}
+                            href={`/${org.id}/installs/${step?.owner_id}/components/${deploy?.component_id}`}
                           >
                             View component
-                            <CaretRight />
+                            <CaretRightIcon />
                           </Link>
                         ) : null}
                         {deploy?.status !== 'queued' ? (
                           <Link
                             className="text-sm gap-0"
-                            href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
+                            href={`/${org.id}/installs/${step?.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
                           >
                             View deployment
-                            <CaretRight />
+                            <CaretRightIcon />
                           </Link>
                         ) : null}
                       </div>
