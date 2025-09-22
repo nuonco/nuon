@@ -1,19 +1,16 @@
 import type { Metadata } from 'next'
-import { Suspense, type FC } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
   AppCreateInstallButton,
   AppPageSubNav,
-  AppWorkflowsTable,
   DashboardContent,
   ErrorFallback,
   Loading,
-  NoActions,
-  Notice,
-  Pagination,
   Section,
 } from '@/components'
-import { getAppById, getAppLatestInputConfig, getActions } from '@/lib'
+import { getAppById } from '@/lib'
+import { AppActions } from './actions'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
@@ -24,13 +21,10 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function AppWorkflows({ params, searchParams }) {
+export default async function AppActionsPage({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
-  const [{ data: app }, inputCfg] = await Promise.all([
-    getAppById({ appId, orgId }),
-    getAppLatestInputConfig({ appId, orgId }).catch(console.error),
-  ])
+  const { data: app } = await getAppById({ appId, orgId })
 
   return (
     <DashboardContent
@@ -42,13 +36,8 @@ export default async function AppWorkflows({ params, searchParams }) {
       heading={app.name}
       headingUnderline={app.id}
       statues={
-        inputCfg ? (
-          <AppCreateInstallButton
-            platform={app?.cloud_platform}
-            inputConfig={inputCfg}
-            appId={appId}
-            orgId={orgId}
-          />
+        app?.cloud_platform === 'aws' || app.cloud_platform === 'azure' ? (
+          <AppCreateInstallButton platform={app?.cloud_platform} />
         ) : null
       }
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
@@ -60,7 +49,7 @@ export default async function AppWorkflows({ params, searchParams }) {
               <Loading variant="page" loadingText="Loading actions..." />
             }
           >
-            <LoadAppActions
+            <AppActions
               appId={appId}
               orgId={orgId}
               offset={sp['offset'] || '0'}
@@ -70,46 +59,5 @@ export default async function AppWorkflows({ params, searchParams }) {
         </ErrorBoundary>
       </Section>
     </DashboardContent>
-  )
-}
-
-// TODO(nnnnat): move to server component file
-const LoadAppActions: FC<{
-  appId: string
-  orgId: string
-  limit?: number
-  offset?: string
-  q?: string
-}> = async ({ appId, orgId, limit = 10, offset, q }) => {
-  const {
-    data: actions,
-    error,
-    headers,
-  } = await getActions({
-    appId,
-    limit,
-    offset,
-    orgId,
-    q,
-  })
-
-  const pageData = {
-    hasNext: headers?.get('x-nuon-page-next') || 'false',
-    offset: headers?.get('x-nuon-page-offset') || '0',
-  }
-  return error ? (
-    <Notice>Can&apos;t load actions: {error?.error}</Notice>
-  ) : actions ? (
-    <div className="flex flex-col gap-4 w-full">
-      <AppWorkflowsTable appId={appId} orgId={orgId} workflows={actions} />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={limit}
-      />
-    </div>
-  ) : (
-    <NoActions />
   )
 }
