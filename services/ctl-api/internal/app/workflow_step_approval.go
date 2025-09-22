@@ -39,7 +39,7 @@ type WorkflowStepApproval struct {
 
 	// the runner job where this approval was created
 	RunnerJobID *string    `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
-	RunnerJob   *RunnerJob `temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJob   *RunnerJob `json:"runner_job,omitzero" temporaljson:"runner_job,omitzero,omitempty"`
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
@@ -49,6 +49,7 @@ type WorkflowStepApproval struct {
 	Type WorkflowStepApprovalType `json:"type"`
 
 	// the response object must be created by the user in the UI or CLI
+
 	Response *WorkflowStepApprovalResponse `gorm:"foreignKey:InstallWorkflowStepApprovalID" json:"response,omitzero" temporaljson:"response,omitzero,omitempty"`
 
 	// afterquery
