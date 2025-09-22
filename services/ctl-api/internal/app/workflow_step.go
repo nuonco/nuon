@@ -41,7 +41,6 @@ type WorkflowStep struct {
 	// DEPRECATED: this is the install workflow ID, which is now the workflow ID.
 	InstallWorkflowID string `json:"install_workflow_id,omitzero" temporaljson:"install_workflow_id,omitzero,omitempty"`
 
-	// status
 	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	Name   string          `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 
@@ -76,6 +75,7 @@ type WorkflowStep struct {
 	Finished   bool      `json:"finished,omitzero" gorm:"-" temporaljson:"finished,omitzero,omitempty"`
 
 	// the step approval is built into each step at the runner level.
+
 	Approval         *WorkflowStepApproval         `gorm:"foreignKey:InstallWorkflowStepID" json:"approval,omitzero" temporaljson:"approval,omitzero,omitempty"`
 	PolicyValidation *WorkflowStepPolicyValidation `gorm:"foreignKey:InstallWorkflowStepID" json:"policy_validation,omitzero" temporaljson:"policy_validation,omitzero,omitempty"`
 
