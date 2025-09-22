@@ -20,7 +20,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   const { data: org } = await getOrgById({ orgId })
 
   return {
-    title: `${org.name} | Apps`,
+    title: `Apps | ${org.name} | Nuon`,
   }
 }
 
