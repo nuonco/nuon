@@ -61,11 +61,14 @@ type Config struct {
 	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
-	GitRef         string `config:"git_ref" validate:"required"`
-	Version        string `config:"version" validate:"required"`
-	DisableMetrics bool   `config:"disable_metrics"`
+	GitRef         string   `config:"git_ref" validate:"required"`
+	Version        string   `config:"version" validate:"required"`
+	MetricsTags    []string `config:"metrics_tags"`
+	DisableMetrics bool     `config:"disable_metrics"`
 
 	ServiceName             string        `config:"service_name" validate:"required"`
+	ServiceType             string        `config:"service_type" validate:"required"`
+	ServiceDeployment       string        `config:"service_deployment"`
 	HTTPPort                string        `config:"http_port" validate:"required"`
 	InternalHTTPPort        string        `config:"internal_http_port" validate:"required"`
 	RunnerHTTPPort          string        `config:"runner_http_port" validate:"required"`

@@ -47,6 +47,7 @@ ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr
 ARG VERSION
 ARG GIT_REF
 ENV VERSION=$VERSION
+ENV DD_VERSION=$VERSION
 ENV GIT_REF=$GIT_REF
 
 COPY bundle /bundle
