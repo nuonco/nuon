@@ -4,12 +4,12 @@ import classNames from 'classnames'
 import { useSearchParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import {
-  ArrowLineLeft,
-  ArrowLineRight,
-  List,
-  X,
+  ArrowLineLeftIcon,
+  ArrowLineRightIcon,
+  ListIcon,
+  XIcon,
 } from '@phosphor-icons/react/dist/ssr'
-import { setDashboardSidebarCookie } from '@/components/actions'
+import { setSidebarCookie } from '@/actions/layout/main-sidebar-cookie'
 import { AdminModal } from '@/components/AdminModal'
 import { Button } from '@/components/Button'
 import { Logo } from '@/components/Logo'
@@ -49,7 +49,7 @@ export const OldLayout: FC<ILayout> = ({ children, orgs, versions }) => {
                 setIsOpen(!isOpen)
               }}
             >
-              {isOpen ? <ArrowLineLeft /> : <ArrowLineRight />}
+              {isOpen ? <ArrowLineLeftIcon /> : <ArrowLineRightIcon />}
             </Button>
           </div>
 
@@ -109,16 +109,16 @@ export const Layout: FC<{
               variant="ghost"
               onClick={() => {
                 setIsOpen(!isOpen)
-                setDashboardSidebarCookie(!isOpen)
+                setSidebarCookie(!isOpen)
               }}
             >
               {isOpen ? (
                 <>
-                  <X className="md:hidden" />
-                  <ArrowLineLeft className="hidden md:block" />
+                  <XIcon className="md:hidden" />
+                  <ArrowLineLeftIcon className="hidden md:block" />
                 </>
               ) : (
-                <ArrowLineRight />
+                <ArrowLineRightIcon />
               )}
             </Button>
           </div>
@@ -159,7 +159,7 @@ export const Layout: FC<{
             setIsOpen(!isOpen)
           }}
         >
-          {isOpen ? <ArrowLineLeft /> : <List />}
+          {isOpen ? <ArrowLineLeftIcon /> : <ListIcon />}
         </Button>
         {children}
       </div>
