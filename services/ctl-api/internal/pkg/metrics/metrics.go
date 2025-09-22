@@ -13,8 +13,11 @@ import (
 
 func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Writer, error) {
 	tags := []string{
+		fmt.Sprintf("service_deployment:%s", cfg.ServiceDeployment),
+		fmt.Sprintf("service_type:%s", cfg.ServiceType),
 		fmt.Sprintf("git_ref:%s", cfg.GitRef),
 	}
+	tags = append(tags, cfg.MetricsTags...)
 
 	mw, err := metrics.New(v,
 		metrics.WithDisable(cfg.DisableMetrics),
