@@ -38,7 +38,7 @@ export const ActionStepDetails = ({
   const {org } = useOrg();
   const { data: actionRun, isLoading, error} = usePolling<TInstallActionRun>({
     initIsLoading: true,
-    path: `/api/${org.id}/installs/${step?.owner_id}/action-workflows/runs/${step?.step_target_id}`,
+    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/actions/runs/${step?.step_target_id}`,
     pollInterval,
     shouldPoll,    
   })

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { SlidersHorizontal } from '@phosphor-icons/react/dist/ssr'
+import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/ssr'
 import { AutoApproveModal } from './AutoApproveModal'
 import { BreakGlassLink } from './BreakGlassLink'
 import { DeleteInstallModal } from './DeleteModal'
@@ -37,7 +37,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
       id="mgmt-install"
       text={
         <>
-          <SlidersHorizontal size="16" />
+          <SlidersHorizontalIcon size="16" />
           Manage
         </>
       }
@@ -49,9 +49,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
           Settings
         </Text>
 
-        {install?.install_inputs?.length ? (
-          <EditModal install={install} orgId={orgId} />
-        ) : null}
+        {install?.install_inputs?.length ? <EditModal /> : null}
         <BreakGlassLink installId={install.id} />
         <InstallAuditHistoryModal installId={install.id} orgId={org.id} />
         <InstallStateModal install={install} />
