@@ -1,8 +1,6 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
-import { CaretRight } from '@phosphor-icons/react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { ActionTriggerType } from '@/components/ActionTriggerType'
 import { Link } from '@/components/Link'
 import { Loading } from '@/components/Loading'
@@ -11,13 +9,15 @@ import { StatusBadge } from '@/components/Status'
 import { EventStatus } from '@/components/Timeline'
 import { Duration } from '@/components/Time'
 import { Text } from '@/components/Typography'
-import type { TActionConfig, TInstallActionWorkflowRun } from '@/types'
+import {useOrg} from "@/hooks/use-org"
+import {usePolling} from "@/hooks/use-polling"
+import type { TActionConfig, TInstallActionRun } from '@/types'
 import { sentanceCase } from '@/utils'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
 
 // hydrate run steps with idx and name
 function hydrateRunSteps(
-  steps: TInstallActionWorkflowRun['steps'],
+  steps: TInstallActionRun['steps'],
   stepConfigs: TActionConfig['steps']
 ) {
   return steps?.map((step) => {
@@ -30,47 +30,21 @@ function hydrateRunSteps(
   })
 }
 
-export const ActionStepDetails: FC<IPollStepDetails> = ({
+export const ActionStepDetails = ({
   step,
   shouldPoll = false,
-  pollDuration = 5000,
-}) => {
-  const params = useParams<Record<'org-id', string>>()
-  const orgId = params?.['org-id']
-  const [actionRun, setData] = useState<TInstallActionWorkflowRun>()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>()
-
-  const fetchData = () => {
-    fetch(
-      `/api/${orgId}/installs/${step?.owner_id}/action-workflows/runs/${step?.step_target_id}`
-    ).then((r) =>
-      r.json().then((res) => {
-        setIsLoading(false)
-        if (res?.error) {
-          setError(res?.error?.error)
-        } else {
-          setError(undefined)
-          setData(res.data)
-        }
-      })
-    )
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    if (shouldPoll) {
-      const pollData = setInterval(fetchData, pollDuration)
-
-      return () => clearInterval(pollData)
-    }
-  }, [shouldPoll])
+  pollInterval = 5000,
+}: IPollStepDetails) => {
+  const {org } = useOrg();
+  const { data: actionRun, isLoading, error} = usePolling<TInstallActionRun>({
+    initIsLoading: true,
+    path: `/api/${org.id}/installs/${step?.owner_id}/action-workflows/runs/${step?.step_target_id}`,
+    pollInterval,
+    shouldPoll,    
+  })
 
   const componentName = actionRun?.run_env_vars?.COMPONENT_NAME
-  const componentPath = `/${orgId}/installs/${step?.owner_id}/components/${actionRun?.run_env_vars?.COMPONENT_ID}`
+  const componentPath = `/${org.id}/installs/${step?.owner_id}/components/${actionRun?.run_env_vars?.COMPONENT_ID}`
 
   return (
     <>
@@ -83,7 +57,7 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
         </div>
       ) : (
         <>
-          {error ? <Notice>{error}</Notice> : null}
+          {error?.error ? <Notice>{error?.error || "Unable to load action run details."}</Notice> : null}
           {actionRun ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">
@@ -102,17 +76,17 @@ export const ActionStepDetails: FC<IPollStepDetails> = ({
                 <div className="flex items-center gap-4">
                   <Link
                     className="text-sm gap-0"
-                    href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}`}
+                    href={`/${org.id}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}`}
                   >
                     View action
-                    <CaretRight />
+                    <CaretRightIcon />
                   </Link>
                   <Link
                     className="text-sm gap-0"
-                    href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
+                    href={`/${org.id}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
                   >
                     View run
-                    <CaretRight />
+                    <CaretRightIcon />
                   </Link>
                 </div>
               </div>

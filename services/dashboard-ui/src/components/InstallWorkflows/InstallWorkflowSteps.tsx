@@ -18,6 +18,7 @@ import { Duration } from '@/components/Time'
 import { Text } from '@/components/Typography'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import  type { IPollingProps } from "@/hooks/use-polling"
 import type {
   TInstallWorkflow,
   TInstallWorkflowStep,
@@ -28,9 +29,7 @@ import { removeSnakeCase, sentanceCase } from '@/utils'
 import { YAStatus } from './InstallWorkflowHistory'
 import { StepDetails, getStepType } from './StepDetails'
 
-export interface IPollStepDetails {
-  pollDuration?: number
-  shouldPoll?: boolean
+export interface IPollStepDetails extends IPollingProps {
   step: TInstallWorkflowStep
   workflowApproveOption?: 'prompt' | 'approve-all'
 }
@@ -263,7 +262,7 @@ export const InstallWorkflowSteps: FC<IInstallWorkflowSteps> = ({
               )}
             >
               {workflowSteps?.map((step) =>
-                getStepType(step, install, installWorkflow?.approval_option)
+                getStepType(step, installWorkflow?.approval_option)
               )}
             </StepDetails>
           </Section>
