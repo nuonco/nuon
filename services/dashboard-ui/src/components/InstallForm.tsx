@@ -3,7 +3,7 @@
 import classNames from 'classnames'
 import React, { type FC, type FormEvent, useRef, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0'
-import { WarningOctagon, CheckCircle, Cube } from '@phosphor-icons/react'
+import { CheckCircleIcon, CubeIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { CodeViewer } from '@/components/Code'
 import { CheckboxInput, Input, RadioInput } from '@/components/Input'
@@ -172,7 +172,7 @@ export const InstallForm: FC<IInstallForm> = ({
             ) : null}
             {isCreated ? (
               <div className="flex flex-col gap-4 items-center on-enter">
-                <CheckCircle
+                <CheckCircleIcon
                   className="text-green-800 dark:text-green-500"
                   size={32}
                 />
@@ -228,7 +228,7 @@ export const InstallForm: FC<IInstallForm> = ({
             variant="primary"
             disabled={isLoading}
           >
-            {isLoading ? <SpinnerSVG /> : <Cube size="16" />}{' '}
+            {isLoading ? <SpinnerSVG /> : <CubeIcon size="16" />}{' '}
             {install ? 'Update' : 'Create'} Install
           </Button>
         </div>
