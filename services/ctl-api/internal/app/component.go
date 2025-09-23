@@ -18,6 +18,7 @@ const (
 	ComponentStatusError          ComponentStatus = "error"
 	ComponentStatusActive         ComponentStatus = "active"
 	ComponentStatusDeprovisioning ComponentStatus = "deprovisioning"
+	ComponentStatusDeleteQueued   ComponentStatus = "delete_queued"
 )
 
 type ComponentType string

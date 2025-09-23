@@ -13,6 +13,9 @@ func (h *Helpers) GetAppLatestConfig(ctx context.Context, appID string) (*app.Ap
 
 	res := h.db.WithContext(ctx).
 		Order("created_at DESC").
+		Scopes(
+			PreloadAppConfigComponentConfigConnections,
+		).
 		First(&appConfig, "app_id = ?", appID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get app config")
