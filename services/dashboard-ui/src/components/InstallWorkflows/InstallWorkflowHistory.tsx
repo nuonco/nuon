@@ -135,6 +135,17 @@ export const InstallWorkflowHistory = ({
                             Plan only
                           </Badge>
                         ) : null}
+
+                        {iw?.type === 'drift_run_reprovision_sandbox' ||
+                        iw.type === 'drift_run' ? (
+                          <Badge
+                            className="!text-[10px] p-1 !leading-none ml-1"
+                            variant="code"
+                            theme="info"
+                          >
+                            Drift scan
+                          </Badge>
+                        ) : null}
                       </span>
                       <Text variant="mono-12">{iw?.id}</Text>
                     </span>
@@ -178,6 +189,17 @@ export const InstallWorkflowHistory = ({
                               variant="code"
                             >
                               Plan only
+                            </Badge>
+                          ) : null}
+
+                          {iw?.type === 'drift_run_reprovision_sandbox' ||
+                          iw.type === 'drift_run' ? (
+                            <Badge
+                              className="!text-[10px] p-1 !leading-none ml-1"
+                              variant="code"
+                              theme="info"
+                            >
+                              Drift scan
                             </Badge>
                           ) : null}
                         </span>
