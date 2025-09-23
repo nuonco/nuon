@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -11,35 +12,38 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 )
 
-func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID string) error {
+func (w *Workflows) pollComponentBeingUnused(ctx workflow.Context, compID string) error {
 	deadline := workflow.Now(ctx).Add(time.Minute * 60)
 
 	inFlight := true
 	for inFlight {
-		comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
-			ComponentID: compID,
-		})
+		appCfg, err := activities.AwaitGetComponentAppConfigByComponentID(ctx, compID)
 		if err != nil {
-			w.updateStatus(ctx, compID, "error", "unable to get component from database")
-			return fmt.Errorf("unable to get component: %w", err)
+			w.updateStatus(ctx, compID, app.ComponentStatusError, "delete: unable to get component app config")
+			return fmt.Errorf("unable to get component app config: %w", err)
 		}
 
 		inFlight = false
-		for _, cfgVersion := range comp.ComponentConfigs {
-			for _, bld := range cfgVersion.ComponentBuilds {
-				for _, rel := range bld.ComponentReleases {
-					if rel.Status == app.ReleaseStatusActive || rel.Status == app.ReleaseStatusError {
-						continue
-					}
+		if slices.Contains(appCfg.ComponentIDs, compID) {
+			inFlight = true
+		}
 
-					inFlight = true
-				}
-			}
+		depsInstalls, err := activities.AwaitGetComponentInstalls(ctx, activities.GetComponentInstallsRequest{
+			ComponentID: compID,
+			AppID:       appCfg.AppID,
+		})
+		if err != nil {
+			w.updateStatus(ctx, compID, app.ComponentStatusError, "delete: unable to get component dependent installs")
+			return fmt.Errorf("unable to get component dependent installs: %w", err)
+		}
+
+		if len(depsInstalls) > 0 {
+			inFlight = true
 		}
 
 		if workflow.Now(ctx).After(deadline) {
-			w.updateStatus(ctx, compID, "error", "time out waiting for releases to finish")
-			return fmt.Errorf("timeout waiting for installs to deprovision")
+			w.updateStatus(ctx, compID, app.ComponentStatusError, "delete: timed out waiting for dependent installs to remove the component")
+			return fmt.Errorf("timeout waiting for dependent installs to remove the component")
 		}
 
 		workflow.Sleep(ctx, defaultPollTimeout)
@@ -52,8 +56,8 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID strin
 // @execution-timeout 5m
 // @task-timeout 3m
 func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {
-	w.updateStatus(ctx, sreq.ID, app.ComponentStatusActive, "polling for releases to finish")
-	if err := w.pollChildrenDeprovisioned(ctx, sreq.ID); err != nil {
+	w.updateStatus(ctx, sreq.ID, app.ComponentStatusDeleteQueued, "delete: polling for component being unused by active installs and latest app config")
+	if err := w.pollComponentBeingUnused(ctx, sreq.ID); err != nil {
 		return err
 	}
 
@@ -62,6 +66,7 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 	if err := activities.AwaitDelete(ctx, activities.DeleteRequest{
 		ComponentID: sreq.ID,
 	}); err != nil {
+		w.updateStatus(ctx, sreq.ID, app.ComponentStatusError, "unable to delete component from database")
 		return fmt.Errorf("unable to delete component: %w", err)
 	}
 
