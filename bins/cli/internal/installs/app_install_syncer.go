@@ -1,6 +1,7 @@
 package installs
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -126,13 +127,15 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error getting current inputs for install %s: %w", appInstall.Name, err)
 	}
 
-	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, appInstall.AppID)
+	upstreamRawConfig, err := s.api.GenerateCLIInstallConfig(ctx, appInstall.ID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting current app input config for install %s: %w", appInstall.Name, err)
+		return nil, fmt.Errorf("error fetching current state for install %s: %w", appInstall.Name, err)
 	}
 
-	upstreamConfig := &config.Install{}
-	upstreamConfig.ParseIntoInstall(appInstall, currInputs, appInputCfg, false)
+	upstreamConfig, err := parseInstallConfig(bytes.NewReader(upstreamRawConfig))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing current state for install %s: %w", appInstall.Name, err)
+	}
 
 	diff, diffRes, err := installCfg.Diff(upstreamConfig)
 	if err != nil {
