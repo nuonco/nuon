@@ -94,6 +94,10 @@ func PrintError(err error) error {
 	return err
 }
 
+func PrintRaw(msg string) {
+	fmt.Print(msg)
+}
+
 func PrintLn(msg string) {
 	fmt.Println(bubbles.InfoStyle.Render(msg))
 }
