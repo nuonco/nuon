@@ -1,24 +1,28 @@
+import { api } from '@/lib/api'
 import type { TInstall } from '@/types'
-import { mutateData } from '@/utils'
-import type { IGetInstall } from '../shared-interfaces'
 
-export interface IUpdateInstall extends IGetInstall {
-  data: {
-    name: string
-    inputs?: Record<string, string>
+export type TUpdateInstallBody = {
+  install_config?: {
+    approval_option: 'prompt' | 'approve-all'
+  }
+  metadata?: {
+    managed_by: 'nuon/dashboard' // 'nuon/cli/config'
   }
 }
 
 export async function updateInstall({
-  data,
+  body,
   installId,
   orgId,
-}: IUpdateInstall) {
-  return mutateData<TInstall>({
-    errorMessage: 'Unable to update install.',
-    data,
-    orgId,
+}: {
+  body: TUpdateInstallBody
+  installId: string
+  orgId: string
+}) {
+  return api<TInstall>({
+    body,
     method: 'PATCH',
+    orgId,
     path: `installs/${installId}`,
   })
 }

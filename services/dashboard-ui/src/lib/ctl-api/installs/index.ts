@@ -15,7 +15,10 @@ export * from './get-install-readme'
 // workflows
 export * from './get-install-workflows'
 
-// TODO(nnnnat): mutations
+// mutations
+export * from './update-install-inputs'
+
+// TODO(nnnnat): mutations to refactor
 export * from './deploy-components'
 export * from './deploy-component-build'
 export * from './reprovision-install'

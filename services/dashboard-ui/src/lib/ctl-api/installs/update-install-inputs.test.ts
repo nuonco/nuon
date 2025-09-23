@@ -1,34 +1,33 @@
 import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
-import { updateInstall } from './update-install'
+import { updateInstallInputs } from './update-install-inputs'
 
-describe('updateInstall should handle response status codes from PATCH installs/:installId endpoint', () => {
+describe('updateInstallInputs should handle response status codes from PATCH installs/:installId/inputs endpoint', () => {
   const installId = 'test-install-id'
   const orgId = 'test-org-id'
 
-  test('200 status with metadata managed_by dashboard', async () => {
-    const { data: install } = await updateInstall({
+  test('200 status with inputs', async () => {
+    const { data: installInputs } = await updateInstallInputs({
       installId,
       orgId,
       body: {
-        metadata: {
-          managed_by: 'nuon/dashboard',
+        inputs: {
+          'input-key-1': 'input-value-1',
+          'input-key-2': 'input-value-2',
         },
       },
     })
-    expect(install).toHaveProperty('id')
-    expect(install).toHaveProperty('name')
-    expect(install).toHaveProperty('app_id')
+    expect(installInputs).toHaveProperty('values')
   })
 
   test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await updateInstall({
+    const { error, status } = await updateInstallInputs({
       installId,
       orgId,
       body: {
-        install_config: {
-          approval_option: 'prompt',
+        inputs: {
+          'test-key': 'test-value',
         },
       },
     })
