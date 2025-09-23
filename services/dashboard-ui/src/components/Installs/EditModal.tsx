@@ -1,18 +1,16 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PencilSimpleLineIcon } from '@phosphor-icons/react'
+import { updateInstall } from '@/actions/installs/update-install'
+import { updateInstallInputs } from '@/actions/installs/update-install-inputs'
 import { Button } from '@/components/Button'
 import { InstallForm } from '@/components/InstallForm'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import {
-  updateInstall,
-  updateInstallManagedBy,
-} from '@/components/install-actions'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
@@ -69,6 +67,8 @@ export const EditModal = () => {
 }
 
 const EditForm = ({ onClose }: { onClose: () => void }) => {
+  const path = usePathname()
+  const router = useRouter()
   const { org } = useOrg()
   const { install } = useInstall()
 
@@ -80,7 +80,6 @@ const EditForm = ({ onClose }: { onClose: () => void }) => {
     path: `/api/orgs/${org.id}/apps/${install?.app_id}/configs/${install?.app_config_id}?recurse=true`,
   })
 
-  const router = useRouter()
   return (
     <>
       {isLoading ? (
@@ -94,25 +93,28 @@ const EditForm = ({ onClose }: { onClose: () => void }) => {
       ) : (
         <InstallForm
           onSubmit={(formData) => {
-            const res = updateInstall({
+            const res = updateInstallInputs({
               installId: install.id,
               orgId: org.id,
               formData,
+              path,
             })
-            updateInstallManagedBy({
-              installId: install?.id,
-              orgId: org.id,
-              managedBy: install?.metadata?.managed_by,
-            })
+
+            if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
+              updateInstall({
+                installId: install.id,
+                managedBy: 'nuon/dashboard',
+                orgId: org.id,
+              })
+            }
+
             return res
           }}
-          onSuccess={(workflowId) => {
-            if (workflowId) {
+          onSuccess={({ error, headers, status }) => {
+            if (!error && status === 200) {
               router.push(
-                `/${org.id}/installs/${install.id}/workflows/${workflowId}`
+                `/${org.id}/installs/${install?.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
               )
-            } else {
-              router.push(`/${org.id}/installs/${install.id}/workflows`)
             }
           }}
           onCancel={onClose}
