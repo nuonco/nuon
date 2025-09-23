@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -59,7 +58,7 @@ func (s *service) GetComponentDependents(ctx *gin.Context) {
 		return
 	}
 
-	comps, err := s.getComponents(ctx, cdo)
+	comps, err := s.appsHelpers.GetComponents(ctx, cdo)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get components"))
 		return
@@ -68,14 +67,4 @@ func (s *service) GetComponentDependents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ComponentChildren{
 		Children: comps,
 	})
-}
-
-func (s *service) getComponents(ctx context.Context, compIDs []string) ([]app.Component, error) {
-	var comps []app.Component
-	if res := s.db.WithContext(ctx).
-		Where("id IN ?", compIDs).Find(&comps); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get components")
-	}
-
-	return comps, nil
 }

@@ -2,13 +2,14 @@ package helpers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	"gorm.io/gorm"
 )
 
 const (
@@ -28,7 +29,7 @@ func (h *Helpers) GetInstallAuditLogs(ctx context.Context, installID string, sta
 		Find(&auditLogs, "install_id = ? AND time_stamp BETWEEN ? AND ?", installID, startTS, endTS)
 
 	if res.Error != nil {
-		if res.Error == sql.ErrNoRows {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			// No rows found, return an empty slice
 			return auditLogs, nil
 		}
