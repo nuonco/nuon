@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ReactFlow,
@@ -21,11 +21,8 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text, Code } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
-
-interface AppConfigGraphRendererProps {
-  appId: string
-  configId: string
-}
+import { useApp } from '@/hooks/use-app'
+import { useQuery } from '@/hooks/use-query'
 
 const getLayoutedElements = (
   nodes: Node[],
@@ -64,16 +61,76 @@ const getLayoutedElements = (
   return { nodes: layoutedNodes, edges }
 }
 
-export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
-  appId,
-  configId,
-}) => {
-  const { org } = useOrg()
+export const AppConfigGraphRenderer = ({ configId }: { configId: string }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>()
+
+  return (
+    <>
+      {isOpen &&
+        createPortal(
+          <Modal
+            contentClassName="flex flex-col !max-h-[calc(100%-4rem)] overflow-y-scroll"
+            className="w-full max-w-[calc(100%-4rem)] mx-6 xl:mx-auto !max-h-[calc(100vh-4rem)] h-screen overflow-hidden"
+            heading={
+              <span>
+                <Text variant="med-14">App component dependency graph</Text>
+              </span>
+            }
+            isOpen={isOpen}
+            onClose={() => {
+              setIsOpen(false)
+            }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <Text variant="reg-14">
+                Nuon automatically creates a graph of all of the components in
+                your application.
+              </Text>
+
+              <ul className="flex flex-col gap-1 list-disc pl-4">
+                <li className="text-sm max-w-xl">
+                  Dependencies are from root to dependencies (so a red-arrow
+                  from a to b, means that b depends on a, or that when a
+                  changes, b would be updated when{' '}
+                  <Code
+                    className="!inline-block !align-middle !py-0 !text-sm"
+                    variant="inline"
+                  >
+                    select-dependencies
+                  </Code>{' '}
+                  is true)
+                </li>
+                <li className="text-sm">
+                  Blue nodes mean that the current config version has changes to
+                  that component
+                </li>
+              </ul>
+            </div>
+            <ComponentsGraph configId={configId} />
+          </Modal>,
+          document.body
+        )}
+      <Button
+        className="text-sm"
+        onClick={() => {
+          setIsOpen(true)
+        }}
+      >
+        View dependency graph
+      </Button>
+    </>
+  )
+}
+
+const ComponentsGraph = ({ configId }: { configId: string }) => {
+  const { org } = useOrg()
+  const { app } = useApp()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
+
+  const { data, error, isLoading } = useQuery({
+    path: `/api/orgs/${org?.id}/apps/${app.id}/configs/${configId}/graph`,
+  })
 
   const updateNodes = (nodes: any[]) => {
     // First, create a map of nodes with data
@@ -173,126 +230,51 @@ export const AppConfigGraphRenderer: FC<AppConfigGraphRendererProps> = ({
     return getLayoutedElements(updateNodes(nodes), edges)
   }
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch(
-        `/api/${org?.id}/apps/${appId}/configs/${configId}/graph`
-      )
-      const res = await response.json()
-      setIsLoading(false)
-
-      if (res?.error) {
-        setError(res?.error?.error)
-      } else {
-        const { nodes: newNodes, edges: newEdges } = convertDotToFlowData(
-          res.data
-        )
-        setNodes(newNodes)
-        setEdges(newEdges)
-      }
-    } catch (err) {
-      console.error('Graph fetch error:', err)
-      setError(
-        err instanceof Error ? err.message : 'Failed to fetch graph data'
-      )
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
-    if (org?.id && appId && configId && isOpen) {
-      fetchData()
+    if (data) {
+      const { nodes: newNodes, edges: newEdges } = convertDotToFlowData(data)
+      setNodes(newNodes)
+      setEdges(newEdges)
     }
-  }, [org?.id, appId, configId, isOpen])
-
+  }, [data])
   return (
     <>
-      {isOpen &&
-        createPortal(
-          <Modal
-            contentClassName="flex flex-col !max-h-[calc(100%-4rem)] overflow-y-scroll"
-            className="w-full max-w-[calc(100%-4rem)] mx-6 xl:mx-auto !max-h-[calc(100vh-4rem)] h-screen overflow-hidden"
-            heading={
-              <span>
-                <Text variant="med-14">App component dependency graph</Text>
-              </span>
-            }
-            isOpen={isOpen}
-            onClose={() => {
-              setIsOpen(false)
+      {isLoading ? (
+        <div className="flex m-auto">
+          <Loading loadingText="Loading component graph..." variant="stack" />
+        </div>
+      ) : error?.error ? (
+        <Notice>
+          {error?.error || 'Unable to load component change graph.'}
+        </Notice>
+      ) : (
+        <div className="w-full h-full border rounded-lg bg-white dark:bg-gray-800">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            fitView
+            fitViewOptions={{ padding: 0.2 }}
+            minZoom={0.1}
+            maxZoom={1.5}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+            proOptions={{ hideAttribution: true }}
+            style={{
+              borderRadius: '8px',
             }}
           >
-            <div className="flex flex-col gap-2 mb-6">
-              <Text variant="reg-14">
-                Nuon automatically creates a graph of all of the components in
-                your application.
-              </Text>
-
-              <ul className="flex flex-col gap-1 list-disc pl-4">
-                <li className="text-sm max-w-xl">
-                  Dependencies are from root to dependencies (so a red-arrow
-                  from a to b, means that b depends on a, or that when a
-                  changes, b would be updated when{' '}
-                  <Code
-                    className="!inline-block !align-middle !py-0 !text-sm"
-                    variant="inline"
-                  >
-                    select-dependencies
-                  </Code>{' '}
-                  is true)
-                </li>
-                <li className="text-sm">
-                  Blue nodes mean that the current config version has changes to
-                  that component
-                </li>
-              </ul>
-            </div>
-            {isLoading ? (
-              <Loading
-                loadingText="Loading component graph..."
-                variant="stack"
-              />
-            ) : error ? (
-              <Notice>{error}</Notice>
-            ) : (
-              <div className="w-full h-full border rounded-lg bg-white dark:bg-gray-800">
-                <ReactFlow
-                  nodes={nodes}
-                  edges={edges}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  fitView
-                  fitViewOptions={{ padding: 0.2 }}
-                  minZoom={0.1}
-                  maxZoom={1.5}
-                  defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-                  proOptions={{ hideAttribution: true }}
-                  style={{
-                    borderRadius: '8px',
-                  }}
-                >
-                  <Controls
-                    position="top-right"
-                    orientation="horizontal"
-                    style={{
-                      color: '#121212',
-                    }}
-                  />
-                  <Background bgColor="#121212" color="#aaa" gap={16} />
-                </ReactFlow>
-              </div>
-            )}
-          </Modal>,
-          document.body
-        )}
-      <Button
-        className="text-sm"
-        onClick={() => {
-          setIsOpen(true)
-        }}
-      >
-        View dependency graph
-      </Button>
+            <Controls
+              position="top-right"
+              orientation="horizontal"
+              style={{
+                color: '#121212',
+              }}
+            />
+            <Background bgColor="#121212" color="#aaa" gap={16} />
+          </ReactFlow>
+        </div>
+      )}
     </>
   )
 }

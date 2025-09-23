@@ -12,7 +12,7 @@ export const AppComponents = async ({
   appId,
   configId,
   orgId,
-  limit = '10',
+  limit = 10,
   offset,
   q,
   types,
@@ -20,7 +20,7 @@ export const AppComponents = async ({
   appId: string
   configId: string
   orgId: string
-  limit?: string
+  limit?: number
   offset?: string
   q?: string
   types?: string
@@ -76,12 +76,16 @@ export const AppComponents = async ({
         appId={appId}
         configId={configId}
         orgId={orgId}
+        limit={limit}
+        offset={offset}
+        q={q}
+        types={types}
       />
       <Pagination
         param="offset"
         pageData={pageData}
         position="center"
-        limit={parseInt(limit)}
+        limit={limit}
       />
     </div>
   ) : (

@@ -114,8 +114,8 @@ export default async function AppComponent({ params }) {
           </ErrorBoundary>
 
           {CANCEL_RUNNER_JOBS &&
-          build?.status !== 'active' &&
-          build?.status !== 'error' ? (
+          build?.status_v2?.status !== 'active' &&
+          build?.status_v2?.status !== 'error' ? (
             <CancelRunnerJobButton
               jobType="build"
               runnerJobId={build?.runner_job?.id}
