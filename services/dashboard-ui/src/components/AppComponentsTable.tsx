@@ -61,17 +61,23 @@ export interface IAppComponentsTable extends IPollingProps, TPaginationParams {
   initComponents: Array<TDataComponent>
   orgId: string
   configId: string
+  q?: string
+  types?: string
 }
 
+
+// TODO(nnnnat): need to rely on the component status and not the latest build
 export const AppComponentsTable: FC<IAppComponentsTable> = ({
   appId,
   initComponents: components,
   configId,
   orgId,
-  /* pollInterval = 5000,
-   * shouldPoll = false,
-   * offset,
-   * limit, */
+  pollInterval = 5000,
+  shouldPoll = false,
+  offset,
+  limit,
+  q,
+  types
 }) => {
   /* const { org } = useOrg()
    * const { app } = useApp()
@@ -152,7 +158,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
         header: 'Build',
         accessorKey: 'build',
         cell: (props) => (
-          <StatusBadge pollDuration={10000} status={props.getValue<string>()} />
+          <StatusBadge status={props.getValue<string>()} />
         ),
       },
       {
@@ -223,7 +229,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             <DebouncedSearchInput placeholder="Search component name" />
 
             <div className="flex items-center gap-4">
-              <AppConfigGraph appId={appId} configId={configId} />
+              <AppConfigGraph configId={configId} />
               <BuildAllComponentsButton components={components} />
             </div>
           </div>

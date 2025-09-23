@@ -1,3 +1,5 @@
 export * from './builds'
+export * from './build-component'
+export * from './build-components'
 export * from './get-component-by-id'
 export * from './get-components'
