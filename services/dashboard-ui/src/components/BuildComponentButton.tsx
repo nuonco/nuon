@@ -1,47 +1,92 @@
 'use client'
 
-import { useRouter, useParams } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, Hammer } from '@phosphor-icons/react'
+import { CheckIcon, HammerIcon } from '@phosphor-icons/react'
+import { buildComponent } from '@/actions/apps/build-component'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { createComponentBuild } from '@/components/app-actions'
+import { useApp } from '@/hooks/use-app'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
+import type { TComponent } from '@/types'
 import { trackEvent } from '@/utils'
 
-export const BuildComponentButton: FC<{
-  componentName: string
-}> = ({ componentName }) => {
-  const { user } = useUser()
+export const BuildComponentButton = ({
+  component,
+}: {
+  component: TComponent
+}) => {
+  const path = usePathname()
   const router = useRouter()
-  const params = useParams<{
-    'org-id': string
-    'app-id': string
-    'component-id': string
-  }>()
-  const appId = params?.['app-id']
-  const orgId = params?.['org-id']
-  const componentId = params?.['component-id']
+  const { user } = useUser()
+  const { org } = useOrg()
+  const { app } = useApp()
+
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const {
+    data: build,
+    error,
+    isLoading,
+    execute,
+  } = useServerAction({
+    action: buildComponent,
+  })
+
+  const handleClose = () => {
+    setIsKickedOff(false)
+    setIsOpen(false)
+  }
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
 
     if (isKickedOff) {
-      const displayNotice = setTimeout(kickoff, 15000)
+      const displayNotice = setTimeout(kickoff, 30000)
 
       return () => {
         clearTimeout(displayNotice)
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'component_build',
+        user,
+        status: 'error',
+        props: {
+          orgId: org.id,
+          appId: app.id,
+          componentId: component.id,
+        },
+      })
+    }
+
+    if (build) {
+      trackEvent({
+        event: 'component_build',
+        user,
+        status: 'ok',
+        props: {
+          orgId: org.id,
+          appId: app.id,
+          componentId: component.id,
+        },
+      })
+      if (build?.id) {
+        router.push(`${path}/builds/${build?.id}`)
+      }
+    }
+  }, [build, error])
 
   return (
     <>
@@ -50,16 +95,13 @@ export const BuildComponentButton: FC<{
             <Modal
               className="max-w-lg"
               isOpen={isOpen}
-              heading={`Build ${componentName} component?`}
-              onClose={() => {
-                setError(undefined)
-                setIsOpen(false)
-              }}
+              heading={`Build ${component.name} component?`}
+              onClose={handleClose}
             >
               <div className="flex flex-col gap-3 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
+                {error?.error ? <Notice>{error?.error}</Notice> : null}
                 <Text variant="reg-14" className="leading-relaxed">
-                  Are you sure you want to build {componentName}?
+                  Are you sure you want to build {component.name}?
                 </Text>
               </div>
               <div className="flex gap-3 justify-end">
@@ -74,52 +116,21 @@ export const BuildComponentButton: FC<{
                 <Button
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    createComponentBuild({ componentId, orgId }).then((r) => {
-                      if (r?.error) {
-                        trackEvent({
-                          event: 'component_build',
-                          user,
-                          status: 'error',
-                          props: {
-                            orgId,
-                            appId,
-                            componentId,
-                          },
-                        })
-                        setError(
-                          r?.error?.error ||
-                            'Error occured, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      } else {
-                        trackEvent({
-                          event: 'component_build',
-                          user,
-                          status: 'ok',
-                          props: {
-                            orgId,
-                            appId,
-                            componentId,
-                          },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-
-                        router.push(
-                          `/${orgId}/apps/${appId}/components/${componentId}/builds/${r?.data?.id}`
-                        )
-                      }
+                    setIsKickedOff(true)
+                    execute({
+                      componentId: component.id,
+                      orgId: org.id,
+                      path,
                     })
                   }}
                   variant="primary"
                 >
-                  {isKickedOff ? (
-                    <Check size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
-                    <Hammer size="18" />
+                    <HammerIcon size="18" />
                   )}{' '}
                   Build component
                 </Button>
