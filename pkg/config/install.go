@@ -79,45 +79,6 @@ func (i *Install) FlattenedInputs() map[string]string {
 	return flattened
 }
 
-func (i *Install) ParseIntoInstall(ins *models.AppInstall, inputs *models.AppInstallInputs, cfg *models.AppAppInputConfig, skipSensetive bool) {
-	if ins != nil {
-		i.Name = ins.Name
-		if ins.AwsAccount != nil {
-			i.AWSAccount = &AWSAccount{
-				Region: ins.AwsAccount.Region,
-			}
-		}
-		if ins.InstallConfig != nil {
-			i.ApprovalOption = InstallApprovalOption(ins.InstallConfig.ApprovalOption)
-		}
-	}
-	if inputs != nil {
-		if i.InputGroups == nil {
-			i.InputGroups = make([]InputGroup, 0)
-		}
-		if cfg == nil {
-			i.InputGroups = append(i.InputGroups, inputs.Values)
-		} else {
-			groups := make(map[string]map[string]string)
-
-			for _, appInput := range cfg.Inputs {
-				if groups[appInput.GroupID] == nil {
-					groups[appInput.GroupID] = make(map[string]string)
-				}
-				if skipSensetive && appInput.Sensitive {
-					continue
-				}
-				groups[appInput.GroupID][appInput.Name] = inputs.Values[appInput.Name]
-			}
-			for _, group := range groups {
-				if len(group) > 0 {
-					i.InputGroups = append(i.InputGroups, group)
-				}
-			}
-		}
-	}
-}
-
 func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, error) {
 	if i == nil {
 		return "", diff.DiffSummary{}, fmt.Errorf("cannot diff a nil install")
