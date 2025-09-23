@@ -5,7 +5,7 @@ import { useParams, usePathname, useRouter } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, XSquare } from '@phosphor-icons/react'
+import { CheckIcon, XSquareIcon } from '@phosphor-icons/react'
 import { Button, type TButtonVariant } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
@@ -122,11 +122,11 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
                   variant="danger"
                 >
                   {isKickedOff ? (
-                    <Check size="18" />
+                    <CheckIcon size="18" />
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : (
-                    <XSquare size="18" />
+                    <XSquareIcon size="18" />
                   )}{' '}
                   Cancel {workflowType}
                 </Button>

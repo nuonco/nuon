@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { CheckCircle, ToggleLeft, ToggleRight } from '@phosphor-icons/react'
+import {
+  CheckCircleIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
+} from '@phosphor-icons/react'
+import { updateInstall } from '@/actions/installs/update-install'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
@@ -14,11 +19,9 @@ import { Text } from '@/components/Typography'
 import {
   createInstallConfig,
   updateInstallConfig,
-  updateInstallManagedBy,
 } from '@/components/install-actions'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstall } from '@/types'
-import { trackEvent } from '@/utils'
 import { ConfirmUpdateModal } from './ConfirmUpdateModal'
 
 interface IAutoApproveModal {
@@ -43,9 +46,9 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
     <>Enable auto approval</>
   )
   const buttonIcon = isApproveAll ? (
-    <ToggleRight size="18" />
+    <ToggleRightIcon size="18" />
   ) : (
-    <ToggleLeft size="18" />
+    <ToggleLeftIcon size="18" />
   )
 
   useEffect(() => {
@@ -95,11 +98,14 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
         .then(handleApprovalOptionChange)
         .catch(handleApprovalOptionError)
     }
-    updateInstallManagedBy({
-      installId: install?.id,
-      orgId: org?.id,
-      managedBy: install?.metadata?.managed_by,
-    })
+
+    if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
+      updateInstall({
+        installId: install.id,
+        orgId: org.id,
+        managedBy: 'nuon/dashboard',
+      })
+    }
   }
 
   const createApprovalOption = () => {
@@ -151,7 +157,7 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
                   variant="primary"
                 >
                   {isKickedOff ? (
-                    <CheckCircle size="18" />
+                    <CheckCircleIcon size="18" />
                   ) : isLoading ? (
                     <SpinnerSVG />
                   ) : (

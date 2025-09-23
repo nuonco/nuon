@@ -1,19 +1,21 @@
 import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
-import { updateInstall } from './update-install'
+import { createAppInstall } from './create-app-install'
 
-describe('updateInstall should handle response status codes from PATCH installs/:installId endpoint', () => {
-  const installId = 'test-install-id'
+describe('createAppInstall should handle response status codes from POST apps/:appId/installs endpoint', () => {
+  const appId = 'test-app-id'
   const orgId = 'test-org-id'
 
-  test('200 status with metadata managed_by dashboard', async () => {
-    const { data: install } = await updateInstall({
-      installId,
+  test('201 status with AWS account', async () => {
+    const { data: install } = await createAppInstall({
+      appId,
       orgId,
       body: {
-        metadata: {
-          managed_by: 'nuon/dashboard',
+        name: 'test-aws-install',
+        aws_account: {
+          iam_role_arn: '',
+          region: 'us-east-1',
         },
       },
     })
@@ -23,14 +25,10 @@ describe('updateInstall should handle response status codes from PATCH installs/
   })
 
   test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await updateInstall({
-      installId,
+    const { error, status } = await createAppInstall({
+      appId,
       orgId,
-      body: {
-        install_config: {
-          approval_option: 'prompt',
-        },
-      },
+      body: { name: 'test-install' },
     })
     expect(status).toBe(code)
     expect(error).toMatchSnapshot({

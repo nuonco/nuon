@@ -1,9 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CubeIcon, CaretLeftIcon } from '@phosphor-icons/react'
+import { createAppInstall } from '@/actions/apps/create-app-install'
 import { Button } from '@/components/Button'
 import { RadioInput } from '@/components/Input'
 import { InstallForm } from '@/components/InstallForm'
@@ -13,7 +14,6 @@ import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
-import { createAppInstall } from '../app-actions'
 import type { TApp, TAppConfig } from '@/types'
 
 interface ICreateInstallModal {}
@@ -166,6 +166,7 @@ const CreateInstallFromApp = ({
   configId,
   ...props
 }: ICreateInstallFromApp & { configId: string }) => {
+  const path = usePathname()
   const router = useRouter()
   const { org } = useOrg()
   const {
@@ -205,13 +206,17 @@ const CreateInstallFromApp = ({
                 appId: app?.id,
                 orgId: org?.id,
                 formData,
-                platform: app?.runner_config.app_runner_type,
+                path,
               })
             }}
-            onSuccess={(data) => {
-              router.push(
-                `/${org?.id}/installs/${(data as Record<'installId' | 'workflowId', string>)?.installId}/workflows/${(data as Record<'installId' | 'workflowId', string>)?.workflowId}`
-              )
+            onSuccess={({ data: install, error, headers, status }) => {
+              if (!error && status === 201) {
+                router.push(
+                  `/${org.id}/installs/${install?.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+                )
+              }
+
+              props.onClose()
             }}
             onCancel={() => {
               props.onClose()
