@@ -5,7 +5,6 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/pkg/config"
 )
 
 func (s *Service) GenerateConfig(ctx context.Context, installID string) error {
@@ -13,24 +12,13 @@ func (s *Service) GenerateConfig(ctx context.Context, installID string) error {
 	if err != nil {
 		return ui.PrintError(err)
 	}
-	view := ui.NewGetView()
 
-	install, err := s.api.GetInstall(ctx, installID)
+	installCfgBytes, err := s.api.GenerateCLIInstallConfig(ctx, installID)
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
-	curInps, err := s.api.GetInstallCurrentInputs(ctx, installID)
-	if err != nil {
-		return view.Error(err)
-	}
-
-	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, install.AppID)
-
-	var ins config.Install
-	ins.ParseIntoInstall(install, curInps, appInputCfg, true)
-
-	ui.PrintTOML(ins)
+	ui.PrintRaw(string(installCfgBytes))
 
 	return nil
 }

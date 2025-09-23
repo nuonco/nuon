@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -166,13 +167,22 @@ func parseInstallConfigFromFile(filePath string) (*config.Install, error) {
 	}
 
 	buf := bytes.NewReader(byts)
-	tomlDec := toml.NewDecoder(buf)
+	cfg, err := parseInstallConfig(buf)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing config from file '%s': %w", filePath, err)
+	}
+
+	return cfg, nil
+}
+
+func parseInstallConfig(raw io.Reader) (*config.Install, error) {
+	tomlDec := toml.NewDecoder(raw)
 	tomlDec.SetTagName("mapstructure")
 
 	obj := make(map[string]interface{})
-	err = tomlDec.Decode(&obj)
+	err := tomlDec.Decode(&obj)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding TOML from file '%s': %w", filePath, err)
+		return nil, fmt.Errorf("error decoding TOML: %w", err)
 	}
 
 	// go from map[string]interface{} => config.Install
@@ -186,12 +196,12 @@ func parseInstallConfigFromFile(filePath string) (*config.Install, error) {
 
 	err = mapDec.Decode(obj)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding config from file '%s': %w", filePath, err)
+		return nil, fmt.Errorf("error decoding config: %w", err)
 	}
 
 	err = cfg.Parse()
 	if err != nil {
-		return nil, fmt.Errorf("error parsing config from file '%s': %w", filePath, err)
+		return nil, fmt.Errorf("error parsing config: %w", err)
 	}
 
 	return &cfg, nil
