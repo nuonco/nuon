@@ -62,7 +62,7 @@ export default async function AppComponent({ params, searchParams }) {
       ]}
       heading={component?.name}
       headingUnderline={componentId}
-      statues={<BuildComponentButton componentName={component?.name} />}
+      statues={<BuildComponentButton component={component} />}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="divide-y flex flex-col md:col-span-8">
