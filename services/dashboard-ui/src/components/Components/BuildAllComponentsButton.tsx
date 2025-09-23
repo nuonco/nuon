@@ -1,37 +1,41 @@
 'use client'
 
-import { useParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, Hammer } from '@phosphor-icons/react'
+import { CheckIcon, HammerIcon } from '@phosphor-icons/react'
+import { buildComponents } from '@/actions/apps/build-components'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text, ID } from '@/components/Typography'
-import { buildComponents } from '@/components/app-actions'
-import type { TComponent } from '@/types'
-import { trackEvent, type TQueryError } from '@/utils'
+import { useApp } from '@/hooks/use-app'
+import { useOrg } from '@/hooks/use-org'
+import type { TComponent, TAPIError } from '@/types'
+import { trackEvent } from '@/utils'
 
 export const BuildAllComponentsButton: FC<{
   components: Array<TComponent>
 }> = ({ components }) => {
+  const path = usePathname()
   const { user } = useUser()
-  const params = useParams<{ 'org-id': string; 'app-id': string }>()
-  const appId = params?.['app-id']
-  const orgId = params?.['org-id']
+  const { org } = useOrg()
+  const { app } = useApp()
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState<string | Array<TQueryError>>()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | TAPIError[]>()
+
+  const handleClose = () => {
+    setIsOpen(false)
+  }
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
-
     if (isKickedOff) {
-      const displayNotice = setTimeout(kickoff, 15000)
-
+      const displayNotice = setTimeout(kickoff, 30000)
       return () => {
         clearTimeout(displayNotice)
       }
@@ -46,10 +50,7 @@ export const BuildAllComponentsButton: FC<{
               className="max-w-lg"
               isOpen={isOpen}
               heading={`Build all components?`}
-              onClose={() => {
-                setError(undefined)
-                setIsOpen(false)
-              }}
+              onClose={handleClose}
             >
               <div className="flex flex-col gap-3 mb-6">
                 {error ? (
@@ -71,7 +72,10 @@ export const BuildAllComponentsButton: FC<{
                       ))}
                     </div>
                   ) : (
-                    <Notice>{error}</Notice>
+                    <Notice>
+                      {error ||
+                        'Unable to kick off component builds, please refresh page and try again.'}
+                    </Notice>
                   )
                 ) : null}
                 <Text variant="reg-14" className="leading-relaxed">
@@ -91,19 +95,21 @@ export const BuildAllComponentsButton: FC<{
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsLoading(true)
+                    setIsKickedOff(true)
                     buildComponents({
-                      appId,
-                      components: components,
-                      orgId,
+                      components,
+                      orgId: org.id,
+                      path,
                     }).then((res) => {
-                      if (res?.some((r) => r?.error)) {
+                      setIsLoading(false)
+                      if (res.some((r) => r.error)) {
                         trackEvent({
                           event: 'components_build',
                           user,
                           status: 'error',
                           props: {
-                            appId,
-                            orgId,
+                            appId: app.id,
+                            orgId: org.id,
                           },
                         })
 
@@ -111,31 +117,28 @@ export const BuildAllComponentsButton: FC<{
                           res.filter((r) => r?.error).map((r) => r?.error) ||
                             'Unable to kick off component builds, please refresh page and try again.'
                         )
-                        setIsLoading(false)
                       } else {
                         trackEvent({
                           event: 'components_build',
                           user,
                           status: 'ok',
                           props: {
-                            appId,
-                            orgId,
+                            appId: app.id,
+                            orgId: org.id,
                           },
                         })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-                        setIsOpen(false)
+                        handleClose()
                       }
                     })
                   }}
                   variant="primary"
                 >
-                  {isKickedOff ? (
-                    <Check size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
-                    <Hammer size="18" />
+                    <HammerIcon size="18" />
                   )}{' '}
                   Build all components
                 </Button>
