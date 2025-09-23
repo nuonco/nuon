@@ -1,35 +1,8 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { API_URL } from '@/configs/api'
 import { ICreateInstallData, installManagedByUI } from '@/lib'
-import type { TBuild, TComponent } from '@/types'
-import { nueMutateData, getFetchOpts } from '@/utils'
-
-interface IRevalidateAppData {
-  appId: string
-  orgId: string
-}
-
-export async function revalidateAppData({ appId, orgId }: IRevalidateAppData) {
-  revalidatePath(`/${orgId}/apps/${appId}`)
-}
-
-interface ICreateComponentBuild {
-  componentId: string
-  orgId: string
-}
-
-export async function createComponentBuild({
-  componentId,
-  orgId,
-}: ICreateComponentBuild) {
-  return nueMutateData<TBuild>({
-    path: `components/${componentId}/builds`,
-    orgId,
-    body: { use_latest: true },
-  })
-}
+import { getFetchOpts } from '@/utils'
 
 interface ICreateAppInstall {
   appId: string
@@ -115,40 +88,4 @@ export async function createAppInstall({
       workflowId,
     }
   }
-}
-
-interface IBuildComponents {
-  appId: string
-  components: Array<TComponent>
-  orgId: string
-}
-
-export async function buildComponents({
-  appId,
-  components,
-  orgId,
-}: IBuildComponents) {
-  return Promise.all(
-    components.map(
-      async ({ id, name }) =>
-        await nueMutateData<TBuild>({
-          path: `components/${id}/builds`,
-          orgId,
-          body: { use_latest: true },
-        }).then((res) =>
-          res?.error
-            ? {
-                ...res,
-                error: {
-                  ...res?.error,
-                  meta: { name, id },
-                },
-              }
-            : res
-        )
-    )
-  ).then((res) => {
-    revalidatePath(`/${orgId}/apps/${appId}/components`)
-    return res
-  })
 }

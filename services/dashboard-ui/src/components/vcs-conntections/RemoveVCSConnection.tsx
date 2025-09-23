@@ -4,10 +4,10 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FaGithub } from 'react-icons/fa'
-import { XCircle, Plus } from '@phosphor-icons/react'
+import { XCircleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
-import { CheckboxInput, Input } from '@/components/Input'
+import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
@@ -27,12 +27,11 @@ export const RemoveVCSConnection = ({
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
 
-  const connectionName = connection?.github_account_name || connection?.github_install_id;
+  const connectionName =
+    connection?.github_account_name || connection?.github_install_id
   const { data, error, isLoading, execute, status } = useServerAction({
     action: removeVCSConnection,
   })
-
-  
 
   const handleClose = () => {
     setIsKickedOff(false)
@@ -55,7 +54,7 @@ export const RemoveVCSConnection = ({
           setIsOpen(true)
         }}
       >
-        <XCircle size="16" />
+        <XCircleIcon size="16" />
       </Button>
 
       {isOpen
@@ -135,9 +134,7 @@ export const RemoveVCSConnection = ({
                 <Button
                   className="text-sm flex items-center gap-2 font-medium"
                   disabled={
-                    confirm !== connectionName ||
-                    isLoading ||
-                    isKickedOff
+                    confirm !== connectionName || isLoading || isKickedOff
                   }
                   variant="danger"
                   onClick={() => {
@@ -155,7 +152,7 @@ export const RemoveVCSConnection = ({
                     </>
                   ) : (
                     <>
-                      <XCircle size="16" /> Disconnect GitHub
+                      <XCircleIcon size="16" /> Disconnect GitHub
                     </>
                   )}
                 </Button>
