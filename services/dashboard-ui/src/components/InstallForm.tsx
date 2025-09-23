@@ -7,14 +7,13 @@ import { CheckCircleIcon, CubeIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { CodeViewer } from '@/components/Code'
 import { CheckboxInput, Input, RadioInput } from '@/components/Input'
-import { Link } from '@/components/Link'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { Select } from '@/components/Select'
-import { Code, Text } from '@/components/Typography'
+import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import { getFlagEmoji, AWS_REGIONS, AZURE_REGIONS, trackEvent } from '@/utils'
-import type { TAppInputConfig, TInstall } from '@/types'
+import type { TAppInputConfig, TInstall, TAPIResponse } from '@/types'
 
 interface IInstallForm {
   platform?: string | 'aws' | 'azure'
@@ -29,7 +28,7 @@ interface IInstallForm {
     | { error: any }
   >
   onSuccess: (
-    install: TInstall | string | Record<'installId' | 'workflowId', string>
+    res: TAPIResponse<TInstall>
   ) => void
   onCancel: () => void
 }
