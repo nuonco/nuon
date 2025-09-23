@@ -19,7 +19,7 @@ import (
 // @Param					install_id		path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json
-// @Produce				application/toml
+// @Produce				application/octet-stream
 // @Security				APIKey
 // @Security				OrgID
 // @Failure				400	{object}	stderr.ErrResponse
@@ -50,7 +50,7 @@ func (s *service) GenerateCLIInstallConfig(ctx *gin.Context) {
 	}
 
 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.toml\"", strcase.ToSnake(installCfg.Name)))
-	ctx.Data(http.StatusOK, "application/toml", response.Bytes())
+	ctx.Data(http.StatusOK, "application/octet-stream", response.Bytes())
 }
 
 func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*config.Install, error) {
