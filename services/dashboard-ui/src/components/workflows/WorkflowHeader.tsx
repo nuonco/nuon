@@ -1,12 +1,14 @@
 'use client'
 
 import { Badge } from '@/components/Badge'
+import { Link } from '@/components/Link'
 import { Notice } from '@/components/Notice'
 import { Text, ID } from '@/components/Typography'
 import { YAStatus } from '@/components/InstallWorkflows/InstallWorkflowHistory'
 import { WorkflowApproveAllModal } from '@/components/InstallWorkflows/ApproveAllModal'
 import { InstallWorkflowCancelModal } from '@/components/InstallWorkflows/InstallWorkflowCancelModal'
 import { InstallWorkflowActivity } from '@/components/InstallWorkflows/InstallWorkflowActivity'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TWorkflow } from '@/types'
@@ -22,6 +24,7 @@ export const WorkflowHeader = ({
   shouldPoll = false,
 }: IWorkflowHeader) => {
   const { org } = useOrg()
+  const { install } = useInstall()
   const { data: workflow, error } = usePolling<TWorkflow>({
     initData: initWorkflow,
     path: `/api/orgs/${org.id}/workflows/${initWorkflow?.id}`,
@@ -55,7 +58,14 @@ export const WorkflowHeader = ({
             </span>
           </Text>
           <span>
-            <ID id={workflow?.id} />
+            <span className="flex gap-4">
+              <ID id={workflow?.id} />
+              <Text variant="reg-12">
+                <Link href={`/${org.id}/apps/${install.app_id}`}>
+                  {install?.app?.name}
+                </Link>
+              </Text>
+            </span>
             <div className="flex flex-col gap-2 mt-4">
               <div className="flex gap-8">
                 <div className="flex flex-col gap-1">
@@ -130,6 +140,7 @@ export const WorkflowHeader = ({
           <div className="flex items-center gap-4">
             {workflow?.approval_option === 'prompt' &&
             !workflow?.finished &&
+            workflow?.status?.status !== 'cancelled' &&
             !workflow?.plan_only ? (
               <WorkflowApproveAllModal
                 workflow={workflow}
