@@ -19,6 +19,7 @@ const (
 	AppStatusDeprovisioning AppStatus = "deprovisioning"
 	AppStatusActive         AppStatus = "active"
 	AppStatusError          AppStatus = "error"
+	AppStatusDeleteQueued   AppStatus = "delete_queued"
 )
 
 type App struct {
