@@ -47,6 +47,7 @@ type model struct {
 	selectedIndex                int                         // used to set selectedStep on data refresh (smells, use map or something better)
 	selectedStep                 *models.AppWorkflowStep
 	selectedStepApprovalResponse *models.AppWorkflowStepApprovalResponse
+
 	// conditional
 	stack        *models.AppInstallStack
 	stackLoading bool
@@ -60,6 +61,7 @@ type model struct {
 	stepsList  list.Model
 	stepDetail viewport.Model
 	footer     viewport.Model
+	focus      string // one of "list" or "detail"
 
 	// 2. ui
 	// for the header
@@ -118,6 +120,7 @@ func initialModel(
 		stepsList:  stepsList,
 		stepDetail: viewport.New(minRequiredWidth, 30),
 		footer:     viewport.New(minRequiredWidth, 4),
+		focus:      "list",
 
 		help:     help.New(),
 		spinner:  s,
@@ -160,6 +163,7 @@ func (m *model) resetSelected() {
 
 	// populate step detail view
 	m.populateStepDetailView(true)
+	m.focus = "list"
 }
 
 func (m *model) setSelected() {
@@ -192,6 +196,7 @@ func (m *model) setSelected() {
 		m.keys.OpenQuickLink.SetEnabled(true)
 		m.keys.OpenTemplateLink.SetEnabled(true)
 	}
+	m.focus = "detail"
 }
 
 func (m *model) setQuitting() {
@@ -255,11 +260,12 @@ func (m *model) handleResize(msg tea.WindowSizeMsg) {
 
 	// resize the list
 	stepsListHeight := msg.Height - vMarginHeight
+	stepsListWidth := int((msg.Width) / 3)
 	m.stepsList.SetHeight(stepsListHeight)
-	m.stepsList.SetWidth((msg.Width - hMargin) / 3)
+	m.stepsList.SetWidth(stepsListWidth)
 
 	// make the detail viewport
-	vpWidth := msg.Width - m.stepsList.Width() // no hmargin subtracted
+	vpWidth := msg.Width - stepsListWidth // no hmargin subtracted
 	vpHeight := msg.Height - vMarginHeight
 	m.stepDetail.Height = vpHeight
 	m.stepDetail.Width = vpWidth
@@ -267,10 +273,19 @@ func (m *model) handleResize(msg tea.WindowSizeMsg) {
 	m.populateStepDetailView(true)
 }
 
+func (m *model) toggleFocus() {
+	if m.focus == "list" {
+		m.focus = "detail"
+	} else {
+		m.focus = "list"
+	}
+}
+
 // handle up and down
+
 func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	if m.selectedStep != nil {
+	if m.focus == "detail" { // m.selectedStep != nil
 		m.stepDetail, cmd = m.stepDetail.Update(msg)
 	} else {
 		m.stepsList, cmd = m.stepsList.Update(msg)
@@ -376,12 +391,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.setWorkflowApprovalConf()
 			}
 
+		case key.Matches(msg, m.keys.Tab):
+			m.toggleFocus()
+
+		case key.Matches(msg, m.keys.Browser):
+			m.openInBrowser()
+
 		// search
 		case key.Matches(msg, m.keys.Slash):
 			m.enableSearch()
 			m.stepsList.Update(msg)
-		case key.Matches(msg, m.keys.Browser):
-			m.openInBrowser()
 
 		}
 
@@ -408,17 +427,35 @@ func (m model) View() string {
 	header := m.headerView()
 	content := ""
 	if m.workflow == nil { // initial load hasn't taken place
-		// content = lipgloss.NewStyle().
-		// 	Width(m.header.Width).
-		// 	Height(m.stepDetail.Height).
-		// 	Render("Loading")
-		content = common.FullPageDialog(m.header.Width, m.stepDetail.Height, 1, "  Loading  ")
+		if m.error != nil { // likely a 404 but worth refining later
+			content = common.FullPageDialog(common.FullPageDialogRequest{
+				Width:   m.header.Width,
+				Height:  m.stepDetail.Height,
+				Padding: 1,
+				Content: fmt.Sprintf("%s", m.error.Error()),
+				Level:   "error",
+			})
+		} else {
+			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.header.Width, Height: m.stepDetail.Height, Padding: 1, Content: "  Loading  ", Level: "info"})
+		}
 
 	} else {
+		stepsList := ""
+		if m.focus == "list" {
+			stepsList = appStyleFocus.Padding(0, 1, 0, 0).Render(m.stepsList.View())
+		} else {
+			stepsList = appStyleBlur.Padding(0, 1, 0, 0).Render(m.stepsList.View())
+		}
+		stepDetail := ""
+		if m.focus == "detail" {
+			stepDetail = appStyleFocus.Render(m.stepDetail.View())
+		} else {
+			stepDetail = appStyleBlur.Render(m.stepDetail.View())
+		}
 		content = lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			m.stepsList.View(),
-			appStyle.Render(m.stepDetail.View()),
+			stepsList,
+			stepDetail,
 		)
 	}
 	footer := m.footerView()
