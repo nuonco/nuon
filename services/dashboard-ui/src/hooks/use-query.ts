@@ -21,7 +21,7 @@ export function useQuery<T = any>({
   const [data, setData] = useState<T | null>(initData);
   const [error, setError] = useState<TAPIError | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [responseHeaders, setResponseHeaders] = useState<Headers | null>(null);
+  const [responseHeaders, setResponseHeaders] = useState<Record<string, string> | null>(null);
   const [status, setStatus] = useState<number | null>(null);
 
   useEffect(() => {

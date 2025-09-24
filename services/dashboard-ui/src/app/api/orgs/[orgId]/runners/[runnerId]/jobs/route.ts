@@ -25,8 +25,5 @@ export async function GET(
     groups,
     statuses,
   })
-  return NextResponse.json({
-    ...response,
-    headers: Object.fromEntries(response.headers?.entries()),
-  })
+  return NextResponse.json(response)
 }

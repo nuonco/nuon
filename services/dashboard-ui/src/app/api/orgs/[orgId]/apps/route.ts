@@ -13,8 +13,5 @@ export async function GET(
   const q = searchParams.get('q') || undefined
 
   const response = await getApps({ orgId, limit, offset, q })
-  return NextResponse.json({
-    ...response,
-    headers: Object.fromEntries(response.headers.entries()),
-  })
+  return NextResponse.json(response)
 }

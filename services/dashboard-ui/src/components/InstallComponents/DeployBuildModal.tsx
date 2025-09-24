@@ -1,10 +1,11 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { CloudCheck, CloudArrowUp } from '@phosphor-icons/react'
+import { CloudCheckIcon, CloudArrowUpIcon } from '@phosphor-icons/react'
+import { deployComponent } from '@/actions/installs/deploy-component'
 import { Button, type TButtonVariant } from '@/components/Button'
 import { CheckboxInput, RadioInput } from '@/components/Input'
 import { SpinnerSVG, Loading } from '@/components/Loading'
@@ -12,9 +13,10 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Time } from '@/components/Time'
 import { Text } from '@/components/Typography'
-import { deployComponentBuild } from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
+import { useServerAction } from '@/hooks/use-server-action'
 import type { TBuild } from '@/types'
 import { trackEvent } from '@/utils'
 
@@ -33,30 +35,80 @@ export const InstallDeployBuildModal: FC<{
   componentId,
   initDeployDeps = false,
 }) => {
-  const params = useParams<Record<'org-id' | 'install-id', string>>()
-  const installId = params['install-id']
   const router = useRouter()
   const { user } = useUser()
   const { org } = useOrg()
-  const [planOnly, setPlanOnly] = useState(false)
+  const { install } = useInstall()
+
   const [isOpen, setIsOpen] = useState(false)
+  const [isKickedOff, setIsKickedOff] = useState(false)
+  const [planOnly, setPlanOnly] = useState(false)
+
   const [buildId, setBuildId] = useState<string>(initBuildId)
   const [deployDeps, setDeployDeps] = useState<boolean>(initDeployDeps)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const {
+    data: deploy,
+    error,
+    execute,
+    isLoading,
+    headers,
+  } = useServerAction({
+    action: deployComponent,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
 
     if (isKickedOff) {
-      const displayNotice = setTimeout(kickoff, 15000)
+      const displayNotice = setTimeout(kickoff, 30000)
 
       return () => {
         clearTimeout(displayNotice)
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'component_deploy',
+        user,
+        status: 'error',
+        props: {
+          orgId: org?.id,
+          installId: install.id,
+          componentId,
+          buildId,
+          err: error?.error,
+        },
+      })
+    }
+
+    if (deploy) {
+      trackEvent({
+        event: 'component_deploy',
+        user,
+        status: 'ok',
+        props: {
+          orgId: org?.id,
+          installId: install.id,
+          componentId,
+          buildId,
+        },
+      })
+
+      if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org?.id}/installs/${install.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org?.id}/installs/${install.id}/workflows`)
+      }
+
+      setIsOpen(false)
+    }
+  }, [deploy, error, headers])
 
   return (
     <>
@@ -74,7 +126,10 @@ export const InstallDeployBuildModal: FC<{
               <div className="flex flex-col mb-6">
                 {error ? (
                   <div className="px-6 pt-6">
-                    <Notice>{error}</Notice>
+                    <Notice>
+                      {error?.error ||
+                        'Unable to kick off deployment for this component.'}
+                    </Notice>
                   </div>
                 ) : null}
                 <Text variant="reg-14" className="px-6 pt-6 pb-4">
@@ -129,70 +184,28 @@ export const InstallDeployBuildModal: FC<{
                       Cancel
                     </Button>
                     <Button
-                      disabled={!buildId}
+                      disabled={!buildId || isKickedOff}
                       className="text-base flex items-center gap-1"
                       onClick={() => {
-                        setIsLoading(true)
-                        deployComponentBuild({
-                          buildId,
-                          installId,
-                          orgId: org?.id,
-                          deployDeps,
-                          planOnly,
+                        setIsKickedOff(true)
+                        execute({
+                          body: {
+                            build_id: buildId,
+                            plan_only: planOnly,
+                            deploy_dependents: deployDeps,
+                          },
+                          installId: install.id,
+                          orgId: org.id,
                         })
-                          .then((workflowId) => {
-                            trackEvent({
-                              event: 'component_deploy',
-                              user,
-                              status: 'ok',
-                              props: {
-                                orgId: org?.id,
-                                installId,
-                                componentId,
-                                buildId,
-                              },
-                            })
-                            setIsLoading(false)
-                            setIsKickedOff(true)
-
-                            if (workflowId) {
-                              router.push(
-                                `/${org?.id}/installs/${installId}/workflows/${workflowId}`
-                              )
-                            } else {
-                              router.push(
-                                `/${org?.id}/installs/${installId}/workflows`
-                              )
-                            }
-
-                            setIsOpen(false)
-                          })
-                          .catch((err) => {
-                            trackEvent({
-                              event: 'component_deploy',
-                              user,
-                              status: 'error',
-                              props: {
-                                orgId: org?.id,
-                                installId,
-                                componentId,
-                                buildId,
-                                err,
-                              },
-                            })
-                            console.error(err?.message)
-                            setIsLoading(false)
-                            setError('Unable to create deployment.')
-                          })
                       }}
                       variant="primary"
                     >
-                      {isKickedOff ? (
-                        <CloudCheck size="18" />
-                      ) : isLoading ? (
+                      {isLoading ? (
                         <SpinnerSVG />
+                      ) : isKickedOff ? (
+                        <CloudCheckIcon size="18" />
                       ) : (
-                        <CloudArrowUp size="18" />
+                        <CloudArrowUpIcon size="18" />
                       )}{' '}
                       Deploy build
                     </Button>
