@@ -9,6 +9,7 @@ import (
 
 	pkgdataconverter "github.com/powertoolsdev/mono/pkg/temporal/dataconverter"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	signaldb "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 type Params struct {
@@ -18,8 +19,9 @@ type Params struct {
 	Cfg *internal.Config
 	L   *zap.Logger
 
-	Gzip         converter.PayloadCodec `name:"gzip"`
-	LargePayload converter.PayloadCodec `name:"largepayload"`
+	Gzip            converter.PayloadCodec `name:"gzip"`
+	LargePayload    converter.PayloadCodec `name:"largepayload"`
+	SignalConverter *signaldb.PayloadConverter
 }
 
 func New(params Params) converter.DataConverter {
@@ -27,6 +29,7 @@ func New(params Params) converter.DataConverter {
 	dc := pkgdataconverter.NewJSONConverter()
 
 	cdc := converter.NewCompositeDataConverter(
+		params.SignalConverter,
 		converter.NewNilPayloadConverter(),
 		converter.NewByteSlicePayloadConverter(),
 		dc,
