@@ -63,6 +63,9 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	if err := render.RenderStruct(&cfg.PermissionsConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render permissions config")
 	}
+	if err := render.RenderStruct(&cfg.BreakGlassConfig, stateData); err != nil {
+		return errors.Wrap(err, "unable to render break glass permissions config")
+	}
 	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render secrets config")
 	}
