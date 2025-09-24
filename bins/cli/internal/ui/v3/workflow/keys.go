@@ -45,6 +45,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Help, k.Quit},
 		{k.Up, k.Down},
+		{k.Tab},
 		{k.Enter, k.ApproveStep},
 		{k.Copy, k.Browser},
 		{k.ToggleJson},
@@ -54,7 +55,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit, k.Enter, k.Esc, k.ToggleJson, k.ApproveStep, k.Browser, k.OpenQuickLink, k.OpenTemplateLink}
+	return []key.Binding{k.Help, k.Tab, k.Quit, k.Enter, k.Esc, k.ToggleJson, k.ApproveStep, k.Browser, k.OpenQuickLink, k.OpenTemplateLink}
 }
 
 var keys = keyMap{
