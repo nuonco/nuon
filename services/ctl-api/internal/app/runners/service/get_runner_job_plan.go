@@ -35,6 +35,11 @@ func (s *service) GetRunnerJobPlan(ctx *gin.Context) {
 		return
 	}
 
+	// Set content type based on Accept header
+	if ctx.GetHeader("Accept") == "application/json" {
+		ctx.Header("Content-Type", "application/json")
+	}
+
 	ctx.String(http.StatusOK, plan)
 }
 
