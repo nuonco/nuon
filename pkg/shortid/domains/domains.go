@@ -262,6 +262,14 @@ func NewRunnerJobID() string {
 	return shortid.NewNanoID("job")
 }
 
+func NewQueueID() string {
+	return shortid.NewNanoID("que")
+}
+
+func NewQueueSignalID() string {
+	return shortid.NewNanoID("qsi")
+}
+
 func NewOCIArtifactID() string {
 	return shortid.NewNanoID("oci")
 }
