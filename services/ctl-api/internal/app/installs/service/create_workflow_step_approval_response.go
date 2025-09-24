@@ -25,7 +25,7 @@ func (c *CreateWorkflowStepApprovalResponseRequest) Validate(v *validator.Valida
 }
 
 // @ID						CreateWorkflowStepApprovalResponse
-// @Summary					deploy a build to an install
+// @Summary					Create an approval for a workflow step.
 // @Description.markdown	create_workflow_step_approval_response.md
 // @Param					workflow_id			path	string	true	"workflow id"
 // @Param					workflow_step_id	path	string	true	"step id"
