@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
@@ -170,7 +171,7 @@ func PrintFormattedMessage(level, prefix, message string, color lipgloss.Color) 
 		Foreground(color).
 		Bold(true).
 		Padding(0, 1)
-	
+
 	fmt.Println(style.Render(prefix + " " + message))
 }
 
@@ -194,10 +195,10 @@ func PrintfError(format string, args ...interface{}) {
 // Progress and status indicators
 func PrintStep(step int, total int, message string) {
 	stepStyle := lipgloss.NewStyle().
-		Foreground(PrimaryColor).
+		Foreground(styles.PrimaryColor).
 		Bold(true).
 		Padding(0, 1)
-	
+
 	stepText := fmt.Sprintf("[%d/%d] %s", step, total, message)
 	fmt.Println(stepStyle.Render(stepText))
 }
@@ -206,7 +207,7 @@ func PrintDivider() {
 	dividerStyle := lipgloss.NewStyle().
 		Foreground(BorderColor).
 		Margin(1, 0)
-	
+
 	divider := strings.Repeat("─", 60)
 	fmt.Println(dividerStyle.Render(divider))
 }
@@ -241,7 +242,7 @@ func PrintContextMessage(context, message string) {
 	contextStyle := lipgloss.NewStyle().
 		Foreground(SecondaryColor).
 		Bold(true)
-	
+
 	fmt.Println(contextStyle.Render(fmt.Sprintf("[%s] %s", context, message)))
 }
 
@@ -249,7 +250,7 @@ func PrintCurrentStatus(entity, name, id string) {
 	statusStyle := lipgloss.NewStyle().
 		Foreground(SuccessColor).
 		Bold(true)
-	
+
 	message := fmt.Sprintf("✓ current %s is now %s: %s", entity, Green(name), Green(id))
 	fmt.Println(statusStyle.Render(message))
 }
@@ -258,7 +259,7 @@ func PrintUnsetStatus(entity string) {
 	statusStyle := lipgloss.NewStyle().
 		Foreground(InfoColor).
 		Bold(true)
-	
+
 	message := fmt.Sprintf("ℹ current %s is now %s", entity, Green("unset"))
 	fmt.Println(statusStyle.Render(message))
 }
@@ -277,3 +278,4 @@ func PrintNotSetMessage(entity, selectCommand string) {
 	message := fmt.Sprintf("current %s is not set, use %s to set one", entity, LightMagenta(selectCommand))
 	fmt.Println(WarningStyle.Render(message))
 }
+
