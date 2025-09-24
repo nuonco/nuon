@@ -31,7 +31,7 @@ export function usePolling<T = any>({
   const [data, setData] = useState<T | null>(initData);
   const [error, setError] = useState<TAPIError | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(initIsLoading);
-  const [responseHeaders, setResponseHeaders] = useState<Headers | null>(null);
+  const [responseHeaders, setResponseHeaders] = useState<Record<string, string> | null>(null);
   const [status, setStatus] = useState<number | null>(null);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
