@@ -12,7 +12,7 @@ export async function updateInstallInputs({
   installId: string
   formData: FormData
   orgId: string
-  path: string
+  path?: string
 }) {
   const formData = Object.fromEntries(fd)
   const inputs = Object.keys(formData).reduce((acc, key) => {
@@ -29,7 +29,7 @@ export async function updateInstallInputs({
   }, {})
 
   return update({ installId, orgId, body: { inputs } }).then((res) => {
-    revalidatePath(path)
-    return { ...res, headers: Object.fromEntries(res.headers) }
+    if (path) revalidatePath(path)
+    return res
   })
 }

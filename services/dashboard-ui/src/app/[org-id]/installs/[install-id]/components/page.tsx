@@ -65,7 +65,7 @@ export default async function InstallComponentsPage({ params, searchParams }) {
           <span className="flex flex-col gap-2">
             <Text isMuted>App config</Text>
             <Text>
-              <Link href={`/${orgId}/apps/${install.app_id}`}>
+              <Link href={`/${orgId}/apps/${install?.app_id}`}>
                 {install?.app?.name}
               </Link>
             </Text>

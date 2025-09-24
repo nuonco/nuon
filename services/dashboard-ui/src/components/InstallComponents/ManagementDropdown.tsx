@@ -8,8 +8,8 @@ import { DeleteComponentModal } from './DeleteComponentModal'
 import { InstallDeployBuildModal } from './DeployBuildModal'
 
 interface IInstallComponentManagementDropdown {
-  componentName: string
   componentId: string
+  componentName: string
 }
 
 export const InstallComponentManagementDropdown = ({
@@ -41,9 +41,10 @@ export const InstallComponentManagementDropdown = ({
           <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
             Remove
           </Text>
-          <DeleteComponentModal componentName={componentName} />
+          <DeleteComponentModal componentId={componentId} componentName={componentName} />
         </>
       </div>
     </Dropdown>
   ) : null
 }
+

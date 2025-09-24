@@ -21,7 +21,6 @@ import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text, Code } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
-import { useApp } from '@/hooks/use-app'
 import { useQuery } from '@/hooks/use-query'
 
 const getLayoutedElements = (
@@ -61,7 +60,13 @@ const getLayoutedElements = (
   return { nodes: layoutedNodes, edges }
 }
 
-export const AppConfigGraphRenderer = ({ configId }: { configId: string }) => {
+export const AppConfigGraphRenderer = ({
+  appId,
+  configId,
+}: {
+  appId: string
+  configId: string
+}) => {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -106,7 +111,7 @@ export const AppConfigGraphRenderer = ({ configId }: { configId: string }) => {
                 </li>
               </ul>
             </div>
-            <ComponentsGraph configId={configId} />
+            <ComponentsGraph appId={appId} configId={configId} />
           </Modal>,
           document.body
         )}
@@ -122,14 +127,19 @@ export const AppConfigGraphRenderer = ({ configId }: { configId: string }) => {
   )
 }
 
-const ComponentsGraph = ({ configId }: { configId: string }) => {
+const ComponentsGraph = ({
+  appId,
+  configId,
+}: {
+  appId: string
+  configId: string
+}) => {
   const { org } = useOrg()
-  const { app } = useApp()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const { data, error, isLoading } = useQuery({
-    path: `/api/orgs/${org?.id}/apps/${app.id}/configs/${configId}/graph`,
+    path: `/api/orgs/${org?.id}/apps/${appId}/configs/${configId}/graph`,
   })
 
   const updateNodes = (nodes: any[]) => {

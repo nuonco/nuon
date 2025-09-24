@@ -43,6 +43,9 @@ export async function api<T>({
 
     response = await fetch(`${API_URL}${pathVersion}/${path}`, fetchOpts)
 
+    // Convert headers to a plain object for serialization
+    const headersObj = Object.fromEntries(response.headers.entries())
+    
     // Handle empty response bodies (common with DELETE requests)
     let data = null
     const contentType = response.headers.get('content-type')
@@ -67,7 +70,7 @@ export async function api<T>({
         data,
         error: null,
         status: response.status,
-        headers: response.headers,
+        headers: headersObj,
       }
     } else {
       if (response.status === 502) {
@@ -81,7 +84,7 @@ export async function api<T>({
             user_error: true,
           },
           status: response.status,
-          headers: response.headers,
+          headers: headersObj,
         }
       }
 
@@ -92,7 +95,7 @@ export async function api<T>({
           description: 'No error details provided',
         },
         status: response.status,
-        headers: response.headers,
+        headers: headersObj,
       }
     }
   } catch (error) {
@@ -105,6 +108,9 @@ export async function api<T>({
       // Fallback for environments using AbortController/AbortSignal
       timeoutError = true
     }
+
+    // Convert headers to object if available, otherwise empty object
+    const errorHeadersObj = response ? Object.fromEntries(response.headers.entries()) : {}
 
     const errorResponse = {
       data: null,
@@ -121,7 +127,7 @@ export async function api<T>({
             user_error: false,
           },
       status: timeoutError ? 408 : 500,
-      headers: response?.headers ?? new Headers(),
+      headers: errorHeadersObj,
     }
 
     if (timeoutError) {
