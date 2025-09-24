@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // SelectorItem represents an item in the selector list
@@ -206,31 +207,31 @@ func (m SelectorModel) View() string {
 
 	var b strings.Builder
 
-	// Title
-	titleStyle := lipgloss.NewStyle().
-		Foreground(PrimaryColor).
-		Bold(true).
-		Padding(0, 0, 1, 0)
-	b.WriteString(titleStyle.Render(m.title))
-	b.WriteString("\n")
+	// Title: hidden for now
+	// titleStyle := lipgloss.NewStyle().
+	// 	Foreground(PrimaryColor).
+	// 	Bold(true).
+	// 	Margin(0, 0, 1)
+	// b.WriteString(titleStyle.Render(m.title))
+	// b.WriteString("\n")
 
 	// Search box
 	searchBoxStyle := lipgloss.NewStyle().
 		Foreground(TextColor).
-		Border(lipgloss.RoundedBorder()).
+		Border(lipgloss.NormalBorder()).
 		BorderForeground(SubtleColor).
 		Padding(0, 1).
-		Margin(0, 0, 1, 0)
+		Margin(0, 0, 1, 0).
+		Width(m.width - 2) // full-width minus padding
 
-	searchPrompt := "Search"
+	searchPrompt := ">"
 	if m.searchMode {
 		searchBoxStyle = searchBoxStyle.BorderForeground(PrimaryColor)
-		searchPrompt = "Search (ESC to exit)"
 	}
 
 	searchText := m.searchQuery
 	if searchText == "" && !m.searchMode {
-		searchText = "Type to search or press / to start..."
+		searchText = "Type press / to search..."
 		searchBoxStyle = searchBoxStyle.Foreground(SubtleColor)
 	}
 
@@ -238,18 +239,8 @@ func (m SelectorModel) View() string {
 		searchText = searchText + "█" // Add cursor
 	}
 
-	b.WriteString(searchBoxStyle.Render(fmt.Sprintf("%s: %s", searchPrompt, searchText)))
+	b.WriteString(searchBoxStyle.Render(fmt.Sprintf("%s %s", searchPrompt, searchText)))
 	b.WriteString("\n")
-
-	// Show filtered results count if searching
-	if m.searchQuery != "" {
-		countStyle := lipgloss.NewStyle().
-			Foreground(SubtleColor).
-			Italic(true).
-			Margin(0, 0, 1, 0)
-		b.WriteString(countStyle.Render(fmt.Sprintf("Found %d match(es)", len(m.filteredItems))))
-		b.WriteString("\n")
-	}
 
 	// Render filtered items
 	if len(m.filteredItems) == 0 {
@@ -279,12 +270,22 @@ func (m SelectorModel) View() string {
 
 			line := fmt.Sprintf("%s%s", prefix, item.Title())
 			if item.Description() != "" {
-				line = fmt.Sprintf("%s%s (%s)", prefix, item.Title(), item.Description())
+				line = fmt.Sprintf("%s%s %s", prefix, item.Title(), item.Description())
 			}
 
 			b.WriteString(itemStyle.Render(line))
 			b.WriteString("\n")
 		}
+	}
+
+	// Show filtered results count if searching
+	if m.searchQuery != "" {
+		countStyle := lipgloss.NewStyle().
+			Foreground(SubtleColor).
+			Italic(true).
+			Margin(1, 0, 0, 0)
+		b.WriteString(countStyle.Render(fmt.Sprintf("Found %02d match(es)", len(m.filteredItems))))
+		b.WriteString("\n")
 	}
 
 	// Instructions
@@ -349,9 +350,15 @@ func SelectFromItems(title string, items []SelectorItem) (string, error) {
 // SelectOrg shows an organization selector with evaluation journey support
 func SelectOrg(orgs []OrgOption) (string, error) {
 	items := make([]SelectorItem, len(orgs))
+	maxOrgNameWidth := 0
+	for _, org := range orgs {
+		if len(org.Name) > maxOrgNameWidth {
+			maxOrgNameWidth = len(org.Name)
+		}
+	}
 	for i, org := range orgs {
-		title := org.Name
-		description := fmt.Sprintf("ID: %s", org.ID)
+		title := fmt.Sprintf("%s%s", org.Name, strings.Repeat(" ", maxOrgNameWidth-len(org.Name)))
+		description := styles.TextDim.Render(fmt.Sprintf("ID: %s", org.ID))
 
 		// Add evaluation journey indicators
 		if org.IsEvaluation {
@@ -378,9 +385,15 @@ func SelectOrg(orgs []OrgOption) (string, error) {
 // SelectApp shows an application selector
 func SelectApp(apps []AppOption) (string, error) {
 	items := make([]SelectorItem, len(apps))
+	maxAppNameWidth := 0
+	for _, app := range apps {
+		if len(app.Name) > maxAppNameWidth {
+			maxAppNameWidth = len(app.Name)
+		}
+	}
 	for i, app := range apps {
 		items[i] = SelectorItem{
-			title:       app.Name,
+			title:       fmt.Sprintf("%s%s", app.Name, strings.Repeat(" ", maxAppNameWidth-len(app.Name))),
 			description: fmt.Sprintf("ID: %s", app.ID),
 			value:       app.ID,
 		}
@@ -392,10 +405,18 @@ func SelectApp(apps []AppOption) (string, error) {
 // SelectInstall shows an installation selector
 func SelectInstall(installs []InstallOption) (string, error) {
 	items := make([]SelectorItem, len(installs))
+	// get some widths for padding
+	maxInstallNameWidth := 0
+	for _, install := range installs {
+		if len(install.Name) > maxInstallNameWidth {
+			maxInstallNameWidth = len(install.Name)
+		}
+	}
+
 	for i, install := range installs {
 		items[i] = SelectorItem{
-			title:       install.Name,
-			description: fmt.Sprintf("ID: %s", install.ID),
+			title:       fmt.Sprintf("%s%s", install.Name, strings.Repeat(" ", maxInstallNameWidth-len(install.Name))),
+			description: styles.TextDim.Render(fmt.Sprintf("ID: %s", install.ID)),
 			value:       install.ID,
 		}
 	}
