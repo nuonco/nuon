@@ -12,8 +12,5 @@ export async function GET(
   const offset = searchParams.get('offset') || undefined
 
   const response = await getAppConfigs({ appId, orgId, limit, offset })
-  return NextResponse.json({
-    ...response,
-    headers: Object.fromEntries(response.headers.entries()),
-  })
+  return NextResponse.json(response)
 }

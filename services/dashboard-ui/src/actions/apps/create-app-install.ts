@@ -61,6 +61,6 @@ export async function createAppInstall({
 
   return create({ appId, orgId, body }).then((res) => {
     revalidatePath(path)
-    return { ...res, headers: Object.fromEntries(res.headers) }
+    return res
   })
 }
