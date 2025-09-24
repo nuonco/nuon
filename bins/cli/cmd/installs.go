@@ -9,6 +9,7 @@ import (
 func (c *cli) installsCmd() *cobra.Command {
 	var (
 		id            string
+		workflowID    string
 		name          string
 		region        string
 		appID         string
@@ -397,6 +398,22 @@ func (c *cli) installsCmd() *cobra.Command {
 	workflowsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	workflowsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
 	installsCmds.AddCommand(workflowsCmd)
+
+	// workflows get
+	workflowGetCmd := &cobra.Command{
+		Use:   "workflows-get",
+		Short: "Get one workflows",
+		Long:  "View one workflows by install ID and workflow ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowGet(cmd.Context(), id, workflowID)
+		}),
+	}
+	workflowGetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the workflow you want to view")
+	workflowGetCmd.MarkFlagRequired("install-id")
+	workflowGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow you want to view")
+	workflowGetCmd.MarkFlagRequired("workflow-id")
+	installsCmds.AddCommand(workflowGetCmd)
 
 	return installsCmds
 }

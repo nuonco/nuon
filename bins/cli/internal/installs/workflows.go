@@ -2,11 +2,15 @@ package installs
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/pkg/browser"
 
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	workflowui "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow"
 )
 
 func (s *Service) Workflows(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
@@ -75,4 +79,27 @@ func (s *Service) listWorkflows(ctx context.Context, appID string, offset, limit
 		return nil, hasMore, err
 	}
 	return workflows, hasMore, nil
+}
+
+// we likely want this to also accept and install id
+func (s *Service) WorkflowGet(ctx context.Context, installID, workflowID string) error {
+	installID, err := lookup.InstallID(ctx, s.api, installID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
+	// only show tui in preview
+	if s.cfg.Preview {
+		workflowui.App(ctx, s.cfg, s.api, installID, workflowID)
+		return nil
+	}
+
+	// if not in preview, open workflow in browser
+	cfg, err := s.api.GetCLIConfig(ctx)
+	if err != nil {
+		ui.PrintError(err)
+	}
+	url := fmt.Sprintf("%s/%s/installs/%s/workflows/%s", cfg.DashboardURL, s.cfg.OrgID, installID, workflowID)
+	browser.OpenURL(url)
+	return nil
 }
