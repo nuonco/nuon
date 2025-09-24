@@ -1,35 +1,38 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { CloudArrowUp, CloudCheck } from '@phosphor-icons/react'
+import { CloudArrowUpIcon, CloudCheckIcon } from '@phosphor-icons/react'
+import { deployComponents } from '@/actions/installs/deploy-components'
 import { Button } from '@/components/Button'
 import { CheckboxInput } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { deployComponents } from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
 
-interface IDeployComponentsModal {
-  installId: string
-  orgId: string
-}
-
-export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
-  installId,
-  orgId,
-}) => {
+export const DeployComponentsModal = () => {
   const router = useRouter()
   const { user } = useUser()
-  const [planOnly, setPlanOnly] = useState(false)
+  const { org } = useOrg()
+  const { install } = useInstall()
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState()
+  const [planOnly, setPlanOnly] = useState(false)
+
+  const {
+    data: deploysOk,
+    error,
+    execute,
+    headers,
+    isLoading,
+  } = useServerAction({ action: deployComponents })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -42,6 +45,43 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'components_deploy',
+        status: 'error',
+        user,
+        props: {
+          installId: install.id,
+          orgId: org.id,
+          err: error?.error,
+        },
+      })
+    }
+
+    if (deploysOk) {
+      trackEvent({
+        event: 'components_deploy',
+        status: 'ok',
+        user,
+        props: {
+          installId: install.id,
+          orgId: org.id,
+        },
+      })
+
+      if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org.id}/installs/${install.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org.id}/installs/${install.id}/workflows`)
+      }
+
+      setIsOpen(false)
+    }
+  }, [deploysOk, error, headers])
 
   return (
     <>
@@ -56,7 +96,11 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
               }}
             >
               <div className="flex flex-col gap-3 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <Notice>
+                    {error?.error || 'Unable to deploy components'}
+                  </Notice>
+                ) : null}
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to deploy components? This will deploy
                   all components to this install.
@@ -83,63 +127,22 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
                 <Button
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    deployComponents({
-                      installId,
-                      orgId,
-                      planOnly,
+                    setIsKickedOff(true)
+
+                    execute({
+                      body: { plan_only: planOnly },
+                      installId: install.id,
+                      orgId: org.id,
                     })
-                      .then((workflowId) => {
-                        trackEvent({
-                          event: 'components_deploy',
-                          status: 'ok',
-                          user,
-                          props: {
-                            installId,
-                            orgId,
-                          },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-
-                        if (workflowId) {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows/${workflowId}`
-                          )
-                        } else {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows`
-                          )
-                        }
-
-                        setIsOpen(false)
-                      })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'components_deploy',
-                          status: 'error',
-                          user,
-                          props: {
-                            installId,
-                            orgId,
-                            err,
-                          },
-                        })
-                        setError(
-                          err?.message ||
-                            'Error occured, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      })
                   }}
                   variant="primary"
                 >
-                  {isKickedOff ? (
-                    <CloudCheck size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CloudCheckIcon size="18" />
                   ) : (
-                    <CloudArrowUp size="18" />
+                    <CloudArrowUpIcon size="18" />
                   )}{' '}
                   Deploy all components
                 </Button>
@@ -154,7 +157,7 @@ export const DeployComponentsModal: FC<IDeployComponentsModal> = ({
           setIsOpen(true)
         }}
       >
-        <CloudArrowUp size="16" />
+        <CloudArrowUpIcon size="16" />
         Deploy all components
       </Button>
     </>

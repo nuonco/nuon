@@ -1,40 +1,53 @@
 'use client'
 
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
 import { CheckIcon, TrashSimpleIcon } from '@phosphor-icons/react'
+import { teardownComponent } from '@/actions/installs/teardown-component'
 import { Button } from '@/components/Button'
 import { CheckboxInput, Input } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { deleteComponent } from '@/components/install-actions'
-import { sentanceCase, trackEvent } from '@/utils'
+import { useOrg } from '@/hooks/use-org'
+import { useInstall } from '@/hooks/use-install'
+import { useServerAction } from '@/hooks/use-server-action'
+import { trackEvent } from '@/utils'
 
 interface IDeleteComponentModal {
+  componentId: string
   componentName: string
 }
 
 export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
+  componentId,
   componentName,
 }) => {
-  const params =
-    useParams<Record<'org-id' | 'install-id' | 'component-id', string>>()
-  const orgId = params['org-id']
-  const installId = params['install-id']
-  const componentId = params['component-id']
   const router = useRouter()
   const { user } = useUser()
+  const { org } = useOrg()
+  const { install } = useInstall()
+
+  const [isOpen, setIsOpen] = useState(false)
+  const [isKickedOff, setIsKickedOff] = useState(false)
+
   const [planOnly, setPlanOnly] = useState(false)
   const [confirm, setConfirm] = useState<string>()
   const [force, setForceDelete] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const {
+    data: teardownOk,
+    error,
+    execute,
+    headers,
+    isLoading,
+    status,
+  } = useServerAction({
+    action: teardownComponent,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -47,6 +60,44 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'component_delete',
+        user,
+        status: 'error',
+        props: {
+          orgId: org.id,
+          installId: install.id,
+          componentId,
+          err: error,
+        },
+      })
+    }
+
+    if (teardownOk) {
+      trackEvent({
+        event: 'component_delete',
+        user,
+        status: 'ok',
+        props: {
+          orgId: org.id,
+          installId: install.id,
+          componentId,
+        },
+      })
+
+      if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org.id}/installs/${install.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org.id}/installs/${install.id}/workflows`)
+      }
+      setIsOpen(false)
+    }
+  }, [teardownOk, error, headers, status])
 
   return (
     <>
@@ -61,7 +112,7 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
               }}
             >
               <div className="flex flex-col gap-6 mb-12">
-                {error ? <Notice>{sentanceCase(error)}</Notice> : null}
+                {error ? <Notice>{error?.error}</Notice> : null}
                 <span className="flex flex-col gap-1">
                   <Text variant="med-18">
                     Are you sure you want to teardown {componentName}?
@@ -139,66 +190,23 @@ export const DeleteComponentModal: FC<IDeleteComponentModal> = ({
                   disabled={confirm !== 'teardown'}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    deleteComponent({
+                    setIsKickedOff(true)
+                    execute({
+                      body: {
+                        plan_only: planOnly,
+                        error_behavior: force ? 'continue' : 'abort',
+                      },
                       componentId,
-                      installId,
-                      orgId,
-                      force,
-                      planOnly,
-                    }).then(({ data: workflowId, error }) => {
-                      if (error) {
-                        trackEvent({
-                          event: 'component_delete',
-                          user,
-                          status: 'error',
-                          props: {
-                            orgId,
-                            installId,
-                            componentId,
-                            err: error,
-                          },
-                        })
-                        setError(
-                          error?.error ||
-                            'Error occured trying to delete this component, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      } else {
-                        trackEvent({
-                          event: 'component_delete',
-                          user,
-                          status: 'ok',
-                          props: {
-                            orgId,
-                            installId,
-                            componentId,
-                          },
-                        })
-                        setForceDelete(false)
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-
-                        if (workflowId) {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows/${workflowId}`
-                          )
-                        } else {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows`
-                          )
-                        }
-
-                        setIsOpen(false)
-                      }
+                      installId: install.id,
+                      orgId: org.id,
                     })
                   }}
                   variant="danger"
                 >
-                  {isKickedOff ? (
-                    <CheckIcon size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
                     <TrashSimpleIcon size="18" />
                   )}{' '}

@@ -3,17 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { API_URL } from "@/configs/api"
 import {
-  deployComponents as deployAllComponents,
-  reprovisionInstall as reprovision,
-  reprovisionSandbox as reprovisionSBox,
-  deployComponentBuild as deployComponentByBuildId,
-  teardownInstallComponents,
-  updateInstall as patchInstall,
   forgetInstall as forget,
-  installManagedByUI,
 } from '@/lib'
 import {  nueMutateData, getFetchOpts } from '@/utils'
-import type { TInstall } from '@/types'
+
 
 interface IReprovisionInstall {
   installId: string
@@ -513,38 +506,38 @@ export async function updateInstallConfig({
   })
 }
 
-interface IUpdateInstallManagedBy {
-  installId: string
-  managedBy?: string
-  orgId: string
-}
+// interface IUpdateInstallManagedBy {
+//   installId: string
+//   managedBy?: string
+//   orgId: string
+// }
 
-export async function updateInstallManagedBy({
-  installId,
-  managedBy,
-  orgId,
-}: IUpdateInstallManagedBy) {
-  if (managedBy && managedBy === installManagedByUI) {
-    return true
-  }
-  const res = fetch(`${API_URL}/v1/installs/${installId}`, {
-    ...(await getFetchOpts(orgId)),
-    body: JSON.stringify({ metadata: { managed_by: installManagedByUI } }),
-    method: 'PATCH',
-  })
-    .then((r) => {
-      if (!r.ok) {
-        throw new Error('Unable to mark install managed by UI')
-      } else {
-        return r
-      }
-    })
-    .catch((err) => {
-      throw new Error(err)
-    })
+// export async function updateInstallManagedBy({
+//   installId,
+//   managedBy,
+//   orgId,
+// }: IUpdateInstallManagedBy) {
+//   if (managedBy && managedBy === installManagedByUI) {
+//     return true
+//   }
+//   const res = fetch(`${API_URL}/v1/installs/${installId}`, {
+//     ...(await getFetchOpts(orgId)),
+//     body: JSON.stringify({ metadata: { managed_by: installManagedByUI } }),
+//     method: 'PATCH',
+//   })
+//     .then((r) => {
+//       if (!r.ok) {
+//         throw new Error('Unable to mark install managed by UI')
+//       } else {
+//         return r
+//       }
+//     })
+//     .catch((err) => {
+//       throw new Error(err)
+//     })
 
-  return (await res).ok
-}
+//   return (await res).ok
+// }
 
 interface IRetryWorklow {
   orgId: string
