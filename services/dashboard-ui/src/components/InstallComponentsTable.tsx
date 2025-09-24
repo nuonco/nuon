@@ -178,10 +178,11 @@ export const InstallComponentsTable = ({
 
             <div className="flex items-center gap-4">
               <AppConfigGraph
+                appId={install?.app_id}
                 configId={install?.app_config_id}
               />
-              <DeployComponentsModal installId={install.id} orgId={org.id} />
-              <DeleteComponentsModal installId={install.id} orgId={org.id} />
+              <DeployComponentsModal />
+              <DeleteComponentsModal />
             </div>
           </div>
           <ComponentTypeFilterDropdown isNotDropdown />

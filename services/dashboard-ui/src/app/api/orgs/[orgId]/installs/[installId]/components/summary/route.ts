@@ -23,8 +23,5 @@ export async function GET(
     },
   })
 
-  return NextResponse.json({
-    ...response,
-    headers: Object.fromEntries(response.headers.entries()),
-  })
+  return NextResponse.json(response)
 }

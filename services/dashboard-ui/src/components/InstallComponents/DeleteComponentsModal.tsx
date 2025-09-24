@@ -1,37 +1,44 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, TrashSimple } from '@phosphor-icons/react'
+import { CheckIcon, TrashSimpleIcon } from '@phosphor-icons/react'
+import { teardownComponents } from '@/actions/installs/teardown-components'
 import { Button } from '@/components/Button'
 import { CheckboxInput, Input } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { deleteComponents } from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
 
-interface IDeleteComponentsModal {
-  installId: string
-  orgId: string
-}
-
-export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
-  installId,
-  orgId,
-}) => {
+export const DeleteComponentsModal = () => {
   const router = useRouter()
   const { user } = useUser()
+  const { org } = useOrg()
+  const { install } = useInstall()
+
+  const [isOpen, setIsOpen] = useState(false)
+  const [isKickedOff, setIsKickedOff] = useState(false)
+
   const [confirm, setConfirm] = useState<string>()
   const [planOnly, setPlanOnly] = useState(false)
   const [force, setForceDelete] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState()
+
+  const {
+    data: teardownsOk,
+    error,
+    execute,
+    headers,
+    isLoading,
+  } = useServerAction({
+    action: teardownComponents,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -44,6 +51,36 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'components_teardown',
+        user,
+        status: 'error',
+        props: { orgId: org.id, installId: install.id, err: error?.error },
+      })
+    }
+
+    if (teardownsOk) {
+      trackEvent({
+        event: 'components_teardown',
+        user,
+        status: 'ok',
+        props: { orgId: org.id, installId: install.id },
+      })
+
+      if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org.id}/installs/${install.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org.id}/installs/${install.id}/workflows`)
+      }
+      setForceDelete(false)
+      setIsOpen(false)
+    }
+  }, [teardownsOk, error, headers])
 
   return (
     <>
@@ -58,7 +95,11 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
               }}
             >
               <div className="flex flex-col gap-6 mb-12">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <Notice>
+                    {error?.error || 'Unable to teardown all components.'}
+                  </Notice>
+                ) : null}
                 <span className="flex flex-col gap-1">
                   <Text variant="med-18">
                     Are you sure you want to teardown all components?
@@ -136,53 +177,24 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
                   disabled={confirm !== 'teardown'}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    deleteComponents({ installId, orgId, force, planOnly })
-                      .then((workflowId) => {
-                        trackEvent({
-                          event: 'components_teardown',
-                          user,
-                          status: 'ok',
-                          props: { orgId, installId },
-                        })
-                        setForceDelete(false)
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-
-                        if (workflowId) {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows/${workflowId}`
-                          )
-                        } else {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows`
-                          )
-                        }
-
-                        setIsOpen(false)
-                      })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'components_teardown',
-                          user,
-                          status: 'error',
-                          props: { orgId, installId, err },
-                        })
-                        setError(
-                          err?.message ||
-                            'Error occured, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      })
+                    setIsKickedOff(true)
+                    execute({
+                      body: {
+                        error_behavior: force ? 'continue' : 'abort',
+                        plan_only: planOnly,
+                      },
+                      installId: install.id,
+                      orgId: org.id,
+                    })
                   }}
                   variant="danger"
                 >
-                  {isKickedOff ? (
-                    <Check size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
-                    <TrashSimple size="18" />
+                    <TrashSimpleIcon size="18" />
                   )}{' '}
                   Teardown all components
                 </Button>
@@ -197,7 +209,7 @@ export const DeleteComponentsModal: FC<IDeleteComponentsModal> = ({
           setIsOpen(true)
         }}
       >
-        <TrashSimple size="16" /> Teardown all components
+        <TrashSimpleIcon size="16" /> Teardown all components
       </Button>
     </>
   )
