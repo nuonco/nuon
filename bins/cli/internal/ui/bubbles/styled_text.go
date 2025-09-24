@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // StyledText provides consistent text styling throughout the application
@@ -22,7 +24,7 @@ func NewStyledText() *StyledText {
 		successStyle:   lipgloss.NewStyle().Foreground(SuccessColor).Bold(true),
 		errorStyle:     lipgloss.NewStyle().Foreground(ErrorColor).Bold(true),
 		warningStyle:   lipgloss.NewStyle().Foreground(WarningColor).Bold(true),
-		infoStyle:      lipgloss.NewStyle().Foreground(PrimaryColor),
+		infoStyle:      lipgloss.NewStyle().Foreground(styles.PrimaryColor),
 		highlightStyle: lipgloss.NewStyle().Foreground(AccentColor).Bold(true),
 		subtleStyle:    lipgloss.NewStyle().Foreground(SubtleColor),
 	}
@@ -147,4 +149,3 @@ func StyleInfo(text string) string {
 func StyleHighlight(text string) string {
 	return styledText.Highlight(text)
 }
-
