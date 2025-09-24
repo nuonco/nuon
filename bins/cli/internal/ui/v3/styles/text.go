@@ -9,7 +9,7 @@ import (
 var Link = lipgloss.NewStyle().Foreground(lipgloss.Color("20")).Underline(true)
 
 var TextBold = lipgloss.NewStyle().Bold(true)
-var TextDim = lipgloss.NewStyle().Foreground(lipgloss.Color("97"))
+var TextDim = lipgloss.NewStyle().Foreground(Dim)
 var TextLight = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
 var TextSuccess = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 var TextError = lipgloss.NewStyle().
