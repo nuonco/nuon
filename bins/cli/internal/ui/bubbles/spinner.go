@@ -10,18 +10,19 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // SpinnerModel represents a spinner with status and message handling
 type SpinnerModel struct {
-	spinner    spinner.Model
-	message    string
-	prevText   string
-	result     *SpinnerResult
-	err        error
-	quitting   bool
-	json       bool
-	width      int
+	spinner  spinner.Model
+	message  string
+	prevText string
+	result   *SpinnerResult
+	err      error
+	quitting bool
+	json     bool
+	width    int
 }
 
 // SpinnerResult represents the final state of a spinner operation
@@ -41,7 +42,7 @@ type SpinnerResultMsg SpinnerResult
 func NewSpinnerModel(json bool) SpinnerModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(PrimaryColor)
+	s.Style = lipgloss.NewStyle().Foreground(styles.PrimaryColor)
 
 	return SpinnerModel{
 		spinner: s,
@@ -132,12 +133,12 @@ func (m SpinnerModel) formatText(text string) string {
 	if len(text) > m.width {
 		return text[:m.width-3] + "..."
 	}
-	
+
 	// Pad with spaces to maintain consistent width
 	for len(text) < len(m.prevText) {
 		text += " "
 	}
-	
+
 	m.prevText = text
 	return text
 }
@@ -183,7 +184,7 @@ func (v *SpinnerView) Start(text string) {
 	v.model.message = text
 
 	v.program = tea.NewProgram(v.model)
-	
+
 	// Run in background
 	go func() {
 		if _, err := v.program.Run(); err != nil {
@@ -253,7 +254,7 @@ func RunSpinnerWithContext(ctx context.Context, message string, operation func(c
 	spinnerView.Start(message)
 
 	err := operation(ctx)
-	
+
 	if err != nil {
 		spinnerView.Fail(err)
 	} else {
@@ -262,3 +263,4 @@ func RunSpinnerWithContext(ctx context.Context, message string, operation func(c
 
 	return err
 }
+
