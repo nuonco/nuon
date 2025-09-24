@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // OnboardingStep represents a single step in the onboarding flow
@@ -102,7 +103,7 @@ func (m OnboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.currentStep < len(m.steps) {
 				m.steps[m.currentStep].Completed = true
 				m.currentStep++
-				
+
 				if m.currentStep >= len(m.steps) {
 					m.quitting = true
 					return m, tea.Quit
@@ -132,10 +133,10 @@ func (m OnboardingModel) View() string {
 	}
 
 	currentStep := m.steps[m.currentStep]
-	
+
 	// Header
 	headerStyle := lipgloss.NewStyle().
-		Foreground(PrimaryColor).
+		Foreground(styles.PrimaryColor).
 		Bold(true).
 		Underline(true).
 		Margin(1, 0)
@@ -158,7 +159,7 @@ func (m OnboardingModel) View() string {
 	// Action button
 	actionStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#ffffff")).
-		Background(PrimaryColor).
+		Background(styles.PrimaryColor).
 		Bold(true).
 		Padding(0, 2).
 		Margin(1, 0)
@@ -213,7 +214,7 @@ func (m OnboardingModel) renderProgress() string {
 		} else {
 			progress += "○"
 		}
-		
+
 		if i < len(m.steps)-1 {
 			progress += "──"
 		}
@@ -240,7 +241,7 @@ func ShowEvaluationWelcome() {
 		Margin(1, 0)
 
 	title := lipgloss.NewStyle().
-		Foreground(PrimaryColor).
+		Foreground(styles.PrimaryColor).
 		Bold(true).
 		Underline(true).
 		Margin(0, 0, 1, 0).
@@ -253,7 +254,7 @@ func ShowEvaluationWelcome() {
 		"",
 		"This evaluation environment includes:",
 		"• Pre-configured sample applications",
-		"• Isolated sandbox deployments", 
+		"• Isolated sandbox deployments",
 		"• Full access to Nuon's features",
 		"• Step-by-step guidance",
 		"",
@@ -269,17 +270,17 @@ func DetectUserJourney(orgName string, userData map[string]interface{}) string {
 	// - Organization metadata from the API
 	// - User journey field from user data
 	// - Special evaluation organization naming patterns
-	
+
 	// For now, return evaluation for demonstration
 	if orgName != "" && contains(orgName, []string{"eval", "test", "demo", "trial"}) {
 		return "evaluation"
 	}
-	
+
 	// Check for journey field in user data
 	if journey, ok := userData["journey"].(string); ok {
 		return journey
 	}
-	
+
 	return "production"
 }
 
@@ -295,3 +296,4 @@ func contains(s string, substrings []string) bool {
 	}
 	return false
 }
+
