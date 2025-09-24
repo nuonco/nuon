@@ -16,13 +16,12 @@ import type { TInstallWorkflow } from '@/types'
 import { removeSnakeCase, sentanceCase } from '@/utils'
 import { InstallWorkflowCancelModal } from './InstallWorkflowCancelModal'
 import {
-  CaretRight,
-  ClockCountdown,
-  CheckCircle,
-  XCircle,
-  Prohibit,
-  Warning,
-  WarningDiamond,
+  CaretRightIcon,
+  ClockCountdownIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  WarningIcon,
+  WarningDiamondIcon,
   MinusCircleIcon,
   ProhibitIcon,
   RepeatIcon,
@@ -124,7 +123,9 @@ export const InstallWorkflowHistory = ({
                               ' (' +
                               iw?.metadata?.install_action_workflow_name +
                               ') '
-                            : sentanceCase(iw?.name) + ' '}
+                            : sentanceCase(
+                                iw?.name || removeSnakeCase(iw?.type)
+                              ) + ' '}
                           {iw?.status?.status}
                         </Text>
                         {iw?.plan_only ? (
@@ -180,7 +181,9 @@ export const InstallWorkflowHistory = ({
                                 ' (' +
                                 iw?.metadata?.install_action_workflow_name +
                                 ') '
-                              : sentanceCase(iw?.name) + ' '}
+                              : sentanceCase(
+                                  iw?.name || removeSnakeCase(iw?.type)
+                                ) + ' '}
                             {iw?.status?.status}
                           </Text>
                           {iw?.plan_only ? (
@@ -218,7 +221,7 @@ export const InstallWorkflowHistory = ({
                         className="text-sm font-medium"
                         href={`/${org?.id}/installs/${iw?.owner_id}/workflows/${iw?.id}`}
                       >
-                        View details <CaretRight />
+                        View details <CaretRightIcon />
                       </Link>
                     </div>
                     <Text
@@ -263,9 +266,9 @@ export const YAStatus = ({
     !isSuccess && !isError && !isProhibit && !isInProgress && !isSystemSkipped
 
   const StatusIcon = isSuccess ? (
-    <CheckCircle size="18" weight="bold" />
+    <CheckCircleIcon size="18" weight="bold" />
   ) : isError ? (
-    <XCircle size="18" weight="bold" />
+    <XCircleIcon size="18" weight="bold" />
   ) : isRetried ? (
     <RepeatIcon size="18" weight="bold" />
   ) : isUserSkipped ? (
@@ -275,17 +278,17 @@ export const YAStatus = ({
   ) : isInProgress ? (
     <SpinnerSVG />
   ) : isCanceled ? (
-    <XCircle size="18" weight="bold" />
+    <XCircleIcon size="18" weight="bold" />
   ) : isNotAttempted || isDiscarded ? (
-    <Prohibit size="18" weight="bold" />
+    <ProhibitIcon size="18" weight="bold" />
   ) : isApprovalDenied ? (
-    <WarningDiamond size="18" weight="bold" />
+    <WarningDiamondIcon size="18" weight="bold" />
   ) : isPendingApproval ? (
-    <Warning size="18" weight="bold" />
+    <WarningIcon size="18" weight="bold" />
   ) : isSystemSkipped ? (
     <EmptyIcon size="18" weight="bold" />
   ) : (
-    <ClockCountdown size="18" weight="bold" />
+    <ClockCountdownIcon size="18" weight="bold" />
   )
 
   return (
@@ -308,7 +311,7 @@ export const YAStatus = ({
         }
       )}
     >
-      {isSkipped ? <Prohibit size="18" weight="bold" /> : StatusIcon}
+      {isSkipped ? <ProhibitIcon size="18" weight="bold" /> : StatusIcon}
     </span>
   )
 }
