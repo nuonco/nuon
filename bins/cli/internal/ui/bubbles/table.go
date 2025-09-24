@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // TableModel represents a data table component
@@ -63,10 +64,10 @@ func NewTableModel(data [][]string) TableModel {
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(PrimaryColor).
+		BorderForeground(styles.PrimaryColor).
 		BorderBottom(true).
 		Bold(true).
-		Foreground(PrimaryColor)
+		Foreground(styles.PrimaryColor)
 
 	s.Selected = s.Selected.
 		Foreground(lipgloss.Color("")).
@@ -280,4 +281,3 @@ func RenderMarkdownTable(headers []string, rows [][]string) string {
 
 	return result.String()
 }
-

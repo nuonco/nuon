@@ -2,13 +2,13 @@ package bubbles
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // Common styles and colors for consistent theming
 // Using ANSI colors to respect terminal color schemes
 var (
 	// Primary brand colors - use terminal's bright colors
-	PrimaryColor   = lipgloss.Color("63") // Bright Purple
 	SecondaryColor = lipgloss.Color("14") // Bright Cyan
 	AccentColor    = lipgloss.Color("11") // Bright Yellow
 
@@ -50,7 +50,7 @@ var (
 
 	// Interactive styles
 	FocusedStyle = lipgloss.NewStyle().
-			Foreground(PrimaryColor).
+			Foreground(styles.PrimaryColor).
 			Bold(true)
 
 	BlurredStyle = lipgloss.NewStyle().
@@ -62,7 +62,7 @@ var (
 
 	FocusedBorderStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(PrimaryColor).
+				BorderForeground(styles.PrimaryColor).
 				Padding(1, 2)
 )
 
@@ -94,4 +94,3 @@ func Min(a, b int) int {
 	}
 	return b
 }
-

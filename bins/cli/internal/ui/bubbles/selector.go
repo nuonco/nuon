@@ -32,7 +32,6 @@ type SelectorModel struct {
 	choice        string
 	selected      bool
 	quitting      bool
-	title         string
 	cursor        int
 	width         int
 	searchQuery   string
@@ -44,7 +43,6 @@ func NewSelectorModel(title string, items []SelectorItem) SelectorModel {
 	return SelectorModel{
 		items:         items,
 		filteredItems: items,
-		title:         title,
 		cursor:        0,
 		width:         60,
 		searchQuery:   "",
@@ -207,14 +205,6 @@ func (m SelectorModel) View() string {
 
 	var b strings.Builder
 
-	// Title: hidden for now
-	// titleStyle := lipgloss.NewStyle().
-	// 	Foreground(PrimaryColor).
-	// 	Bold(true).
-	// 	Margin(0, 0, 1)
-	// b.WriteString(titleStyle.Render(m.title))
-	// b.WriteString("\n")
-
 	// Search box
 	searchBoxStyle := lipgloss.NewStyle().
 		Foreground(TextColor).
@@ -226,7 +216,7 @@ func (m SelectorModel) View() string {
 
 	searchPrompt := ">"
 	if m.searchMode {
-		searchBoxStyle = searchBoxStyle.BorderForeground(PrimaryColor)
+		searchBoxStyle = searchBoxStyle.BorderForeground(styles.PrimaryColor)
 	}
 
 	searchText := m.searchQuery
@@ -259,7 +249,7 @@ func (m SelectorModel) View() string {
 			if i == m.cursor {
 				// Selected item
 				itemStyle = lipgloss.NewStyle().
-					Foreground(PrimaryColor).
+					Foreground(styles.PrimaryColor).
 					Bold(true)
 				prefix = "▶ "
 			} else {
