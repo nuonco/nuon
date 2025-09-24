@@ -115,6 +115,10 @@ func AllModels() []interface{} {
 		&app.OCIArtifact{},
 		&app.HelmRelease{},
 
+		// queues
+		&app.Queue{},
+		&app.QueueSignal{},
+
 		// actions
 		&app.ActionWorkflow{},
 		&app.ActionWorkflowConfig{},

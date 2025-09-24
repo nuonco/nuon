@@ -8,6 +8,7 @@ import (
 
 	"go.temporal.io/api/workflowservice/v1"
 	tclient "go.temporal.io/sdk/client"
+	converter "go.temporal.io/sdk/converter"
 	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
@@ -147,4 +148,74 @@ func (t *temporal) SignalWithStartWorkflowInNamespace(ctx context.Context,
 		workflow,
 		workflowArgs)
 	return run, err
+}
+
+func (t *temporal) UpdateWorkflowInNamespace(ctx context.Context,
+	namespace string,
+	opts tclient.UpdateWorkflowOptions,
+) (tclient.WorkflowUpdateHandle, error) {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get namespace client")
+	}
+
+	return client.UpdateWorkflow(ctx,
+		opts)
+}
+
+func (t *temporal) UpdateWithStartWorkflowInNamespace(ctx context.Context,
+	namespace string,
+	opts tclient.UpdateWithStartWorkflowOptions,
+) (tclient.WorkflowUpdateHandle, error) {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get namespace client")
+	}
+
+	return client.UpdateWithStartWorkflow(ctx, opts)
+}
+
+func (t *temporal) GetWorkflowUpdateHandleInNamespace(
+	namespace string,
+	ref tclient.GetWorkflowUpdateHandleOptions,
+) tclient.WorkflowUpdateHandle {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		t.Logger.Error("unable to get namespace client", zap.String("namespace", namespace), zap.Error(err))
+		return nil
+	}
+
+	return client.GetWorkflowUpdateHandle(ref)
+}
+
+func (t *temporal) QueryWorkflowInNamespace(ctx context.Context,
+	namespace string,
+	workflowID string,
+	workflowRunID string,
+	queryType string,
+	args ...any,
+) (converter.EncodedValue, error) {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get namespace client")
+	}
+
+	return client.QueryWorkflow(ctx,
+		workflowID,
+		workflowRunID,
+		queryType,
+		args...)
+}
+
+func (t *temporal) QueryWorkflowWithOptionsInNamespace(ctx context.Context,
+	namespace string,
+	req *tclient.QueryWorkflowWithOptionsRequest,
+) (*tclient.QueryWorkflowWithOptionsResponse, error) {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get namespace client")
+	}
+
+	return client.QueryWorkflowWithOptions(ctx,
+		req)
 }
