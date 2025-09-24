@@ -181,7 +181,7 @@ docker_env:
   DB_USE_IAM: false
   DB_USE_SSL: false
   DB_USE_ZAP: false
-  CLICKHOUSE_DB_HOST: host.docker.internal
+  CLICKHOUSE_DB_HOST: clickhouse.nuon.dev
   CLICKHOUSE_DB_PORT: 9000
   CLICKHOUSE_DB_USER: ctl-api
   CLICKHOUSE_DB_PASSWORD: ctl-api
