@@ -53,6 +53,7 @@ func (m *model) fetchWorkflow() {
 	workflow, err := m.api.GetWorkflow(m.ctx, m.workflowID)
 	if err != nil {
 		m.logMessage = fmt.Sprintf("[error] failed to fetch data: %s", err)
+		m.error = err
 		return
 	}
 	if m.stepApprovalConf {
