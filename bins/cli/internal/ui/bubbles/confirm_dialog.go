@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // ConfirmDialogModel represents an interactive confirmation dialog
@@ -87,7 +88,7 @@ func (m ConfirmDialogModel) View() string {
 
 	// Question
 	questionStyle := lipgloss.NewStyle().
-		Foreground(PrimaryColor).
+		Foreground(styles.PrimaryColor).
 		Bold(true).
 		Margin(0, 0, 1, 0)
 	b.WriteString(questionStyle.Render(m.message))
@@ -103,14 +104,14 @@ func (m ConfirmDialogModel) View() string {
 	if m.cursor == 0 {
 		// Yes is selected
 		yesStyle = yesStyle.
-			BorderForeground(PrimaryColor).
-			Foreground(PrimaryColor).
+			BorderForeground(styles.PrimaryColor).
+			Foreground(styles.PrimaryColor).
 			Bold(true)
 	} else {
 		// No is selected
 		noStyle = noStyle.
-			BorderForeground(PrimaryColor).
-			Foreground(PrimaryColor).
+			BorderForeground(styles.PrimaryColor).
+			Foreground(styles.PrimaryColor).
 			Bold(true)
 	}
 
@@ -156,3 +157,4 @@ func ShowConfirmDialog(message string) (bool, error) {
 
 	return confirmed, nil
 }
+

@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // SpinnerState represents the state of an individual spinner
@@ -65,7 +66,7 @@ func (m *MultiSpinnerModel) AddSpinner(id, message string) {
 
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(PrimaryColor)
+	s.Style = lipgloss.NewStyle().Foreground(styles.PrimaryColor)
 
 	state := &SpinnerState{
 		id:      id,
