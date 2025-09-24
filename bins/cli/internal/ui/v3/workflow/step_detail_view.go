@@ -145,7 +145,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	if m.workflowCancelationConf {
 		// in this case, we hijack the view to show a big red confirmation
 		content := lipgloss.NewStyle().Padding(1, 3).Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to cancel this workflow?", "", "Press [C] to confirm."))
-		dialog := common.FullPageDialog(m.stepDetail.Width, m.stepDetail.Height, 2, content)
+		dialog := common.FullPageDialog(common.FullPageDialogRequest{Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "warning"})
 		m.stepDetail.SetContent(dialog)
 		return
 	}
@@ -157,7 +157,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 			Render(
 				lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to approve all?", "", "Press [A] to confirm."),
 			)
-		dialog := common.FullPageDialog(m.stepDetail.Width, m.stepDetail.Height, 2, content)
+		dialog := common.FullPageDialog(common.FullPageDialogRequest{Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "warning"})
 		m.stepDetail.SetContent(dialog)
 		return
 	}
