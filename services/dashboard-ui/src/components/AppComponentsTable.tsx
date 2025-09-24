@@ -229,7 +229,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
             <DebouncedSearchInput placeholder="Search component name" />
 
             <div className="flex items-center gap-4">
-              <AppConfigGraph configId={configId} />
+              <AppConfigGraph appId={appId} configId={configId} />
               <BuildAllComponentsButton components={components} />
             </div>
           </div>

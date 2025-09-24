@@ -10,7 +10,6 @@ import {
   CodeViewer,
   DashboardContent,
   ErrorFallback,
-  InstallDeployLatestBuildButton,
   InstallComponentManagementDropdown,
   Link,
   Loading,
@@ -30,7 +29,6 @@ import {
 import type {
   TAppConfig,
   TComponent,
-  TComponentConfig,
   TInstall,
 } from '@/types'
 import { nueQueryData } from '@/utils'
@@ -105,12 +103,7 @@ export default async function InstallComponent({ params, searchParams }) {
       heading={component.name}
       headingUnderline={component.id}
       statues={
-        <div className="flex gap-8">
-          <InstallDeployLatestBuildButton
-            componentId={componentId}
-            installId={installId}
-            orgId={orgId}
-          />
+        <div className="flex gap-8">        
           <InstallComponentManagementDropdown
             componentId={installComponent?.component_id}
             componentName={installComponent?.component?.name}

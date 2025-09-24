@@ -27,8 +27,8 @@ export const UpcomingJobs = async ({
   })
 
   const pageData = {
-    hasNext: headers?.get('x-nuon-page-next') || 'false',
-    offset: headers?.get('x-nuon-page-offset') || '0',
+    hasNext: headers?.['x-nuon-page-next'] || 'false',
+    offset: headers?.['x-nuon-page-offset'] || '0',
   }
 
   return runnerJobs && !error ? (
