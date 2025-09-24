@@ -28,6 +28,7 @@ const (
 	StatusAutoSkipped  Status = "auto-skipped"
 	StatusPlanning     Status = "planning"
 	StatusApplying     Status = "applying"
+	StatusQueued       Status = "queued"
 )
 
 // type specific statuses

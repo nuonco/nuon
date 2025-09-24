@@ -1,44 +1,80 @@
-package cmd
+package testworker
 
 import (
-	"go.uber.org/fx"
+	"os"
+	"testing"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	actionshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
-	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
-	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
-	orgshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/helpers"
-	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
-	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/client"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/handler"
+	handleractivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/handler/activities"
 	signaldb "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/testworker/seed"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-type cli struct{}
+type TestService struct {
+	fx.In
 
-func (c *cli) providers() []fx.Option {
-	return []fx.Option{
+	DB   *gorm.DB `name:"psql"`
+	V    *validator.Validate
+	L    *zap.Logger
+	Seed *seed.Seeder
+
+	Client *client.Client
+}
+
+type EnqueueTestSuite struct {
+	suite.Suite
+
+	app *fxtest.App
+
+	service TestService
+}
+
+func TestSuite(t *testing.T) {
+        if os.Getenv("INTEGRATION") != "true" {
+                t.Skip("INTEGRATION is not set, skipping")
+                return
+        }
+
+	suite.Run(t, new(EnqueueTestSuite))
+}
+
+func (e *EnqueueTestSuite) SetupSuite() {
+	e.app = fxtest.New(
+		e.T(),
 		fx.Provide(internal.NewConfig),
 
 		// various dependencies
@@ -53,13 +89,11 @@ func (c *cli) providers() []fx.Option {
 
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
-		fx.Provide(signaldb.NewPayloadConverter),
 		fx.Provide(dataconverter.New),
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
 		fx.Provide(notifications.New),
 		fx.Provide(eventloop.New),
-		fx.Provide(teventloop.New),
 		fx.Provide(authz.New),
 		fx.Provide(features.New),
 		fx.Provide(account.New),
@@ -67,13 +101,37 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(analytics.NewTemporal),
 		fx.Provide(cloudformation.NewTemplates),
 
-		// add helpers for each domain
-		fx.Provide(vcshelpers.New),
-		fx.Provide(actionshelpers.New),
-		fx.Provide(componentshelpers.New),
-		fx.Provide(orgshelpers.New),
-		fx.Provide(appshelpers.New),
-		fx.Provide(installshelpers.New),
-		fx.Provide(runnershelpers.New),
-	}
+		// shared activities and workflows
+		fx.Provide(statusactivities.New),
+		fx.Provide(job.New),
+		fx.Provide(signaldb.NewPayloadConverter),
+
+		// test dependencies
+		fx.Provide(seed.New),
+		fx.Provide(client.New),
+
+		// start the test worker for testing the queue package
+		fx.Provide(activities.New),
+		fx.Provide(queue.NewWorkflows),
+		fx.Provide(handler.NewWorkflows),
+		fx.Provide(handleractivities.New),
+		fx.Provide(worker.AsWorker(New)),
+
+		// invokers
+		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
+		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {
+		})),
+
+		fx.Populate(&e.service),
+	)
+
+	e.app.RequireStart()
+}
+
+func (e *EnqueueTestSuite) TearDownSuite() {
+	e.app.RequireStop()
+}
+
+type SampleObj struct {
+	Field string `validate:"required"`
 }
