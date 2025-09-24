@@ -9,8 +9,5 @@ export const GET = async (request: NextRequest) => {
 
   const response = await getOrgs({ limit, offset, q })
 
-  return NextResponse.json({
-    ...response,
-    headers: Object.fromEntries(response.headers.entries()),
-  })
+  return NextResponse.json(response)
 }

@@ -73,6 +73,6 @@ export type TAPIError = {
 export type TAPIResponse<T> = {
   data: T | null;
   error: null | TAPIError;
-  headers: Response["headers"];
+  headers: Record<string, string>;
   status: Response["status"];
 };

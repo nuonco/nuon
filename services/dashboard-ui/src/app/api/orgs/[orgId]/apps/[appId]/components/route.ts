@@ -14,8 +14,5 @@ export async function GET(
   const types = searchParams.get('types') || undefined
 
   const response = await getComponents({ appId, orgId, limit, offset, q, types })
-  return NextResponse.json({
-    ...response,
-    headers: Object.fromEntries(response.headers.entries()),
-  })
+  return NextResponse.json(response)
 }
