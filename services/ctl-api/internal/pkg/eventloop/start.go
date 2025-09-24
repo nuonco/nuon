@@ -50,9 +50,9 @@ func (a *evClient) startEventLoop(ctx context.Context, id string, signal Signal)
 	}
 
 	req := EventLoopRequest{
-		ID:            id,
-		SandboxMode:   sandboxMode,
-		Version: a.cfg.Version,
+		ID:          id,
+		SandboxMode: sandboxMode,
+		Version:     a.cfg.Version,
 	}
 	wkflowRun, err := a.client.ExecuteWorkflowInNamespace(ctx,
 		signal.Namespace(),
