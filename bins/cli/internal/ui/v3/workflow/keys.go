@@ -96,11 +96,11 @@ var keys = keyMap{
 	),
 	Left: key.NewBinding(
 		key.WithKeys("left", "h"),
-		key.WithHelp("←/h", "next step"),
+		key.WithHelp("←/h", "left"),
 	),
 	Right: key.NewBinding(
 		key.WithKeys("right", "l"),
-		key.WithHelp("→/l", "next step"),
+		key.WithHelp("→/l", "right"),
 	),
 
 	Enter: key.NewBinding(

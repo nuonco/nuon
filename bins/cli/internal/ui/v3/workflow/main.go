@@ -27,6 +27,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 const minRequiredWidth int = 100
@@ -105,7 +106,7 @@ func initialModel(
 ) model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205")) // .Padding(0, 0, 0, 1)
+	s.Style = lipgloss.NewStyle().Foreground(styles.AccentColor) // .Padding(0, 0, 0, 1)
 	stepsList := initialStepsList()
 	progress := progress.New()
 
@@ -358,9 +359,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// additional navigation for when the step details is open/populated
 		// to allow for navigation
 		case key.Matches(msg, m.keys.Left):
-			m.stepsList.CursorUp()
+			m.toggleFocus()
 		case key.Matches(msg, m.keys.Right):
-			m.stepsList.CursorDown()
+			m.toggleFocus()
 
 		case key.Matches(msg, m.keys.Slash):
 			m.stepsList.SetShowFilter(!m.stepsList.ShowFilter())
