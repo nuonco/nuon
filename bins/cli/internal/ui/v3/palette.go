@@ -24,15 +24,15 @@ func main() {
 
 	colorTable := table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(styles.BorderColor)).
+		BorderStyle(lipgloss.NewStyle().Foreground(styles.BorderActiveColor)).
 		Headers("Color", "Preview", "Usage").
 		Width(80)
 
-	colorTable.Row("Primary", styles.TextBold.Background(styles.PrimaryColor).Render("  Primary  "), "Main brand color")
-	colorTable.Row("Secondary", styles.TextBold.Background(styles.SecondaryColor).Render("  Secondary  "), "Accent color")
-	colorTable.Row("Accent", styles.TextBold.Background(styles.AccentColor).Render("  Accent  "), "Highlight color")
-	colorTable.Row("Dim", styles.TextBold.Background(styles.Dim).Render("  Dim  "), "Muted elements")
-	colorTable.Row("Ghost", styles.TextBold.Background(styles.Ghost).Render("  Ghost  "), "Adaptive subtle")
+	colorTable.Row("Primary", styles.TextBold.Background(styles.PrimaryColor).Render("  Primary  "), styles.TextPrimary.Render("Main brand color"))
+	colorTable.Row("Secondary", styles.TextBold.Background(styles.SecondaryColor).Render("  Secondary  "), styles.TextSecondary.Render("Accent color"))
+	colorTable.Row("Accent", styles.TextBold.Background(styles.AccentColor).Render("  Accent  "), styles.TextAccent.Render("Highlight color"))
+	colorTable.Row("Dim", styles.TextBold.Background(styles.Dim).Render("  Dim  "), styles.TextDim.Render("Muted elements"))
+	colorTable.Row("Ghost", styles.TextBold.Background(styles.Ghost).Render("  Ghost  "), styles.TextGhost.Render("Adaptive subtle"))
 
 	fmt.Println(colorTable.Render())
 	fmt.Println()
@@ -47,18 +47,18 @@ func main() {
 		example string
 	}{
 		{"Link", styles.Link, "https://example.com"},
-		{"Text", styles.Text, "Default text style"},
+		{"Text Primary", styles.TextPrimary, "Default text style"},
 		{"Text Ghost", styles.TextGhost, "Subtle italic text"},
 		{"Text Bold", styles.TextBold, "Bold text for emphasis"},
 		{"Text Dim", styles.TextDim, "Dimmed text for less important content"},
-		{"Text Light", styles.TextLight, "Light colored text"},
+		{"Text Secondary", styles.TextSecondary, "Light colored text"},
 		{"Text Success", styles.TextSuccess, "Success messages"},
 		{"Text Error", styles.TextError, "Error messages"},
 	}
 
 	textTable := table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(styles.BorderColor)).
+		BorderStyle(lipgloss.NewStyle().Foreground(styles.BorderActiveColor)).
 		Headers("Style Name", "Example").
 		Width(80)
 
@@ -75,7 +75,7 @@ func main() {
 
 	statusTable := table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(styles.BorderColor)).
+		BorderStyle(lipgloss.NewStyle().Foreground(styles.BorderActiveColor)).
 		Headers("Status", "Style", "Description").
 		Width(80)
 
@@ -206,9 +206,9 @@ Use this style for help messages and documentation.`
 		case "Healthy":
 			healthStyle = styles.TextSuccess
 		case "Deploying":
-			healthStyle = styles.Info
+			healthStyle = styles.TextInfo
 		case "Failed":
-			healthStyle = styles.Error
+			healthStyle = styles.TextInfo
 		default:
 			healthStyle = styles.TextDim
 		}
@@ -234,7 +234,7 @@ Use this style for help messages and documentation.`
 		Align(lipgloss.Left).
 		Foreground(styles.SecondaryColor).
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(styles.BorderColor).
+		BorderForeground(styles.BorderActiveColor).
 		Padding(1).
 		Render("Left Panel\n\nThis content is\naligned to the left\nside of the layout.")
 
@@ -243,7 +243,7 @@ Use this style for help messages and documentation.`
 		Align(lipgloss.Right).
 		Foreground(styles.AccentColor).
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(styles.BorderColor).
+		BorderForeground(styles.BorderInactiveColor).
 		Padding(1).
 		Render("Right Panel\n\nThis content is\naligned to the right\nside of the layout.")
 
