@@ -1,6 +1,9 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import {
+  executeServerAction,
+  type IServerAction,
+} from '@/actions/execute-server-action'
 import { buildComponents as build } from '@/lib'
 import type { TComponent } from '@/types'
 
@@ -9,16 +12,14 @@ import type { TComponent } from '@/types'
 // This means the return type doesn't conform to the standard
 // TAPIResponse type and can not be used with the useServerAction hook
 export async function buildComponents({
-  components,
-  orgId,
   path,
+  ...args
 }: {
   components: TComponent[]
-  orgId: string
-  path: string
-}) {
-  return build({ components, orgId }).then((res) => {
-    revalidatePath(path)
-    return res
+} & IServerAction) {
+  return executeServerAction({
+    action: build,
+    args,
+    path,
   })
 }
