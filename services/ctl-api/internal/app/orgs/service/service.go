@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	accountshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/accounts/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
@@ -34,7 +33,6 @@ type Params struct {
 	AcctClient      *account.Client
 	AnalyticsClient analytics.Writer
 	Helpers         *helpers.Helpers
-	AccountsHelpers *accountshelpers.Helpers
 	Features        *features.Features
 	EndpointAudit   *api.EndpointAudit
 }
@@ -52,7 +50,6 @@ type service struct {
 	acctClient      *account.Client
 	analyticsClient analytics.Writer
 	helpers         *helpers.Helpers
-	accountsHelpers *accountshelpers.Helpers
 	features        *features.Features
 	endpointAudit   *api.EndpointAudit
 }
@@ -80,11 +77,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 	// runners
 	ge.GET("/v1/orgs/current/runner-group", s.GetOrgRunnerGroup)
-
-	// user journeys
-	ge.GET("/v1/orgs/current/user-journeys", s.GetOrgUserJourneys)
-	ge.POST("/v1/orgs/current/user-journeys", s.CreateUserJourney)
-	ge.PATCH("/v1/orgs/current/user-journeys/:journey_name/steps/:step_name", s.UpdateUserJourneyStep)
 
 	return nil
 }
@@ -147,7 +139,6 @@ func New(params Params) *service {
 		analyticsClient: params.AnalyticsClient,
 		acctClient:      params.AcctClient,
 		helpers:         params.Helpers,
-		accountsHelpers: params.AccountsHelpers,
 		features:        params.Features,
 	}
 }
