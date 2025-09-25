@@ -59,7 +59,7 @@ export const InstallActionRunDetails = () => {
         </div>
       </Section>
       {installActionRun?.runner_job?.outputs ? (
-        <Section className="flex-initial" heading="Workflow outputs">
+        <Section className="flex-initial" heading="Action run outputs">
           <JsonView data={installActionRun?.runner_job?.outputs} />
         </Section>
       ) : null}

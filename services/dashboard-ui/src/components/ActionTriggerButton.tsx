@@ -1,28 +1,30 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import React, { type FC, type FormEvent, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
 import {
-  ArrowsClockwise,
-  Check,
-  Plus,
-  WarningOctagon,
+  ArrowsClockwiseIcon,
+  CheckIcon,
+  PlusIcon,
+  WarningOctagonIcon,
 } from '@phosphor-icons/react'
+import { runAction } from '@/actions/installs/run-action'
 import { Button, type IButton } from '@/components/Button'
 import { Expand } from '@/components/Expand'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
-import { runAction } from './workflow-actions'
-import type { TActionConfig, TActionWorkflow } from '@/types'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
+import type { TActionConfig, TAction } from '@/types'
 import { trackEvent } from '@/utils'
 
 interface IActionTriggerButton extends Omit<IButton, 'className' | 'onClick'> {
-  installId: string
-  orgId: string
-  workflowConfigId: string
-  actionWorkflow: TActionWorkflow
+  action: TAction
+  actionConfigId: string
 }
 
 function normalizeEnvVars(steps: TActionConfig['steps']) {
@@ -42,20 +44,31 @@ function normalizeEnvVars(steps: TActionConfig['steps']) {
 }
 
 export const ActionTriggerButton: FC<IActionTriggerButton> = ({
-  actionWorkflow,
-  installId,
-  orgId,
-  workflowConfigId,
+  action,
+  actionConfigId,
   ...props
 }) => {
+  const path = usePathname()
   const { user } = useUser()
-  const config = actionWorkflow?.configs?.[0]
+  const { org } = useOrg()
+  const { install } = useInstall()
+
+  const config = action?.configs?.[0]
   const envVars = normalizeEnvVars(config?.steps)
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
+
   const [customVars, setCustomVars] = useState([])
-  const [error, setError] = useState<string>()
+
+  const {
+    data: run,
+    error,
+    execute,
+    headers,
+    isLoading,
+  } = useServerAction({
+    action: runAction,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -69,13 +82,45 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
     }
   }, [isKickedOff])
 
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'action_run',
+        user,
+        status: 'error',
+        props: {
+          orgId: org.id,
+          installId: install.id,
+          actionConfigId: actionConfigId,
+          err: error?.error,
+        },
+      })
+    }
+
+    if (run) {
+      trackEvent({
+        event: 'action_run',
+        user,
+        status: 'ok',
+        props: {
+          orgId: org.id,
+          installId: install.id,
+          actionConfigId: actionConfigId,
+        },
+      })
+
+      setIsKickedOff(true)
+      setIsOpen(false)
+    }
+  }, [run, error, headers])
+
   return (
     <>
       {isOpen
         ? createPortal(
             <Modal
               className="!max-w-3xl"
-              heading={`Run action workflow ${actionWorkflow?.name}?`}
+              heading={`Run action workflow ${action?.name}?`}
               isOpen={isOpen}
               onClose={() => {
                 setIsOpen(false)
@@ -84,19 +129,20 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
               <div className="flex flex-col gap-4">
                 {error ? (
                   <span className="flex items-center gap-3  w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium">
-                    <WarningOctagon size="20" /> {error}
+                    <WarningOctagonIcon size="20" />{' '}
+                    {error?.error || 'Unable to run action'}
                   </span>
                 ) : null}
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to run the action workflow{' '}
-                  {actionWorkflow?.name}?
+                  {action?.name}?
                 </Text>
 
                 <form
                   className="flex flex-col gap-4"
                   onSubmit={(e: FormEvent<HTMLFormElement>) => {
                     e.preventDefault()
-                    setIsLoading(true)
+                    setIsKickedOff(true)
 
                     // Variables from the form. This will include overwritten values.
                     const overwrite = Object.fromEntries(
@@ -130,42 +176,17 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
                       return acc
                     }, {})
 
-                    runAction({
-                      actionWorkflowConfigId: workflowConfigId,
-                      installId,
-                      orgId,
-                      vars,
-                    }).then((res) => {
-                      setIsLoading(false)
-                      if (res.error) {
-                        trackEvent({
-                          event: 'action_run',
-                          user,
-                          status: 'error',
-                          props: {
-                            orgId,
-                            installId,
-                            workflowConfigId,
-                            vars,
-
-                            err: res.error,
-                          },
-                        })
-                        setError(
-                          res?.error?.error ||
-                            'Error occured, please refresh page and try again.'
-                        )
-                      } else {
-                        trackEvent({
-                          event: 'action_run',
-                          user,
-                          status: 'ok',
-                          props: { orgId, installId, workflowConfigId, vars },
-                        })
-
-                        setIsKickedOff(true)
-                        setIsOpen(false)
-                      }
+                    execute({
+                      body: {
+                        action_workflow_config_id: actionConfigId,
+                        ...(vars &&
+                          Object.keys(vars)?.length > 0 && {
+                            run_env_vars: vars,
+                          }),
+                      },
+                      installId: install.id,
+                      orgId: org.id,
+                      path,
                     })
                   }}
                 >
@@ -234,7 +255,7 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
                             }}
                             type="button"
                           >
-                            <Plus />
+                            <PlusIcon />
                             Add env var
                           </Button>
                         </div>
@@ -257,12 +278,12 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
                       type="submit"
                       disabled={isLoading}
                     >
-                      {isKickedOff ? (
-                        <Check size="18" />
-                      ) : isLoading ? (
+                      {isLoading ? (
                         <SpinnerSVG />
+                      ) : isKickedOff ? (
+                        <CheckIcon size="18" />
                       ) : (
-                        <ArrowsClockwise size="18" />
+                        <ArrowsClockwiseIcon size="18" />
                       )}{' '}
                       Run action workflow
                     </Button>

@@ -101,9 +101,9 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
 
     if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
       updateInstall({
+        body: { metadata: { managed_by: 'nuon/dashboard' } },
         installId: install.id,
         orgId: org.id,
-        managedBy: 'nuon/dashboard',
       })
     }
   }
