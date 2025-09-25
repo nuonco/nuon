@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/profiles"
-	accountsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/accounts/service"
 	actionsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/service"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
@@ -94,7 +93,6 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),
 		fx.Provide(api.AsService(health.New)),
-		fx.Provide(api.AsService(accountsservice.New)),
 		fx.Provide(api.AsService(orgsservice.New)),
 		fx.Provide(api.AsService(appsservice.New)),
 		fx.Provide(api.AsService(vcsservice.New)),

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
@@ -51,7 +51,16 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	if acct.AccountType == app.AccountTypeService {
+	// NOTE(jm): we have a discrepancy in your db, where some OG members had their data inputted into the accounts
+	// table backwards.
+	isAllowed := false
+	for _, allowed := range strings.Split(s.cfg.OrgCreationEmailAllowList, ",") {
+		if strings.HasSuffix(acct.Email, allowed) || strings.HasSuffix(acct.Subject, allowed) {
+			isAllowed = true
+		}
+	}
+
+	if acct.AccountType == app.AccountTypeAuth0 && !isAllowed {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("This email is not allowed to create new orgs."),
 			Description: "Please reach out to team@nuon.co for access.",
@@ -82,15 +91,6 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	s.evClient.Send(ctx, newOrg.ID, &sigs.Signal{
 		Type: sigs.OperationProvision,
 	})
-
-	// Update user journey for first org creation
-	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstOrg(ctx, acct.ID); err != nil {
-		// Log error but don't fail org creation
-		s.l.Warn("failed to update user journey for first org",
-			zap.String("account_id", acct.ID),
-			zap.String("org_id", newOrg.ID),
-			zap.Error(err))
-	}
 
 	ctx.JSON(http.StatusCreated, newOrg)
 }
