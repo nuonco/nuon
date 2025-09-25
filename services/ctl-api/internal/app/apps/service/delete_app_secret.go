@@ -9,23 +9,23 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-//	@ID						DeleteAppSecret
-//	@Summary				delete an app secret
-//	@Description.markdown	delete_app_secret.md
-//	@Param					app_id		path	string	true	"app ID"
-//	@Param					secret_id	path	string	true	"secret ID"
-//	@Tags					apps
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{boolean}	true
-//	@Router					/v1/apps/{app_id}/secret/{secret_id} [DELETE]
+// @ID						DeleteAppSecret
+// @Summary				delete an app secret
+// @Description.markdown	delete_app_secret.md
+// @Param					app_id		path	string	true	"app ID"
+// @Param					secret_id	path	string	true	"secret ID"
+// @Tags					apps
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{boolean}	true
+// @Router					/v1/apps/{app_id}/secret/{secret_id} [DELETE]
 func (s *service) DeleteAppSecret(ctx *gin.Context) {
 	secretID := ctx.Param("secret_id")
 
