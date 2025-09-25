@@ -1,9 +1,6 @@
-import { Dashboard, SignUpForm } from '@/components'
+import { redirect } from 'next/navigation'
 
-export default async function GettingStarted() {
-  return (
-    <Dashboard>
-      <SignUpForm />
-    </Dashboard>
-  )
+export default async function RequestAccessRedirect() {
+  // Redirect to homepage - this page is deprecated
+  redirect('/')
 }
