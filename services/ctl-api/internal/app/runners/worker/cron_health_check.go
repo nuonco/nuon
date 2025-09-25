@@ -59,6 +59,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			"runner_status":         runnerStatus,
 			"runner_status_changed": strconv.FormatBool(changed),
 			"runner_type":           runnerType,
+			"runner_id":             req.RunnerID,
 		})
 		// write metrics now
 		w.mw.Incr(ctx, "runner.health_check", tags...)
