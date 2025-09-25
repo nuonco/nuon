@@ -13,7 +13,7 @@ import (
 )
 
 var buttonStyle = lipgloss.NewStyle().
-	Foreground(styles.AccentColor).
+	Foreground(styles.SuccessColor).
 	Padding(0, 3)
 
 var dangerousButtonStyle = buttonStyle.
@@ -107,9 +107,7 @@ func (m model) headerView() string {
 	}
 	title += fmt.Sprintf("(%02d steps)", len(m.workflow.Steps))
 
-	if m.workflow.Status.Status != models.AppStatusInDashProgress {
-		title += style.Render(fmt.Sprintf("[%s]", m.workflow.Status.Status))
-	}
+	title += style.Render(fmt.Sprintf(" [%s]", m.workflow.Status.Status))
 
 	// 2. actions
 	actions := m.actionsOrMessage()
