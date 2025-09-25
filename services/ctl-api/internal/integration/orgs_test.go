@@ -74,6 +74,34 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 
 		s.deleteOrg(org.ID)
 	})
+
+	s.T().Run("sets correct default feature flags", func(t *testing.T) {
+		fakeReq := s.fakeOrgRequest()
+
+		org, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
+		require.NoError(t, err)
+		require.NotNil(t, org)
+
+		// Verify feature flags that should be disabled by default
+		require.False(t, org.Features["org-dashboard"], "org-dashboard should be disabled by default")
+		require.False(t, org.Features["install-break-glass"], "install-break-glass should be disabled by default")
+
+		// Verify feature flags that should be enabled by default
+		require.True(t, org.Features["api-pagination"], "api-pagination should be enabled by default")
+		require.True(t, org.Features["org-runner"], "org-runner should be enabled by default")
+		require.True(t, org.Features["org-settings"], "org-settings should be enabled by default")
+		require.True(t, org.Features["org-support"], "org-support should be enabled by default")
+		require.True(t, org.Features["install-delete-components"], "install-delete-components should be enabled by default")
+		require.True(t, org.Features["install-delete"], "install-delete should be enabled by default")
+		require.True(t, org.Features["terraform-workspace"], "terraform-workspace should be enabled by default")
+		require.True(t, org.Features["dev-command"], "dev-command should be enabled by default")
+		require.True(t, org.Features["app-branches"], "app-branches should be enabled by default")
+
+		// Verify total number of features (should have all 11 features)
+		require.Len(t, org.Features, 11, "should have all 11 feature flags set")
+
+		s.deleteOrg(org.ID)
+	})
 }
 
 func (s *orgsIntegrationTestSuite) TestOrgByID() {
