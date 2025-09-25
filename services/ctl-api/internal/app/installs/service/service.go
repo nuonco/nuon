@@ -15,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 
+	accountshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 )
 
@@ -28,6 +29,7 @@ type Params struct {
 	Cfg              *internal.Config
 	ComponentHelpers *componenthelpers.Helpers
 	Helpers          *helpers.Helpers
+	AccountsHelpers  *accountshelpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
 	FeaturesClient   *features.Features
 	EvClient         eventloop.Client
@@ -43,6 +45,7 @@ type service struct {
 	cfg              *internal.Config
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
+	accountsHelpers  *accountshelpers.Helpers
 	appsHelpers      *appshelpers.Helpers
 	featuresClient   *features.Features
 	evClient         eventloop.Client
@@ -198,6 +201,7 @@ func New(params Params) *service {
 		mw:               params.MW,
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
+		accountsHelpers:  params.AccountsHelpers,
 		evClient:         params.EvClient,
 		appsHelpers:      params.AppsHelpers,
 		featuresClient:   params.FeaturesClient,

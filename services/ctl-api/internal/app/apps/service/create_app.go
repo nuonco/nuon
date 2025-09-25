@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -36,22 +37,22 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateApp
-//	@Summary				create an app
-//	@Description.markdown	create_app.md
-//	@Tags					apps
-//	@Accept					json
-//	@Param					req	body	CreateAppRequest	true	"Input"
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.App
-//	@Router					/v1/apps [post]
+// @ID						CreateApp
+// @Summary				create an app
+// @Description.markdown	create_app.md
+// @Tags					apps
+// @Accept					json
+// @Param					req	body	CreateAppRequest	true	"Input"
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.App
+// @Router					/v1/apps [post]
 func (s *service) CreateApp(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -79,6 +80,15 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
+	}
+
+	// Update user journey for first app creation
+	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppCreate(ctx, user.ID, app.ID); err != nil {
+		// Log error but don't fail app creation
+		s.l.Warn("failed to update user journey for first app creation",
+			zap.String("account_id", user.ID),
+			zap.String("app_id", app.ID),
+			zap.Error(err))
 	}
 
 	s.evClient.Send(ctx, app.ID, &signals.Signal{

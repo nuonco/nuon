@@ -43,4 +43,3 @@ func (a *AppInputGroup) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
-

@@ -4,10 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	accountshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
@@ -17,23 +19,27 @@ import (
 type Params struct {
 	fx.In
 
-	V          *validator.Validate
-	DB         *gorm.DB `name:"psql"`
-	MW         metrics.Writer
-	Cfg        *internal.Config
-	VcsHelpers *vcshelpers.Helpers
-	Helpers    *appshelpers.Helpers
-	EvClient   eventloop.Client
+	V               *validator.Validate
+	DB              *gorm.DB `name:"psql"`
+	MW              metrics.Writer
+	L               *zap.Logger
+	Cfg             *internal.Config
+	VcsHelpers      *vcshelpers.Helpers
+	Helpers         *appshelpers.Helpers
+	AccountsHelpers *accountshelpers.Helpers
+	EvClient        eventloop.Client
 }
 
 type service struct {
-	v          *validator.Validate
-	db         *gorm.DB
-	mw         metrics.Writer
-	cfg        *internal.Config
-	vcsHelpers *vcshelpers.Helpers
-	helpers    *appshelpers.Helpers
-	evClient   eventloop.Client
+	v               *validator.Validate
+	db              *gorm.DB
+	mw              metrics.Writer
+	l               *zap.Logger
+	cfg             *internal.Config
+	vcsHelpers      *vcshelpers.Helpers
+	helpers         *appshelpers.Helpers
+	accountsHelpers *accountshelpers.Helpers
+	evClient        eventloop.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -129,12 +135,14 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
-		cfg:        params.Cfg,
-		v:          params.V,
-		db:         params.DB,
-		mw:         params.MW,
-		vcsHelpers: params.VcsHelpers,
-		helpers:    params.Helpers,
-		evClient:   params.EvClient,
+		cfg:             params.Cfg,
+		v:               params.V,
+		db:              params.DB,
+		mw:              params.MW,
+		l:               params.L,
+		vcsHelpers:      params.VcsHelpers,
+		helpers:         params.Helpers,
+		accountsHelpers: params.AccountsHelpers,
+		evClient:        params.EvClient,
 	}
 }
