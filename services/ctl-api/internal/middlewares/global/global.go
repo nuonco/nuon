@@ -12,21 +12,15 @@ import (
 // globalEndpointList is a list of endpoints that are not scoped to an org,
 // but still need to be authenticated.
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"POST", "/v1/orgs"}:                                                  {},
-	{"GET", "/v1/orgs"}:                                                   {},
-	{"POST", "/v1/general/metrics"}:                                       {},
-	{"GET", "/v1/general/current-user"}:                                   {},
-	{"GET", "/v1/sandboxes"}:                                              {},
-	{"GET", "/v1/sandboxes/:sandbox_id"}:                                  {},
-	{"GET", "/v1/sandboxes/:sandbox_id/releases"}:                         {},
-	{"POST", "/v1/general/waitlist"}:                                      {},
-	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}:        {},
-	{"GET", "/v1/account"}:                                                {},
-	{"GET", "/v1/account/user-journeys"}:                                  {},
-	{"POST", "/v1/account/user-journeys"}:                                 {},
-	{"PATCH", "/v1/account/user-journeys/:journey_name/steps/:step_name"}: {},
-	{"POST", "/v1/account/user-journeys/:journey_name/reset"}:             {},
-	{"POST", "/v1/account/user-journeys/:journey_name/complete"}:          {},
+	{"POST", "/v1/orgs"}:                                           {},
+	{"GET", "/v1/orgs"}:                                            {},
+	{"POST", "/v1/general/metrics"}:                                {},
+	{"GET", "/v1/general/current-user"}:                            {},
+	{"GET", "/v1/sandboxes"}:                                       {},
+	{"GET", "/v1/sandboxes/:sandbox_id"}:                           {},
+	{"GET", "/v1/sandboxes/:sandbox_id/releases"}:                  {},
+	{"POST", "/v1/general/waitlist"}:                               {},
+	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 }
 
 type middleware struct {

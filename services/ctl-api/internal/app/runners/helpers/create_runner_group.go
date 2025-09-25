@@ -138,7 +138,8 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		return nil, res.Error
 	}
 
-	// Note: Signal sending moved to caller to avoid race condition with foreign key constraints
-	// The temporal workflow will be triggered after runner group creation completes
+	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
+		Type: signals.OperationCreated,
+	})
 	return &runnerGroup, nil
 }
