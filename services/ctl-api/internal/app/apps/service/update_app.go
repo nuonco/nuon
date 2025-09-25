@@ -111,4 +111,3 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 
 	return &currentApp, nil
 }
-

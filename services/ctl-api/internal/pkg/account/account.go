@@ -7,6 +7,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Params struct {
@@ -16,6 +18,8 @@ type Params struct {
 	AnalyticsClient analytics.Writer
 	DB              *gorm.DB `name:"psql"`
 	V               *validator.Validate
+	AuthzClient     *authz.Client
+	EvClient        eventloop.Client
 }
 
 type Client struct {
@@ -23,6 +27,8 @@ type Client struct {
 	db              *gorm.DB
 	v               *validator.Validate
 	analyticsClient analytics.Writer
+	authzClient     *authz.Client
+	evClient        eventloop.Client
 }
 
 func New(params Params) *Client {
@@ -31,5 +37,7 @@ func New(params Params) *Client {
 		cfg:             params.Cfg,
 		db:              params.DB,
 		analyticsClient: params.AnalyticsClient,
+		authzClient:     params.AuthzClient,
+		evClient:        params.EvClient,
 	}
 }
