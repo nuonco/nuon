@@ -55,7 +55,6 @@ func init() {
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
 
 	config.RegisterDefault("enable_endpoint_auditing", false)
-	config.RegisterDefault("org_default_user_journeys_enabled", false)
 }
 
 type Config struct {
@@ -176,6 +175,9 @@ type Config struct {
 	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
 	DNSZoneID               string `config:"dns_zone_id" validate:"required"`
 	DNSRootDomain           string `config:"dns_root_domain" validate:"required"`
+
+	// support for handling org creation
+	OrgCreationEmailAllowList string `config:"org_creation_email_allow_list"`
 
 	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
