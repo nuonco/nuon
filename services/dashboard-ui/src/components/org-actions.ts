@@ -4,8 +4,10 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { auth0 } from '@/lib/auth'
 import { joinWaitlist, type IJoinWaitlist } from '@/lib'
-import type { TInvite, TWaitlist } from '@/types'
+import type { TInvite, TWaitlist, TOrg } from '@/types'
 import { mutateData, nueMutateData, SF_TRIAL_ACCESS_ENDPOINT } from '@/utils'
+import { getFetchOpts } from '@/utils/get-fetch-opts'
+import { API_URL } from '@/configs/api'
 
 export async function requestWaitlistAccess(
   formData: FormData
@@ -82,7 +84,52 @@ export async function removeUserFromOrg(
   })
 }
 
+export async function createOrganization(name: string) {
+  return nueMutateData<TOrg>({
+    path: `orgs`,
+    body: {
+      name: name,
+      'sandbox-mode': false,
+    },
+  })
+}
+
+export async function createTrialOrganization() {
+  const session = await auth0.getSession()
+
+  if (!session?.user?.email) {
+    return {
+      data: null,
+      error: { error: 'Unable to get user email for org creation' }
+    }
+  }
+
+  // Generate org name from email (same pattern as backend was using)
+  const orgName = `${session.user.email}-trial`
+
+  return nueMutateData<TOrg>({
+    path: `orgs`,
+    body: {
+      name: orgName,
+      'sandbox-mode': false,
+    },
+  })
+}
+
 export async function setOrgSessionCookie(orgId: string) {
   const c = await cookies()
   c.set('org-session', orgId)
+}
+
+export async function completeUserJourney(journeyName: string) {
+  return fetch(`${API_URL}/v1/account/user-journeys/${journeyName}/complete`, {
+    ...(await getFetchOpts()), // ⚠️ CRITICAL: Global endpoint - do not pass orgId
+    method: 'POST',
+  }).then(async (response) => {
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to complete user journey: ${response.status} ${errorText}`)
+    }
+    return response.json()
+  })
 }

@@ -13,7 +13,8 @@ import {
 } from '@/components'
 import { getOrgById, getApps } from '@/lib'
 // TODO(nnnat): move segment init script to org dashboard
-import { SegmentAnalyticsSetOrg } from '@/utils'
+import type { TApp } from '@/types'
+import { SegmentAnalyticsSetOrg, nueQueryData } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -29,10 +30,28 @@ export default async function Apps({ params, searchParams }) {
   const sp = await searchParams
   const { data: org } = await getOrgById({ orgId })
 
+  // Get both apps and account data at page level
+  const params_ = new URLSearchParams({
+    offset: sp['offset'] || '0',
+    limit: '10',
+    q: sp['q'] || '',
+  }).toString()
+  const { data: apps } = await nueQueryData<TApp[]>({
+    orgId,
+    path: `apps${params_ ? '?' + params_ : params_}`,
+    headers: {
+      'x-nuon-pagination-enabled': true,
+    },
+  })
+
+  const hasNoApps = !apps || apps.length === 0
+
   return (
     <>
       {process.env.SEGMENT_WRITE_KEY && <SegmentAnalyticsSetOrg org={org} />}
-      <DashboardContent breadcrumb={[{ href: `/${orgId}/apps`, text: 'Apps' }]}>
+      <DashboardContent
+        breadcrumb={[{ href: `/${orgId}/apps`, text: 'Apps' }]}
+      >
         <Section>
           <ErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense

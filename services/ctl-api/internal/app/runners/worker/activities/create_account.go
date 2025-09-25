@@ -26,7 +26,12 @@ func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest
 	if err == nil {
 		// NOTE(jm): each runner needs to be reprovisioned to properly create their roles, and then this should
 		// be removed.
-		a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, acct.ID)
+
+		// Set account context for role creation audit trail
+		ctx = cctx.SetAccountContext(ctx, acct)
+		if err := a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, acct.ID); err != nil {
+			return nil, fmt.Errorf("unable to assign runner role to existing service account: %w", err)
+		}
 		return acct, nil
 	}
 
@@ -35,6 +40,10 @@ func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest
 		return nil, fmt.Errorf("unable to create service account: %w", err)
 	}
 
-	a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, acct.ID)
+	// Set account context for role creation audit trail
+	ctx = cctx.SetAccountContext(ctx, acct)
+	if err := a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, acct.ID); err != nil {
+		return nil, fmt.Errorf("unable to assign runner role to service account: %w", err)
+	}
 	return acct, nil
 }

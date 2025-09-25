@@ -23,23 +23,23 @@ func (c *CreateAppSecretRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateAppSecret
-//	@Summary				create an app secret
-//	@Description.markdown	create_app_secret.md
-//	@Tags					apps
-//	@Accept					json
-//	@Param					req		body	CreateAppSecretRequest	true	"Input"
-//	@Param					app_id	path	string					true	"app ID"
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.AppSecret
-//	@Router					/v1/apps/{app_id}/secret [post]
+// @ID						CreateAppSecret
+// @Summary				create an app secret
+// @Description.markdown	create_app_secret.md
+// @Tags					apps
+// @Accept					json
+// @Param					req		body	CreateAppSecretRequest	true	"Input"
+// @Param					app_id	path	string					true	"app ID"
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.AppSecret
+// @Router					/v1/apps/{app_id}/secret [post]
 func (s *service) CreateAppSecret(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
