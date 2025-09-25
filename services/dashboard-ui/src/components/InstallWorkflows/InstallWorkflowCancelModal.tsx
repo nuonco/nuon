@@ -1,25 +1,26 @@
 'use client'
 
 import classNames from 'classnames'
-import { useParams, usePathname, useRouter } from 'next/navigation'
-import React, { type FC, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
 import { CheckIcon, XSquareIcon } from '@phosphor-icons/react'
+import { cancelWorkflow } from '@/actions/workflows/cancel-workflow'
 import { Button, type TButtonVariant } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { cancelInstallWorkflow } from '@/components/workflow-actions'
 import { useOrg } from '@/hooks/use-org'
-import type { TInstallWorkflow } from '@/types'
+import { useServerAction } from '@/hooks/use-server-action'
+import type { TWorkflow } from '@/types'
 import { trackEvent, removeSnakeCase } from '@/utils'
 
 interface IInstallWorkflowCancelModal {
   buttonClassName?: string
   buttonVariant?: TButtonVariant
-  installWorkflow: TInstallWorkflow
+  installWorkflow: TWorkflow
 }
 
 export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
@@ -27,23 +28,58 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
   buttonVariant,
   installWorkflow,
 }) => {
+  const path = usePathname()
+  const router = useRouter()
   const { user } = useUser()
   const { org } = useOrg()
-  const pathName = usePathname()
-  const params =
-    useParams<Record<'org-id' | 'install-id' | 'workflow-id', string>>()
-  const router = useRouter()
-  const orgId = params?.['org-id']
+
   const installWorkflowId = installWorkflow?.id
   const [isOpen, setIsOpen] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const { data, error, execute, headers, isLoading } = useServerAction({
+    action: cancelWorkflow,
+  })
 
   const workflowType = removeSnakeCase(installWorkflow?.type)
-  const workflowPath = `/${orgId}/installs/${installWorkflow?.owner_id}/workflows/${installWorkflow?.id}`
-  const historyPath = `/${orgId}/installs/${installWorkflow?.owner_id}/workflows`
+  const workflowPath = `/${org.id}/installs/${installWorkflow?.owner_id}/workflows/${installWorkflow?.id}`
+  const historyPath = `/${org.id}/installs/${installWorkflow?.owner_id}/workflows`
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'workflow_cancel',
+        status: 'error',
+        user,
+        props: {
+          orgId: org.id,
+          workflowId: installWorkflowId,
+          workflowType: installWorkflow?.type,
+        },
+      })
+    }
+
+    if (data) {
+      setHasBeenCanceled(true)
+      trackEvent({
+        event: 'workflow_cancel',
+        status: 'ok',
+        user,
+        props: {
+          orgId: org.id,
+          workflowId: installWorkflowId,
+          workflowType: installWorkflow?.type,
+        },
+      })
+
+      if (path !== workflowPath && path !== historyPath) {
+        router.push(workflowPath)
+      }
+
+      setIsOpen(false)
+    }
+  }, [data, error, headers])
 
   return (
     <>
@@ -58,7 +94,11 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
               }}
             >
               <div className="flex flex-col gap-3 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <Notice>
+                    {error?.error || 'Unable to cancel workflow.'}
+                  </Notice>
+                ) : null}
                 <Text>
                   Are you sure you want to cancel this {workflowType} workflow?
                 </Text>
@@ -76,55 +116,15 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
                   disabled={Boolean(error)}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    cancelInstallWorkflow({ orgId, installWorkflowId }).then(
-                      (res) => {
-                        if (res?.error) {
-                          trackEvent({
-                            event: 'install_workflow_cancel',
-                            status: 'error',
-                            user,
-                            props: {
-                              workflowType: installWorkflow?.type,
-                              orgId: org.id,
-                              installWorkflowId,
-                            },
-                          })
-                          console.error(res?.error)
-                          setIsLoading(false)
-                          setError(
-                            res?.error?.error ||
-                              'Error occured, please refresh page and try again.'
-                          )
-                        } else {
-                          trackEvent({
-                            event: 'install_workflow_cancel',
-                            status: 'ok',
-                            user,
-                            props: {
-                              workflowType: installWorkflow?.type,
-                              orgId: org.id,
-                              installWorkflowId,
-                            },
-                          })
-                          setIsLoading(false)
-                          setIsKickedOff(true)
-                          if (pathName !== workflowPath && pathName !== historyPath) {
-                            router.push(workflowPath)
-                          }
-
-                          setIsOpen(false)
-                          setHasBeenCanceled(true)
-                        }
-                      }
-                    )
+                    setIsKickedOff(true)
+                    execute({ orgId: org.id, workflowId: installWorkflowId })
                   }}
                   variant="danger"
                 >
-                  {isKickedOff ? (
-                    <CheckIcon size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
                     <XSquareIcon size="18" />
                   )}{' '}

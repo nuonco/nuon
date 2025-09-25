@@ -1,19 +1,20 @@
 'use client'
 
 import classNames from 'classnames'
-import { useParams, usePathname, useRouter } from 'next/navigation'
-import React, { type FC, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, XSquare } from '@phosphor-icons/react'
+import { CheckIcon } from '@phosphor-icons/react'
+import { approveAllWorkflowSteps } from '@/actions/workflows/approve-all-workflow-steps'
 import { Badge } from '@/components/Badge'
 import { Button, type TButtonVariant } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { installWorkflowApproveAll } from '@/components/workflow-actions'
 import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import type { TInstallWorkflow } from '@/types'
 import { trackEvent, removeSnakeCase, sentanceCase } from '@/utils'
 
@@ -28,23 +29,58 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
   buttonVariant,
   workflow,
 }) => {
+  const router = useRouter()
   const { user } = useUser()
   const { org } = useOrg()
-  const pathName = usePathname()
-  const params =
-    useParams<Record<'org-id' | 'install-id' | 'workflow-id', string>>()
-  const router = useRouter()
-  const orgId = params?.['org-id']
+  const path = usePathname()
+
   const workflowId = workflow?.id
   const [isOpen, setIsOpen] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [hasBeenApproved, setHasBeenApproved] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const { data, error, execute, headers, isLoading } = useServerAction({
+    action: approveAllWorkflowSteps,
+  })
 
   const workflowType = removeSnakeCase(workflow?.type)
-  const workflowPath = `/${orgId}/installs/${workflow?.owner_id}/workflows/${workflow?.id}`
-  const historyPath = `/${orgId}/installs/${workflow?.owner_id}/workflows`
+  const workflowPath = `/${org.id}/installs/${workflow?.owner_id}/workflows/${workflow?.id}`
+  const historyPath = `/${org.id}/installs/${workflow?.owner_id}/workflows`
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'workflow_approve_all',
+        status: 'error',
+        user,
+        props: {
+          orgId: org.id,
+          workflowId,
+          workflowType: workflow?.type,
+        },
+      })
+    }
+
+    if (data) {
+      setHasBeenApproved(true)
+      trackEvent({
+        event: 'install_workflow_approve_all',
+        status: 'ok',
+        user,
+        props: {
+          orgId: org.id,
+          workflowId,
+          workflowType: workflow?.type,
+        },
+      })
+
+      if (path !== workflowPath && path !== historyPath) {
+        router.push(workflowPath)
+      }
+
+      setIsOpen(false)
+    }
+  }, [data, error, headers])
 
   return (
     <>
@@ -59,7 +95,11 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
               }}
             >
               <div className="flex flex-col gap-3 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <Notice>
+                    {error?.error || 'Unable to approve all workflow steps'}
+                  </Notice>
+                ) : null}
                 <Text>
                   Are you sure you want to approve these changes? This will mark
                   all approval steps as reviewed and allow automatic changes to
@@ -71,7 +111,12 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
                 </Text>
                 <div className="flex flex-wrap gap-2">
                   {workflow?.steps
-                    ?.filter((s) => s?.execution_type === 'approval' && s?.status?.status !== 'discarded' )
+                    ?.filter(
+                      (s) =>
+                        s?.execution_type === 'approval' &&
+                        s?.status?.status !== 'discarded' &&
+                        !s?.approval?.response
+                    )
                     .map((s) => (
                       <Badge className="text-[11px]" variant="code" key={s?.id}>
                         {sentanceCase(s?.name)}
@@ -92,59 +137,19 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
                   disabled={Boolean(error)}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    installWorkflowApproveAll({
-                      orgId,
+                    setIsKickedOff(true)
+                    execute({
+                      body: { approval_option: 'approve-all' },
+                      orgId: org.id,
                       workflowId,
-                    }).then((res) => {
-                      if (res?.error) {
-                        trackEvent({
-                          event: 'install_workflow_approve_all',
-                          status: 'error',
-                          user,
-                          props: {
-                            workflowType: workflow?.type,
-                            orgId: org.id,
-                            workflowId,
-                          },
-                        })
-                        console.error(res?.error)
-                        setIsLoading(false)
-                        setError(
-                          res?.error?.error ||
-                            'Error occured, please refresh page and try again.'
-                        )
-                      } else {
-                        trackEvent({
-                          event: 'install_workflow_approve_all',
-                          status: 'ok',
-                          user,
-                          props: {
-                            workflowType: workflow?.type,
-                            orgId: org.id,
-                            workflowId,
-                          },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-                        if (
-                          pathName !== workflowPath &&
-                          pathName !== historyPath
-                        ) {
-                          router.push(workflowPath)
-                        }
-
-                        setIsOpen(false)
-                        setHasBeenApproved(true)
-                      }
                     })
                   }}
                   variant="primary"
                 >
-                  {isKickedOff ? (
-                    <Check size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : null}{' '}
                   Approve all
                 </Button>
