@@ -1,19 +1,20 @@
-"use server";
+'use server'
 
-import { revalidatePath } from "next/cache";
-import { removeVCSConnection as removeVCS } from "@/lib";
+import {
+  executeServerAction,
+  type IServerAction,
+} from '@/actions/execute-server-action'
+import { removeVCSConnection as removeVCS } from '@/lib'
 
 export async function removeVCSConnection({
-  orgId,
   path,
-  connectionId,
+  ...args
 }: {
-  orgId: string;
-  path?: string;
-  connectionId: string;
-}) {
-  return removeVCS({ orgId, connectionId }).then((r) => {
-    if (path) revalidatePath(path);
-    return r;
-  });
+  connectionId: string
+} & IServerAction) {
+  return executeServerAction({
+    action: removeVCS,
+    args,
+    path,
+  })
 }

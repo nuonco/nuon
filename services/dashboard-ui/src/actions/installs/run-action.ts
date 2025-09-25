@@ -4,17 +4,17 @@ import {
   executeServerAction,
   type IServerAction,
 } from '@/actions/execute-server-action'
-import { teardownComponents as teardown, TTeardownComponentsBody } from '@/lib'
+import { runAction as run, TRunActionBody } from '@/lib'
 
-export async function teardownComponents({
+export async function runAction({
   path,
   ...args
 }: {
-  body: TTeardownComponentsBody
+  body: TRunActionBody
   installId: string
 } & IServerAction) {
   return executeServerAction({
-    action: teardown,
+    action: run,
     args,
     path,
   })

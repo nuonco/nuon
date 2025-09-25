@@ -1,19 +1,20 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import {
+  executeServerAction,
+  type IServerAction,
+} from '@/actions/execute-server-action'
 import { buildComponent as build } from '@/lib'
 
 export async function buildComponent({
-  componentId,
-  orgId,
   path,
+  ...args
 }: {
   componentId: string
-  orgId: string
-  path: string
-}) {
-  return build({ componentId, orgId }).then((res) => {
-    revalidatePath(path)
-    return res
+} & IServerAction) {
+  return executeServerAction({
+    action: build,
+    args,
+    path,
   })
 }
