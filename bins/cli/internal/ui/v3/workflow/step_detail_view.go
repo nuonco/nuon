@@ -3,6 +3,8 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nuonco/nuon-go/models"
@@ -91,6 +93,69 @@ func (m model) stepDetailViewStepJSON() string {
 	)
 }
 
+func structToMap(obj any) (map[string]string, error) {
+	// ONLY use this IFF you know all of the values are strings or can be converted to strings
+	jsonBytes, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	var intermediate map[string]interface{}
+	err = json.Unmarshal(jsonBytes, &intermediate)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]string)
+	for key, value := range intermediate {
+		switch v := value.(type) {
+		case string:
+			result[key] = v
+		case []interface{}:
+			// Convert array to comma-separated string
+			var strSlice []string
+			for _, item := range v {
+				strSlice = append(strSlice, fmt.Sprintf("%v", item))
+			}
+			result[key] = strings.Join(strSlice, ", ")
+		default:
+			// Convert other types to string
+			result[key] = fmt.Sprintf("%v", v)
+		}
+	}
+	return result, nil
+}
+
+func (m model) stepDetailViewInstallStackOutputs() string {
+	// NOTE(fd): aws only rn
+	outputMap, err := structToMap(m.stack.InstallStackOutputs.Aws)
+	if err != nil {
+		return fmt.Sprintf("unable to render stack outputs\n%s", err)
+	}
+	//make read only table
+	keys := []string{}
+	maxKeyLength := 0
+	for key, _ := range outputMap {
+		l := len(key)
+		if l > maxKeyLength {
+			maxKeyLength = l
+		}
+		keys = append(keys, key)
+	}
+	sort.Strings(keys) // sorted so order isn't all jittery
+	rows := []string{}
+	for i, key := range keys {
+		value := outputMap[key]
+		row := lipgloss.JoinHorizontal(lipgloss.Left,
+			styles.TextGhost.Render(fmt.Sprintf("[%02d] ", i))+styles.TextLight.Render(fmt.Sprintf("%s%s", key, strings.Repeat(" ", maxKeyLength-len(key)))),
+			" | ",
+			styles.TextDim.Render(value), // this feels SUPER dangerous
+		)
+		rows = append(rows, row)
+	}
+	return lipgloss.JoinVertical(lipgloss.Top, rows...)
+}
+
 func (m model) stepDetailViewInstallStack() string {
 	step := m.selectedStep
 	s := ""
@@ -108,28 +173,46 @@ func (m model) stepDetailViewInstallStack() string {
 	}
 
 	stack := m.stack.Versions[0]
+	cliCreateCmd := fmt.Sprintf("aws cloudformation create-stack --stack-name [YOUR_STACK_NAME] --template-url %s", stack.TemplateURL)
+	cliUpdateCmd := fmt.Sprintf("aws cloudformation update-stack --stack-name [YOUR_STACK_NAME] --template-url %s", stack.TemplateURL)
 	s += lipgloss.NewStyle().Width(m.stepDetail.Width).Padding(1).Render(
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			// install stack
-			styles.TextBold.Render("Setup your install stack"),
-			"",
+			styles.TextBold.Margin(0, 0, 1).Render("Setup your install stack"),
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
 				styles.TextLight.Render(" Install Quick Link"),
 				styles.TextDim.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenQuickLink.Help().Key)),
 			),
-			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.QuickLinkURL),
-			"",
+			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.QuickLinkURL),
 			// install template link
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
 				styles.TextLight.Render(" Install Template Link"),
 				styles.TextDim.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenTemplateLink.Help().Key)),
 			),
-			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.TemplateURL),
+			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.TemplateURL),
+			// divider
+			styles.TextLight.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Render(" --- or --- "),
+			// CLI cmd
+			styles.TextLight.Render(" Setup your install stack using CLI command"),
+			styles.Text.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliCreateCmd),
+			// CLI update cmd
+			styles.TextLight.Render(" Setup your install stack using CLI command"),
+			styles.Text.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliUpdateCmd),
 		),
 	)
+
+	if m.stack.InstallStackOutputs != nil {
+		s += lipgloss.NewStyle().Width(m.stepDetail.Width).Padding(1).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				styles.TextBold.Margin(0, 0, 1).Render("Stack Outputs"),
+				m.stepDetailViewInstallStackOutputs(),
+			),
+		)
+	}
 	return s
 }
 
