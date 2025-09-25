@@ -81,11 +81,11 @@ docker_cmds:
       - install
 docker_target: oci-artifacts
 docker_env:
-  INTERNAL_API_URL: http://host.docker.internal:8082
-  RUNNER_API_URL: http://host.docker.internal:8083
+  INTERNAL_API_URL: http://host.nuon.dev:8082
+  RUNNER_API_URL: http://host.nuon.dev:8083
   GIT_REF: local
 
-  RUNNER_API_URL: http://host.docker.internal:8083
+  RUNNER_API_URL: http://host.nuon.dev:8083
 
   # NOTE: by default, run-local will fetch the first runner from the api and set these for you.
   #
@@ -99,7 +99,7 @@ docker_env:
   # NOTE(jm): this will not enable all debug output, as the logs are also controlled via the api but for things like
   # metrics this is useful.
   # LOG_LEVEL: DEBUG
-  INTERNAL_API_URL: http://host.docker.internal:8082
+  INTERNAL_API_URL: http://host.nuon.dev:8082
 
   # this controls how long a job will stay in sandbox, printing out logs every quarter second.
   SANDBOX_JOB_DURATION: 1s
