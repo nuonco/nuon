@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { retryWorkflowStep } from '@/actions/workflows/retry-workflow-step'
 import { Button } from '@/components/Button'
 import { Notice } from '@/components/Notice'
-import { retryWorkflow } from '@/components/install-actions'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflowStep } from '@/types'
 import { SpinnerSVG } from '../Loading'
@@ -19,7 +19,7 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
   const [error, setError] = useState<string>()
   const [shouldRender, setShouldRender] = useState(
     (step?.retryable && step?.status?.status == 'error' && !step?.retried) ||
-    step?.status?.status === 'noop'
+      step?.status?.status === 'noop'
   )
 
   useEffect(() => {
@@ -29,11 +29,10 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
   }, [step])
 
   const retry = (op: 'retry-step' | 'skip-step') => {
-    retryWorkflow({
+    retryWorkflowStep({
+      body: { step_id: step?.id, operation: op },
       orgId: org.id,
       workflowId: step?.install_workflow_id,
-      stepId: step?.id,
-      op: op,
     }).then(({ data, error }) => {
       switch (op) {
         case 'retry-step':
@@ -80,7 +79,9 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
                 </>
               )}
             </Button>
-          ) : (<div></div>)}
+          ) : (
+            <div></div>
+          )}
           <Button
             onClick={() => {
               setIsKickedOff(true)
