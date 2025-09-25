@@ -1,25 +1,21 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import {
+  executeServerAction,
+  type IServerAction,
+} from '@/actions/execute-server-action'
 import { deployComponents as deploy, TDeployComponentsBody } from '@/lib'
 
 export async function deployComponents({
-  body,
-  installId,
-  orgId,
   path,
+  ...args
 }: {
   body: TDeployComponentsBody
   installId: string
-  orgId: string
-  path?: string
-}) {
-  return deploy({
-    body,
-    installId,
-    orgId,
-  }).then((res) => {
-    if (path) revalidatePath(path)
-    return res
+} & IServerAction) {
+  return executeServerAction({
+    action: deploy,
+    args,
+    path,
   })
 }

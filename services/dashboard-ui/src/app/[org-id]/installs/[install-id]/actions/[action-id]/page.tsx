@@ -123,10 +123,8 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
             (t) => t.type === 'manual'
           ) ? (
             <ActionTriggerButton
-              actionWorkflow={installAction?.action_workflow}
-              installId={installId}
-              orgId={orgId}
-              workflowConfigId={installAction.action_workflow?.configs?.[0]?.id}
+              action={installAction?.action_workflow}
+              actionConfigId={installAction.action_workflow?.configs?.[0]?.id}
             />
           ) : null}
         </div>
