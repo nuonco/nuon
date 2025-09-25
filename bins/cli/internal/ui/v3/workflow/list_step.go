@@ -2,9 +2,13 @@ package workflow
 
 import (
 	"fmt"
+	"math"
+	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -19,16 +23,8 @@ type listStep struct {
 
 func (i listStep) Title() string {
 	number := fmt.Sprintf("[%02d]", i.step.Idx)
-	title := number + " " + i.step.Name
-	return title
-}
-
-var terminalStatuses = []models.AppStatus{
-	models.AppStatusCancelled,
-	models.AppStatusError,
-	models.AppStatusSuccess,
-	// models.AppStatusFailed
-
+	color := styles.GetStatusStyle(i.step.Status.Status)
+	return color.Render(number) + " " + i.step.Name
 }
 
 func (i listStep) Description() string {
@@ -36,7 +32,21 @@ func (i listStep) Description() string {
 	if generics.SliceContains(step.Status.Status, terminalStatuses) {
 		return fmt.Sprintf("executed in %s", common.HumanizeNSDuration(i.step.ExecutionTime))
 	}
-	return string(step.Status.Status)
+
+	color := styles.GetStatusStyle(step.Status.Status)
+	if i.step.Status.Status == models.AppStatusInDashProgress {
+
+		// this is super duper fucked up
+		s := spinner.New()
+		s.Spinner = spinner.Line
+		now := int(math.Mod(float64(time.Now().Second()), 6))
+		for _ = range now {
+			s, _ = s.Update(s.Tick())
+		}
+		return s.View() + " " + color.Render(string(step.Status.Status))
+	}
+
+	return color.Render(string(step.Status.Status))
 }
 
 func (i listStep) FilterValue() string {
