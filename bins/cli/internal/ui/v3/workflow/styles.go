@@ -1,15 +1,18 @@
 package workflow
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
+)
 
 var appStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("#6133FF"))
+	BorderForeground(styles.PrimaryColor)
 
 var appStyleBlur = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.AdaptiveColor{Dark: "237", Light: "237"})
+	BorderForeground(styles.BorderInactiveColor)
 
 var appStyleFocus = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(lipgloss.Color("#6133FF"))
+	BorderForeground(styles.BorderActiveColor)

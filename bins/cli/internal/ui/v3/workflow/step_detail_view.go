@@ -10,17 +10,8 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
-
-var subtle = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
-var dialogBoxStyle = lipgloss.NewStyle().
-	Border(lipgloss.RoundedBorder()).
-	BorderForeground(lipgloss.Color("#874BFD")).
-	Padding(1, 0).
-	BorderTop(true).
-	BorderLeft(true).
-	BorderRight(true).
-	BorderBottom(true)
 
 func (m model) stepIsApprovable() bool {
 	if m.selectedStep == nil {
@@ -147,9 +138,9 @@ func (m model) stepDetailViewInstallStackOutputs() string {
 	for i, key := range keys {
 		value := outputMap[key]
 		row := lipgloss.JoinHorizontal(lipgloss.Left,
-			styles.TextGhost.Render(fmt.Sprintf("[%02d] ", i))+styles.TextLight.Render(fmt.Sprintf("%s%s", key, strings.Repeat(" ", maxKeyLength-len(key)))),
+			styles.TextGhost.Render(fmt.Sprintf("[%02d] ", i))+styles.TextSubtle.Render(fmt.Sprintf("%s%s", key, strings.Repeat(" ", maxKeyLength-len(key)))),
 			" | ",
-			styles.TextDim.Render(value), // this feels SUPER dangerous
+			styles.TextSubtle.Render(value), // this feels SUPER dangerous
 		)
 		rows = append(rows, row)
 	}
@@ -163,7 +154,7 @@ func (m model) stepDetailViewInstallStack() string {
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			styles.TextBold.Render("Install stack is waiting to run"),
-			fmt.Sprintf("%s: %s", styles.TextDim.Render("Current Status"), step.Status.Status),
+			fmt.Sprintf("%s: %s", styles.TextSubtle.Render("Current Status"), step.Status.Status),
 		),
 	)
 
@@ -182,25 +173,25 @@ func (m model) stepDetailViewInstallStack() string {
 			styles.TextBold.Margin(0, 0, 1).Render("Setup your install stack"),
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
-				styles.TextLight.Render(" Install Quick Link"),
-				styles.TextDim.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenQuickLink.Help().Key)),
+				styles.TextSubtle.Render(" Install Quick Link"),
+				styles.TextSubtle.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenQuickLink.Help().Key)),
 			),
 			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.QuickLinkURL),
 			// install template link
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
-				styles.TextLight.Render(" Install Template Link"),
-				styles.TextDim.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenTemplateLink.Help().Key)),
+				styles.TextSubtle.Render(" Install Template Link"),
+				styles.TextSubtle.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenTemplateLink.Help().Key)),
 			),
 			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.TemplateURL),
 			// divider
-			styles.TextLight.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Render(" --- or --- "),
+			styles.TextSubtle.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Render(" --- or --- "),
 			// CLI cmd
-			styles.TextLight.Render(" Setup your install stack using CLI command"),
-			styles.Text.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliCreateCmd),
+			styles.TextSubtle.Render(" Setup your install stack using CLI command"),
+			lipgloss.NewStyle().Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliCreateCmd),
 			// CLI update cmd
-			styles.TextLight.Render(" Setup your install stack using CLI command"),
-			styles.Text.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliUpdateCmd),
+			styles.TextSubtle.Render(" Setup your install stack using CLI command"),
+			lipgloss.NewStyle().Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliUpdateCmd),
 		),
 	)
 
@@ -228,7 +219,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	if m.workflowCancelationConf {
 		// in this case, we hijack the view to show a big red confirmation
 		content := lipgloss.NewStyle().Padding(1, 3).Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to cancel this workflow?", "", "Press [C] to confirm."))
-		dialog := common.FullPageDialog(common.FullPageDialogRequest{Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "warning"})
+		dialog := common.FullPageDialog(common.FullPageDialogRequest{Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "error"})
 		m.stepDetail.SetContent(dialog)
 		return
 	}
@@ -247,7 +238,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 
 	// case: no selected step or a step w/ no status
 	if m.selectedStep == nil || m.selectedStep.Status == nil {
-		m.stepDetail.SetContent(styles.TextDim.Padding(3).Render("Select a workflow to get started"))
+		m.stepDetail.SetContent(styles.TextSubtle.Padding(3).Render("Select a workflow to get started"))
 		return
 	}
 
@@ -259,7 +250,13 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		Width(m.stepDetail.Width).
 		Bold(true).
 		Padding(1).
-		Render(fmt.Sprintf("%s %s", getStatusIcon(step.Status.Status), step.Name))
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				fmt.Sprintf("%s %s", getStatusIcon(step.Status.Status), step.Name),
+				styles.TextSubtle.Render(fmt.Sprintf("ID: %s", step.ID)),
+			),
+		)
 
 	sections = append(sections, title)
 
@@ -284,10 +281,26 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		sections = append(sections, banner)
 	}
 
+	// stack section
 	// NOTE(fd): brittle af
 	if step.Name == "await install stack" || step.StepTargetType == "install_stack_versions" {
 		installStack := m.stepDetailViewInstallStack()
 		sections = append(sections, installStack)
+	}
+
+	// approvals section
+	if generics.SliceContains(step.StepTargetType, []string{"install_sandbox_runs", "install_deploys"}) { //
+		sbRun := lipgloss.NewStyle().Padding(1).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				styles.TextBold.Render("Resource Drift"),
+				lipgloss.NewStyle().Width(m.stepDetail.Width).Padding(1).Margin(0, 0, 1).
+					Border(lipgloss.NormalBorder()).
+					BorderForeground(styles.Ghost).
+					Render("[B] open in browser to see diff."),
+			),
+		)
+		sections = append(sections, sbRun)
 	}
 
 	jsonSection := m.stepDetailViewStepJSON()
