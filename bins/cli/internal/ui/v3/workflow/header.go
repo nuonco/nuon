@@ -13,13 +13,11 @@ import (
 )
 
 var buttonStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#FFF7DB")).
-	Background(lipgloss.Color("#888B7E")).
+	Foreground(styles.AccentColor).
 	Padding(0, 3)
 
 var dangerousButtonStyle = buttonStyle.
-	Foreground(lipgloss.Color("#FFF7DB")).
-	Background(lipgloss.Color("#F25D94"))
+	Foreground(styles.WarningColor)
 
 func (m model) getProgressPercentage() (int, int, float64) {
 	stepsTotal := len(m.workflow.Steps)
