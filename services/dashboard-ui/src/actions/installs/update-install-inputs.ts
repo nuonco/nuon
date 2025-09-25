@@ -1,19 +1,19 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import {
+  executeServerAction,
+  type IServerAction,
+} from '@/actions/execute-server-action'
 import { updateInstallInputs as update } from '@/lib'
 
 export async function updateInstallInputs({
-  installId,
   formData: fd,
-  orgId,
   path,
+  ...args
 }: {
   installId: string
   formData: FormData
-  orgId: string
-  path?: string
-}) {
+} & IServerAction) {
   const formData = Object.fromEntries(fd)
   const inputs = Object.keys(formData).reduce((acc, key) => {
     if (key.includes('inputs:')) {
@@ -28,8 +28,9 @@ export async function updateInstallInputs({
     return acc
   }, {})
 
-  return update({ installId, orgId, body: { inputs } }).then((res) => {
-    if (path) revalidatePath(path)
-    return res
+  return executeServerAction({
+    action: update,
+    args: { ...args, body: { inputs } },
+    path,
   })
 }

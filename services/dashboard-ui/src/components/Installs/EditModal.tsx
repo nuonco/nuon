@@ -102,8 +102,8 @@ const EditForm = ({ onClose }: { onClose: () => void }) => {
 
             if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
               updateInstall({
+                body: { metadata: { managed_by: 'nuon/dashboard' } },
                 installId: install.id,
-                managedBy: 'nuon/dashboard',
                 orgId: org.id,
               })
             }
