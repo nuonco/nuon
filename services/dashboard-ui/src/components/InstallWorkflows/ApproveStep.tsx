@@ -3,21 +3,14 @@
 import classNames from 'classnames'
 import { useParams } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
-import {
-  ArrowsClockwise,
-  X,
-  Check,
-  ArrowRightIcon,
-  ArrowsOutSimpleIcon,
-  CaretDownIcon,
-  CaretRightIcon,
-} from '@phosphor-icons/react'
+import { ArrowsClockwiseIcon, XIcon, CheckIcon } from '@phosphor-icons/react'
+import { approveWorkflowStep } from '@/actions/workflows/approve-workflow-step'
 import { Button } from '@/components/Button'
 import { JsonView } from '@/components/Code'
 import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Notice, type INotice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { approveWorkflowStep } from '@/components/install-actions'
+//import { approveWorkflowStep } from '@/components/install-actions'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 import { HelmChangesViewer } from './HelmPlanDiff'
@@ -111,17 +104,17 @@ export const ApprovalStep: FC<IApprovalStep> = ({
   const approve = (responseType: 'approve' | 'deny' | 'retry') => {
     setIsKickedOff(true)
     approveWorkflowStep({
+      approvalId: approval?.id,
+      body: { note: '', response_type: responseType },
       orgId,
       workflowId,
-      stepId: step?.id,
-      approvalId: approval?.id,
-      responseType,
+      workflowStepId: step?.id,
     }).then(({ data, error }) => {
       setIsDenyLoading(false)
       setIsRetryLoading(false)
       setIsApproveLoading(false)
       if (error) {
-        setError(error?.error)
+        setError(error?.error || `Unable to ${responseType} workflow step plan`)
         console.error(error)
       } else {
       }
@@ -161,7 +154,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             </>
           ) : (
             <>
-              <X />
+              <XIcon />
               Deny plan
             </>
           )}
@@ -189,7 +182,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             </>
           ) : (
             <>
-              <ArrowsClockwise />
+              <ArrowsClockwiseIcon />
               Retry Plan
             </>
           )}
@@ -210,7 +203,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             </>
           ) : (
             <>
-              <Check />
+              <CheckIcon />
               Approve plan
             </>
           )}
