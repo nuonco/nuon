@@ -15,7 +15,7 @@ describe('approveWorkflowStep should handle response status codes from POST work
   test('201 status with approve operation', async () => {
     const body: TApproveWorkflowStepBody = {
       note: 'Approved by test',
-      operation: 'approve',
+      response_type: 'approve',
     }
 
     const { data, status } = await approveWorkflowStep({
@@ -32,7 +32,7 @@ describe('approveWorkflowStep should handle response status codes from POST work
   test.each(badResponseCodes)('%s status', async (code) => {
     const body: TApproveWorkflowStepBody = {
       note: 'Test note',
-      operation: 'approve',
+      response_type: 'approve',
     }
 
     const { error, status } = await approveWorkflowStep({
