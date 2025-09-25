@@ -1,28 +1,22 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import {
+  executeServerAction,
+  type IServerAction,
+} from '@/actions/execute-server-action'
 import { teardownComponent as teardown,  TTeardownComponentBody } from '@/lib'
 
 export async function teardownComponent({
-  body,
-  componentId,
-  installId,
-  orgId,
   path,
+  ...args
 }: {
   body: TTeardownComponentBody
   componentId: string
   installId: string
-  orgId: string
-  path?: string
-}) {
-  return teardown({
-    body,
-    componentId,
-    installId,
-    orgId,
-  }).then((res) => {
-    if (path) revalidatePath(path)
-    return res
+} & IServerAction) {
+  return executeServerAction({
+    action: teardown,
+    args,
+    path,
   })
 }
