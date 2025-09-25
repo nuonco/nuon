@@ -47,8 +47,13 @@ func (w *writer) tagsToZapFields(tags []string) []zapcore.Field {
 }
 
 func (w *writer) Incr(name string, tags []string) {
+	allTags := append(w.Tags, tags...)
+
 	if w.Disable {
-		w.Log.Debug(fmt.Sprintf("incr.%s", name), w.tagsToZapFields(tags)...)
+		allTags = append(allTags, "metric_type:incr")
+		w.Log.Debug(
+			fmt.Sprintf("metric.incr.%s", name),
+			w.tagsToZapFields(allTags)...)
 		return
 	}
 
@@ -58,12 +63,18 @@ func (w *writer) Incr(name string, tags []string) {
 		return
 	}
 
-	w.handleErr(client.Incr(name, append(w.Tags, tags...), defaultRate))
+	w.handleErr(client.Incr(name, allTags, defaultRate))
 }
 
 func (w *writer) Decr(name string, tags []string) {
+	allTags := append(w.Tags, tags...)
 	if w.Disable {
-		w.Log.Debug(fmt.Sprintf("decr.%s", name), w.tagsToZapFields(tags)...)
+		l := w.Log.With(
+			zap.String("metric_type", "decr"),
+			zap.String("is_metric", "true"))
+		l.Debug(
+			fmt.Sprintf("metric.decr.%s", name),
+			w.tagsToZapFields(allTags)...)
 		return
 	}
 
@@ -73,14 +84,19 @@ func (w *writer) Decr(name string, tags []string) {
 		return
 	}
 
-	w.handleErr(client.Decr(name, append(w.Tags, tags...), defaultRate))
+	w.handleErr(client.Decr(name, allTags, defaultRate))
 }
 
 func (w *writer) Count(name string, value int64, tags []string) {
+	allTags := append(w.Tags, tags...)
 	if w.Disable {
-		allTags := w.tagsToZapFields(tags)
-		allTags = append(allTags, zap.Int64("value", value))
-		w.Log.Debug(fmt.Sprintf("count.%s", name), allTags...)
+		l := w.Log.With(
+			zap.String("metric_type", "count"),
+			zap.String("is_metric", "true"))
+
+		allAttrs := w.tagsToZapFields(allTags)
+		allAttrs = append(allAttrs, zap.Int64("value", value))
+		l.Debug(fmt.Sprintf("metric.count.%s", name), allAttrs...)
 		return
 	}
 
@@ -94,10 +110,14 @@ func (w *writer) Count(name string, value int64, tags []string) {
 }
 
 func (w *writer) Gauge(name string, value float64, tags []string) {
+	allTags := append(w.Tags, tags...)
 	if w.Disable {
-		allTags := w.tagsToZapFields(tags)
-		allTags = append(allTags, zap.Float64("value", value))
-		w.Log.Debug(fmt.Sprintf("gauge.%s", name), allTags...)
+		l := w.Log.With(
+			zap.String("metric_type", "gauge"),
+			zap.String("is_metric", "true"))
+		allAttrs := w.tagsToZapFields(allTags)
+		allAttrs = append(allAttrs, zap.Float64("value", value))
+		l.Debug(fmt.Sprintf("metric.gauge.%s", name), allAttrs...)
 		return
 	}
 
@@ -107,14 +127,16 @@ func (w *writer) Gauge(name string, value float64, tags []string) {
 		return
 	}
 
-	w.handleErr(client.Gauge(name, float64(value), append(w.Tags, tags...), defaultRate))
+	w.handleErr(client.Gauge(name, float64(value), allTags, defaultRate))
 }
 
 func (w *writer) Timing(name string, value time.Duration, tags []string) {
+	allTags := append(w.Tags, tags...)
 	if w.Disable {
-		allTags := w.tagsToZapFields(tags)
-		allTags = append(allTags, zap.String("duration", value.String()))
-		w.Log.Debug(fmt.Sprintf("timing.%s", name), allTags...)
+		l := w.Log.With(zap.String("metric_type", "timing"), zap.String("is_metric", "true"))
+		allAttrs := w.tagsToZapFields(allTags)
+		allAttrs = append(allAttrs, zap.String("duration", value.String()))
+		l.Debug(fmt.Sprintf("metric.timing.%s", name), allAttrs...)
 		return
 	}
 
@@ -124,13 +146,13 @@ func (w *writer) Timing(name string, value time.Duration, tags []string) {
 		return
 	}
 
-	w.handleErr(client.Timing(name, value, append(w.Tags, tags...), defaultRate))
+	w.handleErr(client.Timing(name, value, allTags, defaultRate))
 }
 
 func (w *writer) Event(ev *statsd.Event) {
 	if w.Disable {
 		allTags := w.tagsToZapFields(ev.Tags)
-		w.Log.Debug(fmt.Sprintf("event.%s (agg key: %s): %s", ev.Title, ev.AggregationKey, ev.Text, ), allTags...)
+		w.Log.Debug(fmt.Sprintf("event.%s (agg key: %s): %s", ev.Title, ev.AggregationKey, ev.Text), allTags...)
 		return
 	}
 
