@@ -4,7 +4,6 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	accountshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/accounts/helpers"
 	actionshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
@@ -69,7 +68,6 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(cloudformation.NewTemplates),
 
 		// add helpers for each domain
-		fx.Provide(accountshelpers.New),
 		fx.Provide(vcshelpers.New),
 		fx.Provide(actionshelpers.New),
 		fx.Provide(componentshelpers.New),
