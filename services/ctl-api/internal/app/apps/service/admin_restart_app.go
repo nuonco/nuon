@@ -14,17 +14,17 @@ import (
 
 type RestartAppRequest struct{}
 
-// @ID						AdminRestartApp
-// @Summary				restart an apps event loop
-// @Description.markdown	restart_app.md
-// @Param					app_id	path	string				true	"app ID"
-// @Param					req		body	RestartAppRequest	true	"Input"
-// @Tags					apps/admin
-// @Security				AdminEmail
-// @Accept					json
-// @Produce				json
-// @Success				200	{boolean}	true
-// @Router					/v1/apps/{app_id}/admin-restart [POST]
+//	@ID						AdminRestartApp
+//	@Summary				restart an apps event loop
+//	@Description.markdown	restart_app.md
+//	@Param					app_id	path	string				true	"app ID"
+//	@Param					req		body	RestartAppRequest	true	"Input"
+//	@Tags					apps/admin
+//	@Security				AdminEmail
+//	@Accept					json
+//	@Produce				json
+//	@Success				200	{boolean}	true
+//	@Router					/v1/apps/{app_id}/admin-restart [POST]
 func (s *service) RestartApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

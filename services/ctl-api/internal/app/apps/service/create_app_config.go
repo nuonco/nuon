@@ -67,16 +67,6 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey step for first app config sync
-	user, err := cctx.AccountFromGinContext(ctx)
-	if err == nil {
-		// Only update if this is the user's first app sync (app_synced step incomplete)
-		if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, user.ID, appID); err != nil {
-			// Log but don't fail the sync
-			fmt.Printf("failed to update user journey for first app sync: %v\n", err)
-		}
-	}
-
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
