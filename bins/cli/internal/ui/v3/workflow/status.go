@@ -2,6 +2,13 @@ package workflow
 
 import "github.com/nuonco/nuon-go/models"
 
+var terminalStatuses = []models.AppStatus{
+	models.AppStatusCancelled,
+	models.AppStatusError,
+	models.AppStatusSuccess,
+	// models.AppStatusFailed
+}
+
 var statusIconMap = map[models.AppStatus]string{
 	models.AppStatusPending:              "⏲",
 	models.AppStatusApprovalDashAwaiting: "⚠",
