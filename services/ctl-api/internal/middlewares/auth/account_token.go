@@ -12,7 +12,6 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 )
 
 func (m *middleware) fetchAccountToken(ctx context.Context, token string) (*app.Token, error) {
@@ -68,23 +67,8 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 			return nil, fmt.Errorf("unable to get account: %w", err)
 		}
 
-		// Determine appropriate user journey based on signup type
-		var pendingInvite app.OrgInvite
-		inviteErr := m.db.WithContext(ctx).Where(&app.OrgInvite{
-			Email:  customClaims.Email,
-			Status: app.OrgInviteStatusPending,
-		}).First(&pendingInvite).Error
-
-		var userJourneys app.UserJourneys
-		if inviteErr == nil {
-			// Found pending invite - create account without journey tracking
-			userJourneys = account.NoUserJourneys()
-		} else {
-			// No pending invite - self-signup gets evaluation journey (org creation handled by dashboard)
-			userJourneys = account.DefaultEvaluationJourney()
-		}
-
-		acct, err = m.acctClient.CreateAccount(ctx, customClaims.Email, claims.RegisteredClaims.Subject, userJourneys)
+		// create account
+		acct, err = m.acctClient.CreateAccount(ctx, customClaims.Email, claims.RegisteredClaims.Subject)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create account: %w", err)
 		}

@@ -83,7 +83,6 @@ type Org struct {
 	VCSConnections []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
 	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
 	Features       types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
-	UserJourneys   []UserJourney       `json:"user_journeys,omitzero" gorm:"type:jsonb;default null" temporaljson:"user_journeys,omitzero,omitempty"`
 
 	// Other relationships as part of the data model
 
@@ -142,28 +141,9 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		o.Features = make(map[string]bool, 0)
 	}
 
-	// Set default feature flag values - most features enabled by default
-	// except org-dashboard and install-break-glass which remain disabled
-	defaultFeatures := map[OrgFeature]bool{
-		// Disabled by default
-		OrgFeatureOrgDashboard:      false,
-		OrgFeatureInstallBreakGlass: false,
-
-		// Enabled by default
-		OrgFeatureAPIPagination:           true,
-		OrgFeatureOrgRunner:               true,
-		OrgFeatureOrgSettings:             true,
-		OrgFeatureOrgSupport:              true,
-		OrgFeatureInstallDeleteComponents: true,
-		OrgFeatureInstallDelete:           true,
-		OrgFeatureTerraformWorkspace:      true,
-		OrgFeatureDevCommand:              true,
-		OrgFeatureAppBranches:             true,
-	}
-
 	for _, feature := range GetFeatures() {
 		if _, ok := o.Features[string(feature)]; !ok {
-			o.Features[string(feature)] = defaultFeatures[feature]
+			o.Features[string(feature)] = false
 		}
 	}
 
@@ -172,7 +152,6 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	o.CreatedByID = createdByIDFromContext(tx.Statement.Context)
-
 	return nil
 }
 
