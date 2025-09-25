@@ -20,7 +20,7 @@ import (
 // GetLocalhostAlias returns the localhost alias for the installed container runtime.
 func GetLocalhostAlias() string {
 	if ok := IsDocker(); ok {
-		return "host.docker.internal"
+		return "host.nuon.dev"
 	}
 	return "localhost"
 }
