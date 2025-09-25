@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -82,7 +81,7 @@ func (s *service) createSupportUser(ctx context.Context, subject, email, orgID s
 			return err
 		}
 
-		acct, err = s.acctClient.CreateAccount(ctx, email, subject, account.NoUserJourneys())
+		acct, err = s.acctClient.CreateAccount(ctx, email, subject)
 		if err != nil {
 			return err
 		}

@@ -9,8 +9,6 @@ import {
   InitSegmentAnalytics,
   SegmentAnalyticsIdentify,
 } from '@/utils'
-import { AccountProvider } from '@/components/AccountProvider'
-import { GlobalUserJourneyProvider } from '@/components/GlobalUserJourneyProvider'
 import './globals.css'
 
 const inter = Inter({
@@ -60,11 +58,7 @@ export default function RootLayout({
             env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
             githubAppName={process.env.GITHUB_APP_NAME}
           />
-          <AccountProvider>
-            <GlobalUserJourneyProvider>
-              {children}
-            </GlobalUserJourneyProvider>
-          </AccountProvider>
+          {children}
           {process.env.SEGMENT_WRITE_KEY && (
             <Suspense>
               <InitSegmentAnalytics writeKey={process.env.SEGMENT_WRITE_KEY} />

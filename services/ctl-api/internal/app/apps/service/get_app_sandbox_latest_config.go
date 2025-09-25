@@ -9,22 +9,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// @ID						GetAppSandboxLatestConfig
-// @Summary				get latest app sandbox config
-// @Description.markdown	get_app_sandbox_latest_config.md
-// @Param					app_id	path	string	true	"app ID"
-// @Tags					apps
-// @Accept					json
-// @Produce				json
-// @Security				APIKey
-// @Security				OrgID
-// @Failure				400	{object}	stderr.ErrResponse
-// @Failure				401	{object}	stderr.ErrResponse
-// @Failure				403	{object}	stderr.ErrResponse
-// @Failure				404	{object}	stderr.ErrResponse
-// @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	app.AppSandboxConfig
-// @Router					/v1/apps/{app_id}/sandbox-latest-config [get]
+//	@ID						GetAppSandboxLatestConfig
+//	@Summary				get latest app sandbox config
+//	@Description.markdown	get_app_sandbox_latest_config.md
+//	@Param					app_id	path	string	true	"app ID"
+//	@Tags					apps
+//	@Accept					json
+//	@Produce				json
+//	@Security				APIKey
+//	@Security				OrgID
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
+//	@Success				200	{object}	app.AppSandboxConfig
+//	@Router					/v1/apps/{app_id}/sandbox-latest-config [get]
 func (s *service) GetAppSandboxLatestConfig(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
