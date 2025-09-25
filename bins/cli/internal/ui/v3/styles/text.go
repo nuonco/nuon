@@ -7,7 +7,9 @@ import (
 )
 
 var Link = lipgloss.NewStyle().Foreground(lipgloss.Color("20")).Underline(true)
+var Text = lipgloss.NewStyle().Foreground(lipgloss.Color(""))
 
+var TextGhost = lipgloss.NewStyle().Italic(true).Foreground(Ghost)
 var TextBold = lipgloss.NewStyle().Bold(true)
 var TextDim = lipgloss.NewStyle().Foreground(Dim)
 var TextLight = lipgloss.NewStyle().Foreground(lipgloss.Color("7"))

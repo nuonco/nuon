@@ -11,7 +11,8 @@ var (
 
 	Dim = lipgloss.Color("97") // Dark Purple
 
-	TextColor   = lipgloss.Color("")  // Default foreground
-	SubtleColor = lipgloss.Color("8") // Bright Black (typically gray)
-	BorderColor = lipgloss.Color("8") // Bright Black (typically gray)
+	TextColor   = lipgloss.Color("")                              // Default foreground
+	SubtleColor = lipgloss.Color("8")                             // Bright Black (typically gray)
+	BorderColor = lipgloss.Color("8")                             // Bright Black (typically gray)
+	Ghost       = lipgloss.AdaptiveColor{Light: "93", Dark: "17"} //
 )
