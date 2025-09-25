@@ -1,19 +1,19 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import {
+  executeServerAction,
+  type IServerAction,
+} from '@/actions/execute-server-action'
 import { createAppInstall as create, type TCreateAppInstallBody } from '@/lib'
 
 export async function createAppInstall({
-  appId,
   formData: fd,
-  orgId,
   path,
+  ...args
 }: {
   appId: string
   formData: FormData
-  orgId: string
-  path: string
-}) {
+} & IServerAction) {
   const formData = Object.fromEntries(fd)
   const inputs = Object.keys(formData).reduce((acc, key) => {
     if (key.includes('inputs:')) {
@@ -59,8 +59,9 @@ export async function createAppInstall({
     }
   }
 
-  return create({ appId, orgId, body }).then((res) => {
-    revalidatePath(path)
-    return res
+  return executeServerAction({
+    action: create,
+    args: { ...args, body },
+    path,
   })
 }
