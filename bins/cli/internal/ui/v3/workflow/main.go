@@ -421,7 +421,14 @@ func (m model) View() string {
 
 	} else if m.header.Width < minRequiredWidth {
 		// TODO: make this message full screen
-		return "This screen is too small, please increase the width.\n"
+		content := common.FullPageDialog(common.FullPageDialogRequest{
+			Width:   m.header.Width,
+			Height:  m.stepDetail.Height,
+			Padding: 2,
+			Content: "This screen is too small, please increase the width.", Level: "info",
+		})
+		return content
+
 	}
 	// this is the actual bulk of the wekr
 	header := m.headerView()
