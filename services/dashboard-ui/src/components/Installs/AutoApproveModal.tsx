@@ -1,35 +1,29 @@
 'use client'
 
-import classNames from 'classnames'
-import { useRouter } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
 import {
   CheckCircleIcon,
   ToggleLeftIcon,
   ToggleRightIcon,
 } from '@phosphor-icons/react'
+import { createInstallConfig } from '@/actions/installs/create-install-config'
+import { updateInstallConfig } from '@/actions/installs/update-install-config'
 import { updateInstall } from '@/actions/installs/update-install'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import {
-  createInstallConfig,
-  updateInstallConfig,
-} from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import type { TInstall } from '@/types'
 import { ConfirmUpdateModal } from './ConfirmUpdateModal'
 
-interface IAutoApproveModal {
-  install: TInstall
-}
-
-export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
+export const AutoApproveModal = () => {
+  const path = usePathname()
   const { org } = useOrg()
+  const { install } = useInstall()
   const [isOpen, setIsOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -79,25 +73,16 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
   }
   const toggleApprovalOption = () => {
     setIsLoading(true)
-    if (isApproveAll) {
-      updateInstallConfig({
-        approvalOption: 'prompt',
-        configId: install?.install_config?.id,
-        installId: install?.id,
-        orgId: org?.id,
-      })
-        .then(handleApprovalOptionChange)
-        .catch(handleApprovalOptionError)
-    } else {
-      updateInstallConfig({
-        approvalOption: 'approve-all',
-        configId: install?.install_config?.id,
-        installId: install?.id,
-        orgId: org?.id,
-      })
-        .then(handleApprovalOptionChange)
-        .catch(handleApprovalOptionError)
-    }
+
+    updateInstallConfig({
+      body: { approval_option: isApproveAll ? 'prompt' : 'approve-all' },
+      installConfigId: install?.install_config?.id,
+      installId: install?.id,
+      orgId: org?.id,
+      path,
+    })
+      .then(handleApprovalOptionChange)
+      .catch(handleApprovalOptionError)
 
     if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
       updateInstall({
@@ -110,9 +95,10 @@ export const AutoApproveModal: FC<IAutoApproveModal> = ({ install }) => {
 
   const createApprovalOption = () => {
     createInstallConfig({
-      approvalOption: 'approve-all',
+      body: { approval_option: 'approve-all' },
       installId: install?.id,
       orgId: org?.id,
+      path,
     })
       .then(handleApprovalOptionChange)
       .catch(handleApprovalOptionError)

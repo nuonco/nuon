@@ -53,23 +53,23 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         <BreakGlassLink installId={install.id} />
         <InstallAuditHistoryModal installId={install.id} orgId={org.id} />
         <InstallStateModal install={install} />
-        <AutoApproveModal install={install} />
+        <AutoApproveModal />
         <GenerateInstallConfigModal installId={install.id} orgId={org.id} />
 
         <hr className="my-2" />
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
           Controls
         </Text>
-        <ReprovisionModal installId={install.id} orgId={orgId} />
-        <SyncSecretsModal installId={install.id} orgId={orgId} />
-        <DeleteInstallModal install={install} />
+        <ReprovisionModal />
+        <SyncSecretsModal />
+        <DeleteInstallModal />
         <DeprovisionStackModal install={install} orgId={orgId} />
 
         <hr className="my-2" />
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
           Remove
         </Text>
-        <ForgetModal install={install} orgId={orgId} />
+        <ForgetModal />
       </div>
     </Dropdown>
   )
