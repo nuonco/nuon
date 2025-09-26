@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -79,6 +80,15 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
+	}
+
+	// Update user journey for first app creation
+	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppCreate(ctx, user.ID, app.ID); err != nil {
+		// Log error but don't fail app creation
+		s.l.Warn("failed to update user journey for first app creation",
+			zap.String("account_id", user.ID),
+			zap.String("app_id", app.ID),
+			zap.Error(err))
 	}
 
 	s.evClient.Send(ctx, app.ID, &signals.Signal{

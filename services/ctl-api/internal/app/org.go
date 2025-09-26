@@ -141,9 +141,28 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		o.Features = make(map[string]bool, 0)
 	}
 
+	// Set default feature flag values - most features enabled by default
+	// except org-dashboard and install-break-glass which remain disabled
+	defaultFeatures := map[OrgFeature]bool{
+		// Disabled by default
+		OrgFeatureOrgDashboard:      false,
+		OrgFeatureInstallBreakGlass: false,
+
+		// Enabled by default
+		OrgFeatureAPIPagination:           true,
+		OrgFeatureOrgRunner:               true,
+		OrgFeatureOrgSettings:             true,
+		OrgFeatureOrgSupport:              true,
+		OrgFeatureInstallDeleteComponents: true,
+		OrgFeatureInstallDelete:           true,
+		OrgFeatureTerraformWorkspace:      true,
+		OrgFeatureDevCommand:              true,
+		OrgFeatureAppBranches:             true,
+	}
+
 	for _, feature := range GetFeatures() {
 		if _, ok := o.Features[string(feature)]; !ok {
-			o.Features[string(feature)] = false
+			o.Features[string(feature)] = defaultFeatures[feature]
 		}
 	}
 
