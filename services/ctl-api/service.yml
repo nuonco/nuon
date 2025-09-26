@@ -129,7 +129,7 @@ env:
   PROFILING_PORT: 6060
   ENABLE_ENDPOINT_AUDITING: true
 
-  # chaos rate greater than 0 to enable
+  # chaos rate greater than 0 to enable, 1 = 1% and 100 = 100% 
   CHAOS_RATE: 0
   CHAOS_ERRORS: panic,bad_gateway,service_unavailable,internal_server_error,timeout
   # CHAOS_ROUTES: get_/v1/orgs,get_/v1/apps
