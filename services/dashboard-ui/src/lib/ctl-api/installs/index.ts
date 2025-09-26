@@ -22,5 +22,4 @@ export * from './update-install'
 // TODO(nnnnat): to refactor
 // export * from './reprovision-install'
 // export * from './reprovision-sandbox'
-export * from './run-install-action-workflow'
 export * from './forget-install'
