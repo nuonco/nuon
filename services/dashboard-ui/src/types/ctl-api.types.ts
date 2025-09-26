@@ -192,6 +192,23 @@ export type TWaitlist = components['schemas']['app.Waitlist']
 export type TAccount = components['schemas']['app.Account']
 export type TInvite = components['schemas']['app.OrgInvite']
 
+// User Journey (Enhanced with completion tracking and metadata)
+export interface TUserJourneyStep {
+  name: string
+  title: string
+  complete: boolean
+  completed_at: string | null
+  completion_method: 'auto' | 'manual' | 'cli' | 'api' | null
+  completion_source: 'dashboard' | 'cli' | 'api' | 'system' | null
+  metadata: Record<string, any>
+}
+
+export interface TUserJourney {
+  name: string
+  title: string
+  steps: TUserJourneyStep[]
+}
+
 // install workflows
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep =
