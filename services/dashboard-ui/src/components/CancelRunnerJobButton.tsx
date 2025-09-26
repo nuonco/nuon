@@ -4,13 +4,14 @@ import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check } from '@phosphor-icons/react'
+import { CheckIcon } from '@phosphor-icons/react'
+import { cancelRunnerJob } from '@/actions/runners/cancel-runner-job'
 import { Button, type IButton } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
-import { cancelRunnerJob } from '@/components/runner-actions'
 import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
 
 export type TCancelJobType =
@@ -101,12 +102,21 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
   const { user } = useUser()
   const { org } = useOrg()
   const cancelJobData = cancelJobOptions[jobType]
-  const pathName = usePathname()
-  const [cancelError, setCancelError] = useState<string>()
+  const path = usePathname()
+
   const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
+  const {
+    data: canceledJob,
+    error,
+    execute,
+    headers,
+    isLoading,
+  } = useServerAction({
+    action: cancelRunnerJob,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -119,6 +129,37 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'runner_job_cancel',
+        status: 'error',
+        user,
+        props: {
+          jobType,
+          orgId: org.id,
+          runnerJobId,
+          err: error?.error,
+        },
+      })
+    }
+
+    if (canceledJob) {
+      setHasBeenCanceled(true)
+      trackEvent({
+        event: 'runner_job_cancel',
+        status: 'ok',
+        user,
+        props: {
+          jobType,
+          orgId: org.id,
+          runnerJobId,
+        },
+      })
+      setIsConfirmOpen(false)
+    }
+  }, [canceledJob, error, headers])
 
   return (
     <>
@@ -133,9 +174,9 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
               }}
             >
               <div className="mb-6">
-                {cancelError ? (
+                {error ? (
                   <span className="flex w-full p-2 border rounded-md border-red-400 bg-red-300/20 text-red-800 dark:border-red-600 dark:bg-red-600/5 dark:text-red-600 text-base font-medium mb-6">
-                    {cancelError}
+                    {error?.error || 'Unable to cancel runner job.'}
                   </span>
                 ) : null}
                 <Text variant="reg-14" className="leading-relaxed">
@@ -152,51 +193,18 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
                   Cancel
                 </Button>
                 <Button
-                  disabled={Boolean(cancelError)}
+                  disabled={Boolean(error)}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    cancelRunnerJob({ orgId, runnerJobId, path: pathName })
-                      .then(() => {
-                        trackEvent({
-                          event: 'runner_job_cancel',
-                          status: 'ok',
-                          user,
-                          props: {
-                            jobType,
-                            orgId: org.id,
-                            runnerJobId,
-                          },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-                        setIsConfirmOpen(false)
-                        setHasBeenCanceled(true)
-                      })
-                      .catch((error) => {
-                        trackEvent({
-                          event: 'runner_job_cancel',
-                          status: 'error',
-                          user,
-                          props: {
-                            jobType,
-                            orgId: org.id,
-                            runnerJobId,
-                          },
-                        })
-                        console.error(error?.message)
-                        setIsLoading(false)
-                        setCancelError(
-                          'Error occured, please refresh page and try again.'
-                        )
-                      })
+                    setIsKickedOff(true)
+                    execute({ orgId, runnerJobId, path })
                   }}
                   variant="danger"
                 >
-                  {isKickedOff ? (
-                    <Check size="16" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="16" />
                   ) : null}{' '}
                   {cancelJobData?.buttonText}
                 </Button>
