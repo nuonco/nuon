@@ -12,6 +12,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
 )
 
 const (
@@ -57,7 +58,7 @@ func (s *service) createSeedUser(ctx context.Context) (*app.Token, error) {
 			return nil, err
 		}
 
-		acct, err = s.acctClient.CreateAccount(ctx, email, email)
+		acct, err = s.acctClient.CreateAccount(ctx, email, email, account.NoUserJourneys())
 		if err != nil {
 			return nil, err
 		}
