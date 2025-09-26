@@ -1,35 +1,35 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, ArrowURightUp } from '@phosphor-icons/react'
+import { CheckIcon, ArrowURightUpIcon } from '@phosphor-icons/react'
+import { reprovisionInstall } from '@/actions/installs/reprovision-install'
 import { Button } from '@/components/Button'
 import { CheckboxInput } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { reprovisionInstall } from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
 
-interface IReprovisionModal {
-  installId: string
-  orgId: string
-}
-
-export const ReprovisionModal: FC<IReprovisionModal> = ({
-  installId,
-  orgId,
-}) => {
+export const ReprovisionModal = () => {
   const router = useRouter()
   const { user } = useUser()
+  const { org } = useOrg()
+  const { install } = useInstall()
+
   const [isOpen, setIsOpen] = useState(false)
   const [planOnly, setPlanOnly] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState()
+
+  const { data, error, execute, headers, isLoading } = useServerAction({
+    action: reprovisionInstall,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -42,6 +42,36 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'install_reprovision',
+        user,
+        status: 'error',
+        props: { orgId: org.id, installId: install.id, err: error?.error },
+      })
+    }
+
+    if (data) {
+      trackEvent({
+        event: 'install_reprovision',
+        user,
+        status: 'ok',
+        props: { orgId: org.id, installId: install.id },
+      })
+
+      if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org.id}/installs/${install.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org.id}/installs/${install.id}/workflows`)
+      }
+
+      setIsOpen(false)
+    }
+  }, [data, error, headers])
 
   return (
     <>
@@ -56,7 +86,11 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
               }}
             >
               <div className="flex flex-col gap-3 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <Notice>
+                    {error?.error || 'Unable to kick off install reprovision.'}
+                  </Notice>
+                ) : null}
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to reprovision this install?
                 </Text>
@@ -82,56 +116,21 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
                 <Button
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    reprovisionInstall({
-                      installId,
-                      orgId,
-                      planOnly,
+                    setIsKickedOff(true)
+                    execute({
+                      body: { plan_only: planOnly },
+                      installId: install.id,
+                      orgId: org.id,
                     })
-                      .then((workflowId) => {
-                        trackEvent({
-                          event: 'install_reprovision',
-                          user,
-                          status: 'ok',
-                          props: { orgId, installId },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-
-                        if (workflowId) {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows/${workflowId}`
-                          )
-                        } else {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows`
-                          )
-                        }
-
-                        setIsOpen(false)
-                      })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'install_reprovision',
-                          user,
-                          status: 'error',
-                          props: { orgId, installId, err },
-                        })
-                        setError(
-                          err?.message ||
-                            'Error occured, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      })
                   }}
                   variant="primary"
                 >
-                  {isKickedOff ? (
-                    <Check size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
-                    <ArrowURightUp size="18" />
+                    <ArrowURightUpIcon size="18" />
                   )}{' '}
                   Reprovision
                 </Button>
@@ -147,7 +146,7 @@ export const ReprovisionModal: FC<IReprovisionModal> = ({
           setIsOpen(true)
         }}
       >
-        <ArrowURightUp size="16" />
+        <ArrowURightUpIcon size="16" />
         Reprovision install
       </Button>
     </>

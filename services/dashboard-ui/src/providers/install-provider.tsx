@@ -24,11 +24,12 @@ export function InstallProvider({
   initInstall: TInstall;
 } & IPollingProps) {
   const { org } = useOrg()
-  const {
+  const {   
     data: install,
     error,
     isLoading,
   } = usePolling<TInstall>({
+    dependencies: [initInstall],
     initData: initInstall,
     path: `/api/orgs/${org.id}/installs/${initInstall.id}`,
     pollInterval,
