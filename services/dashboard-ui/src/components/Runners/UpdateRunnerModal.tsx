@@ -4,7 +4,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, ArrowsCounterClockwise } from '@phosphor-icons/react'
+import { CheckIcon, ArrowsCounterClockwiseIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Input } from '@/components/Input'
@@ -54,7 +54,7 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
               className="!max-w-xl"
               heading={
                 <>
-                  <ArrowsCounterClockwise />
+                  <ArrowsCounterClockwiseIcon />
                   Update runner
                 </>
               }
@@ -144,11 +144,11 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
                     variant="primary"
                   >
                     {isKickedOff ? (
-                      <Check size="18" />
+                      <CheckIcon size="18" />
                     ) : isLoading ? (
                       <SpinnerSVG />
                     ) : (
-                      <ArrowsCounterClockwise size="18" />
+                      <ArrowsCounterClockwiseIcon size="18" />
                     )}{' '}
                     Update runner
                   </Button>
@@ -164,7 +164,7 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
           setIsOpen(true)
         }}
       >
-        <ArrowsCounterClockwise size="16" />
+        <ArrowsCounterClockwiseIcon size="16" />
         Update runner
       </Button>
     </>
