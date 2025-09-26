@@ -1,33 +1,34 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { type FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, Trash } from '@phosphor-icons/react'
+import { CheckIcon, TrashIcon } from '@phosphor-icons/react'
+import { forgetInstall } from '@/actions/installs/forget-install'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { forgetInstall } from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
-import type { TInstall } from '@/types'
 
-interface IForgetModal {
-  install: TInstall
-  orgId: string
-}
-
-export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
+export const ForgetModal = () => {
   const { user } = useUser()
   const router = useRouter()
+  const { org } = useOrg()
+  const { install } = useInstall()
   const [confirm, setConfirm] = useState<string>()
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState()
+
+  const { data, error, execute, headers, isLoading } = useServerAction({
+    action: forgetInstall,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -40,6 +41,30 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'install_forget',
+        user,
+        status: 'error',
+        props: { orgId: org.id, installId: install.id, err: error?.error },
+      })
+    }
+
+    if (data) {
+      trackEvent({
+        event: 'install_forget',
+        user,
+        status: 'ok',
+        props: { orgId: org.id, installId: install.id },
+      })
+
+      router.push(`/${org.id}/installs`)
+
+      setIsOpen(false)
+    }
+  }, [data, error, headers])
 
   return (
     <>
@@ -58,7 +83,9 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
               }}
             >
               <div className="flex flex-col gap-8 mb-12">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <Notice>{error?.error || 'Unable to forget install.'}</Notice>
+                ) : null}
                 <Notice>
                   This should only be used in cases where an install was broken
                   in an unordinary way and needs to be manually removed.
@@ -124,48 +151,20 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
                   disabled={confirm !== install.name}
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    forgetInstall({ installId: install.id, orgId })
-                      .then(() => {
-                        trackEvent({
-                          event: 'install_forget',
-                          user,
-                          status: 'ok',
-                          props: {
-                            orgId,
-                            installId: install?.id,
-                          },
-                        })
-                        router.push(`/${orgId}/installs`)
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-                      })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'install_forget',
-                          user,
-                          status: 'error',
-                          props: {
-                            orgId,
-                            installId: install?.id,
-                            err,
-                          },
-                        })
-                        setError(
-                          err?.message ||
-                            'Error occured, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      })
+                    setIsKickedOff(true)
+                    execute({
+                      installId: install.id,
+                      orgId: org.id,
+                    })
                   }}
                   variant="danger"
                 >
-                  {isKickedOff ? (
-                    <Check size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
-                    <Trash size="18" />
+                    <TrashIcon size="18" />
                   )}{' '}
                   Forget install
                 </Button>
@@ -182,7 +181,7 @@ export const ForgetModal: FC<IForgetModal> = ({ install, orgId }) => {
           setIsOpen(true)
         }}
       >
-        <Trash size="16" />
+        <TrashIcon size="16" />
         Forget install
       </Button>
     </>

@@ -9,7 +9,6 @@ import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { forgetInstall } from '@/components/install-actions'
 import { trackEvent } from '@/utils'
 import type { TInstall } from '@/types'
 

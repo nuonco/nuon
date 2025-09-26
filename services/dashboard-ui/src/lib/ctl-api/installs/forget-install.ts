@@ -1,11 +1,14 @@
-import { mutateData } from '@/utils'
-import type { IGetInstall } from '../shared-interfaces'
+import { api } from '@/lib/api'
 
-export interface IForgetInstall extends IGetInstall {}
-
-export async function forgetInstall({ installId, orgId }: IForgetInstall) {
-  return mutateData<boolean>({
-    errorMessage: 'Unable to forget install.',
+export async function forgetInstall({
+  installId,
+  orgId,
+}: {
+  installId: string
+  orgId: string
+}) {
+  return api<boolean>({
+    method: 'POST',
     orgId,
     path: `installs/${installId}/forget`,
   })
