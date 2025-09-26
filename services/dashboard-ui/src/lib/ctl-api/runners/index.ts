@@ -1,7 +1,5 @@
-export * from './cancel-runner-job'
-
-// refactored
 export * from './terraform-workspace'
+export * from './cancel-runner-job'
 export * from './get-runner-by-id'
 export * from './get-runner-job-by-id'
 export * from './get-runner-job-plan-by-id'
