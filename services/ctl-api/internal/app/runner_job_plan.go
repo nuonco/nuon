@@ -22,7 +22,8 @@ type RunnerJobPlan struct {
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
-	PlanJSON    string `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
+
+	PlanJSON string `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
 }
 
 func (r *RunnerJobPlan) BeforeCreate(tx *gorm.DB) error {
