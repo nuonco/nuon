@@ -4,6 +4,7 @@ import (
 	_ "go.temporal.io/api/common/v1"
 
 	_ "github.com/powertoolsdev/mono/pkg/metrics"
+	_ "github.com/powertoolsdev/mono/pkg/plans/types"
 	_ "github.com/powertoolsdev/mono/pkg/types/state"
 	_ "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
