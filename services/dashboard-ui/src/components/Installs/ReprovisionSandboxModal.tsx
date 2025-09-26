@@ -1,35 +1,35 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Check, BoxArrowUp } from '@phosphor-icons/react'
+import { CheckIcon, BoxArrowUpIcon } from '@phosphor-icons/react'
+import { reprovisionSandbox } from '@/actions/installs/reprovision-sandbox'
 import { Button } from '@/components/Button'
 import { CheckboxInput } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { reprovisionSandbox } from '@/components/install-actions'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
 
-interface IReprovisionSandboxModal {
-  installId: string
-  orgId: string
-}
-
-export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
-  installId,
-  orgId,
-}) => {
+export const ReprovisionSandboxModal = () => {
   const router = useRouter()
   const { user } = useUser()
+  const { org } = useOrg()
+  const { install } = useInstall()
+
   const [isOpen, setIsOpen] = useState(false)
-  const [planOnly, setPlanOnly] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [error, setError] = useState<string>()
+  const [planOnly, setPlanOnly] = useState(false)
+
+  const { data, error, execute, headers, isLoading } = useServerAction({
+    action: reprovisionSandbox,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -42,6 +42,36 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'install_sandbox_reprovision',
+        user,
+        status: 'error',
+        props: { orgId: org.id, installId: install.id, err: error?.error },
+      })
+    }
+
+    if (data) {
+      trackEvent({
+        event: 'install_sandbox_reprovision',
+        user,
+        status: 'ok',
+        props: { orgId: org.id, installId: install.id },
+      })
+
+      if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org.id}/installs/${install.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org.id}/installs/${install.id}/workflows`)
+      }
+
+      setIsOpen(false)
+    }
+  }, [data, error, headers])
 
   return (
     <>
@@ -56,7 +86,11 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
               }}
             >
               <div className="flex flex-col gap-3 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
+                {error ? (
+                  <Notice>
+                    {error?.error || 'Unable to kickoff sandbox reprovision'}
+                  </Notice>
+                ) : null}
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to reprovision this sandbox?
                 </Text>
@@ -83,55 +117,21 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
                 <Button
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
-                    setIsLoading(true)
-                    reprovisionSandbox({
-                      installId,
-                      orgId,
-                      planOnly,
+                    setIsKickedOff(true)
+                    execute({
+                      body: { plan_only: planOnly },
+                      installId: install.id,
+                      orgId: org.id,
                     })
-                      .then((workflowId) => {
-                        trackEvent({
-                          event: 'install_sandbox_reprovision',
-                          user,
-                          status: 'ok',
-                          props: { orgId, installId },
-                        })
-                        setIsLoading(false)
-                        setIsKickedOff(true)
-
-                        if (workflowId) {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows/${workflowId}`
-                          )
-                        } else {
-                          router.push(
-                            `/${orgId}/installs/${installId}/workflows`
-                          )
-                        }
-
-                        setIsOpen(false)
-                      })
-                      .catch((err) => {
-                        trackEvent({
-                          event: 'install_sandbox_reprovision',
-                          user,
-                          status: 'error',
-                          props: { orgId, installId, err },
-                        })
-                        setError(
-                          'Error occured, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-                      })
                   }}
                   variant="primary"
                 >
-                  {isKickedOff ? (
-                    <Check size="18" />
-                  ) : isLoading ? (
+                  {isLoading ? (
                     <SpinnerSVG />
+                  ) : isKickedOff ? (
+                    <CheckIcon size="18" />
                   ) : (
-                    <BoxArrowUp size="18" />
+                    <BoxArrowUpIcon size="18" />
                   )}{' '}
                   Reprovision sandbox
                 </Button>
@@ -146,7 +146,7 @@ export const ReprovisionSandboxModal: FC<IReprovisionSandboxModal> = ({
           setIsOpen(true)
         }}
       >
-        <BoxArrowUp size="16" />
+        <BoxArrowUpIcon size="16" />
         Reprovision sandbox
       </Button>
     </>
