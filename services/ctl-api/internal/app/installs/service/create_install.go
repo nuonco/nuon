@@ -6,10 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateInstallRequest struct {
@@ -102,6 +104,16 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	})
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
+	// Update user journey step for first install creation
+	user, err := cctx.AccountFromGinContext(ctx)
+	if err == nil {
+		// Only update if this is the user's first install (install_created step incomplete)
+		if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {
+			// Log but don't fail the install creation
+			s.l.Warn("failed to update user journey for first install create", zap.Error(err))
+		}
+	}
 
 	// TODO(jm): these will be deprecated after the workflow tooling is created
 	ctx.JSON(http.StatusCreated, install)

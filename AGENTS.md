@@ -205,6 +205,181 @@ The Nuon platform implements a comprehensive guided onboarding system:
 - **Frontend**: `services/dashboard-ui/src/components/Apps/*Modal.tsx`
 - **Data Structure**: `services/ctl-api/internal/app/user_journey.go`
 
+## Account & Organization Permission System
+
+Nuon uses a sophisticated multi-tenant RBAC (Role-Based Access Control) system for managing access to organizations.
+
+### Account Types & Creation Flows
+
+**Account Types** (`internal/app/account.go`):
+- `AccountTypeAuth0` - Regular users (external customers)
+- `AccountTypeService` - Service accounts for automation
+- `AccountTypeCanary` - Internal testing accounts
+- `AccountTypeIntegration` - Integration testing accounts
+
+**Account Creation Paths** (`internal/middlewares/auth/account_token.go:71-104`):
+
+1. **Self-Signup Flow**:
+   - No pending `OrgInvite` found for email
+   - Gets `DefaultEvaluationJourneyWithAutoOrg()` with user journey tracking
+   - **Automatically creates trial org** with pattern `${email}-trial`
+   - User becomes org admin immediately
+   - Skips manual org creation step in dashboard
+
+2. **Invite Flow**:
+   - Pending `OrgInvite` exists for email
+   - Gets `NoUserJourneys()` (no guided onboarding)
+   - Invite acceptance grants specific org access via existing role assignment
+
+### Permission Architecture (Three-Layer RBAC)
+
+**1. Accounts** - Individual users or service accounts
+**2. Roles** - Permission containers with specific purposes
+**3. Policies** - Actual permission sets attached to roles
+
+### Role System
+
+**Standard Org Roles** (`internal/pkg/authz/create_org_roles.go`):
+- `RoleTypeOrgAdmin` - Full organization administration
+- `RoleTypeInstaller` - Install management permissions
+- `RoleTypeRunner` - Runner execution permissions
+
+Each role gets associated policies with permissions stored in PostgreSQL HSTORE format.
+
+### How Accounts Access Organizations
+
+**Account → Org Access Flow**:
+
+1. **Org Role Creation** (`authzClient.CreateOrgRoles(ctx, orgID)`):
+   - Creates standard roles for the organization
+   - Each role gets policies with appropriate permissions
+   - Requires account context for audit trail (`CreatedByID`)
+
+2. **Account Role Assignment** (`authzClient.AddAccountOrgRole(ctx, roleType, orgID, accountID)`):
+   - Creates `AccountRole` junction table entries
+   - Links specific accounts to specific org roles
+   - Uses conflict resolution to prevent duplicates
+
+3. **Permission Resolution** (`internal/app/account.go:57-85`):
+   - Account's `AfterQuery` hook aggregates permissions from all roles
+   - Builds `OrgIDs` array from accessible organizations
+   - Creates unified `AllPermissions` set for authorization
+
+### Context & Audit Requirements
+
+**CreatedByID Pattern**:
+All major entities require audit tracking:
+- Org, Role, Policy models have `CreatedByID` fields
+- `BeforeCreate` hooks automatically populate from context
+- **Critical**: Must set account context before operations:
+  ```go
+  ctx = cctx.SetAccountContext(ctx, account)
+  ```
+
+### Auto-Org Creation Implementation
+
+**New Self-Signup Flow** (implemented):
+- `CreateAccountWithAutoOrg()` creates account + trial org atomically
+- Sets proper account context for org creation hooks
+- Creates org roles and assigns user as admin
+- User journey reflects completed org creation step
+
+**Key Files**:
+- `internal/pkg/account/create.go` - Account creation with auto org
+- `internal/middlewares/auth/account_token.go` - Auth flow logic
+- `internal/app/user_journey.go` - Journey step definitions
+- `internal/pkg/authz/` - Role and permission management
+
+### User Journey Integration
+
+**Updated Journey Flow**:
+1. **Account Created** → Self-signup account created
+2. **Org Created** → Trial org automatically created (marked complete)
+3. **App Created** → User runs `nuon apps sync`
+4. **Install Created** → User creates first install
+
+**Journey Helpers Pattern**:
+- Cross-domain operations use helpers (e.g., `accountsHelpers.UpdateUserJourneyStep`)
+- Helpers injected via FX dependency injection
+- Non-blocking: Journey failures never break core operations
+
+### Important Implementation Notes
+
+- **Transaction Safety**: Auto org creation uses database transactions for atomicity
+- **Error Handling**: Role creation failures return detailed error messages
+- **Context Propagation**: Account context must be set for all authz operations
+- **Invite Preservation**: Existing invite flow unchanged - only affects self-signup
+- **Journey Tracking**: Auto-created orgs marked as completed in user journey
+
+## CLAUDE.md Context Files
+
+This monorepo contains 14 CLAUDE.md files that provide component-specific context and instructions for AI assistants. These files contain critical domain knowledge, development patterns, and service-specific guidance.
+
+### CLAUDE.md File Locations
+
+**Root Level:**
+- `/CLAUDE.md` - Main project instructions (references this AGENTS.md file)
+
+**Binary Tools (`/bins/`):**
+- `/bins/cli/CLAUDE.md` - Public CLI tool (`nuon` command)
+- `/bins/nuonctl/CLAUDE.md` - Internal CLI with operational scripts
+- `/bins/runner/CLAUDE.md` - Deployment execution binary
+
+**Services (`/services/`):**
+- `/services/ctl-api/CLAUDE.md` - Control API service (Go)
+- `/services/dashboard-ui/CLAUDE.md` - Main dashboard UI (Next.js/React)
+- `/services/e2e/CLAUDE.md` - End-to-end testing service
+- `/services/orgs-api/CLAUDE.md` - Organizations API (DEPRECATED)
+- `/services/website-v2/CLAUDE.md` - Marketing website (Astro)
+- `/services/website/CLAUDE.md` - Legacy website (Astro)
+- `/services/wiki/CLAUDE.md` - Internal documentation site
+- `/services/workers-canary/CLAUDE.md` - Canary testing service
+- `/services/workers-executors/CLAUDE.md` - Core execution engine (DEPRECATED)
+- `/services/workers-infra-tests/CLAUDE.md` - Infrastructure testing service
+
+### Instructions for AI Assistants
+
+**CRITICAL: Session Context Loading**
+
+When starting any new session to work on this monorepo, AI assistants should:
+
+1. **Always load the root context files first:**
+   ```
+   Read /CLAUDE.md (main project instructions)
+   Read /AGENTS.md (this comprehensive overview)
+   ```
+
+2. **Load component-specific context based on the task:**
+   - If working on the CLI: Read `/bins/cli/CLAUDE.md`
+   - If working on the API: Read `/services/ctl-api/CLAUDE.md`
+   - If working on the dashboard: Read `/services/dashboard-ui/CLAUDE.md`
+   - If working across multiple services: Read all relevant CLAUDE.md files
+
+3. **Use globbing to discover all context files:**
+   ```bash
+   # Find all CLAUDE.md files in the monorepo
+   glob pattern: **/CLAUDE.md
+   ```
+
+4. **Load context systematically:**
+   - Root context provides architectural overview and common patterns
+   - Component-specific context provides detailed implementation guidance
+   - Each CLAUDE.md file contains domain-specific knowledge not found elsewhere
+
+### Benefits of Hierarchical Context
+
+- **Component Isolation**: Each service/binary has specific development patterns and constraints
+- **Historical Context**: Deprecated services maintain their context for reference
+- **Specialized Knowledge**: Domain-specific implementation details and gotchas
+- **Development Efficiency**: Reduces discovery time for service-specific conventions
+
+### Maintenance Guidelines
+
+- Keep CLAUDE.md files updated as services evolve
+- Document major architectural changes in relevant component files
+- Ensure root AGENTS.md reflects current monorepo structure
+- Archive context files in `/graveyard/` when services are fully deprecated
+
 ## Project Status
 
 Main branch: `main`
