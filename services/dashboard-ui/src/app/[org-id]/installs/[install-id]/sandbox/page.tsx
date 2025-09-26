@@ -1,10 +1,8 @@
 import type { Metadata } from 'next'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CaretRightIcon, FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
-  AppSandboxConfig,
-  AppSandboxVariables,
   DashboardContent,
   DeprovisionSandboxModal,
   ErrorFallback,
@@ -13,19 +11,15 @@ import {
   InstallManagementDropdown,
   Link,
   Loading,
-  Notice,
   ReprovisionSandboxModal,
   Section,
   Text,
   Time,
 } from '@/components'
-import {
-  TerraformWorkspace,
-  ValuesFileModal,
-} from '@/components/InstallSandbox'
+import { TerraformWorkspace } from '@/components/InstallSandbox'
 import { getInstallById } from '@/lib'
-import type { TAppConfig } from '@/types'
-import { nueQueryData } from '@/utils'
+
+import { SandboxConfig } from './config'
 import { SandboxRuns } from './sandbox-runs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -117,7 +111,7 @@ export default async function InstallComponent({ params, searchParams }) {
                   />
                 }
               >
-                <LoadSandboxConfig
+                <SandboxConfig
                   appId={install?.app_id}
                   appConfigId={install?.app_config_id}
                   orgId={orgId}
@@ -153,8 +147,8 @@ export default async function InstallComponent({ params, searchParams }) {
         <div className="divide-y flex flex-col md:col-span-4">
           <Section heading="Sandbox controls" className="flex-initial">
             <div className="flex items-center gap-4 flex-wrap">
-              <ReprovisionSandboxModal installId={installId} orgId={orgId} />
-              <DeprovisionSandboxModal install={install} />
+              <ReprovisionSandboxModal />
+              <DeprovisionSandboxModal />
             </div>
           </Section>
           <Section heading="Sandbox history">
@@ -178,29 +172,5 @@ export default async function InstallComponent({ params, searchParams }) {
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-const LoadSandboxConfig: FC<{
-  appId: string
-  appConfigId: string
-  orgId: string
-}> = async ({ appId, appConfigId, orgId }) => {
-  const { data, error } = await nueQueryData<TAppConfig>({
-    orgId,
-    path: `apps/${appId}/config/${appConfigId}?recurse=true`,
-  })
-
-  return error ? (
-    <Notice>{error?.error}</Notice>
-  ) : (
-    <>
-      <AppSandboxConfig sandboxConfig={data?.sandbox} />
-      <AppSandboxVariables
-        variables={data?.sandbox?.variables}
-        isNotTruncated
-      />
-      <ValuesFileModal valuesFiles={data?.sandbox?.variables_files} />
-    </>
   )
 }
