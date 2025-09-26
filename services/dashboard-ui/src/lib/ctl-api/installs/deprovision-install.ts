@@ -1,15 +1,16 @@
 import { api } from '@/lib/api'
 
-export type TReprovisionInstallBody = {
+export type TDeprovisionInstallBody = {
+  error_behavior?: "continue" | "abort" 
   plan_only: boolean
 }
 
-export async function reprovisionInstall({
+export async function deprovisionInstall({
   body,
   installId,
   orgId,
 }: {
-  body: TReprovisionInstallBody
+  body: TDeprovisionInstallBody
   installId: string
   orgId: string
 }) {
@@ -17,6 +18,6 @@ export async function reprovisionInstall({
     body,
     method: 'POST',
     orgId,
-    path: `installs/${installId}/reprovision`,
+    path: `installs/${installId}/deprovision`,
   })
 }

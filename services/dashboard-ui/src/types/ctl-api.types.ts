@@ -41,6 +41,7 @@ export type TInstallInputs = components['schemas']['app.InstallInputs']
 export type TInstallComponentOutputs = Record<string, string>
 export type TInstallComponentSummary =
   components['schemas']['app.InstallComponentSummary']
+export type TInstallConfig = components['schemas']['app.InstallConfig']
 
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
@@ -153,9 +154,13 @@ export type TRunner = components['schemas']['app.Runner']
 export type TRunnerJob = components['schemas']['app.RunnerJob']
 export type TRunnerHealthCheck = components['schemas']['app.RunnerHealthCheck']
 export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
-export type TRunnerMngHeartbeat = { mng: TRunnerHeartbeat, install: TRunnerHeartbeat, org: TRunnerHeartbeat };
+export type TRunnerMngHeartbeat = {
+  mng: TRunnerHeartbeat
+  install: TRunnerHeartbeat
+  org: TRunnerHeartbeat
+}
 export type TRunnerSettings = components['schemas']['app.RunnerGroupSettings']
-export type TRunnerJobPlan = Record<string, any>;
+export type TRunnerJobPlan = Record<string, any>
 
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']
@@ -175,12 +180,10 @@ export type TInstallActionWorkflow =
   components['schemas']['app.InstallActionWorkflow']
 
 // new action types
-export type TAction = components["schemas"]["app.ActionWorkflow"];;
+export type TAction = components['schemas']['app.ActionWorkflow']
 export type TInstallActionRun =
-  components["schemas"]["app.InstallActionWorkflowRun"];
-export type TInstallAction =
-  components["schemas"]["app.InstallActionWorkflow"];
-
+  components['schemas']['app.InstallActionWorkflowRun']
+export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
 
 // App / Install Readme
 export type TReadme = components['schemas']['service.Readme']
@@ -211,17 +214,15 @@ export interface TUserJourney {
 
 // install workflows
 export type TInstallWorkflow = components['schemas']['app.Workflow']
-export type TInstallWorkflowStep =
-  components['schemas']['app.WorkflowStep']
+export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
-export type TWorkflowStep =
-  components['schemas']['app.WorkflowStep']
+export type TWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflowStepApproval =
-  components["schemas"]["app.WorkflowStepApproval"];
+  components['schemas']['app.WorkflowStepApproval']
 export type TWorkflowStepApprovalResponse =
-  components["schemas"]["app.WorkflowStepApprovalResponse"];
+  components['schemas']['app.WorkflowStepApprovalResponse']
 export type TWorkflowStepApprovalType =
-  components["schemas"]["app.WorkflowStepApprovalType"];
+  components['schemas']['app.WorkflowStepApprovalType']
 
 // app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']
@@ -239,47 +240,48 @@ export type TAPIVersion = {
   version: string
 }
 
-
 // terraform workspaces
-export type TTerraformWorkspaceState = components["schemas"]["app.TerraformWorkspaceStateJSON"]
-export type TTerraformWorkspaceLock = components["schemas"]["app.TerraformWorkspaceLock"] 
+export type TTerraformWorkspaceState =
+  components['schemas']['app.TerraformWorkspaceStateJSON']
+export type TTerraformWorkspaceLock =
+  components['schemas']['app.TerraformWorkspaceLock']
 export type TTerraformState = {
-  format_version: string;
-  terraform_version: string;
+  format_version: string
+  terraform_version: string
   values: {
     outputs?: {
       [key: string]: {
-        sensitive: boolean;
-        value: any;
-        type: string;
-      };
-    };
+        sensitive: boolean
+        value: any
+        type: string
+      }
+    }
     root_module?: {
       resources?: Array<{
-        address: string;
-        mode: string;
-        type: string;
-        name: string;
-        provider_name: string;
-        schema_version: number;
-        values: Record<string, any>;
-        sensitive_values: Record<string, any>;
-      }>;
+        address: string
+        mode: string
+        type: string
+        name: string
+        provider_name: string
+        schema_version: number
+        values: Record<string, any>
+        sensitive_values: Record<string, any>
+      }>
       child_modules?: Array<{
         resources?: Array<{
-          address: string;
-          mode: string;
-          type: string;
-          name: string;
-          provider_name: string;
-          schema_version: number;
-          index?: number | string;
-          values: Record<string, any>;
-          sensitive_values: Record<string, any>;
-          depends_on?: string[];
-        }>;
-        address?: string;
-      }>;
-    };
-  };
-};
+          address: string
+          mode: string
+          type: string
+          name: string
+          provider_name: string
+          schema_version: number
+          index?: number | string
+          values: Record<string, any>
+          sensitive_values: Record<string, any>
+          depends_on?: string[]
+        }>
+        address?: string
+      }>
+    }
+  }
+}

@@ -12,7 +12,7 @@ interface IWorkflowSteps extends IPollingProps {
 }
 export const WorkflowSteps = ({
   initWorkflow,
-  pollInterval = 3000,
+  pollInterval = 5000,
   shouldPoll = false,
   workflowId,
 }: IWorkflowSteps) => {

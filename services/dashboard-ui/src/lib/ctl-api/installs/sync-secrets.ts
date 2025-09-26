@@ -1,15 +1,16 @@
 import { api } from '@/lib/api'
 
-export type TReprovisionInstallBody = {
+export type TSyncSecretsBody = {
+  error_behavior?: "continue" | "abort" 
   plan_only: boolean
 }
 
-export async function reprovisionInstall({
+export async function syncSecrets({
   body,
   installId,
   orgId,
 }: {
-  body: TReprovisionInstallBody
+  body: TSyncSecretsBody
   installId: string
   orgId: string
 }) {
@@ -17,6 +18,6 @@ export async function reprovisionInstall({
     body,
     method: 'POST',
     orgId,
-    path: `installs/${installId}/reprovision`,
+    path: `installs/${installId}/sync-secrets`,
   })
 }
