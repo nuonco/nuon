@@ -85,6 +85,8 @@ export const BuildComponentButton = ({
       if (build?.id) {
         router.push(`${path}/builds/${build?.id}`)
       }
+
+      setIsOpen(false)
     }
   }, [build, error])
 
