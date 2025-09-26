@@ -35,6 +35,25 @@ var skipRoutes = map[string]struct{}{
 	"/docs/":   {},
 }
 
+func (m middleware) shouldTriggerWithProbability() bool {
+	percentage := m.cfg.ChaosRate
+
+	if percentage <= 0 {
+		return false
+	}
+	if percentage >= 100 {
+		return true
+	}
+
+	// Generate random float from 0.0 to 1.0
+	randomFloat := rand.Float64()
+
+	// Convert percentage to decimal probability
+	probability := float64(percentage) / 100.0
+
+	return randomFloat <= probability
+}
+
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if m.cfg.ChaosRate < 1 {
@@ -63,11 +82,11 @@ func (m middleware) Handler() gin.HandlerFunc {
 			}
 		}
 
-		if m.cfg.ChaosSleep > 0 && rand.IntN(m.cfg.ChaosRate)+1 == 1 {
+		if m.cfg.ChaosSleep > 0 && m.shouldTriggerWithProbability() {
 			time.Sleep(m.cfg.ChaosSleep)
 		}
 
-		if rand.IntN(m.cfg.ChaosRate)+1 != 1 {
+		if m.shouldTriggerWithProbability() == false {
 			ctx.Next()
 			return
 		}
