@@ -1,35 +1,38 @@
 import type { Metadata } from 'next'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CalendarBlankIcon, TimerIcon } from '@phosphor-icons/react/dist/ssr'
 import {
-  BuildStatus,
-  CancelRunnerJobButton,
-  ClickToCopy,
-  ComponentConfiguration,
   DashboardContent,
   Duration,
   ErrorFallback,
   Loading,
   LogStreamProvider,
   OperationLogsSection,
-  RunnerJobPlanModal,
   Section,
   Time,
   Text,
   ToolTip,
   Truncate,
 } from '@/components'
-import { getAppById, getComponentById, getComponentBuildById } from '@/lib'
-import type { TComponentConfig } from '@/types'
-import { CANCEL_RUNNER_JOBS, nueQueryData } from '@/utils'
+import { BuildDetails } from '@/components/Components/BuildDetails'
+import { getAppById, getComponentBuildById } from '@/lib'
+import { ComponentConfig } from './config'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const { ['org-id']: orgId, ['component-id']: componentId } = await params
-  const { data: component} = await getComponentById({ componentId, orgId })
+  const {
+    ['org-id']: orgId,
+    ['component-id']: componentId,
+    ['build-id']: buildId,
+  } = await params
+  const { data: build } = await getComponentBuildById({
+    componentId,
+    buildId,
+    orgId,
+  })
 
   return {
-    title: `Build | ${component.name} | Nuon`,
+    title: `Build | ${build?.component_name} | Nuon`,
   }
 }
 
@@ -41,28 +44,27 @@ export default async function AppComponent({ params }) {
     ['build-id']: buildId,
   } = await params
 
-  const [{ data: app}, {data: build}, {data: component}] = await Promise.all([
+  const [{ data: app }, { data: build }] = await Promise.all([
     getAppById({ appId, orgId }),
     getComponentBuildById({ componentId, buildId, orgId }),
-    getComponentById({ componentId, orgId }),
   ])
-  
+
   return (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app.name },
-        { href: `/${orgId}/apps/${app.id}/components`, text: 'Components' },
+        { href: `/${orgId}/apps/${app?.id}`, text: app?.name },
+        { href: `/${orgId}/apps/${app?.id}/components`, text: 'Components' },
         {
-          href: `/${orgId}/apps/${app.id}/components/${build.component_id}`,
-          text: component.name,
+          href: `/${orgId}/apps/${app?.id}/components/${build.component_id}`,
+          text: build?.component_name,
         },
         {
-          href: `/${orgId}/apps/${app.id}/components/${build.component_id}/builds/${build.id}`,
+          href: `/${orgId}/apps/${app?.id}/components/${build.component_id}/builds/${build.id}`,
           text: 'Build',
         },
       ]}
-      heading={`${component.name} build`}
+      heading={`${build?.component_name} build`}
       headingUnderline={build.id}
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
@@ -76,54 +78,7 @@ export default async function AppComponent({ params }) {
           </Text>
         </div>
       }
-      statues={
-        <div className="flex gap-6 items-start justify-start">
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Status
-            </Text>
-            <BuildStatus
-              descriptionAlignment="right"
-              initBuild={build}
-              shouldPoll
-            />
-          </span>
-
-          <span className="flex flex-col gap-2">
-            <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-              Component
-            </Text>
-            <Text variant="med-12">{component.name}</Text>
-            <Text variant="mono-12">
-              <ToolTip alignment="right" tipContent={build.component_id}>
-                <ClickToCopy>{build.component_id}</ClickToCopy>
-              </ToolTip>
-            </Text>
-          </span>
-
-          <ErrorBoundary fallback={<Text>Can&apso;t fetching job plan</Text>}>
-            <Suspense
-              fallback={
-                <Loading variant="stack" loadingText="Loading job plan..." />
-              }
-            >
-              <RunnerJobPlanModal
-                runnerJobId={build?.runner_job?.id}
-              />
-            </Suspense>
-          </ErrorBoundary>
-
-          {CANCEL_RUNNER_JOBS &&
-          build?.status_v2?.status !== 'active' &&
-          build?.status_v2?.status !== 'error' ? (
-            <CancelRunnerJobButton
-              jobType="build"
-              runnerJobId={build?.runner_job?.id}
-              orgId={orgId}
-            />
-          ) : null}
-        </div>
-      }
+      statues={<BuildDetails initBuild={build} shouldPoll />}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
@@ -175,7 +130,7 @@ export default async function AppComponent({ params }) {
                         alignment="right"
                         position="top"
                       >
-                        <Truncate variant="large">
+                        <Truncate variant="small">
                           {build.vcs_connection_commit?.message}
                         </Truncate>
                       </ToolTip>
@@ -198,7 +153,7 @@ export default async function AppComponent({ params }) {
                   />
                 }
               >
-                <LoadComponentConfig
+                <ComponentConfig
                   componentId={componentId}
                   componentConfigId={build?.component_config_connection_id}
                   orgId={orgId}
@@ -209,23 +164,5 @@ export default async function AppComponent({ params }) {
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-const LoadComponentConfig: FC<{
-  componentId: string
-  componentConfigId: string
-  orgId: string
-}> = async ({ componentId, componentConfigId, orgId }) => {
-  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
-    {
-      orgId,
-      path: `components/${componentId}/configs/${componentConfigId}`,
-    }
-  )
-  return error ? (
-    <Text>{error?.error}</Text>
-  ) : (
-    <ComponentConfiguration config={componentConfig} />
   )
 }
