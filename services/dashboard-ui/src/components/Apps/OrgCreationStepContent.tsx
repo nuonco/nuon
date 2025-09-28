@@ -17,21 +17,8 @@ export const OrgCreationStepContent: FC<OrgCreationStepContentProps> = ({
 }) => {
   const { isCreating, error, retry } = useAutoOrgCreation()
 
-  // If step is already complete, show success state
-  if (stepComplete) {
-    return (
-      <div className="space-y-3">
-        <Text className="text-green-600 dark:text-green-400">
-          ✅ Your trial organization has been created successfully!
-        </Text>
-        <Text className="text-sm text-gray-600 dark:text-gray-400">
-          You can now proceed to the next steps to set up your applications and deployments.
-        </Text>
-      </div>
-    )
-  }
-
-  // Show creating state
+  // Early return for non-success states - these don't need the prepend pattern
+  // since they're temporary states during the creation process
   if (isCreating) {
     return (
       <div className="space-y-3">
@@ -48,7 +35,6 @@ export const OrgCreationStepContent: FC<OrgCreationStepContentProps> = ({
     )
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="space-y-3">
@@ -58,25 +44,44 @@ export const OrgCreationStepContent: FC<OrgCreationStepContentProps> = ({
         <Text className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           {error}
         </Text>
-        <Button
-          onClick={retry}
-          variant="primary"
-        >
+        <Button onClick={retry} variant="primary">
           Try Again
         </Button>
       </div>
     )
   }
 
-  // Default state (should trigger auto-creation via the hook)
   return (
-    <div className="space-y-3">
-      <Text className="text-gray-600 dark:text-gray-400">
-        Welcome! We&rsquo;re preparing to create your organization.
-      </Text>
-      <Text className="text-sm text-gray-500 dark:text-gray-500">
-        Your trial organization will be created automatically so you can get started quickly.
-      </Text>
+    <div className="space-y-6">
+      {/* Success Message - Shown when step is complete */}
+      {stepComplete && (
+        <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full" />
+            <Text
+              variant="semi-14"
+              className="text-green-800 dark:text-green-200"
+            >
+              Your trial organization has been created successfully!
+            </Text>
+          </div>
+          <Text className="text-gray-600 dark:text-gray-400">
+            You can now proceed to the next steps to set up your applications
+            and deployments.
+          </Text>
+        </div>
+      )}
+
+      {/* Original Step Instructions - Always shown */}
+      <div className={`space-y-3 ${stepComplete ? 'opacity-75' : ''}`}>
+        <Text className="text-gray-600 dark:text-gray-400">
+          Welcome! We&rsquo;re preparing to create your organization.
+        </Text>
+        <Text className="text-sm text-gray-500 dark:text-gray-500">
+          Your trial organization will be created automatically.
+        </Text>
+      </div>
     </div>
   )
 }
+
