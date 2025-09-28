@@ -10,6 +10,7 @@ import { CLIInstallStepContent } from './CLIInstallStepContent'
 import { CreateAppStepContent } from './CreateAppStepContent'
 import { InstallCreationStepContent } from './InstallCreationStepContent'
 import { OrgCreationStepContent } from './OrgCreationStepContent'
+import { CommandBlock } from '@/components/CommandBlock'
 import type { TAccount, TUserJourney, TUserJourneyStep } from '@/types'
 import { completeUserJourney } from '@/components/org-actions'
 
@@ -50,47 +51,6 @@ const detectNewlyCompletedStep = (
     }
   }
   return null
-}
-
-const getStepInstructions = (stepName: string) => {
-  switch (stepName) {
-    case 'account_created':
-      return (
-        <div className="space-y-3">
-          <Text className="text-green-600 dark:text-green-400">
-            ✅ Your account has been created successfully!
-          </Text>
-          <Text className="text-sm text-gray-600 dark:text-gray-400">
-            You&rsquo;re now ready to set up your organization and start deploying applications.
-          </Text>
-        </div>
-      )
-    case 'org_created':
-      return null // Will be handled by OrgCreationStepContent component
-    case 'cli_installed':
-      return null // Will be handled by CLIInstallStepContent component
-    case 'app_created':
-      return null // Will be handled by CreateAppStepContent component
-    case 'app_synced':
-      return (
-        <div className="space-y-3">
-          <Text>
-            Navigate to the app config directory and sync your app configuration
-            to make it available for deployment.
-          </Text>
-          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded font-mono text-sm">
-            cd my-app
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded font-mono text-sm">
-            nuon apps sync
-          </div>
-        </div>
-      )
-    case 'install_created':
-      return null // Will be handled by InstallCreationStepContent component
-    default:
-      return null
-  }
 }
 
 export const ProductionReadyChecklistModal: FC<
@@ -174,7 +134,9 @@ export const ProductionReadyChecklistModal: FC<
     } else {
       // Show user-visible error feedback if skip fails
       // eslint-disable-next-line no-console
-      console.warn('Skip All failed - user may need to refresh the page or try again')
+      console.warn(
+        'Skip failed - user may need to refresh the page or try again'
+      )
     }
   }
 
@@ -193,7 +155,7 @@ export const ProductionReadyChecklistModal: FC<
       heading="Get started"
       actions={
         <Button variant="secondary" onClick={handleSkipAll}>
-          Skip All
+          Skip
         </Button>
       }
       className="max-w-2xl"
@@ -208,7 +170,38 @@ export const ProductionReadyChecklistModal: FC<
               isExpanded={expandedItems.includes(step.name)}
               onToggleExpand={() => toggleExpand(step.name)}
             >
-              {step.name === 'org_created' ? (
+              {step.name === 'account_created' ? (
+                <div className="space-y-6">
+                  {/* Success Message - Shown when step is complete */}
+                  {step.complete && (
+                    <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <Text
+                          variant="semi-14"
+                          className="text-green-800 dark:text-green-200"
+                        >
+                          Your account has been created successfully!
+                        </Text>
+                      </div>
+                      <Text className="text-gray-600 dark:text-gray-400">
+                        You&rsquo;re now ready to set up your organization and start
+                        deploying applications.
+                      </Text>
+                    </div>
+                  )}
+
+                  {/* Original Step Instructions - Always shown */}
+                  <div className={`space-y-3 ${step.complete ? 'opacity-75' : ''}`}>
+                    <Text className="text-gray-600 dark:text-gray-400">
+                      Welcome to Nuon! Your account creation is the first step in setting up your deployment platform.
+                    </Text>
+                    <Text className="text-sm text-gray-500 dark:text-gray-500">
+                      With your account created, you can now proceed to create an organization and start managing your applications.
+                    </Text>
+                  </div>
+                </div>
+              ) : step.name === 'org_created' ? (
                 <OrgCreationStepContent stepComplete={step.complete} />
               ) : step.name === 'cli_installed' ? (
                 <CLIInstallStepContent stepComplete={step.complete} />
@@ -217,15 +210,49 @@ export const ProductionReadyChecklistModal: FC<
                   stepComplete={step.complete}
                   appId={step.metadata?.app_id}
                 />
+              ) : step.name === 'app_synced' ? (
+                <div className="space-y-6">
+                  {/* Success Message - Shown when step is complete */}
+                  {step.complete && (
+                    <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <Text
+                          variant="semi-14"
+                          className="text-green-800 dark:text-green-200"
+                        >
+                          App synced successfully!
+                        </Text>
+                      </div>
+                      <Text className="text-gray-600 dark:text-gray-400">
+                        Your app configuration has been synced and builds are in progress. You can now proceed to create an install.
+                      </Text>
+                    </div>
+                  )}
+
+                  {/* Original Step Instructions - Always shown */}
+                  <div className={`space-y-3 ${step.complete ? 'opacity-75' : ''}`}>
+                    <Text>
+                      Navigate to the app config directory and sync your app
+                      configuration to make it available for deployment.
+                    </Text>
+                    <Text>
+                      In addition to syncing your app config, this will trigger
+                      builds to package the component source code for deployment.
+                      You don&apos;t need to wait for these to finish, and can move on
+                      to creating an install.
+                    </Text>
+                    <CommandBlock command="cd my-app" />
+                    <CommandBlock command="nuon apps sync" />
+                  </div>
+                </div>
               ) : step.name === 'install_created' ? (
                 <InstallCreationStepContent
                   stepComplete={step.complete}
-                  onClose={onClose}
+                  onClose={handleSkipAll}
                   installId={step.metadata?.install_id}
                 />
-              ) : (
-                getStepInstructions(step.name)
-              )}
+              ) : null}
             </ChecklistItem>
           ))}
         </div>
@@ -233,4 +260,3 @@ export const ProductionReadyChecklistModal: FC<
     </Modal>
   )
 }
-

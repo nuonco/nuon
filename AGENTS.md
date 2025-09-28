@@ -380,6 +380,230 @@ When starting any new session to work on this monorepo, AI assistants should:
 - Ensure root AGENTS.md reflects current monorepo structure
 - Archive context files in `/graveyard/` when services are fully deprecated
 
+## Local Development with nuonctl
+
+The Nuon monorepo uses a sophisticated development orchestration system built around the `nuonctl` CLI tool. Understanding this system is crucial for effective development and configuration management.
+
+### Development Command Structure
+
+**Primary Development Command:**
+```bash
+./run-nuonctl.sh services dev --dev <service-name>
+```
+
+**Common Usage Examples:**
+```bash
+# Run dashboard UI locally
+./run-nuonctl.sh services dev --dev dashboard-ui
+
+# Run multiple services
+./run-nuonctl.sh services dev --dev dashboard-ui,ctl-api
+
+# Run all services in development mode
+./run-nuonctl.sh services dev --dev-all
+
+# Skip specific services
+./run-nuonctl.sh services dev --dev-all --skip cli,runner
+```
+
+### Configuration Architecture
+
+Nuon uses a **two-tier configuration system** that provides both team consistency and individual flexibility:
+
+#### 1. Service Base Configuration (`service.yml`)
+
+Each service contains a `service.yml` file with default development settings:
+
+```yaml
+# /services/dashboard-ui/service.yml
+env:                    # Local development environment
+  NEXT_PUBLIC_API_URL: 'http://localhost:8081'
+  NUON_WORKFLOWS: true
+  FEATURE_FLAG_NAME: false
+
+docker_env:             # Docker container environment
+  NEXT_PUBLIC_API_URL: 'http://host.nuon.dev:8081'
+  FEATURE_FLAG_NAME: false
+
+local_cmds:             # Commands executed for local development
+  - npm run dev
+
+local_startup_cmds: []  # Commands run before service startup
+```
+
+**Key Sections:**
+- `env:` - Environment variables for local development
+- `docker_env:` - Environment variables when running in Docker containers
+- `local_cmds:` - Commands executed to start the service locally
+- `tests:` - Test configurations and Docker targets
+
+#### 2. User Override System (`~/.nuonctl-env.yml`)
+
+Individual developers can override any service configuration:
+
+```yaml
+# ~/.nuonctl-env.yml
+dashboard-ui:
+  NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING: true
+  NUON_WORKFLOWS: false
+  CUSTOM_DEBUG_FLAG: true
+
+ctl-api:
+  LOG_LEVEL: DEBUG
+  CHAOS_RATE: 1
+
+runner:
+  DISABLE_INSTALL_RUNNER: true
+```
+
+**Override Behavior:**
+- User overrides take **precedence** over service.yml values
+- Only specified values are overridden; others use service.yml defaults
+- Overrides are per-service using the service directory name as the key
+
+### Configuration Merge Process
+
+When `nuonctl services dev` runs:
+
+1. **Load Base Config**: Reads `/services/<service>/service.yml`
+2. **Load User Overrides**: Reads `~/.nuonctl-env.yml` (if exists)
+3. **Merge Configurations**: User overrides take precedence
+4. **Export Environment**: Combined environment variables are exported
+5. **Execute Commands**: Runs `local_cmds` with merged environment
+
+### Adding New Environment Variables
+
+**For Service Defaults (Team-Wide):**
+
+Edit the service's `service.yml` file in both sections:
+```yaml
+env:
+  NEW_FEATURE_FLAG: false        # Local development default
+
+docker_env:
+  NEW_FEATURE_FLAG: false        # Docker container default
+```
+
+**For Individual Testing:**
+
+Add to your personal `~/.nuonctl-env.yml`:
+```yaml
+service-name:
+  NEW_FEATURE_FLAG: true         # Personal override
+```
+
+### Service Management Commands
+
+**Service Discovery:**
+```bash
+# List all available services
+./run-nuonctl.sh services --help
+
+# Available services: ctl-api, dashboard-ui, cli, runner, wiki, docs, website
+```
+
+**Development Modes:**
+```bash
+# Local development (runs npm/go commands directly)
+./run-nuonctl.sh services dev --dev dashboard-ui --dev-type local
+
+# Docker development (runs services in containers)
+./run-nuonctl.sh services dev --dev dashboard-ui --dev-type docker
+```
+
+**Service Control:**
+```bash
+# Watch for file changes and auto-restart (default: enabled)
+./run-nuonctl.sh services dev --dev dashboard-ui --watch
+
+# Disable file watching
+./run-nuonctl.sh services dev --dev dashboard-ui --watch=false
+
+# Pull latest images instead of building locally
+./run-nuonctl.sh services dev --dev dashboard-ui --pull
+
+# Build images locally instead of pulling
+./run-nuonctl.sh services dev --dev dashboard-ui --pull=false
+```
+
+### Environment Variable Debugging
+
+**Enable Debug Mode:**
+```bash
+./run-nuonctl.sh services dev --dev dashboard-ui --debug
+```
+
+This will show:
+- All environment variables being set
+- Configuration merge results
+- Commands being executed
+- Override sources and values
+
+### Common Development Patterns
+
+#### Feature Flag Development
+```yaml
+# ~/.nuonctl-env.yml
+dashboard-ui:
+  NEXT_PUBLIC_NEW_FEATURE: true
+  NUON_EXPERIMENTAL_MODE: true
+```
+
+#### API Endpoint Switching
+```yaml
+# ~/.nuonctl-env.yml
+dashboard-ui:
+  NEXT_PUBLIC_API_URL: 'https://api.nuon-stage.co'  # Point to staging
+  NUON_API_URL: 'https://api.nuon-stage.co'
+```
+
+#### Multi-Service Development
+```bash
+# Run API and UI together with custom configs
+./run-nuonctl.sh services dev --dev ctl-api,dashboard-ui
+```
+
+### Troubleshooting Development Issues
+
+**Configuration Problems:**
+1. Run with `--debug` to see environment variable merge results
+2. Check `~/.nuonctl-env.yml` for conflicting overrides
+3. Verify service.yml syntax with a YAML validator
+
+**Service Startup Issues:**
+1. Check if ports are already in use (default: UI=4000, API=8081)
+2. Verify dependencies are running (e.g., database, temporal)
+3. Look for authentication issues (AWS SSO, Auth0)
+
+**File Change Detection:**
+1. NPM projects have file watching disabled by default
+2. Go services automatically restart on file changes
+3. Use `--watch=false` if auto-restart causes issues
+
+### Integration with Code Generation
+
+**Important**: Many services have code generation steps that must be run when making changes:
+
+```bash
+# Reset and regenerate all code
+./run-nuonctl.sh scripts reset-generated-code
+
+# This is required after:
+# - Adding/modifying Go struct types
+# - Adding @temporal-gen annotations
+# - Changing API endpoint definitions with swagger annotations
+```
+
+### Best Practices for Agents
+
+1. **Always check service.yml first** when working with environment variables
+2. **Use ~/.nuonctl-env.yml for testing** rather than modifying service.yml
+3. **Run with --debug** when troubleshooting configuration issues
+4. **Remember to run code generation** after significant changes
+5. **Check for existing overrides** in ~/.nuonctl-env.yml when debugging
+
+This development system provides powerful flexibility while maintaining team consistency. It allows for rapid iteration and testing without requiring changes to shared configuration files.
+
 ## Project Status
 
 Main branch: `main`
