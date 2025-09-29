@@ -8,8 +8,14 @@ export const getInstallActionsLatestRuns = ({
   offset,
   orgId,
   q,
-}: { installId: string; orgId: string; q?: string } & TPaginationParams) =>
+  trigger_types,
+}: {
+  installId: string
+  orgId: string
+  q?: string
+  trigger_types?: string
+} & TPaginationParams) =>
   api<TInstallAction[]>({
-    path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q })}`,
+    path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q, trigger_types })}`,
     orgId,
   })

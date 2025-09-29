@@ -1,11 +1,14 @@
-import type { TInstall } from '@/types'
-import { queryData } from '@/utils'
-import type { IGetInstalls } from '../shared-interfaces'
+import { api } from "@/lib/api";
+import type { TInstall, TPaginationParams } from "@/types";
+import { buildQueryParams } from "@/utils/build-query-params";
 
-export async function getInstalls({ orgId }: IGetInstalls) {
-  return queryData<Array<TInstall>>({
-    errorMessage: 'Unable to retrieve your installs.',
+export const getInstalls = ({
+  limit,
+  offset,
+  orgId,
+  q,
+}: { orgId: string; q?: string } & TPaginationParams) =>
+  api<TInstall[]>({
+    path: `installs${buildQueryParams({ limit, offset, q })}`,
     orgId,
-    path: 'installs',
-  })
-}
+  });
