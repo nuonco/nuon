@@ -1,5 +1,0 @@
-version = "v2"
-
-description = "Simple Demo"
-display_name = "The simplest demo"
-readme = "./README.md"

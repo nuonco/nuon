@@ -1,7 +1,0 @@
-#:schema https://api.nuon.co/v1/general/config-schema?type=install
-
-name = "app-branch-install"
-approval_option = "approve-all"
-
-[aws_account]
-  region = "us-east-1"

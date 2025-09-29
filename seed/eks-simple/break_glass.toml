@@ -1,7 +1,7 @@
 [[role]]
-name = "sandbox_break_glass"
-description = "grant access to the sandbox"
-display_name = "Sandbox Break Glass"
+name                 = "{{.nuon.install.id}}-eks-simple-sandbox-break-glass"
+description          = "Grants access to the sandbox for install {{.nuon.install.id}}."
+display_name         = "{{.nuon.install.id}} - EKS Simple Sandbox Break Glass"
 permissions_boundary = ""
 
 [[role.policies]]

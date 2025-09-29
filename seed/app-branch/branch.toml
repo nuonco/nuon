@@ -1,6 +1,0 @@
-name = "default"
-
-[connected_repo]
-repo = "powertoolsdev/mono"
-branch = "main"
-directory = "seed/app-branch"

@@ -1,8 +1,0 @@
-type = "deprovision"
-name = "{{.nuon.install.id}}-deprovision"
-description = "deprovision"
-display_name = "deprovision"
-permissions_boundary = "./deprovision_boundary.json"
-
-[[policies]]
-managed_policy_name = "AdministratorAccess"
