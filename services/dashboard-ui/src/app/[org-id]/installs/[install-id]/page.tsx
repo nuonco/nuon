@@ -1,30 +1,23 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
   DashboardContent,
   ErrorFallback,
-  InstallInputs,
-  InstallInputsModal,
   InstallPageSubNav,
   InstallStatuses,
   InstallManagementDropdown,
   Link,
   Loading,
-  Notice,
   Section,
-  SectionHeader,
   Text,
   Time,
-  Markdown,
 } from '@/components'
-import {
-  getInstallById,
-  getInstallCurrentInputs,
-  getInstallReadme,
-} from '@/lib'
+import { getInstallById } from '@/lib'
+import { CurrentInputs } from './inputs'
+import { Readme } from './readme'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -92,11 +85,7 @@ export default async function Install({ params }) {
           </span>
           <InstallStatuses />
 
-          <InstallManagementDropdown
-            orgId={orgId}
-            hasInstallComponents={Boolean(install?.install_components?.length)}
-            install={install}
-          />
+          <InstallManagementDropdown />
         </div>
       }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
@@ -117,7 +106,7 @@ export default async function Install({ params }) {
                 />
               }
             >
-              <LoadInstallReadme installId={installId} orgId={orgId} />
+              <Readme installId={installId} orgId={orgId} />
             </Suspense>
           </ErrorBoundary>
         </Section>
@@ -128,66 +117,12 @@ export default async function Install({ params }) {
               <Suspense
                 fallback={<Loading loadingText="Loading install inputs..." />}
               >
-                <LoadInstallCurrentInputs installId={installId} orgId={orgId} />
+                <CurrentInputs installId={installId} orgId={orgId} />
               </Suspense>
             </ErrorBoundary>
           </Section>
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-const LoadInstallReadme: FC<{ installId: string; orgId: string }> = async ({
-  installId,
-  orgId,
-}) => {
-  const { data: installReadme, error } = await getInstallReadme({
-    installId,
-    orgId,
-  })
-
-  return installReadme && !error ? (
-    <div className="flex flex-col gap-3">
-      {installReadme?.warnings?.length
-        ? installReadme?.warnings?.map((warn, i) => (
-            <Notice key={i.toString()} variant="warn">
-              {warn}
-            </Notice>
-          ))
-        : null}
-      <Markdown content={installReadme?.readme} />
-    </div>
-  ) : (
-    <Text variant="reg-12">No install README found</Text>
-  )
-}
-
-const LoadInstallCurrentInputs: FC<{
-  installId: string
-  orgId: string
-}> = async ({ installId, orgId }) => {
-  const { data: currentInputs } = await getInstallCurrentInputs({
-    installId,
-    orgId,
-  })
-
-  return (
-    <>
-      <SectionHeader
-        actions={
-          currentInputs?.redacted_values ? (
-            <InstallInputsModal currentInputs={currentInputs} />
-          ) : undefined
-        }
-        className="mb-4"
-        heading="Current inputs"
-      />
-      {currentInputs?.redacted_values ? (
-        <InstallInputs currentInputs={currentInputs} />
-      ) : (
-        <Text>No inputs configured.</Text>
-      )}
-    </>
   )
 }

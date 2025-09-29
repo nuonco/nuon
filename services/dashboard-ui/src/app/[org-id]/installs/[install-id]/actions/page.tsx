@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Suspense, type FC } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -7,20 +7,15 @@ import {
   InstallManagementDropdown,
   InstallPageSubNav,
   InstallStatuses,
-  InstallActionWorkflowsTable,
   DashboardContent,
   ErrorFallback,
   Loading,
-  NoActions,
-  Notice,
-  Pagination,
   Section,
   Text,
   Time,
 } from '@/components'
 import { getInstallById } from '@/lib'
-import type { TInstallActionWorkflow } from '@/types'
-import { nueQueryData } from '@/utils'
+import { InstallActions } from './actions'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -71,11 +66,7 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
           </span>
           <InstallStatuses />
 
-          <InstallManagementDropdown
-            orgId={orgId}
-            hasInstallComponents={Boolean(install?.install_components?.length)}
-            install={install}
-          />
+          <InstallManagementDropdown />
         </div>
       }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
@@ -87,7 +78,7 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
               <Loading variant="page" loadingText="Loading actions..." />
             }
           >
-            <LoadInstallActions
+            <InstallActions
               installId={installId}
               orgId={orgId}
               offset={sp['offset'] || '0'}
@@ -98,57 +89,5 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
         </ErrorBoundary>
       </Section>
     </DashboardContent>
-  )
-}
-
-const LoadInstallActions: FC<{
-  installId: string
-  orgId: string
-  limit?: string
-  offset?: string
-  q?: string
-  trigger_types?: string
-}> = async ({ installId, orgId, limit = '10', offset, q, trigger_types }) => {
-  const params = new URLSearchParams({
-    offset,
-    limit,
-    q,
-    trigger_types,
-  }).toString()
-  const {
-    data: actionsWithLatestRun,
-    error,
-    headers,
-  } = await nueQueryData<TInstallActionWorkflow[]>({
-    orgId,
-    path: `installs/${installId}/action-workflows/latest-runs${params ? '?' + params : params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
-  })
-
-  const pageData = {
-    hasNext: headers?.['x-nuon-page-next'] || 'false',
-    offset: headers?.['x-nuon-page-offset'] || '0',
-  }
-
-  return error ? (
-    <Notice className="grow-0 h-max">Can&apos;t load install actions</Notice>
-  ) : actionsWithLatestRun ? (
-    <div className="flex flex-col gap-4 w-full">
-      <InstallActionWorkflowsTable
-        actions={actionsWithLatestRun}
-        installId={installId}
-        orgId={orgId}
-      />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={parseInt(limit)}
-      />
-    </div>
-  ) : (
-    <NoActions />
   )
 }

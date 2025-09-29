@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import {
   CalendarBlankIcon,
@@ -11,7 +11,6 @@ import {
 import {
   ApprovalStep,
   ClickToCopy,
-  ComponentConfiguration,
   ConfigurationVariables,
   DashboardContent,
   DeployStatus,
@@ -24,7 +23,6 @@ import {
   LogStreamProvider,
   OperationLogsSection,
   RunnerJobPlanModal,
-  StatusBadge,
   Section,
   Text,
   Time,
@@ -32,8 +30,9 @@ import {
   Truncate,
 } from '@/components'
 import { getInstallById, getDeployById, getWorkflowById } from '@/lib'
-import type { TBuild, TComponentConfig } from '@/types'
-import { CANCEL_RUNNER_JOBS, sizeToMbOrGB, nueQueryData } from '@/utils'
+import { CANCEL_RUNNER_JOBS, sizeToMbOrGB } from '@/utils'
+import { Build } from './build'
+import { ComponentConfig } from './config'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -326,7 +325,11 @@ export default async function InstallComponentDeploy({ params }) {
                   />
                 }
               >
-                <LoadComponentBuild buildId={deploy.build_id} orgId={orgId} />
+                <Build
+                  buildId={deploy.build_id}
+                  componentId={componentId}
+                  orgId={orgId}
+                />
               </Suspense>
             </ErrorBoundary>
           </Section>
@@ -355,8 +358,9 @@ export default async function InstallComponentDeploy({ params }) {
                   />
                 }
               >
-                <LoadComponentConfig
-                  buildId={deploy.build_id}
+                <ComponentConfig
+                  appConfigId={install?.app_config_id}
+                  appId={install?.app_id}
                   componentId={deploy.component_id}
                   orgId={orgId}
                 />
@@ -384,71 +388,5 @@ export default async function InstallComponentDeploy({ params }) {
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-// load component build
-const LoadComponentBuild: FC<{ buildId: string; orgId: string }> = async ({
-  buildId,
-  orgId,
-}) => {
-  const { data: build, error } = await nueQueryData<TBuild>({
-    orgId,
-    path: `components/builds/${buildId}`,
-  })
-
-  return build && !error ? (
-    <div className="flex items-start justify-start gap-6">
-      <span className="flex flex-col gap-2">
-        <StatusBadge
-          description={build.status_description}
-          status={build.status}
-          label="Status"
-        />
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Build date
-        </Text>
-        <Time time={build.created_at} />
-      </span>
-
-      <span className="flex flex-col gap-2">
-        <Text className="text-cool-grey-600 dark:text-cool-grey-500">
-          Build duration
-        </Text>
-        <Duration beginTime={build.created_at} endTime={build.updated_at} />
-      </span>
-    </div>
-  ) : (
-    <Text>No component build found.</Text>
-  )
-}
-
-// load component config
-const LoadComponentConfig: FC<{
-  componentId: string
-  buildId: string
-  orgId: string
-}> = async ({ componentId, buildId, orgId }) => {
-  const { data: build, error: buildError } = await nueQueryData<TBuild>({
-    orgId,
-    path: `components/builds/${buildId}`,
-  })
-
-  const { data: componentConfig, error } = await nueQueryData<TComponentConfig>(
-    {
-      orgId,
-      path: `components/${componentId}/configs/${build?.component_config_connection_id}`,
-    }
-  )
-
-  return buildError || error ? (
-    <Text>{buildError?.error || error?.error}</Text>
-  ) : componentConfig ? (
-    <ComponentConfiguration config={componentConfig} hideHelmValuesFile />
-  ) : (
-    <Text>No component config found.</Text>
   )
 }

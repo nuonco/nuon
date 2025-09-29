@@ -1,26 +1,23 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { DownloadSimpleIcon, FileCodeIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { ClickToCopyButton } from '@/components/ClickToCopy'
-import { CodeViewer } from '@/components/Code'
+import { CodeBlock } from '@/components/CodeBlock'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
 
-interface IGenerateInstallConfigButton {
-  installId: string
-  orgId: string
-}
-
-export const GenerateInstallConfigModal: FC<IGenerateInstallConfigButton> = ({
-  installId,
-  orgId,
-}) => {
+// TODO(nnnnat): refactor to use-query and new api/orgs endpoint
+export const GenerateInstallConfigModal = () => {
+  const { org } = useOrg()
+  const { install } = useInstall()
   const [isOpen, setIsOpen] = useState(false)
-  const [config, setConfig] = useState("")
+  const [config, setConfig] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState()
 
@@ -28,7 +25,7 @@ export const GenerateInstallConfigModal: FC<IGenerateInstallConfigButton> = ({
     if (isOpen) {
       try {
         fetch(
-          `/api/${orgId}/installs/${installId}/generate-cli-install-config`
+          `/api/${org.id}/installs/${install.id}/generate-cli-install-config`
         ).then((r) =>
           r.text().then((res) => {
             setIsLoading(false)
@@ -72,7 +69,7 @@ export const GenerateInstallConfigModal: FC<IGenerateInstallConfigButton> = ({
                       textToCopy={config}
                     />
                     <div className="overflow-auto max-h-[600px]">
-                      <CodeViewer initCodeSource={config} language="toml" />
+                      <CodeBlock language="toml">{config}</CodeBlock>
                     </div>
                   </div>
                 )}
@@ -87,7 +84,7 @@ export const GenerateInstallConfigModal: FC<IGenerateInstallConfigButton> = ({
                   Close
                 </Button>
                 <a
-                  href={`/api/${orgId}/installs/${installId}/generate-cli-install-config`}
+                  href={`/api/${org.id}/installs/${install.id}/generate-cli-install-config`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
