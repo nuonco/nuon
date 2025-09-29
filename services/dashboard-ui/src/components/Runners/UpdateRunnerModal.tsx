@@ -5,34 +5,43 @@ import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0'
 import { CheckIcon, ArrowsCounterClockwiseIcon } from '@phosphor-icons/react'
+import { updateRunner } from '@/actions/runners/update-runner'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
 import { Input } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { updateRunner } from '@/components/runner-actions'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
 import type { TRunnerGroupSettings } from '@/types'
 
 interface IUpdateRunnerModal {
   runnerId: string
   settings: TRunnerGroupSettings
-  orgId: string
 }
 
 export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
   runnerId,
   settings,
-  orgId,
 }) => {
-  const pathName = usePathname()
+  const path = usePathname()
   const { user } = useUser()
+  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [tag, setTag] = useState<string>()
-  const [error, setError] = useState<string>()
+
+  const {
+    data: isUpdated,
+    error,
+    execute,
+    headers,
+    isLoading,
+  } = useServerAction({
+    action: updateRunner,
+  })
 
   useEffect(() => {
     const kickoff = () => setIsKickedOff(false)
@@ -45,6 +54,32 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
       }
     }
   }, [isKickedOff])
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'runner_update',
+        user,
+        status: 'error',
+        props: {
+          orgId: org.id,
+          runnerId,
+          err: error?.error,
+        },
+      })
+    }
+
+    if (isUpdated) {
+      trackEvent({
+        event: 'runner_update',
+        user,
+        status: 'ok',
+        props: { orgId: org.id, runnerId },
+      })
+
+      setIsOpen(false)
+    }
+  }, [isUpdated, error, headers])
 
   return (
     <>
@@ -66,11 +101,11 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
-                  setIsLoading(true)
-                  updateRunner({
+                  setIsKickedOff(true)
+                  execute({
                     runnerId,
-                    orgId,
-                    path: pathName,
+                    orgId: org.id,
+                    path,
                     body: {
                       container_image_tag: tag || '',
                       container_image_url: settings?.container_image_url,
@@ -79,39 +114,15 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
                         settings?.org_k8s_service_account_name,
                       runner_api_url: settings?.runner_api_url,
                     },
-                  }).then((res) => {
-                    if (res?.error) {
-                      trackEvent({
-                        event: 'runner_update',
-                        user,
-                        status: 'error',
-                        props: {
-                          orgId,
-                          runnerId,
-                          err: res.error?.error,
-                        },
-                      })
-                      setError(
-                        res?.error?.error ||
-                          'Error occured, please refresh page and try again.'
-                      )
-                      setIsLoading(false)
-                    } else {
-                      trackEvent({
-                        event: 'runner_update',
-                        user,
-                        status: 'ok',
-                        props: { orgId, runnerId },
-                      })
-                      setIsLoading(false)
-                      setIsKickedOff(true)
-                      setIsOpen(false)
-                    }
                   })
                 }}
               >
                 <div className="flex flex-col gap-4 mb-8">
-                  {error ? <Notice>{error}</Notice> : null}
+                  {error ? (
+                    <Notice>
+                      {error?.error || 'Unable to update runner.'}
+                    </Notice>
+                  ) : null}
                   <Text variant="med-18">
                     Update to a different runner version.
                   </Text>
@@ -143,10 +154,10 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
                     className="text-sm flex items-center gap-1"
                     variant="primary"
                   >
-                    {isKickedOff ? (
-                      <CheckIcon size="18" />
-                    ) : isLoading ? (
+                    {isLoading ? (
                       <SpinnerSVG />
+                    ) : isKickedOff ? (
+                      <CheckIcon size="18" />
                     ) : (
                       <ArrowsCounterClockwiseIcon size="18" />
                     )}{' '}
@@ -159,7 +170,8 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
+        variant="ghost"
         onClick={() => {
           setIsOpen(true)
         }}
