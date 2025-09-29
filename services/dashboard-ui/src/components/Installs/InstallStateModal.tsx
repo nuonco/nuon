@@ -1,42 +1,20 @@
 'use client'
 
-import React, { type FC, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CodeBlock } from '@phosphor-icons/react'
+import { CodeBlockIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { ClickToCopyButton } from '@/components/ClickToCopy'
 import { JsonView } from '@/components/Code'
 import { Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import type { TInstall } from '@/types'
+import { useQuery } from '@/hooks/use-query'
 
-interface IInstallStateModal {
-  install: TInstall
-}
-
-export const InstallStateModal: FC<IInstallStateModal> = ({ install }) => {
-  const { org } = useOrg()
+export const InstallStateModal = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const [state, setState] = useState()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState()
-
-  useEffect(() => {
-    if (isOpen) {
-      fetch(`/api/${org?.id}/installs/${install?.id}/state`).then((r) =>
-        r.json().then((res) => {
-          setIsLoading(false)
-          if (res?.error) {
-            setError(res?.error?.error || 'Unable to fetch install state')
-          } else {
-            setState(res.data)
-          }
-        })
-      )
-    }
-  }, [isOpen])
 
   return (
     <>
@@ -55,25 +33,7 @@ export const InstallStateModal: FC<IInstallStateModal> = ({ install }) => {
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-4 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
-                {isLoading ? (
-                  <Loading
-                    loadingText="Loading install state..."
-                    variant="stack"
-                  />
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    <ClickToCopyButton
-                      className="w-fit self-end"
-                      textToCopy={JSON.stringify(state)}
-                    />
-                    <div className="overflow-auto max-h-[600px]">
-                      <JsonView data={state} />
-                    </div>
-                  </div>
-                )}
-              </div>
+              <InstallState />
               <div className="flex gap-3 justify-end">
                 <Button
                   onClick={() => {
@@ -96,9 +56,43 @@ export const InstallStateModal: FC<IInstallStateModal> = ({ install }) => {
           setIsOpen(true)
         }}
       >
-        <CodeBlock size="16" />
+        <CodeBlockIcon size="16" />
         View state
       </Button>
     </>
+  )
+}
+
+const InstallState = () => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+
+  const {
+    data: state,
+    error,
+    isLoading,
+  } = useQuery<Record<string, any>>({
+    path: `/api/orgs/${org?.id}/installs/${install?.id}/state`,
+  })
+
+  return (
+    <div className="flex flex-col gap-4 mb-6">
+      {error ? (
+        <Notice>{error?.error || 'Unable to load install state.'}</Notice>
+      ) : null}
+      {isLoading ? (
+        <Loading loadingText="Loading install state..." variant="stack" />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <ClickToCopyButton
+            className="w-fit self-end"
+            textToCopy={JSON.stringify(state)}
+          />
+          <div className="overflow-auto max-h-[600px]">
+            <JsonView data={state} />
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

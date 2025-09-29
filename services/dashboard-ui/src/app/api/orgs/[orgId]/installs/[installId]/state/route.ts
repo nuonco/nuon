@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getInstallById } from '@/lib'
+import { getInstallState } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -7,6 +7,6 @@ export async function GET(
   { params }: TRouteProps<'orgId' | 'installId'>
 ) {
   const { installId, orgId } = await params
-  const response = await getInstallById({ installId, orgId })
+  const response = await getInstallState({ installId, orgId })
   return NextResponse.json(response)
 }

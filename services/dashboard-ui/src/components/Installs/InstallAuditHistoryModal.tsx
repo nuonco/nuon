@@ -7,11 +7,13 @@ import { Button } from '@/components/Button'
 import { RadioInput } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
+
 interface IInstallAuditHistoryModal {
   installId: string
   orgId: string
 }
 
+// TODO(nnnnat): refactor to new api/orgs endpoint
 export const InstallAuditHistoryModal: FC<IInstallAuditHistoryModal> = ({
   installId,
   orgId,
