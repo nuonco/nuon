@@ -70,7 +70,7 @@ export function CodeBlock({
   return (
     <Prism
       className={cn(
-        '!m-0 !p-0 !text-sm !rounded-md !shadow-sm min-h-[3rem] max-h-[40rem] overflow-auto',
+        '!m-0 !p-4 !text-sm !rounded-md !shadow-sm min-h-[3rem] max-h-[40rem] overflow-auto',
         className
       )}
       language={language}
