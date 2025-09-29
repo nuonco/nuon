@@ -44,11 +44,15 @@ timeout = "30s"
 
 [[triggers]] type = "manual"
 
-[[steps]] name = "kubectl logs" inline_contents = """ #!/usr/bin/env sh kubectl
-logs -n $NAMESPACE --all-containers=true -l app.kubernetes.io/name=ctl-api-api
+[[steps]]
+name            = "kubectl logs"
+inline_contents = """
+#!/usr/bin/env sh
+kubectl logs -n $NAMESPACE --all-containers=true -l app.kubernetes.io/name=ctl-api-api
 """
 
-[steps.env_vars] NAMESPACE = "default"
+[steps.env_vars]
+NAMESPACE = "default"
 
 ````
 </CodeGroup>
