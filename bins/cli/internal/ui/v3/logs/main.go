@@ -25,7 +25,10 @@ import (
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
+
+var maxSidebarWidth = 90
 
 type model struct {
 	// configs and api client
@@ -54,7 +57,11 @@ type model struct {
 	searchEnabled bool
 	searchTerm    string
 
-	altscreen bool
+	altscreen    bool
+	width        int
+	height       int
+	mainHeight   int // for table and sidebar (main isn't a real object, just a concept)
+	sidebarWidth int
 
 	// components
 	message     string
@@ -76,7 +83,7 @@ func initialModel(
 ) model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205")) // .Padding(0, 0, 0, 1)
+	s.Style = lipgloss.NewStyle().Foreground(styles.PrimaryColor) // .Padding(0, 0, 0, 1)
 	m := model{
 		ctx: ctx,
 		cfg: cfg,
@@ -86,7 +93,7 @@ func initialModel(
 		deploy_id:    deploy_id,
 		logstream_id: logstream_id,
 
-		loading: false,
+		loading: true,
 		spinner: s,
 
 		logs: map[string]*models.AppOtelLogRecord{},
@@ -98,7 +105,6 @@ func initialModel(
 		keys:      keys,
 		altscreen: true,
 	}
-
 	table := m.initTable()
 	m.table = table
 	return m
@@ -119,6 +125,60 @@ func (m *model) setLoading(v bool) {
 	// not really used to set loading to false, that happens downstream usually
 	m.loading = v
 }
+func (m *model) resize() {
+	// when the window resizes, we need to set the width of our components
+	vMargin := lipgloss.Height(m.headerView()) + lipgloss.Height(m.footerView()) + 2
+	hMargin := 2
+	m.mainHeight = m.height - vMargin
+	m.sidebarWidth = max(maxSidebarWidth, int(m.width/3)) - 4 // minus margin. stored here so we can access everywhere.
+
+	// header search input
+	m.searchInput.Width = m.width - hMargin - lipgloss.Width(m.spinner.View()) - 3 // 3 is the width of the caret
+
+	// logs table
+	m.table.SetHeight(m.height - vMargin)
+	if m.selectedLog == nil {
+		m.table.SetWidth(m.width - hMargin)
+	} else {
+		m.table.SetWidth(m.width - (hMargin + m.sidebarWidth + 2)) // minus additional padding
+	}
+	m.resizeTableColumns()
+
+	// 3 is the height of the modal header (8 and 6 are scaling factors)
+	m.details.Width = m.sidebarWidth
+	m.details.Height = m.height - vMargin
+	m.help.Width = m.width
+	m.setMessage(fmt.Sprintf("resize: w: %d h: %d - table(%d x %d) sidebar(%d x %d)", m.width, m.height, m.table.Width(), m.table.Height(), m.details.Width, m.details.Height))
+}
+
+func (m *model) handleResize(msg tea.WindowSizeMsg) {
+	m.width = msg.Width
+	m.height = msg.Height
+	m.resize()
+}
+
+func (m *model) setSelected() {
+	row := m.table.SelectedRow()
+	// TODO: apply filter and keep an extra list of filtered rows
+	if len(m.logs) > 1 {
+		selectedLog, ok := m.logs[row[0]]
+		if ok {
+			m.selectedLog = selectedLog
+			// resize everything
+			m.resize()
+			// set content
+			m.details.SetContent(m.getDetailContent())
+		} else {
+			m.setMessage(fmt.Sprintf("[selected] log with id:%s not found", row[0]))
+		}
+	}
+}
+
+func (m *model) resetSelected() {
+	m.selectedLog = nil
+	m.table.SetWidth(m.width - 2)
+	m.resizeTableColumns()
+}
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -133,22 +193,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// handle re-size
 	case tea.WindowSizeMsg:
-		// when the window resizes, we need to set the width of our components
-		vMarginHeight := lipgloss.Height(m.headerView()) + lipgloss.Height(m.footerView()) + 1
-		hMargin := 2
-
-		// header search input
-		m.searchInput.Width = msg.Width - hMargin - lipgloss.Width(m.spinner.View()) - 3 // 3 is the width of the caret
-
-		// logs table
-		m.table.SetWidth(msg.Width - hMargin)
-		m.table.SetHeight(msg.Height - vMarginHeight) // idk why we need the three here
-		m.resizeTableColumns()
-
-		// 3 is the height of the modal header (8 and 6 are scaling factors)
-		m.details = viewport.New(msg.Width-4, msg.Height-vMarginHeight-2) // idk where this 2 comes from
-		m.help.Width = msg.Width
-		m.setMessage(fmt.Sprintf("resize: w: %d h: %d - table(%d x %d)", msg.Width, msg.Height, m.table.Width(), m.table.Height()))
+		m.handleResize(msg)
 
 	// handle keys
 	case tea.KeyMsg:
@@ -157,6 +202,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
+			m.resize()
 
 		case key.Matches(msg, m.keys.Enter):
 			if m.searchEnabled && m.searchInput.Focused() {
@@ -166,18 +212,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.table.Focus()
 			} else if len(m.logs) > 0 && len(m.table.Rows()) > 0 {
 				// set the selectedLog to the log corresponding to selected row's log id
-				row := m.table.SelectedRow()
-				// TODO: apply filter and keep an extra list of filtered rows
-				if len(m.logs) > 1 { // gt 1 because we raise the
-					selectedLog, ok := m.logs[row[0]]
-					if ok {
-						m.selectedLog = selectedLog
-						m.details.SetContent(m.getDetailContent())
-					} else {
-						m.setMessage(fmt.Sprintf("[selected] log with id:%s not found", row[0]))
-					}
-				}
-
+				m.setSelected()
 			}
 
 		case key.Matches(msg, m.keys.Copy):
@@ -203,10 +238,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 
 		case key.Matches(msg, m.keys.Esc):
-
 			if m.selectedLog != nil {
 				// if the model is open, close the modal
-				m.selectedLog = nil
+				m.resetSelected()
 			} else if m.searchEnabled {
 				// if there is a search term, reset the field and focus the table
 				m.ResetSearchInput()
@@ -240,45 +274,60 @@ func (m model) headerView() string {
 	}
 	if m.searchEnabled {
 		s += m.searchInput.View()
-		return headerStyleActive.Render(lipgloss.JoinHorizontal(lipgloss.Top, s, spinner)) + "\n"
+		return headerStyleActive.Render(lipgloss.JoinHorizontal(lipgloss.Top, s, spinner))
 	}
 	s += fmt.Sprintf("Logs for Install:%s deploy:%s", m.install_id, m.deploy_id)
 
-	return headerStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, s, spinner)) + "\n"
+	return headerStyle.Width(m.width - 2).Render(lipgloss.JoinHorizontal(lipgloss.Top, s, spinner))
 }
 
 func (m model) footerView() string {
-	s := ""
+	sections := []string{}
 	if m.searchTerm != "" {
-		s += fmt.Sprintf("Matches: %d | ", len(m.table.Rows()))
+		sections = append(sections, styles.TextSubtle.Width(m.width).Render(fmt.Sprintf("Matches: %d | ", len(m.table.Rows()))))
 	}
-	s += fmt.Sprintf("Total Rows: %d", len(m.logs))
-	if !m.help.ShowAll {
-		s += "          " + "\n"
-	}
-	s += messageStyle.Render("> "+m.message) + "\n"
-
-	// Help View
-	s += m.help.View(m.keys)
-	return s
+	sections = append(sections, (styles.TextSubtle.Width(m.width).Render(fmt.Sprintf("Total Rows: %d", len(m.logs)))))
+	sections = append(sections, styles.LogMessageStyle.Render("> "+m.message))
+	sections = append(sections, m.help.View(m.keys))
+	return lipgloss.JoinVertical(lipgloss.Top, sections...)
 }
 
 func (m model) View() string {
-	s := ""
-	// HEADER
-	s += m.headerView()
+	// easy sections
+	header := m.headerView()
+	footer := m.footerView()
 
 	// Main Content
-	if m.selectedLog != nil {
-		s += logModal.Render(m.details.View()) + "\n"
+	main := ""
+	tableStyle := appStyle
+	if m.table.Focused() && m.selectedLog == nil {
+		tableStyle = appStyle.BorderForeground(styles.BorderActiveColor)
 	} else {
+		tableStyle = appStyle.BorderForeground(styles.BorderInactiveColor)
+	}
+	tableView := tableStyle.Render(m.table.View())
 
-		s += appStyle.Render(m.table.View()) + "\n"
+	if m.selectedLog == nil {
+		main = tableView
+	} else {
+		tableView = tableStyle.
+			Width(m.table.Width()).
+			Height(m.mainHeight).
+			Render(m.table.View())
+		logView := logModal.
+			Width(m.sidebarWidth).
+			Height(m.mainHeight).
+			BorderForeground(styles.BorderActiveColor).
+			Render(m.details.View())
+		main = lipgloss.JoinHorizontal(lipgloss.Left, tableView, logView)
 	}
 
-	// Metadata Footer
-	s += m.footerView()
-	return s
+	// compose view
+	view := lipgloss.JoinVertical(
+		lipgloss.Top,
+		header, main, footer,
+	)
+	return view
 }
 
 func MakeMeAnApp(

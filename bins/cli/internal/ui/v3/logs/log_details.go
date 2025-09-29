@@ -4,13 +4,14 @@ import (
 	"math"
 
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/bubbles/viewport"
+	"github.com/charmbracelet/lipgloss"
+	// "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 var readOnlyTableStyles = table.Styles{
 	Selected: logModalBase,
 	Header:   logModalBase.Bold(true).Padding(0, 1, 1, 0),
-	Cell:     logModalBase.Padding(0, 2),
+	Cell:     logModalBase.Padding(0, 1),
 }
 
 func (m model) getLogAttributesTable() table.Model {
@@ -40,6 +41,7 @@ func (m model) getLogAttributesTable() table.Model {
 		table.WithFocused(true),
 		table.WithStyles(readOnlyTableStyles),
 		table.WithFocused(false),
+		table.WithWidth(m.sidebarWidth),
 	)
 	return logAttributesTable
 }
@@ -72,34 +74,51 @@ func (m model) getResourceAttributesTable() table.Model {
 		table.WithFocused(true),
 		table.WithStyles(readOnlyTableStyles),
 		table.WithFocused(false),
+		table.WithWidth(m.sidebarWidth),
 	)
 	return resourceAttributesTable
 }
 
-func (m model) getLogBodyViewport(body string) viewport.Model {
-	bodyViewportWidth := m.details.Width - 4
-	rows := float64(len(body)) / float64(bodyViewportWidth)
-	bodyViewportHeight := int(math.Ceil(rows))
-	vp := viewport.New(bodyViewportWidth, bodyViewportHeight)
-	vp.SetContent(body)
-	return vp
+func (m model) getLogBody(body string) string {
+	// returns a body within a box of the right size.
+	width := m.sidebarWidth - 4 // minus whitespace
+	height := int(math.Ceil(float64(len(body)) / float64(width)))
+	return logText.Width(width).Height(height).Render(body)
 }
 
 func (m model) getDetailContent() string {
-	s := ""
-	s += dimTitle.Render("Body:") + "\n"
-	vp := m.getLogBodyViewport(m.selectedLog.Body)
-	s += logText.Render(vp.View()) + "\n\n"
-
+	sections := []string{}
+	// body
+	sections = append(sections,
+		lipgloss.NewStyle().Width(m.sidebarWidth).Padding(1).Render(
+			lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				dimTitle.Width(m.sidebarWidth-2).Render("Body:"),
+				m.getLogBody(m.selectedLog.Body),
+			),
+		),
+	)
 	// resource attributes table
-	resourceAttributesTable := m.getResourceAttributesTable()
-	s += "\n" + dimTitle.Render("Resource Attributes:") + "\n"
-	s += logTable.Render(resourceAttributesTable.View()) + "\n"
+	sections = append(sections,
+		lipgloss.NewStyle().Width(m.sidebarWidth-2).Padding(1).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				dimTitle.Render("Resource Attributes:"),
+				logTable.Render(m.getResourceAttributesTable().View()),
+			),
+		),
+	)
 
 	// log attributes table
-	logAttributesTable := m.getLogAttributesTable()
-	s += "\n" + dimTitle.Render("Log Attributes:") + "\n"
-	s += logTable.Render(logAttributesTable.View()) + "\n"
+	sections = append(sections,
+		lipgloss.NewStyle().Width(m.sidebarWidth-2).Padding(1).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				dimTitle.Render("Log Attributes:"),
+				logTable.Render(m.getLogAttributesTable().View()),
+			),
+		),
+	)
 
-	return "\n" + s + "\n"
+	return lipgloss.JoinVertical(lipgloss.Top, sections...)
 }
