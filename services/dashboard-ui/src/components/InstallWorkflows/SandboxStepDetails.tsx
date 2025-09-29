@@ -24,7 +24,7 @@ export const SandboxStepDetails = ({
     error,
   } = usePolling<TSandboxRun>({
     initIsLoading: true,
-    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/runs/${step?.step_target_id}`,
+    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`,
     pollInterval,
     shouldPoll,
   })
