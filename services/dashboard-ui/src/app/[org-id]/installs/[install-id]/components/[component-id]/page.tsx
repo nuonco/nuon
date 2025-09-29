@@ -1,13 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr'
 import {
-  ClickToCopyButton,
-  ComponentConfiguration,
-  ComponentDependencies,
-  CodeViewer,
   DashboardContent,
   ErrorFallback,
   InstallComponentManagementDropdown,
@@ -16,23 +12,13 @@ import {
   Section,
   Text,
 } from '@/components'
-import {
-  TerraformWorkspace,
-  ValuesFileModal,
-} from '@/components/InstallSandbox'
-import {
-  getInstallById,
-  getInstallComponentOutputs,
-  getInstallComponentById,
-  getOrgById,
-} from '@/lib'
-import type {
-  TAppConfig,
-  TComponent,
-  TInstall,
-} from '@/types'
-import { nueQueryData } from '@/utils'
+import { TerraformWorkspace } from '@/components/InstallSandbox'
+import { getInstallById, getInstallComponentById, getOrgById } from '@/lib'
+
+import { ComponentConfig } from './config'
+import { ComponentDependencies } from './dependencies'
 import { Deploys } from './deploys'
+import { LatestOutputs } from './outputs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -103,7 +89,7 @@ export default async function InstallComponent({ params, searchParams }) {
       heading={component.name}
       headingUnderline={component.id}
       statues={
-        <div className="flex gap-8">        
+        <div className="flex gap-8">
           <InstallComponentManagementDropdown
             componentId={installComponent?.component_id}
             componentName={installComponent?.component?.name}
@@ -137,7 +123,7 @@ export default async function InstallComponent({ params, searchParams }) {
                   />
                 }
               >
-                <LoadComponentConfig
+                <ComponentConfig
                   componentId={componentId}
                   install={install}
                   orgId={orgId}
@@ -149,7 +135,7 @@ export default async function InstallComponent({ params, searchParams }) {
                 <Suspense
                   fallback={<Loading loadingText="Loading latest outputs..." />}
                 >
-                  <LoadLatestOutputs
+                  <LatestOutputs
                     componentId={componentId}
                     installId={installId}
                     orgId={orgId}
@@ -195,7 +181,7 @@ export default async function InstallComponent({ params, searchParams }) {
                     />
                   }
                 >
-                  <LoadComponentDependencies
+                  <ComponentDependencies
                     component={component}
                     orgId={orgId}
                     installId={installId}
@@ -228,85 +214,5 @@ export default async function InstallComponent({ params, searchParams }) {
         </div>
       </div>
     </DashboardContent>
-  )
-}
-
-const LoadLatestOutputs: FC<{
-  componentId: string
-  installId: string
-  orgId: string
-}> = async ({ componentId, installId, orgId }) => {
-  const { data: outputs, error } = await getInstallComponentOutputs({
-    componentId,
-    installId,
-    orgId,
-  })
-
-  return outputs && !error ? (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <Text variant="med-12">Outputs</Text>
-        <ClickToCopyButton textToCopy={JSON.stringify(outputs)} />
-      </div>
-      <CodeViewer
-        initCodeSource={JSON.stringify(outputs, null, 2)}
-        language="json"
-      />
-    </div>
-  ) : null
-}
-
-const LoadComponentConfig: FC<{
-  install: TInstall
-  componentId: string
-  orgId: string
-}> = async ({ componentId, install, orgId }) => {
-  const { data: config, error } = await nueQueryData<TAppConfig>({
-    orgId,
-    path: `apps/${install?.app_id}/config/${install?.app_config_id}?recurse=true`,
-  })
-
-  const componentConfig = config?.component_config_connections?.find(
-    (c) => c.component_id === componentId
-  )
-
-  return error ? (
-    <Text>{error?.error}</Text>
-  ) : componentConfig ? (
-    <>
-      <ComponentConfiguration config={componentConfig} isNotTruncated />
-      {componentConfig?.terraform_module?.variables_files?.length ? (
-        <ValuesFileModal
-          valuesFiles={componentConfig?.terraform_module?.variables_files}
-        />
-      ) : null}
-    </>
-  ) : (
-    <Text>No component config found.</Text>
-  )
-}
-
-const LoadComponentDependencies: FC<{
-  component: TComponent
-  installId: string
-  orgId: string
-}> = async ({ component, installId, orgId }) => {
-  const { data, error } = await nueQueryData<Array<TComponent>>({
-    orgId,
-    path: `components/${component?.id}/dependencies`,
-  })
-
-  return (
-    <div className="flex items-center gap-4">
-      {error ? (
-        <Text>{error?.error}</Text>
-      ) : (
-        <ComponentDependencies
-          deps={data}
-          installId={installId}
-          name={component?.name}
-        />
-      )}
-    </div>
   )
 }
