@@ -4,11 +4,10 @@ import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0'
-import { CheckIcon, ArrowClockwiseIcon } from '@phosphor-icons/react'
-import { shutdownRunner } from '@/actions/runners/shutdown-runner'
+import { CheckIcon, CloudArrowDownIcon } from '@phosphor-icons/react'
+import { shutdownInstance } from '@/actions/runners/shutdown-instance'
 import { Button } from '@/components/Button'
 import { SpinnerSVG } from '@/components/Loading'
-import { CheckboxInput } from '@/components/Input'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
@@ -16,17 +15,16 @@ import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/utils'
 
-interface IShutdownRunnerModal {
+interface IShutdownInstanceModal {
   runnerId: string
 }
 
-export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
+export const ShutdownInstanceModal: FC<IShutdownInstanceModal> = ({ runnerId }) => {
   const path = usePathname()
   const { user } = useUser()
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  const [force, setForce] = useState<boolean>(false)
 
   const {
     data: isShutdown,
@@ -35,7 +33,7 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
     headers,
     isLoading,
   } = useServerAction({
-    action: shutdownRunner,
+    action: shutdownInstance,
   })
 
   useEffect(() => {
@@ -53,7 +51,7 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
   useEffect(() => {
     if (error) {
       trackEvent({
-        event: 'runner_shutdown',
+        event: 'runner_shutdown_instance',
         user,
         status: 'error',
         props: {
@@ -66,7 +64,7 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
 
     if (isShutdown) {
       trackEvent({
-        event: 'runner_shutdown',
+        event: 'runner_shutdown_instance',
         user,
         status: 'ok',
         props: { orgId: org.id, runnerId },
@@ -82,7 +80,7 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
         ? createPortal(
             <Modal
               className="!max-w-xl"
-              heading="Shutdown runner?"
+              heading="Shutdown runner instance?"
               isOpen={isOpen}
               onClose={() => {
                 setIsOpen(false)
@@ -91,46 +89,14 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
               <div className="flex flex-col gap-4 mb-8">
                 {error ? (
                   <Notice>
-                    {error?.error || 'Unable to shutdown runner.'}
+                    {error?.error || 'Unable to shutdown runner instance.'}
                   </Notice>
                 ) : null}
-                <Text variant="med-18">Shutdown this runner gracefully.</Text>
+                <Text variant="med-18">Shutdown this runner instance.</Text>
                 <Text variant="reg-14" className="leading-relaxed max-w-md">
-                  The runner will make a best effort to shut down after any
-                  queued jobs are complete.
-                </Text>
-
-                <ul className="flex flex-col gap-1 list-disc pl-4">
-                  <li className="text-sm">
-                    Causes all jobs to queue while the runner restarts
-                  </li>
-                  <li className="text-sm">
-                    Any new version updates will be applied
-                  </li>
-                  <li className="text-sm">All local state will be refreshed</li>
-                </ul>
-
-                <div className="flex items-start">
-                  <CheckboxInput
-                    name="ack"
-                    defaultChecked={force}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setForce(Boolean(e?.currentTarget?.checked))
-                    }}
-                    className="mt-1.5"
-                    labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-sm !items-start"
-                    labelText={
-                      <span className="flex flex-col gap-1">
-                        <Text variant="med-12">Force shutdown</Text>
-                        <Text className="!font-normal" variant="reg-12">
-                          Immediately shutdown the runner, terminating any
-                          in-flight jobs. This has the potential for loss of
-                          state.
-                        </Text>
-                      </span>
-                    }
-                  />
-                </div>
+                  The runner VM will be shutdown and restarted.
+                </Text>                
+                
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -145,12 +111,10 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
                   className="text-sm flex items-center gap-1"
                   onClick={() => {
                     setIsKickedOff(true)
-
                     execute({
                       runnerId,
                       orgId: org.id,
                       path,
-                      force,
                     })
                   }}
                   variant="primary"
@@ -160,9 +124,9 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
                   ) : isKickedOff ? (
                     <CheckIcon size="18" />
                   ) : (
-                    <ArrowClockwiseIcon size="18" />
+                    <CloudArrowDownIcon size="18" />
                   )}{' '}
-                  Shutdown runner
+                  Shutdown instance
                 </Button>
               </div>
             </Modal>,
@@ -176,8 +140,8 @@ export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
           setIsOpen(true)
         }}
       >
-        <ArrowClockwiseIcon size="16" />
-        Shutdown runner
+        <CloudArrowDownIcon size="16" />
+        Shutdown instance
       </Button>
     </>
   )
