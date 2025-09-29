@@ -1,5 +1,3 @@
-import {HelmContentDiffEntry} from "./HelmPlanDiff";
-
 export function diffLines(
   before: string | object | any[] | undefined | null,
   after: string | object | any[] | undefined | null,
@@ -40,31 +38,5 @@ export function diffLines(
   const result = lines.join("\n");
 
   // Return "No diff to show" if the result is empty or just whitespace
-  return result.trim() === "" ? "No diff to show" : result;
-}
-
-export function diffEntries(
-    entries: HelmContentDiffEntry[]
-): string {
-  const lines: string[] = [];
-  
-  for (const entry of entries) {
-    const entryLines = entry.payload.split('\n');
-    
-    for (const line of entryLines) {
-      if (entry.delta === 1) {
-        // Before lines (removed)
-        lines.push(`- ${line}`);
-      } else if (entry.delta === 2) {
-        // After lines (added)
-        lines.push(`+ ${line}`);
-      } else {
-        // Unchanged lines
-        lines.push(`  ${line}`);
-      }
-    }
-  }
-  
-  const result = lines.join('\n');
   return result.trim() === "" ? "No diff to show" : result;
 }
