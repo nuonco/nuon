@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { type FC, Suspense } from 'react'
+import { Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import {
@@ -10,14 +10,11 @@ import {
   InstallManagementDropdown,
   Link,
   Loading,
-  Notice,
   Text,
   Time,
-  StacksTable,
 } from '@/components'
 import { getInstallById } from '@/lib'
-import type { TInstallStack } from '@/types'
-import { nueQueryData } from '@/utils'
+import { Stacks } from './stacks'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -74,11 +71,7 @@ export default async function InstallStack({ params }) {
           </span>
           <InstallStatuses />
 
-          <InstallManagementDropdown
-            orgId={orgId}
-            hasInstallComponents={Boolean(install?.install_components?.length)}
-            install={install}
-          />
+          <InstallManagementDropdown />
         </div>
       }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
@@ -90,28 +83,10 @@ export default async function InstallStack({ params }) {
               <Loading loadingText="Loading components..." variant="page" />
             }
           >
-            <LoadInstallStacks installId={install?.id} orgId={orgId} />
+            <Stacks installId={install?.id} orgId={orgId} />
           </Suspense>
         </ErrorBoundary>
       </section>
     </DashboardContent>
-  )
-}
-
-const LoadInstallStacks: FC<{
-  installId: string
-  orgId: string
-}> = async ({ installId, orgId }) => {
-  const { data, error } = await nueQueryData<TInstallStack>({
-    orgId,
-    path: `installs/${installId}/stack`,
-  })
-
-  return error ? (
-    <Notice>Can&apos;t load install stacks: {error?.error}</Notice>
-  ) : data?.versions?.length ? (
-    <StacksTable stack={data} />
-  ) : (
-    <Text>No install stacks.</Text>
   )
 }
