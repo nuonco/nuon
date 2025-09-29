@@ -136,7 +136,7 @@ export const RunnerMeta = ({
         ) : null}
         <span className="flex flex-col gap-2">
           <Text className="text-cool-grey-600 dark:text-cool-grey-500">ID</Text>
-          <ID className="break-all" id={runner?.id} />
+          <ID id={runner?.id} />
         </span>
       </div>
     </div>
