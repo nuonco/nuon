@@ -26,7 +26,8 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state data")
 	}
-	if ok := hasClusterOutputs(stateData); !ok {
+
+	if ok := render.Exists(".nuon.sandbox.outputs.cluster", stateData); !ok {
 		l.Info("sandbox outputs do not include kubernetes cluster info, skipping")
 		return nil, nil
 	}
@@ -72,16 +73,4 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 
 	l.Info("successfully parsed kubernetes cluster info, including in plan")
 	return obj, nil
-}
-
-// hasClusterOutputs checks for sandbox cluster outputs in install state data.
-func hasClusterOutputs(stateData map[string]any) bool {
-	if sandbox, ok := stateData["sandbox"]; ok {
-		if outputs, ok := sandbox.(map[string]any)["outputs"]; ok {
-			if _, ok := outputs.(map[string]any)["cluster"]; ok {
-				return true
-			}
-		}
-	}
-	return false
 }
