@@ -2,7 +2,7 @@
 
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { BoxArrowDown } from '@phosphor-icons/react'
+import { BoxArrowDownIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
@@ -57,12 +57,13 @@ export const DeprovisionRunnerModal: FC<IDeprovisionRunnerModal> = ({
           )
         : null}
       <Button
-        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 text-red-800 dark:text-red-500"
+        className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full text-red-800 dark:text-red-500"
+        variant="ghost"
         onClick={() => {
           setIsOpen(true)
         }}
       >
-        <BoxArrowDown size="16" />
+        <BoxArrowDownIcon size="16" />
         {buttonText}
       </Button>
     </>
