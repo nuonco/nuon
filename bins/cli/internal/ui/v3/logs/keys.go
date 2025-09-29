@@ -37,7 +37,7 @@ var keys = keyMap{
 	),
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
-		key.WithHelp("⎆", "select row"),
+		key.WithHelp("↳", "select row"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),
