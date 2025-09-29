@@ -1,6 +1,5 @@
 'use client'
 
-import React, { type FC } from 'react'
 import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/ssr'
 import { AutoApproveModal } from './AutoApproveModal'
 import { BreakGlassLink } from './BreakGlassLink'
@@ -14,21 +13,13 @@ import { InstallAuditHistoryModal } from './InstallAuditHistoryModal'
 import { SyncSecretsModal } from './SyncSecretsModal'
 import { Dropdown } from '@/components/Dropdown'
 import { Text } from '@/components/Typography'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import type { TInstall } from '@/types'
 import { GenerateInstallConfigModal } from './GenerateInstallConfigModal'
 
-interface IInstallManagementDropdown {
-  hasInstallComponents?: boolean
-  install: TInstall
-  orgId: string
-}
-
-export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
-  install,
-  orgId,
-}) => {
+export const InstallManagementDropdown = () => {
   const { org } = useOrg()
+  const { install } = useInstall()
 
   return (
     <Dropdown
@@ -52,9 +43,9 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         {install?.install_inputs?.length ? <EditModal /> : null}
         <BreakGlassLink installId={install.id} />
         <InstallAuditHistoryModal installId={install.id} orgId={org.id} />
-        <InstallStateModal install={install} />
+        <InstallStateModal />
         <AutoApproveModal />
-        <GenerateInstallConfigModal installId={install.id} orgId={org.id} />
+        <GenerateInstallConfigModal />
 
         <hr className="my-2" />
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
@@ -63,7 +54,7 @@ export const InstallManagementDropdown: FC<IInstallManagementDropdown> = ({
         <ReprovisionModal />
         <SyncSecretsModal />
         <DeleteInstallModal />
-        <DeprovisionStackModal install={install} orgId={orgId} />
+        <DeprovisionStackModal />
 
         <hr className="my-2" />
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
