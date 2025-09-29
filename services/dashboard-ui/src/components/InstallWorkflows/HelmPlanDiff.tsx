@@ -5,10 +5,10 @@ import { CaretRight } from '@phosphor-icons/react'
 import { Badge, Text } from '@/stratus/components'
 import { CodeBlock } from '../CodeBlock'
 import { Code } from '../Typography'
-import { diffLines } from './diff-utils'
+import { diffEntries, diffLines } from './diff-utils'
 
 interface Change {
-  workspace: string
+  namespace: string
   release: string
   resource: string
   resourceType: string
@@ -24,16 +24,26 @@ interface PlanSummary {
 interface HelmPlan {
   op: string
   plan: string
-  helm_content_diff?: HelmContentDiffEntry[]
+  helm_content_diff?: HelmContentDiff[]
 }
+// payload contains n lines seprated by \n
+// delta 1 : before
+// delta 2 : after
+export interface HelmContentDiffEntry {
+  delta: 1 | 2 | 0;
+  payload: string;
+};
 
-interface HelmContentDiffEntry {
+
+interface HelmContentDiff {
+  _version: string
   api: string
   name: string
   namespace: string
   kind: string
   before: string // YAML string
   after: string // YAML string
+  entries: HelmContentDiffEntry[]
 }
 
 interface HelmChangesViewerProps {
@@ -43,13 +53,13 @@ interface HelmChangesViewerProps {
 /**
  * Correct matching function based on your data sample.
  */
-function findDiffForChange(change: Change, diffs?: HelmContentDiffEntry[]) {
+function findDiffForChange(change: Change, diffs?: HelmContentDiff[]) {
   if (!diffs) return undefined
   return diffs.find(
     (d) =>
       d.api === change.resourceType &&
       d.kind === change.resource &&
-      d.namespace === change.workspace &&
+      d.namespace === change.namespace &&
       d.name === change.release
   )
 }
@@ -66,7 +76,7 @@ const parseChanges = (
     )
     if (match) {
       changes.push({
-        workspace: match[1].trim(),
+        namespace: match[1].trim(),
         release: match[2].trim(),
         resource: match[3].trim(),
         resourceType: match[4].trim(),
@@ -168,7 +178,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
                       {change.resource} ({change.resourceType})
                     </Text>
                     <Text variant="subtext" theme="muted">
-                      Workspace: {change.workspace}
+                      Namespace: {change.namespace}
                     </Text>
                   </div>
                 </span>
@@ -193,7 +203,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
                   {diff ? (
                     <div className="flex flex-col md:flex-row gap-4 px-2 py-2 bg-white dark:bg-dark-grey-100 rounded border">
                       <CodeBlock className="w-full" language="yaml" isDiff>
-                        {diffLines(diff?.before, diff?.after)}
+                        { diff?._version == '2' ? diffEntries(diff?.entries) : diffLines(diff?.before, diff?.after)}
                       </CodeBlock>
                     </div>
                   ) : (
