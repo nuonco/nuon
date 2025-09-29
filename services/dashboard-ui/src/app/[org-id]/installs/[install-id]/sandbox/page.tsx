@@ -78,11 +78,7 @@ export default async function InstallComponent({ params, searchParams }) {
           </span>
           <InstallStatuses />
 
-          <InstallManagementDropdown
-            orgId={orgId}
-            hasInstallComponents={Boolean(install?.install_components?.length)}
-            install={install}
-          />
+          <InstallManagementDropdown />
         </div>
       }
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
