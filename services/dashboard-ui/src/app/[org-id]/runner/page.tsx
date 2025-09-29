@@ -13,6 +13,7 @@ import {
   Section,
   Text,
 } from '@/components'
+import { ManageRunnerDropdown } from "@/components/Runners/ManageDropdown"
 import { getRunnerById, getRunnerSettingsById, getOrgById } from '@/lib'
 import { Activity } from './activity'
 import { Details } from './details'
@@ -125,16 +126,7 @@ export default async function OrgRunner({ params, searchParams }) {
           </div>
           <div className="divide-y flex flex-col flex-auto col-span-4">
             <Section heading="Runner controls" className="flex-initial">
-              <div className="flex gap-4 flex-wrap">
-                <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />{' '}
-                {settings ? (
-                  <UpdateRunnerModal
-                    orgId={orgId}
-                    runnerId={runnerId}
-                    settings={settings}
-                  />
-                ) : null}
-              </div>
+              <ManageRunnerDropdown runner={runner} settings={settings} />             
             </Section>
             <Section className="flex-initial" heading="Upcoming jobs ">
               <ErrorBoundary fallbackRender={ErrorFallback}>
