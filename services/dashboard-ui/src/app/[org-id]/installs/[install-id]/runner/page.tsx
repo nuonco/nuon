@@ -18,6 +18,7 @@ import {
   Time,
 } from '@/components'
 import { InstallManagementDropdown } from '@/components/Installs'
+import { ManageRunnerDropdown } from '@/components/Runners/ManageDropdown'
 import { getInstallById, getRunnerById, getRunnerSettingsById } from '@/lib'
 import { Activity } from './activity'
 import { Details } from './details'
@@ -150,17 +151,11 @@ export default async function Runner({ params, searchParams }) {
         </div>
         <div className="divide-y flex-auto flex flex-col col-span-4">
           <Section heading="Runner controls" className="flex-initial">
-            <div className="flex items-center gap-4 flex-wrap">
-              <ShutdownRunnerModal orgId={orgId} runnerId={runner?.id} />
-              <DeprovisionRunnerModal />
-              {settings ? (
-                <UpdateRunnerModal
-                  orgId={orgId}
-                  runnerId={runner?.id}
-                  settings={settings}
-                />
-              ) : null}
-            </div>
+            <ManageRunnerDropdown
+              runner={runner}
+              settings={settings}
+              isInstallRunner
+            />
           </Section>
           <Section heading="Upcoming jobs ">
             <ErrorBoundary fallbackRender={ErrorFallback}>
