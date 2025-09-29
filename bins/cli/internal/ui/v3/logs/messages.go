@@ -11,6 +11,6 @@ import (
 type tickMsg time.Time
 
 func tick() tea.Msg {
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 5)
 	return tickMsg{}
 }
