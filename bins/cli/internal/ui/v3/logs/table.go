@@ -59,7 +59,7 @@ func (m *model) prepareRows() []table.Row {
 	logs := map[string]*models.AppOtelLogRecord{}
 	// NOTE(fd): this is a naive approach
 	if m.searchTerm != "" {
-		m.message = fmt.Sprintf("applying search term: %s", m.searchTerm)
+		m.setMessage(fmt.Sprintf("applying search term: %s", m.searchTerm), "info")
 		filteredLogs := map[string]*models.AppOtelLogRecord{}
 		for _, log := range m.logs {
 			matches := strings.Contains(strings.ToLower(log.Body), strings.ToLower(m.searchTerm))
