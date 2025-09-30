@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
@@ -64,7 +65,7 @@ type model struct {
 	sidebarWidth int
 
 	// components
-	message     string
+	message     common.StatusBarRequest
 	keys        keyMap
 	table       table.Model
 	spinner     spinner.Model
@@ -100,7 +101,7 @@ func initialModel(
 
 		searchInput: textinput.New(),
 		help:        help.New(),
-		message:     "-",
+		message:     common.StatusBarRequest{Message: ""},
 
 		keys:      keys,
 		altscreen: true,
@@ -110,9 +111,11 @@ func initialModel(
 	return m
 }
 
-func (m *model) setMessage(message string) {
+func (m *model) setMessage(message string, level string) {
 	// for use from within update
-	m.message = message
+	m.message.Message = message
+	m.message.Level = level
+
 }
 
 func (m model) Init() tea.Cmd {
@@ -148,12 +151,12 @@ func (m *model) resize() {
 	m.details.Width = m.sidebarWidth
 	m.details.Height = m.height - vMargin
 	m.help.Width = m.width
-	m.setMessage(fmt.Sprintf("resize: w: %d h: %d - table(%d x %d) sidebar(%d x %d)", m.width, m.height, m.table.Width(), m.table.Height(), m.details.Width, m.details.Height))
 }
 
 func (m *model) handleResize(msg tea.WindowSizeMsg) {
 	m.width = msg.Width
 	m.height = msg.Height
+	m.message.Width = msg.Width
 	m.resize()
 }
 
@@ -169,7 +172,7 @@ func (m *model) setSelected() {
 			// set content
 			m.details.SetContent(m.getDetailContent())
 		} else {
-			m.setMessage(fmt.Sprintf("[selected] log with id:%s not found", row[0]))
+			m.setMessage(fmt.Sprintf("[selected] log with id:%s not found", row[0]), "info")
 		}
 	}
 }
@@ -222,7 +225,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if ok {
 					selectedLogID := selectedLog.ID
 					clipboard.Write(clipboard.FmtText, []byte(selectedLogID))
-					m.setMessage(fmt.Sprintf("[copy] copied to clipboard \"%s\"", selectedLogID))
+					m.setMessage(fmt.Sprintf("[copy] copied to clipboard \"%s\"", selectedLogID), "info")
 				}
 			}
 
@@ -283,11 +286,15 @@ func (m model) headerView() string {
 
 func (m model) footerView() string {
 	sections := []string{}
+	rows := ""
 	if m.searchTerm != "" {
-		sections = append(sections, styles.TextSubtle.Width(m.width).Render(fmt.Sprintf("Matches: %d | ", len(m.table.Rows()))))
+		rows += fmt.Sprintf("Matches: %d | ", len(m.table.Rows()))
 	}
-	sections = append(sections, (styles.TextSubtle.Width(m.width).Render(fmt.Sprintf("Total Rows: %d", len(m.logs)))))
-	sections = append(sections, styles.LogMessageStyle.Render("> "+m.message))
+	rows += fmt.Sprintf("Total Rows: %d", len(m.logs))
+	sections = append(sections, styles.TextSubtle.Width(m.width).Render(rows))
+	if m.message.Message != "" {
+		sections = append(sections, common.StatusBar(m.message))
+	}
 	sections = append(sections, m.help.View(m.keys))
 	return lipgloss.JoinVertical(lipgloss.Top, sections...)
 }
