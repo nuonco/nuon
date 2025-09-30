@@ -1,6 +1,7 @@
 'use client'
 
 import React, { type FC, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/Button'
 import { Text } from '@/components/Typography'
@@ -8,9 +9,9 @@ import { useAccount } from '@/components/AccountProvider'
 import { ChecklistItem } from './ChecklistItem'
 import { CLIInstallStepContent } from './CLIInstallStepContent'
 import { CreateAppStepContent } from './CreateAppStepContent'
+import { AppSyncStepContent } from './AppSyncStepContent'
 import { InstallCreationStepContent } from './InstallCreationStepContent'
 import { OrgCreationStepContent } from './OrgCreationStepContent'
-import { CommandBlock } from '@/components/CommandBlock'
 import type { TAccount, TUserJourney, TUserJourneyStep } from '@/types'
 import { completeUserJourney } from '@/components/org-actions'
 
@@ -19,6 +20,7 @@ interface ProductionReadyChecklistModalProps {
   onClose: () => void
   account: TAccount | null
   orgId: string
+  onForceClose?: () => void
 }
 
 // Journey helper functions
@@ -55,8 +57,9 @@ const detectNewlyCompletedStep = (
 
 export const ProductionReadyChecklistModal: FC<
   ProductionReadyChecklistModalProps
-> = ({ isOpen, onClose, account, orgId }) => {
+> = ({ isOpen, onClose, account, orgId, onForceClose }) => {
   const { refreshAccount } = useAccount()
+  const router = useRouter()
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [previousJourneyState, setPreviousJourneyState] =
     useState<TUserJourney | null>(null)
@@ -148,6 +151,23 @@ export const ProductionReadyChecklistModal: FC<
     )
   }
 
+  // Coordinated navigation: close modal → navigate → auto-open install modal
+  const handleNavigateToInstall = (appId: string, orgId: string) => {
+    // Step 1: Force close the onboarding modal immediately
+    if (onForceClose) {
+      // Use force close to bypass journey completion logic
+      onForceClose()
+    } else {
+      // Fallback to regular close (may not work if journey incomplete)
+      onClose()
+    }
+
+    // Step 2: Navigate after a brief delay to allow modal close animation
+    setTimeout(() => {
+      router.push(`/${orgId}/apps/${appId}?createInstall=true`)
+    }, 300) // 300ms allows modal close transition to complete
+  }
+
   return (
     <Modal
       isOpen={isOpen}
@@ -211,47 +231,27 @@ export const ProductionReadyChecklistModal: FC<
                   appId={step.metadata?.app_id}
                 />
               ) : step.name === 'app_synced' ? (
-                <div className="space-y-6">
-                  {/* Success Message - Shown when step is complete */}
-                  {step.complete && (
-                    <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        <Text
-                          variant="semi-14"
-                          className="text-green-800 dark:text-green-200"
-                        >
-                          App synced successfully!
-                        </Text>
-                      </div>
-                      <Text className="text-gray-600 dark:text-gray-400">
-                        Your app configuration has been synced and builds are in progress. You can now proceed to create an install.
-                      </Text>
-                    </div>
-                  )}
-
-                  {/* Original Step Instructions - Always shown */}
-                  <div className={`space-y-3 ${step.complete ? 'opacity-75' : ''}`}>
-                    <Text>
-                      Navigate to the app config directory and sync your app
-                      configuration to make it available for deployment.
-                    </Text>
-                    <Text>
-                      In addition to syncing your app config, this will trigger
-                      builds to package the component source code for deployment.
-                      You don&apos;t need to wait for these to finish, and can move on
-                      to creating an install.
-                    </Text>
-                    <CommandBlock command="cd my-app" />
-                    <CommandBlock command="nuon apps sync" />
-                  </div>
-                </div>
-              ) : step.name === 'install_created' ? (
-                <InstallCreationStepContent
+                <AppSyncStepContent
                   stepComplete={step.complete}
-                  onClose={handleSkipAll}
-                  installId={step.metadata?.install_id}
+                  selectedAppPath={step.metadata?.app_path || 'eks-simple'}
                 />
+              ) : step.name === 'install_created' ? (
+                (() => {
+                  // Get app_id from current step or fallback to app_created step
+                  const appId = step.metadata?.app_id ||
+                    allJourneySteps.find(s => s.name === 'app_created')?.metadata?.app_id
+
+                  return (
+                    <InstallCreationStepContent
+                      stepComplete={step.complete}
+                      onClose={handleSkipAll}
+                      installId={step.metadata?.install_id}
+                      appId={appId}
+                      orgId={orgId}
+                      onNavigateToInstall={handleNavigateToInstall}
+                    />
+                  )
+                })()
               ) : null}
             </ChecklistItem>
           ))}
