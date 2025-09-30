@@ -13,7 +13,7 @@ type AdminUpdateOrgFeaturesRequest struct {
 }
 
 // @ID						AdminUpdateOrgFeatures
-// @Summary				get available org features
+// @Summary				update org features for a single org
 // @Description.markdown	admin_update_org_features.md
 // @Param					org_id	path	string	true	"org ID"
 // @Tags					orgs/admin

@@ -12,7 +12,7 @@ import (
 )
 
 // @ID						GetReleaseSteps
-// @Summary				get a release
+// @Summary				get a release's steps
 // @Description.markdown	get_release.md
 // @Param					release_id					path	string	true	"release ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)

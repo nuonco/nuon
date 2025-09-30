@@ -11,7 +11,7 @@ import (
 )
 
 // @ID							GetWorkflowSteps
-// @Summary						get a workflow step
+// @Summary						get all of the steps for a given workflow
 // @Description.markdown		get_workflow_steps.md
 // @Param workflow_id	path	string true "workflow ID"
 // @Tags						installs
@@ -31,7 +31,7 @@ func (s *service) GetWorkflowSteps(ctx *gin.Context) {
 
 	steps, err := s.getWorkflowSteps(ctx, workflowID)
 	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get install workflow steps"))
+		ctx.Error(errors.Wrap(err, "unable to get workflow steps"))
 		return
 	}
 
@@ -40,7 +40,7 @@ func (s *service) GetWorkflowSteps(ctx *gin.Context) {
 
 // TODO: Remove. Deprecated.
 // @ID							GetInstallWorkflowSteps
-// @Summary						get an install workflow step
+// @Summary						get all of the steps for a given install workflow
 // @Description.markdown		get_workflow_steps.md
 // @Param install_workflow_id	path	string true "install workflow ID"
 // @Tags						installs
@@ -55,6 +55,7 @@ func (s *service) GetWorkflowSteps(ctx *gin.Context) {
 // @Failure						500	{object}	stderr.ErrResponse
 // @Success						200	{array}		app.WorkflowStep
 // @Router						/v1/install-workflows/{install_workflow_id}/steps [GET]
+// @Deprecated
 func (s *service) GetInstallWorkflowSteps(ctx *gin.Context) {
 	workflowID := ctx.Param("install_workflow_id")
 

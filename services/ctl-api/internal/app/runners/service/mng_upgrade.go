@@ -13,7 +13,7 @@ import (
 type MngUpdateRequest struct{}
 
 // @ID						UpdateRunnerMng
-// @Summary				shut down an install runner management process
+// @Summary				update an install runner via the mng process
 // @Param					runner_id	path	string						true	"runner ID"
 // @Param					req			body	MngUpdateRequest	true	"Input"
 // @Tags					runners
