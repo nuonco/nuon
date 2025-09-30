@@ -52,3 +52,38 @@ func (c *Client) InvalidateTokens(ctx context.Context, subjectOrEmail string) er
 
 	return nil
 }
+
+func (c *Client) ExtendToken(ctx context.Context, subjectOrEmail string, dur time.Duration) error {
+	acct, err := c.FindAccount(ctx, subjectOrEmail)
+	if err != nil {
+		return errors.Wrap(err, "unable to get account")
+	}
+
+	var token app.Token
+	res := c.db.WithContext(ctx).
+		Where(app.Token{
+			AccountID: acct.ID,
+		}).
+		Order("expires_at desc").
+		Limit(1).
+		First(&token)
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to extend token")
+	}
+
+	// update the token expiry
+	var updatedToken app.Token
+	res = c.db.WithContext(ctx).
+		Model(&updatedToken).
+		Where(&app.Token{
+			ID: token.ID,
+		}).
+		Updates(app.Token{
+			ExpiresAt: token.ExpiresAt.Add(dur),
+		})
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to update token")
+	}
+
+	return nil
+}
