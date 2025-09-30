@@ -115,6 +115,7 @@ export const desiredOrgStructure: orgStructure = [
       { name: 'sandbox-ey' },
       { name: 'sandbox-se' },
       { name: 'sandbox-byoc' },
+      {name:'sandbox-am'},
 
       // NOTE(jm): these accounts can be deprecated
       { name: 'sandbox-retool' },
