@@ -49,12 +49,15 @@ func (i listStep) Description() string {
 	return color.Render(string(step.Status.Status))
 }
 
+// NOTE(fd): not in use at this time
 func (i listStep) FilterValue() string {
-	return i.step.Name
+	return i.step.Name + " " + i.step.ID
 }
 
 func (i listStep) Name() string {
-	return i.step.ID
+	number := fmt.Sprintf("[%02d]", i.step.Idx)
+	color := styles.GetStatusStyle(i.step.Status.Status)
+	return color.Render(number) + " " + i.step.Name
 }
 
 // the niecities

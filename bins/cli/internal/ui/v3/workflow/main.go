@@ -42,6 +42,10 @@ type model struct {
 	installID  string
 	workflowID string
 
+	width     int
+	height    int
+	listWidth int
+
 	// data
 	workflow                     *models.AppWorkflow
 	steps                        [][]*models.AppWorkflowStep // standlone so we can sort them, nested so we can group them
@@ -52,9 +56,6 @@ type model struct {
 	// conditional
 	stack        *models.AppInstallStack
 	stackLoading bool
-
-	// display only elements
-	status common.StatusBarRequest
 
 	// ui components
 	// 1. layout
@@ -69,6 +70,9 @@ type model struct {
 	progress    progress.Model
 	searchInput textinput.Model
 	spinner     spinner.Model
+
+	// 3. for the footer
+	status common.StatusBarRequest
 
 	// approval confirmations
 	stepApprovalConf        bool
@@ -251,29 +255,40 @@ func (m *model) resetWorkflowApprovalConf() {
 	m.populateStepDetailView(true)
 }
 
-func (m *model) handleResize(msg tea.WindowSizeMsg) {
-	// when the window resizes, we need to set the width of our components
+func (m *model) resize() {
 	// vertical margin height is the height of the header + the height of the footer
 	vMarginHeight := lipgloss.Height(m.headerView()) + lipgloss.Height(m.footerView()) + 2
+	third := int(m.width / 3)
+	// the list width controls the width of the style.Width we render the list with
+	m.listWidth = third
 	// horizonal margin is just 2 because of the padding of 1
 	hMargin := 2
-	m.header.Width = msg.Width - hMargin
-	m.progress.Width = msg.Width / 3
-	m.footer.Width = msg.Width - hMargin
+	m.header.Width = m.width - hMargin
+	m.progress.Width = third
+	m.footer.Width = m.width - hMargin
 
 	// resize the list
-	stepsListHeight := msg.Height - vMarginHeight
-	stepsListWidth := int((msg.Width) / 3)
+	stepsListHeight := m.height - vMarginHeight
 	m.stepsList.SetHeight(stepsListHeight)
-	m.stepsList.SetWidth(stepsListWidth)
+	m.stepsList.SetWidth(m.listWidth - 1) // minus one because of the padding we render the list with
 
 	// make the detail viewport
-	vpWidth := msg.Width - stepsListWidth // no hmargin subtracted
-	vpHeight := msg.Height - vMarginHeight
+	vpWidth := m.width - (m.listWidth + 2) // actual width plus margin
+	vpHeight := m.height - vMarginHeight
 	m.stepDetail.Height = vpHeight
 	m.stepDetail.Width = vpWidth
+	m.setLogMessage(fmt.Sprintf("w:%d list.w:%d details.w:%d", m.width, m.listWidth, vpWidth), "info")
 
+	// NOTE: called here to ensure proportions
 	m.populateStepDetailView(true)
+}
+
+func (m *model) handleResize(msg tea.WindowSizeMsg) {
+	// when the window resizes, store the dimensions of the window
+	m.width = msg.Width
+	m.height = msg.Height
+	// then we call resize
+	m.resize()
 }
 
 func (m *model) toggleFocus() {
@@ -452,9 +467,9 @@ func (m model) View() string {
 	} else {
 		stepsList := ""
 		if m.focus == "list" {
-			stepsList = appStyleFocus.Padding(0, 1, 0, 0).Render(m.stepsList.View())
+			stepsList = appStyleFocus.Width(m.listWidth).Padding(0, 1, 0, 0).Render(m.stepsList.View())
 		} else {
-			stepsList = appStyleBlur.Padding(0, 1, 0, 0).Render(m.stepsList.View())
+			stepsList = appStyleBlur.Width(m.listWidth).Padding(0, 1, 0, 0).Render(m.stepsList.View())
 		}
 		stepDetail := ""
 		if m.focus == "detail" {
