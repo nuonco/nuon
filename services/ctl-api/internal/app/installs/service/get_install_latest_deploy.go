@@ -12,7 +12,7 @@ import (
 )
 
 // @ID						GetInstallLatestDeploy
-// @Summary				get an install deploy
+// @Summary				get an install's latest deploy
 // @Description.markdown	get_install_latest_deploy.md
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs

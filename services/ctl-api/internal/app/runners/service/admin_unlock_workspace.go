@@ -9,7 +9,7 @@ import (
 type AdminUnlockWorkspace struct{}
 
 // @ID						AdminUnlockWorkspace
-// @Summary				lock a workspace
+// @Summary				unlock a terraform workspace
 // @Description.markdown admin_unlock_workspace.md
 // @Tags					runners/admin
 // @Security				AdminEmail
