@@ -29,7 +29,11 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
-var maxSidebarWidth = 90
+const (
+	maxSidebarWidth   int = 90
+	minRequiredWidth  int = 100
+	minRequiredHeight int = 15
+)
 
 type model struct {
 	// configs and api client
@@ -115,7 +119,6 @@ func (m *model) setMessage(message string, level string) {
 	// for use from within update
 	m.message.Message = message
 	m.message.Level = level
-
 }
 
 func (m model) Init() tea.Cmd {
@@ -300,6 +303,25 @@ func (m model) footerView() string {
 }
 
 func (m model) View() string {
+	if m.width == 0 {
+		return ""
+
+	} else if m.width < minRequiredWidth || m.height < minRequiredHeight {
+		// TODO: make this message full screen
+		content := common.FullPageDialog(common.FullPageDialogRequest{
+			Width:   m.width,
+			Height:  m.height,
+			Padding: 2,
+			Level:   "warning",
+			Content: lipgloss.JoinVertical(
+				lipgloss.Center,
+				"  This screen is too small, please increase the width.  ",
+				fmt.Sprintf("Minimum dimensions %d x %d.  ", minRequiredWidth, minRequiredHeight),
+			),
+		})
+		return content
+
+	}
 	// easy sections
 	header := m.headerView()
 	footer := m.footerView()
@@ -337,7 +359,7 @@ func (m model) View() string {
 	return view
 }
 
-func MakeMeAnApp(
+func LogStreamApp(
 	ctx context.Context,
 	cfg *config.Config,
 	api nuon.Client,
@@ -347,7 +369,6 @@ func MakeMeAnApp(
 ) {
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, deploy_id, logstream_id)
-
 	// initialize the program
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
