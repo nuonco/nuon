@@ -108,6 +108,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/offline-check", s.AdminOfflineCheck)
 	api.POST("/v1/runners/:runner_id/service-account-token", s.AdminCreateRunnerServiceAccountToken)
 	api.POST("/v1/runners/:runner_id/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
+	api.POST("/v1/runners/:runner_id/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
 	api.POST("/v1/runners/:runner_id/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
 	api.GET("/v1/runners/:runner_id/service-account", s.AdminGetRunnerServiceAccount)
 	api.POST("/v1/runners/restart", s.AdminRestartRunners)
