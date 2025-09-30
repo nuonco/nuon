@@ -25,7 +25,7 @@ func (c *CreateWorkflowStepApprovalResponseRequest) Validate(v *validator.Valida
 }
 
 // @ID						CreateWorkflowStepApprovalResponse
-// @Summary					Create an approval for a workflow step.
+// @Summary					Create an approval response for a workflow step.
 // @Description.markdown	create_workflow_step_approval_response.md
 // @Param					workflow_id			path	string	true	"workflow id"
 // @Param					workflow_step_id	path	string	true	"step id"
@@ -110,6 +110,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					201	{object}	app.WorkflowStepApprovalResponse
 // @Router					/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id}/approvals/{approval_id}/response [post]
+// @Deprecated
 func (s *service) CreateInstallWorkflowStepApprovalResponse(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

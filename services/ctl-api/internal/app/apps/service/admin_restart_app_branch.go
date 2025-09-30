@@ -14,7 +14,7 @@ import (
 type AdminRestartAppBranchRequest struct{}
 
 // @ID						AdminRestartAppBranch
-// @Summary				restart an apps event loop
+// @Summary				restart an app branch event loop
 // @Description.markdown	admin_restart_app_branch.md
 // @Param					app_branch_id	path	string				true	"app branch ID"
 // @Param					req		body	AdminRestartAppBranchRequest	false	"Input"

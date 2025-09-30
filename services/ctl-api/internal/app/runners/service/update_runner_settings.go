@@ -33,7 +33,7 @@ func (c *UpdateRunnerSettingsRequest) Validate(v *validator.Validate) error {
 }
 
 // @ID						UpdateRunnerSettings
-// @Summary				update a runner job execution
+// @Summary				update a runner's settings via its runner settings group
 // @Description.markdown	update_runner_settings.md
 // @Param					req						body	UpdateRunnerSettingsRequest	true	"Input"
 // @Param					runner_id			path	string							true	"runner ID"
