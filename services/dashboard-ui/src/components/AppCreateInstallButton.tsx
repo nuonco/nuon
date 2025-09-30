@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { CubeIcon } from '@phosphor-icons/react'
 import { createAppInstall } from '@/actions/apps/create-app-install'
@@ -14,8 +14,9 @@ import { Text } from '@/components/Typography'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
+import { useAccount } from '@/components/AccountProvider'
 //import { createAppInstall } from './app-actions'
-import type { TAppConfig } from '@/types'
+import type { TAppConfig, TUserJourney } from '@/types'
 
 interface IAppCreateInstallButton {
   platform: string | 'aws' | 'azure'
@@ -25,6 +26,20 @@ export const AppCreateInstallButton = ({
   platform,
 }: IAppCreateInstallButton) => {
   const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Check for createInstall URL parameter and auto-open modal
+  useEffect(() => {
+    const shouldAutoOpen = searchParams.get('createInstall') === 'true'
+    if (shouldAutoOpen) {
+      setIsOpen(true)
+      // Clean up URL parameter to avoid issues with refresh/back button
+      const url = new URL(window.location.href)
+      url.searchParams.delete('createInstall')
+      router.replace(url.pathname + url.search, { scroll: false })
+    }
+  }, [searchParams, router])
 
   return (
     <>
@@ -105,6 +120,21 @@ const CreateInstallFromAppConfig = ({
   const router = useRouter()
   const { org } = useOrg()
   const { app } = useApp()
+  const { account } = useAccount()
+
+  // Check if this install creation will complete the evaluation journey
+  const isCompletingEvaluationJourney = () => {
+    const accountWithJourneys = account as any
+    const evaluationJourney = accountWithJourneys?.user_journeys?.find(
+      (journey: TUserJourney) => journey.name === 'evaluation'
+    )
+
+    if (!evaluationJourney) return false
+
+    // Check if install_created step is the only incomplete step
+    const incompleteSteps = evaluationJourney.steps.filter((step: any) => !step.complete)
+    return incompleteSteps.length === 1 && incompleteSteps[0].name === 'install_created'
+  }
   const {
     data: config,
     isLoading,
@@ -135,9 +165,15 @@ const CreateInstallFromAppConfig = ({
           }}
           onSuccess={({ data: install, error, headers, status }) => {
             if (!error && status === 201) {
-              router.push(
-                `/${org.id}/installs/${install?.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
-              )
+              const workflowUrl = `/${org.id}/installs/${install?.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
+
+              // Add completion parameter if this completes the evaluation journey
+              const isCompletingJourney = isCompletingEvaluationJourney()
+              const finalUrl = isCompletingJourney
+                ? `${workflowUrl}?onboardingComplete=true`
+                : workflowUrl
+
+              router.push(finalUrl)
             }
           }}
           onCancel={onClose}
