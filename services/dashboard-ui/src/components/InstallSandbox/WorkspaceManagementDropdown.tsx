@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { SlidersHorizontal } from '@phosphor-icons/react'
+import { SlidersHorizontalIcon } from '@phosphor-icons/react'
 import { Dropdown } from '@/components/Dropdown'
 import { BackendModal } from '@/components/InstallSandbox/BackendModal'
 
@@ -23,7 +23,7 @@ export const WorkspaceManagementDropdown: FC<IWorkspaceManagementDropdown> = ({
       id="mgmt-install"
       text={
         <>
-          <SlidersHorizontal size="16" />
+          <SlidersHorizontalIcon size="16" />
           Manage
         </>
       }
