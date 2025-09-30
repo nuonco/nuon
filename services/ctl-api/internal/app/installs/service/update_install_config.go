@@ -23,7 +23,7 @@ func (c *UpdateInstallConfigRequest) Validate(v *validator.Validate) error {
 }
 
 // @ID						UpdateInstallConfig
-// @Summary				create an install config
+// @Summary				update an install config
 // @Description.markdown	update_install_config.md
 // @Tags					installs
 // @Param					install_id	path	string	true	"install ID"
