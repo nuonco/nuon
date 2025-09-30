@@ -11,12 +11,17 @@ the hood, Nuon will handle keeping your configuration in sync.
 **Create a local App directory** - Create a directory and name it after your
 App. This directory will contain your App's configuration files.
 
-<CodeGroup>```sh nuon mkdir your-app cd your-app ```</CodeGroup>
+```sh nuon
+mkdir your-app
+cd your-app
+```
 
-Config files are used to sync the configuration for a single App. For
-consistency, use the same name as the directory you created above.
+Config files are used to sync the configuration for a single App. The app name
+must be the same as the directory you created above.
 
-<CodeGroup>```sh nuon nuon apps create --name=your-app ```</CodeGroup>
+```sh nuon
+nuon apps create --name=your-app
+```
 
 ## Sync an App
 
@@ -50,10 +55,10 @@ branch    = "main"
 contents = "./whoami.yaml"
 ```
 
-<Note>
-	When loading a component from a source, the `components` prefix is not needed
-	for each field, like it is in the main config file.
-</Note>
+See our
+[`example-app-configs` repository](https://github.com/nuonco/example-app-configs)
+for common directory structures.
+
 ## Reference
 
 ### Input Config
@@ -111,81 +116,11 @@ internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
 contents = "./sandbox.tfvars"
 ```
 
+Nuon maintains [managed Sandboxes](./concepts/sandboxes#nuon-managed-sandboxes)
+for the platforms we support.
+
 <Note>
 	Notice how variables can be defined in the `vars` block and with `var_file`.
-</Note>
-
-### Install Config
-
-You can create and manage [Installs](/concepts/installs) by creating
-`<install>.toml` files in an `installs` directory managed separately from the
-app configs. An Install config must declare a `name` field and any relevant
-install-specific configuration.
-
-The inputs are defined as a list of input groups. This is just for logical
-grouping, and inputs from different groups can be defined together. Note that if
-an input is defined multiple times, the last defined value would be used.
-
-When you generate a config, inputs will be grouped together, reflecting the
-input groups you have defined in the app config. Sensitive inputs will be
-excluded, to avoid saving them in plain text in version control. When syncing
-install config files, sensitive inputs will be ignored. They can still be
-managed manually via the Dashboard.
-
-<Note>
-	Currently only AWS installs are supported using Install config files.
-</Note>
-
-**Generate an Install Config File**
-
-To manage existing installs using CI, use the CLI command
-`nuon installs generate-config` to export an existing install to stdout. Create
-a TOML config file for the install in the `installs` folder of your app's config
-and paste the stout.
-
-```bash
-mkdir -p installs
-touch installs/<install-name>.toml
-nuon installs generate-config -i <install-name> | tee installs/<install-name>.toml
-```
-
-**Update an Install**
-
-The `nuon installs sync` command can be used with a single install config file
-or with a directory containing multiple install config files.
-
-```bash
-nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
-```
-
-In the dashboard, see the newly-created workflow to track the install's upgrade
-process.
-
-**An Example Install Config File**
-
-```toml installs/install.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=install
-
-name = "<install-name>"
-
-# configure Auto Approval settings for an install
-approval_option = "prompt" # set this to "approve-all" to enable auto approval
-
-[aws_account]
-  region = "us-east-1"
-
-[[inputs]]
-  input_string = "sample"
-
-[[inputs]]
-  input_number = "100"
-  input_bool   = "true"
-  input_json   = '{"key": "value"}'
-```
-
-<Note>
-	All input values should be defined as strings. They will be parsed into the
-	correct type by Nuon.
 </Note>
 
 ### Component Config
@@ -248,6 +183,33 @@ branch = "main"
 "api.ingresses.public_domain" = "{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}"
 ```
 
+### Kubernetes Manifest Component
+
+To define a
+[kubernetes manifest component](/guides/kubernetes-manifest-components) use the
+`kubernetes_manifest` type.
+
+```toml manifest-db-secret.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=kubernetes-manifest
+
+name   = "grafana_secrets"
+type   = "kubernetes_manifest"
+dependencies   = ["grafana_postgres"]
+
+namespace = "grafana"
+manifest = """
+# Secret for Grafana's internal database connection
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-postgres-secret
+  namespace: grafana
+type: Opaque
+stringData:
+  GF_DATABASE_URL: "postgres://grafana:grafana@postgresql.grafana.svc.cluster.local:5432/grafana?sslmode=disable&connect_timeout=10"
+"""
+```
+
 ### Docker Build Component
 
 To define a [docker build component](/guides/docker-build-components) use the
@@ -296,35 +258,77 @@ tag = "latest"
 region = "us-west-2"
 ```
 
-### Kubernetes Manifest Component
+### Install Config
 
-To define a
-[kubernetes manifest component](/guides/kubernetes-manifest-components) use the
-`kubernetes_manifest` type.
+You can create and manage [Installs](/concepts/installs) by creating
+`<install>.toml` files in an `installs` directory managed separately from the
+app configs. An Install config must declare a `name` field and any relevant
+install-specific configuration.
 
-```toml helm.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=kubernetes-manifest
-name   = "kubernetes_manifest"
-type   = "kubernetes_manifest"
+The inputs are defined as a list of input groups. This is just for logical
+grouping, and inputs from different groups can be defined together. Note that if
+an input is defined multiple times, the last defined value would be used.
 
-dependencies = ["toml_terraform_s3"]
+When you generate a config, inputs will be grouped together, reflecting the
+input groups you have defined in the app config. Sensitive inputs will be
+excluded, to avoid saving them in plain text in version control. When syncing
+install config files, sensitive inputs will be ignored. They can still be
+managed manually via the Dashboard.
 
-namespace = "default"
-manifest = """
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: development
-  labels:
-    name: development
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: game-demo
-data:
-  # property-like keys; each key maps to a simple value
-  sample_data: "3"
-  key: "prop.value"
-"""
+<Note>
+	Currently only AWS installs are supported using Install config files.
+</Note>
+
+**Generate an Install Config File**
+
+To manage existing installs using CI, use the CLI command
+`nuon installs generate-config` to export an existing install to stdout. Create
+a TOML config file for the install in the `installs` folder of your app's config
+and paste the stout.
+
+```bash
+mkdir -p installs
+touch installs/<install-name>.toml
+nuon installs generate-config -i <install-name> > installs/<install-name>.toml
 ```
+
+**Update an Install**
+
+The `nuon installs sync` command can be used with a single install config file
+or with a directory containing multiple install config files.
+
+```bash
+nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
+```
+
+In the dashboard, see the newly-created workflow to track the install's upgrade
+process.
+
+**An Example Install Config File**
+
+```toml installs/install.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=install
+
+name = "<install-name>"
+
+# configure Auto Approval settings for an install
+approval_option = "prompt" # set this to "approve-all" to enable auto approval
+
+[aws_account]
+  region = "us-east-1"
+
+[[inputs]]
+  input_string = "sample"
+
+[[inputs]]
+  input_number = "100"
+  input_bool   = "true"
+  input_json   = '{"key": "value"}'
+```
+
+<Note>
+	All input values should be defined as strings. They will be parsed into the
+	correct type by Nuon.
+</Note>
+
+
