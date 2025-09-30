@@ -7,6 +7,7 @@ import {
 } from '@/components'
 import { ErrorBoundary } from '@/components/common/ErrorBoundry'
 import { WorkflowHeader } from '@/components/workflows/WorkflowHeader'
+import { OnboardingCelebrationWrapper } from './OnboardingCelebrationWrapper'
 import { getInstallById, getWorkflowById } from '@/lib'
 import { removeSnakeCase, sentanceCase } from '@/utils'
 import { WorkflowSteps } from './workflow-steps'
@@ -36,6 +37,7 @@ export default async function InstallWorkflow({ params }) {
     ['install-id']: installId,
     ['workflow-id']: workflowId,
   } = await params
+
   const [{ data: install }, { data: installWorkflow }] = await Promise.all([
     getInstallById({ installId, orgId }),
     getWorkflowById({ workflowId: workflowId, orgId }),
@@ -61,7 +63,7 @@ export default async function InstallWorkflow({ params }) {
         },
       ]}
     >
-      <>
+      <OnboardingCelebrationWrapper>
         <WorkflowHeader initWorkflow={installWorkflow} shouldPoll />
         <ErrorBoundary
           fallback={
@@ -80,7 +82,7 @@ export default async function InstallWorkflow({ params }) {
             <WorkflowSteps workflowId={workflowId} orgId={orgId} />
           </Suspense>
         </ErrorBoundary>
-      </>
+      </OnboardingCelebrationWrapper>
     </DashboardContent>
   )
 }

@@ -33,6 +33,7 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
 }) => {
   const { account, refreshAccount } = useAccount()
   const [showChecklistModal, setShowChecklistModal] = useState(false)
+  const [userDismissedForNavigation, setUserDismissedForNavigation] = useState(false)
 
   // Get evaluation journey from account
   const getEvaluationJourney = () => {
@@ -58,14 +59,21 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
   }
 
 
-  // Show journey modal based on incomplete steps
+  // Show journey modal based on incomplete steps and dismissal state
   useEffect(() => {
-    if (shouldShowChecklist()) {
-      setShowChecklistModal(true)
-    } else {
-      setShowChecklistModal(false)
+    const shouldShow = shouldShowChecklist() && !userDismissedForNavigation
+    setShowChecklistModal(shouldShow)
+  }, [account, userDismissedForNavigation])
+
+  // Reset dismissal flag when journey is complete (for future journeys)
+  useEffect(() => {
+    const evaluationJourney = getEvaluationJourney()
+    const allStepsComplete = evaluationJourney?.steps.every(step => step.complete) ?? false
+
+    if (allStepsComplete && userDismissedForNavigation) {
+      setUserDismissedForNavigation(false)
     }
-  }, [account])
+  }, [account, userDismissedForNavigation])
 
   const handleCloseChecklistModal = async () => {
     // Check if all journey steps are complete before allowing close
@@ -110,6 +118,10 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
               onClose={handleCloseChecklistModal}
               account={account}
               orgId={orgId}
+              onForceClose={() => {
+                setUserDismissedForNavigation(true)
+                setShowChecklistModal(false)
+              }}
             />,
             document.body
           )
