@@ -17,7 +17,7 @@ func (m *model) getLogStream() error {
 
 func (m *model) getLogs() error {
 	m.loading = true
-	m.message = fmt.Sprintf("[data] fetching logs cursor:%s", m.logsCursor)
+	m.setMessage(fmt.Sprintf("[data] fetching logs cursor:%s", m.logsCursor), "info")
 	// get the next page of logs
 	logs, err := m.api.LogStreamReadLogs(m.ctx, m.logstream_id, m.logsCursor)
 	if err != nil {
@@ -55,7 +55,7 @@ func (m *model) getLatestLogs() {
 	if m.logStream != nil && !m.logStream.Open {
 		return
 	}
-	m.message = fmt.Sprintf("[%s] getting latest data", time.Now().String())
+	m.setMessage(fmt.Sprintf("[%s] getting latest data", time.Now().String()), "info")
 	m.getLogs()
 	m.getLogStream()
 	m.setCursorFromLogs()
