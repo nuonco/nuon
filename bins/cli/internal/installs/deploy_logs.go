@@ -34,7 +34,7 @@ func (s *Service) DeployLogs(ctx context.Context, installID, deployID, installCo
 		browser.OpenURL(url)
 	} else {
 		// open in tui
-		logs.MakeMeAnApp(ctx, s.cfg, s.api, installID, deployID, deploy.LogStream.ID)
+		logs.LogStreamApp(ctx, s.cfg, s.api, installID, deployID, deploy.LogStream.ID)
 	}
 
 	return nil

@@ -80,11 +80,14 @@ func (m model) headerView() string {
 		renders two rows
 		1. title + action instructions
 		2. details _ progress
+
+		unless it's loading, in which case we render a single row
 	*/
 	content := ""
 	if len(m.steps) == 0 {
 		content += m.spinner.View() + " loading ..."
 		m.header.SetContent(content)
+		m.header.Height = 1
 		return appStyle.Render(m.header.View())
 	}
 	stepsFinished, stepsPending, progress := m.getProgressPercentage()
