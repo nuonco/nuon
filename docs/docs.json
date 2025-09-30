@@ -79,18 +79,6 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Production-Readiness Checklist",
-            "pages": [
-              "production-readiness/introduction",
-              "production-readiness/package",
-              "production-readiness/monitor",
-              "production-readiness/deploy",
-              "production-readiness/debug",
-              "production-readiness/break-glass",
-              "production-readiness/customer-setup"
-            ]
-          },
-          {
             "group": "Configuration",
             "pages": [
               "guides/vcs",
@@ -118,7 +106,19 @@
           {
             "group": "Integrations",
             "pages": ["guides/notifications", "guides/github-actions"]
-          }
+          },
+          {
+            "group": "Production-Readiness Checklist",
+            "pages": [
+              "production-readiness/introduction",
+              "production-readiness/package",
+              "production-readiness/monitor",
+              "production-readiness/deploy",
+              "production-readiness/debug",
+              "production-readiness/break-glass",
+              "production-readiness/customer-setup"
+            ]
+          }          
         ]
       },
       {
