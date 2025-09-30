@@ -60,7 +60,7 @@ type AppAWSIAMRoleConfig struct {
 
 func (a *AppAWSIAMRoleConfig) AfterQuery(tx *gorm.DB) error {
 	cfnName := strcase.ToCamel(string(a.Type))
-	if a.Type == AWSIAMRoleTypeRunnerBreakGlass {
+	if a.Type == AWSIAMRoleTypeRunnerBreakGlass || a.Type == AWSIAMRoleTypeBreakGlass {
 		cfnName = strcase.ToCamel(fmt.Sprintf("%s%s", a.Type, a.Name))
 	}
 
