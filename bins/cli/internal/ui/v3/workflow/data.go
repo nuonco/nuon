@@ -52,13 +52,13 @@ func (m *model) fetchWorkflow() {
 	m.loading = true
 	workflow, err := m.api.GetWorkflow(m.ctx, m.workflowID)
 	if err != nil {
-		m.logMessage = fmt.Sprintf("[error] failed to fetch data: %s", err)
+		m.setLogMessage(fmt.Sprintf("[error] failed to fetch data: %s", err), "error")
 		m.error = err
 		return
 	}
 	if m.stepApprovalConf {
 		// in this case, do not override the message
-		m.logMessage = fmt.Sprintf("[%s] fetched workflow id:%s", time.Now().String(), workflow.ID)
+		m.setLogMessage(fmt.Sprintf("[%s] fetched workflow id:%s", time.Now().String(), workflow.ID), "info")
 	}
 	m.workflow = workflow
 	// set progress from workflow steps
@@ -100,7 +100,7 @@ func (m *model) approveWorkflowStep() {
 		return
 	}
 	m.selectedStepApprovalResponse = resp
-	m.logMessage = fmt.Sprintf("[%s] step approved %s", resp.Type, resp.InstallWorkflowStepApprovalID)
+	m.setLogMessage(fmt.Sprintf("[%s] step approved %s", resp.Type, resp.InstallWorkflowStepApprovalID), "success")
 	m.loading = false
 	m.stepApprovalConf = false
 }
@@ -113,7 +113,7 @@ func (m *model) cancelWorkflow() {
 		return
 	}
 	m.loading = false
-	m.logMessage = "workflow has been cancelled"
+	m.setLogMessage("workflow has been cancelled", "error")
 	m.resetSelected()
 	m.fetchWorkflow()
 }
@@ -132,7 +132,7 @@ func (m *model) getInstallStack() {
 func (m *model) approveAll() {
 
 	m.loading = true
-	m.logMessage = "approving all workflows"
+	m.setLogMessage("approving all workflows", "info")
 	approved := 0
 	for i, step := range m.workflow.Steps {
 		if step.Approval == nil || step.Approval.Response != nil {
@@ -145,11 +145,11 @@ func (m *model) approveAll() {
 		resp, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, step.ID, step.Approval.ID, req)
 		if err != nil {
 			m.error = err
-			m.logMessage = fmt.Sprintf("%s", err)
+			m.setLogMessage(fmt.Sprintf("%s", err), "error")
 			return
 		}
 		m.selectedStepApprovalResponse = resp
-		m.logMessage = fmt.Sprintf("[%02d] step \"%s\" approved", i, step.Name)
+		m.setLogMessage(fmt.Sprintf("[%02d] step \"%s\" approved", i, step.Name), "success")
 		approved += 1
 		m.fetchWorkflow()
 	}
