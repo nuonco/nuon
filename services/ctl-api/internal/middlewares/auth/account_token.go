@@ -80,8 +80,14 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 			// Found pending invite - create account without journey tracking
 			userJourneys = account.NoUserJourneys()
 		} else {
-			// No pending invite - self-signup gets evaluation journey (org creation handled by dashboard)
-			userJourneys = account.DefaultEvaluationJourney()
+			// No pending invite - self-signup user, check deployment configuration
+			if m.cfg.EvaluationJourneyEnabled {
+				// Multi-tenant deployment: Enable evaluation journey
+				userJourneys = account.DefaultEvaluationJourney()
+			} else {
+				// BYOC deployment: Skip evaluation journey for clean first-run experience
+				userJourneys = account.NoUserJourneys()
+			}
 		}
 
 		acct, err = m.acctClient.CreateAccount(ctx, customClaims.Email, claims.RegisteredClaims.Subject, userJourneys)

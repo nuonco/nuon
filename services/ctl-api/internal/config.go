@@ -56,6 +56,7 @@ func init() {
 
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
+	config.RegisterDefault("evaluation_journey_enabled", true)
 }
 
 type Config struct {
@@ -189,6 +190,7 @@ type Config struct {
 	LogRequestBody              bool `config:"log_request_body"`
 	EnableHttpBinDebugEndpoints bool `config:"enable_httpbin_debug_endpoints"`
 	EnableEndpointAuditing      bool `config:"enable_endpoint_auditing"`
+	EvaluationJourneyEnabled    bool `config:"evaluation_journey_enabled"`
 
 	// chaos configuration
 	ChaosRate   int           `config:"chaos_rate"`
