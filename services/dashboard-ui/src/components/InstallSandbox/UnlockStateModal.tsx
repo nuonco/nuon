@@ -1,30 +1,64 @@
 'use client'
 
-import React, { type FC, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { LockKeyOpen } from '@phosphor-icons/react'
+import { LockKeyOpenIcon } from '@phosphor-icons/react'
+import { unlockTerraformWorkspace } from '@/actions/runners/unlock-terraform-workspace'
 import { Button } from '@/components/Button'
 import { Link } from '@/components/Link'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
-import { Text } from '@/components/Typography'
-import { trackEvent } from '@/utils'
-import { unlockWorkspace } from '@/components/runner-actions'
 import { jobHrefPath, jobName } from '@/components/Runners/helpers'
+import { Text } from '@/components/Typography'
+import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
+import { trackEvent } from '@/utils'
 
 interface IUnlockModal {
-  orgId: string
   workspace: any
   lock: any
 }
 
-export const UnlockModal: FC<IUnlockModal> = ({ orgId, workspace, lock }) => {
+export const UnlockModal = ({ workspace, lock }: IUnlockModal) => {
+  const path = usePathname()
   const { user } = useUser()
+  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const {
+    data: isUnlocked,
+    error,
+    execute,
+    headers,
+    isLoading,
+  } = useServerAction({
+    action: unlockTerraformWorkspace,
+  })
+
+  useEffect(() => {
+    if (error) {
+      trackEvent({
+        event: 'terraform_workspace_state_unlock',
+        user,
+        status: 'error',
+        props: { orgId: org.id, workflowId: workspace.id, err: error?.error },
+      })
+    }
+
+    if (isUnlocked !== null) {
+      trackEvent({
+        event: 'terraform_workspace_state_unlock',
+        user,
+        status: 'ok',
+        props: { orgId: org.id, workspaceId: workspace.id },
+      })
+
+      setIsOpen(false)
+    }
+  }, [isUnlocked, error, headers])
 
   return (
     <>
@@ -38,11 +72,15 @@ export const UnlockModal: FC<IUnlockModal> = ({ orgId, workspace, lock }) => {
                 setIsOpen(false)
               }}
             >
-              {error ? <Notice>{error}</Notice> : null}
+              {error ? (
+                <Notice>
+                  {error?.error || 'Unable to unlock Terraform workspace.'}
+                </Notice>
+              ) : null}
               {lock?.runner_job ? (
                 <Text>
                   This Terraform state is associated with this{' '}
-                  <Link href={`/${orgId}/${jobHrefPath(lock?.runner_job)}`}>
+                  <Link href={`/${org.id}/${jobHrefPath(lock?.runner_job)}`}>
                     {jobName(lock?.runner_job)}
                   </Link>
                 </Text>
@@ -61,35 +99,11 @@ export const UnlockModal: FC<IUnlockModal> = ({ orgId, workspace, lock }) => {
                 </Button>
                 <Button
                   onClick={() => {
-                    setIsLoading(true)
-                    unlockWorkspace({
-                      orgId,
-                      workspaceId: workspace.id,
+                    execute({
+                      orgId: org.id,
+                      path,
+                      terraformWorkspaceId: workspace.id,
                     })
-                      .then(() => {
-                        trackEvent({
-                          event: 'terraform_workspace_state_unlock',
-                          user,
-                          status: 'ok',
-                          props: { orgId, workspaceId: workspace.id },
-                        })
-                        setIsLoading(false)
-                        setIsOpen(false)
-                      })
-                      .catch((err: any) => {
-                        trackEvent({
-                          event: 'terraform_workspace_state_unlock',
-                          user,
-                          status: 'error',
-                          props: { orgId, workflowId: workspace.id, err },
-                        })
-                        setError(
-                          'Error occured, please refresh page and try again.'
-                        )
-                        setIsLoading(false)
-
-                        console.error(err)
-                      })
                   }}
                   className="text-base flex items-center gap-1"
                   variant="primary"
@@ -102,7 +116,7 @@ export const UnlockModal: FC<IUnlockModal> = ({ orgId, workspace, lock }) => {
                     </>
                   ) : (
                     <>
-                      <LockKeyOpen size="18" />
+                      <LockKeyOpenIcon size="18" />
                       Force unlock
                     </>
                   )}
@@ -118,7 +132,7 @@ export const UnlockModal: FC<IUnlockModal> = ({ orgId, workspace, lock }) => {
           setIsOpen(true)
         }}
       >
-        <LockKeyOpen size="18" />
+        <LockKeyOpenIcon size="18" />
         Force unlock
       </Button>
     </>
