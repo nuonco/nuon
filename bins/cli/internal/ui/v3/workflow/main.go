@@ -30,7 +30,10 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
-const minRequiredWidth int = 100
+const (
+	minRequiredWidth  int = 100
+	minRequiredHeight int = 20
+)
 
 type model struct {
 	// common/base
@@ -277,7 +280,6 @@ func (m *model) resize() {
 	vpHeight := m.height - vMarginHeight
 	m.stepDetail.Height = vpHeight
 	m.stepDetail.Width = vpWidth
-	m.setLogMessage(fmt.Sprintf("w:%d list.w:%d details.w:%d", m.width, m.listWidth, vpWidth), "info")
 
 	// NOTE: called here to ensure proportions
 	m.populateStepDetailView(true)
@@ -434,34 +436,39 @@ func (m model) View() string {
 	if m.quitting {
 		return "quitting " + m.spinner.View()
 	}
-	if m.header.Width == 0 {
+	if m.width == 0 {
 		return ""
 
-	} else if m.header.Width < minRequiredWidth {
-		// TODO: make this message full screen
+	} else if m.width < minRequiredWidth || m.height < minRequiredHeight {
 		content := common.FullPageDialog(common.FullPageDialogRequest{
-			Width:   m.header.Width,
-			Height:  m.stepDetail.Height,
+			Width:   m.width,
+			Height:  m.height,
 			Padding: 2,
-			Content: "This screen is too small, please increase the width.", Level: "info",
+			Level:   "warning",
+			Content: lipgloss.JoinVertical(
+				lipgloss.Center,
+				"  This screen is too small, please increase the width.  ",
+				fmt.Sprintf("Minimum dimensions %d x %d.  ", minRequiredWidth, minRequiredHeight),
+			),
 		})
 		return content
 
 	}
-	// this is the actual bulk of the wekr
+
+	// this is the actual bulk of the work
 	header := m.headerView()
 	content := ""
 	if m.workflow == nil { // initial load hasn't taken place
 		if m.error != nil { // likely a 404 but worth refining later
 			content = common.FullPageDialog(common.FullPageDialogRequest{
-				Width:   m.header.Width,
+				Width:   m.width,
 				Height:  m.stepDetail.Height,
 				Padding: 1,
-				Content: fmt.Sprintf("%s", m.error.Error()),
+				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(fmt.Sprintf("%s", m.error.Error())),
 				Level:   "error",
 			})
 		} else {
-			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.header.Width, Height: m.stepDetail.Height, Padding: 1, Content: "  Loading  ", Level: "info"})
+			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.stepDetail.Height, Padding: 1, Content: "  Loading  ", Level: "info"})
 		}
 
 	} else {
@@ -488,7 +495,7 @@ func (m model) View() string {
 	return s
 }
 
-func App(
+func WorkflowApp(
 	ctx context.Context,
 	cfg *config.Config,
 	api nuon.Client,

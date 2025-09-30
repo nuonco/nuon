@@ -90,7 +90,7 @@ func (s *Service) WorkflowGet(ctx context.Context, installID, workflowID string)
 
 	// only show tui in preview
 	if s.cfg.Preview {
-		workflowui.App(ctx, s.cfg, s.api, installID, workflowID)
+		workflowui.WorkflowApp(ctx, s.cfg, s.api, installID, workflowID)
 		return nil
 	}
 
