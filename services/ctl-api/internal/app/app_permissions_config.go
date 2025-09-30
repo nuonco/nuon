@@ -56,7 +56,7 @@ func (a *AppPermissionsConfig) AfterQuery(tx *gorm.DB) error {
 			a.ProvisionRole = role
 		case AWSIAMRoleTypeRunnerMaintenance:
 			a.MaintenanceRole = role
-		case AWSIAMRoleTypeRunnerBreakGlass:
+		case AWSIAMRoleTypeBreakGlass:
 			a.BreakGlassRole = role
 		default:
 		}
