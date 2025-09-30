@@ -97,6 +97,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 // @Failure						500	{object}	stderr.ErrResponse
 // @Success						202	{boolean}		true
 // @Router						/v1/install-workflows/{install_workflow_id}/cancel [post]
+// @Deprecated
 func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	workflowID := ctx.Param("install_workflow_id")
 
