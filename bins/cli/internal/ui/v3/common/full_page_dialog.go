@@ -11,7 +11,7 @@ var dialogBoxStyle = lipgloss.NewStyle().
 	BorderTop(true).
 	BorderLeft(true).
 	BorderRight(true).
-	BorderForeground(lipgloss.Color("#874BFD")).
+	BorderForeground(styles.PrimaryColor).
 	BorderBottom(true)
 
 var levelStyleMap = map[string]lipgloss.CompleteAdaptiveColor{
