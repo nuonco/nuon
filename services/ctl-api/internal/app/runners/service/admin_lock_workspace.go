@@ -14,7 +14,7 @@ import (
 type AdminLockWorkspace struct{}
 
 // @ID						AdminLockWorkspace
-// @Summary				lock a workspace
+// @Summary				lock a terraform workspace
 // @Description.markdown admin_lock_workspace.md
 // @Tags					runners/admin
 // @Security				AdminEmail

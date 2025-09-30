@@ -10,22 +10,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-//	@ID						GetRunner
-//	@Summary				get a runner
-//	@Description.markdown	get_runner.md
-//	@Param					runner_id	path	string	true	"runner ID"
-//	@Tags					runners/runner
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.Runner
-//	@Router					/v1/runners/{runner_id} [get]
+// @ID						GetRunner
+// @Summary				get a runner by id
+// @Description.markdown	get_runner.md
+// @Param					runner_id	path	string	true	"runner ID"
+// @Tags					runners/runner
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.Runner
+// @Router					/v1/runners/{runner_id} [get]
 func (s *service) GetRunnerCtlAPI(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 

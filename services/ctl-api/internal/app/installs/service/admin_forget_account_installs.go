@@ -24,19 +24,19 @@ func (c *AdminForgetAccountInstallsRequest) Validate(v *validator.Validate) erro
 	return nil
 }
 
-//	@ID						AdminForgetAccountInstalls
-//	@Summary				forget all installs for an org
-//	@Description.markdown	forget_account_installs.md
-//	@Param					req	body	AdminForgetAccountInstallsRequest	true	"Input"
-//	@Tags					installs/admin
-//	@Security				AdminEmail
-//	@Accept					json
-//	@Produce				json
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{boolean}	true
-//	@Router					/v1/installs/admin-forget-account-installs [POST]
+// @ID						AdminForgetAccountInstalls
+// @Summary				forget all installs for an account
+// @Description.markdown	forget_account_installs.md
+// @Param					req	body	AdminForgetAccountInstallsRequest	true	"Input"
+// @Tags					installs/admin
+// @Security				AdminEmail
+// @Accept					json
+// @Produce				json
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{boolean}	true
+// @Router					/v1/installs/admin-forget-account-installs [POST]
 func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 	var req AdminForgetAccountInstallsRequest
 	if err := ctx.BindJSON(&req); err != nil {

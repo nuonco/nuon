@@ -10,7 +10,7 @@ import (
 )
 
 // @ID						GetRunnerLatestHeartBeat
-// @Summary				get a runner
+// @Summary				get the latest heartbeats for a runner
 // @Description.markdown	get_runner_latest_heart_beat.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Tags					runners

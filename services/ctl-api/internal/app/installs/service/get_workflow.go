@@ -55,6 +55,7 @@ func (s *service) GetWorkflow(ctx *gin.Context) {
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					200	{object}	app.Workflow
 // @Router					/v1/install-workflows/{install_workflow_id} [GET]
+// @Deprecated
 func (s *service) GetInstallWorkflow(ctx *gin.Context) {
 	workflowID := ctx.Param("install_workflow_id")
 
