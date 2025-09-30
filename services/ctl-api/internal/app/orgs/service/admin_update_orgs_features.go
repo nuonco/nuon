@@ -16,7 +16,7 @@ type AdminUpdateOrgsFeaturesRequest struct {
 }
 
 // @ID						AdminUpdateOrgsFeatures
-// @Summary				get available org features
+// @Summary				update org features in bulk
 // @Description.markdown	admin_update_orgs_features.md
 // @Tags					orgs/admin
 // @Security				AdminEmail

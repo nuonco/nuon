@@ -73,6 +73,7 @@ func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 // @Failure								500	{object}	stderr.ErrResponse
 // @Success								200	{object}		app.WorkflowStepApproval
 // @Router 								/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id}/approvals/{approval_id} [GET]
+// @Deprecated
 func (s *service) GetInstallWorkflowStepApproval(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

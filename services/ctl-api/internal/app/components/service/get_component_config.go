@@ -9,7 +9,7 @@ import (
 )
 
 // @ID						GetComponentConfig
-// @Summary				get all configs for a component
+// @Summary					get a config for a component
 // @Description.markdown	get_component_config.md
 // @Param					component_id				path	string	true	"component ID"
 // @Param					config_id					path	string	true	"config ID"
