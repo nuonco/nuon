@@ -128,6 +128,7 @@ env:
   ENABLE_PROFILING: false
   PROFILING_PORT: 6060
   ENABLE_ENDPOINT_AUDITING: true
+  EVALUATION_JOURNEY_ENABLED: true
 
   # chaos rate greater than 0 to enable, 1 = 1% and 100 = 100% 
   CHAOS_RATE: 0

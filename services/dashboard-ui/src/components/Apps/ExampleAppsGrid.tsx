@@ -12,14 +12,19 @@ interface ExampleApp {
 
 const EXAMPLE_APPS: ExampleApp[] = [
   {
+    name: 'EKS Simple',
+    description: 'Simple Kubernetes cluster deployment',
+    path: 'eks-simple',
+  },
+  {
     name: 'AWS Lambda',
     description: 'Serverless functions deployment example',
     path: 'aws-lambda',
   },
   {
-    name: 'EKS Simple',
-    description: 'Simple Kubernetes cluster deployment',
-    path: 'eks-simple',
+    name: 'AWS EC2',
+    description: 'Simple EC2 deployment example',
+    path: 'httpbin',
   },
   {
     name: 'Coder',
@@ -30,11 +35,6 @@ const EXAMPLE_APPS: ExampleApp[] = [
     name: 'Mattermost',
     description: 'Team collaboration platform',
     path: 'mattermost',
-  },
-  {
-    name: 'Penpot',
-    description: 'Open source design and prototyping platform',
-    path: 'penpot',
   },
 ]
 
@@ -75,3 +75,4 @@ export const ExampleAppsGrid: FC<ExampleAppsGridProps> = ({
 }
 
 export type { ExampleApp }
+
