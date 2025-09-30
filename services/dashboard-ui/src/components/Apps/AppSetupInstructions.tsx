@@ -35,22 +35,13 @@ export const AppSetupInstructions: FC<AppSetupInstructionsProps> = ({
         command: `cd example-app-configs/${selectedApp.path}`,
         completed: false,
       },
+      {
+        title: 'Create your app',
+        command: `nuon apps create -n ${selectedApp.path}`,
+        completed: false,
+      },
     ]
-
-    if (appCreated) {
-      // If app already created, no additional steps needed
-      return baseCommands
-    } else {
-      // Show app creation step only
-      return [
-        ...baseCommands,
-        {
-          title: 'Create your app',
-          command: `nuon apps create -n ${selectedApp.path}`,
-          completed: false,
-        },
-      ]
-    }
+    return baseCommands
   }
 
   const commands = getCommands()
@@ -82,4 +73,3 @@ export const AppSetupInstructions: FC<AppSetupInstructionsProps> = ({
     </div>
   )
 }
-
