@@ -54,7 +54,7 @@ type model struct {
 	stackLoading bool
 
 	// display only elements
-	logMessage string
+	status common.StatusBarRequest
 
 	// ui components
 	// 1. layout
@@ -126,6 +126,7 @@ func initialModel(
 		help:     help.New(),
 		spinner:  s,
 		progress: progress,
+		status:   common.StatusBarRequest{Message: ""},
 
 		keys: keys,
 	}
@@ -139,9 +140,10 @@ func (m *model) toggleShowJson() {
 	m.populateStepDetailView(false)
 }
 
-func (m *model) setLogMessage(message string) {
+func (m *model) setLogMessage(message string, level string) {
 	// for use from within m.Update
-	m.logMessage = message
+	m.status.Message = message
+	m.status.Level = level
 }
 
 func (m model) Init() tea.Cmd {
@@ -185,7 +187,7 @@ func (m *model) setSelected() {
 	if m.stepIsApprovable() {
 		m.keys.ApproveStep.SetEnabled(true)
 	} else {
-		m.setLogMessage(fmt.Sprintf("[%d:%02d] id:%s step is not approvable", m.stepsList.Cursor(), m.stepsList.Index(), m.selectedStep.ID))
+		m.setLogMessage(fmt.Sprintf("[%02d] id:%s step is not approvable", m.stepsList.Index(), m.selectedStep.ID), "info")
 		m.keys.ApproveStep.SetEnabled(false)
 	}
 	m.keys.Esc.SetHelp("esc", "back")
@@ -201,7 +203,7 @@ func (m *model) setSelected() {
 }
 
 func (m *model) setQuitting() {
-	m.logMessage = "quitting ..."
+	m.setLogMessage("quitting ...", "warning")
 	m.quitting = true
 }
 
@@ -212,39 +214,39 @@ func (m *model) enableSearch() {
 func (m *model) setApprovalConfirmation() {
 	m.stepApprovalConf = true
 	m.loading = true
-	m.setLogMessage("awaiting confirmation")
+	m.setLogMessage("awaiting confirmation", "info")
 	m.populateStepDetailView(true)
 }
 
 func (m *model) resetApprovalConf() {
 	m.stepApprovalConf = false
 	m.loading = true
-	m.setLogMessage("no confirmation received")
+	m.setLogMessage("no confirmation received", "warning")
 	m.populateStepDetailView(true)
 }
 
 func (m *model) setWorkflowCancelationConf() {
 	m.loading = true
-	m.setLogMessage("awaiting confirmation")
+	m.setLogMessage("awaiting confirmation", "info")
 	m.workflowCancelationConf = true
 	m.populateStepDetailView(true)
 }
 
 func (m *model) resetWorkflowCancelationConf() {
 	m.workflowCancelationConf = false
-	m.setLogMessage("no cancellation confirmation received")
+	m.setLogMessage("no cancellation confirmation received", "warning")
 	m.loading = false
 	m.populateStepDetailView(true)
 }
 
 func (m *model) setWorkflowApprovalConf() {
-	m.setLogMessage("awaiting confirmation")
+	m.setLogMessage("awaiting confirmation", "info")
 	m.workflowApprovalConf = true
 	m.populateStepDetailView(true)
 }
 
 func (m *model) resetWorkflowApprovalConf() {
-	m.setLogMessage("no approval confirmation received")
+	m.setLogMessage("no approval confirmation received", "warning")
 	m.workflowApprovalConf = false
 	m.populateStepDetailView(true)
 }
