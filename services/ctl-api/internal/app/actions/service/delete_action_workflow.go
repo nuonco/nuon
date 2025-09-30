@@ -13,7 +13,7 @@ import (
 )
 
 // @ID						DeleteActionWorkflow
-// @Summary				delete an app
+// @Summary				delete an action workflow
 // @Description.markdown	delete_action_workflow.md
 // @Param					action_workflow_id	path	string	true	"action workflow ID"
 // @Tags					actions

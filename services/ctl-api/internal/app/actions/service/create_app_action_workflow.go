@@ -25,23 +25,23 @@ func (c *CreateAppActionWorkflowRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@ID						CreateAppActionWorkflow
-//	@Summary				create an app
-//	@Description.markdown	create_app_action_workflow.md
-//	@Param					app_id	path	string	true	"app ID"
-//	@Tags					actions
-//	@Accept					json
-//	@Param					req	body	CreateAppActionWorkflowRequest	true	"Input"
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				201	{object}	app.ActionWorkflow
-//	@Router					/v1/apps/{app_id}/action-workflows [post]
+// @ID						CreateAppActionWorkflow
+// @Summary				create an app action workflow
+// @Description.markdown	create_app_action_workflow.md
+// @Param					app_id	path	string	true	"app ID"
+// @Tags					actions
+// @Accept					json
+// @Param					req	body	CreateAppActionWorkflowRequest	true	"Input"
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.ActionWorkflow
+// @Router					/v1/apps/{app_id}/action-workflows [post]
 func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

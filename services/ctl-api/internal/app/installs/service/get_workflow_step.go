@@ -58,6 +58,7 @@ func (s *service) GetWorkflowStep(ctx *gin.Context) {
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					200	{object}	app.WorkflowStep
 // @Router					/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id} [GET]
+// @Deprecated
 func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
 	workflowID := ctx.Param("install_workflow_id")
 	stepID := ctx.Param("install_workflow_step_id")

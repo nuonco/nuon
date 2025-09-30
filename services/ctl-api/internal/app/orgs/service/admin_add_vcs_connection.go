@@ -16,17 +16,17 @@ type AdminAddVCSConnectionRequest struct {
 	GithubInstallID string
 }
 
-//	@ID						AdminAddVCSConnection
-//	@Summary				get an org by name
-//	@Description.markdown	admin_add_vcs_connection.md
-//	@Tags					orgs/admin
-//	@Security				AdminEmail
-//	@Accept					json
-//	@Param					req		body	AdminAddVCSConnectionRequest	true	"Input"
-//	@Param					org_id	path	string							true	"org ID or name"
-//	@Produce				json
-//	@Success				201	{string}	ok
-//	@Router					/v1/orgs/{org_id}/admin-add-vcs-connection [POST]
+// @ID						AdminAddVCSConnection
+// @Summary				add a VCS connection for an org
+// @Description.markdown	admin_add_vcs_connection.md
+// @Tags					orgs/admin
+// @Security				AdminEmail
+// @Accept					json
+// @Param					req		body	AdminAddVCSConnectionRequest	true	"Input"
+// @Param					org_id	path	string							true	"org ID or name"
+// @Produce				json
+// @Success				201	{string}	ok
+// @Router					/v1/orgs/{org_id}/admin-add-vcs-connection [POST]
 func (s *service) AdminAddVCSConnection(ctx *gin.Context) {
 	nameOrID := ctx.Param("org_id")
 
