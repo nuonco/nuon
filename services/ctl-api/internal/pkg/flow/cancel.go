@@ -8,8 +8,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 func (c *WorkflowConductor[DomainSignal]) isCancellationErr(ctx workflow.Context, err error) bool {
