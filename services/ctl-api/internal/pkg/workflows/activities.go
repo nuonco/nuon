@@ -4,10 +4,10 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
-	flowactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 	signalsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/signals/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
+	flowactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 type Params struct {
