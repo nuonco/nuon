@@ -138,7 +138,8 @@ export const WorkflowHeader = ({
 
         <div className="flex flex-col gap-3 items-end">
           <div className="flex items-center gap-4">
-            {workflow?.approval_option === 'prompt' &&
+            {workflow?.steps?.length > 2 &&
+            workflow?.approval_option === 'prompt' &&
             !workflow?.finished &&
             workflow?.status?.status !== 'cancelled' &&
             !workflow?.plan_only ? (
