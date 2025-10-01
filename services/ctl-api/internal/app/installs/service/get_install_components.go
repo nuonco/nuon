@@ -3,8 +3,10 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
@@ -14,6 +16,8 @@ import (
 // @Summary				get an installs components
 // @Description.markdown	get_install_components.md
 // @Param					install_id					path	string	true	"install ID"
+// @Param					types						query	string	false	"component types to filter by"
+// @Param         q					query	string	false	"search query for component name"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Tags					installs
@@ -30,7 +34,13 @@ import (
 // @Router					/v1/installs/{install_id}/components [GET]
 func (s *service) GetInstallComponents(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
-	installComponents, err := s.getInstallComponents(ctx, appID)
+	types := ctx.Query("types")
+	q := ctx.Query("q")
+	var typesSlice []string
+	if types != "" {
+		typesSlice = pq.StringArray(strings.Split(types, ","))
+	}
+	installComponents, err := s.getInstallComponents(ctx, appID, q, typesSlice)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
 		return
@@ -39,13 +49,24 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installComponents)
 }
 
-func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]app.InstallComponent, error) {
+func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, types []string) ([]app.InstallComponent, error) {
 	paginatedComponents := []app.InstallComponent{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Joins("JOIN components ON components.id = install_components.component_id").
-		Order("created_at DESC").
-		Preload("Component").
+		Order("created_at DESC")
+
+	if len(types) > 0 {
+		tx = tx.
+			Where("components.type IN ?", types)
+	}
+
+	if q != "" {
+		tx = tx.
+			Where("components.name ILIKE ?", "%"+q+"%")
+	}
+
+	tx = tx.Preload("Component").
 		Preload("TerraformWorkspace").
 		Where("install_id = ?", installID).
 		Find(&paginatedComponents)
