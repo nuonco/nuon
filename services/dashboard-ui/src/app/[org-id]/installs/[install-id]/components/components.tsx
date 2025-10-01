@@ -4,11 +4,11 @@ import {
   Notice,
   Pagination,
 } from '@/components'
-import { api } from '@/lib/api'
-import type { TInstall, TInstallComponentSummary } from '@/types'
-import { buildQueryParams } from '@/utils/build-query-params'
+import { getInstallComponents, getAppConfigById } from '@/lib'
+import type { TInstall } from '@/types'
 
 export const InstallComponents = async ({
+  install,
   installId,
   orgId,
   limit = 10,
@@ -24,25 +24,43 @@ export const InstallComponents = async ({
   q?: string
   types?: string
 }) => {
-  const params = buildQueryParams({ offset, limit, q, types })
-  const { data, error, headers } = await api<TInstallComponentSummary[]>({
-    orgId,
-    path: `installs/${installId}/components/summary${params}`,
-    headers: {
-      'x-nuon-pagination-enabled': true,
-    },
-  })
+  const [{ data, error, headers }, { data: config, error: configError }] =
+    await Promise.all([
+      getInstallComponents({
+        installId,
+        limit,
+        offset,
+        orgId,
+        q,
+        types,
+      }),
+      getAppConfigById({
+        appConfigId: install?.app_config_id,
+        appId: install.app_id,
+        orgId,
+        recurse: true,
+      }),
+    ])
 
   const pageData = {
     hasNext: headers?.['x-nuon-page-next'] || 'false',
     offset: headers?.['x-nuon-page-offset'] || '0',
   }
 
-  return error ? (
+  const componentDeps = data?.map((ic) => ({
+    id: ic?.id,
+    component_id: ic?.component_id,
+    dependencies: config?.component_config_connections?.find(
+      (c) => c?.component_id === ic?.component_id
+    )?.component_dependency_ids,
+  }))
+
+  return error || configError ? (
     <Notice>Can&apos;t load install components: {error?.error}</Notice>
   ) : data ? (
     <div className="flex flex-col gap-4">
       <InstallComponentsTable
+        componentDeps={componentDeps}
         initInstallComponents={data}
         offset={offset}
         limit={limit}
