@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { CaretRight } from '@phosphor-icons/react'
-import { Badge, Text } from '@/stratus/components'
+import { CaretRightIcon } from '@phosphor-icons/react'
+import { Badge } from "../Badge"
 import { CodeBlock } from '../CodeBlock'
-import { Code } from '../Typography'
+import { Text } from '../Typography'
 import { diffEntries, diffLines } from './diff-utils'
 
 interface Change {
@@ -105,10 +105,10 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
     <div className="bg-cool-grey-50 dark:bg-dark-grey-200 rounded-lg border">
       {/* Header */}
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
-        <Text variant="h3" weight="strong">
+        <Text variant="med-18">
           Helm Changes Overview
         </Text>
-        <Text theme="muted">Operation: {planData.op}</Text>
+        <Text isMuted>Operation: {planData.op}</Text>
       </div>
 
       {/* Summary */}
@@ -116,37 +116,34 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
         <div className="flex space-x-4">
           <div className="flex items-center gap-1.5">
             <Text
-              variant="base"
-              className="text-green-600 dark:text-green-40"
-              weight="strong"
+              variant="reg-14"
+              className="text-green-600 dark:text-green-40 font-medium"
             >
               {summary.add}
             </Text>
-            <Text variant="subtext" theme="muted">
+            <Text variant="reg-12" isMuted>
               to add
             </Text>
           </div>
           <div className="flex items-center gap-1.5">
             <Text
-              variant="base"
-              className="text-orange-600 dark:text-orange-400"
-              weight="strong"
+              variant="reg-14"
+              className="text-orange-600 dark:text-orange-400 font-medium"
             >
               {summary.change}
             </Text>
-            <Text variant="subtext" theme="muted">
+            <Text variant="reg-12" isMuted>
               to change
             </Text>
           </div>
           <div className="flex items-center gap-1.5">
             <Text
-              variant="base"
+              variant="med-14"
               className="text-red-600 dark:text-red-400"
-              weight="strong"
             >
               {summary.destroy}
             </Text>
-            <Text variant="subtext" theme="muted">
+            <Text variant="reg-12" isMuted>
               to destroy
             </Text>
           </div>
@@ -168,16 +165,16 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
                 aria-expanded={isExpanded}
               >
                 <span className="flex items-center gap-2">
-                  <CaretRight
+                  <CaretRightIcon
                     size={16}
                     className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                   />
                   <div className="flex flex-col text-left">
-                    <Text weight="strong">{change.release}</Text>
-                    <Text variant="subtext" theme="muted">
+                    <Text className="font-medium">{change.release}</Text>
+                    <Text variant="reg-12" isMuted>
                       {change.resource} ({change.resourceType})
                     </Text>
-                    <Text variant="subtext" theme="muted">
+                    <Text variant="reg-12" isMuted>
                       Namespace: {change.namespace}
                     </Text>
                   </div>
@@ -208,7 +205,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
                     </div>
                   ) : (
                     <div className="mt-2 px-2 py-2 bg-cool-grey-100 dark:bg-dark-grey-200 rounded border">
-                      <Text variant="subtext" theme="muted">
+                      <Text variant="reg-12" isMuted>
                         No diff available for this change.
                       </Text>
                     </div>

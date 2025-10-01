@@ -5,6 +5,7 @@
   "scripts": {
     "predev": "npm run generate-api-types",
     "dev": "next dev -p 4000 --turbo",
+    "dev:ladle": "ladle dev",
     "build": "cross-env NODE_ENV=production next build",
     "prebuild": "npm run generate-api-types",
     "generate-api-types": "openapi-typescript ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
@@ -27,6 +28,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@phosphor-icons/react": "^2.1.7",
     "@segment/analytics-next": "^1.72.2",
+    "@tailwindcss/postcss": "^4.1.13",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-table": "^8.20.5",
     "@uiw/react-textarea-code-editor": "^3.0.2",
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
+    "@ladle/react": "^5.0.3",
     "@mswjs/http-middleware": "^0.10.2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.2",
@@ -83,7 +86,7 @@
     "openapi-typescript": "^6.7.6",
     "postcss": "^8",
     "prettier": "^3.2.5",
-    "tailwindcss": "^3.3.0",
+    "tailwindcss": "^4.1.13",
     "tsx": "^4.19.3",
     "typescript": "^5",
     "vite-tsconfig-paths": "^4.3.2",
