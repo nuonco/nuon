@@ -64,7 +64,7 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
                 retry('skip-step')
               }}
               variant={'secondary'}
-              className="w-fit text-sm"
+              className="w-fit text-sm flex gap-2 items-center grow-0"
               disabled={isKickedOff}
             >
               {isSkipLoading ? (
@@ -90,7 +90,7 @@ export const RetryButtons = ({ step }: { step: TInstallWorkflowStep }) => {
               retry('retry-step')
             }}
             variant={'primary'}
-            className="w-fit text-sm"
+            className="w-fit text-sm flex gap-2 items-center"
             disabled={isKickedOff}
           >
             {isRetryLoading ? (
