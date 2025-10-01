@@ -9,8 +9,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
+	workflowsflow "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, fid string) error {
@@ -65,45 +66,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		return err
 	}
 
-	gen, has := c.Generators[flw.Type]
-	if !has {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: fid,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: "no workflow step generator registered for type",
-				Metadata: map[string]any{
-					"error_message": "no workflow step generator registered for workflow type " + flw.Type,
-				},
-			},
-		}); err != nil {
-			return err
-		}
-		return errors.Errorf("no workflow step generator registered for workflow type %s", flw.Type)
-	}
-
-	steps, err := gen(ctx, flw)
-	for idx, step := range steps {
-		step.Idx = idx
-		s, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
-			FlowID:        fid,
-			OwnerID:       flw.OwnerID,
-			OwnerType:     flw.OwnerType,
-			Status:        step.Status,
-			Name:          step.Name,
-			Signal:        step.Signal,
-			Idx:           step.Idx,
-			ExecutionType: step.ExecutionType,
-			Metadata:      step.Metadata,
-			Retryable:     step.Retryable,
-			Skippable:     step.Skippable,
-			GroupIdx:      step.GroupIdx,
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to create steps")
-		}
-		step.ID = s.ID
-	}
+	flw, err = c.generateSteps(ctx, flw)
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: fid,
@@ -128,12 +91,6 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		},
 	}); err != nil {
 		return err
-	}
-
-	// TODO(sdboyer) remove this once types align
-	flw.Steps = make([]app.WorkflowStep, len(steps))
-	for i, step := range steps {
-		flw.Steps[i] = *step
 	}
 
 	l.Debug("executing steps for workflow")
@@ -167,4 +124,32 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 	}
 
 	return nil
+}
+
+func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, flw *app.Workflow) (*app.Workflow, error) {
+	gen, has := c.Generators[flw.Type]
+	if !has {
+		return nil, errors.Errorf("no workflow step generator registered for workflow type %s", flw.Type)
+	}
+
+	steps, err := gen(ctx, flw)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to generate steps for workflow %s", flw.ID)
+	}
+
+	steps, err = workflowsflow.AwaitGenerateWorkflowSteps(ctx, &workflowsflow.GenerateWorkflowStepsRequest{
+		WorkflowID: flw.ID,
+		Steps:      steps,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create steps for workflow")
+	}
+
+	// TODO(sdboyer) remove this once types align
+	flw.Steps = make([]app.WorkflowStep, len(steps))
+	for i, step := range steps {
+		flw.Steps[i] = *step
+	}
+
+	return flw, nil
 }
