@@ -14,8 +14,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	activities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
+	activities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 var ErrNotApproved error = fmt.Errorf("not approved")

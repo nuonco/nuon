@@ -13,9 +13,9 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/poll"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep, stepIdx int) (*app.WorkflowStepApprovalResponse, error) {
