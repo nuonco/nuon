@@ -15,7 +15,11 @@
         "groups": [
           {
             "group": "Get Started",
-            "pages": ["get-started/introduction", "get-started/quickstart", "get-started/create-your-first-app"]
+            "pages": [
+              "get-started/introduction",
+              "get-started/quickstart",
+              "get-started/create-your-first-app"
+            ]
           },
           {
             "group": "Resources",
@@ -36,6 +40,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/019-self-service",
           "updates/018-management-mode",
           "updates/017-noop-approvals-stability-updates",
           "updates/016-enhanced-install-config-files-and-improved-plans",
@@ -118,7 +123,7 @@
               "production-readiness/break-glass",
               "production-readiness/customer-setup"
             ]
-          }          
+          }
         ]
       },
       {
