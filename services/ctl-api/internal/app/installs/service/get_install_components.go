@@ -40,29 +40,24 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 }
 
 func (s *service) getInstallComponents(ctx *gin.Context, installID string) ([]app.InstallComponent, error) {
-	install, err := s.getInstallByID(ctx, installID, nil, "")
-	if err != nil {
-		return nil, fmt.Errorf("unable to get install: %w", err)
+	paginatedComponents := []app.InstallComponent{}
+	tx := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
+		Joins("JOIN components ON components.id = install_components.component_id").
+		Order("created_at DESC").
+		Preload("Component").
+		Preload("TerraformWorkspace").
+		Where("install_id = ?", installID).
+		Find(&paginatedComponents)
+
+	if tx.Error != nil {
+		return nil, fmt.Errorf("unable to query install components: %w", tx.Error)
 	}
 
-	paginatedComponents, err := db.HandlePaginatedResponse(ctx, install.InstallComponents)
+	paginatedComponents, err := db.HandlePaginatedResponse(ctx, paginatedComponents)
 	if err != nil {
 		return nil, fmt.Errorf("failed to paginate install components: %w", err)
 	}
 
 	return paginatedComponents, nil
-}
-
-func (s *service) getLatestInstallsDeploys(ctx *gin.Context, installComponentIDs ...string) ([]app.InstallDeploy, error) {
-	installDeploys := []app.InstallDeploy{}
-	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1")).
-		Where("install_component_id IN ?", installComponentIDs).
-		Order("created_at DESC").
-		Find(&installDeploys)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
-	}
-
-	return installDeploys, nil
 }
