@@ -8,7 +8,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           stale-issue-message: 'This issue is stale because it has been open 2 days.'
           stale-pr-message: 'This PR was marked as stale, and will be closed after 3 more days. Add the #keep-open label to prevent this from being closed.'
