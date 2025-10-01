@@ -57,7 +57,7 @@ func NewTableModel(data [][]string) TableModel {
 		table.WithColumns(columns),
 		table.WithRows(tableRows),
 		table.WithFocused(false),
-		table.WithHeight(len(tableRows)), // Set height to match number of rows
+		table.WithHeight(len(tableRows)+1), // Set height to match number of rows + header
 	)
 
 	// Style the table

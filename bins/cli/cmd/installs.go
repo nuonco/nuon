@@ -139,7 +139,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	}
 	syncCmd.Flags().StringVarP(&fileOrDir, "file", "d", "", "Path to an install config file or a directory with install config files to sync")
 	syncCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the install belongs to")
-	syncCmd.Flags().BoolVarP(&confirm, "yes", "y", false, "Set to automatically approve diffs before syncing installs")
+	syncCmd.Flags().BoolVarP(&confirm, "yes", "y", false, "Set to automatically approve diffs and workflows for synced installs")
 	syncCmd.Flags().BoolVarP(&wait, "wait", "w", false, "Set to wait for workflows to complete after syncing installs")
 	syncCmd.MarkFlagRequired("file")
 	syncCmd.MarkFlagRequired("app-id")

@@ -111,7 +111,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
 	}
 
-	s.printWorkflowStatus(ctx, installWorkflowID, appInstall.ID, wait)
+	s.handleWorkflow(ctx, installWorkflowID, appInstall.ID, autoApprove, wait)
 
 	ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
 	return appInstall, nil
@@ -220,23 +220,36 @@ func (s *appInstallSyncer) syncExistingInstall(
 			return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)
 		}
 
-		s.printWorkflowStatus(ctx, workflowID, appInstall.ID, wait)
+		s.handleWorkflow(ctx, workflowID, appInstall.ID, autoApprove, wait)
 	}
 
 	ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	return appInstall, nil
 }
 
-func (s *appInstallSyncer) printWorkflowStatus(ctx context.Context, workflowID string, installID string, wait bool) {
+func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, autoApprove, wait bool) {
 	workflow, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil {
 		return
 	}
 
+	if workflow.ApprovalOption == models.AppInstallApprovalOptionPrompt {
+		if autoApprove && workflow.Status.Status == models.AppStatusPending {
+			_, err := s.api.UpdateWorkflow(ctx, workflow.ID, &models.ServiceUpdateWorkflowRequest{
+				ApprovalOption: models.AppInstallApprovalOptionApproveDashAll.Pointer(),
+			})
+			if err != nil {
+				ui.PrintError(fmt.Errorf("failed auto-approving workflow: %w", err))
+			} else {
+				ui.PrintSuccess("All changes have been auto-approved")
+			}
+		} else {
+			ui.PrintWarning("Some workflow steps might need manual approval from the UI")
+		}
+	}
+
 	view := ui.NewGetView()
 	view.Render(formatWorkflows([]*models.AppWorkflow{workflow}))
-
-	ui.PrintWarning("Some workflow steps might need manual approval from the UI")
 
 	if wait == false {
 		return
