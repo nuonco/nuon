@@ -127,20 +127,6 @@ export const MainNav: FC<{
       ),
       isExternal: true,
     },
-
-    {
-      href: `/${org.id}/releases`,
-      text: (
-        <>
-          <span>
-            <ListDashes weight="bold" />
-          </span>
-          {isSidebarOpen ? (
-            <span className="overflow-hidden">Releases</span>
-          ) : null}
-        </>
-      ),
-    },
   ]
 
   const NavLink: FC<{ link: TLink }> = ({ link }) => {
