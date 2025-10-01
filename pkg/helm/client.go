@@ -5,6 +5,8 @@ import (
 	"log/slog"
 
 	"go.uber.org/zap"
+	actionV3 "helm.sh/helm/v3/pkg/action"
+	kubeV3 "helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v4/pkg/action"
 	"helm.sh/helm/v4/pkg/kube"
 	"k8s.io/client-go/kubernetes"
@@ -59,10 +61,40 @@ func ClientV2(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configu
 	return ac, nil
 }
 
+func ActionConfigV3(log *zap.Logger, kubeCfg *rest.Config, ns string) (*actionV3.Configuration, error) {
+	clientset, err := kubernetes.NewForConfig(kubeCfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kube client: %w", err)
+	}
+
+	// Initialize our action
+	ac, err := initActionConfigV3(&RestClientGetter{
+		RestConfig: kubeCfg,
+		Clientset:  clientset,
+		Namespace:  ns,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get rest client: %w", err)
+	}
+
+	return ac, nil
+}
+
 func initActionConfig(getter *RestClientGetter) (*action.Configuration, error) {
 	actionCfg := action.Configuration{}
 
 	kc := kube.New(getter)
+
+	actionCfg.RESTClientGetter = getter
+	actionCfg.KubeClient = kc
+
+	return &actionCfg, nil
+}
+
+func initActionConfigV3(getter *RestClientGetter) (*actionV3.Configuration, error) {
+	actionCfg := actionV3.Configuration{}
+
+	kc := kubeV3.New(getter)
 
 	actionCfg.RESTClientGetter = getter
 	actionCfg.KubeClient = kc
