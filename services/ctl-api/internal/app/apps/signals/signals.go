@@ -86,7 +86,7 @@ func (s *Signal) Name() string {
 
 func (s *Signal) Stop() bool {
 	switch s.Type {
-	case OperationDeleted:
+	case OperationDeleted, OperationDeprovision:
 		return true
 	default:
 	}
