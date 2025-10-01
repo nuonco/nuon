@@ -190,3 +190,4 @@ docker_env:
   CLICKHOUSE_DB_NAME: ctl_api
   CLICKHOUSE_DB_USE_TLS: false
   TEMPORAL_UI_URL: http://host.nuon.dev:8233
+  SERVICE_TYPE: api
