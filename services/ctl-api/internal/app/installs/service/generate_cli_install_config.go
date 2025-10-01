@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iancoleman/strcase"
@@ -41,7 +42,7 @@ func (s *service) GenerateCLIInstallConfig(ctx *gin.Context) {
 	var response bytes.Buffer
 	enc := toml.NewEncoder(&response)
 	enc.SetTagName("mapstructure")
-	enc.Order(toml.OrderPreserve)
+	enc.Order(toml.OrderAlphabetical)
 
 	err = enc.Encode(installCfg)
 	if err != nil {
@@ -99,10 +100,16 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		inputGroups[inp.AppInputGroupID][inp.Name] = *installInputs.Values[inp.Name]
 	}
 
-	for _, group := range inputGroups {
+	keys := make([]string, 0, len(inputGroups))
+	for groupId, group := range inputGroups {
 		if len(group) > 0 {
-			installCfg.InputGroups = append(installCfg.InputGroups, group)
+			keys = append(keys, groupId)
 		}
+	}
+
+	slices.Sort(keys)
+	for _, k := range keys {
+		installCfg.InputGroups = append(installCfg.InputGroups, inputGroups[k])
 	}
 
 	return &installCfg, nil
