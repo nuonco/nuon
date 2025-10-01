@@ -1,107 +1,133 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-:root {
-  font-variant-ligatures: no-contextual !important;
-  color-scheme: light dark;
-  --border-color-light: #dee3e7;
-  --border-color-dark: #27252a;
-  --gradient-brand-light: linear-gradient(
-    88.14deg,
-    #f9519d 7.25%,
-    #6133ff 62.82%
-  );
-  --gradient-brand-dark: linear-gradient(
-    88.14deg,
-    #f72585 7.25%,
-    #3a00ff 62.82%
-  );
-}
+@config '../../tailwind.config.ts';
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --border-color: var(--border-color-light);
-  }
-  
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
   *,
-  .prose :where(hr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
-  .prose :where(tbody tr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
-  .prose :where(thead):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-    border-color: var(--border-color-light);
-  }
-
-  .history-event:before,
-  .timeline-event:before {
-    border-left: 1px solid var(--border-color-light);
-  }
-
-  .dashboard_sidebar {
-    background: linear-gradient(
-      336deg,
-      rgba(255, 255, 255, 1) 0%,
-      rgba(249, 249, 251, 1) 100%
-    );
-  }
-
-  .dashboard_nav {
-    background-image: url('../../public/light-sidebar-bg.svg');
-  }
-
-  .text-gradient {
-    background: var(--gradient-brand-light);
-  }
-
-  @media (min-width: 1020px) {
-    .landing-graphic {
-      background-image: url('../../public/landing-graphic-light.svg');
-    }
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --border-color: var(--border-color-dark);
-  }
-  
-  *,
-  .prose :where(hr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
-  .prose :where(tbody tr):not(:where([class~="not-prose"], [class~="not-prose"] *)),
-  .prose :where(thead):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
-    border-color: var(--border-color-dark);
-  }
-
-  .history-event:before,
-  .timeline-event:before {
-    border-left: 1px solid var(--border-color-dark);
-  }
-
-  .dashboard_sidebar {
-    background: linear-gradient(
-      336deg,
-      rgba(13, 4, 22, 1) 0%,
-      rgba(5, 1, 9, 1) 100%
-    );
-  }
-
-  .dashboard_nav {
-    background-image: url('../../public/sidebar-bg.svg');
-  }
-
-  .text-gradient {
-    background: var(--gradient-brand-dark);
-  }
-
-  @media (min-width: 1020px) {
-    .landing-graphic {
-      background-image: url('../../public/landing-graphic.svg');
-    }
-  }
+@utility text-balance {
+  text-wrap: balance;
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  :root {
+    font-variant-ligatures: no-contextual !important;
+    color-scheme: light dark;
+    --border-color-light: #dee3e7;
+    --border-color-dark: #27252a;
+    --gradient-brand-light: linear-gradient(
+      88.14deg,
+      #f9519d 7.25%,
+      #6133ff 62.82%
+    );
+    --gradient-brand-dark: linear-gradient(
+      88.14deg,
+      #f72585 7.25%,
+      #3a00ff 62.82%
+    );
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --border-color: var(--border-color-light);
+    }
+
+    *,
+    .prose :where(hr):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+    .prose
+      :where(tbody tr):not(
+        :where([class~='not-prose'], [class~='not-prose'] *)
+      ),
+    .prose
+      :where(thead):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      border-color: var(--border-color-light);
+    }
+
+    .history-event:before,
+    .timeline-event:before {
+      border-left: 1px solid var(--border-color-light);
+    }
+
+    .dashboard_sidebar {
+      background: linear-gradient(
+        336deg,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(249, 249, 251, 1) 100%
+      );
+    }
+
+    .dashboard_nav {
+      background-image: url('../../public/light-sidebar-bg.svg');
+    }
+
+    .text-gradient {
+      background: var(--gradient-brand-light);
+    }
+
+    @media (min-width: 1020px) {
+      .landing-graphic {
+        background-image: url('../../public/landing-graphic-light.svg');
+      }
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --border-color: var(--border-color-dark);
+    }
+
+    *,
+    .prose :where(hr):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+    .prose
+      :where(tbody tr):not(
+        :where([class~='not-prose'], [class~='not-prose'] *)
+      ),
+    .prose
+      :where(thead):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      border-color: var(--border-color-dark);
+    }
+
+    .history-event:before,
+    .timeline-event:before {
+      border-left: 1px solid var(--border-color-dark);
+    }
+
+    .dashboard_sidebar {
+      background: linear-gradient(
+        336deg,
+        rgba(13, 4, 22, 1) 0%,
+        rgba(5, 1, 9, 1) 100%
+      );
+    }
+
+    .dashboard_nav {
+      background-image: url('../../public/sidebar-bg.svg');
+    }
+
+    .text-gradient {
+      background: var(--gradient-brand-dark);
+    }
+
+    @media (min-width: 1020px) {
+      .landing-graphic {
+        background-image: url('../../public/landing-graphic.svg');
+      }
+    }
   }
 }
 
