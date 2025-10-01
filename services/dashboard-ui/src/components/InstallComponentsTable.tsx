@@ -23,19 +23,20 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useQueryParams } from '@/hooks/use-query-params'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
-import type { TInstallComponentSummary, TPaginationParams } from '@/types'
+import type { TInstallComponent, TPaginationParams } from '@/types'
 
 export interface IInstallComponentsTable
   extends IPollingProps,
     TPaginationParams {
-  initInstallComponents: Array<TInstallComponentSummary>
-
+  initInstallComponents: Array<TInstallComponent>
+  componentDeps: { id: string; component_id: string; dependencies: string[] }[]
   q?: string
   types?: string
 }
 
 export const InstallComponentsTable = ({
   initInstallComponents,
+  componentDeps,
   pollInterval = 10000,
   shouldPoll = false,
   offset,
@@ -46,10 +47,10 @@ export const InstallComponentsTable = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const params = useQueryParams({ q, offset, limit, types })
-  const { data: installComponents } = usePolling<TInstallComponentSummary[]>({
+  const { data: installComponents } = usePolling<TInstallComponent[]>({
     dependencies: [params],
     initData: initInstallComponents,
-    path: `/api/orgs/${org.id}/installs/${install.id}/components/summary${params}`,
+    path: `/api/orgs/${org.id}/installs/${install.id}/components${params}`,
     pollInterval,
     shouldPoll,
   })
@@ -73,11 +74,13 @@ export const InstallComponentsTable = ({
     updateData(installComponents)
   }, [installComponents])
 
-  const columns: Array<ColumnDef<TInstallComponentSummary>> = useMemo(
+  const columns: Array<
+    ColumnDef<TInstallComponent & { dependencies: string[] }>
+  > = useMemo(
     () => [
       {
         header: 'Name',
-        accessorKey: 'component_name',
+        accessorKey: 'component.name',
         cell: (props) => (
           <div className="flex flex-col gap-2">
             <Link
@@ -92,7 +95,7 @@ export const InstallComponentsTable = ({
       },
       {
         header: 'Type',
-        accessorKey: 'component_config.type',
+        accessorKey: 'component.type',
         id: 'component_config.type',
         filterFn: 'arrIncludesSome',
         cell: (props) =>
@@ -108,12 +111,17 @@ export const InstallComponentsTable = ({
       },
       {
         header: 'Deployment',
-        accessorKey: 'deploy_status',
+        accessorKey: 'status',
         cell: (props) =>
           props.getValue<string>() ? (
             <StatusBadge
-              status={props.getValue<string>()}
-              description={props.row?.original?.deploy_status_description}
+              status={
+                props.row?.original?.status_v2?.status ||
+                props.getValue<string>()
+              }
+              description={
+                props.row?.original?.status_v2?.status_human_description
+              }
             />
           ) : (
             <MinusIcon />
@@ -121,38 +129,52 @@ export const InstallComponentsTable = ({
       },
       {
         header: 'Dependencies',
-        accessorKey: 'dependencies',
+        id: 'dependencies',
         enableSorting: false,
-        cell: (props) => (
-          <div className="flex flex-wrap items-center gap-4">
-            {props.getValue<number>() ? (
-              <div className="flex items-center gap-4 flex-wrap w-full">
-                <ComponentDependencies
-                  deps={props?.row?.original?.dependencies}
-                  name={props.row.original?.component_name}
-                  installId={install.id}
-                />
-              </div>
-            ) : (
-              <Text>None</Text>
-            )}
-          </div>
-        ),
+        cell: (props) => {
+          const depIndex = componentDeps?.findIndex(
+            (dep) => dep?.id === props?.row?.original?.id
+          )
+
+          return (
+            <div className="flex flex-wrap items-center gap-4">
+              {componentDeps?.at(depIndex)?.dependencies?.length ? (
+                <div className="flex items-center gap-4 flex-wrap w-full">
+                  <ComponentDependencies
+                    deps={install?.install_components
+                      ?.map((ic) =>
+                        componentDeps
+                          ?.at(depIndex)
+                          ?.dependencies?.includes(ic?.component_id)
+                          ? ic?.component
+                          : undefined
+                      )
+                      .filter(Boolean)}
+                    name={props.row.original?.component?.name}
+                    installId={install.id}
+                  />
+                </div>
+              ) : (
+                <Text>None</Text>
+              )}
+            </div>
+          )
+        },
       },
-      {
-        header: 'Build',
-        accessorKey: 'build_status',
-        cell: (props) =>
-          props.getValue<string>() ? (
-            <StatusBadge
-              status={props.getValue<string>()}
-              description={props.row?.original?.build_status_description}
-              descriptionAlignment="right"
-            />
-          ) : (
-            <MinusIcon />
-          ),
-      },
+      /* {
+       *   header: 'Build',
+       *   accessorKey: 'build_status',
+       *   cell: (props) =>
+       *     props.getValue<string>() ? (
+       *       <StatusBadge
+       *         status={props.getValue<string>()}
+       *         description={props.row?.original?.build_status_description}
+       *         descriptionAlignment="right"
+       *       />
+       *     ) : (
+       *       <MinusIcon />
+       *     ),
+       * }, */
       {
         id: 'test',
         enableSorting: false,
