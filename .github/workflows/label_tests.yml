@@ -16,7 +16,7 @@ jobs:
       workers-canary: ${{ steps.filter.outputs.workers-canary }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: read ci triggers file
         uses: pietrobolcato/action-read-yaml@1.1.0
