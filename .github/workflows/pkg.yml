@@ -32,7 +32,7 @@ jobs:
       pkg: ${{ steps.filter.outputs.pkg }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: dorny/paths-filter@v3
         id: filter
@@ -53,7 +53,7 @@ jobs:
     runs-on: mono
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup nuonctl
         uses: powertoolsdev/mono/actions/setup-nuonctl@main

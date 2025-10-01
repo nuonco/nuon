@@ -31,7 +31,7 @@ jobs:
       tfcloud: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: read ci triggers file
         uses: pietrobolcato/action-read-yaml@1.1.0
