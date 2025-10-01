@@ -6,29 +6,8 @@ const config: Config = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/stratus/**/*.{js,ts,jsx,tsx,mdx}',
     './node_modules/react-tailwindcss-select/dist/index.esm.js',
-  ],
-  safelist: [
-    {
-      pattern: /z-(10|20|30|40|50)/,
-    },
-    {
-      pattern: /(bottom|top|left|right)-(0|2|4|6|8|10)/,
-    },
-    {
-      pattern: /(m|p)-(auto)/,
-    },
-    {
-      pattern: /rounded-none/,
-    },
-    {
-      pattern: /^divide-(x|y)-/,
-    },
-    {
-      pattern: /^size-/,
-    },
-  ],
+  ], 
   theme: {
     colors: {
       ...colors,
