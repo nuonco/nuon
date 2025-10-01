@@ -38,11 +38,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/activities"
-	flowactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/flow/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job/activities"
 	signalsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/signals/activities"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
+	workflowsflow "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow"
+	flowactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 var (
@@ -97,6 +98,7 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		fx.Provide(statusactivities.New),
 		fx.Provide(activities.New),
 		fx.Provide(job.New),
+		fx.Provide(workflowsflow.New),
 		fx.Provide(workflows.NewActivities),
 		fx.Provide(workflows.NewWorkflows),
 	)
