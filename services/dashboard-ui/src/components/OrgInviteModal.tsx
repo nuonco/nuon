@@ -1,24 +1,39 @@
 'use client'
 
-import React, { type FC, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { UserPlus } from '@phosphor-icons/react'
+import { UserPlusIcon } from '@phosphor-icons/react'
+import { inviteUser } from '@/actions/orgs/invite-user'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { SpinnerSVG } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { inviteUserToOrg } from '@/components/org-actions'
 import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 
-interface IOrgInviteModal {}
-
-export const OrgInviteModal: FC<IOrgInviteModal> = ({}) => {
+export const OrgInviteModal = () => {
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const {
+    data: invite,
+    error,
+    execute,
+    isLoading,
+  } = useServerAction({
+    action: inviteUser,
+  })
+
+  useEffect(() => {
+    if (error) {
+    }
+
+    if (invite) {
+      setIsOpen(false)
+    }
+  }, [invite, error])
 
   return (
     <>
@@ -36,25 +51,19 @@ export const OrgInviteModal: FC<IOrgInviteModal> = ({}) => {
               <form
                 onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
                   e.preventDefault()
-                  setIsLoading(true)
-                  const formData = new FormData(e.currentTarget)
+                  const formData = Object.fromEntries(
+                    new FormData(e.currentTarget)
+                  ) as { email: string }
 
-                  inviteUserToOrg(formData, org.id)
-                    .then(() => {
-                      setIsLoading(false)
-                      setIsOpen(false)
-                    })
-                    .catch((err) => {
-                      console.error(err)
-                      setIsLoading(false)
-                      setError(
-                        'Unable to invite user, refresh page and try again.'
-                      )
-                    })
+                  execute({ body: { email: formData?.email }, orgId: org.id })
                 }}
               >
                 <div className="p-6 flex flex-col gap-4">
-                  {error ? <Notice>{error}</Notice> : null}
+                  {error ? (
+                    <Notice>
+                      {error?.error || 'Unable to invite user to organization.'}
+                    </Notice>
+                  ) : null}
                   <label className="w-full flex flex-col gap-2">
                     <Text variant="med-14">
                       Email address of the user you want to invite
@@ -71,8 +80,6 @@ export const OrgInviteModal: FC<IOrgInviteModal> = ({}) => {
                   <Button
                     className="text-sm"
                     onClick={() => {
-                      setError(undefined)
-                      setIsLoading(false)
                       setIsOpen(false)
                     }}
                     type="button"
@@ -90,7 +97,7 @@ export const OrgInviteModal: FC<IOrgInviteModal> = ({}) => {
                       </>
                     ) : (
                       <>
-                        <UserPlus size="16" /> Invite user
+                        <UserPlusIcon size="16" /> Invite user
                       </>
                     )}
                   </Button>
@@ -106,7 +113,7 @@ export const OrgInviteModal: FC<IOrgInviteModal> = ({}) => {
           setIsOpen(true)
         }}
       >
-        <UserPlus size="16" />
+        <UserPlusIcon size="16" />
         Invite team member
       </Button>
     </>

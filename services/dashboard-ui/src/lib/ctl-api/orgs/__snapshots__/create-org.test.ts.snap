@@ -1,0 +1,41 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createOrg should handle response status codes from POST orgs endpoint > 400 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createOrg should handle response status codes from POST orgs endpoint > 401 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createOrg should handle response status codes from POST orgs endpoint > 403 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createOrg should handle response status codes from POST orgs endpoint > 404 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createOrg should handle response status codes from POST orgs endpoint > 500 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;

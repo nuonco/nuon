@@ -1,19 +1,16 @@
 'use client'
 
-import React, { type FC, useEffect } from 'react'
-import { Spinner } from '@phosphor-icons/react'
+import { SpinnerIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { Text } from '@/components/Typography'
-import { useAutoOrgCreation } from '@/hooks/useAutoOrgCreation'
+import { useAutoOrgCreation } from '@/hooks/use-auto-org-creation'
 
-interface OrgCreationStepContentProps {
-  stepComplete: boolean
-  onOrgCreated?: (orgId: string) => void
-}
-
-export const OrgCreationStepContent: FC<OrgCreationStepContentProps> = ({
+export const OrgCreationStepContent = ({
   stepComplete,
   onOrgCreated,
+}: {
+  stepComplete: boolean
+  onOrgCreated?: (orgId: string) => void
 }) => {
   const { isCreating, error, retry } = useAutoOrgCreation()
 
@@ -23,7 +20,7 @@ export const OrgCreationStepContent: FC<OrgCreationStepContentProps> = ({
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <Spinner className="animate-spin" size={16} />
+          <SpinnerIcon className="animate-spin" size={16} />
           <Text className="text-blue-600 dark:text-blue-400">
             Setting up your workspace...
           </Text>
@@ -84,4 +81,3 @@ export const OrgCreationStepContent: FC<OrgCreationStepContentProps> = ({
     </div>
   )
 }
-

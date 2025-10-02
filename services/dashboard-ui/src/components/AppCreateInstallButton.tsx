@@ -14,8 +14,7 @@ import { Text } from '@/components/Typography'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
-import { useAccount } from '@/components/AccountProvider'
-//import { createAppInstall } from './app-actions'
+import { useAccount } from '@/hooks/use-account'
 import type { TAppConfig, TUserJourney } from '@/types'
 
 interface IAppCreateInstallButton {
