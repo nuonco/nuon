@@ -73,6 +73,7 @@ nuon sync
 		c.secretsCmd(),
 		c.buildsCmd(),
 		c.devCmd(),
+		c.loginCmd(),
 	}
 
 	for _, cmd := range cmds {
