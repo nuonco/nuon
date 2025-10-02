@@ -10,6 +10,7 @@ export interface IUpdateRunnerBody {
 }
 
 export async function updateRunner({
+  body,
   orgId,
   runnerId,
 }: {
@@ -18,6 +19,7 @@ export async function updateRunner({
   orgId: string
 }) {
   return api<TRunnerJob>({
+    body,
     method: 'PATCH',
     orgId,
     path: `runners/${runnerId}/settings`,
