@@ -7,7 +7,7 @@ import { Text } from '@/components/Typography'
 interface CommandBlockProps {
   command: string
   title?: string
-  description?: string
+  description?: string | React.ReactElement
   className?: string
 }
 
@@ -39,4 +39,3 @@ export const CommandBlock: FC<CommandBlockProps> = ({
     </div>
   )
 }
-
