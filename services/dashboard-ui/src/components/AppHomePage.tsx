@@ -2,12 +2,12 @@
 
 import React, { type FC, useState, useEffect } from 'react'
 import classNames from 'classnames'
-import { ArrowLineLeft, ArrowLineRight } from '@phosphor-icons/react/dist/ssr'
+import { ArrowLineLeftIcon, ArrowLineRightIcon } from '@phosphor-icons/react'
+import { getIsSidebarOpenFromCookie } from "@/actions/layout/main-sidebar-cookie"
 import { Button } from '@/components/Button'
 import { Logo } from '@/components/Logo'
 import { SignOutButton } from '@/components/Profile'
 import { NuonVersions, type TNuonVersions } from '@/components/NuonVersions'
-import { useAccount } from '@/components/AccountProvider'
 import { getAPIVersion } from '@/lib'
 import { VERSION } from '@/utils'
 
@@ -43,7 +43,7 @@ const AppLayout: FC<{
               variant="ghost"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
-              {isSidebarOpen ? <ArrowLineLeft /> : <ArrowLineRight />}
+              {isSidebarOpen ? <ArrowLineLeftIcon /> : <ArrowLineRightIcon />}
             </Button>
           </div>
 
@@ -74,7 +74,6 @@ const AppLayout: FC<{
 }
 
 export const AppHomePage: FC = () => {
-  const { account, loading } = useAccount()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [versions, setVersions] = useState<TNuonVersions>({
     api: { git_ref: 'unknown' as any, version: 'unknown' as any },
