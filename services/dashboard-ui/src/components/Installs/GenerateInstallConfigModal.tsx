@@ -1,42 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { DownloadSimpleIcon, FileCodeIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/Button'
 import { ClickToCopyButton } from '@/components/ClickToCopy'
 import { CodeBlock } from '@/components/CodeBlock'
-import { Loading } from '@/components/Loading'
+import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useQuery } from '@/hooks/use-query'
+import type { TFileResponse } from '@/types'
+import { downloadFileOnClick } from '@/utils/file-download'
 
-// TODO(nnnnat): refactor to use-query and new api/orgs endpoint
 export const GenerateInstallConfigModal = () => {
-  const { org } = useOrg()
-  const { install } = useInstall()
   const [isOpen, setIsOpen] = useState(false)
-  const [config, setConfig] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState()
-
-  useEffect(() => {
-    if (isOpen) {
-      try {
-        fetch(
-          `/api/${org.id}/installs/${install.id}/generate-cli-install-config`
-        ).then((r) =>
-          r.text().then((res) => {
-            setIsLoading(false)
-            setConfig(res)
-          })
-        )
-      } catch (err) {
-        setError(err)
-      }
-    }
-  }, [isOpen])
 
   return (
     <>
@@ -55,48 +35,11 @@ export const GenerateInstallConfigModal = () => {
                 setIsOpen(false)
               }}
             >
-              <div className="flex flex-col gap-4 mb-6">
-                {error ? <Notice>{error}</Notice> : null}
-                {isLoading ? (
-                  <Loading
-                    loadingText="Generating install config file..."
-                    variant="stack"
-                  />
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    <ClickToCopyButton
-                      className="w-fit self-end"
-                      textToCopy={config}
-                    />
-                    <div className="overflow-auto max-h-[600px]">
-                      <CodeBlock language="toml">{config}</CodeBlock>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-3 justify-end">
-                <Button
-                  onClick={() => {
-                    setIsOpen(false)
-                  }}
-                  className="text-base"
-                >
-                  Close
-                </Button>
-                <a
-                  href={`/api/${org.id}/installs/${install.id}/generate-cli-install-config`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button
-                    className="flex items-center gap-1 text-sm font-medium disabled:!bg-primary-950"
-                    type="submit"
-                    variant="primary"
-                  >
-                    <DownloadSimpleIcon size="18" /> Download File
-                  </Button>
-                </a>
-              </div>
+              <DownloadInstallCLIConfig
+                handleClose={() => {
+                  setIsOpen(false)
+                }}
+              />
             </Modal>,
             document.body
           )
@@ -112,6 +55,74 @@ export const GenerateInstallConfigModal = () => {
         <FileCodeIcon size="16" />
         Generate Install Config
       </Button>
+    </>
+  )
+}
+
+const DownloadInstallCLIConfig = ({ handleClose }) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const {
+    data: config,
+    error,
+    isLoading,
+  } = useQuery<TFileResponse>({
+    path: `/api/orgs/${org.id}/installs/${install.id}/generate-cli-config`,
+  })
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 mb-6">
+        {error ? (
+          <Notice>
+            {error?.error || 'Unable to load install config TOML'}
+          </Notice>
+        ) : null}
+        {isLoading ? (
+          <Loading
+            loadingText="Generating install config file..."
+            variant="stack"
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            <ClickToCopyButton
+              className="w-fit self-end"
+              textToCopy={config?.content}
+            />
+            <div className="overflow-auto max-h-[600px]">
+              <CodeBlock language="json">{config?.content}</CodeBlock>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="flex gap-3 justify-end">
+        <Button onClick={handleClose} className="text-base">
+          Close
+        </Button>
+        {isLoading || !config?.content ? (
+          <Button
+            disabled={isLoading}
+            className="text-sm flex items-center gap-1"
+            variant="primary"
+            onClick={handleClose}
+          >
+            <SpinnerSVG /> Download TOML
+          </Button>
+        ) : (
+          <Button
+            className="text-sm flex items-center gap-1"
+            variant="primary"
+            onClick={() => {
+              downloadFileOnClick({
+                ...config,
+                callback: handleClose,
+              })
+            }}
+          >
+            <DownloadSimpleIcon size="18" /> Download TOML
+          </Button>
+        )}
+      </div>
     </>
   )
 }

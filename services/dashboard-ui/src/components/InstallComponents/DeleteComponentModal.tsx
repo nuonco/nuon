@@ -15,7 +15,7 @@ import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { useServerAction } from '@/hooks/use-server-action'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 
 interface IDeleteComponentModal {
   componentId: string

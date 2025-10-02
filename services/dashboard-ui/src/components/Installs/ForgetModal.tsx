@@ -15,7 +15,7 @@ import { Text } from '@/components/Typography'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 
 export const ForgetModal = () => {
   const { user } = useUser()

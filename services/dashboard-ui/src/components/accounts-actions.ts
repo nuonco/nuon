@@ -2,7 +2,7 @@
 
 import type { TAccount } from '@/types'
 import { nueQueryData } from '@/utils'
-import { getFetchOpts } from '@/utils/get-fetch-opts'
+import { getFetchOpts } from '@/utils'
 import { API_URL } from '@/configs/api'
 
 export async function getCurrentAccount(): Promise<TAccount | null> {

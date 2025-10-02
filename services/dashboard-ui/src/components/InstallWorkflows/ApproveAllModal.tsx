@@ -15,8 +15,9 @@ import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
+import { trackEvent } from '@/lib/segment-analytics'
 import type { TInstallWorkflow } from '@/types'
-import { trackEvent, removeSnakeCase, sentanceCase } from '@/utils'
+import { removeSnakeCase, sentanceCase } from '@/utils'
 
 interface IWorkflowApproveAllModal {
   buttonClassName?: string
