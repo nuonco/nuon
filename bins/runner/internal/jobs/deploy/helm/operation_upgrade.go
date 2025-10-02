@@ -58,17 +58,14 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
-	client.Atomic = false
 	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""
 	client.ResetValues = false
 	client.ReuseValues = false
-	client.Recreate = false
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
-	client.Force = false
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
 
 	crds := chart.CRDObjects()
@@ -109,17 +106,14 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
-	client.Atomic = false
 	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""
 	client.ResetValues = false
 	client.ReuseValues = false
-	client.Recreate = false
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
-	client.Force = false
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
 
 	rel, err := helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, l)

@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	chartutil "helm.sh/helm/v4/pkg/chart/v2/util"
+	chartcommon "helm.sh/helm/v4/pkg/chart/common"
+	chartutil "helm.sh/helm/v4/pkg/chart/common/util"
 	"helm.sh/helm/v4/pkg/strvals"
 
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
@@ -20,7 +21,7 @@ func ChartValues(values []string, helmSet []plantypes.HelmValue) (map[string]int
 			continue
 		}
 
-		currentVals, err := chartutil.ReadValues([]byte(values))
+		currentVals, err := chartcommon.ReadValues([]byte(values))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to read values")
 		}
