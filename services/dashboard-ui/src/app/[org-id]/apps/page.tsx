@@ -4,7 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { DashboardContent, ErrorFallback, Loading, Section } from '@/components'
 import { getOrgById } from '@/lib'
 // TODO(nnnat): move segment init script to org dashboard
-import { SegmentAnalyticsSetOrg } from '@/utils'
+import { SegmentAnalyticsSetOrg } from '@/lib/segment-analytics'
 import { Apps } from './apps'
 
 export async function generateMetadata({ params }): Promise<Metadata> {

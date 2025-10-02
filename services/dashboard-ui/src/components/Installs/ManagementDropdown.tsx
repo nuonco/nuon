@@ -14,11 +14,9 @@ import { SyncSecretsModal } from './SyncSecretsModal'
 import { Dropdown } from '@/components/Dropdown'
 import { Text } from '@/components/Typography'
 import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
 import { GenerateInstallConfigModal } from './GenerateInstallConfigModal'
 
 export const InstallManagementDropdown = () => {
-  const { org } = useOrg()
   const { install } = useInstall()
 
   return (
@@ -42,7 +40,7 @@ export const InstallManagementDropdown = () => {
 
         {install?.install_inputs?.length ? <EditModal /> : null}
         <BreakGlassLink installId={install.id} />
-        <InstallAuditHistoryModal installId={install.id} orgId={org.id} />
+        <InstallAuditHistoryModal />
         <InstallStateModal />
         <AutoApproveModal />
         <GenerateInstallConfigModal />

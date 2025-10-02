@@ -29,21 +29,21 @@ export interface IRouteProps extends IPageProps {}
 // -- end old types ---
 
 // nextjs types
-export type TParams<Keys extends string> = Promise<Record<Keys, string>>;
+export type TParams<Keys extends string> = Promise<Record<Keys, string>>
 
 export type TRouteProps<Keys extends string, T = {}> = {
-  params: TParams<Keys>;
-} & T;
+  params: TParams<Keys>
+} & T
 
 export type TPageProps<Keys extends string, T = {}> = {
-  params: TParams<Keys>;
-  searchParams: Promise<Record<string, string>>;
-} & T;
+  params: TParams<Keys>
+  searchParams: Promise<Record<string, string>>
+} & T
 
 export type TLayoutProps<Keys extends string, T = {}> = {
-  children: ReactNode;
-  params: TParams<Keys>;
-} & T;
+  children: ReactNode
+  params: TParams<Keys>
+} & T
 
 export type TNavLink = {
   icon?: React.ReactNode
@@ -58,21 +58,23 @@ export type TPaginationPageData = {
 }
 
 export type TPaginationParams = {
-  offset?: number | string;
-  limit?: number | string;
-};
+  offset?: number | string
+  limit?: number | string
+}
 
 // fetch wrapper types
 export type TAPIError = {
-  description: string;
-  error: string;
-  user_error: boolean;
-  meta?: any;
-};
+  description: string
+  error: string
+  user_error: boolean
+  meta?: any
+}
 
 export type TAPIResponse<T> = {
-  data: T | null;
-  error: null | TAPIError;
-  headers: Record<string, string>;
-  status: Response["status"];
-};
+  data: T | null
+  error: null | TAPIError
+  headers: Record<string, string>
+  status: Response['status']
+}
+
+export type TFileResponse = { content: string; filename: string }

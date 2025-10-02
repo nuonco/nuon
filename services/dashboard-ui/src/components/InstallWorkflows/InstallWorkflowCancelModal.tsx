@@ -14,8 +14,9 @@ import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
+import { trackEvent } from '@/lib/segment-analytics'
 import type { TWorkflow } from '@/types'
-import { trackEvent, removeSnakeCase } from '@/utils'
+import { removeSnakeCase } from '@/utils'
 
 interface IInstallWorkflowCancelModal {
   buttonClassName?: string

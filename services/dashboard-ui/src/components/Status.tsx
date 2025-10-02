@@ -1,11 +1,9 @@
 'use client'
 
 import classNames from 'classnames'
-import { usePathname } from 'next/navigation'
-import React, { type FC, useEffect } from 'react'
+import React, { type FC } from 'react'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
-import { revalidateData } from '@/components/actions'
 import { titleCase, POLL_DURATION } from '@/utils'
 
 export type TStatus = 'active' | 'failed' | 'error' | 'waiting'
@@ -65,20 +63,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'user-skipped' ||
     status === 'auto-skipped'
 
-  const statusText = isLabelStatusText ? label : status
-
-  const path = usePathname()
-
-  /* useEffect(() => {
-   *   const refreshData = () => {
-   *     revalidateData({ path })
-   *   }
-   *   if (shouldPoll) {
-   *     const pollBuild = setInterval(refreshData, pollDuration)
-
-   *     return () => clearInterval(pollBuild)
-   *   }
-   * }, [status, shouldPoll]) */
+  const statusText = isLabelStatusText ? label : status  
 
   const Status = (
     <span
