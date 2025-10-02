@@ -73,7 +73,7 @@ jobs:
           SLACK_USERNAME: github-bot
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_MESSAGE: |
-            ⛴  [MANUAL PROMOTION] from branch `${{ github.event.inputs.branch }}` (`${{ needs.tag.outputs.git_ref }}`)
+            ⛴  *MANUAL PROMOTION* from branch `${{ github.event.inputs.branch }}` `${{ needs.tag.outputs.git_ref }}` to `${{needs.tag.outputs.semver}}`
             *version* - ${{ needs.tag.outputs.semver }}
             *services* - all
             *stage* - true
@@ -135,7 +135,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_COLOR: ${{steps.check.outputs.status}}
           SLACK_MESSAGE: |
-            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} [MANUAL PROMOTION] finished from branch `${{ github.event.inputs.branch }}` (`${{ needs.tag.outputs.git_ref }}`)
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} **MANUAL PROMOTION** finished from branch `${{ github.event.inputs.branch }}` `${{ needs.tag.outputs.git_ref }}` to `${{ needs.tag.outputs.semver }}`
             *version* - ${{ needs.tag.outputs.semver }}
             *stage* - true
             *prod* - true
