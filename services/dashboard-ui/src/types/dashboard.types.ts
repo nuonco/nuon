@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { TIconVariant } from '@/components/common/Icon'
 
 // TODO(nnnat): old types replace with types below
 export type TRouteParams<S extends string | number | symbol = string> = Record<
@@ -45,23 +46,6 @@ export type TLayoutProps<Keys extends string, T = {}> = {
   params: TParams<Keys>
 } & T
 
-export type TNavLink = {
-  icon?: React.ReactNode
-  path: string
-  text: string
-  isExternal?: boolean
-}
-
-export type TPaginationPageData = {
-  hasNext: string
-  offset: string
-}
-
-export type TPaginationParams = {
-  offset?: number | string
-  limit?: number | string
-}
-
 // fetch wrapper types
 export type TAPIError = {
   description: string
@@ -78,3 +62,161 @@ export type TAPIResponse<T> = {
 }
 
 export type TFileResponse = { content: string; filename: string }
+
+export type TPaginationPageData = {
+  hasNext: string
+  offset: string
+}
+
+export type TPaginationParams = {
+  offset?: number | string
+  limit?: number | string
+}
+
+// page nav link types
+export type TNavLink = {
+  iconVariant?: TIconVariant
+  path: string
+  text: string
+  isExternal?: boolean
+}
+
+// UI variant types
+export type TEmptyVariant =
+  | '404'
+  | 'actions'
+  | 'diagram'
+  | 'history'
+  | 'search'
+  | 'table'
+
+// Key value type
+export type TKeyValue = {
+  key: string
+  value: string
+  type?: string
+}
+
+// Terraform plan types
+export type TTerraformChangeAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'noop'
+  | 'replace'
+  | 'read'
+
+export type TTerraformResourceChange = {
+  address: string
+  module?: string | null
+  resource: string
+  name: string
+  action: TTerraformChangeAction
+  before?: any
+  after?: any
+}
+
+export type TTerraformOutputChange = {
+  output: string
+  action: TTerraformChangeAction
+  before?: any
+  after?: any
+  afterUnknown?: any
+  afterSensitive?: any
+  beforeSensitive?: any
+}
+
+export type TTerraformPlan = {
+  resource_changes: Array<{
+    address: string
+    module_address?: string | null
+    type: string
+    name: string
+    change: {
+      actions: TTerraformChangeAction[]
+      before?: any
+      after?: any
+      after_unknown?: any
+    }
+  }>
+  output_changes?: {
+    [name: string]: {
+      actions: TTerraformChangeAction[]
+      before?: any
+      after?: any
+      after_unknown?: any
+      after_sensitive?: any
+      before_sensitive?: any
+    }
+  }
+}
+
+// Helm & K8s plan types
+export type THelmK8sChangeAction =
+  | 'add'
+  | 'added'
+  | 'change'
+  | 'changed'
+  | 'destroy'
+  | 'destroyed'
+
+type TPlanSummary = {
+  add: number
+  change: number
+  destroy: number
+}
+
+type TPlanChange = {
+  resource: string
+  resourceType: string
+  action: THelmK8sChangeAction
+  before?: string
+  after?: string
+}
+
+export type THelmPlanSummary = TPlanSummary
+export type TKubernetesPlanSummary = TPlanSummary
+export type TKubernetesPlanChange = TPlanChange & {
+  name: string
+  namespace: string
+}
+export type THelmPlanChange = TPlanChange & {
+  workspace: string
+  release: string
+}
+
+export type TKubernetesPlanItem = {
+  group_version_kind: {
+    Group: string
+    Version: string
+    Kind: string
+  }
+  group_version_resource: {
+    Group: string
+    Version: string
+    Resource: string
+  }
+  namespace: string
+  name: string
+  before?: string
+  after?: string
+  op: string
+}
+
+export type TKubernetesPlan = TKubernetesPlanItem[]
+
+export type THelmPlan = {
+  plan: string
+  op: string
+  helm_content_diff: {
+    api: string
+    kind: string
+    name: string
+    namespace: string
+    before: string
+    after: string
+  }[]
+}
+
+// cloud platform
+export type TCloudPlatform = 'aws' | 'azure' | 'gcp' | 'unknown'
