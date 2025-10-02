@@ -163,17 +163,14 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
-	client.Atomic = false
 	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""
 	client.ResetValues = false
 	client.ReuseValues = false
-	client.Recreate = false
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
-	client.Force = false
 
 	l.Info("calculating helm diff")
 	rel, err := client.RunWithContext(ctx, prevRel.Name, chart, values)
@@ -237,7 +234,6 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	client.GenerateName = false
 	client.NameTemplate = ""
 	client.OutputDir = ""
-	client.Atomic = false
 	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
