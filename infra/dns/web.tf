@@ -5,7 +5,7 @@ resource "aws_route53_record" "www-naked" {
   type    = "A"
   ttl     = 300
   records = [
-    "76.76.21.21",
+    "216.150.1.1",
   ]
 }
 
