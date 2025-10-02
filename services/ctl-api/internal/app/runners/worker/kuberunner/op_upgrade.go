@@ -36,17 +36,14 @@ func (h *Activities) upgrade(ctx context.Context, actionCfg *action.Configuratio
 	client.DependencyUpdate = true
 	client.Timeout = req.Timeout
 	client.Namespace = req.Namespace
-	client.Atomic = false
 	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""
 	client.ResetValues = false
 	client.ReuseValues = false
-	client.Recreate = false
 	client.MaxHistory = 0
 	client.CleanupOnFail = false
-	client.Force = false
 
 	l.Info("loading values")
 	vals := h.getValues(req)
