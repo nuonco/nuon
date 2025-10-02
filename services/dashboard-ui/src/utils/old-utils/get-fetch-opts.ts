@@ -4,7 +4,7 @@ export async function getFetchOpts(
   orgId = '',
   headers = {},
   abortTimeout = 5000
-): Promise<RequestInit> {  
+): Promise<RequestInit> {
   const session = await auth0.getSession()
   return {
     cache: 'no-store',
