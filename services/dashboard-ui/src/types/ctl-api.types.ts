@@ -18,6 +18,7 @@ export type TBuild = TComponentBuild & { org_id: string }
 
 // org
 export type TOrg = components['schemas']['app.Org']
+export type TOrgInvite = components['schemas']['app.OrgInvite']
 
 // install
 export type TInstall = components['schemas']['app.Install'] & {

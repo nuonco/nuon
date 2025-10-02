@@ -2,18 +2,18 @@
 
 import React, { type FC, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { completeUserJourney } from '@/actions/accounts/complete-user-journey'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/Button'
 import { Text } from '@/components/Typography'
-import { useAccount } from '@/components/AccountProvider'
+import { useAccount } from '@/hooks/use-account'
+import type { TAccount, TUserJourney, TUserJourneyStep } from '@/types'
 import { ChecklistItem } from './ChecklistItem'
 import { CLIInstallStepContent } from './CLIInstallStepContent'
 import { CreateAppStepContent } from './CreateAppStepContent'
 import { AppSyncStepContent } from './AppSyncStepContent'
 import { InstallCreationStepContent } from './InstallCreationStepContent'
 import { OrgCreationStepContent } from './OrgCreationStepContent'
-import type { TAccount, TUserJourney, TUserJourneyStep } from '@/types'
-import { completeUserJourney } from '@/components/org-actions'
 
 interface ProductionReadyChecklistModalProps {
   isOpen: boolean
@@ -119,7 +119,7 @@ export const ProductionReadyChecklistModal: FC<
   // Server action to complete evaluation journey
   const completeEvaluationJourneyAction = async (): Promise<boolean> => {
     try {
-      await completeUserJourney('evaluation')
+      await completeUserJourney({ journeyName: 'evaluation' })
       return true
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -205,19 +205,23 @@ export const ProductionReadyChecklistModal: FC<
                         </Text>
                       </div>
                       <Text className="text-gray-600 dark:text-gray-400">
-                        You&rsquo;re now ready to set up your organization and start
-                        deploying applications.
+                        You&rsquo;re now ready to set up your organization and
+                        start deploying applications.
                       </Text>
                     </div>
                   )}
 
                   {/* Original Step Instructions - Always shown */}
-                  <div className={`space-y-3 ${step.complete ? 'opacity-75' : ''}`}>
+                  <div
+                    className={`space-y-3 ${step.complete ? 'opacity-75' : ''}`}
+                  >
                     <Text className="text-gray-600 dark:text-gray-400">
-                      Welcome to Nuon! Your account creation is the first step in setting up your deployment platform.
+                      Welcome to Nuon! Your account creation is the first step
+                      in setting up your deployment platform.
                     </Text>
                     <Text className="text-sm text-gray-500 dark:text-gray-500">
-                      With your account created, you can now proceed to create an organization and start managing your applications.
+                      With your account created, you can now proceed to create
+                      an organization and start managing your applications.
                     </Text>
                   </div>
                 </div>
@@ -238,8 +242,10 @@ export const ProductionReadyChecklistModal: FC<
               ) : step.name === 'install_created' ? (
                 (() => {
                   // Get app_id from current step or fallback to app_created step
-                  const appId = step.metadata?.app_id ||
-                    allJourneySteps.find(s => s.name === 'app_created')?.metadata?.app_id
+                  const appId =
+                    step.metadata?.app_id ||
+                    allJourneySteps.find((s) => s.name === 'app_created')
+                      ?.metadata?.app_id
 
                   return (
                     <InstallCreationStepContent
