@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -23,7 +24,8 @@ type RunnerJobPlan struct {
 
 	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
 
-	PlanJSON string `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
+	PlanJSON      string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
+	CompositePlan plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
 }
 
 func (r *RunnerJobPlan) BeforeCreate(tx *gorm.DB) error {
