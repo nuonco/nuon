@@ -3,14 +3,12 @@
 import React, { type FC } from 'react'
 import { FaAws } from 'react-icons/fa'
 import { VscAzure } from 'react-icons/vsc'
-import { QuestionMark } from '@phosphor-icons/react'
-import { ClickToCopy } from '@/components/ClickToCopy'
-import { Config, ConfigContent } from '@/components/Config'
-import { Link } from '@/components/Link'
+import {  ConfigContent } from '@/components/Config'
 import { ToolTip } from '@/components/ToolTip'
-import { Code, Text } from '@/components/Typography'
-import type { TInstall, TSandboxConfig } from '@/types'
-import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
+import {  Text } from '@/components/Typography'
+import { AWS_REGIONS, AZURE_REGIONS } from "@/configs/cloud-regions"
+import type { TInstall } from '@/types'
+import { getFlagEmoji } from '@/utils'
 
 export const InstallPlatform: FC<{ platform: 'aws' | 'azure' | string }> = ({
   platform,

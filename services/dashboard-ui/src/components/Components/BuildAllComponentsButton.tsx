@@ -14,7 +14,7 @@ import { Text, ID } from '@/components/Typography'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import type { TComponent, TAPIError } from '@/types'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 
 export const BuildAllComponentsButton: FC<{
   components: Array<TComponent>

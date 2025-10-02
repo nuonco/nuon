@@ -5,8 +5,7 @@ import { cookies } from 'next/headers'
 import { auth0 } from '@/lib/auth'
 import { joinWaitlist, type IJoinWaitlist } from '@/lib'
 import type { TInvite, TWaitlist, TOrg } from '@/types'
-import { mutateData, nueMutateData, SF_TRIAL_ACCESS_ENDPOINT } from '@/utils'
-import { getFetchOpts } from '@/utils/get-fetch-opts'
+import { mutateData, nueMutateData, SF_TRIAL_ACCESS_ENDPOINT, getFetchOpts } from '@/utils'
 import { API_URL } from '@/configs/api'
 
 export async function requestWaitlistAccess(
