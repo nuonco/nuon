@@ -5,7 +5,7 @@ resource "aws_route53_record" "www-naked" {
   type    = "A"
   ttl     = 300
   records = [
-    "76.76.21.21"
+    "76.76.21.21",
   ]
 }
 
@@ -15,6 +15,6 @@ resource "aws_route53_record" "www" {
   type    = "CNAME"
   ttl     = 300
   records = [
-    "cname.vercel-dns.com"
+    "45828c60ae8a324a.vercel-dns-016.com"
   ]
 }
