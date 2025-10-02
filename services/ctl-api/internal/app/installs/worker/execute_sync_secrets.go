@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -84,9 +85,14 @@ func (w *Workflows) SyncSecrets(ctx workflow.Context, sreq signals.RequestSignal
 	if err != nil {
 		return errors.Wrap(err, "unable to create json")
 	}
+
+	// Deprecated: for now we dual write both the plan json and the composite plan
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
+		CompositePlan: plantypes.CompositePlan{
+			SyncSecretsPlan: plan,
+		},
 	}); err != nil {
 		return fmt.Errorf("unable to save plan: %w", err)
 	}
