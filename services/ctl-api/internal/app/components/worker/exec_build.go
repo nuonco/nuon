@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/plan"
@@ -69,6 +70,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
+		CompositePlan: plantypes.CompositePlan{
+			BuildPlan: runPlan,
+		},
 	}); err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to save job plan")
 		return fmt.Errorf("unable to save runner job plan: %w", err)

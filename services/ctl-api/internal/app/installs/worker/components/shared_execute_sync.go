@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -75,9 +76,13 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		return errors.Wrap(err, "unable to create json")
 	}
 
+	// Deprecated: for now we dual write both the plan json and the composite plan
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
+		CompositePlan: plantypes.CompositePlan{
+			SyncOCIPlan: runPlan,
+		},
 	}); err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
