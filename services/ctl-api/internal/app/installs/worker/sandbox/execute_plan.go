@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
@@ -63,6 +64,9 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
+		CompositePlan: plantypes.CompositePlan{
+			SandboxRunPlan: runPlan,
+		},
 	}); err != nil {
 		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
