@@ -21,5 +21,6 @@ export async function GET(
     q,
     types,
   })
+
   return NextResponse.json(response)
 }

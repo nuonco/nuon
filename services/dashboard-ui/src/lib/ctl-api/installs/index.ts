@@ -4,6 +4,7 @@ export * from './sandbox'
 
 // install query
 export * from './get-installs'
+export * from './get-install-audit-log'
 export * from './get-install-by-id'
 export * from './get-install-stack'
 export * from './get-install-state'
@@ -22,4 +23,3 @@ export * from './sync-secrets'
 export * from './update-install-config'
 export * from './update-install-inputs'
 export * from './update-install'
-
