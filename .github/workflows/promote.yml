@@ -84,7 +84,7 @@ jobs:
           SLACK_USERNAME: github-bot
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_MESSAGE: |
-            ⛴  promoting `${{ needs.tag.outputs.git_ref }}`
+            ⛴  promoting `${{ needs.tag.outputs.git_ref }}` to `${{needs.tag.outputs.semver}}`
             *stage* - true
             *prod* - true
 
@@ -149,7 +149,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_COLOR: ${{steps.check.outputs.status}}
           SLACK_MESSAGE: |
-            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting `${{ needs.tag.outputs.git_ref }} to `${{ needs.tag.outputs.semver }}`
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting `${{ needs.tag.outputs.git_ref }}` to `${{ needs.tag.outputs.semver }}`
             *prod* - true
             *status* - ${{steps.check.outputs.status}}
 
