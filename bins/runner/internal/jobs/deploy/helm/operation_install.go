@@ -47,7 +47,6 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.GenerateName = false
 	client.NameTemplate = ""
 	client.OutputDir = ""
-	client.Atomic = false
 	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
