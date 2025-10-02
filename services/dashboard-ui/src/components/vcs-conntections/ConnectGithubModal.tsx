@@ -1,9 +1,11 @@
 'use client'
 
-import React, { type FC, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FaGithub } from 'react-icons/fa'
-import { CaretLeft, Plus } from '@phosphor-icons/react'
+import { CaretLeftIcon, PlusIcon } from '@phosphor-icons/react'
+import { createVCSConnection } from '@/actions/vcs-connection/create-vcs-connection'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -12,18 +14,34 @@ import { Link } from '@/components/Link'
 import { Modal } from '@/components/Modal'
 import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
-import { connectGitHubToOrg } from '@/components/org-actions'
 import { GITHUB_APP_NAME } from '@/configs/github-app'
 import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
 
-interface IConnectGithubModal {}
-
-export const ConnectGithubModal: FC<IConnectGithubModal> = ({}) => {
+export const ConnectGithubModal = () => {
+  const path = usePathname()
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
   const [isManual, setIsManual] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string>()
+
+  const {
+    data: vcsConnection,
+    error,
+    execute,
+    isLoading,
+  } = useServerAction({
+    action: createVCSConnection,
+  })
+
+  useEffect(() => {
+    if (error) {
+    }
+
+    if (vcsConnection) {
+      setIsOpen(false)
+      setIsManual(false)
+    }
+  }, [vcsConnection, error])
 
   return (
     <>
@@ -51,50 +69,33 @@ export const ConnectGithubModal: FC<IConnectGithubModal> = ({}) => {
                       setIsManual(false)
                     }}
                   >
-                    <CaretLeft />
+                    <CaretLeftIcon />
                     Back
                   </Button>
 
                   <form
                     onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
                       e.preventDefault()
-                      setIsLoading(true)
                       const formData = Object.fromEntries(
                         new FormData(e.currentTarget)
                       ) as {
                         github_install_id: string
-                        org_id: string
                       }
-
-                      connectGitHubToOrg(formData)
-                        .then(({ error }) => {
-                          setIsLoading(false)
-                          if (error) {
-                            setError(
-                              error?.error ||
-                                'An error occured while trying to connect the GitHub account. Please try again.'
-                            )
-                          } else {
-                            setIsManual(false)
-                            setError(undefined)
-                            setIsOpen(false)
-                          }
-                        })
-                        .catch(() => {
-                          setError(
-                            'An error occured while trying to connect the GitHub account. Please try again.'
-                          )
-                        })
+                      execute({
+                        body: {
+                          github_install_id: formData?.github_install_id,
+                        },
+                        orgId: org.id,
+                        path,
+                      })
                     }}
                   >
                     <div className="flex flex-col gap-4">
-                      {error ? <Notice>{error}</Notice> : null}
-                      <Input
-                        type="hidden"
-                        name="org_id"
-                        defaultValue={org?.id}
-                        required
-                      />
+                      {error ? (
+                        <Notice>
+                          {error?.error || 'Unable to create VCS connection.'}
+                        </Notice>
+                      ) : null}
                       <label className="w-full flex flex-col gap-2">
                         <Text variant="med-14">GitHub install ID</Text>
                         <Input
@@ -110,8 +111,6 @@ export const ConnectGithubModal: FC<IConnectGithubModal> = ({}) => {
                         className="text-sm"
                         onClick={() => {
                           setIsManual(false)
-                          setError(undefined)
-                          setIsLoading(false)
                           setIsOpen(false)
                         }}
                         type="button"
@@ -129,7 +128,7 @@ export const ConnectGithubModal: FC<IConnectGithubModal> = ({}) => {
                           </>
                         ) : (
                           <>
-                            <Plus size="16" /> Add GitHub connection
+                            <PlusIcon size="16" /> Add GitHub connection
                           </>
                         )}
                       </Button>
@@ -215,7 +214,7 @@ export const ConnectGithubModal: FC<IConnectGithubModal> = ({}) => {
           setIsOpen(true)
         }}
       >
-        <Plus className="text-lg" />
+        <PlusIcon className="text-lg" />
         Add
       </Button>
     </>
