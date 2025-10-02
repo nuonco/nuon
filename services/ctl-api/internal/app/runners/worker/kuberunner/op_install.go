@@ -33,7 +33,6 @@ func (h *Activities) install(ctx context.Context, actionCfg *action.Configuratio
 	client.GenerateName = false
 	client.ReleaseName = fmt.Sprintf("runner-%s", req.RunnerID)
 	client.OutputDir = ""
-	client.Atomic = false
 	client.SkipCRDs = false
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
