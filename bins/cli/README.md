@@ -1,3 +1,3 @@
 # Nuon CLI
 
-Our public CLI.
+This powers `brew install nuon`
