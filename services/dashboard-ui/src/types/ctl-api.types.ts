@@ -42,6 +42,7 @@ export type TInstallComponentOutputs = Record<string, string>
 export type TInstallComponentSummary =
   components['schemas']['app.InstallComponentSummary']
 export type TInstallConfig = components['schemas']['app.InstallConfig']
+export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {

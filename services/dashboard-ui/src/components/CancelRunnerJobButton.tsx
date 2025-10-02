@@ -12,7 +12,7 @@ import { Modal } from '@/components/Modal'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 
 export type TCancelJobType =
   | 'build'

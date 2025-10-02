@@ -1,14 +1,13 @@
-// @ts-nocheck
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
+import { InitDatadogLogs } from '@/lib/datadog-logs'
+import { InitDatadogRUM } from '@/lib/datadog-rum'
 import {
-  InitDatadogLogs,
-  InitDatadogRUM,
   InitSegmentAnalytics,
   SegmentAnalyticsIdentify,
-} from '@/utils'
+} from '@/lib/segment-analytics'
 import { AccountProvider } from '@/components/AccountProvider'
 import { GlobalUserJourneyProvider } from '@/components/GlobalUserJourneyProvider'
 import './globals.css'
@@ -61,9 +60,7 @@ export default function RootLayout({
             githubAppName={process.env.GITHUB_APP_NAME}
           />
           <AccountProvider>
-            <GlobalUserJourneyProvider>
-              {children}
-            </GlobalUserJourneyProvider>
+            <GlobalUserJourneyProvider>{children}</GlobalUserJourneyProvider>
           </AccountProvider>
           {process.env.SEGMENT_WRITE_KEY && (
             <Suspense>

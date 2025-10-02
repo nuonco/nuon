@@ -1,6 +1,5 @@
 import { API_URL } from '@/configs/api'
-import { getFetchOpts } from '@/utils/get-fetch-opts'
-import type { TQuery } from '@/utils'
+import { getFetchOpts, type TQuery } from '@/utils'
 
 export interface IMutateData {
   data?: Record<string, unknown>
@@ -58,11 +57,11 @@ export async function nueMutateData<T>({
       r.json().then((data) =>
         r.ok
           ? {
-            data,
-            error: null,
-            status: r.status,
-            headers: r.headers,
-          }
+              data,
+              error: null,
+              status: r.status,
+              headers: r.headers,
+            }
           : { data: null, error: data, status: r.status, headers: r.headers }
       )
     )

@@ -15,7 +15,7 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
 import type { TComponent } from '@/types'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 
 export const BuildComponentButton = ({
   component,

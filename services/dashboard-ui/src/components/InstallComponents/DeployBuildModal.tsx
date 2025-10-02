@@ -18,7 +18,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
 import { useServerAction } from '@/hooks/use-server-action'
 import type { TBuild } from '@/types'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 
 export const InstallDeployBuildModal: FC<{
   buttonClassName?: string
