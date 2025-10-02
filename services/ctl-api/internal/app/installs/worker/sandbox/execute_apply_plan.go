@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/plan"
@@ -116,9 +117,13 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return errors.Wrap(err, "unable to create json")
 	}
 
+	// Deprecated: for now we dual write both the plan json and the composite plan
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
+		CompositePlan: plantypes.CompositePlan{
+			SandboxRunPlan: runPlan,
+		},
 	}); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
