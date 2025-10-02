@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAccount } from '@/components/AccountProvider'
-import { createTrialOrganization } from '@/components/org-actions'
+import { createOrg } from "@/actions/orgs/create-org"
+import { useAccount } from '@/hooks/use-account'
 import type { TUserJourney } from '@/types'
 
 export const useAutoOrgCreation = () => {
@@ -35,7 +35,7 @@ export const useAutoOrgCreation = () => {
     setError(null)
 
     try {
-      const { data: newOrg, error: createError } = await createTrialOrganization()
+      const { data: newOrg, error: createError } = await createOrg({ body: { name: `${account.email}-trial`, use_sandbox_mode: false }})
 
       if (createError !== null) {
         setError(createError?.error || 'Failed to create organization')
