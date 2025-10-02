@@ -98,58 +98,58 @@ describe('install-utils', () => {
   describe('getInstallComponentsStatusTitle', () => {
     test('should return correct components status titles', () => {
       expect(getInstallComponentsStatusTitle('active')).toBe(
-        'Components have been deployed'
+        'Components are deployed'
       )
       expect(getInstallComponentsStatusTitle('inactive')).toBe(
         'Components are inactive'
       )
       expect(getInstallComponentsStatusTitle('error')).toBe(
-        'Component deployment has an error'
+        'Component has an error'
       )
       expect(getInstallComponentsStatusTitle('noop')).toBe(
-        'Component deployment had no changes'
+        'Deployment had no changes'
       )
       expect(getInstallComponentsStatusTitle('planning')).toBe(
-        'Component deployment is planning'
+        'Deployment is planning'
       )
       expect(getInstallComponentsStatusTitle('syncing')).toBe(
-        'Component deployment is syncing'
+        'Deployment is syncing'
       )
       expect(getInstallComponentsStatusTitle('executing')).toBe(
-        'Component deployment is executing'
+        'Deployment is executing'
       )
       expect(getInstallComponentsStatusTitle('cancelled')).toBe(
-        'Component deployment was cancelled'
+        'Deployment was cancelled'
       )
       expect(getInstallComponentsStatusTitle('pending')).toBe(
-        'Component deployment is pending'
+        'Deployment is pending'
       )
       expect(getInstallComponentsStatusTitle('queued')).toBe(
-        'Component deployment is queued'
+        'Deployment is queued'
       )
       expect(getInstallComponentsStatusTitle('pending-approval')).toBe(
-        'Component deployment is pending approval'
+        'Deployment is pending approval'
       )
       expect(getInstallComponentsStatusTitle('approval-denied')).toBe(
-        'Component deployment approval was denied'
+        'Deployment approval was denied'
       )
     })
 
     test('should return unknown status for unrecognized components statuses', () => {
       expect(getInstallComponentsStatusTitle('unknown_status')).toBe(
-        'Component deployment status is unknown'
+        'Deployment status is unknown'
       )
       expect(getInstallComponentsStatusTitle('')).toBe(
-        'Component deployment status is unknown'
+        'Deployment status is unknown'
       )
       expect(getInstallComponentsStatusTitle('invalid')).toBe(
-        'Component deployment status is unknown'
+        'Deployment status is unknown'
       )
     })
 
     test('should return known status for known components status', () => {
       expect(getInstallComponentsStatusTitle('unknown')).toBe(
-        'Component deployment status is unknown'
+        'Deployment status is unknown'
       )
     })
   })
@@ -170,7 +170,7 @@ describe('install-utils', () => {
         'composite_component_status',
         'active'
       )
-      expect(result).toBe('Components have been deployed')
+      expect(result).toBe('Components are deployed')
     })
 
     test('should return waiting message for unknown status keys', () => {
@@ -201,7 +201,7 @@ describe('install-utils', () => {
         'composite_component_status',
         'pending-approval'
       )
-      expect(result).toBe('Component deployment is pending approval')
+      expect(result).toBe('Deployment is pending approval')
     })
 
     test('should handle unknown statuses through routing', () => {
@@ -214,7 +214,7 @@ describe('install-utils', () => {
 
       expect(result1).toBe('Runner status is unknown')
       expect(result2).toBe('Sandbox status is unknown')
-      expect(result3).toBe('Component deployment status is unknown')
+      expect(result3).toBe('Deployment status is unknown')
     })
   })
 })
