@@ -1,5 +1,5 @@
 import { API_URL } from '@/configs/api'
-import { getFetchOpts } from '@/utils/get-fetch-opts'
+import { getFetchOpts } from '@/utils'
 
 export type TResponseError = {
   description: string
@@ -21,35 +21,35 @@ export interface IQueryData {
   abortTimeout?: number
 }
 
-export async function queryData<T>({
-  errorMessage = 'Encountered an issue retrieving this information, please refresh the page to try again.',
-  orgId,
-  path,
-  pathVersion = 'v1',
-  abortTimeout = 10000,
-}: IQueryData): Promise<T> {
-  const res = await fetch(
-    `${API_URL}/${pathVersion}/${path}`,
-    await getFetchOpts(orgId, {}, abortTimeout)
-  )
+// export async function queryData<T>({
+//   errorMessage = 'Encountered an issue retrieving this information, please refresh the page to try again.',
+//   orgId,
+//   path,
+//   pathVersion = 'v1',
+//   abortTimeout = 10000,
+// }: IQueryData): Promise<T> {
+//   const res = await fetch(
+//     `${API_URL}/${pathVersion}/${path}`,
+//     await getFetchOpts(orgId, {}, abortTimeout)
+//   )
 
-  if (!res.ok) {
-    throw new Error(errorMessage)
-    // const error = await res.json()
+//   if (!res.ok) {
+//     throw new Error(errorMessage)
+//     // const error = await res.json()
 
-    // if (res.status >= 500) {
+//     // if (res.status >= 500) {
 
-    // } else {
-    //   return {
-    //     status: res.status,
-    //     error,
-    //     errorMessage,
-    //   }
-    // }
-  }
+//     // } else {
+//     //   return {
+//     //     status: res.status,
+//     //     error,
+//     //     errorMessage,
+//     //   }
+//     // }
+//   }
 
-  return res.json()
-}
+//   return res.json()
+// }
 
 export type TQueryError = {
   description: string

@@ -14,7 +14,7 @@ import { Notice } from '@/components/Notice'
 import { Text } from '@/components/Typography'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 import type { TRunnerGroupSettings } from '@/types'
 
 interface IUpdateRunnerModal {

@@ -2,16 +2,16 @@
 
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRight } from '@phosphor-icons/react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { InstallPlatform } from '@/components/InstallCloudPlatform'
-import { InstallsTableStatusFilter } from '@/components/InstallsTableStatusFilter'
 import { Link } from '@/components/Link'
 import { StatusBadge } from '@/components/Status'
-import { DataTableSearch, Table } from '@/components/DataTable'
+import { Table } from '@/components/DataTable'
 import { DebouncedSearchInput } from '@/components/DebouncedSearchInput'
 import { ID, Text } from '@/components/Typography'
+import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
 import type { TInstall } from '@/types'
-import { AWS_REGIONS, AZURE_REGIONS, getFlagEmoji } from '@/utils'
+import { getFlagEmoji } from '@/utils'
 
 type TDataStatuses = {
   composite_component_status: string
@@ -184,7 +184,7 @@ export const AppInstallsTable: FC<IAppInstallsTable> = ({
             href={`/${orgId}/installs/${props.row.original.installId}`}
             variant="ghost"
           >
-            <CaretRight />
+            <CaretRightIcon />
           </Link>
         ),
       },

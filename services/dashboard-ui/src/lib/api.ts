@@ -45,7 +45,7 @@ export async function api<T>({
 
     // Convert headers to a plain object for serialization
     const headersObj = Object.fromEntries(response.headers.entries())
-    
+
     // Handle empty response bodies (common with DELETE requests)
     let data = null
     const contentType = response.headers.get('content-type')
@@ -63,6 +63,23 @@ export async function api<T>({
           data = text // Return as text if JSON parsing fails
         }
       }
+    }
+
+    if (
+      contentLength !== '0' &&
+      (contentType?.includes('text/csv') ||
+        contentType?.includes('application/octet-stream'))
+    ) {
+      const content = await response.text()
+      let filename = contentType?.includes('text/csv')
+        ? 'data.csv'
+        : 'download.bin'
+      const contentDisposition = response.headers.get('content-disposition')
+      const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/)
+      if (filenameMatch) {
+        filename = filenameMatch[1].replace(/^["'_]+|["'_]+$/g, '').trim()
+      }
+      data = { content, filename }
     }
 
     if (response.ok) {
@@ -110,7 +127,9 @@ export async function api<T>({
     }
 
     // Convert headers to object if available, otherwise empty object
-    const errorHeadersObj = response ? Object.fromEntries(response.headers.entries()) : {}
+    const errorHeadersObj = response
+      ? Object.fromEntries(response.headers.entries())
+      : {}
 
     const errorResponse = {
       data: null,
