@@ -47,7 +47,7 @@ const MultiDependencies: FC<{
   name: string
   deps: Array<TComponent>
   installId?: string
-}> = ({ deps, name, installId }) => {
+}> = ({ deps, name, installId }) => {  
   const [isOpen, setIsOpen] = useState(false)
   const firstDeps = deps.slice(0, 2)
   const remainingDeps = deps.slice(2)
