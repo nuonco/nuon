@@ -14,7 +14,7 @@ export async function createVCSConnection({
   return api({
     method: 'POST',
     orgId,
-    path: `vcs/connections/`,
+    path: `vcs/connections`,
     body,
   })
 }

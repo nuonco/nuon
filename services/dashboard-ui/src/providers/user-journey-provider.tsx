@@ -1,39 +1,29 @@
 'use client'
 
-import React, { type FC, useState, useEffect, createContext, useContext } from 'react'
+import { useParams } from 'next/navigation'
+import { useState, useEffect, createContext, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { ProductionReadyChecklistModal } from './Apps/ProductionReadyChecklistModal'
-import { useAccount } from './AccountProvider'
-import type { TAccount, TUserJourney } from '@/types'
+import { ProductionReadyChecklistModal } from '@/components/Apps/ProductionReadyChecklistModal'
+import { useAccount } from '@/hooks/use-account'
+import type { TUserJourney } from '@/types'
 
-interface UserJourneyContextType {
+interface UserJourneyContextValue {
   showChecklist: () => void
   hideChecklist: () => void
   isChecklistOpen: boolean
 }
 
-const UserJourneyContext = createContext<UserJourneyContextType | undefined>(undefined)
+export const UserJourneyContext = createContext<
+  UserJourneyContextValue | undefined
+>(undefined)
 
-export const useUserJourney = () => {
-  const context = useContext(UserJourneyContext)
-  if (context === undefined) {
-    throw new Error('useUserJourney must be used within a UserJourneyProvider')
-  }
-  return context
-}
-
-interface UserJourneyProviderProps {
-  children: React.ReactNode
-  orgId: string // Can be empty string for users without orgs
-}
-
-export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
-  children,
-  orgId,
-}) => {
+export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
+  const params = useParams()
+  const { ['org-id']: orgId } = params
   const { account, refreshAccount } = useAccount()
   const [showChecklistModal, setShowChecklistModal] = useState(false)
-  const [userDismissedForNavigation, setUserDismissedForNavigation] = useState(false)
+  const [userDismissedForNavigation, setUserDismissedForNavigation] =
+    useState(false)
 
   // Get evaluation journey from account
   const getEvaluationJourney = () => {
@@ -52,12 +42,11 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
 
     // Show modal if ANY step is incomplete - modal persists until journey complete
     const hasIncompleteSteps = evaluationJourney.steps.some(
-      step => !step.complete
+      (step) => !step.complete
     )
 
     return hasIncompleteSteps
   }
-
 
   // Show journey modal based on incomplete steps and dismissal state
   useEffect(() => {
@@ -68,7 +57,8 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
   // Reset dismissal flag when journey is complete (for future journeys)
   useEffect(() => {
     const evaluationJourney = getEvaluationJourney()
-    const allStepsComplete = evaluationJourney?.steps.every(step => step.complete) ?? false
+    const allStepsComplete =
+      evaluationJourney?.steps.every((step) => step.complete) ?? false
 
     if (allStepsComplete && userDismissedForNavigation) {
       setUserDismissedForNavigation(false)
@@ -78,7 +68,8 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
   const handleCloseChecklistModal = async () => {
     // Check if all journey steps are complete before allowing close
     const evaluationJourney = getEvaluationJourney()
-    const allStepsComplete = evaluationJourney?.steps.every(step => step.complete) ?? false
+    const allStepsComplete =
+      evaluationJourney?.steps.every((step) => step.complete) ?? false
 
     if (allStepsComplete) {
       // All steps complete - allow modal to close
@@ -99,7 +90,7 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
     // This method is kept for API compatibility but doesn't override journey logic
   }
 
-  const contextValue: UserJourneyContextType = {
+  const contextValue: UserJourneyContextValue = {
     showChecklist,
     hideChecklist,
     isChecklistOpen: showChecklistModal,
@@ -109,7 +100,6 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
     <UserJourneyContext.Provider value={contextValue}>
       {children}
 
-
       {/* Journey checklist modal - shows for all incomplete steps including org creation */}
       {showChecklistModal && typeof document !== 'undefined'
         ? createPortal(
@@ -117,7 +107,7 @@ export const UserJourneyProvider: FC<UserJourneyProviderProps> = ({
               isOpen={showChecklistModal}
               onClose={handleCloseChecklistModal}
               account={account}
-              orgId={orgId}
+              orgId={orgId as string}
               onForceClose={() => {
                 setUserDismissedForNavigation(true)
                 setShowChecklistModal(false)
