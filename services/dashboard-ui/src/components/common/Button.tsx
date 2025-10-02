@@ -1,43 +1,43 @@
-import React, { forwardRef } from "react";
-import Link from "next/link";
-import { cn } from "@/utils/classnames";
+import React, { forwardRef } from 'react'
+import Link from 'next/link'
+import { cn } from '@/utils/classnames'
 
-export type TButtonSize = "lg" | "md" | "sm" | "xs";
+export type TButtonSize = 'lg' | 'md' | 'sm' | 'xs'
 export type TButtonVariant =
-  | "danger"
-  | "ghost"
-  | "primary"
-  | "secondary"
-  | "tab";
+  | 'danger'
+  | 'ghost'
+  | 'primary'
+  | 'secondary'
+  | 'tab'
 
 interface IButtonBase {
-  size?: TButtonSize;
-  variant?: TButtonVariant;
-  href?: string;
-  isActive?: boolean;
-  isMenuButton?: boolean;
+  size?: TButtonSize
+  variant?: TButtonVariant
+  href?: string
+  isActive?: boolean
+  isMenuButton?: boolean
 }
 
 export interface IButtonAsButton
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     IButtonBase {
-  href?: undefined;
+  href?: undefined
 }
 
 export interface IButtonAsAnchor
   extends React.AnchorHTMLAttributes<HTMLAnchorElement>,
     IButtonBase {
-  href: string;
+  href: string
 }
 
-export type TButton = IButtonAsButton | IButtonAsAnchor;
+export type TButton = IButtonAsButton | IButtonAsAnchor
 
 const SIZE_CLASSES: Record<TButtonSize, string> = {
-  lg: "text-sm h-9 px-3 py-1 leading-[21px]",
-  md: "text-sm h-8 px-3 py-1 leading-[21px]",
-  sm: "text-xs h-6 px-2 py-0.5 leading-[15px]",
-  xs: "text-xs h-4 leading-[15px]",
-};
+  lg: 'text-sm h-9 px-3 py-1 leading-[21px]',
+  md: 'text-sm h-8 px-3 py-1 leading-[21px]',
+  sm: 'text-xs h-6 px-2 py-0.5 leading-[15px]',
+  xs: 'text-xs h-4 leading-[15px]',
+}
 
 const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   danger: `
@@ -77,7 +77,7 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
     active:!border-primary-600/80
     disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
   `,
-};
+}
 
 export const Button = forwardRef<
   HTMLButtonElement | HTMLAnchorElement,
@@ -87,30 +87,30 @@ export const Button = forwardRef<
     {
       className,
       children,
-      size = "md",
-      variant = "secondary",
+      size = 'md',
+      variant = 'secondary',
       href,
       isActive,
       isMenuButton,
       ...props
     },
-    ref,
+    ref
   ) => {
     const classes = cn(
       `inline-flex items-center font-sans font-strong tracking-tight transition-colors whitespace-nowrap break-keep w-fit focus:outline-1 focus:outline-current cursor-pointer
       disabled:cursor-not-allowed`,
       VARIANT_CLASSES[variant],
       SIZE_CLASSES[size],
-      "has-[svg]:flex has-[svg]:items-center has-[svg]:gap-1.5",
+      'has-[svg]:flex has-[svg]:items-center has-[svg]:gap-1.5',
       {
-        "!border-primary-600 !hover:!border-primary-600":
-          isActive && variant === "tab",
+        '!border-primary-600 !hover:!border-primary-600':
+          isActive && variant === 'tab',
       },
-      className,
-    );
+      className
+    )
 
     if (href) {
-      const isInternal = href.startsWith("/");
+      const isInternal = href.startsWith('/')
       if (isInternal) {
         // Next.js 13+ Link: no legacyBehavior, no <a> inside
         return (
@@ -122,7 +122,7 @@ export const Button = forwardRef<
           >
             {children}
           </Link>
-        );
+        )
       }
       // External link
       return (
@@ -134,7 +134,7 @@ export const Button = forwardRef<
         >
           {children}
         </a>
-      );
+      )
     }
 
     // Regular button
@@ -146,8 +146,8 @@ export const Button = forwardRef<
       >
         {children}
       </button>
-    );
-  },
-);
+    )
+  }
+)
 
-Button.displayName = "Button";
+Button.displayName = 'Button'

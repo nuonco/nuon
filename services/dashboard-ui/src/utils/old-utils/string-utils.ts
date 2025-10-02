@@ -10,7 +10,8 @@ export const initialsFromString = (s = '') => {
   ).toUpperCase()
 }
 
-export const removeKebabCase = (str: string): string => str ? str.replace(/-/g, ' ') : 'unknown';
+export const removeKebabCase = (str: string): string =>
+  str ? str.replace(/-/g, ' ') : 'unknown'
 
 export const removeSnakeCase = (str?: string) =>
   str ? str?.replace(/_/g, ' ') : 'unknown'
@@ -27,15 +28,16 @@ export const slugifyString = (str: string) =>
     .replace(/-+/g, '-')
 
 export function removeLastPathSegment(pathname: string) {
-  let path = pathname.endsWith('/') && pathname.length > 1
-    ? pathname.slice(0, -1)
-    : pathname;
+  let path =
+    pathname.endsWith('/') && pathname.length > 1
+      ? pathname.slice(0, -1)
+      : pathname
 
-  const lastSlashIndex = path.lastIndexOf('/');
+  const lastSlashIndex = path.lastIndexOf('/')
 
-  if (lastSlashIndex <= 0) return '/';
+  if (lastSlashIndex <= 0) return '/'
 
-  return path.slice(0, lastSlashIndex) || '/';
+  return path.slice(0, lastSlashIndex) || '/'
 }
 
 export const sizeToMbOrGB = (bytes: number): string => {

@@ -1,4 +1,4 @@
-import { Button } from "./Button";
+import { Button } from './Button'
 
 export const Variants = () => (
   <div className="flex gap-4 items-center">
@@ -8,7 +8,7 @@ export const Variants = () => (
     <Button variant="ghost">Ghost button</Button>
     <Button variant="tab">Tab button</Button>
   </div>
-);
+)
 
 export const Sizes = () => (
   <div className="flex gap-4 items-center">
@@ -17,7 +17,7 @@ export const Sizes = () => (
     <Button>MD button</Button>
     <Button size="lg">LG button</Button>
   </div>
-);
+)
 
 export const Links = () => (
   <div className="flex gap-4 items-center">
@@ -26,7 +26,7 @@ export const Links = () => (
       External link
     </Button>
   </div>
-);
+)
 
 export const Disabled = () => (
   <div className="flex gap-4 items-center">
@@ -41,12 +41,14 @@ export const Disabled = () => (
       Ghost button
     </Button>
   </div>
-);
+)
 
 export const TabButtons = () => (
   <div className="flex border-b items-center">
-    <Button isActive variant="tab" href="#">Tab button</Button>
+    <Button isActive variant="tab" href="#">
+      Tab button
+    </Button>
     <Button variant="tab">Tab button</Button>
     <Button variant="tab">Tab button</Button>
   </div>
-);
+)
