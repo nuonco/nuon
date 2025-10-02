@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getOrgs } from '@/lib'
-import { getFetchOpts } from '@/utils/get-fetch-opts'
+import { getFetchOpts } from '@/utils'
 import { setOrgSessionCookie } from '@/components/org-actions'
 import type { TOrg } from '@/types'
 import { API_URL } from '@/configs/api'

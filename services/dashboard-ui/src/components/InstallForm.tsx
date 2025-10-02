@@ -11,8 +11,10 @@ import { SpinnerSVG, Loading } from '@/components/Loading'
 import { Notice } from '@/components/Notice'
 import { Select } from '@/components/Select'
 import { Text } from '@/components/Typography'
+import { AWS_REGIONS, AZURE_REGIONS } from "@/configs/cloud-regions"
 import { useOrg } from '@/hooks/use-org'
-import { getFlagEmoji, AWS_REGIONS, AZURE_REGIONS, trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
+import { getFlagEmoji } from '@/utils'
 import type { TAppInputConfig, TInstall, TAPIResponse } from '@/types'
 
 interface IInstallForm {
@@ -27,9 +29,7 @@ interface IInstallForm {
     | Record<'installId' | 'workflowId', string>
     | { error: any }
   >
-  onSuccess: (
-    res: TAPIResponse<TInstall>
-  ) => void
+  onSuccess: (res: TAPIResponse<TInstall>) => void
   onCancel: () => void
 }
 

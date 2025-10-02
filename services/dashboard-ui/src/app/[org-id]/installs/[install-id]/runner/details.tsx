@@ -15,7 +15,7 @@ export const Details = async ({
     orgId,
     runnerId: runner.id,
   })
-
+  
   return heartbeat && !error ? (
     <RunnerMeta
       initHeartbeat={heartbeat}

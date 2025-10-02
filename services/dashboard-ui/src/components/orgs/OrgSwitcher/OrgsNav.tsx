@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, useState } from 'react'
-import { Plus, TestTube } from '@phosphor-icons/react'
+import { TestTubeIcon } from '@phosphor-icons/react'
 import NextLink from 'next/link'
 import { Button } from '@/components/Button'
 import { StatusBadge } from '@/components/Status'
@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/Skeleton'
 import { Text } from '@/components/Typography'
 import type { TOrg } from '@/types'
 import { SearchInput } from '@/components/SearchInput'
-import { useQuery } from '@/utils/use-query'
+import { useQuery } from '@/hooks/use-query'
 import { buildQueryParams } from '@/utils/build-query-params'
 import { OrgAvatar } from './OrgAvatar'
 
@@ -76,7 +76,7 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs: initOrgs }) => {
                     org.sandbox_mode ? 'Org is in sandbox mode' : undefined
                   }
                 >
-                  {org.sandbox_mode && <TestTube className="text-sm" />}
+                  {org.sandbox_mode && <TestTubeIcon className="text-sm" />}
                   <span
                     className={classNames('', {
                       'truncate !inline max-w-[140px]': org.name.length >= 16,

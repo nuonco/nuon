@@ -20,7 +20,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
 import type { TActionConfig, TAction } from '@/types'
-import { trackEvent } from '@/utils'
+import { trackEvent } from '@/lib/segment-analytics'
 
 interface IActionTriggerButton extends Omit<IButton, 'className' | 'onClick'> {
   action: TAction

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { API_URL } from '@/configs/api'
 import { TRouteRes } from '@/app/api/[org-id]/types'
-import { getFetchOpts } from '@/utils/get-fetch-opts'
+import { getFetchOpts } from '@/utils'
 
 export const GET = async (
   req: NextRequest,
