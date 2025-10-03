@@ -114,14 +114,14 @@ func (m SpinnerModel) View() string {
 // renderResult renders the final result (success or failure)
 func (m SpinnerModel) renderResult() string {
 	if m.result.Success {
-		style := lipgloss.NewStyle().Foreground(SuccessColor).Bold(true)
+		style := lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
 		return style.Render(fmt.Sprintf("✓ %s", m.formatText(m.result.Message)))
 	}
 
 	// Handle error display
 	if m.result.Error != nil {
 		errorMsg := m.formatErrorMessage(m.result.Error)
-		style := lipgloss.NewStyle().Foreground(ErrorColor).Bold(true)
+		style := lipgloss.NewStyle().Foreground(styles.ErrorColor).Bold(true)
 		return style.Render(fmt.Sprintf("✗ %s", m.formatText(errorMsg)))
 	}
 
@@ -263,4 +263,3 @@ func RunSpinnerWithContext(ctx context.Context, message string, operation func(c
 
 	return err
 }
-

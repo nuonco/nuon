@@ -78,7 +78,7 @@ func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m ConfirmDialogModel) View() string {
 	if m.quitting {
 		if m.confirmed {
-			successStyle := lipgloss.NewStyle().Foreground(SuccessColor).Bold(true)
+			successStyle := lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
 			return successStyle.Render("✓ Confirmed")
 		}
 		return ""
@@ -98,7 +98,7 @@ func (m ConfirmDialogModel) View() string {
 	yesStyle := lipgloss.NewStyle().
 		Padding(0, 2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(SubtleColor)
+		BorderForeground(styles.SubtleColor)
 	noStyle := yesStyle.Copy()
 
 	if m.cursor == 0 {
@@ -124,7 +124,7 @@ func (m ConfirmDialogModel) View() string {
 
 	// Instructions
 	helpStyle := lipgloss.NewStyle().
-		Foreground(SubtleColor).
+		Foreground(styles.SubtleColor).
 		Italic(true).
 		Margin(1, 0, 0, 0)
 	b.WriteString(helpStyle.Render("Use ←/→ to navigate, Enter to confirm, Esc to cancel, or type y/n"))
@@ -157,4 +157,3 @@ func ShowConfirmDialog(message string) (bool, error) {
 
 	return confirmed, nil
 }
-

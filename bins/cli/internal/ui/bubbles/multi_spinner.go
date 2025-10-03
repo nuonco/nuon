@@ -183,10 +183,10 @@ func (m MultiSpinnerModel) renderSpinnerLine(state *SpinnerState) string {
 
 		if state.success {
 			icon = "✓"
-			style = lipgloss.NewStyle().Foreground(SuccessColor).Bold(true)
+			style = lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
 		} else {
 			icon = "✗"
-			style = lipgloss.NewStyle().Foreground(ErrorColor).Bold(true)
+			style = lipgloss.NewStyle().Foreground(styles.ErrorColor).Bold(true)
 		}
 
 		message := state.finalMsg
