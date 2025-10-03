@@ -2,7 +2,7 @@ package state
 
 func NewInstallStackState() *InstallStackState {
 	return &InstallStackState{
-		Outputs: make(map[string]string, 0),
+		Outputs: make(map[string]interface{}, 0),
 	}
 }
 
@@ -15,5 +15,5 @@ type InstallStackState struct {
 	Checksum     string `json:"checksum"`
 	Status       string `json:"status"`
 
-	Outputs map[string]string `json:"outputs"`
+	Outputs map[string]interface{} `json:"outputs"`
 }

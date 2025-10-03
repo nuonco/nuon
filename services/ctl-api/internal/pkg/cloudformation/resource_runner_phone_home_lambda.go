@@ -4,9 +4,21 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/lambda"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.CustomResource {
+	breakGlassRoleArns := make(map[string]interface{})
+
+	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
+		// cloudformation has parameter called role.CloudFormationStackParamName
+		breakGlassRoleArns[role.Name] = cloudformation.If(
+			role.CloudFormationStackParamName,
+			generics.FromPtrStr(cloudformation.GetAttPtr(role.CloudFormationStackName, "Arn")),
+			cloudformation.Ref("AWS::NoValue"),
+		)
+	}
+
 	lambdaprops := map[string]any{
 		"ServiceToken": cloudformation.GetAttPtr("RunnerPhoneHome", "Arn"),
 		"url":          inp.CloudFormationStackVersion.PhoneHomeURL,
@@ -17,6 +29,8 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 		"provision_iam_role_arn":   cloudformation.GetAttPtr("RunnerProvision", "Arn"),
 		"deprovision_iam_role_arn": cloudformation.GetAttPtr("RunnerDeprovision", "Arn"),
 		"runner_iam_role_arn":      cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole"),
+
+		"break_glass_role_arns": breakGlassRoleArns,
 
 		// from the nested VPC Cloudformation Template (we want its outputs)
 		"vpc_id":          cloudformation.GetAtt("VPC", "Outputs.VPC"),
