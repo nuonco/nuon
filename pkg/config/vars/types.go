@@ -59,16 +59,17 @@ type componentIntermediate struct {
 }
 
 type installStackIntermediate struct {
-	AccountID             string   `json:"account_id" mapstructure:"account_id"`
-	Region                string   `json:"region" mapstructure:"region"`
-	VPCID                 string   `json:"vpc_id" mapstructure:"vpc_id"`
-	RunnerSubnet          string   `json:"runner_subnet" mapstructure:"runner_subnet"`
-	PublicSubnets         []string `json:"public_subnets" mapstructure:"public_subnets"`
-	PrivateSubnets        []string `json:"private_subnets" mapstructure:"private_subnets"`
-	ProvisionIAMRoleARN   string   `json:"provision_iam_role_arn" mapstructure:"provision_iam_role_arn"`
-	DeprovisionIAMRoleARN string   `json:"deprovision_iam_role_arn" mapstructure:"deprovision_iam_role_arn"`
-	MaintenanceIAMRoleARN string   `json:"maintenance_iam_role_arn" mapstructure:"maintenance_iam_role_arn"`
-	RunnerIAMRoleARN      string   `json:"runner_iam_role_arn" mapstructure:"runner_iam_role_arn"`
+	AccountID             string            `json:"account_id" mapstructure:"account_id"`
+	Region                string            `json:"region" mapstructure:"region"`
+	VPCID                 string            `json:"vpc_id" mapstructure:"vpc_id"`
+	RunnerSubnet          string            `json:"runner_subnet" mapstructure:"runner_subnet"`
+	PublicSubnets         []string          `json:"public_subnets" mapstructure:"public_subnets"`
+	PrivateSubnets        []string          `json:"private_subnets" mapstructure:"private_subnets"`
+	ProvisionIAMRoleARN   string            `json:"provision_iam_role_arn" mapstructure:"provision_iam_role_arn"`
+	DeprovisionIAMRoleARN string            `json:"deprovision_iam_role_arn" mapstructure:"deprovision_iam_role_arn"`
+	MaintenanceIAMRoleARN string            `json:"maintenance_iam_role_arn" mapstructure:"maintenance_iam_role_arn"`
+	RunnerIAMRoleARN      string            `json:"runner_iam_role_arn" mapstructure:"runner_iam_role_arn"`
+	BreakGlassRoles       map[string]string `json:"break_glass_roles" mapstructure:"break_glass_roles"`
 }
 
 // intermediate represents the intermediate data available to users to interpolate
