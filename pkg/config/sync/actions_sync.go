@@ -61,10 +61,12 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 	}
 
 	request := &models.ServiceCreateActionWorkflowConfigRequest{
-		AppConfigID:  generics.ToPtr(s.state.CfgID),
-		Timeout:      timeout.Nanoseconds(),
-		Dependencies: action.Dependencies,
+		AppConfigID:       generics.ToPtr(s.state.CfgID),
+		Timeout:           timeout.Nanoseconds(),
+		Dependencies:      action.Dependencies,
+		BreakGlassRoleArn: action.BreakGlassRoleARN,
 	}
+
 	for _, ref := range action.References {
 		request.References = append(request.References, ref.String())
 	}
