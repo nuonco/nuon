@@ -16,9 +16,9 @@ type ActionConfig struct {
 	Triggers []*ActionTriggerConfig `mapstructure:"triggers" jsonschema:"required"`
 	Steps    []*ActionStepConfig    `mapstructure:"steps" jsonschema:"required"`
 
-	References        []refs.Ref `mapstructure:"-" jsonschema:"-"`
-	Dependencies      []string   `mapstructure:"dependencies,omitempty"`
-	BreakGlassRoleARN string     `mapstructure:"break_glass_role_arn,omitempty"`
+	References     []refs.Ref `mapstructure:"-" jsonschema:"-"`
+	Dependencies   []string   `mapstructure:"dependencies,omitempty"`
+	BreakGlassRole string     `mapstructure:"break_glass_role,omitempty"`
 }
 
 type ActionTriggerConfig struct {
