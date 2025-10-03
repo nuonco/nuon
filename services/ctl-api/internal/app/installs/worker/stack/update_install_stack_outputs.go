@@ -6,6 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/types/stacks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -59,6 +60,13 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	}
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
+		// parse into map[string]interface{}
+		stackOutputs, err := stacks.DecodeAWSStackOutputData(run.Data)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode run data")
+		}
+
+		// parse into AWSStackOutputs
 		decoderConfig := &mapstructure.DecoderConfig{
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
 				mapstructure.StringToSliceHookFunc(","),
@@ -71,7 +79,7 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		if err != nil {
 			return errors.Wrap(err, "unable to create decoder")
 		}
-		if err := decoder.Decode(run.Data); err != nil {
+		if err := decoder.Decode(stackOutputs); err != nil {
 			return errors.Wrap(err, "unable to parse install outputs")
 		}
 
