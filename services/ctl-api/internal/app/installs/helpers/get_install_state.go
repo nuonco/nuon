@@ -10,9 +10,9 @@ import (
 
 	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/types/outputs"
+	"github.com/powertoolsdev/mono/pkg/types/stacks"
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
@@ -212,7 +212,11 @@ func (h *Helpers) toInstallStackState(stack *app.InstallStack) *state.InstallSta
 	is.Checksum = version.Checksum
 	is.Status = string(version.Status.Status)
 
-	is.Outputs = generics.ToStringMap(stack.InstallStackOutputs.Data)
+	stackOutput, err := stacks.DecodeAWSStackOutputData(stack.InstallStackOutputs.Data)
+	if err != nil {
+		return nil
+	}
+	is.Outputs = stackOutput
 
 	return is
 }
