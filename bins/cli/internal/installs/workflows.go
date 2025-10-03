@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	workflowui "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow/selector"
 )
 
 func (s *Service) Workflows(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
@@ -20,6 +21,17 @@ func (s *Service) Workflows(ctx context.Context, installID string, offset, limit
 	}
 
 	view := ui.NewListView()
+
+	if s.cfg.Preview {
+		// Show workflow selector
+		selectedWorkflowID, err := selector.WorkflowSelectorApp(ctx, s.cfg, s.api, installID)
+		if err != nil {
+			return view.Error(err)
+		}
+
+		workflowui.WorkflowApp(ctx, s.cfg, s.api, installID, selectedWorkflowID)
+		return nil
+	}
 
 	workflows, hasMore, err := s.listWorkflows(ctx, installID, offset, limit)
 	if err != nil {
