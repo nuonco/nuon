@@ -3,6 +3,8 @@ package generics
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -154,4 +156,93 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 		out[k] = v
 	}
 	return out
+}
+
+func StringToMapDecodeHook() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		// 1. Check if the target is an interface{} or map[string]string(any)
+		if t.Kind() != reflect.Interface && t != reflect.TypeOf(map[string]string{}) {
+			return data, nil // Pass through if types don't match
+		}
+
+		var raw string
+		if str, ok := data.(string); ok {
+			raw = str
+		} else if strPtr, ok := data.(*string); ok {
+			raw = FromPtrStr(strPtr)
+		} else {
+			return data, nil // Skip if not string or *string
+		}
+
+		if !strings.HasPrefix(raw, "map[") || !strings.HasSuffix(raw, "]") {
+			return data, nil // Skip if not in the expected format
+		}
+
+		// 1. Strip "map[" and "]"
+		content := raw[4 : len(raw)-1]
+
+		resultMap := make(map[string]string)
+
+		// 2. Parse multiple key:value pairs
+		// Split by space to get individual key:value pairs
+		for pair := range strings.FieldsSeq(content) {
+			parts := strings.SplitN(pair, ":", 2)
+			if len(parts) == 2 {
+				resultMap[parts[0]] = parts[1]
+			}
+		}
+
+		return resultMap, nil
+	}
+}
+
+// parseMap parses input map string into map[string]interface{}
+// parses nested maps as well
+// primarily crafted for roles which have ':' in them
+// Beta: use with caution
+func parseMap(input string) map[string]interface{} {
+	// 1. Strip "map[" and "]"
+	content := input[4 : len(input)-1]
+
+	resultMap := make(map[string]interface{})
+
+	// 2. Parse multiple key:value pairs
+	// Split by space to get individual key:value pairs
+	for pair := range strings.FieldsSeq(content) {
+		parts := strings.SplitN(pair, ":", 2)
+		if len(parts) == 2 {
+			resultMap[parts[0]] = parts[1]
+			if !strings.HasPrefix(parts[1], "map[") || !strings.HasSuffix(parts[1], "]") {
+				resultMap[parts[0]] = parseMap(parts[1])
+			}
+		}
+	}
+
+	return resultMap
+}
+
+// StringToNestedMapDecodeHook decodes input interface into nested map if needed
+// Beta: use with caution, not used anywhere as of now, bugs expected
+func StringToNestedMapDecodeHook() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		// 1. Check if the target is an interface{} or map[string]string(any)
+		if t.Kind() != reflect.Interface && t != reflect.TypeOf(map[string]string{}) {
+			return data, nil // Pass through if types don't match
+		}
+
+		var raw string
+		if str, ok := data.(string); ok {
+			raw = str
+		} else if strPtr, ok := data.(*string); ok {
+			raw = FromPtrStr(strPtr)
+		} else {
+			return data, nil // Skip if not string or *string
+		}
+
+		if !strings.HasPrefix(raw, "map[") || !strings.HasSuffix(raw, "]") {
+			return data, nil // Skip if not in the expected format
+		}
+
+		return parseMap(raw), nil
+	}
 }

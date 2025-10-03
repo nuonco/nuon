@@ -163,14 +163,10 @@ func (a *Templates) getRolesParameters(inp *TemplateInput) map[string]cloudforma
 	params := make(map[string]cloudformation.Parameter, 0)
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
-		roleParameter := a.getRoleParameters(role)
-		params[role.CloudFormationStackParamName] = roleParameter
-
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role)
 	}
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
-		roleParameter := a.getRoleParameters(role)
-		params[role.CloudFormationStackParamName] = roleParameter
-
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role)
 	}
 
 	return params
