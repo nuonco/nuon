@@ -10,6 +10,7 @@ import (
 
 	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -98,6 +99,11 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		Create(&run); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to create install stack version run")
 	}
+
+	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type:           signals.OperationUpdateInstallStackOutputs,
+		InstallStackID: stackVersion.InstallStackID,
+	})
 
 	return nil
 }
