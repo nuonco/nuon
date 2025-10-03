@@ -37,7 +37,7 @@ func (u *CLIUserError) Error() string {
 func PrintError(err error) error {
 	if os.Getenv(debugEnvVar) != "" {
 		debugStyle := lipgloss.NewStyle().
-			Foreground(SubtleColor).
+			Foreground(styles.SubtleColor).
 			Italic(true)
 		fmt.Println(debugStyle.Render("DEBUG: " + err.Error()))
 	}
@@ -131,10 +131,10 @@ func PrintWithColor(msg, color string) {
 // Evaluation journey specific messages
 func PrintEvaluationWelcome(orgName string) {
 	welcomeStyle := lipgloss.NewStyle().
-		Foreground(AccentColor).
+		Foreground(styles.AccentColor).
 		Bold(true).
 		Border(lipgloss.DoubleBorder()).
-		BorderForeground(AccentColor).
+		BorderForeground(styles.AccentColor).
 		Padding(1, 2).
 		Margin(1, 0)
 
@@ -240,7 +240,7 @@ func Yellow(text string) string {
 // Context-aware messaging
 func PrintContextMessage(context, message string) {
 	contextStyle := lipgloss.NewStyle().
-		Foreground(SecondaryColor).
+		Foreground(styles.SecondaryColor).
 		Bold(true)
 
 	fmt.Println(contextStyle.Render(fmt.Sprintf("[%s] %s", context, message)))
@@ -248,7 +248,7 @@ func PrintContextMessage(context, message string) {
 
 func PrintCurrentStatus(entity, name, id string) {
 	statusStyle := lipgloss.NewStyle().
-		Foreground(SuccessColor).
+		Foreground(styles.SuccessColor).
 		Bold(true)
 
 	message := fmt.Sprintf("✓ current %s is now %s: %s", entity, Green(name), Green(id))
@@ -257,7 +257,7 @@ func PrintCurrentStatus(entity, name, id string) {
 
 func PrintUnsetStatus(entity string) {
 	statusStyle := lipgloss.NewStyle().
-		Foreground(InfoColor).
+		Foreground(styles.InfoColor).
 		Bold(true)
 
 	message := fmt.Sprintf("ℹ current %s is now %s", entity, Green("unset"))
@@ -278,4 +278,3 @@ func PrintNotSetMessage(entity, selectCommand string) {
 	message := fmt.Sprintf("current %s is not set, use %s to set one", entity, LightMagenta(selectCommand))
 	fmt.Println(WarningStyle.Render(message))
 }
-

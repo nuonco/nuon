@@ -21,12 +21,12 @@ type StyledText struct {
 // NewStyledText creates a new styled text instance
 func NewStyledText() *StyledText {
 	return &StyledText{
-		successStyle:   lipgloss.NewStyle().Foreground(SuccessColor).Bold(true),
-		errorStyle:     lipgloss.NewStyle().Foreground(ErrorColor).Bold(true),
-		warningStyle:   lipgloss.NewStyle().Foreground(WarningColor).Bold(true),
+		successStyle:   lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true),
+		errorStyle:     lipgloss.NewStyle().Foreground(styles.ErrorColor).Bold(true),
+		warningStyle:   lipgloss.NewStyle().Foreground(styles.WarningColor).Bold(true),
 		infoStyle:      lipgloss.NewStyle().Foreground(styles.PrimaryColor),
-		highlightStyle: lipgloss.NewStyle().Foreground(AccentColor).Bold(true),
-		subtleStyle:    lipgloss.NewStyle().Foreground(SubtleColor),
+		highlightStyle: lipgloss.NewStyle().Foreground(styles.AccentColor).Bold(true),
+		subtleStyle:    lipgloss.NewStyle().Foreground(styles.SubtleColor),
 	}
 }
 
