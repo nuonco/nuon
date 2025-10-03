@@ -5,10 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/types/stacks"
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 )
 
 func (w *Workflows) getStackStatePartial(ctx workflow.Context, installID string) (*state.InstallStackState, error) {
@@ -35,7 +35,11 @@ func (h *Workflows) toInstallStackState(stack *app.InstallStack) *state.InstallS
 	is.Checksum = version.Checksum
 	is.Status = string(version.Status.Status)
 
-	is.Outputs = generics.ToStringMap(stack.InstallStackOutputs.Data)
+	outputData, err := stacks.DecodeAWSStackOutputData(stack.InstallStackOutputs.Data)
+	if err != nil {
+		return nil
+	}
+	is.Outputs = outputData
 
 	return is
 }
