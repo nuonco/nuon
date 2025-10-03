@@ -12,6 +12,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/types/stacks"
 )
 
 type InstallStackOutputs struct {
@@ -35,16 +36,17 @@ type InstallStackOutputs struct {
 }
 
 type AWSStackOutputs struct {
-	AccountID             string   `json:"account_id,omitzero" mapstructure:"account_id" temporaljson:"account_id,omitzero,omitempty"`
-	Region                string   `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
-	VPCID                 string   `json:"vpc_id,omitzero" mapstructure:"vpc_id" temporaljson:"vpcid,omitzero,omitempty"`
-	RunnerSubnet          string   `json:"runner_subnet,omitzero" mapstructure:"runner_subnet" temporaljson:"runner_subnet,omitzero,omitempty"`
-	PublicSubnets         []string `json:"public_subnets,omitzero" mapstructure:"public_subnets" temporaljson:"public_subnets,omitzero,omitempty"`
-	PrivateSubnets        []string `json:"private_subnets,omitzero" mapstructure:"private_subnets" temporaljson:"private_subnets,omitzero,omitempty"`
-	ProvisionIAMRoleARN   string   `json:"provision_iam_role_arn,omitzero" mapstructure:"provision_iam_role_arn" temporaljson:"provision_iam_role_arn,omitzero,omitempty"`
-	DeprovisionIAMRoleARN string   `json:"deprovision_iam_role_arn,omitzero" mapstructure:"deprovision_iam_role_arn" temporaljson:"deprovision_iam_role_arn,omitzero,omitempty"`
-	MaintenanceIAMRoleARN string   `json:"maintenance_iam_role_arn,omitzero" mapstructure:"maintenance_iam_role_arn" temporaljson:"maintenance_iam_role_arn,omitzero,omitempty"`
-	RunnerIAMRoleARN      string   `json:"runner_iam_role_arn,omitzero" mapstructure:"runner_iam_role_arn" temporaljson:"runner_iam_role_arn,omitzero,omitempty"`
+	AccountID             string            `json:"account_id,omitzero" mapstructure:"account_id" temporaljson:"account_id,omitzero,omitempty"`
+	Region                string            `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
+	VPCID                 string            `json:"vpc_id,omitzero" mapstructure:"vpc_id" temporaljson:"vpcid,omitzero,omitempty"`
+	RunnerSubnet          string            `json:"runner_subnet,omitzero" mapstructure:"runner_subnet" temporaljson:"runner_subnet,omitzero,omitempty"`
+	PublicSubnets         []string          `json:"public_subnets,omitzero" mapstructure:"public_subnets" temporaljson:"public_subnets,omitzero,omitempty"`
+	PrivateSubnets        []string          `json:"private_subnets,omitzero" mapstructure:"private_subnets" temporaljson:"private_subnets,omitzero,omitempty"`
+	ProvisionIAMRoleARN   string            `json:"provision_iam_role_arn,omitzero" mapstructure:"provision_iam_role_arn" temporaljson:"provision_iam_role_arn,omitzero,omitempty"`
+	DeprovisionIAMRoleARN string            `json:"deprovision_iam_role_arn,omitzero" mapstructure:"deprovision_iam_role_arn" temporaljson:"deprovision_iam_role_arn,omitzero,omitempty"`
+	MaintenanceIAMRoleARN string            `json:"maintenance_iam_role_arn,omitzero" mapstructure:"maintenance_iam_role_arn" temporaljson:"maintenance_iam_role_arn,omitzero,omitempty"`
+	RunnerIAMRoleARN      string            `json:"runner_iam_role_arn,omitzero" mapstructure:"runner_iam_role_arn" temporaljson:"runner_iam_role_arn,omitzero,omitempty"`
+	BreakGlassRoleARNs    map[string]string `json:"break_glass_role_arns,omitzero" mapstructure:"break_glass_role_arns" temporaljson:"break_glass_role_arns,omitzero,omitempty"`
 }
 
 type AzureStackOutputs struct {
@@ -94,6 +96,11 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		}
 		a.AzureStackOutputs = &azureOutputs
 	} else {
+		// parsing pgtype.Hstore into map[string]interface{}
+		outputData, err := stacks.DecodeAWSStackOutputData(a.Data)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode stack output data to map")
+		}
 		var awsOutputs AWSStackOutputs
 		decoderConfig := &mapstructure.DecoderConfig{
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
@@ -103,11 +110,11 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 			WeaklyTypedInput: true,
 			Result:           &awsOutputs,
 		}
-		decoder, err := mapstructure.NewDecoder(decoderConfig)
+		awsDecoder, err := mapstructure.NewDecoder(decoderConfig)
 		if err != nil {
 			return errors.Wrap(err, "unable to create aws decoder")
 		}
-		if err := decoder.Decode(a.Data); err != nil {
+		if err := awsDecoder.Decode(outputData); err != nil {
 			return errors.Wrap(err, "unable to parse aws outputs")
 		}
 		a.AWSStackOutputs = &awsOutputs

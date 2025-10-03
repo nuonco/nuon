@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
+	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/types/state"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
@@ -30,6 +31,7 @@ func (w *Workflows) getSecretsStatePartial(ctx workflow.Context, installID strin
 			mapstructure.StringToSliceHookFunc(","),
 			mapstructure.StringToTimeDurationHookFunc(),
 			mapstructure.StringToTimeHookFunc(time.RFC3339Nano),
+			pkggenerics.StringToMapDecodeHook(),
 		),
 		WeaklyTypedInput: true,
 		Result:           &state,
