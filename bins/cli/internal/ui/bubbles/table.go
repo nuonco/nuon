@@ -160,7 +160,7 @@ func NewTableView() *TableView {
 func (v *TableView) Render(data [][]string) {
 	if len(data) == 0 {
 		noItemsStyle := lipgloss.NewStyle().
-			Foreground(SubtleColor).
+			Foreground(styles.SubtleColor).
 			Italic(true).
 			Padding(1)
 		fmt.Println(noItemsStyle.Render("No items found"))
@@ -177,7 +177,7 @@ func (v *TableView) RenderPaging(data [][]string, offset, limit int, hasMore boo
 
 	// Add pagination info
 	pagingStyle := lipgloss.NewStyle().
-		Foreground(SubtleColor).
+		Foreground(styles.SubtleColor).
 		Italic(true).
 		Margin(1, 0, 0, 0)
 
@@ -194,7 +194,7 @@ func (v *TableView) RenderPaging(data [][]string, offset, limit int, hasMore boo
 func (v *TableView) RenderInteractive(data [][]string) error {
 	if len(data) == 0 {
 		noItemsStyle := lipgloss.NewStyle().
-			Foreground(SubtleColor).
+			Foreground(styles.SubtleColor).
 			Italic(true).
 			Padding(1)
 		fmt.Println(noItemsStyle.Render("No items found"))
