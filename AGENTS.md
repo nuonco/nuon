@@ -135,11 +135,147 @@ cd services/dashboard-ui && npm test
 - When you see compilation errors about missing generated files
 - When generated files (`.activity_gen.go`, `.workflow_gen.go`, swagger docs) are out of sync
 
+## Running the Complete Stack Locally
+
+The Nuon monorepo provides a sophisticated orchestration system for running the entire platform locally, including all microservices and their dependencies.
+
+### Quick Start: Full Stack
+
+**Run all services (RECOMMENDED):**
+```bash
+# First regenerate all code (Go types, temporal activities, swagger docs)
+./run-nuonctl.sh scripts reset-generated-code
+
+# Start infrastructure dependencies
+./run-nuonctl.sh scripts exec reset-dependencies
+
+# Then start all application services - SIMPLIFIED COMMAND
+./run-nuonctl.sh dev --dev-all
+```
+
+**Alternative service-specific orchestration (if needed):**
+```bash
+./run-nuonctl.sh services dev --dev-all --skip cli,runner
+```
+
+> **⚠️ Important**: The simplified `dev --dev-all` command is more reliable than the service-specific `services dev --dev-all` variant. It properly handles service startup orchestration and dependencies, especially for the ctl-api's critical code generation phase.
+
+### Complete Architecture
+
+When running the full stack, you get:
+
+**Application Services** (via `--dev-all`):
+- **`ctl-api`** - Core backend API (ports 8081, 8082, 8083)
+- **`dashboard-ui`** - Web frontend (port 4000)
+- **`cli`** - Public CLI tool
+- **`runner`** - Deployment execution engine
+- **`wiki`** - Internal documentation (port 4321)
+
+**Infrastructure Dependencies** (via Docker Compose):
+- **PostgreSQL** - Main database with multiple databases (`ctl_api`, `temporal`, `temporal_visibility`)
+- **ClickHouse Cluster** - Replicated analytics database (2 nodes + 3 keepers)
+- **Temporal** - Workflow engine with web UI
+- **PGAdmin** - Database management UI
+- **Development Tools** - Registry, profiling, tunneling
+
+### Step-by-Step Setup
+
+1. **Regenerate Code:**
+   ```bash
+   ./run-nuonctl.sh scripts reset-generated-code
+   ```
+   This ensures all Go types, Temporal activities, and Swagger documentation are up-to-date.
+
+2. **Start Infrastructure Dependencies:**
+   ```bash
+   ./run-nuonctl.sh scripts exec reset-dependencies
+   ```
+   This runs `docker-compose up` with all required databases and supporting services.
+
+3. **Start Application Services:**
+   ```bash
+   # RECOMMENDED: Simplified orchestration
+   ./run-nuonctl.sh dev --dev-all
+
+   # Alternative: Service-specific orchestration
+   ./run-nuonctl.sh services dev --dev-all --skip cli,runner
+   ```
+
+4. **Verify Services:**
+   - Dashboard UI: http://localhost:4000
+   - API Endpoints: http://localhost:8081 (public), http://localhost:8082 (admin)
+   - Temporal UI: http://localhost:8233
+   - Database UIs: http://localhost:8888 (PGAdmin), http://localhost:5521 (ClickHouse)
+
+### Port Map for Full Stack
+
+```
+Frontend Services:
+- Dashboard UI:     http://localhost:4000
+- Wiki:             http://localhost:4321
+
+Backend Services:
+- CTL-API Public:   http://localhost:8081
+- CTL-API Admin:    http://localhost:8082
+- CTL-API Runner:   http://localhost:8083
+
+Infrastructure:
+- PostgreSQL:       localhost:5432
+- ClickHouse:       localhost:9000 (native), localhost:8123 (HTTP)
+- Temporal:         localhost:7233
+- Temporal UI:      http://localhost:8233
+- PGAdmin:          http://localhost:8888
+- ClickHouse UI:    http://localhost:5521
+```
+
+### Common Development Patterns
+
+**Backend-focused development:**
+```bash
+./run-nuonctl.sh services dev --dev ctl-api
+```
+
+**Frontend-focused development:**
+```bash
+./run-nuonctl.sh services dev --dev dashboard-ui,ctl-api
+```
+
+**Debug mode:**
+```bash
+./run-nuonctl.sh services dev --dev-all --debug
+```
+
+### Prerequisites for Full Stack
+
+1. **Docker/Podman** - For infrastructure services
+2. **Go 1.24+** - For Go services
+3. **Node.js** - For frontend services
+4. **AWS Credentials** - Services assume support role for real AWS access
+5. **Auth0 Configuration** - For dashboard authentication
+
+### Troubleshooting Full Stack
+
+**Command Selection Issues:**
+- **Use simplified command**: `./run-nuonctl.sh dev --dev-all` is more reliable than `services dev --dev-all`
+- **CTL-API startup problems**: The simplified command properly handles ctl-api's code generation dependencies
+- **Service orchestration**: Simplified command manages startup sequence and service dependencies automatically
+
+**If services fail to start:**
+- Check infrastructure: `docker ps`
+- Verify ports: `lsof -i :4000,8081,5432`
+- Check AWS access: `aws sts get-caller-identity`
+- Run with debug: `--debug` flag
+
+**Performance optimization:**
+- Skip unused services: `--skip cli,runner`
+- Disable file watching: `--watch=false`
+- Use user overrides in `~/.nuonctl-env.yml`
+
 ## Getting Started
 
 1. **Prerequisites**: Go 1.24+, Node.js, Docker, Terraform, kubectl
-2. **Authentication**: Set up cloud credentials (AWS/Azure)  
-3. **Local Development**: Check service-specific README files in `/services/` and `/bins/`
+2. **Authentication**: Set up cloud credentials (AWS/Azure)
+3. **Local Development**: Start with running the complete stack above
 4. **Documentation**: Visit the `/docs/` directory or internal wiki
 
 ## Go Development Best Practices

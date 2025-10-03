@@ -2,18 +2,20 @@
 
 import React, { type FC, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { completeUserJourney } from '@/actions/accounts/complete-user-journey'
+import { Check } from '@phosphor-icons/react'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/Button'
 import { Text } from '@/components/Typography'
 import { useAccount } from '@/hooks/use-account'
 import type { TAccount, TUserJourney, TUserJourneyStep } from '@/types'
 import { ChecklistItem } from './ChecklistItem'
+import { CreateAccountStepContent } from './CreateAccountStepContent'
 import { CLIInstallStepContent } from './CLIInstallStepContent'
 import { CreateAppStepContent } from './CreateAppStepContent'
 import { AppSyncStepContent } from './AppSyncStepContent'
 import { InstallCreationStepContent } from './InstallCreationStepContent'
 import { OrgCreationStepContent } from './OrgCreationStepContent'
+import { completeUserJourney } from '@/actions/accounts/complete-user-journey'
 
 interface ProductionReadyChecklistModalProps {
   isOpen: boolean
@@ -55,6 +57,50 @@ const detectNewlyCompletedStep = (
   return null
 }
 
+// Progress indicator component
+const StepProgressIndicator: FC<{
+  steps: TUserJourneyStep[]
+  currentStepIndex: number
+}> = ({ steps, currentStepIndex }) => {
+  return (
+    <div className="flex items-center justify-center space-x-2 mb-6 px-4">
+      {steps.map((step, index) => (
+        <React.Fragment key={step.name}>
+          {/* Step circle */}
+          <div
+            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ease-out transform ${
+              step.complete
+                ? 'bg-green-500 text-white scale-100'
+                : index === currentStepIndex
+                  ? 'bg-blue-500 text-white scale-110 animate-pulse'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-500 scale-90'
+            }`}
+          >
+            {step.complete ? (
+              <Check
+                size={12}
+                weight="bold"
+                className="transition-transform duration-200"
+              />
+            ) : (
+              <span></span>
+            )}
+          </div>
+
+          {/* Connector line */}
+          {index < steps.length - 1 && (
+            <div
+              className={`h-0.5 w-8 transition-all duration-300 ease-out ${
+                step.complete ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
 export const ProductionReadyChecklistModal: FC<
   ProductionReadyChecklistModalProps
 > = ({ isOpen, onClose, account, orgId, onForceClose }) => {
@@ -72,6 +118,7 @@ export const ProductionReadyChecklistModal: FC<
 
   // Show all journey steps including automatic ones for complete visibility
   const allJourneySteps = evaluationJourney?.steps || []
+  const currentStepIndex = allJourneySteps.findIndex((step) => !step.complete)
 
   // Auto-expansion and step progression logic
   useEffect(() => {
@@ -98,6 +145,7 @@ export const ProductionReadyChecklistModal: FC<
       allJourneySteps.some((step) => step.name === completedStep.name)
     ) {
       const nextStep = getNextStep(allJourneySteps, completedStep.name)
+
       // Close completed step, open next step (or close all if journey complete)
       setExpandedItems(nextStep ? [nextStep.name] : [])
 
@@ -105,7 +153,7 @@ export const ProductionReadyChecklistModal: FC<
       if (!nextStep) {
         setTimeout(() => {
           onClose()
-        }, 2000) // Brief delay to show completion state
+        }, 3000) // Extended delay to show completion celebration
       }
     }
 
@@ -168,6 +216,9 @@ export const ProductionReadyChecklistModal: FC<
     }, 300) // 300ms allows modal close transition to complete
   }
 
+  const appId = allJourneySteps.find((s) => s.name === 'app_created')?.metadata
+    ?.app_id
+
   return (
     <Modal
       isOpen={isOpen}
@@ -181,7 +232,15 @@ export const ProductionReadyChecklistModal: FC<
       className="max-w-2xl"
       showCloseButton={false} // Remove X button
     >
-      <div className="space-y-2">
+      <div className="space-y-4">
+        {/* Step Progress Indicator */}
+        <StepProgressIndicator
+          steps={allJourneySteps}
+          currentStepIndex={
+            currentStepIndex === -1 ? allJourneySteps.length : currentStepIndex
+          }
+        />
+
         <div className="space-y-3">
           {allJourneySteps.map((step, index) => (
             <ChecklistItem
@@ -191,40 +250,7 @@ export const ProductionReadyChecklistModal: FC<
               onToggleExpand={() => toggleExpand(step.name)}
             >
               {step.name === 'account_created' ? (
-                <div className="space-y-6">
-                  {/* Success Message - Shown when step is complete */}
-                  {step.complete && (
-                    <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        <Text
-                          variant="semi-14"
-                          className="text-green-800 dark:text-green-200"
-                        >
-                          Your account has been created successfully!
-                        </Text>
-                      </div>
-                      <Text className="text-gray-600 dark:text-gray-400">
-                        You&rsquo;re now ready to set up your organization and
-                        start deploying applications.
-                      </Text>
-                    </div>
-                  )}
-
-                  {/* Original Step Instructions - Always shown */}
-                  <div
-                    className={`space-y-3 ${step.complete ? 'opacity-75' : ''}`}
-                  >
-                    <Text className="text-gray-600 dark:text-gray-400">
-                      Welcome to Nuon! Your account creation is the first step
-                      in setting up your deployment platform.
-                    </Text>
-                    <Text className="text-sm text-gray-500 dark:text-gray-500">
-                      With your account created, you can now proceed to create
-                      an organization and start managing your applications.
-                    </Text>
-                  </div>
-                </div>
+                <CreateAccountStepContent stepComplete={step.complete} />
               ) : step.name === 'org_created' ? (
                 <OrgCreationStepContent stepComplete={step.complete} />
               ) : step.name === 'cli_installed' ? (
@@ -240,24 +266,14 @@ export const ProductionReadyChecklistModal: FC<
                   selectedAppPath={step.metadata?.app_path || 'eks-simple'}
                 />
               ) : step.name === 'install_created' ? (
-                (() => {
-                  // Get app_id from current step or fallback to app_created step
-                  const appId =
-                    step.metadata?.app_id ||
-                    allJourneySteps.find((s) => s.name === 'app_created')
-                      ?.metadata?.app_id
-
-                  return (
-                    <InstallCreationStepContent
-                      stepComplete={step.complete}
-                      onClose={handleSkipAll}
-                      installId={step.metadata?.install_id}
-                      appId={appId}
-                      orgId={orgId}
-                      onNavigateToInstall={handleNavigateToInstall}
-                    />
-                  )
-                })()
+                <InstallCreationStepContent
+                  stepComplete={step.complete}
+                  onClose={handleSkipAll}
+                  installId={step.metadata?.install_id}
+                  appId={appId}
+                  orgId={orgId}
+                  onNavigateToInstall={handleNavigateToInstall}
+                />
               ) : null}
             </ChecklistItem>
           ))}
