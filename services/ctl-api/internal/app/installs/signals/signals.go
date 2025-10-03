@@ -150,7 +150,8 @@ type Signal struct {
 	// used for awaiting the run
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
 
-	// used for sandbox runs
+	// used for install stack output update via phoen home
+	InstallStackID string `json:"install_stack_id"`
 
 	eventloop.BaseSignal
 }

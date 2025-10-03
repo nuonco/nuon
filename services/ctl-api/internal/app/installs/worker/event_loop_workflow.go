@@ -5,6 +5,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
 )
@@ -30,6 +31,9 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		signals.OperationAwaitRunnerHealthy: w.AwaitRunnerHealthy,
 		signals.OperationProvisionRunner:    AwaitProvisionRunner,
 		signals.OperationReprovisionRunner:  AwaitReprovisionRunner,
+
+		// install stack update
+		signals.OperationUpdateInstallStackOutputs: stack.AwaitUpdateInstallStackOutputs,
 
 		// NOTE(jm): these should be child loops
 		signals.OperationProvisionDNS:   AwaitProvisionDNS,
