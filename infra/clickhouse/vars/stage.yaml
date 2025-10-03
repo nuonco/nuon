@@ -3,7 +3,7 @@ account: stage
 env: stage
 data_volume_storage: 50Gi
 
-logLevel: information
+logLevel: warning
 
 replicas: 2
 shards: 1
