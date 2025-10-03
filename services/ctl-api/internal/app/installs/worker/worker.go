@@ -49,11 +49,16 @@ func New(params WorkerParams) (*Worker, error) {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
 
+	panicPolicy := worker.BlockWorkflow
+	if params.Cfg.TemporalWorkflowFailurePanic {
+		panicPolicy = worker.FailWorkflow
+	}
+
 	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       params.Interceptors,
-		WorkflowPanicPolicy:                worker.FailWorkflow,
+		WorkflowPanicPolicy:                panicPolicy,
 		DisableRegistrationAliasing:        true,
 	})
 

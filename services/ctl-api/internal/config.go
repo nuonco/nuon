@@ -57,6 +57,8 @@ func init() {
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
 	config.RegisterDefault("evaluation_journey_enabled", true)
+
+	config.RegisterDefault("temporal_workflow_failure_panic", true)
 }
 
 type Config struct {
@@ -103,6 +105,7 @@ type Config struct {
 	TemporalHost                          string `config:"temporal_host"  validate:"required"`
 	TemporalStickyWorkflowCacheSize       int    `config:"temporal_sticky_workflow_cache_size"`
 	TemporalDataConverterLargePayloadSize int    `config:"temporal_dataconverter_large_payload_size"`
+	TemporalWorkflowFailurePanic          bool   `config:"temporal_workflow_failure_panic"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`
