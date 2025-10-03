@@ -64,7 +64,7 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 		AppConfigID:       generics.ToPtr(s.state.CfgID),
 		Timeout:           timeout.Nanoseconds(),
 		Dependencies:      action.Dependencies,
-		BreakGlassRoleArn: action.BreakGlassRoleARN,
+		BreakGlassRoleArn: action.BreakGlassRole,
 	}
 
 	for _, ref := range action.References {
