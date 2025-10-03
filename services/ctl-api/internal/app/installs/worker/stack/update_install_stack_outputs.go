@@ -18,7 +18,12 @@ import (
 // @execution-timeout 24h
 // @task-timeout 30s
 func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals.RequestSignal) error {
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, sreq.ID)
+	id := sreq.ID
+	if sreq.InstallStackID != "" {
+		id = sreq.InstallStackID
+	}
+
+	install, err := activities.AwaitGetInstallForStackByStackID(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
