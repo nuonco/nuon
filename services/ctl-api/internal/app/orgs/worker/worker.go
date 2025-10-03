@@ -46,10 +46,14 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
+	panicPolicy := worker.BlockWorkflow
+	if params.Cfg.TemporalWorkflowFailurePanic {
+		panicPolicy = worker.FailWorkflow
+	}
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       params.Interceptors,
-		WorkflowPanicPolicy:                worker.FailWorkflow,
+		WorkflowPanicPolicy:                panicPolicy,
 	})
 
 	wkr.RegisterActivity(params.Acts)

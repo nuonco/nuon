@@ -27,7 +27,7 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
-	V *validator.Validate
+	V       *validator.Validate
 	Cfg     *internal.Config
 	Tclient temporalclient.Client
 	Wkflows *Workflows
@@ -47,10 +47,16 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
+	panicPolicy := worker.BlockWorkflow
+	if params.Cfg.TemporalWorkflowFailurePanic {
+		panicPolicy = worker.FailWorkflow
+	}
+
+	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       params.Interceptors,
-		WorkflowPanicPolicy:                worker.FailWorkflow,
+		WorkflowPanicPolicy:                panicPolicy,
 	})
 
 	// register activities
