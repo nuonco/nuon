@@ -84,11 +84,25 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	}
 
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
+		role := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
+
+		if run.ActionWorkflowConfig.BreakGlassRoleARN.Valid {
+			roleArn, ok := stack.InstallStackOutputs.AWSStackOutputs.BreakGlassRoleARNs[run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString()]
+			if !ok {
+				l.Error(fmt.Sprintf(
+					"break glass role %s not provisioned in install stack",
+					run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString(),
+				))
+				return nil, fmt.Errorf("break glass role not provisioned in install stack")
+			}
+			role = roleArn
+		}
+
 		plan.AWSAuth = &awscredentials.Config{
 			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
 			AssumeRole: &awscredentials.AssumeRoleConfig{
 				SessionName: fmt.Sprintf("install-action-workflow-%s", run.ID),
-				RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN,
+				RoleARN:     role,
 			},
 		}
 	}

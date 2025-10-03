@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/powertoolsdev/mono/pkg/config/refs"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
@@ -51,6 +52,8 @@ type ActionWorkflowConfig struct {
 	Refs              []refs.Ref                    `gorm:"-"`
 	CronTrigger       *ActionWorkflowTriggerConfig  `json:"-" temporaljson:"cron_trigger,omitzero,omitempty"`
 	LifecycleTriggers []ActionWorkflowTriggerConfig `json:"-" temporaljson:"lifecycle_triggers,omitzero,omitempty"`
+
+	BreakGlassRoleARN generics.NullString `json:"break_glass_role_arn,omitzero" temporaljson:"break_glass_role_arn,omitzero,omitempty" swaggertype:"string"`
 }
 
 func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
