@@ -20,6 +20,7 @@ func (a *Activities) GetInstallStackVersionRun(ctx context.Context, req GetInsta
 		Where(app.InstallStackVersionRun{
 			InstallStackVersionID: req.VersionID,
 		}).
+		Order("created_at DESC").
 		First(&stack); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get install stack version run")
 	}
