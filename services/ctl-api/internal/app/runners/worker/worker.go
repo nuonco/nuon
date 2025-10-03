@@ -46,7 +46,6 @@ func New(params WorkerParams) (*Worker, error) {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
 
-	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
 	panicPolicy := worker.BlockWorkflow
 	if params.Cfg.TemporalWorkflowFailurePanic {
 		panicPolicy = worker.FailWorkflow
