@@ -148,12 +148,12 @@ func (m OnboardingModel) View() string {
 
 	// Current step
 	titleStyle := lipgloss.NewStyle().
-		Foreground(AccentColor).
+		Foreground(styles.AccentColor).
 		Bold(true).
 		Margin(1, 0, 0, 0)
 
 	descStyle := lipgloss.NewStyle().
-		Foreground(TextColor).
+		Foreground(styles.TextColor).
 		Margin(0, 0, 1, 0)
 
 	// Action button
@@ -166,7 +166,7 @@ func (m OnboardingModel) View() string {
 
 	// Progress indicator
 	progressStyle := lipgloss.NewStyle().
-		Foreground(SubtleColor).
+		Foreground(styles.SubtleColor).
 		Margin(1, 0, 0, 0)
 
 	progress := m.renderProgress()
@@ -233,10 +233,10 @@ func RunOnboarding(userJourney string) error {
 // ShowEvaluationWelcome displays the evaluation welcome message
 func ShowEvaluationWelcome() {
 	welcomeStyle := lipgloss.NewStyle().
-		Foreground(AccentColor).
+		Foreground(styles.AccentColor).
 		Bold(true).
 		Border(lipgloss.DoubleBorder()).
-		BorderForeground(AccentColor).
+		BorderForeground(styles.AccentColor).
 		Padding(2, 3).
 		Margin(1, 0)
 
@@ -296,4 +296,3 @@ func contains(s string, substrings []string) bool {
 	}
 	return false
 }
-
