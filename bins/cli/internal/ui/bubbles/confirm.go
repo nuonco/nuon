@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
 )
 
 // ConfirmModel represents a yes/no confirmation dialog
@@ -91,7 +92,7 @@ func (m ConfirmModel) View() string {
 
 	// Render the prompt
 	promptStyle := lipgloss.NewStyle().
-		Foreground(TextColor).
+		Foreground(styles.ErrorColor).
 		Bold(true).
 		Margin(1, 0)
 
@@ -116,7 +117,7 @@ func (m ConfirmModel) View() string {
 	)
 
 	help := lipgloss.NewStyle().
-		Foreground(SubtleColor).
+		Foreground(styles.SubtleColor).
 		Italic(true).
 		Margin(1, 0).
 		Render("Use arrow keys or tab to navigate • Enter to confirm • y/n for shortcuts")
