@@ -1,0 +1,19 @@
+name = "simple_demonstration"
+timeout = "1m"
+role = "sandbox_break_glass"
+break_glass_role="{{.nuon.install.id}}-test-break-glass-role"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name = "delete a secret from aws"
+inline_contents = """
+#!/usr/bin/env sh
+set -x
+
+BUCKET_KEY=$(openssl rand -hex 8)
+aws s3 mb s3://test-bucket-$BUCKET_KEY --region us-east-1
+aws s3 ls
+aws s3api delete-bucket --bucket test-bucket-$BUCKET_KEY --region us-east-1
+"""

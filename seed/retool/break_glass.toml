@@ -24,3 +24,30 @@ contents = """
     ]
 }
 """
+
+[[role]]
+name                 = "{{.nuon.install.id}}-test-break-glass-role"
+description          = "Grants access to the sandbox for install {{.nuon.install.id}}."
+display_name         = "{{.nuon.install.id}} - Retool Sandbox Break Glass"
+permissions_boundary = ""
+
+[[role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[role.policies]]
+name = "remove-secrets-manager"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenySecretsManagerAccess",
+            "Effect": "Deny",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""
