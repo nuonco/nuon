@@ -8,20 +8,8 @@ import (
 // Common styles and colors for consistent theming
 // Using ANSI colors to respect terminal color schemes
 var (
-	// Primary brand colors - use terminal's bright colors
-	SecondaryColor = lipgloss.Color("14") // Bright Cyan
-	AccentColor    = lipgloss.Color("11") // Bright Yellow
-
-	// Status colors - use standard ANSI colors
-	SuccessColor = lipgloss.Color("2") // Green
-	ErrorColor   = lipgloss.Color("1") // Red
-	WarningColor = lipgloss.Color("3") // Yellow
-	InfoColor    = lipgloss.Color("4") // Blue
-
 	// Neutral colors - use terminal's default colors
-	TextColor   = lipgloss.Color("")  // Default foreground
-	SubtleColor = lipgloss.Color("8") // Bright Black (typically gray)
-	BorderColor = lipgloss.Color("8") // Bright Black (typically gray)
+	BorderColor = styles.BorderInactiveColor
 
 	// Base styles
 	BaseStyle = lipgloss.NewStyle().
@@ -29,22 +17,22 @@ var (
 
 	// Status message styles
 	InfoStyle = lipgloss.NewStyle().
-			Foreground(InfoColor).
+			Foreground(styles.InfoColor).
 			Bold(true).
 			Padding(0, 1)
 
 	ErrorStyle = lipgloss.NewStyle().
-			Foreground(ErrorColor).
+			Foreground(styles.ErrorColor).
 			Bold(true).
 			Padding(0, 1)
 
 	WarningStyle = lipgloss.NewStyle().
-			Foreground(WarningColor).
+			Foreground(styles.WarningColor).
 			Bold(true).
 			Padding(0, 1)
 
 	SuccessStyle = lipgloss.NewStyle().
-			Foreground(SuccessColor).
+			Foreground(styles.SuccessColor).
 			Bold(true).
 			Padding(0, 1)
 
@@ -54,7 +42,7 @@ var (
 			Bold(true)
 
 	BlurredStyle = lipgloss.NewStyle().
-			Foreground(SubtleColor)
+			Foreground(styles.SubtleColor)
 
 	// Border styles: padded but border-less
 	BorderStyle = lipgloss.NewStyle().
@@ -69,13 +57,13 @@ var (
 // Evaluation journey specific styling
 var (
 	EvaluationHeaderStyle = lipgloss.NewStyle().
-				Foreground(AccentColor).
+				Foreground(styles.AccentColor).
 				Bold(true).
 				Underline(true).
 				Margin(1, 0)
 
 	EvaluationTipStyle = lipgloss.NewStyle().
-				Foreground(InfoColor).
+				Foreground(styles.InfoColor).
 				Italic(true).
 				Padding(0, 1)
 )
