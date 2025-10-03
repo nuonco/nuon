@@ -196,7 +196,7 @@ func (m SelectorModel) View() string {
 			// Find the selected item from filtered items
 			if m.cursor >= 0 && m.cursor < len(m.filteredItems) {
 				selectedItem := m.filteredItems[m.cursor]
-				successStyle := lipgloss.NewStyle().Foreground(SuccessColor).Bold(true)
+				successStyle := lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
 				return successStyle.Render(fmt.Sprintf("✓ Selected: %s", selectedItem.Title()))
 			}
 		}
@@ -207,9 +207,9 @@ func (m SelectorModel) View() string {
 
 	// Search box
 	searchBoxStyle := lipgloss.NewStyle().
-		Foreground(TextColor).
+		Foreground(styles.TextColor).
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(SubtleColor).
+		BorderForeground(styles.SubtleColor).
 		Padding(0, 1).
 		Margin(0, 0, 1, 0).
 		Width(m.width - 2) // full-width minus padding
@@ -222,7 +222,7 @@ func (m SelectorModel) View() string {
 	searchText := m.searchQuery
 	if searchText == "" && !m.searchMode {
 		searchText = "Type press / to search..."
-		searchBoxStyle = searchBoxStyle.Foreground(SubtleColor)
+		searchBoxStyle = searchBoxStyle.Foreground(styles.SubtleColor)
 	}
 
 	if m.searchMode {
@@ -235,7 +235,7 @@ func (m SelectorModel) View() string {
 	// Render filtered items
 	if len(m.filteredItems) == 0 {
 		noResultsStyle := lipgloss.NewStyle().
-			Foreground(SubtleColor).
+			Foreground(styles.SubtleColor).
 			Italic(true).
 			Align(lipgloss.Center).
 			Padding(2, 0)
@@ -255,7 +255,7 @@ func (m SelectorModel) View() string {
 			} else {
 				// Normal item
 				itemStyle = lipgloss.NewStyle().
-					Foreground(TextColor)
+					Foreground(styles.TextColor)
 			}
 
 			line := fmt.Sprintf("%s%s", prefix, item.Title())
@@ -271,7 +271,7 @@ func (m SelectorModel) View() string {
 	// Show filtered results count if searching
 	if m.searchQuery != "" {
 		countStyle := lipgloss.NewStyle().
-			Foreground(SubtleColor).
+			Foreground(styles.SubtleColor).
 			Italic(true).
 			Margin(1, 0, 0, 0)
 		b.WriteString(countStyle.Render(fmt.Sprintf("Found %02d match(es)", len(m.filteredItems))))
@@ -280,7 +280,7 @@ func (m SelectorModel) View() string {
 
 	// Instructions
 	helpStyle := lipgloss.NewStyle().
-		Foreground(SubtleColor).
+		Foreground(styles.SubtleColor).
 		Italic(true).
 		Margin(1, 0, 0, 0)
 
@@ -414,6 +414,28 @@ func SelectInstall(installs []InstallOption) (string, error) {
 	return SelectFromItems("Select an installation", items)
 }
 
+// SelectWorkflow shows an installation selector
+func SelectWorkflow(workflows []WorkflowOption) (string, error) {
+	items := make([]SelectorItem, len(workflows))
+	// get some widths for padding
+	maxWorkflowNameWidth := 0
+	for _, workflow := range workflows {
+		if len(workflow.Name) > maxWorkflowNameWidth {
+			maxWorkflowNameWidth = len(workflow.Name)
+		}
+	}
+
+	for i, workflow := range workflows {
+		items[i] = SelectorItem{
+			title:       fmt.Sprintf("%s%s", workflow.Name, strings.Repeat(" ", maxWorkflowNameWidth-len(workflow.Name))),
+			description: styles.TextDim.Render(fmt.Sprintf("ID: %s", workflow.ID)),
+			value:       workflow.ID,
+		}
+	}
+
+	return SelectFromItems("Select an workflow", items)
+}
+
 // Helper types for the selector functions
 type OrgOption struct {
 	ID           string
@@ -427,6 +449,11 @@ type AppOption struct {
 }
 
 type InstallOption struct {
+	ID   string
+	Name string
+}
+
+type WorkflowOption struct {
 	ID   string
 	Name string
 }
