@@ -33,6 +33,7 @@ func (m baseMiddleware) Name() string {
 
 var skipRoutes = map[string]struct{}{
 	"/livez":   {},
+	"/readyz":  {},
 	"/version": {},
 	"/docs/":   {},
 }
