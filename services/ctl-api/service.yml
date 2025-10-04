@@ -76,7 +76,7 @@ env:
   INTERNAL_HTTP_PORT: 8082
   RUNNER_HTTP_PORT: 8083
   GRACEFUL_SHUTDOWN_TIMEOUT: 1s
-  
+
   # middlewares are applied from left to right, with the left most being the outermost.
   MIDDLEWARES: chaos,tracer,public_metrics,error,public,size,global,public_audit,auth,org,log,offset_pagination,invites,headers,cors,config,patcher,panicker
   RUNNER_MIDDLEWARES: chaos,tracer,runner_metrics,error,size,public,runner_audit,auth,runner_org,log,offset_pagination,headers,cors,config,panicker
@@ -98,7 +98,6 @@ env:
   TEMPORAL_UI_URL: http://localhost:8233
   ORG_RUNNER_HELM_CHART_DIR: $NUON_ROOT/bins/runner/bundle/helm
   MAX_REQUEST_DURATION: 10s
-  ENABLE_HTTPBIN_DEBUG_ENDPOINTS: true
   SERVICE_TYPE: api
   SERVICE_DEPLOYMENT: local
 
@@ -127,10 +126,11 @@ env:
   FORCE_DEBUG_MODE: true
   ENABLE_PROFILING: false
   PROFILING_PORT: 6060
+  ENABLE_HTTPBIN_DEBUG_ENDPOINTS: true
   ENABLE_ENDPOINT_AUDITING: true
   EVALUATION_JOURNEY_ENABLED: true
 
-  # chaos rate greater than 0 to enable, 1 = 1% and 100 = 100% 
+  # chaos rate greater than 0 to enable, 1 = 1% and 100 = 100%
   CHAOS_RATE: 0
   CHAOS_ERRORS: panic,bad_gateway,service_unavailable,internal_server_error,timeout
   # CHAOS_ROUTES: get_/v1/orgs,get_/v1/apps
