@@ -46,7 +46,7 @@ func (a *Activities) getApprovalPlan(ctx context.Context, stepTargetID string) (
 	}
 
 	// we're only using content display currently since we're only dealing with terraform and sandbox plans
-	decompressedContentDisplay, err := a.decompressRunnerJobExecutionResult(ctx, runnerJobExecutionResult.ContentsDisplayGzip)
+	decompressedContentDisplay, err := a.decompressRunnerJobExecutionResult(runnerJobExecutionResult.ContentsDisplayGzip)
 	if err != nil {
 		return nil, err
 	}
