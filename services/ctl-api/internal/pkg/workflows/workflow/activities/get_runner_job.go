@@ -76,8 +76,6 @@ type GetApprovalPlanRequest struct {
 	StepTargetID string `validate:"required"`
 }
 
-
-
 // @temporal-gen activity
 // @max-retries 1
 func (a *Activities) GetApprovalPlan(ctx context.Context, req GetApprovalPlanRequest) (*ApprovalPlan, error) {
@@ -101,7 +99,7 @@ func (a *Activities) GetApprovalPlan(ctx context.Context, req GetApprovalPlanReq
 	}
 
 	// we're only using content display currently since we're only dealing with terraform and sandbox plans
-	decompressedContentDisplay, err := a.decompressRunnerJobExecutionResult(ctx, runnerJobExecutionResult.ContentsDisplayGzip)
+	decompressedContentDisplay, err := a.decompressRunnerJobExecutionResult(runnerJobExecutionResult.ContentsDisplayGzip)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +112,7 @@ func (a *Activities) GetApprovalPlan(ctx context.Context, req GetApprovalPlanReq
 	return &plan, nil
 }
 
-func (a *Activities) decompressRunnerJobExecutionResult(ctx context.Context, b []byte) ([]byte, error) {
+func (a *Activities) decompressRunnerJobExecutionResult(b []byte) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewReader(b))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decompress plan contents, failed to read contents")
