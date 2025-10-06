@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import { createContext, useEffect, type ReactNode } from "react";
-import { setOrgCookie } from "@/actions/orgs/org-session-cookie";
-import { usePolling, type IPollingProps } from "@/hooks/use-polling";
-import type { TOrg } from "@/types";
+import { createContext, useEffect, type ReactNode } from 'react'
+import { setOrgCookie } from '@/actions/orgs/org-session-cookie'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import type { TOrg } from '@/types'
 
 type OrgContextValue = {
-  org: TOrg | null;
-  isLoading: boolean;
-  error: any;
-  refresh: () => void;
-};
+  org: TOrg | null
+  isLoading: boolean
+  error: any
+  refresh: () => void
+}
 
-export const OrgContext = createContext<OrgContextValue | undefined>(undefined);
+export const OrgContext = createContext<OrgContextValue | undefined>(undefined)
 
 export function OrgProvider({
   children,
@@ -20,8 +20,8 @@ export function OrgProvider({
   pollInterval = 30000,
   shouldPoll = false,
 }: {
-  children: ReactNode;
-  initOrg: TOrg;
+  children: ReactNode
+  initOrg: TOrg
 } & IPollingProps) {
   const {
     data: org,
@@ -32,11 +32,11 @@ export function OrgProvider({
     path: `/api/orgs/${initOrg.id}`,
     pollInterval,
     shouldPoll,
-  });
+  })
 
   useEffect(() => {
-    setOrgCookie(initOrg?.id);
-  }, [initOrg?.id]);
+    setOrgCookie(initOrg?.id)
+  }, [initOrg?.id])
 
   return (
     <OrgContext.Provider
@@ -51,5 +51,5 @@ export function OrgProvider({
     >
       {children}
     </OrgContext.Provider>
-  );
+  )
 }

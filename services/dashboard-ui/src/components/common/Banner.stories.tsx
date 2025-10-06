@@ -1,6 +1,6 @@
-import { Banner } from "./Banner";
-import { Button } from "./Button";
-import { Text } from "./Text";
+import { Banner } from './Banner'
+import { Button } from './Button'
+import { Text } from './Text'
 
 export const LongContent = () => (
   <Banner theme="warn">
@@ -17,7 +17,7 @@ export const LongContent = () => (
       </div>
     </div>
   </Banner>
-);
+)
 
 export const AllThemes = () => (
   <div className="space-y-4">
@@ -35,7 +35,7 @@ export const AllThemes = () => (
       Default: This is a default banner with important information.
     </Banner>
   </div>
-);
+)
 
 export const SimpleMessages = () => (
   <div className="space-y-4">
@@ -44,7 +44,7 @@ export const SimpleMessages = () => (
     <Banner theme="info">Good to know</Banner>
     <Banner theme="success">All done!</Banner>
   </div>
-);
+)
 
 export const WithComplexContent = () => (
   <div className="space-y-4">
@@ -52,7 +52,8 @@ export const WithComplexContent = () => (
       <div className="space-y-2">
         <Text weight="strong">Update Available</Text>
         <Text variant="subtext">
-          A new version of the application is available. Update now to get the latest features and security improvements.
+          A new version of the application is available. Update now to get the
+          latest features and security improvements.
         </Text>
       </div>
     </Banner>
@@ -68,4 +69,4 @@ export const WithComplexContent = () => (
       </div>
     </Banner>
   </div>
-);
+)

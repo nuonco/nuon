@@ -11,6 +11,7 @@ import {
 import { AccountProvider } from '@/providers/account-provider'
 import { UserJourneyProvider } from '@/providers/user-journey-provider'
 import './globals.css'
+import './old-styles.css'
 
 const inter = Inter({
   subsets: ['latin'],
