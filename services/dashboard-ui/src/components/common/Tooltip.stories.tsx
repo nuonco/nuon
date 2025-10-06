@@ -120,7 +120,7 @@ const deps = [
   },
 ]
 
-export const RichTooltip = () => (
+export const ContextTooltip = () => (
   <div className="flex p-8">
     <Tooltip
       isOpen
