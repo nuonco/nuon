@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/kyokomi/emoji"
+	"github.com/powertoolsdev/mono/pkg/cli/styles"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +32,7 @@ func GetStatusColor(status string) string {
 	return statusColor
 }
 
-func Line(ctx context.Context, msg string, args ...interface{}) {
+func Line(ctx context.Context, msg string, args ...any) {
 	log, err := FromContext(ctx)
 	if err != nil {
 		return
@@ -41,7 +42,7 @@ func Line(ctx context.Context, msg string, args ...interface{}) {
 }
 
 // Step records a step that happened, with a "check"
-func Step(ctx context.Context, msg string, args ...interface{}) {
+func Step(ctx context.Context, msg string, args ...any) {
 	log, err := FromContext(ctx)
 	if err != nil {
 		return
@@ -50,13 +51,13 @@ func Step(ctx context.Context, msg string, args ...interface{}) {
 	log.Step(msg, args...)
 }
 
-func (l *logger) Step(msg string, args ...interface{}) {
+func (l *logger) Step(msg string, args ...any) {
 	if l.JSON {
 		l.Zap.Info(fmt.Sprintf(msg, args...))
 		return
 	}
-
-	emoji.Fprintf(os.Stderr, ":check_mark:"+msg+"\n", args...)
+	message := fmt.Sprintf("%s %s\n", styles.TextSuccess.Render("✔"), msg)
+	fmt.Fprintf(os.Stderr, message, args...)
 }
 
 // Error records an error that happened, with a "x"
