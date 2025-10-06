@@ -1,6 +1,8 @@
 package httpbin
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/mccutchen/go-httpbin/v2/httpbin"
 	"go.uber.org/fx"
@@ -41,10 +43,25 @@ func (s *Service) registerRoutes(api *gin.Engine) error {
 }
 
 func (s *Service) Proxy(c *gin.Context) {
-	if c.Request.URL.Path == "/httpbin/panic" {
+
+	switch c.Request.URL.Path {
+	case "/httpbin/panic":
 		panic("HTTPBIN force panic")
+	case "/httpbin/oom":
+		s.l.Info("Generating out-of-memory error...")
+		// Generate up to 10GiB of data in 100MiB chunks
+		var data [][]byte
+		for i := range 100 {
+			chunk := make([]byte, 100*1024*1024) // 100MiB
+			for j := 0; j < len(chunk); j += 4096 {
+				chunk[j] = byte(i % 256)
+			}
+			data = append(data, chunk)
+			s.l.Info(fmt.Sprintf("Allocated %dMiB", (i+1)*100))
+		}
+	default:
+		s.httpbin.Handler().ServeHTTP(c.Writer, c.Request)
 	}
-	s.httpbin.Handler().ServeHTTP(c.Writer, c.Request)
 }
 
 type Params struct {
