@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
+	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
 // TableModel represents a data table component
