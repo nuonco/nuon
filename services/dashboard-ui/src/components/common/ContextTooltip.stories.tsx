@@ -1,10 +1,10 @@
-import { RichTooltip } from './RichTooltip'
+import { ContextTooltip } from './ContextTooltip'
 import { Button } from './Button'
 import { Icon } from './Icon'
 
 export const SingleItem = () => (
   <div className="flex justify-center p-8">
-    <RichTooltip
+    <ContextTooltip
       title="Actions"
       items={[
         {
@@ -18,13 +18,13 @@ export const SingleItem = () => (
       ]}
     >
       <Button>Hover for single action</Button>
-    </RichTooltip>
+    </ContextTooltip>
   </div>
 )
 
 export const FourItems = () => (
   <div className="flex justify-center p-8">
-    <RichTooltip
+    <ContextTooltip
       title="Quick Actions"
       items={[
         {
@@ -62,13 +62,13 @@ export const FourItems = () => (
       ]}
     >
       <Button>Hover for 4 actions</Button>
-    </RichTooltip>
+    </ContextTooltip>
   </div>
 )
 
 export const FifteenItems = () => (
   <div className="flex justify-center p-8">
-    <RichTooltip
+    <ContextTooltip
       title="All Components"
       position="bottom"
       maxHeight="max-h-64"
@@ -182,13 +182,13 @@ export const FifteenItems = () => (
       ]}
     >
       <Button>Hover for 15 components</Button>
-    </RichTooltip>
+    </ContextTooltip>
   </div>
 )
 
 export const CustomConfiguration = () => (
   <div className="flex justify-center p-8">
-    <RichTooltip
+    <ContextTooltip
       title="Custom Options"
       showCount={false}
       width="w-72"
@@ -214,13 +214,13 @@ export const CustomConfiguration = () => (
       ]}
     >
       <Button variant="primary">Custom tooltip</Button>
-    </RichTooltip>
+    </ContextTooltip>
   </div>
 )
 
 export const WithClickHandlers = () => (
   <div className="flex justify-center p-8">
-    <RichTooltip
+    <ContextTooltip
       title="Interactive Items"
       onItemClick={(item) => alert(`Clicked: ${item.title}`)}
       items={[
@@ -241,13 +241,13 @@ export const WithClickHandlers = () => (
       ]}
     >
       <Button variant="secondary">Interactive tooltip</Button>
-    </RichTooltip>
+    </ContextTooltip>
   </div>
 )
 
 export const InfoOnly = () => (
   <div className="flex justify-center p-8">
-    <RichTooltip
+    <ContextTooltip
       title="System Status"
       items={[
         {
@@ -278,6 +278,6 @@ export const InfoOnly = () => (
       ]}
     >
       <Button variant="ghost">View system metrics</Button>
-    </RichTooltip>
+    </ContextTooltip>
   </div>
 )
