@@ -36,4 +36,3 @@ export const useConfetti = () => {
 
   return { fireConfetti, fireCelebrationConfetti }
 }
-

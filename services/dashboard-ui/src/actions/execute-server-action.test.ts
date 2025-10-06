@@ -12,7 +12,9 @@ describe('executeServerAction', () => {
   })
 
   test('should execute action and return result without path revalidation', async () => {
-    const mockAction = vi.fn().mockResolvedValue({ success: true, data: 'test-data' })
+    const mockAction = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: 'test-data' })
     const args = { orgId: 'org-123' }
 
     const result = await executeServerAction({
@@ -26,7 +28,9 @@ describe('executeServerAction', () => {
 
   test('should execute action and revalidate path when path is provided', async () => {
     const { revalidatePath } = await import('next/cache')
-    const mockAction = vi.fn().mockResolvedValue({ id: 'test-id', name: 'test-name' })
+    const mockAction = vi
+      .fn()
+      .mockResolvedValue({ id: 'test-id', name: 'test-name' })
     const args = { orgId: 'org-456', name: 'Test App' }
     const path = '/org-456/apps'
 
@@ -46,10 +50,12 @@ describe('executeServerAction', () => {
     const mockAction = vi.fn().mockRejectedValue(mockError)
     const args = { orgId: 'org-789' }
 
-    await expect(executeServerAction({
-      action: mockAction,
-      args,
-    })).rejects.toThrow('Action failed')
+    await expect(
+      executeServerAction({
+        action: mockAction,
+        args,
+      })
+    ).rejects.toThrow('Action failed')
 
     expect(mockAction).toHaveBeenCalledWith(args)
   })
@@ -61,11 +67,13 @@ describe('executeServerAction', () => {
     const args = { orgId: 'org-error' }
     const path = '/org-error/apps'
 
-    await expect(executeServerAction({
-      action: mockAction,
-      args,
-      path,
-    })).rejects.toThrow('Action with path failed')
+    await expect(
+      executeServerAction({
+        action: mockAction,
+        args,
+        path,
+      })
+    ).rejects.toThrow('Action with path failed')
 
     expect(mockAction).toHaveBeenCalledWith(args)
     expect(revalidatePath).not.toHaveBeenCalled()
