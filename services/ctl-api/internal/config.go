@@ -54,11 +54,12 @@ func init() {
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
 
+	config.RegisterDefault("enable_httpbin_debug_endpoints", false)
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
 	config.RegisterDefault("evaluation_journey_enabled", true)
 
-	config.RegisterDefault("temporal_workflow_failure_panic", true)
+	config.RegisterDefault("temporal_workflow_failure_panic", false)
 }
 
 type Config struct {
