@@ -27,7 +27,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
+	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
 const (

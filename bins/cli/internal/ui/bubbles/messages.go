@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
+	"github.com/powertoolsdev/mono/pkg/cli/styles"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
