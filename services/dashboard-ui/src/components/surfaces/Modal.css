@@ -1,0 +1,61 @@
+.modal-wrapper.enter .modal-overlay {
+  animation: enter-overlay var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+.modal-wrapper.exit .modal-overlay {
+  animation: exit-overlay var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+@keyframes enter-overlay {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes exit-overlay {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.modal {
+  width: calc(100% - 48px);
+}
+
+.modal-wrapper.enter .modal {
+  opacity: 0;
+  animation: enter-below var(--duration-fastest) var(--ease-cubic)
+    var(--duration-fastest) forwards;
+}
+
+.modal-wrapper.exit .modal {
+  animation: exit-below var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+@keyframes enter-below {
+  0% {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes exit-below {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}

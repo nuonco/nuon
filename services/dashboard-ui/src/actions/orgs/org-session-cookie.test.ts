@@ -6,10 +6,12 @@ const mockSet = vi.fn()
 const mockGet = vi.fn()
 
 vi.mock('next/headers', () => ({
-  cookies: vi.fn(() => Promise.resolve({
-    set: mockSet,
-    get: mockGet,
-  })),
+  cookies: vi.fn(() =>
+    Promise.resolve({
+      set: mockSet,
+      get: mockGet,
+    })
+  ),
 }))
 
 describe('org-session-cookie', () => {
@@ -20,7 +22,7 @@ describe('org-session-cookie', () => {
   describe('setOrgCookie', () => {
     test('should set org_session cookie with provided orgId', async () => {
       const orgId = 'org-123'
-      
+
       await setOrgCookie(orgId)
 
       expect(mockSet).toHaveBeenCalledWith('org_session', orgId, {
@@ -33,7 +35,7 @@ describe('org-session-cookie', () => {
 
     test('should set cookie with correct options', async () => {
       const orgId = 'org-456'
-      
+
       await setOrgCookie(orgId)
 
       const expectedOptions = {
@@ -43,12 +45,16 @@ describe('org-session-cookie', () => {
         sameSite: 'lax',
       }
 
-      expect(mockSet).toHaveBeenCalledWith('org_session', orgId, expectedOptions)
+      expect(mockSet).toHaveBeenCalledWith(
+        'org_session',
+        orgId,
+        expectedOptions
+      )
     })
 
     test('should handle empty string orgId', async () => {
       const orgId = ''
-      
+
       await setOrgCookie(orgId)
 
       expect(mockSet).toHaveBeenCalledWith('org_session', '', {
@@ -61,7 +67,7 @@ describe('org-session-cookie', () => {
 
     test('should handle special characters in orgId', async () => {
       const orgId = 'org-123-test_special'
-      
+
       await setOrgCookie(orgId)
 
       expect(mockSet).toHaveBeenCalledWith('org_session', orgId, {

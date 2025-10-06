@@ -1,0 +1,419 @@
+/*
+  Pre stratus css please do not add anything to this file as these styles will be deleted soon
+*/
+
+@import 'tailwindcss';
+
+@config '../../tailwind.config.ts';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@layer utilities {
+  :root {
+    font-variant-ligatures: no-contextual !important;
+    color-scheme: light dark;
+    --border-color-light: #dee3e7;
+    --border-color-dark: #27252a;
+    --gradient-brand-light: linear-gradient(
+      88.14deg,
+      #f9519d 7.25%,
+      #6133ff 62.82%
+    );
+    --gradient-brand-dark: linear-gradient(
+      88.14deg,
+      #f72585 7.25%,
+      #3a00ff 62.82%
+    );
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --border-color: var(--border-color-light);
+    }
+
+    *,
+    .prose :where(hr):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+    .prose
+      :where(tbody tr):not(
+        :where([class~='not-prose'], [class~='not-prose'] *)
+      ),
+    .prose
+      :where(thead):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      border-color: var(--border-color-light);
+    }
+
+    .history-event:before,
+    .timeline-event:before {
+      border-left: 1px solid var(--border-color-light);
+    }
+
+    .dashboard_sidebar {
+      background: linear-gradient(
+        336deg,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(249, 249, 251, 1) 100%
+      );
+    }
+
+    .dashboard_nav {
+      background-image: url('../../public/light-sidebar-bg.svg');
+    }
+
+    .text-gradient {
+      background: var(--gradient-brand-light);
+    }
+
+    @media (min-width: 1020px) {
+      .landing-graphic {
+        background-image: url('../../public/landing-graphic-light.svg');
+      }
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --border-color: var(--border-color-dark);
+    }
+
+    *,
+    .prose :where(hr):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+    .prose
+      :where(tbody tr):not(
+        :where([class~='not-prose'], [class~='not-prose'] *)
+      ),
+    .prose
+      :where(thead):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      border-color: var(--border-color-dark);
+    }
+
+    .history-event:before,
+    .timeline-event:before {
+      border-left: 1px solid var(--border-color-dark);
+    }
+
+    .dashboard_sidebar {
+      background: linear-gradient(
+        336deg,
+        rgba(13, 4, 22, 1) 0%,
+        rgba(5, 1, 9, 1) 100%
+      );
+    }
+
+    .dashboard_nav {
+      background-image: url('../../public/sidebar-bg.svg');
+    }
+
+    .text-gradient {
+      background: var(--gradient-brand-dark);
+    }
+
+    @media (min-width: 1020px) {
+      .landing-graphic {
+        background-image: url('../../public/landing-graphic.svg');
+      }
+    }
+  }
+}
+
+.disable-ligatures {
+  font-variant-ligatures: no-contextual !important;
+}
+
+.dashboard_sidebar,
+.dashboard_nav {
+  background-position: bottom;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.dashboard_content {
+  background-image: url('../../public/dashboard-bg.svg');
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+.history {
+  max-height: calc(100vh - 200px);
+}
+
+.timeline {
+}
+
+.timeline-event {
+  position: relative;
+}
+
+.timeline:not(.new) .timeline-event:before {
+  content: '';
+  height: calc(100% - 1.25rem);
+  left: 1.26rem;
+  position: absolute;
+  width: 1px;
+  top: 2.4rem;
+}
+
+.timeline:not(.new) .timeline-event:last-of-type:before {
+  display: none;
+}
+
+.history-event {
+  position: relative;
+}
+
+.history-event:before {
+  content: '';
+  height: calc(100% - 2rem);
+  left: 1.26rem;
+  position: absolute;
+  width: 1px;
+  top: 2.5rem;
+}
+
+.history-event:last-child:before {
+  display: none;
+}
+
+.text-gradient {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (min-width: 1020px) {
+  .landing-gradient {
+    background-image: url('../../public/dashboard-bg.svg');
+    background-repeat: no-repeat;
+    background-position: top;
+    background-attachment: local;
+  }
+
+  .landing-graphic {
+    background-repeat: no-repeat;
+    background-position: top -2rem right;
+    background-attachment: local;
+  }
+
+  .landing-toml {
+    background-image: url('../../public/landing-actions-toml.svg');
+    background-repeat: no-repeat;
+    background-position: top right;
+  }
+}
+
+@media (min-width: 1200px) {
+  .landing-graphic {
+    background-repeat: no-repeat;
+    background-position: top -2rem right 8rem;
+    background-attachment: local;
+  }
+}
+
+.on-enter {
+  animation: enter 100ms ease-in-out forwards;
+  opacity: 0;
+}
+
+.on-enter.enter-left {
+  transform: translateX(-1rem);
+  transform-origin: top center;
+}
+
+.on-enter.enter-right {
+  transform: translateX(1rem);
+  transform-origin: top center;
+}
+
+.on-enter.enter-top {
+  transform: translateY(-1rem);
+  transform-origin: top center;
+}
+
+.on-enter.enter-bottom {
+  transform: translateY(1rem);
+  transform-origin: top center;
+}
+
+@keyframes enter {
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes exit {
+  100% {
+    opacity: 0;
+    transform: translateY(-4rem);
+  }
+}
+
+.tooltip {
+  display: inline-block;
+  position: relative;
+  width: fit-content;
+}
+
+.tooltip .tooltip-wrapper {
+  display: none;
+  height: max-content;
+  position: absolute;
+  width: max-content;
+  z-index:10;
+}
+
+.tooltip:hover .tooltip-wrapper {
+  display: block;
+}
+
+.tooltip .tooltip-wrapper.top {
+  padding-bottom: 0.5rem;
+}
+
+.tooltip:hover .tooltip-wrapper.top {
+  top: 0;
+  transform: translateY(-100%);
+}
+
+.tooltip .tooltip-wrapper.bottom {
+  padding-top: 0.5rem;
+}
+
+.tooltip:hover .tooltip-wrapper.bottom {
+  bottom: 0;
+  transform: translateY(100%);
+}
+
+.tooltip:hover .tooltip-wrapper.right {
+  right: 0;
+}
+
+.tooltip:hover .tooltip-wrapper.left {
+  left: 0;
+}
+
+.tooltip:hover .tooltip-wrapper.center {
+  left: 50%;
+}
+
+.tooltip:hover .tooltip-wrapper.center.top {
+  transform: translate(-50%, -100%);
+}
+
+.heartbeat-item-parent,
+.heartbeat-item-parent .heartbeat-item {
+  transition: 100ms ease-in-out;
+}
+
+.heartbeat-item-parent:hover .heartbeat-item {
+  transform: scaleY(130%);
+}
+
+.heartbeat-item-parent:has(+ .heartbeat-item-parent:hover) {
+  transform: scaleY(115%);
+}
+
+.heartbeat-item-parent:hover + .heartbeat-item-parent .heartbeat-item {
+  transform: scaleY(115%);
+}
+
+.readme-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.readme-table table {
+  width: fit-content;
+}
+
+.layout {
+  display: flex;
+  flex-wrap: no-wrap;
+  flex-flow: row;
+  min-height: 100vh;
+  overflow: hidden;
+  width: 200vw;
+  transition: transform 100ms ease-in-out;
+}
+
+.layout.layout--open {
+
+}
+
+.layout:not(.layout--open) {
+  transform: translateX(-50%);
+}
+
+.layout_aside {  
+  flex: 1 0 auto;
+  height: 100vh;
+  width: 100vw
+}
+
+.layout_content {  
+  flex: 1 0 auto;
+  height: 100vh;
+  width: 100vw;
+}
+
+@media (min-width: 768px) {
+  .layout {
+    display: flex;
+    flex-wrap: no-wrap;
+    flex-flow: row;
+    min-height: 100vh;
+    overflow: hidden;
+    width: 100vw;    
+  }
+
+  .layout.layout--open {
+
+  }
+
+  .layout:not(.layout--open) {
+    transform: translateX(0%);
+  }
+
+  .layout_aside {  
+    flex: 0 0 auto;
+    transition: width 150ms cubic-bezier(0.65, 0, 0.35, 1);
+    width: 18rem;
+  }
+
+  .layout:not(.layout--open) .layout_aside {
+    width: 72px;
+  }
+
+  .layout_content {
+    flex: 1 0 auto;    
+    width: calc(100vw - 18rem);
+  }
+}
+
+button .org-summary .org-summary-name {
+  opacity: 100%;
+  transition: opacity 100ms ease-in-out 50ms;
+  
+  @starting-style {
+    opacity: 0%;
+  }
+}

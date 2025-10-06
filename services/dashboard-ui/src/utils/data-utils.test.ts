@@ -106,7 +106,11 @@ describe('data-utils', () => {
 
       expect(result).toEqual([
         { key: 'name', value: 'test', type: 'string' },
-        { key: 'circular', value: '[Object - Unable to serialize]', type: 'object' },
+        {
+          key: 'circular',
+          value: '[Object - Unable to serialize]',
+          type: 'object',
+        },
       ])
     })
 
@@ -154,7 +158,11 @@ describe('data-utils', () => {
 
     test('should handle nested arrays with different types', () => {
       const obj = {
-        nestedArrays: [[1, 2], ['a', 'b'], [true, false]],
+        nestedArrays: [
+          [1, 2],
+          ['a', 'b'],
+          [true, false],
+        ],
         objectsInArray: [{ id: 1 }, { id: 2 }],
       }
 
@@ -165,7 +173,7 @@ describe('data-utils', () => {
         value: '[[1, 2], [a, b], [true, false]]',
         type: 'array',
       })
-      
+
       expect(result[1]).toEqual({
         key: 'objectsInArray',
         value: '[{\n  "id": 1\n}, {\n  "id": 2\n}]',
