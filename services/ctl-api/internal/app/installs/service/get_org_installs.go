@@ -75,7 +75,7 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string) ([]app.Insta
 		Joins(fmt.Sprintf("JOIN apps ON apps.id=%s", views.TableOrViewName(s.db, &app.Install{}, ".app_id"))).
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where(views.TableOrViewName(s.db, &app.Install{}, ".org_id")+" = ?", orgID).
-		Order("created_at desc")
+		Order("name ASC")
 
 	if q != "" {
 		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".name")+" ILIKE ?", "%"+q+"%")

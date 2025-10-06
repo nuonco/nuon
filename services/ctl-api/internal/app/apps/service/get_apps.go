@@ -63,7 +63,8 @@ func (s *service) getApps(ctx *gin.Context, orgID, q string) ([]*app.App, error)
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
-		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig")
+		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Order("apps.name ASC")
 
 	if q != "" {
 		tx = tx.Where("apps.name ILIKE ?", "%"+q+"%")
