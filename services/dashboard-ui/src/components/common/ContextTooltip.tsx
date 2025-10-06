@@ -5,7 +5,7 @@ import { Icon } from './Icon'
 import { Text } from './Text'
 import { Tooltip, type ITooltip } from './Tooltip'
 
-export type TRichTooltipItem = {
+export type TContextTooltipItem = {
   id: string
   href?: string
   leftContent?: ReactNode
@@ -15,17 +15,17 @@ export type TRichTooltipItem = {
   onClick?: () => void
 }
 
-interface IRichTooltip
+interface IContextTooltip
   extends Omit<ITooltip, 'tipContent' | 'tipContentClassName'> {
-  items: TRichTooltipItem[]
+  items: TContextTooltipItem[]
   title?: string
   showCount?: boolean
   maxHeight?: string
   width?: string
-  onItemClick?: (item: TRichTooltipItem) => void
+  onItemClick?: (item: TContextTooltipItem) => void
 }
 
-export const RichTooltip = ({
+export const ContextTooltip = ({
   children,
   items,
   title,
@@ -35,8 +35,8 @@ export const RichTooltip = ({
   position = 'bottom',
   onItemClick,
   ...props
-}: IRichTooltip) => {
-  const handleItemClick = (item: TRichTooltipItem) => {
+}: IContextTooltip) => {
+  const handleItemClick = (item: TContextTooltipItem) => {
     item.onClick?.()
     onItemClick?.(item)
   }
