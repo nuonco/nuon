@@ -45,14 +45,32 @@ func (m *metricsWriterPlugin) Name() string {
 	return "metrics-writer"
 }
 
+type OperationType string
+
+const (
+	CreateOperation OperationType = "create"
+	QueryOperation  OperationType = "query"
+	UpdateOperation OperationType = "update"
+	DeleteOperation OperationType = "delete"
+	RawOperation    OperationType = "raw"
+)
+
 func (m *metricsWriterPlugin) Initialize(db *gorm.DB) error {
-	db.Callback().Create().Before("*").Register("before_all", m.beforeAll)
-	db.Callback().Create().After("*").Register("after_all", m.afterAll)
+	db.Callback().Create().Before("*").Register("before_all", func(tx *gorm.DB) { m.beforeAll(tx, CreateOperation) })
+	db.Callback().Create().After("*").Register("after_all", func(tx *gorm.DB) { m.afterAll(tx, CreateOperation) })
+	db.Callback().Query().Before("*").Register("before_all", func(tx *gorm.DB) { m.beforeAll(tx, QueryOperation) })
+	db.Callback().Query().After("*").Register("after_all", func(tx *gorm.DB) { m.afterAll(tx, QueryOperation) })
+	db.Callback().Update().Before("*").Register("before_all", func(tx *gorm.DB) { m.beforeAll(tx, UpdateOperation) })
+	db.Callback().Update().After("*").Register("after_all", func(tx *gorm.DB) { m.afterAll(tx, UpdateOperation) })
+	db.Callback().Delete().Before("*").Register("before_all", func(tx *gorm.DB) { m.beforeAll(tx, DeleteOperation) })
+	db.Callback().Delete().After("*").Register("after_all", func(tx *gorm.DB) { m.afterAll(tx, DeleteOperation) })
+	db.Callback().Raw().Before("*").Register("before_all", func(tx *gorm.DB) { m.beforeAll(tx, RawOperation) })
+	db.Callback().Raw().After("*").Register("after_all", func(tx *gorm.DB) { m.afterAll(tx, RawOperation) })
 
 	return nil
 }
 
-func (m *metricsWriterPlugin) beforeAll(tx *gorm.DB) {
+func (m *metricsWriterPlugin) beforeAll(tx *gorm.DB, operationType OperationType) {
 	ctx := tx.Statement.Context
 	ts := time.Now()
 
@@ -64,10 +82,12 @@ func (m *metricsWriterPlugin) beforeAll(tx *gorm.DB) {
 		return
 	}
 
+	metrics.DBType = m.dbType
+	metrics.DBOperationType = string(operationType)
 	metrics.DBQueryCount += 1
 }
 
-func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
+func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType) {
 	ctx := tx.Statement.Context
 	schema := tx.Statement.Schema
 
@@ -81,9 +101,12 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 
 	tags := []string{}
 	if schema != nil {
-		tags = append(tags, "table:"+schema.Table)
-		tags = append(tags, "db_type:"+m.dbType)
-		tags = append(tags, "within_target_latency:"+strconv.FormatBool(withinTargetLatency))
+		tags = append(tags,
+			"table:"+schema.Table,
+			"db_type:"+m.dbType,
+			"db_operation_type:"+string(operationType),
+			"within_target_latency:"+strconv.FormatBool(withinTargetLatency),
+		)
 	}
 
 	metricCtx, err := cctx.MetricsContextFromGinContext(ctx)
@@ -91,12 +114,12 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 		return
 	}
 
-	tags = append(tags, []string{
-		"endpoint:" + metricCtx.Endpoint,
-		"context:" + metricCtx.Context,
-		"method:" + metricCtx.Method,
-		"org_id:" + metricCtx.OrgID,
-	}...)
+	tags = append(tags,
+		"context:"+metricCtx.Context,
+		"method:"+metricCtx.Method,
+		"endpoint:"+metricCtx.Endpoint,
+		"org_id:"+metricCtx.OrgID,
+	)
 
 	respSize := 0
 	if tx.Statement.ReflectValue.IsValid() {
