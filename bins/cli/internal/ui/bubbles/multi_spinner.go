@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
+	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
 // SpinnerState represents the state of an individual spinner
