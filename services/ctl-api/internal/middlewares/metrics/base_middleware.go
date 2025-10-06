@@ -63,7 +63,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 
 		m.writer.Incr("api.request.status", tags)
 		m.writer.Gauge("api.request.size", float64(c.Request.ContentLength), tags)
-		m.writer.Gauge("gorm_operation.endpoint_count", float64(ctxObj.DBQueryCount), tags)
 		m.writer.Timing("api.request.latency", time.Since(startTS), tags)
+		m.writer.Gauge("gorm_operation.endpoint_count", float64(ctxObj.DBQueryCount), tags)
 	}
 }
