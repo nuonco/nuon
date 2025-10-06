@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
-	// "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/styles"
+	// "github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
 var readOnlyTableStyles = table.Styles{
