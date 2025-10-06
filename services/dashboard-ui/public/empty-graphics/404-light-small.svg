@@ -1,0 +1,52 @@
+<svg width="94" height="64" viewBox="0 0 94 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_di_5439_882)">
+<g clip-path="url(#clip0_5439_882)">
+<g clip-path="url(#clip1_5439_882)">
+<rect width="90" height="60" transform="translate(2 1)" fill="url(#paint0_linear_5439_882)"/>
+<path d="M2.5 11C2.5 5.7533 6.7533 1.5 12 1.5H82C87.2467 1.5 91.5 5.75329 91.5 11V51C91.5 56.2467 87.2467 60.5 82 60.5H12C6.75329 60.5 2.5 56.2467 2.5 51V11Z" stroke="url(#paint1_linear_5439_882)"/>
+<mask id="mask0_5439_882" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="2" y="1" width="90" height="60">
+<path d="M2 1H92V61H2V1Z" fill="url(#paint2_linear_5439_882)"/>
+</mask>
+<g mask="url(#mask0_5439_882)">
+<path d="M33.264 40V36.448H24.672V34.24L32.952 22.96H35.856V34.096H37.944V36.448H35.856V40H33.264ZM27.624 34.096H33.264V26.56L27.624 34.096ZM47.1818 40.384C45.7738 40.384 44.5498 40.024 43.5098 39.304C42.4698 38.584 41.6698 37.56 41.1098 36.232C40.5498 34.904 40.2698 33.328 40.2698 31.504C40.2698 29.68 40.5498 28.104 41.1098 26.776C41.6698 25.432 42.4698 24.4 43.5098 23.68C44.5498 22.944 45.7738 22.576 47.1818 22.576C48.6058 22.576 49.8378 22.936 50.8778 23.656C51.9178 24.376 52.7178 25.408 53.2778 26.752C53.8378 28.08 54.1178 29.664 54.1178 31.504C54.1178 33.328 53.8378 34.904 53.2778 36.232C52.7178 37.56 51.9178 38.584 50.8778 39.304C49.8378 40.024 48.6058 40.384 47.1818 40.384ZM47.1818 38.008C48.5418 38.008 49.5898 37.456 50.3258 36.352C51.0618 35.232 51.4297 33.616 51.4297 31.504C51.4297 29.392 51.0618 27.776 50.3258 26.656C49.5898 25.52 48.5418 24.952 47.1818 24.952C45.8378 24.952 44.7978 25.52 44.0618 26.656C43.3258 27.776 42.9578 29.392 42.9578 31.504C42.9578 33.616 43.3258 35.232 44.0618 36.352C44.7978 37.456 45.8378 38.008 47.1818 38.008ZM64.5531 40V36.448H55.9611V34.24L64.2411 22.96H67.1451V34.096H69.2331V36.448H67.1451V40H64.5531ZM58.9131 34.096H64.5531V26.56L58.9131 34.096Z" fill="#8040BF"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<filter id="filter0_di_5439_882" x="0" y="0" width="94" height="64" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="1"/>
+<feGaussianBlur stdDeviation="1"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_5439_882"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_5439_882" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feMorphology radius="2" operator="erode" in="SourceAlpha" result="effect2_innerShadow_5439_882"/>
+<feOffset/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.12 0"/>
+<feBlend mode="normal" in2="shape" result="effect2_innerShadow_5439_882"/>
+</filter>
+<linearGradient id="paint0_linear_5439_882" x1="45" y1="0" x2="45" y2="60" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F6F0FF"/>
+<stop offset="1" stop-color="white"/>
+</linearGradient>
+<linearGradient id="paint1_linear_5439_882" x1="10.4" y1="1" x2="22.1" y2="33.4" gradientUnits="userSpaceOnUse">
+<stop stop-color="#8040BF"/>
+<stop offset="1" stop-color="white" stop-opacity="0.02"/>
+</linearGradient>
+<linearGradient id="paint2_linear_5439_882" x1="46.5946" y1="9.03571" x2="46.7716" y2="61.0008" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="white" stop-opacity="0.02"/>
+</linearGradient>
+<clipPath id="clip0_5439_882">
+<path d="M2 11C2 5.47715 6.47715 1 12 1H82C87.5229 1 92 5.47715 92 11V51C92 56.5228 87.5229 61 82 61H12C6.47715 61 2 56.5228 2 51V11Z" fill="white"/>
+</clipPath>
+<clipPath id="clip1_5439_882">
+<rect width="90" height="60" fill="white" transform="translate(2 1)"/>
+</clipPath>
+</defs>
+</svg>

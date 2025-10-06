@@ -1,15 +1,20 @@
 import { describe, expect, test, vi, beforeEach } from 'vitest'
-import { setSidebarCookie, getIsSidebarOpenFromCookie } from './main-sidebar-cookie'
+import {
+  setSidebarCookie,
+  getIsSidebarOpenFromCookie,
+} from './main-sidebar-cookie'
 
 // Mock Next.js cookies
 const mockSet = vi.fn()
 const mockGet = vi.fn()
 
 vi.mock('next/headers', () => ({
-  cookies: vi.fn(() => Promise.resolve({
-    set: mockSet,
-    get: mockGet,
-  })),
+  cookies: vi.fn(() =>
+    Promise.resolve({
+      set: mockSet,
+      get: mockGet,
+    })
+  ),
 }))
 
 describe('main-sidebar-cookie', () => {

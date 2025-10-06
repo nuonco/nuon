@@ -1,18 +1,20 @@
-"use client";
+'use client'
 
-import { createContext, type ReactNode } from "react";
-import { usePolling, type IPollingProps } from "@/hooks/use-polling";
-import { useOrg } from "@/hooks/use-org";
-import type { TInstall } from "@/types";
+import { createContext, type ReactNode } from 'react'
+import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useOrg } from '@/hooks/use-org'
+import type { TInstall } from '@/types'
 
 type InstallContextValue = {
-  install: TInstall | null;
-  isLoading: boolean;
-  error: any;
-  refresh: () => void;
-};
+  install: TInstall | null
+  isLoading: boolean
+  error: any
+  refresh: () => void
+}
 
-export const InstallContext = createContext<InstallContextValue | undefined>(undefined);
+export const InstallContext = createContext<InstallContextValue | undefined>(
+  undefined
+)
 
 export function InstallProvider({
   children,
@@ -20,11 +22,11 @@ export function InstallProvider({
   pollInterval = 20000,
   shouldPoll = false,
 }: {
-  children: ReactNode;
-  initInstall: TInstall;
+  children: ReactNode
+  initInstall: TInstall
 } & IPollingProps) {
   const { org } = useOrg()
-  const {   
+  const {
     data: install,
     error,
     isLoading,
@@ -34,7 +36,7 @@ export function InstallProvider({
     path: `/api/orgs/${org.id}/installs/${initInstall.id}`,
     pollInterval,
     shouldPoll,
-  });
+  })
 
   return (
     <InstallContext.Provider
@@ -49,5 +51,5 @@ export function InstallProvider({
     >
       {children}
     </InstallContext.Provider>
-  );
+  )
 }

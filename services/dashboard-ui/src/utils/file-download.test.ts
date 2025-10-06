@@ -47,7 +47,6 @@ describe('file-download', () => {
         value: mockRemoveChild,
         writable: true,
       })
-
       ;(global.URL.createObjectURL as ReturnType<typeof vi.fn>).mockReturnValue(
         'blob:mock-url'
       )
@@ -191,7 +190,6 @@ describe('file-download', () => {
         value: mockRemoveChild,
         writable: true,
       })
-
       ;(global.URL.createObjectURL as ReturnType<typeof vi.fn>).mockReturnValue(
         'blob:mock-url'
       )
