@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createOrg } from "@/actions/orgs/create-org"
+import { createOrg } from '@/actions/orgs/create-org'
 import { useAccount } from '@/hooks/use-account'
 import type { TUserJourney } from '@/types'
 
@@ -23,7 +23,9 @@ export const useAutoOrgCreation = () => {
 
     if (!evaluationJourney) return false
 
-    const orgStep = evaluationJourney.steps.find(step => step.name === 'org_created')
+    const orgStep = evaluationJourney.steps.find(
+      (step) => step.name === 'org_created'
+    )
     return orgStep && !orgStep.complete && !isCreating
   }
 
@@ -35,7 +37,9 @@ export const useAutoOrgCreation = () => {
     setError(null)
 
     try {
-      const { data: newOrg, error: createError } = await createOrg({ body: { name: `${account.email}-trial`, use_sandbox_mode: false }})
+      const { data: newOrg, error: createError } = await createOrg({
+        body: { name: `${account.email}-trial`, use_sandbox_mode: false },
+      })
 
       if (createError !== null) {
         setError(createError?.error || 'Failed to create organization')
@@ -74,6 +78,6 @@ export const useAutoOrgCreation = () => {
     error,
     shouldAutoCreate: shouldAutoCreate(),
     createOrgAutomatically,
-    retry
+    retry,
   }
 }
