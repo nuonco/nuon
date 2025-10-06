@@ -15,10 +15,15 @@ type MetricContext struct {
 	RunnerID string
 	Context  string
 
-	DBQueryCount int
 	IsPanic      bool
 	IsTimeout    bool
 	IsDeprecated bool
+
+	SignalType string
+
+	DBType          string
+	DBOperationType string
+	DBQueryCount    int
 }
 
 func MetricsContextFromGinContext(ctx ValueContext) (*MetricContext, error) {
