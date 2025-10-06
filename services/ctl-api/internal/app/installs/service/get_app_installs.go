@@ -46,39 +46,35 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 }
 
 func (s *service) getAppInstalls(ctx *gin.Context, appID string, q string) ([]app.Install, error) {
-	currentApp := &app.App{}
+	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination)
 
 	if q != "" {
-		tx = tx.Preload("Installs", "name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("name ILIKE ?", "%"+q+"%")
 	}
 
-	if q == "" {
-		tx = tx.Preload("Installs")
-	}
-
-	tx = tx.
-		Preload("Installs.AppSandboxConfig").
-		Preload("Installs.InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+	tx = tx.Where("app_id = ?", appID).
+		Preload("AppSandboxConfig").
+		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
-		Preload("Installs.AWSAccount").
-		Preload("Installs.AppRunnerConfig").
-		Preload("Installs.RunnerGroup").
-		Preload("Installs.RunnerGroup.Runners")
+		Preload("AWSAccount").
+		Preload("AppRunnerConfig").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
+		Order("name ASC")
 
-	res := tx.First(&currentApp, "id = ?", appID)
+	res := tx.Find(&installs)
 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	installs, err := db.HandlePaginatedResponse(ctx, currentApp.Installs)
+	installs, err := db.HandlePaginatedResponse(ctx, installs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
-	currentApp.Installs = installs
-	return currentApp.Installs, nil
+	return installs, nil
 }
