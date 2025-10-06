@@ -129,7 +129,8 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 		}
 		if isApplied {
 			a.mw.Incr("migration.count", metrics.ToTags(map[string]string{
-				"status": "already_applied",
+				"db_type": a.dbType,
+				"status":  "already_applied",
 			}))
 			a.l.Debug("migration already applied", zap.String("name", migration.Name))
 			return nil
@@ -145,11 +146,13 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 			Title: "migration",
 			Text:  fmt.Sprintf("migration %s", migration.Name),
 			Tags: metrics.ToTags(map[string]string{
+				"db_type":            a.dbType,
 				"status":             status,
 				"status_description": statusDescription,
 			}),
 		})
 		a.mw.Incr("migration.count", metrics.ToTags(map[string]string{
+			"db_type":            a.dbType,
 			"status":             status,
 			"status_description": statusDescription,
 		}))
