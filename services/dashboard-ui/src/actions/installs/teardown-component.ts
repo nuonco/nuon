@@ -4,7 +4,7 @@ import {
   executeServerAction,
   type IServerAction,
 } from '@/actions/execute-server-action'
-import { teardownComponent as teardown,  TTeardownComponentBody } from '@/lib'
+import { teardownComponent as teardown, TTeardownComponentBody } from '@/lib'
 
 export async function teardownComponent({
   path,

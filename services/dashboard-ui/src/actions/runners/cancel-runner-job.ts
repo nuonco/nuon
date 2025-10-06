@@ -11,7 +11,7 @@ export async function cancelRunnerJob({
   ...args
 }: {
   runnerJobId: string
-} & IServerAction) {  
+} & IServerAction) {
   return executeServerAction({
     action: cancel,
     args,

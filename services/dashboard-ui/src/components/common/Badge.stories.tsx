@@ -1,4 +1,4 @@
-import { Badge } from "./Badge";
+import { Badge } from './Badge'
 
 export const Themes = () => (
   <div className="flex gap-4 items-center">
@@ -8,7 +8,7 @@ export const Themes = () => (
     <Badge theme="error">Error badge</Badge>
     <Badge theme="info">Info badge</Badge>
   </div>
-);
+)
 
 export const Sizes = () => (
   <div className="flex gap-4 items-center">
@@ -16,11 +16,11 @@ export const Sizes = () => (
     <Badge size="md">MD badge</Badge>
     <Badge size="lg">LG badge</Badge>
   </div>
-);
+)
 
 export const Variants = () => (
   <div className="flex gap-4 items-center">
     <Badge variant="default">Default badge</Badge>
     <Badge variant="code">Code badge</Badge>
   </div>
-);
+)
