@@ -9,6 +9,12 @@ import (
 )
 
 func AppID(ctx context.Context, apiClient nuon.Client, appIDOrName string) (string, error) {
+	if appIDOrName == "" {
+		return "", &ui.CLIUserError{
+			Msg: "current app is not set, use apps select to set one or pass the --app-id flag",
+		}
+	}
+
 	app, err := apiClient.GetApp(ctx, appIDOrName)
 	if nuon.IsNotFound(err) {
 		return "", &ui.CLIUserError{
