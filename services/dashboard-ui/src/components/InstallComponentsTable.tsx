@@ -128,6 +128,16 @@ export const InstallComponentsTable = ({
           ),
       },
       {
+        header: 'Drift detected',
+        accessorKey: 'drifted_object',
+        cell: (props) =>
+          props.getValue<string>() ? (
+            <StatusBadge status="drifted" />
+          ) : (
+            <MinusIcon />
+          ),
+      },
+      {
         header: 'Dependencies',
         id: 'dependencies',
         enableSorting: false,

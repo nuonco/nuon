@@ -51,8 +51,15 @@ export const WorkflowHeader = ({
                 ? ` (${workflow?.metadata?.install_action_workflow_name})`
                 : ' '}
               {workflow?.plan_only ? (
-                <Badge className="!text-[11px] ml-2" variant="code">
+                <Badge className="!text-[11px] my-2" variant="code">
                   Plan only
+                </Badge>
+              ) : null}
+
+              {workflow?.type === 'drift_run_reprovision_sandbox' ||
+              workflow.type === 'drift_run' ? (
+                <Badge className="!text-[11px]" variant="code" theme="info">
+                  Drift scan
                 </Badge>
               ) : null}
             </span>
