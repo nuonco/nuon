@@ -7,8 +7,10 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/types/stacks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
@@ -28,7 +30,28 @@ type InstallStackVersionRun struct {
 	InstallStackVersionID string              `json:"install_stack_version_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"install_stack_version_id,omitzero,omitempty"`
 	InstallStackVersion   InstallStackVersion `json:"-" temporaljson:"install_stack_version,omitzero,omitempty"`
 
-	Data pgtype.Hstore `json:"data,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"data,omitzero,omitempty"`
+	Data         pgtype.Hstore  `json:"data,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"data,omitzero,omitempty"`
+	DataContents map[string]any `json:"data_contents,omitzero" gorm:"-"`
+}
+
+func (a *InstallStackVersionRun) AfterQuery(tx *gorm.DB) error {
+	if len(a.Data) < 1 {
+		return nil
+	}
+
+	// TODO(ja): what have i become
+	_, isAzure := a.Data["resource_group_id"]
+	if !isAzure {
+		// parsing pgtype.Hstore into map[string]interface{}
+		outputData, err := stacks.DecodeAWSStackOutputData(a.Data)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode stack output data to map")
+		}
+		a.DataContents = outputData
+
+	}
+
+	return nil
 }
 
 func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
