@@ -72,3 +72,6 @@ bins/nuonctl/nuonctl
 .parrot.md
 
 **/.claude/settings.local.json
+
+# IntelliJ IDEA
+.idea/
