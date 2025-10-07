@@ -12,7 +12,7 @@ locals {
 }
 
 # Install the controller first (required before scale sets)
-resource "helm_release" "controller" {
+resource "helm_release" "gha_runner_controller" {
   namespace        = local.vars.controller_namespace
   name             = "gha-runner-scale-set-controller"
   create_namespace = true
@@ -28,7 +28,7 @@ resource "helm_release" "controller" {
 }
 
 # Create GitHub token secret in runner namespace
-resource "kubernetes_secret" "github_token" {
+resource "kubernetes_secret" "gha_runner_github_token" {
   metadata {
     name      = local.vars.github_secret_name
     namespace = local.vars.runner_namespace
@@ -40,12 +40,12 @@ resource "kubernetes_secret" "github_token" {
 
   type = "Opaque"
 
-  depends_on = [helm_release.controller]
+  depends_on = [helm_release.gha_runner_controller]
 }
 
 # Deploy multiple runner scale sets based on configuration
 # Only deploy if scale_sets are defined (environment-specific)
-resource "helm_release" "scale_sets" {
+resource "helm_release" "gha_runner_scale_sets" {
   for_each = lookup(local.vars, "scale_sets", {})
 
   namespace = local.vars.runner_namespace
@@ -80,5 +80,5 @@ resource "helm_release" "scale_sets" {
     })
   ]
 
-  depends_on = [helm_release.controller, kubernetes_secret.github_token]
+  depends_on = [helm_release.gha_runner_controller, kubernetes_secret.gha_runner_github_token]
 }
