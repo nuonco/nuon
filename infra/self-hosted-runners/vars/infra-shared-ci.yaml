@@ -1,0 +1,33 @@
+---
+pool: nuon
+
+# Environment-specific configuration for infra-shared-ci
+# Scale sets are ONLY defined in environment files
+
+scale_sets:
+  # Ubuntu runner for basic CI jobs using Kubernetes mode
+  ubuntu-basic:
+    github_config_url: "https://github.com/powertoolsdev"
+    max_runners: 3
+    min_runners: 1
+    container_mode:
+      type: "kubernetes"
+      kubernetesModeWorkVolumeClaim:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "gp3"
+        resources:
+          requests:
+            storage: 1Gi
+    template:
+      spec:
+        containers:
+          - name: runner
+            image: ghcr.io/actions/actions-runner:latest
+            command: ["/home/runner/run.sh"]
+            resources:
+              limits:
+                cpu: 1000m
+                memory: 2Gi
+              requests:
+                cpu: 500m
+                memory: 1Gi

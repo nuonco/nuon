@@ -396,10 +396,10 @@ module "buildkit-infra-shared-ci" {
   trigger_workspaces              = [module.infra-eks-infra-shared-ci-nuon.workspace_id]
 }
 
-module "self-hosted-runners" {
+module "self-hosted-runners-infra-shared-ci" {
   source = "./modules/workspace"
 
-  name       = "self-hosted-runners"
+  name       = "self-hosted-runners-infra-shared-ci"
   repo       = "powertoolsdev/mono"
   dir        = "infra/self-hosted-runners"
   auto_apply = true

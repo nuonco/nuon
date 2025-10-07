@@ -1,0 +1,70 @@
+# Base scale set values - will be merged with specific configurations from vars
+# This file contains common configurations for all scale sets
+
+# Namespace will be set by Helm deployment
+namespaceOverride: ""
+
+# Common template configurations
+template:
+  metadata:
+    labels:
+      app.kubernetes.io/component: "github-runner"
+  spec:
+    # Node selector and tolerations will be added by Helm deployment
+    restartPolicy: Never
+    
+    # Security context for runner pods
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 121
+      fsGroup: 121
+    
+    # Common volumes that may be needed
+    volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: work
+        emptyDir: {}
+
+# Listener template for job processing
+listenerTemplate:
+  spec:
+    nodeSelector:
+      karpenter.sh/nodepool: self-hosted-runners
+    tolerations:
+      - key: "pool.nuon.co"
+        operator: "Equal"
+        value: "self-hosted-runners"
+        effect: "NoSchedule"
+    containers:
+      - name: listener
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+
+# Enable metrics collection
+listenerMetrics:
+  counters:
+    gha_started_jobs_total:
+      labels: ["repository", "organization", "enterprise", "job_name", "event_name", "job_workflow_ref"]
+    gha_completed_jobs_total:
+      labels: ["repository", "organization", "enterprise", "job_name", "event_name", "job_result", "job_workflow_ref"]
+  gauges:
+    gha_assigned_jobs:
+      labels: ["name", "namespace", "repository", "organization", "enterprise"]
+    gha_running_jobs:
+      labels: ["name", "namespace", "repository", "organization", "enterprise"]
+    gha_registered_runners:
+      labels: ["name", "namespace", "repository", "organization", "enterprise"]

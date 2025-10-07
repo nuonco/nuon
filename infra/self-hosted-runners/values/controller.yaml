@@ -1,0 +1,43 @@
+# Controller values will be populated from vars/defaults.yaml
+# This file serves as a base template for controller-specific configurations
+
+# Default controller configuration
+# Additional static configurations can be added here if needed
+
+# Node selector for controller pod
+nodeSelector:
+  karpenter.sh/nodepool: self-hosted-runners
+
+# Tolerations for dedicated node pool
+tolerations:
+  - key: "pool.nuon.co"
+    operator: "Equal"
+    value: "self-hosted-runners"
+    effect: "NoSchedule"
+
+
+# Service account configuration
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+  capabilities:
+    drop:
+      - ALL
+
+# Enable metrics
+metrics:
+  controllerManagerAddr: ":8080"
+  listenerAddr: ":8080"
+  listenerEndpoint: "/metrics"

@@ -17,12 +17,24 @@ karpenter:
 
 ec2nodeclasses:
  - buildkit
+ - self-hosted-runners
 
 
 additional_nodepools:
   - name: buildkit
     instance_types:
       - c5a.8xlarge
+    limits:
+      cpu: 32
+      memory: "62Gi"
+    expireAfter: "Never"
+    disruption:
+      consolidationPolicy: "WhenEmpty"
+      consolidateAfter: "30m"
+
+  - name: self-hosted-runners
+    instance_types:
+      - c5a.xlarge
     limits:
       cpu: 32
       memory: "62Gi"

@@ -1,0 +1,43 @@
+---
+root_domain: nuon.cloud
+region: us-west-2
+pool: nuon
+
+# Namespace separation
+controller_namespace: arc-systems
+runner_namespace: arc-runners
+node_pool_name: self-hosted-runners
+
+# GitHub secret configuration
+github_secret_name: pre-defined-secret
+
+# Controller service account (for production deployments)
+controller_service_account:
+  namespace: arc-systems
+  name: gha-runner-scale-set-controller
+
+# Controller configuration
+controller:
+  replicaCount: 1
+  image:
+    repository: "ghcr.io/actions/gha-runner-scale-set-controller"
+    tag: "0.12.1"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  flags:
+    logLevel: "info"
+    logFormat: "text"
+    watchSingleNamespace: "arc-runners"
+    runnerMaxConcurrentReconciles: 5
+    updateStrategy: "immediate"
+    excludeLabelPropagationPrefixes:
+      - "argocd.argoproj.io/instance"
+
+# NO SCALE SETS BY DEFAULT - They are defined per environment
+# Each environment defines its own scale sets with specific configurations
