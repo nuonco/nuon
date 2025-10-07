@@ -1,13 +1,13 @@
-
 ---
 title: 020 - Break glass actions 
 description: Define actions that customers can enable to break glass.
 ---
 
-_Sep 30, 2025_
+_Oct 7, 2025_
 
-Needs to be updated
-<div className="badge badge--primary">v0.19.649</div>
+Define actions that can use break glass roles for executing privileged operations.
+
+<div className="badge badge--primary">v0.19.657</div>
 
 ## Actions with break glass permissions
 
@@ -17,8 +17,8 @@ allows for elevated permissions during critical operations while maintaining sec
 ### Break Glass Role Configuration
 
 Break glass roles are enabled in CloudFormation and can be referenced in your action configurations. These roles provide temporary elevated access for emergency situations or critical deployments.
-Sample break glass Configuration.
 
+Sample break glass configuration:
 ```toml break_glass.toml
 [[role]]
 name                 = "bucket-operations-break-glass"
@@ -104,7 +104,9 @@ You can now run entire workflows via our experimental TUI. To interact with work
 NUON_PREVIEW=true nuon installs workflows
 ```
 
-![Nuon Workflows TUI](/assets/2025-10-07-10-39-23.png)
+You will then see all recent workflows, and can select a workflow to enter the TUI view:
+
+![Nuon Workflows TUI](assets/2025-10-07-10-39-23.png)
 
 ## Bug Fixes and Improvements
 
