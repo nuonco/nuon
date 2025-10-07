@@ -53,7 +53,7 @@ type ActionWorkflowConfig struct {
 	CronTrigger       *ActionWorkflowTriggerConfig  `json:"-" temporaljson:"cron_trigger,omitzero,omitempty"`
 	LifecycleTriggers []ActionWorkflowTriggerConfig `json:"-" temporaljson:"lifecycle_triggers,omitzero,omitempty"`
 
-	BreakGlassRoleARN generics.NullString `json:"break_glass_role_arn,omitzero" temporaljson:"break_glass_role_arn,omitzero,omitempty" swaggertype:"string"`
+	BreakGlassRoleARN generics.NullString `json:"break_glass_role_arn,omitzero" gorm:"default:null" temporaljson:"break_glass_role_arn,omitzero,omitempty" swaggertype:"string"`
 }
 
 func (a *ActionWorkflowConfig) BeforeCreate(tx *gorm.DB) error {
