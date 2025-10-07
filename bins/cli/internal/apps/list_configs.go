@@ -11,11 +11,6 @@ import (
 func (s *Service) ListConfigs(ctx context.Context, appID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
-	if appID == "" {
-		s.printAppNotSetMsg()
-		return nil
-	}
-
 	cfgs, hasMore, err := s.listConfigs(ctx, appID, offset, limit)
 	if err != nil {
 		return view.Error(err)
