@@ -49,7 +49,7 @@ type InstallComponent struct {
 
 	InstallDeploys     []InstallDeploy    `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys,omitzero" temporaljson:"install_deploys,omitzero,omitempty"`
 	TerraformWorkspace TerraformWorkspace `json:"terraform_workspace,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"terraform_workspace,omitzero,omitempty"`
-	DriftedObjects     []DriftedObject    `faker:"-" gorm:"-;" json:"drifted_objects,omitzero" temporaljson:"drifted_objects,omitzero,omitempty"`
+	DriftedObject      DriftedObject      `faker:"-" gorm:"-;" json:"drifted_object,omitzero" temporaljson:"drifted_object,omitzero,omitempty"`
 
 	Links     map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 	HelmChart HelmChart      `json:"helm_chart" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"helm_chart,omitzero,omitempty"`
