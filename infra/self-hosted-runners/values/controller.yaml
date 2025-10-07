@@ -20,7 +20,7 @@ tolerations:
 serviceAccount:
   create: true
   annotations: {}
-  name: ""
+  name: "gha-runner-scale-set-controller"
 
 # Security context
 podSecurityContext:

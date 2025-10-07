@@ -27,7 +27,7 @@ resource "helm_release" "gha_runner_controller" {
   ]
 }
 
-# Create GitHub token secret using kubectl
+# Create GitHub App secret using kubectl
 resource "kubectl_manifest" "gha_runner_github_secret" {
   yaml_body = yamlencode({
     "apiVersion" = "v1"
@@ -38,7 +38,9 @@ resource "kubectl_manifest" "gha_runner_github_secret" {
     }
     "type" = "Opaque"
     "data" = {
-      "github_token" = base64encode(var.github_token)
+      "github_app_id"              = base64encode(local.vars.github_app_id)
+      "github_app_installation_id" = base64encode(local.vars.github_app_installation_id)
+      "github_app_private_key"     = base64encode(var.github_app_private_key)
     }
   })
 

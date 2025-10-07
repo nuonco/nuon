@@ -20,8 +20,8 @@ variable "env" {
   default     = "infra-shared-ci"
 }
 
-variable "github_token" {
+variable "github_app_private_key" {
   type        = string
-  description = "GitHub PAT token for runner authentication"
+  description = "GitHub App Private Key for runner authentication (sensitive)"
   sensitive   = true
 }

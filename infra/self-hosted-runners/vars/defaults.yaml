@@ -11,6 +11,10 @@ node_pool_name: self-hosted-runners
 # GitHub secret configuration
 github_secret_name: pre-defined-secret
 
+# GitHub App configuration (non-sensitive values)
+github_app_id: "1814123"
+github_app_installation_id: "81921171"
+
 # Controller service account (for production deployments)
 controller_service_account:
   namespace: arc-systems
