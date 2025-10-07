@@ -18,6 +18,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "2.17.0" # Pin to same version as metabase
     }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.14"
+    }
     tfe = {
       source  = "hashicorp/tfe"
       version = ">= 0.36.1"

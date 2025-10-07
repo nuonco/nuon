@@ -27,21 +27,24 @@ resource "helm_release" "gha_runner_controller" {
   ]
 }
 
-# Create GitHub token secret in runner namespace
-resource "kubernetes_secret" "gha_runner_github_token" {
-  metadata {
-    name      = local.vars.github_secret_name
-    namespace = local.vars.runner_namespace
-  }
-
-  data = {
-    github_token = var.github_token
-  }
-
-  type = "Opaque"
+# Create GitHub token secret using kubectl
+resource "kubectl_manifest" "gha_runner_github_secret" {
+  yaml_body = yamlencode({
+    "apiVersion" = "v1"
+    "kind"       = "Secret"
+    "metadata" = {
+      "name"      = local.vars.github_secret_name
+      "namespace" = local.vars.runner_namespace
+    }
+    "type" = "Opaque"
+    "data" = {
+      "github_token" = base64encode(var.github_token)
+    }
+  })
 
   depends_on = [helm_release.gha_runner_controller]
 }
+
 
 # Deploy multiple runner scale sets based on configuration
 # Only deploy if scale_sets are defined (environment-specific)
@@ -80,5 +83,5 @@ resource "helm_release" "gha_runner_scale_sets" {
     })
   ]
 
-  depends_on = [helm_release.gha_runner_controller, kubernetes_secret.gha_runner_github_token]
+  depends_on = [helm_release.gha_runner_controller, kubectl_manifest.gha_runner_github_secret]
 }

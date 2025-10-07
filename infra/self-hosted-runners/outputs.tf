@@ -23,3 +23,13 @@ output "scale_set_releases" {
     }
   }
 }
+
+output "github_secret_name" {
+  description = "The name of the GitHub token secret"
+  value       = local.vars.github_secret_name
+}
+
+output "github_secret_namespace" {
+  description = "The namespace where the GitHub token secret is deployed"
+  value       = local.vars.runner_namespace
+}
