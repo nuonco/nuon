@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,14 @@ import (
 )
 
 type InstallPhoneHomeRequest map[string]any
+
+type phoneHomeRequestType string
+
+const (
+	phoneHomeRequestTypeUpdate = "Update"
+	phoneHomeRequestTypeDelete = "Delete"
+	phoneHomeRequestTypeCreate = "Create"
+)
 
 // @ID PhoneHome
 // @Summary				phone home for an install
@@ -42,6 +51,25 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(err)
 		return
+	}
+
+	var requestType string
+	if v, ok := req["request_type"]; ok {
+		requestType = v.(string)
+	} else {
+		ctx.Error(fmt.Errorf("request type param not present"))
+		return
+	}
+
+	switch requestType {
+	case phoneHomeRequestTypeCreate, phoneHomeRequestTypeUpdate, phoneHomeRequestTypeDelete:
+	default:
+		ctx.Error(fmt.Errorf("request type param not present"))
+		return
+	}
+
+	if requestType == phoneHomeRequestTypeDelete {
+		ctx.JSON(http.StatusOK, "ok")
 	}
 
 	if err := s.updateInstallPhoneHome(ctx, installID, phoneHomeID, &req); err != nil {
