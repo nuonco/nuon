@@ -198,27 +198,6 @@ func (s *service) getInstallsComponentsInBatches(ctx *gin.Context, installID str
 		installComponentIDs = append(installComponentIDs, ic.ID)
 	}
 
-	driftedObjects := make([]app.DriftedObject, 0)
-	if len(installComponentIDs) > 0 {
-		res := s.db.WithContext(ctx).
-			Where("install_component_id IN ?", installComponentIDs).
-			Find(&driftedObjects)
-		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
-		}
-	}
-
-	driftedObjMap := make(map[string][]app.DriftedObject)
-	for _, obj := range driftedObjects {
-		if obj.InstallComponentID != nil {
-			driftedObjMap[*obj.InstallComponentID] = append(driftedObjMap[*obj.InstallComponentID], obj)
-		}
-	}
-
-	for i := range installComponents {
-		installComponents[i].DriftedObjects = driftedObjMap[installComponents[i].ID]
-	}
-
 	return installComponents, nil
 }
 
