@@ -44,7 +44,7 @@ export type TInstallComponentSummary =
   components['schemas']['app.InstallComponentSummary']
 export type TInstallConfig = components['schemas']['app.InstallConfig']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
-
+export type TDriftedObject = components['schemas']['app.DriftedObject']
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
