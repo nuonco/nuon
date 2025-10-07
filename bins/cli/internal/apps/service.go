@@ -68,10 +68,6 @@ func (s *Service) printAppNotFoundMsg(id string) {
 	fmt.Printf("%s\n", bubbles.BaseStyle.Render(fmt.Sprintf("can't find app %s, use apps list to view all apps", id)))
 }
 
-func (s *Service) printAppNotSetMsg() {
-	fmt.Printf("%s\n", bubbles.BaseStyle.Render("current app is not set, use apps select to set one"))
-}
-
 func (s *Service) notFoundErr(id string) error {
 	return errors.New(fmt.Sprintf("app %s was not found", id))
 }
