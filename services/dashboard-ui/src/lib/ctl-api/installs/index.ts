@@ -10,6 +10,7 @@ export * from './get-install-stack'
 export * from './get-install-state'
 export * from './get-install-current-inputs'
 export * from './get-install-readme'
+export * from './get-install-drifted-objects'
 
 // workflows
 export * from './get-install-workflows'
