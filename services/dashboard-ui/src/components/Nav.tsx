@@ -222,7 +222,7 @@ export const SubNav: FC<{ links: Array<TLink> }> = ({ links }) => {
               {
                 'text-cool-grey-600 dark:text-cool-grey-400 border-transparent':
                   !isActive,
-                'text-primary-600 dark:text-primary-400 border-current':
+                'text-primary-600 dark:text-primary-400 !border-current':
                   isActive,
               }
             )}
