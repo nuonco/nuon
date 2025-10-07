@@ -86,7 +86,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
 		role := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
 
-		if run.ActionWorkflowConfig.BreakGlassRoleARN.Valid {
+		if !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
 			roleArn, ok := stack.InstallStackOutputs.AWSStackOutputs.BreakGlassRoleARNs[run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString()]
 			if !ok {
 				l.Error(fmt.Sprintf(
