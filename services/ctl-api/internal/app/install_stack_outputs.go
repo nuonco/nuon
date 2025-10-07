@@ -29,7 +29,8 @@ type InstallStackOutputs struct {
 	InstallStackID           string              `json:"install_stack_id,omitzero" gorm:"notnull;default null" temporaljson:"install_stack_id,omitzero,omitempty"`
 	InstallStackVersionRunID generics.NullString `json:"install_version_run_id,omitzero" swaggertype:"string" temporaljson:"install_stack_version_run_id,omitzero,omitempty"`
 
-	Data pgtype.Hstore `json:"data,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"data,omitzero,omitempty"`
+	Data         pgtype.Hstore  `json:"data,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"data,omitzero,omitempty"`
+	DataContents map[string]any `json:"data_contents,omitzero" gorm:"-"`
 
 	AWSStackOutputs   *AWSStackOutputs   `json:"aws,omitzero" gorm:"-" temporaljson:"aws_stack_outputs,omitzero,omitempty"`
 	AzureStackOutputs *AzureStackOutputs `json:"azure,omitzero" gorm:"-" temporaljson:"azure_stack_outputs,omitzero,omitempty"`
@@ -101,6 +102,8 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		if err != nil {
 			return errors.Wrap(err, "unable to decode stack output data to map")
 		}
+		a.DataContents = outputData
+
 		var awsOutputs AWSStackOutputs
 		decoderConfig := &mapstructure.DecoderConfig{
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
@@ -117,7 +120,9 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		if err := awsDecoder.Decode(outputData); err != nil {
 			return errors.Wrap(err, "unable to parse aws outputs")
 		}
+
 		a.AWSStackOutputs = &awsOutputs
+
 	}
 
 	return nil
