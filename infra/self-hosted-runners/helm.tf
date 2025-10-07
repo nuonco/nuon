@@ -68,6 +68,7 @@ resource "helm_release" "gha_runner_scale_sets" {
       runnerScaleSetName = each.key
       githubConfigUrl    = each.value.github_config_url
       githubConfigSecret = local.vars.github_secret_name
+      runnerGroup        = lookup(each.value, "runner_group", "default")
       maxRunners         = each.value.max_runners
       minRunners         = each.value.min_runners
       containerMode      = each.value.container_mode

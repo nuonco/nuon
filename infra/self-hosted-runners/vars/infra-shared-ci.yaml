@@ -8,6 +8,7 @@ scale_sets:
   # Ubuntu runner for basic CI jobs using Kubernetes mode
   ubuntu-basic:
     github_config_url: "https://github.com/powertoolsdev"
+    runner_group: "nuon-self-hosted"
     max_runners: 3
     min_runners: 1
     container_mode:
@@ -24,6 +25,15 @@ scale_sets:
           - name: runner
             image: ghcr.io/actions/actions-runner:latest
             command: ["/home/runner/run.sh"]
+            env:
+              - name: ACTIONS_RUNNER_CONTAINER_HOOKS
+                value: /home/runner/k8s/index.js
+              - name: ACTIONS_RUNNER_POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+                value: "false"
             resources:
               limits:
                 cpu: 1000m
@@ -31,3 +41,16 @@ scale_sets:
               requests:
                 cpu: 500m
                 memory: 1Gi
+            volumeMounts:
+              - name: work
+                mountPath: /home/runner/_work
+        volumes:
+          - name: work
+            ephemeral:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  storageClassName: "gp3"
+                  resources:
+                    requests:
+                      storage: 10Gi
