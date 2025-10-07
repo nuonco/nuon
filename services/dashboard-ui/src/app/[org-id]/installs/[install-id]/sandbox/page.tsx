@@ -16,9 +16,9 @@ import {
   Text,
   Time,
 } from '@/components'
+import { DriftedBanner } from '@/components/DriftedBanner'
 import { TerraformWorkspace } from '@/components/InstallSandbox'
-import { getInstallById } from '@/lib'
-
+import { getInstallById, getInstallDriftedObjects } from '@/lib'
 import { SandboxConfig } from './config'
 import { SandboxRuns } from './sandbox-runs'
 
@@ -34,7 +34,17 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function InstallComponent({ params, searchParams }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const { data: install } = await getInstallById({ installId, orgId })
+  const [{ data: install }, { data: driftedObjects }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getInstallDriftedObjects({ installId, orgId }),
+  ])
+
+  const latestSandboxRun = install?.install_sandbox_runs?.at(0)
+  const driftedObject = driftedObjects?.find(
+    (drifted) =>
+      drifted?.['target_type'] === 'install_sandbox_run' &&
+      drifted?.['target_id'] === latestSandboxRun?.id
+  )
 
   return (
     <DashboardContent
@@ -85,6 +95,11 @@ export default async function InstallComponent({ params, searchParams }) {
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y  md:divide-x">
         <div className="md:col-span-8 divide-y flex-auto flex flex-col">
+          {driftedObject ? (
+            <Section className="!border-b-0">
+              <DriftedBanner drifted={driftedObject} />
+            </Section>
+          ) : null}
           <Section
             actions={
               <Text>
