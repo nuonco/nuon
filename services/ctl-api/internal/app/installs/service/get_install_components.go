@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	"gorm.io/gorm"
 )
 
 // @ID						GetInstallComponents
@@ -73,6 +74,38 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, ty
 
 	if tx.Error != nil {
 		return nil, fmt.Errorf("unable to query install components: %w", tx.Error)
+	}
+
+	if len(paginatedComponents) > 0 {
+		var componentIDs []string
+		for i := range paginatedComponents {
+			componentIDs = append(componentIDs, paginatedComponents[i].ID)
+		}
+
+		allDriftedObjects := make([]app.DriftedObject, 0)
+		res := s.db.WithContext(ctx).
+			Where("install_component_id IN ?", componentIDs).
+			Find(&allDriftedObjects)
+
+		if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
+		}
+
+		// Create a map of install component ID to drifted object
+		driftedObjectByComponentID := make(map[string]app.DriftedObject)
+		for _, obj := range allDriftedObjects {
+			if obj.InstallComponentID != nil {
+				// Just keep the last one if there are multiple
+				driftedObjectByComponentID[*obj.InstallComponentID] = obj
+			}
+		}
+
+		// Set the single drifted object for each component
+		for i := range paginatedComponents {
+			if obj, ok := driftedObjectByComponentID[paginatedComponents[i].ID]; ok {
+				paginatedComponents[i].DriftedObject = obj
+			}
+		}
 	}
 
 	paginatedComponents, err := db.HandlePaginatedResponse(ctx, paginatedComponents)
