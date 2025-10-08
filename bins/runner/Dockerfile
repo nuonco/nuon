@@ -46,7 +46,7 @@ FROM golang:1.24-alpine AS nuon-cli
 RUN apk add --update --no-cache curl ca-certificates
 RUN curl https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.602/nuon_linux_amd64 -o /bin/nuon && chmod +x /bin/nuon
 
-FROM gcr.io/kaniko-project/executor AS kaniko
+FROM public.ecr.aws/p7e3r5y0/kaniko-project/executor:latest  AS kaniko
 
 FROM golang:1.24-alpine AS aws-iam-authenticator
 
