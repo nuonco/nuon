@@ -2,9 +2,9 @@ package workflow
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
@@ -48,17 +48,15 @@ func (m *model) getFlatSteps() []list.Item {
 }
 
 // TODO: put this in a goroutine
-func (m *model) fetchWorkflow() {
-	m.loading = true
-	workflow, err := m.api.GetWorkflow(m.ctx, m.workflowID)
+func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
+	workflow := msg.workflow
+	err := msg.err
 	if err != nil {
 		m.setLogMessage(fmt.Sprintf("[error] failed to fetch data: %s", err), "error")
-		m.error = err
 		return
-	}
-	if m.stepApprovalConf {
-		// in this case, do not override the message
-		m.setLogMessage(fmt.Sprintf("[%s] fetched workflow id:%s", time.Now().String(), workflow.ID), "info")
+	} else if workflow == nil {
+		m.setLogMessage("something unexpected has taken place", "error")
+		return
 	}
 	m.workflow = workflow
 	// set progress from workflow steps
@@ -86,75 +84,76 @@ func (m *model) fetchWorkflow() {
 	}
 
 	m.populateStepDetailView(false)
-	m.getInstallStack()
+	m.loading = false
 }
 
-func (m *model) approveWorkflowStep() {
-	req := &models.ServiceCreateWorkflowStepApprovalResponseRequest{
-		ResponseType: models.AppWorkflowStepResponseTypeApprove,
-		Note:         "",
-	}
-	resp, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, m.selectedStep.ID, m.selectedStep.Approval.ID, req)
+func (m *model) handleStackFetched(msg stackFetchedMsg) {
+	stack := msg.stack
+	err := msg.err
+	m.stack = stack
 	if err != nil {
 		m.error = err
-		return
+	}
+}
+
+func (m *model) handleWorkflowStepApprovalResponseCreated(msg createWorkflowStepApprovalResponseMsg) tea.Cmd {
+	resp := msg.selectedStepApprovalResponse
+	err := msg.err
+	if err != nil {
+		m.error = err
 	}
 	m.selectedStepApprovalResponse = resp
-	m.setLogMessage(fmt.Sprintf("[%s] step approved %s", resp.Type, resp.InstallWorkflowStepApprovalID), "success")
 	m.loading = false
 	m.stepApprovalConf = false
+	// after a step is approved, we want to immediately fetch the workflow to get the upated version
+	return m.fetchWorkflowCmd
 }
 
-func (m *model) cancelWorkflow() {
-	m.loading = true
-	_, err := m.api.CancelWorkflow(m.ctx, m.workflowID)
-	if err != nil {
-		m.error = err
-		return
-	}
+func (m *model) handleCancelWorkflow(msg cancelWorkflowMsg) tea.Cmd {
 	m.loading = false
+	_, err := m.api.CancelWorkflow(m.ctx, m.workflowID)
+	if msg.err != nil {
+		m.error = err
+	}
 	m.setLogMessage("workflow has been cancelled", "error")
 	m.resetSelected()
-	m.fetchWorkflow()
+	m.resetWorkflowCancelationConf()
+	return m.fetchWorkflowCmd
 }
 
-func (m *model) getInstallStack() {
-	m.stackLoading = true
-	stack, err := m.api.GetInstallStack(m.ctx, m.installID)
-	if err != nil {
-		m.error = err
+func (m *model) handleApproveAll(msg approveAllMsg) []tea.Cmd {
+	cmds := []tea.Cmd{}
+	if msg.err != nil {
+		m.setLogMessage(fmt.Sprintf("%s", msg.err), "error")
 	}
-	m.stack = stack
-	m.stackLoading = false
-	m.populateStepDetailView(false)
-}
-
-func (m *model) approveAll() {
-
-	m.loading = true
-	m.setLogMessage("approving all workflows", "info")
-	approved := 0
-	for i, step := range m.workflow.Steps {
-		if step.Approval == nil || step.Approval.Response != nil {
-			continue
-		}
-		req := &models.ServiceCreateWorkflowStepApprovalResponseRequest{
-			ResponseType: models.AppWorkflowStepResponseTypeApprove,
-			Note:         "",
-		}
-		resp, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, step.ID, step.Approval.ID, req)
-		if err != nil {
-			m.error = err
-			m.setLogMessage(fmt.Sprintf("%s", err), "error")
-			return
-		}
-		m.selectedStepApprovalResponse = resp
-		m.setLogMessage(fmt.Sprintf("[%02d] step \"%s\" approved", i, step.Name), "success")
-		approved += 1
-		m.fetchWorkflow()
-	}
-	m.loading = false
 	m.workflowApprovalConf = false
-	m.stepApprovalConf = false
 	m.populateStepDetailView(true)
+	if msg.approved > 0 {
+		m.setLogMessage(fmt.Sprintf("approved %02d workflows", msg.approved), "success")
+		cmds = append(cmds, m.fetchWorkflowCmd)
+	} else {
+		m.setLogMessage("nothing to approve", "warning")
+	}
+	return cmds
+}
+
+func (m *model) handleGetWorkflowStepApprovalContents(msg getWorkflowStepApprovalContentsMsg) []tea.Cmd {
+
+	if msg.err != nil {
+		m.approvalContents = approvalContents{error: msg.err, raw: msg.raw, loading: false}
+		return []tea.Cmd{}
+	}
+	contents, err := interfaceToMap(msg.raw)
+	if err != nil {
+		m.approvalContents = approvalContents{error: err, raw: msg.raw, loading: false}
+		return []tea.Cmd{}
+	}
+	m.approvalContents = approvalContents{error: err, raw: msg.raw, loading: false, contents: contents}
+	m.populateStepDetailView(false)
+	m.setLogMessage(
+		fmt.Sprintf("workflow content fetched %02d keys", len(contents)),
+		"info",
+	)
+
+	return []tea.Cmd{}
 }
