@@ -56,14 +56,16 @@ func (c *WorkflowConductor[DomainSignal]) handleCancellation(ctx workflow.Contex
 	}
 
 	// cancel all steps
-	for _, cancelStep := range flw.Steps[idx+1:] {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-			ID: cancelStep.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
-				"reason": fmt.Sprintf("%s and workflow was configured with abort-on-error.", FlowCancellationErr.Error()),
-			}),
-		}); err != nil {
-			return errors.Wrap(err, "unable to cancel step after cancelled workflow")
+	if idx < len(flw.Steps)-1 {
+		for _, cancelStep := range flw.Steps[idx+1:] {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+				ID: cancelStep.ID,
+				Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
+					"reason": fmt.Sprintf("%s and workflow was configured with abort-on-error.", FlowCancellationErr.Error()),
+				}),
+			}); err != nil {
+				return errors.Wrap(err, "unable to cancel step after cancelled workflow")
+			}
 		}
 	}
 
@@ -86,6 +88,11 @@ func (c *WorkflowConductor[DomainSignal]) handleCancellation(ctx workflow.Contex
 }
 
 func (c *WorkflowConductor[DomainSignal]) cancelFutureSteps(ctx workflow.Context, flw *app.Workflow, idx int, reason string) error {
+	if idx >= len(flw.Steps) {
+		// No future steps to cancel
+		return nil
+	}
+
 	for _, cancelStep := range flw.Steps[idx+1:] {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: cancelStep.ID,
