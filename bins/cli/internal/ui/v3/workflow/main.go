@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -31,9 +32,20 @@ import (
 )
 
 const (
-	minRequiredWidth  int = 100
-	minRequiredHeight int = 20
+	minRequiredWidth    int           = 100
+	minRequiredHeight   int           = 20
+	dataRefreshInterval time.Duration = time.Second * 5
 )
+
+type approvalContents struct {
+	raw      interface{}
+	contents map[string]interface{}
+	loading  bool
+	error    error
+	// target attrs for decompression
+	terraformContent map[string]any
+	helmDiff         map[string]any
+}
 
 type model struct {
 	// common/base
@@ -59,6 +71,8 @@ type model struct {
 	// conditional
 	stack        *models.AppInstallStack
 	stackLoading bool
+
+	approvalContents approvalContents
 
 	// ui components
 	// 1. layout
@@ -116,6 +130,7 @@ func initialModel(
 	s.Style = lipgloss.NewStyle().Foreground(styles.AccentColor) // .Padding(0, 0, 0, 1)
 	stepsList := initialStepsList()
 	progress := progress.New()
+	approvalContents := approvalContents{error: nil, loading: false, raw: []int64{}}
 
 	m := model{
 		ctx:        ctx,
@@ -123,6 +138,9 @@ func initialModel(
 		api:        api,
 		installID:  installID,
 		workflowID: workflowID,
+
+		// data
+		approvalContents: approvalContents,
 
 		header:     viewport.New(minRequiredWidth, 2),
 		stepsList:  stepsList,
@@ -154,7 +172,12 @@ func (m *model) setLogMessage(message string, level string) {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(tick, m.spinner.Tick)
+	return tea.Batch(
+		m.fetchWorkflowCmd,
+		m.fetchStackCmd,
+		tick,
+		m.spinner.Tick,
+	)
 }
 
 func (m *model) resetSelected() {
@@ -164,6 +187,7 @@ func (m *model) resetSelected() {
 	m.selectedStep = nil
 	m.selectedIndex = -1
 	m.showJson = false
+	m.approvalContents = approvalContents{loading: false, error: nil}
 
 	// toggle detail-specific key help
 	m.keys.Esc.SetHelp("esc", "quit")
@@ -176,7 +200,8 @@ func (m *model) resetSelected() {
 	m.focus = "list"
 }
 
-func (m *model) setSelected() {
+func (m *model) setSelected() []tea.Cmd {
+	cmds := []tea.Cmd{}
 	// reset any and all approval modals
 	m.stepApprovalConf = false
 	m.workflowApprovalConf = false
@@ -184,7 +209,7 @@ func (m *model) setSelected() {
 	// grab the item from the list using the cursor
 	items := m.stepsList.Items()
 	if len(items) == 0 {
-		return
+		return cmds
 	}
 	m.selectedIndex = m.stepsList.Index()
 
@@ -194,7 +219,14 @@ func (m *model) setSelected() {
 	if m.stepIsApprovable() {
 		m.keys.ApproveStep.SetEnabled(true)
 	} else {
-		m.setLogMessage(fmt.Sprintf("[%02d] id:%s step is not approvable", m.stepsList.Index(), m.selectedStep.ID), "info")
+		m.setLogMessage(
+			fmt.Sprintf(
+				"[%02d] id:%s step is not approvable",
+				m.stepsList.Index(),
+				m.selectedStep.ID,
+			),
+			"info",
+		)
 		m.keys.ApproveStep.SetEnabled(false)
 	}
 	m.keys.Esc.SetHelp("esc", "back")
@@ -202,11 +234,28 @@ func (m *model) setSelected() {
 	m.populateStepDetailView(true)
 
 	// enable actions for install stack
-	if m.selectedStep.StepTargetType == "install_stack_versions" {
+	switch m.selectedStep.StepTargetType {
+	case "install_stack_versions":
 		m.keys.OpenQuickLink.SetEnabled(true)
 		m.keys.OpenTemplateLink.SetEnabled(true)
+	case "install_deploys":
+		if m.selectedStep.Approval != nil {
+			m.setLogMessage(
+				fmt.Sprintf(
+					"[%02d] id:%s fetching approval contents",
+					m.stepsList.Index(),
+					m.selectedStep.ID,
+				),
+				"info",
+			)
+			m.approvalContents.loading = true
+			cmds = append(cmds, m.getWorkflowStepApprovalContentsCmd)
+		}
+
 	}
+
 	m.focus = "detail"
+	return cmds
 }
 
 func (m *model) setQuitting() {
@@ -276,7 +325,7 @@ func (m *model) resize() {
 	m.stepsList.SetWidth(m.listWidth - 1) // minus one because of the padding we render the list with
 
 	// make the detail viewport
-	vpWidth := m.width - (m.listWidth + 2) // actual width plus margin
+	vpWidth := m.width - (m.listWidth + 2) - 2 // actual width plus margin
 	vpHeight := m.height - vMarginHeight
 	m.stepDetail.Height = vpHeight
 	m.stepDetail.Width = vpWidth
@@ -315,18 +364,43 @@ func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	// var cmds []tea.Cmd
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 
-	// handle tick: fetch data
+	// handle tick: data refresh and ticks
 	case tickMsg:
-		m.fetchWorkflow()
-		return m, tick
+		return m, tea.Batch(
+			m.fetchWorkflowCmd,
+			m.fetchStackCmd,
+			tea.Tick(
+				dataRefreshInterval,
+				func(t time.Time) tea.Msg {
+					return tickMsg(t)
+				}),
+		)
+
+	case workflowFetchedMsg:
+		m.handleWorkflowFetched(msg)
+	case stackFetchedMsg:
+		m.handleStackFetched(msg)
+	case createWorkflowStepApprovalResponseMsg:
+		cmd = m.handleWorkflowStepApprovalResponseCreated(msg)
+		cmds = append(cmds, cmd)
+	case cancelWorkflowMsg:
+		cmd = m.handleCancelWorkflow(msg)
+		cmds = append(cmds, cmd)
+	case approveAllMsg:
+		commands := m.handleApproveAll(msg)
+		cmds = append(cmds, commands...)
+	case getWorkflowStepApprovalContentsMsg:
+		commands := m.handleGetWorkflowStepApprovalContents(msg)
+		cmds = append(cmds, commands...)
 
 	// handle re-size
 	case tea.WindowSizeMsg:
 		m.handleResize(msg)
-		return m, cmd
+		return m, tea.Batch(cmds...)
 
 	// handle keystrokes
 	case tea.KeyMsg:
@@ -352,7 +426,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// actions: for a step
 		case key.Matches(msg, m.keys.ToggleJson):
 			m.toggleShowJson()
-			return m, cmd
+			return m, tea.Batch(cmds...)
 		case key.Matches(msg, m.keys.OpenQuickLink):
 			m.openQuickLink()
 		case key.Matches(msg, m.keys.OpenTemplateLink):
@@ -365,22 +439,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Down):
 			m, cmd := m.handleNav(msg)
 			return m, cmd
-		// these are really only for the step detail viewport
-		case key.Matches(msg, m.keys.PageDown):
-			m.stepDetail, cmd = m.stepDetail.Update(msg)
-			// m, cmd := m.handleNav(msg)
-			return m, cmd
-		case key.Matches(msg, m.keys.PageUp):
-			m.stepDetail, cmd = m.stepDetail.Update(msg)
-			// m, cmd := m.handleNav(msg)
-			return m, cmd
-
-		// additional navigation for when the step details is open/populated
-		// to allow for navigation
 		case key.Matches(msg, m.keys.Left):
 			m.toggleFocus()
 		case key.Matches(msg, m.keys.Right):
 			m.toggleFocus()
+
+		// these are really only for the step detail viewport
+		case key.Matches(msg, m.keys.PageDown):
+			m.stepDetail, cmd = m.stepDetail.Update(msg)
+			cmds = append(cmds, cmd)
+			return m, tea.Batch(cmds...)
+		case key.Matches(msg, m.keys.PageUp):
+			m.stepDetail, cmd = m.stepDetail.Update(msg)
+			cmds = append(cmds, cmd)
+			return m, tea.Batch(cmds...)
 
 		case key.Matches(msg, m.keys.Slash):
 			m.stepsList.SetShowFilter(!m.stepsList.ShowFilter())
@@ -388,13 +460,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// selection
 		case key.Matches(msg, m.keys.Enter):
-			m.setSelected()
+			commands := m.setSelected()
+			cmds = append(cmds, commands...)
 			m.stepsList.Update(msg)
 
 			// data actions
 		case key.Matches(msg, m.keys.ApproveStep):
 			if m.stepApprovalConf {
-				m.approveWorkflowStep()
+				m.createWorkflowStepApprovalResponseCmd()
 			} else {
 				m.setApprovalConfirmation()
 			}
@@ -402,11 +475,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.workflowCancelationConf {
 				m.setWorkflowCancelationConf()
 			} else if m.workflowCancelationConf {
-				m.cancelWorkflow()
+				cmds = append(cmds, m.cancelWorkflowCmd)
 			}
 		case key.Matches(msg, m.keys.ApproveAll):
 			if m.workflowApprovalConf {
-				m.approveAll()
+				cmds = append(cmds, m.approveAllCmd)
 			} else {
 				m.setWorkflowApprovalConf()
 			}
@@ -426,10 +499,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	default:
 		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		cmds = append(cmds, cmd)
 	}
 
-	return m, cmd
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
@@ -485,7 +558,7 @@ func (m model) View() string {
 			stepDetail = appStyleBlur.Render(m.stepDetail.View())
 		}
 		content = lipgloss.JoinHorizontal(
-			lipgloss.Top,
+			lipgloss.Left,
 			stepsList,
 			stepDetail,
 		)
@@ -504,8 +577,6 @@ func WorkflowApp(
 ) {
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, workflow_id)
-	m.fetchWorkflow()
-
 	// initialize the program
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
