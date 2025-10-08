@@ -72,17 +72,33 @@ resource "helm_release" "gha_runner_scale_sets" {
       maxRunners         = each.value.max_runners
       minRunners         = each.value.min_runners
       containerMode      = each.value.container_mode
-      template           = each.value.template
+      template = merge(each.value.template, {
+        spec = merge(lookup(each.value.template, "spec", {}), {
+          nodeSelector = {
+            "karpenter.sh/nodepool" = local.vars.node_pool_name
+          }
+          tolerations = [{
+            key      = "pool.nuon.co"
+            operator = "Equal"
+            value    = local.vars.node_pool_name
+            effect   = "NoSchedule"
+          }]
+        })
+      })
       controllerServiceAccount = local.vars.controller_service_account
-      nodeSelector       = {
-        "karpenter.sh/nodepool" = local.vars.node_pool_name
+      listenerTemplate = {
+        spec = {
+          nodeSelector = {
+            "karpenter.sh/nodepool" = local.vars.node_pool_name
+          }
+          tolerations = [{
+            key      = "pool.nuon.co"
+            operator = "Equal"
+            value    = local.vars.node_pool_name
+            effect   = "NoSchedule"
+          }]
+        }
       }
-      tolerations = [{
-        key      = "pool.nuon.co"
-        operator = "Equal"
-        value    = local.vars.node_pool_name
-        effect   = "NoSchedule"
-      }]
     })
   ]
 

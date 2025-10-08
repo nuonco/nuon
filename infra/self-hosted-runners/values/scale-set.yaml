@@ -29,13 +29,7 @@ template:
 # Listener template for job processing
 listenerTemplate:
   spec:
-    nodeSelector:
-      karpenter.sh/nodepool: self-hosted-runners
-    tolerations:
-      - key: "pool.nuon.co"
-        operator: "Equal"
-        value: "self-hosted-runners"
-        effect: "NoSchedule"
+    # Node selector and tolerations will be added by Helm deployment from environment variables
     containers:
       - name: listener
         securityContext:

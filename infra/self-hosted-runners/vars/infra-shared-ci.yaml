@@ -1,56 +1,221 @@
----
 pool: nuon
-
-# Environment-specific configuration for infra-shared-ci
-# Scale sets are ONLY defined in environment files
-
 scale_sets:
-  # Ubuntu runner for basic CI jobs using Kubernetes mode
   ubuntu-basic:
-    github_config_url: "https://github.com/powertoolsdev"
-    runner_group: "nuon-self-hosted"
+    github_config_url: https://github.com/powertoolsdev
+    runner_group: nuon-self-hosted
     max_runners: 3
     min_runners: 1
     container_mode:
-      type: "kubernetes"
+      type: kubernetes
       kubernetesModeWorkVolumeClaim:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: "gp3"
+        accessModes:
+        - ReadWriteOnce
+        storageClassName: gp3
         resources:
           requests:
             storage: 1Gi
     template:
       spec:
         containers:
-          - name: runner
-            image: ghcr.io/actions/actions-runner:latest
-            command: ["/home/runner/run.sh"]
-            env:
-              - name: ACTIONS_RUNNER_CONTAINER_HOOKS
-                value: /home/runner/k8s/index.js
-              - name: ACTIONS_RUNNER_POD_NAME
-                valueFrom:
-                  fieldRef:
-                    fieldPath: metadata.name
-              - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
-                value: "false"
-            resources:
-              limits:
-                cpu: 1000m
-                memory: 2Gi
-              requests:
-                cpu: 500m
-                memory: 1Gi
-            volumeMounts:
-              - name: work
-                mountPath: /home/runner/_work
-        volumes:
+        - name: runner
+          image: ghcr.io/actions/actions-runner:latest
+          command:
+          - /home/runner/run.sh
+          env:
+          - name: ACTIONS_RUNNER_CONTAINER_HOOKS
+            value: /home/runner/k8s/index.js
+          - name: ACTIONS_RUNNER_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+            value: 'false'
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
           - name: work
-            ephemeral:
-              volumeClaimTemplate:
-                spec:
-                  accessModes: ["ReadWriteOnce"]
-                  storageClassName: "gp3"
-                  resources:
-                    requests:
-                      storage: 10Gi
+            mountPath: /home/runner/_work
+        volumes:
+        - name: work
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                - ReadWriteOnce
+                storageClassName: gp3
+                resources:
+                  requests:
+                    storage: 10Gi
+  build-only:
+    github_config_url: https://github.com/powertoolsdev
+    runner_group: nuon-self-hosted
+    max_runners: 3
+    min_runners: 1
+    container_mode:
+      type: kubernetes
+      kubernetesModeWorkVolumeClaim:
+        accessModes:
+        - ReadWriteOnce
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 1Gi
+    template:
+      spec:
+        containers:
+        - name: runner
+          image: 821160992543.dkr.ecr.us-west-2.amazonaws.com/self-hosted-runners/build-only:latest
+          command:
+          - /home/runner/run.sh
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          env:
+          - name: ACTIONS_RUNNER_CONTAINER_HOOKS
+            value: /home/runner/k8s/index.js
+          - name: ACTIONS_RUNNER_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+            value: 'false'
+          - name: CONTAINERD_NAMESPACE
+            value: actions
+          - name: CONTAINERD_ADDRESS
+            value: /run/containerd/containerd.sock
+          - name: BUILDKIT_HOST
+            value: tcp://buildkitd.buildkit.svc.cluster.local:1234
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: containerd-sock
+            mountPath: /run/containerd/containerd.sock
+          - name: containerd-root
+            mountPath: /var/lib/containerd
+            readOnly: true
+        volumes:
+        - name: work
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                - ReadWriteOnce
+                storageClassName: gp3
+                resources:
+                  requests:
+                    storage: 10Gi
+        - name: containerd-sock
+          hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket
+        - name: containerd-root
+          hostPath:
+            path: /var/lib/containerd
+            type: Directory
+  build-run:
+    github_config_url: https://github.com/powertoolsdev
+    runner_group: nuon-self-hosted
+    max_runners: 2
+    min_runners: 0
+    container_mode:
+      type: kubernetes
+      kubernetesModeWorkVolumeClaim:
+        accessModes:
+        - ReadWriteOnce
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 1Gi
+    template:
+      spec:
+        containers:
+        - name: runner
+          image: 821160992543.dkr.ecr.us-west-2.amazonaws.com/self-hosted-runners/build-run:latest
+          command:
+          - /home/runner/run.sh
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          env:
+          - name: ACTIONS_RUNNER_CONTAINER_HOOKS
+            value: /home/runner/k8s/index.js
+          - name: ACTIONS_RUNNER_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+            value: 'false'
+          - name: CONTAINERD_NAMESPACE
+            value: actions
+          - name: CONTAINERD_ADDRESS
+            value: /run/containerd/containerd.sock
+          - name: BUILDKIT_HOST
+            value: tcp://buildkitd.buildkit.svc.cluster.local:1234
+          - name: CNI_PATH
+            value: /opt/cni/bin
+          - name: NETCONFPATH
+            value: /etc/cni/net.d
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: containerd-sock
+            mountPath: /run/containerd/containerd.sock
+          - name: containerd-root
+            mountPath: /var/lib/containerd
+            readOnly: true
+          - name: containerd-state
+            mountPath: /run/containerd
+          - name: cni-conf
+            mountPath: /etc/cni/net.d
+          - name: nerdctl-data
+            mountPath: /var/lib/nerdctl
+        volumes:
+        - name: work
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                - ReadWriteOnce
+                storageClassName: gp3
+                resources:
+                  requests:
+                    storage: 20Gi
+        - name: containerd-sock
+          hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket
+        - name: containerd-root
+          hostPath:
+            path: /var/lib/containerd
+            type: Directory
+        - name: containerd-state
+          hostPath:
+            path: /run/containerd
+            type: Directory
+        - name: cni-conf
+          hostPath:
+            path: /etc/cni/net.d
+            type: DirectoryOrCreate
+        - name: nerdctl-data
+          hostPath:
+            path: /var/lib/nerdctl
+            type: DirectoryOrCreate
