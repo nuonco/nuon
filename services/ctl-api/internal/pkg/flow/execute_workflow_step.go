@@ -268,22 +268,26 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 }
 
 func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
-	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
-		FlowID:         flw.ID,
-		OwnerID:        flw.OwnerID,
-		OwnerType:      flw.OwnerType,
-		Name:           getCloneStepName(step.Name),
-		Signal:         step.Signal,
-		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
-		Idx:            step.Idx,
-		ExecutionType:  step.ExecutionType,
-		Metadata:       step.Metadata,
-		Retryable:      step.Retryable,
-		Skippable:      step.Skippable,
-		GroupIdx:       step.GroupIdx,
-		GroupRetryIdx:  step.GroupRetryIdx,
-		StepTargetType: step.StepTargetType,
-		StepTargetID:   step.StepTargetID,
+	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
+		Steps: []activities.CreateFlowStep{
+			{
+				FlowID:         flw.ID,
+				OwnerID:        flw.OwnerID,
+				OwnerType:      flw.OwnerType,
+				Name:           getCloneStepName(step.Name),
+				Signal:         step.Signal,
+				Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+				Idx:            step.Idx,
+				ExecutionType:  step.ExecutionType,
+				Metadata:       step.Metadata,
+				Retryable:      step.Retryable,
+				Skippable:      step.Skippable,
+				GroupIdx:       step.GroupIdx,
+				GroupRetryIdx:  step.GroupRetryIdx,
+				StepTargetType: step.StepTargetType,
+				StepTargetID:   step.StepTargetID,
+			},
+		},
 	})
 	return err
 }

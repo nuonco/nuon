@@ -17,7 +17,7 @@ type GenerateWorkflowStepsRequest struct {
 // @temporal-gen workflow
 // @execution-timeout 1h
 // @task-timeout 1m
-// @id-callback WorkflowIDCallback
+// @id-template generate-steps-{{.Req.WorkflowID}}
 func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWorkflowStepsRequest) ([]*app.WorkflowStep, error) {
 	fid := req.WorkflowID
 
@@ -28,9 +28,13 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 
 	steps := req.Steps
 
+	stepsReq := activities.CreateFlowStepsRequest{
+		Steps: make([]activities.CreateFlowStep, 0, len(steps)),
+	}
+
 	for idx, step := range steps {
 		step.Idx = idx
-		s, err := activities.AwaitPkgWorkflowsFlowCreateFlowStep(ctx, activities.CreateFlowStepRequest{
+		stepsReq.Steps = append(stepsReq.Steps, activities.CreateFlowStep{
 			FlowID:        fid,
 			OwnerID:       wflw.OwnerID,
 			OwnerType:     wflw.OwnerType,
@@ -44,10 +48,15 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 			Skippable:     step.Skippable,
 			GroupIdx:      step.GroupIdx,
 		})
-		if err != nil {
-			return nil, fmt.Errorf("unable to create steps: %w", err)
-		}
-		step.ID = s.ID
+	}
+
+	resp, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, stepsReq)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create steps: %w", err)
+	}
+
+	for i, wflwStep := range resp {
+		steps[i].ID = wflwStep.ID
 	}
 
 	return steps, nil
