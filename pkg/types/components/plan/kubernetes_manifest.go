@@ -1,6 +1,6 @@
 package plan
 
-import "k8s.io/apimachinery/pkg/runtime/schema"
+import "github.com/powertoolsdev/mono/pkg/diff"
 
 type KubernetesManifestPlanOperation string
 
@@ -9,18 +9,9 @@ const (
 	KubernetesManifestPlanOperationDelete KubernetesManifestPlanOperation = "delete"
 )
 
-type KubernetesManifestDiff struct {
-	GroupVersionKind     schema.GroupVersionKind         `json:"group_version_kind,omitempty"`
-	GroupVersionResource schema.GroupVersionResource     `json:"group_version_resource,omitempty"`
-	Namespace            string                          `json:"namespace,omitempty"`
-	Name                 string                          `json:"name,omitempty"`
-	Diff                 string                          `json:"diff,omitempty"`
-	Before               string                          `json:"before,omitempty"`
-	After                string                          `json:"after,omitempty"`
-	Op                   KubernetesManifestPlanOperation `json:"op,omitempty"`
-}
-
 // KubernetesManifestPlanContents for kubernetes plan, summarized before after state of all resources
 type KubernetesManifestPlanContents struct {
-	Plan []*KubernetesManifestDiff `json:"plan"`
+	Plan        string                          `json:"plan"`
+	Op          KubernetesManifestPlanOperation `json:"op"`
+	ContentDiff []diff.ResourceDiff             `json:"k8s_content_diff,omitempty"`
 }
