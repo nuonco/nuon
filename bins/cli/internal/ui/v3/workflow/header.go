@@ -20,6 +20,9 @@ var dangerousButtonStyle = buttonStyle.
 	Foreground(styles.WarningColor)
 
 func (m model) getProgressPercentage() (int, int, float64) {
+	if m.workflow == nil {
+		return 0, 0, 0
+	}
 	stepsTotal := len(m.workflow.Steps)
 	stepsFinished := 0
 	for _, step := range m.workflow.Steps {
@@ -87,7 +90,6 @@ func (m model) headerView() string {
 	if len(m.steps) == 0 {
 		content += m.spinner.View() + " loading ..."
 		m.header.SetContent(content)
-		m.header.Height = 1
 		return appStyle.Render(m.header.View())
 	}
 	stepsFinished, stepsPending, progress := m.getProgressPercentage()
