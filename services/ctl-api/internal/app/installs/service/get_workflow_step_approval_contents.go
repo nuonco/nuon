@@ -27,7 +27,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object} map[string]interface{}
+// @Success				200	{object}	interface{}
 // @Header					200	{string}	Content-Encoding	"gzip"
 // @Router					/v1/workflows/{workflow_id}/steps/{workflow_step_id}/approvals/{approval_id}/contents  [GET]
 func (s *service) GetWorkflowStepApprovalContents(ctx *gin.Context) {
