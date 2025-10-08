@@ -3,8 +3,10 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
@@ -13,6 +15,7 @@ import (
 // @ID						GetAllComponents
 // @Summary				get all components for all orgs
 // @Description.markdown	get_all_components.md
+// @Param 				component_ids		query	string	false	"comma-separated list of component IDs to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -32,12 +35,25 @@ func (s *service) GetAllComponents(ctx *gin.Context) {
 }
 
 func (s *service) getAllComponents(ctx *gin.Context) ([]*app.Component, error) {
+	componentIDs := ctx.Query("component_ids")
+	var componentIDsSlice []string
+	if componentIDs != "" {
+		componentIDsSlice = pq.StringArray(strings.Split(strings.TrimSpace(componentIDs), ","))
+		for i, id := range componentIDsSlice {
+			componentIDsSlice[i] = strings.TrimSpace(id)
+		}
+	}
 	var components []*app.Component
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Order("created_at desc").
-		Preload("Dependencies").
-		Find(&components)
+		Preload("Dependencies")
+
+	if len(componentIDsSlice) > 0 {
+		query = query.Where("id IN ?", componentIDsSlice)
+	}
+
+	res := query.Find(&components)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all components: %w", res.Error)
 	}
