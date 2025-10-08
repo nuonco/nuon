@@ -176,19 +176,19 @@ docker_cmds:
       - --namespace=all
 
 docker_env:
+  CLICKHOUSE_DB_HOST: host.nuon.dev
+  CLICKHOUSE_DB_NAME: ctl_api
+  CLICKHOUSE_DB_PASSWORD: ctl-api
+  CLICKHOUSE_DB_PORT: 9000
+  CLICKHOUSE_DB_USER: ctl-api
+  CLICKHOUSE_DB_USE_TLS: false
   DB_HOST: host.nuon.dev
-  DB_USER: ctl_api
   DB_NAME: ctl_api
   DB_PASSWORD: password
   DB_SSL_MODE: disable
+  DB_USER: ctl_api
   DB_USE_IAM: false
   DB_USE_SSL: false
   DB_USE_ZAP: false
-  CLICKHOUSE_DB_HOST: host.nuon.dev
-  CLICKHOUSE_DB_PORT: 9000
-  CLICKHOUSE_DB_USER: ctl-api
-  CLICKHOUSE_DB_PASSWORD: ctl-api
-  CLICKHOUSE_DB_NAME: ctl_api
-  CLICKHOUSE_DB_USE_TLS: false
-  TEMPORAL_UI_URL: http://host.nuon.dev:8233
   SERVICE_TYPE: api
+  TEMPORAL_UI_URL: http://host.nuon.dev:8233
