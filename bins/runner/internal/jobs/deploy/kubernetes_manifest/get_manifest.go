@@ -1,7 +1,6 @@
 package kubernetes_manifest
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -22,7 +21,7 @@ func (h *handler) removeManagedFields(obj *unstructured.Unstructured) unstructur
 	return *clean
 }
 
-func (h *handler) getKubernetesResourcesFromManifest(ctx context.Context, k *kubernetesClient, manifest string) ([]*kubernetesResource, error) {
+func (h *handler) getKubernetesResourcesFromManifest(k *kubernetesClient, manifest string) ([]*kubernetesResource, error) {
 	manifestRaw := strings.NewReader(manifest)
 	dec := yaml.NewYAMLOrJSONDecoder(manifestRaw, 1024)
 	var currentKubernetesResources []*kubernetesResource

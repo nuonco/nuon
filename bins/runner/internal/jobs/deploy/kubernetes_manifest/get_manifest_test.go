@@ -1,7 +1,6 @@
 package kubernetes_manifest
 
 import (
-	"context"
 	"testing"
 
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
@@ -298,9 +297,7 @@ spec:
 				},
 			}
 
-			// Call the function under test
-			ctx := context.TODO()
-			resources, err := handler.getKubernetesResourcesFromManifest(ctx, &k, tc.manifest)
+			resources, err := handler.getKubernetesResourcesFromManifest(&k, tc.manifest)
 
 			// Assertions
 			assert.NoError(t, err)

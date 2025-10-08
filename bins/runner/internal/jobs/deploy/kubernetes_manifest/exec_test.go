@@ -12,70 +12,6 @@ import (
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 )
 
-func Test_handler_getPreviousConfigForResource(t *testing.T) {
-	tests := map[string]struct {
-		inResource    *kubernetesResource
-		prevResources []*kubernetesResource
-		expected      kubernetesResource
-	}{
-		"resource found in previous config": {
-			inResource: &kubernetesResource{
-				groupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
-				namespace:        "default",
-				name:             "test-deployment",
-			},
-			prevResources: []*kubernetesResource{
-				{
-					groupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
-					namespace:        "default",
-					name:             "test-deployment",
-				},
-			},
-			expected: kubernetesResource{
-				groupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
-				namespace:        "default",
-				name:             "test-deployment",
-			},
-		},
-		"resource not found in previous config": {
-			inResource: &kubernetesResource{
-				groupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
-				namespace:        "default",
-				name:             "test-deployment",
-			},
-			prevResources: []*kubernetesResource{
-				{
-					groupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
-					namespace:        "default",
-					name:             "another-deployment",
-				},
-			},
-			expected: kubernetesResource{},
-		},
-		"empty previous config": {
-			inResource: &kubernetesResource{
-				groupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
-				namespace:        "default",
-				name:             "test-deployment",
-			},
-			prevResources: []*kubernetesResource{},
-			expected:      kubernetesResource{},
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			h := &handler{}
-			result := h.getPreviousConfigForResource(
-				context.Background(),
-				test.inResource,
-				test.prevResources,
-			)
-			assert.Equal(t, test.expected, result)
-		})
-	}
-}
-
 // func Test_handler_execApply(t *testing.T) {
 // 	tests := map[string]struct {
 // 		resources       []*kubernetesResource
@@ -256,7 +192,7 @@ func Test_handler_execDelete(t *testing.T) {
 				client := fakedynamic.NewSimpleDynamicClient(runtime.NewScheme())
 				return client
 			},
-			expectedError: "delete error for resource [Group: apps, Version: v1, Kind: deployments, Namespace: default, Name: test-deployment]: deployments.apps \"test-deployment\" not found",
+			expectedError: "delete error for resource [ default/test-deployment]: deployments.apps \"test-deployment\" not found",
 		},
 	}
 
@@ -264,7 +200,7 @@ func Test_handler_execDelete(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := test.clientSetupFunc()
 			h := &handler{}
-			out, err := h.execDelete(context.Background(), client, test.resources)
+			out, err := h.execDelete(context.Background(), client, test.resources, false)
 			if test.expectedError == "" {
 				assert.NoError(t, err)
 				assert.Equal(t, len(test.resources), len(*out), "expected number of resources to be deleted should match the input resources")

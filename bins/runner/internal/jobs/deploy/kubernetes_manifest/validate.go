@@ -34,7 +34,7 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 
 	// 2. Kubernetes manifest validation
 	// Parse as unstructured Kubernetes object
-	resources, err := h.getKubernetesResourcesFromManifest(ctx, h.state.kubeClient, manifestContent)
+	resources, err := h.getKubernetesResourcesFromManifest(h.state.kubeClient, manifestContent)
 	if err != nil {
 		l.Error("failed to parse Kubernetes manifest", zap.Error(err))
 		return fmt.Errorf("invalid Kubernetes manifest format: %w", err)

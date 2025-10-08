@@ -6,12 +6,12 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	_ "embed"
 
 	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/diff"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/render"
 	types "github.com/powertoolsdev/mono/pkg/types/components/plan"
@@ -99,81 +99,28 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 
 func (p *Planner) createKubernetesManifestDeployPlanSandboxMode(req *plantypes.KubernetesManifestDeployPlan) (*plantypes.KubernetesSandboxMode, error) {
 	obj := types.KubernetesManifestPlanContents{
-		Plan: []*types.KubernetesManifestDiff{
+		Plan: "{\n  \"diff\": [\n    {\n      \"_version\": \"2\",\n      \"name\": \"demo\",\n      \"namespace\": \"default\",\n      \"kind\": \"ConfigMap\",\n      \"api\": \"/v1\",\n      \"resource\": \"configmaps\",\n      \"op\": \"apply\",\n      \"type\": 3,\n      \"dry_run\": true,\n      \"entries\": [\n        {\n          \"path\": \"data.sample_data\",\n          \"original\": \"3\",\n          \"applied\": \"4\",\n          \"type\": 3,\n          \"payload\": \"  map[string]any{\\n  \\t\\\"apiVersion\\\": string(\\\"v1\\\"),\\n- \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"3\\\")},\\n+ \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"4\\\")},\\n  \\t\\\"kind\\\":       string(\\\"ConfigMap\\\"),\\n  \\t\\\"metadata\\\":   map[string]any{\\\"name\\\": string(\\\"demo\\\"), ...},\\n  }\\n\"\n        }\n      ]\n    }\n  ]\n}",
+		Op:   "apply",
+		ContentDiff: []diff.ResourceDiff{
 			{
-				GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"},
-				GroupVersionResource: schema.GroupVersionResource{
-					Group:    "",
-					Version:  "v1",
-					Resource: "configmaps",
+				Version:   "2",
+				Name:      "demo",
+				Namespace: "default",
+				Kind:      "ConfigMap",
+				ApiPath:   "/v1",
+				Resource:  "configmaps",
+				Operation: "apply",
+				Type:      3,
+				DryRun:    true,
+				Entries: []diff.DiffEntry{
+					{
+						Path:     "data.sample_data",
+						Original: "3",
+						Applied:  "4",
+						Type:     3,
+						Payload:  "  map[string]any{\n  \t\"apiVersion\": string(\"v1\"),\n- \t\"data\":       map[string]any{\"sample_data\": string(\"3\")},\n+ \t\"data\":       map[string]any{\"sample_data\": string(\"4\")},\n  \t\"kind\":       string(\"ConfigMap\"),\n  \t\"metadata\":   map[string]any{\"name\": string(\"demo\"), ...},\n  }\n",
+					},
 				},
-				Namespace: "sandbox-namespace",
-				Name:      "sandbox-configmap",
-				Op:        types.KubernetesManifestPlanOperationApply,
-				Before:    "",
-				After: `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sandbox-configmap
-  namespace: sandbox-namespace
-data:
-  key1: value1
-  key2: value2
-`,
-			},
-			{
-				GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"},
-				GroupVersionResource: schema.GroupVersionResource{
-					Group:    "",
-					Version:  "v1",
-					Resource: "secrets",
-				},
-				Namespace: "sandbox-namespace",
-				Name:      "sandbox-secret",
-				Op:        types.KubernetesManifestPlanOperationDelete,
-				Before: `
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sandbox-secret
-  namespace: sandbox-namespace
-data:
-  password: c2VjcmV0
-`,
-				After: "",
-			},
-			{
-				GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"},
-				GroupVersionResource: schema.GroupVersionResource{
-					Group:    "",
-					Version:  "v1",
-					Resource: "configmaps",
-				},
-				Namespace: "sandbox-namespace",
-				Name:      "sandbox-configmap",
-				Op:        types.KubernetesManifestPlanOperationApply,
-				Before: `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sandbox-configmap
-  namespace: sandbox-namespace
-data:
-  key1: value1
-  key2: value2
-`,
-				After: `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sandbox-configmap
-  namespace: sandbox-namespace
-data:
-  key1: updated-value1
-  key2: value2
-  key3: new-value3
-`,
 			},
 		},
 	}
