@@ -98,6 +98,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client = action.NewUpgrade(actionCfg)
 	client.DryRun = false
 	client.DisableHooks = false
+	client.ServerSideApply = "false"
 
 	client.WaitForJobs = false
 	client.WaitStrategy = kube.StatusWatcherStrategy
