@@ -91,7 +91,7 @@ func structToMap(obj any) (map[string]string, error) {
 		return nil, err
 	}
 
-	var intermediate map[string]interface{}
+	var intermediate map[string]any
 	err = json.Unmarshal(jsonBytes, &intermediate)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func structToMap(obj any) (map[string]string, error) {
 		switch v := value.(type) {
 		case string:
 			result[key] = v
-		case []interface{}:
+		case []any:
 			// Convert array to comma-separated string
 			var strSlice []string
 			for _, item := range v {
@@ -126,7 +126,7 @@ func (m model) stepDetailViewInstallStackOutputs() string {
 	//make read only table
 	keys := []string{}
 	maxKeyLength := 0
-	for key, _ := range outputMap {
+	for key := range outputMap {
 		l := len(key)
 		if l > maxKeyLength {
 			maxKeyLength = l
@@ -218,8 +218,16 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	// case: workflow cancellation confirmation prompt
 	if m.workflowCancelationConf {
 		// in this case, we hijack the view to show a big red confirmation
-		content := lipgloss.NewStyle().Padding(1, 3).Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to cancel this workflow?", "", "Press [C] to confirm."))
-		dialog := common.FullPageDialog(common.FullPageDialogRequest{Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "error"})
+		content := lipgloss.NewStyle().
+			Padding(1, 3).
+			Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to cancel this workflow?", "", "Press [C] to confirm."))
+		dialog := common.FullPageDialog(common.FullPageDialogRequest{
+			Width:   m.stepDetail.Width,
+			Height:  m.stepDetail.Height,
+			Padding: 2,
+			Content: content,
+			Level:   "error",
+		})
 		m.stepDetail.SetContent(dialog)
 		return
 	}
@@ -231,7 +239,12 @@ func (m *model) populateStepDetailView(goToTop bool) {
 			Render(
 				lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to approve all?", "", "Press [A] to confirm."),
 			)
-		dialog := common.FullPageDialog(common.FullPageDialogRequest{Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "warning"})
+		dialog := common.FullPageDialog(common.FullPageDialogRequest{
+			Width: m.stepDetail.Width, Height: m.stepDetail.Height,
+			Padding: 2,
+			Content: content,
+			Level:   "warning",
+		})
 		m.stepDetail.SetContent(dialog)
 		return
 	}
@@ -245,23 +258,13 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	sections := []string{}
 	// normal case
 	step := m.selectedStep
-	style := styles.GetStatusStyle(step.Status.Status)
-	title := style.
-		Width(m.stepDetail.Width).
-		Bold(true).
-		Padding(1).
-		Render(
-			lipgloss.JoinVertical(
-				lipgloss.Top,
-				fmt.Sprintf("%s %s", getStatusIcon(step.Status.Status), step.Name),
-				styles.TextSubtle.Render(fmt.Sprintf("ID: %s", step.ID)),
-			),
-		)
 
-	sections = append(sections, title)
-
+	// full-width banners
 	if step.Status.Status == models.AppStatusPending {
-		pendingMessage := lipgloss.NewStyle().Padding(2).Width(m.stepDetail.Width).Render("nothing to see at the moment...")
+		pendingMessage := lipgloss.NewStyle().
+			Padding(2).
+			Width(m.stepDetail.Width).
+			Render("nothing to see at the moment...")
 		sections = append(sections, pendingMessage)
 	}
 
@@ -277,9 +280,28 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		// TODO: make this a re-usable component
 		l1 := lipgloss.NewStyle().Bold(true).Render("Plan Approved") + "\n"
 		l1 += "These changes have been approved and changes will be applied."
-		banner := styles.SuccessBanner.Width(m.stepDetail.Width).Margin(0, 0, 1).Render(l1)
+		banner := styles.SuccessBanner.
+			Width(m.stepDetail.Width).
+			Margin(0, 0, 1).
+			Render(l1)
 		sections = append(sections, banner)
 	}
+
+	// title
+	style := styles.GetStatusStyle(step.Status.Status)
+	title := style.
+		Width(m.stepDetail.Width).
+		Bold(true).
+		Padding(1).
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				fmt.Sprintf("%s %s", getStatusIcon(step.Status.Status), step.Name),
+				styles.TextSubtle.Render(fmt.Sprintf("ID: %s", step.ID)),
+			),
+		)
+
+	sections = append(sections, title)
 
 	// stack section
 	// NOTE(fd): brittle af
@@ -289,18 +311,10 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	}
 
 	// approvals section
-	if generics.SliceContains(step.StepTargetType, []string{"install_sandbox_runs", "install_deploys"}) { //
-		sbRun := lipgloss.NewStyle().Padding(1).Render(
-			lipgloss.JoinVertical(
-				lipgloss.Top,
-				styles.TextBold.Render("Resource Drift"),
-				lipgloss.NewStyle().Width(m.stepDetail.Width).Padding(1).Margin(0, 0, 1).
-					Border(lipgloss.NormalBorder()).
-					BorderForeground(styles.Ghost).
-					Render("[B] open in browser to see diff."),
-			),
-		)
-		sections = append(sections, sbRun)
+	// TODO(fd): handle "install_sandbox_runs",
+	if generics.SliceContains(step.StepTargetType, []string{"install_deploys"}) {
+		diffSection := m.stepDetailViewStepDiff()
+		sections = append(sections, diffSection)
 	}
 
 	jsonSection := m.stepDetailViewStepJSON()
