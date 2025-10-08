@@ -15,7 +15,7 @@ export const teardownComponents = ({
   body: TTeardownComponentsBody
 }) =>
   api<string>({
-    path: `installs/${installId}/components/deploy-all`,
+    path: `installs/${installId}/components/teardown-all`,
     method: 'POST',
     orgId,
     body,
