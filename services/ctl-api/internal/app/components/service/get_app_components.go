@@ -20,6 +20,7 @@ import (
 // @Param					app_id						path	string	true	"app ID"
 // @Param         q                 query	string	false	"search query to filter components by name"
 // @Param         types					    query	string	false	"comma-separated list of component types to filter by (e.g., terraform_module, helm_chart)"
+// @Param 				component_ids		query	string	false	"comma-separated list of component IDs to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -43,8 +44,16 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	if types != "" {
 		typesSlice = pq.StringArray(strings.Split(types, ","))
 	}
+	componentIDs := ctx.Query("component_ids")
+	var componentIDsSlice []string
+	if componentIDs != "" {
+		componentIDsSlice = pq.StringArray(strings.Split(strings.TrimSpace(componentIDs), ","))
+		for i, id := range componentIDsSlice {
+			componentIDsSlice[i] = strings.TrimSpace(id)
+		}
+	}
 
-	components, err := s.getAppComponents(ctx, appID, q, typesSlice)
+	components, err := s.getAppComponents(ctx, appID, q, typesSlice, componentIDsSlice)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
@@ -53,7 +62,7 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, components)
 }
 
-func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string) ([]app.Component, error) {
+func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string, componentIDs []string) ([]app.Component, error) {
 	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get latest app config")
@@ -70,6 +79,10 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []st
 
 	if len(types) > 0 {
 		tx = tx.Where("components.type IN ?", types)
+	}
+
+	if len(componentIDs) > 0 {
+		tx = tx.Where("components.id IN ?", componentIDs)
 	}
 
 	res := tx.Find(&components)
