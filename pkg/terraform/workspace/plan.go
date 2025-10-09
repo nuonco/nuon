@@ -48,13 +48,16 @@ func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger
 		opts = append(opts, tfexec.VarFile(fp))
 	}
 
-	if _, err := client.PlanJSON(ctx,
+	var diffExists bool
+	if diffExists, err = client.PlanJSON(ctx,
 		writer,
 		opts...,
 	); err != nil {
 		fmt.Printf("%e", err)
 		return nil, fmt.Errorf("unable to plan: %w", err)
 	}
+
+	log.Debug("plan diff", zap.Bool("diff.exists", diffExists))
 
 	return out.Bytes()
 }
