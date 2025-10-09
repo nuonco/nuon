@@ -16,15 +16,16 @@ var (
 )
 
 var StatusStyleMap = map[models.AppStatus]lipgloss.Style{
-	models.AppStatusPending:              Pending,
-	models.AppStatusNotDashAttempted:     TextDefault,
-	models.AppStatusApproved:             Approved,
-	models.AppStatusApprovalDashDenied:   ApprovalDenied,
-	models.AppStatusCancelled:            TerminalBad,
-	models.AppStatusError:                lipgloss.NewStyle().Foreground(ErrorColor),
-	models.AppStatusAutoDashSkipped:      lipgloss.NewStyle().Foreground(InfoColor),
-	models.AppStatusApprovalDashAwaiting: TerminalBad,
-	models.AppStatusSuccess:              TextSuccess,
+	models.AppStatusPending:                             Pending,
+	models.AppStatusNotDashAttempted:                    TextDefault,
+	models.AppStatusApproved:                            Approved,
+	models.AppStatusApprovalDashDenied:                  ApprovalDenied,
+	models.AppStatusCancelled:                           TerminalBad,
+	models.AppStatusError:                               lipgloss.NewStyle().Foreground(ErrorColor),
+	models.AppStatusAutoDashSkipped:                     lipgloss.NewStyle().Foreground(InfoColor),
+	models.AppStatusApprovalDashAwaiting:                TerminalBad,
+	models.AppStatusSuccess:                             TextSuccess,
+	models.AppStatus(models.AppOperationStatusFinished): TextSuccess,
 }
 
 func GetStatusStyle(status models.AppStatus) lipgloss.Style {
