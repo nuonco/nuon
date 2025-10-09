@@ -43,7 +43,8 @@ data "aws_iam_policy_document" "runner_policy" {
       "sts:AssumeRole",
     ]
     resources = [
-      "arn:aws:iam::${local.accounts.prod}:role/gha-*",
+      for account_name, account_id in local.accounts :
+      "arn:aws:iam::${account_id}:role/github/actions/gha-*"
     ]
   }
 }
