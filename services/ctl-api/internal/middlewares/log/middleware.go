@@ -42,18 +42,17 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		startAt := time.Now()
 
-		reqZapFields := m.requestToZapFields(ctx, startAt)
-
-		requestMessage := fmt.Sprintf("api request: %s", ctx.FullPath())
-		childLogger.Info(requestMessage, reqZapFields...)
+		// Disable these for now. It doubles our log bill.
+		// reqZapFields := m.requestToZapFields(ctx, startAt)
+		// requestMessage := fmt.Sprintf("api request: %s", ctx.FullPath())
+		// childLogger.Info(requestMessage, reqZapFields...)
 
 		ctx.Next()
 
-		respZapFields := m.responseToZapFields(ctx, w, startAt)
-
-		responseMessage := fmt.Sprintf("api response: %s", ctx.FullPath())
-
 		status := ctx.Writer.Status()
+		duration := float64(time.Since(startAt).Milliseconds())
+		respZapFields := m.responseToZapFields(ctx, w, startAt)
+		responseMessage := fmt.Sprintf("%d %s %s (%.2fms)", status, ctx.Request.Method, ctx.FullPath(), duration)
 
 		if status >= 500 {
 			childLogger.Error(responseMessage, respZapFields...)
