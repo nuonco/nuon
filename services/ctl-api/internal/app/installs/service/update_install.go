@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
@@ -17,9 +17,14 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
+type PatchInstallConfigParams struct {
+	ApprovalOption app.InstallApprovalOption `json:"approval_option"`
+}
+
 type UpdateInstallRequest struct {
-	Name     string                   `json:"name"`
-	Metadata *helpers.InstallMetadata `json:"metadata,omitempty"`
+	Name          string                    `json:"name"`
+	Metadata      *helpers.InstallMetadata  `json:"metadata,omitempty"`
+	InstallConfig *PatchInstallConfigParams `json:"install_config"`
 }
 
 func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
@@ -77,6 +82,33 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		ID: installID,
 	}
 
+	res := s.db.WithContext(ctx).First(&currentInstall, "id = ?", installID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+	}
+
+	// update or create install config
+	if req.InstallConfig != nil {
+		installConfig := app.InstallConfig{
+			InstallID:      installID,
+			ApprovalOption: req.InstallConfig.ApprovalOption,
+		}
+		res := s.db.WithContext(ctx).Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "deleted_at"},
+				{Name: "install_id"},
+			},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"approval_option",
+			}),
+		}).
+			Create(&installConfig)
+
+		if res.Error != nil {
+			return nil, fmt.Errorf("unable to write routes: %w", res.Error)
+		}
+	}
+
 	updateObj := app.Install{Name: req.Name}
 	if req.Metadata != nil {
 		updateObj.Metadata = generics.ToHstore(map[string]string{
@@ -84,7 +116,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		})
 	}
 
-	res := s.db.WithContext(ctx).
+	res = s.db.WithContext(ctx).
 		Scopes(scopes.WithPatcher(patcher.PatcherOptions{})).
 		Model(&currentInstall).
 		Preload("AWSAccount").
@@ -94,9 +126,6 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
-	}
-	if res.RowsAffected != 1 {
-		return nil, fmt.Errorf("install not found: %w", gorm.ErrRecordNotFound)
 	}
 
 	return &currentInstall, nil
