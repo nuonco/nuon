@@ -67,7 +67,12 @@ data "aws_iam_policy_document" "github_actions_assume_role_policy" {
     actions = ["sts:AssumeRole"]
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${local.accounts["infra-shared-ci"].id}:role/*-runner"]
+      identifiers = ["arn:aws:iam::${local.accounts["infra-shared-ci"].id}:root"]
+    }
+    condition {
+      test     = "StringLike"
+      variable = "aws:PrincipalArn"
+      values   = ["arn:aws:iam::${local.accounts["infra-shared-ci"].id}:role/*-runner"]
     }
   }
 }
