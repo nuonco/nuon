@@ -159,6 +159,23 @@ module "nuon-actions-release" {
   }
 }
 
+module "nuon-actions-nuon" {
+  source      = "./modules/repository"
+  name        = "actions-nuon"
+  description = "Action for using the nuon Nuon cli in CI/CD."
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+  ]
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-guides" {
   source      = "./modules/repository"
   name        = "guides"
