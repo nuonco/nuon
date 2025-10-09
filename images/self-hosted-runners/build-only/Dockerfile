@@ -16,14 +16,24 @@ RUN curl -sSL https://github.com/moby/buildkit/releases/download/v${BUILDKIT_VER
     rm -rf /tmp/bin && \
     chmod +x /usr/local/bin/buildctl
 
-# Check if docker exists and remove it, then create symlink to nerdctl
+# Install docker buildx CLI plugin
+ARG BUILDX_VERSION=0.19.3
+RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
+    curl -fsSL https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-amd64 \
+    -o /usr/local/lib/docker/cli-plugins/docker-buildx && \
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+
+# Copy docker wrapper script
+COPY docker-wrapper.sh /usr/local/bin/docker-wrapper.sh
+RUN chmod +x /usr/local/bin/docker-wrapper.sh
+
+# Remove existing docker and create symlink to wrapper
 RUN if [ -f /usr/local/bin/docker ] || [ -L /usr/local/bin/docker ]; then \
         rm -f /usr/local/bin/docker; \
     fi && \
-    ln -s /usr/local/bin/nerdctl /usr/local/bin/docker
+    ln -s /usr/local/bin/docker-wrapper.sh /usr/local/bin/docker && \
+    chmod +x /usr/local/bin/nerdctl /usr/local/bin/docker
 
-# Make executable
-RUN chmod +x /usr/local/bin/nerdctl /usr/local/bin/docker
 
 # Switch back to runner user (ARC expects this)
 USER runner
