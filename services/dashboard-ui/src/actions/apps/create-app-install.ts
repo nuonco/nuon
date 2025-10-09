@@ -49,7 +49,7 @@ export async function createAppInstall({
   if (formData?.location) {
     body = {
       ...body,
-      azure_accout: {
+      azure_account: {
         location: formData?.location as string,
         service_principal_app_id: '',
         service_principal_password: '',
