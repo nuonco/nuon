@@ -20,16 +20,11 @@ type CreateInstallParams struct {
 	Name string `json:"name" validate:"required"`
 
 	AWSAccount *struct {
-		Region     string `json:"region"`
-		IAMRoleARN string `json:"iam_role_arn"`
+		Region string `json:"region"`
 	} `json:"aws_account"`
 
 	AzureAccount *struct {
-		Location                 string `json:"location"`
-		SubscriptionID           string `json:"subscription_id"`
-		SubscriptionTenantID     string `json:"subscription_tenant_id"`
-		ServicePrincipalAppID    string `json:"service_principal_app_id"`
-		ServicePrincipalPassword string `json:"service_principal_password"`
+		Location string `json:"location"`
 	} `json:"azure_account"`
 
 	Inputs map[string]*string `json:"inputs"`
@@ -92,17 +87,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 
 	if req.AWSAccount != nil {
 		install.AWSAccount = &app.AWSAccount{
-			Region:     req.AWSAccount.Region,
-			IAMRoleARN: req.AWSAccount.IAMRoleARN,
+			Region: req.AWSAccount.Region,
 		}
 	}
 	if req.AzureAccount != nil {
 		install.AzureAccount = &app.AzureAccount{
-			Location:                 req.AzureAccount.Location,
-			SubscriptionID:           req.AzureAccount.SubscriptionID,
-			SubscriptionTenantID:     req.AzureAccount.SubscriptionTenantID,
-			ServicePrincipalAppID:    req.AzureAccount.ServicePrincipalAppID,
-			ServicePrincipalPassword: req.AzureAccount.ServicePrincipalPassword,
+			Location: req.AzureAccount.Location,
 		}
 	}
 	if len(parentApp.AppInputConfigs) > 0 {
