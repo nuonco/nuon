@@ -71,10 +71,8 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("Org").
 		Preload("Components").
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).Limit(5)
+			return db.Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).Limit(3)
 		}).
-
-		//
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC").Limit(5)
 		}).
