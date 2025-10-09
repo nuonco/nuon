@@ -100,3 +100,9 @@ module "github_actions" {
     aws_iam_policy.github_actions_policy.arn,
   ]
 }
+
+# Ensure the policy is attached to our custom role
+resource "aws_iam_role_policy_attachment" "github_actions_policy" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = aws_iam_policy.github_actions_policy.arn
+}
