@@ -6,7 +6,7 @@ export type TCreateAppInstallBody = {
     iam_role_arn: ''
     region: string
   }
-  azure_accout?: {
+  azure_account?: {
     location: string
     service_principal_app_id: ''
     service_principal_password: ''
