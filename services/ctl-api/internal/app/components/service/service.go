@@ -51,6 +51,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// components belong to an app
 	api.GET("/v1/apps/:app_id/components", s.GetAppComponents)
 	api.POST("/v1/apps/:app_id/components", s.CreateComponent)
+	api.POST("/v1/apps/:app_id/components/build-all", s.BuildAllComponents)
 
 	// crud ops for components
 	api.GET("/v1/components/:component_id", s.GetComponent)
