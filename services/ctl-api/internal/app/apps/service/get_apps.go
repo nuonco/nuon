@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
 )
@@ -56,14 +57,17 @@ func (s *service) getApps(ctx *gin.Context, orgID, q string) ([]*app.App, error)
 
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).Limit(3)
+		}).
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_runner_configs.created_at DESC")
+			return db.Order("app_runner_configs.created_at DESC").Limit(3)
 		}).
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_sandbox_configs.created_at DESC")
+			return db.Order("app_sandbox_configs.created_at DESC").Limit(3)
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
-		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").Limit(3).
 		Order("apps.name ASC")
 
 	if q != "" {
