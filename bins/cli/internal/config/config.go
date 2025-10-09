@@ -25,12 +25,15 @@ const (
 type Config struct {
 	*viper.Viper
 
-	APIToken         string `mapstructure:"api_token"`
-	APIURL           string `mapstructure:"api_url"`
-	OrgID            string `mapstructure:"org_id"`
-	DisableTelemetry bool   `mapstructure:"disable_telemetry"`
-	Debug            bool   `mapstructure:"debug"`
-	Preview          bool   `mapstructure:"preview"`
+	APIToken  string `mapstructure:"api_token"`
+	APIURL    string `mapstructure:"api_url"`
+	OrgID     string `mapstructure:"org_id"`
+	InstallID string `mapstructure:"install_id"`
+	AppID     string `mapstructure:"app_id"`
+
+	DisableTelemetry bool `mapstructure:"disable_telemetry"`
+	Debug            bool `mapstructure:"debug"`
+	Preview          bool `mapstructure:"preview"`
 
 	// internal configuration, not designed to be used by users
 	GitHubAppName   string        `mapstructure:"github_app_name"`
@@ -41,7 +44,7 @@ type Config struct {
 	UserID          string        `mapstructure:"-"`
 }
 
-// newConfig creates a new config instance.
+// NewConfig creates a new config instance.
 func NewConfig(customFilepath string) (*Config, error) {
 	cfg := &Config{
 		Viper:          viper.New(),
@@ -71,6 +74,9 @@ func NewConfig(customFilepath string) (*Config, error) {
 	}
 	if cfg.GetString("org_id") != "" {
 		cfg.OrgID = cfg.GetString("org_id")
+	}
+	if cfg.GetString("app_id") != "" {
+		cfg.AppID = cfg.GetString("app_id")
 	}
 	if cfg.GetString("github_app_name") != "" {
 		cfg.GitHubAppName = cfg.GetString("github_app_name")
