@@ -74,6 +74,7 @@ resource "helm_release" "gha_runner_scale_sets" {
       containerMode      = each.value.container_mode
       template = merge(each.value.template, {
         spec = merge(lookup(each.value.template, "spec", {}), {
+          serviceAccountName = "${each.key}-runner"
           nodeSelector = {
             "karpenter.sh/nodepool" = local.vars.node_pool_name
           }
@@ -85,6 +86,17 @@ resource "helm_release" "gha_runner_scale_sets" {
           }]
         })
       })
+      resourceMeta = {
+        kubernetesModeServiceAccount = {
+          annotations = {
+            "eks.amazonaws.com/role-arn" = aws_iam_role.runner_scale_set_roles[each.key].arn
+          }
+          labels = {
+            "nuon.co/scale-set-name" = each.key
+            "nuon.co/iam-role-name" = aws_iam_role.runner_scale_set_roles[each.key].name
+          }
+        }
+      }
       controllerServiceAccount = local.vars.controller_service_account
       listenerTemplate = {
         spec = {
@@ -102,5 +114,8 @@ resource "helm_release" "gha_runner_scale_sets" {
     })
   ]
 
-  depends_on = [helm_release.gha_runner_controller, kubectl_manifest.gha_runner_github_secret]
+  depends_on = [
+    helm_release.gha_runner_controller,
+    kubectl_manifest.gha_runner_github_secret
+  ]
 }

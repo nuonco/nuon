@@ -33,3 +33,24 @@ output "github_secret_namespace" {
   description = "The namespace where the GitHub token secret is deployed"
   value       = local.vars.runner_namespace
 }
+
+output "runner_iam_roles" {
+  description = "IAM roles created for each runner scale set"
+  value = {
+    for k, v in aws_iam_role.runner_scale_set_roles : k => {
+      name = v.name
+      arn  = v.arn
+    }
+  }
+}
+
+output "runner_service_accounts" {
+  description = "Service accounts created for each runner scale set"
+  value = {
+    for k, v in aws_iam_role.runner_scale_set_roles : k => {
+      name      = "${k}-runner"
+      namespace = local.vars.runner_namespace
+      role_arn  = v.arn
+    }
+  }
+}

@@ -1,56 +1,5 @@
 pool: nuon
 scale_sets:
-  ubuntu-basic:
-    github_config_url: https://github.com/powertoolsdev
-    runner_group: nuon-self-hosted
-    max_runners: 3
-    min_runners: 1
-    container_mode:
-      type: kubernetes
-      kubernetesModeWorkVolumeClaim:
-        accessModes:
-        - ReadWriteOnce
-        storageClassName: gp3
-        resources:
-          requests:
-            storage: 1Gi
-    template:
-      spec:
-        containers:
-        - name: runner
-          image: ghcr.io/actions/actions-runner:latest
-          command:
-          - /home/runner/run.sh
-          env:
-          - name: ACTIONS_RUNNER_CONTAINER_HOOKS
-            value: /home/runner/k8s/index.js
-          - name: ACTIONS_RUNNER_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
-            value: 'false'
-          resources:
-            limits:
-              cpu: 1000m
-              memory: 2Gi
-            requests:
-              cpu: 500m
-              memory: 1Gi
-          volumeMounts:
-          - name: work
-            mountPath: /home/runner/_work
-        volumes:
-        - name: work
-          ephemeral:
-            volumeClaimTemplate:
-              spec:
-                accessModes:
-                - ReadWriteOnce
-                storageClassName: gp3
-                resources:
-                  requests:
-                    storage: 10Gi
   build-only:
     github_config_url: https://github.com/powertoolsdev
     runner_group: nuon-self-hosted
@@ -90,6 +39,8 @@ scale_sets:
             value: /run/containerd/containerd.sock
           - name: BUILDKIT_HOST
             value: tcp://buildkitd.buildkit.svc.cluster.local:1234
+          - name: RUNNER_ALLOW_RUNASROOT
+            value: 'true'
           resources:
             limits:
               cpu: 2000m
@@ -163,6 +114,8 @@ scale_sets:
             value: /run/containerd/containerd.sock
           - name: BUILDKIT_HOST
             value: tcp://buildkitd.buildkit.svc.cluster.local:1234
+          - name: RUNNER_ALLOW_RUNASROOT
+            value: 'true'
           - name: CNI_PATH
             value: /opt/cni/bin
           - name: NETCONFPATH

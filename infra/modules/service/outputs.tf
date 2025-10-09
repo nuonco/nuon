@@ -2,7 +2,7 @@ output "release" {
   description = "Outputs required for releasing a service, such as pushing a helm chart or ECR image."
 
   value = {
-    gh_role_arn        = module.github_actions.iam_role_arn
+    gh_role_arn        = aws_iam_role.github_actions.arn
     region             = local.vars.region
     eks_role_arn       = module.iam_eks_role.iam_role_arn
     ecr_repository_url = data.aws_ecr_repository.ecr_repository.repository_url
@@ -28,7 +28,7 @@ output "tags" {
 
 // NOTE(jm): legacy outputs, until we update our services to read these
 output "gh_role_arn" {
-  value = module.github_actions.iam_role_arn
+  value = aws_iam_role.github_actions.arn
 }
 
 output "region" {
