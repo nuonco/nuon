@@ -415,5 +415,21 @@ func (c *cli) installsCmd() *cobra.Command {
 	workflowGetCmd.MarkFlagRequired("workflow-id")
 	installsCmds.AddCommand(workflowGetCmd)
 
+	// NOTE(fd): this may not be the place where this ends up living
+	actionsCmd := &cobra.Command{
+		Use:   "actions",
+		Short: "View actions",
+		Long:  "View actions by install ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Actions(cmd.Context(), id, offset, limit, PrintJSON)
+		}),
+	}
+	actionsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	actionsCmd.MarkFlagRequired("install-id")
+	actionsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	actionsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum actions to return")
+	installsCmds.AddCommand(actionsCmd)
+
 	return installsCmds
 }
