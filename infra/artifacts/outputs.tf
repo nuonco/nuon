@@ -1,5 +1,5 @@
 output "gh_role_arn" {
-  value       = module.github_actions.iam_role_arn
+  value       = aws_iam_role.github_actions.arn
   description = "github role"
 }
 

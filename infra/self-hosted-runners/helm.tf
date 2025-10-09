@@ -74,7 +74,6 @@ resource "helm_release" "gha_runner_scale_sets" {
       containerMode      = each.value.container_mode
       template = merge(each.value.template, {
         spec = merge(lookup(each.value.template, "spec", {}), {
-          serviceAccountName = "${each.key}-runner"
           nodeSelector = {
             "karpenter.sh/nodepool" = local.vars.node_pool_name
           }

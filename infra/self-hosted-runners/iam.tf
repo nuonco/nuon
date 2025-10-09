@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "runner_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub"
-      values   = ["system:serviceaccount:${local.vars.runner_namespace}:${each.key}-runner"]
+      values   = ["system:serviceaccount:${local.vars.runner_namespace}:${each.key}-gha-rs-kube-mode"]
     }
 
     condition {
