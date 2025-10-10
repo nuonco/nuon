@@ -11,6 +11,7 @@ import (
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/config/refs"
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
@@ -87,6 +88,9 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		role := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
 
 		if !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
+			if run.TriggerType != app.ActionWorkflowTriggerTypeManual {
+				return nil, fmt.Errorf("break glass role can only be used for manual action triggers")
+			}
 			roleArn, ok := stack.InstallStackOutputs.AWSStackOutputs.BreakGlassRoleARNs[run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString()]
 			if !ok {
 				l.Error(fmt.Sprintf(
