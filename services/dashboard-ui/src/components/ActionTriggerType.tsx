@@ -18,7 +18,7 @@ export const ActionTriggerType: FC<IActionTriggerType> = ({
 }) => {
   return (
     <Badge
-      className={classNames('inline-flex !gap-0 !text-nowrap', {
+      className={classNames('inline-flex !gap-0 !text-nowrap text-xs', {
         [`${className}`]: Boolean(className),
       })}
       variant="code"

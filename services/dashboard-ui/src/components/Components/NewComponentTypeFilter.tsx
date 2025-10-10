@@ -126,12 +126,12 @@ export const ComponentTypeFilterDropdown: React.FC<
           }
         >
           <span className="flex items-center gap-1">
-            <span className="font-semibold text-sm">
+            <span className="font-semibold text-xs">
               <ComponentConfigType configType={opt} />
             </span>
           </span>
           <span
-            className={`ml-2 text-sm self-end opacity-0 ${groupClasses[opt][1]} ${onlyLabelClass}`}
+            className={`ml-2 text-xs self-end opacity-0 ${groupClasses[opt][1]} ${onlyLabelClass}`}
           >
             {selectedTypes.length === 1 && selectedTypes.includes(opt)
               ? 'Reset'
@@ -152,7 +152,7 @@ export const ComponentTypeFilterDropdown: React.FC<
             onClick={handleShowAll}
           >
             <span className="flex items-center gap-1">
-              <span className="font-semibold text-sm">Show all</span>
+              <span className="font-semibold text-xs">Show all</span>
             </span>
           </Button>
           {renderFilters('', '')}

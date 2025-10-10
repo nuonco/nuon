@@ -134,7 +134,7 @@ export const MainNav: FC<{
     const hrefParts = link.href.split('/')
     const isActive = pathParts[2] === hrefParts[2]
     const classes = classNames(
-      'flex items-center font-sans font-medium gap-4 text-lg leading-normal rounded-md p-2.5 w-full text-nowrap overflow-hidden',
+      'flex items-center font-sans font-medium gap-4 text-sm leading-normal rounded-md p-2 w-full text-nowrap overflow-hidden',
       {
         '!text-cool-grey-800 dark:!text-cool-grey-400 hover:bg-black/5 dark:hover:bg-white/10':
           !isActive,

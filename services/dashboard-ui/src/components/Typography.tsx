@@ -172,18 +172,18 @@ export const Text: FC<IText> = ({
   return (
     <span
       aria-level={role === 'heading' && level ? level : undefined}
-      className={classNames('flex flex-wrap items-center gap-1', {
-        'font-semibold text-xl leading-loose tracking-normal':
+      className={classNames('font-sans flex flex-wrap items-center gap-1', {
+        'font-stronger text-lg leading-loose tracking-normal':
           variant === 'semi-18',
-        'font-semibold text-base': variant === 'semi-14',
-        'font-medium text-xl': variant === 'med-18',
-        'font-medium text-base': variant === 'med-14',
-        'font-medium text-sm tracking-wide': variant === 'med-12',
-        'font-medium text-xs leading-tight tracking-wide': variant === 'med-8',
-        'text-base leading-normal': variant === 'reg-14',
-        'text-sm leading-normal tracking-wide': variant === 'reg-12',
-        'font-mono font-normal text-base leading-loose': variant === 'mono-14',
-        'font-mono font-normal text-sm leading-relaxed text-cool-grey-600 dark:text-white/70':
+        'font-stronger text-sm': variant === 'semi-14',
+        'font-strong text-lg': variant === 'med-18',
+        'font-strong text-base': variant === 'med-14',
+        'font-strong text-xs tracking-wide': variant === 'med-12',
+        'font-strong text-[10px] leading-tight tracking-wide': variant === 'med-8',
+        'text-sm leading-normal': variant === 'reg-14',
+        'text-xs leading-normal tracking-wide': variant === 'reg-12',
+        '!font-mono font-normal text-sm leading-loose': variant === 'mono-14',
+        '!font-mono font-normal text-xs leading-relaxed text-cool-grey-600 dark:text-white/70':
           variant === 'mono-12',
         'text-cool-grey-600 dark:text-white/70': isMuted,
         [`${className}`]: Boolean(className),

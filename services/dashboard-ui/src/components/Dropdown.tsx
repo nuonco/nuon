@@ -75,7 +75,7 @@ export const Dropdown: FC<IDropdown> = ({
         <div className="hidden group-focus-within:block w-inherit">
           <div
             className={classNames(
-              'absolute z-20 border divide-y rounded-md shadow-md outline-none bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50',
+              'absolute z-20 border divide-y rounded-md shadow-md outline-none bg-white text-cool-grey-950 dark:bg-dark-grey-900 dark:text-cool-grey-50',
               {
                 'left-0': alignment === 'left' && position !== 'beside',
                 'right-0': alignment === 'right' && position !== 'beside',

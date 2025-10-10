@@ -56,7 +56,7 @@ export const ModalBase = ({
     <>
       <TransitionDiv
         className={cn(
-          'modal-wrapper absolute top-0 left-0 w-screen h-screen flex',
+          'modal-wrapper absolute top-0 left-0 w-screen h-screen flex z-10',
           {}
         )}
         isVisible={isVisible}

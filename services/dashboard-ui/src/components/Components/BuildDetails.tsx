@@ -2,7 +2,7 @@
 
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { CancelRunnerJobButton } from '@/components/CancelRunnerJobButton'
-import { RunnerJobPlanModal } from '@/components/Runners/RunnerJobPlanModal'
+import { RunnerJobPlanModal } from '@/components/OldRunners/RunnerJobPlanModal'
 import { StatusBadge } from '@/components/Status'
 import { ToolTip } from '@/components/ToolTip'
 import { Text } from '@/components/Typography'
