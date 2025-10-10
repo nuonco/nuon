@@ -2,7 +2,7 @@
 name: pull request checks
 "on":
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, edited]
 permissions:
   contents: read
   pull-requests: write
