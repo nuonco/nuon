@@ -71,7 +71,7 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs: initOrgs }) => {
               <OrgAvatar name={org.name} logoURL={org.logo_url} />
               <span>
                 <Text
-                  className="break-all text-md font-medium leading-normal mb-1 !flex-nowrap"
+                  className="break-all text-[12px] font-medium leading-normal mb-1 !flex-nowrap"
                   title={
                     org.sandbox_mode ? 'Org is in sandbox mode' : undefined
                   }

@@ -157,8 +157,9 @@ export type TRunnerJob = components['schemas']['app.RunnerJob']
 export type TRunnerHealthCheck = components['schemas']['app.RunnerHealthCheck']
 export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
 export type TRunnerMngHeartbeat = {
-  mng: TRunnerHeartbeat
+  build: TRunnerHeartbeat
   install: TRunnerHeartbeat
+  mng: TRunnerHeartbeat   
   org: TRunnerHeartbeat
 }
 export type TRunnerSettings = components['schemas']['app.RunnerGroupSettings']

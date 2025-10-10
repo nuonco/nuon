@@ -56,7 +56,11 @@ export const RunnerMeta = ({
   })
 
   const runnerHeartbeat =
-    heartbeats.install ?? heartbeats?.org ?? heartbeats[''] ?? undefined
+    heartbeats.install ??
+    heartbeats?.org ??
+    heartbeats?.build ??
+    heartbeats[''] ??
+    undefined
 
   return (
     <div>

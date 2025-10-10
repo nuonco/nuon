@@ -1,4 +1,5 @@
-import React from 'react'
+import type { ElementType, HTMLAttributes } from 'react'
+import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
 
 export type TTextFamily = 'sans' | 'mono'
@@ -11,16 +12,9 @@ export type TTextVariant =
   | 'subtext'
   | 'label'
 export type TTextWeight = 'normal' | 'strong' | 'stronger'
-export type TTextTheme =
-  | 'default'
-  | 'neutral'
-  | 'info'
-  | 'success'
-  | 'warn'
-  | 'brand'
-  | 'error'
+export type TTextTheme = TTheme
 
-export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
+export interface IText extends HTMLAttributes<HTMLSpanElement> {
   family?: TTextFamily
   level?: 1 | 2 | 3 | 4 | 5 | 6
   role?: 'paragraph' | 'heading' | 'code' | 'time'
@@ -80,7 +74,7 @@ export const Text = ({
   ...props
 }: IText) => {
   // Optionally render as semantic element
-  let Element: React.ElementType = 'span'
+  let Element: ElementType = 'span'
   if (role === 'heading' && level) Element = `h${level}` as const
   else if (role === 'paragraph') Element = 'p'
   else if (role === 'code') Element = 'code'
@@ -96,6 +90,7 @@ export const Text = ({
     <Element
       aria-level={role === 'heading' && level ? level : undefined}
       className={cn(
+        Element === 'span' || Element === 'time' ? 'inline' : 'block',
         FAMILY_CLASSES[family],
         VARIANT_CLASSES[variant],
         WEIGHT_CLASSES[weight],

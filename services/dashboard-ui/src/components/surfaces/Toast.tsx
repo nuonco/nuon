@@ -1,18 +1,19 @@
 'use client'
 
-import React, { forwardRef, useEffect, useRef } from 'react'
+import { forwardRef, useEffect, useRef, type HTMLAttributes } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useToast } from '@/hooks/use-toast'
+import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
 import './Toast.css'
 
-export type TToastTheme = 'default' | 'info' | 'error' | 'warn' | 'success'
+export type TToastTheme = TTheme
 
 export interface IToast
   extends Omit<
-    React.HTMLAttributes<HTMLDivElement>,
+    HTMLAttributes<HTMLDivElement>,
     'onMouseEnter' | 'onMouseLeave'
   > {
   heading: React.ReactNode
@@ -26,12 +27,16 @@ export interface IToast
 export const THEME_CLASSES = {
   default:
     'bg-cool-grey-50 text-dark-grey-950 dark:bg-dark-grey-800 dark:text-white',
+  neutral:
+    'bg-cool-grey-100 text-cool-grey-800 !border-cool-grey-400 dark:bg-dark-grey-600 dark:!border-cool-grey-600/40 dark:text-cool-grey-400',
   success:
-    'bg-green-100/50 text-green-800 !border-green-400 dark:bg-[#0C1B14] dark:!border-green-500/40 dark:text-green-500',
-  warn: 'bg-orange-100/50 text-orange-800 !border-orange-400 dark:bg-[#2E1E10] dark:!border-orange-500/40 dark:text-orange-500',
+    'bg-[#F4FBF7] text-green-800 !border-green-400 dark:bg-[#0C1B14] dark:!border-green-500/40 dark:text-green-500',
+  warn: 'bg-[#FFF5EB] text-orange-800 !border-orange-400 dark:bg-[#2E1E10] dark:!border-orange-500/40 dark:text-orange-500',
   error:
-    'bg-red-100/50 text-red-800 !border-red-300 dark:bg-[#290C0D] dark:!border-red-500/40 dark:text-red-500',
-  info: 'bg-blue-100/50 text-blue-800 !border-blue-400 dark:bg-[#0F172A] dark:!border-blue-500/40 dark:text-blue-500',
+    'bg-[#FEF2F2] text-red-800 !border-red-300 dark:bg-[#290C0D] dark:!border-red-500/40 dark:text-red-500',
+  info: 'bg-[#FAFBFF] text-blue-800 !border-blue-400 dark:bg-[#0F172A] dark:!border-blue-500/40 dark:text-blue-500',
+  brand:
+    'bg-[#FCFAFF] text-primary-800 !border-primary-400 dark:bg-[#251932] dark:!border-primary-600/40 dark:text-primary-500',
 }
 
 // Helper function to determine the appropriate role and aria-live based on theme
@@ -50,6 +55,8 @@ const getToastAccessibilityProps = (theme: TToastTheme) => {
     case 'success':
     case 'info':
     case 'default':
+    case 'neutral':
+    case 'brand':
       return {
         role: 'status' as const,
         'aria-live': 'polite' as const,
