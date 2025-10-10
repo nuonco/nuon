@@ -23,6 +23,21 @@ const (
 	WorkflowStepExecutionTypeHidden   WorkflowStepExecutionType = "hidden"
 )
 
+type WorkflowStepTargetType string
+
+// install_cloudformation_stack
+// install_sandbox_run
+// install_runner_update
+// install_deploy
+// install_action_workflow_run (can be many of these)
+const (
+	WorkflowStepTargetTypeInstallCloudformationStack = "install_cloudformation_stack"
+	WorkflowStepTargetTypeInstallSandboxRun          = "install_sandbox_run"
+	WorkflowStepTargetTypeInstallRunnerUpdate        = "install_runner_update"
+	WorkflowStepTargetTypeInstallDeploy              = "install_deploy"
+	WorkflowStepTargetTypeInstallActionWorkflowRun   = "install_action_workflow_run"
+)
+
 type WorkflowStep struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
