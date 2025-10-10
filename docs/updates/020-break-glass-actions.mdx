@@ -1,5 +1,5 @@
 ---
-title: 020 - Break glass actions 
+title: 020 - Break glass actions
 description: Define actions that customers can enable to break glass.
 ---
 
@@ -7,11 +7,11 @@ _Oct 7, 2025_
 
 Define actions that can use break glass roles for executing privileged operations.
 
-<div className="badge badge--primary">v0.19.658</div>
+<div className="badge badge--primary">v0.19.662</div>
 
 ## Actions with break glass permissions
 
-Actions can now utilize break glass roles and policies that have been enabled via an install CloudFormation stack. This 
+Actions can now utilize break glass roles and policies that have been enabled via an install CloudFormation stack. This
 allows for elevated permissions during critical operations while maintaining security boundaries.
 
 ### Break Glass Role Configuration
@@ -92,8 +92,8 @@ Once enabled, the roles can be referenced in your actions, providing secure acce
 
 ### Security Considerations
 
-Break glass roles enable a customer to temporarily grant elevated permissions and should be used with caution. They are 
-primarily designed for mitigating customer issues, running migrations and other opt-in operations that require a 
+Break glass roles enable a customer to temporarily grant elevated permissions and should be used with caution. They are
+primarily designed for mitigating customer issues, running migrations and other opt-in operations that require a
 customer to grant temporary elevated permissions.
 
 ## Nuon Workflows TUI
@@ -113,3 +113,5 @@ You will then see all recent workflows, and can select a workflow to enter the T
 
 - Fixed an issue where some Nuon Workflows would not generate if too many actions or components were defined.
 - Fixed an issue where some Nuon Workflows could fail silently.
+- Reduced logging volume by not logging requests unless debug flags are enabled.
+- Reduced metrics volume by pruning some redundant metrics.
