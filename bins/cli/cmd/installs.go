@@ -89,9 +89,14 @@ func (c *cli) installsCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
 	createCmd.MarkFlagRequired("app-id")
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name you want to give this install")
-	createCmd.MarkFlagRequired("name")
+
+	if !c.cfg.Preview {
+		createCmd.MarkFlagRequired("name")
+	}
 	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
-	createCmd.MarkFlagRequired("region")
+	if !c.cfg.Preview {
+		createCmd.MarkFlagRequired("region")
+	}
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
 	installsCmds.AddCommand(createCmd)
