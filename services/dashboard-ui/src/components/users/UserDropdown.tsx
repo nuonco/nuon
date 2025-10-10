@@ -58,6 +58,7 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
           href="/api/auth/logout"
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
+          isExternal
         >
           Log out <Icon variant="SignOut" />
         </Link>
