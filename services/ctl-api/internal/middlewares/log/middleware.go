@@ -35,29 +35,43 @@ func (r responseBodyWriter) Write(b []byte) (int, error) {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		w := &responseBodyWriter{body: &bytes.Buffer{}, ResponseWriter: ctx.Writer}
-		ctx.Writer = w
-
-		childLogger := m.setCTXLogger(ctx)
-
 		startAt := time.Now()
 
-		// Disable these for now. It doubles our log bill.
-		// reqZapFields := m.requestToZapFields(ctx, startAt)
-		// requestMessage := fmt.Sprintf("api request: %s", ctx.FullPath())
-		// childLogger.Info(requestMessage, reqZapFields...)
+		w := &responseBodyWriter{body: &bytes.Buffer{}, ResponseWriter: ctx.Writer}
+		ctx.Writer = w
+		childLogger := m.setCTXLogger(ctx)
+
+		logRequests := false
+		if m.cfg.ServiceDeployment == "admin" {
+			logRequests = true
+		} else if m.cfg.ForceDebugMode {
+			logRequests = true
+		} else {
+			org, _ := cctx.OrgFromContext(ctx)
+			if org != nil {
+				logRequests = org.DebugMode
+			}
+		}
+
+		if logRequests {
+			reqZapFields := m.requestToZapFields(ctx, startAt)
+			requestMessage := fmt.Sprintf("req: %s %s", ctx.Request.Method, ctx.FullPath())
+			childLogger.Info(requestMessage, reqZapFields...)
+		}
 
 		ctx.Next()
 
 		status := ctx.Writer.Status()
 		duration := float64(time.Since(startAt).Milliseconds())
 		respZapFields := m.responseToZapFields(ctx, w, startAt)
-		responseMessage := fmt.Sprintf("%d %s %s (%.2fms)", status, ctx.Request.Method, ctx.FullPath(), duration)
+		responseMessage := fmt.Sprintf("res: %s %s %d (%.2fms)", ctx.Request.Method, ctx.FullPath(), status, duration)
 
 		if status >= 500 {
 			childLogger.Error(responseMessage, respZapFields...)
 		} else {
-			childLogger.Info(responseMessage, respZapFields...)
+			if logRequests {
+				childLogger.Info(responseMessage, respZapFields...)
+			}
 		}
 	}
 }
