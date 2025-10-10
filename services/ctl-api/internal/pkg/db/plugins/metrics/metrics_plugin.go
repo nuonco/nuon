@@ -134,7 +134,6 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 
 	preloadCount := float64(len(tx.Statement.Preloads))
 
-	m.metricsWriter.Incr("gorm_operation", tags)
 	m.metricsWriter.Timing("gorm_operation_latency", dur, tags)
 	m.metricsWriter.Gauge("gorm_operation.response_size", float64(respSize), tags)
 	m.metricsWriter.Gauge("gorm_operation.preload_count", preloadCount, tags)
