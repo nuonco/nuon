@@ -25,8 +25,7 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 	if err != nil {
 		return err
 	}
-	l.Info("returning before starting children event loops for action crons")
-	return nil
+	l.Info("starting children event loops for action crons")
 
 	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, sreq.ID)
 	if err != nil {
