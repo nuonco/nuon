@@ -10,7 +10,7 @@ buildkit:
   image:
     repository: moby/buildkit
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources:
     limits:
       cpu: 30000m
