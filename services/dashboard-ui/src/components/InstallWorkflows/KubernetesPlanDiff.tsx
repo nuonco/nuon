@@ -25,10 +25,10 @@ export const KubernetesManifestDiffViewer: React.FC<
 > = ({ approvalContents }) => {
   const plan = approvalContents.plan
   const [expanded, setExpanded] = useState<number | null>(null)
-
+  
   return (
     <div className="flex flex-col gap-2">
-      {plan.map((diff, index) => {
+      {plan?.length ? plan.map((diff, index) => {
         const isOpen = expanded === index
         return (
           <div
@@ -132,7 +132,7 @@ export const KubernetesManifestDiffViewer: React.FC<
             )}
           </div>
         )
-      })}
+      }) : <span>No plan data</span>}
     </div>
   )
 }

@@ -1,0 +1,35 @@
+.org-avatar {
+  --slow: 500ms
+}
+
+.org-avatar .enter .status {
+  opacity: 0;
+  animation: enter-org-status-above var(--duration-fastest) var(--ease-cubic)
+    var(--duration-fastest) forwards;
+}
+
+.org-avatar .exit .status {
+  animation: exit-org-status-above var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+@keyframes enter-org-status-above {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes exit-org-status-above {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}

@@ -1,7 +1,15 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { PageSection } from '@/components/layout/PageSection'
+import { Text } from '@/components/common/Text'
+import { getInstallById, getOrgById } from '@/lib'
+import type { TPageProps } from '@/types'
+import { InstallComponents } from './components'
+
+// NOTE: old layout stuff
+import { ErrorBoundary } from 'react-error-boundary'
 import {
   DashboardContent,
   ErrorFallback,
@@ -10,13 +18,15 @@ import {
   InstallPageSubNav,
   InstallManagementDropdown,
   Loading,
-  Text,
+  Text as OldText,
   Time,
 } from '@/components'
-import { getInstallById } from '@/lib'
-import { InstallComponents } from './components'
 
-export async function generateMetadata({ params }): Promise<Metadata> {
+type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
+
+export async function generateMetadata({
+  params,
+}: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const { data: install } = await getInstallById({ installId, orgId })
 
@@ -25,12 +35,48 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function InstallComponentsPage({ params, searchParams }) {
+export default async function InstallComponentsPage({
+  params,
+  searchParams,
+}: TInstallPageProps) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const { data: install } = await getInstallById({ orgId, installId })
+  const [{ data: install }, { data: org }] = await Promise.all([
+    getInstallById({ orgId, installId }),
+    getOrgById({ orgId }),
+  ])
 
-  return (
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection isScrollable>
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          Install components
+        </Text>
+        <Text theme="neutral">
+          View and manage all components for this install.
+        </Text>
+      </HeadingGroup>
+
+      {/* old layout stuff */}
+      <ErrorBoundary fallbackRender={ErrorFallback}>
+        <Suspense
+          fallback={
+            <Loading loadingText="Loading components..." variant="page" />
+          }
+        >
+          <InstallComponents
+            install={install}
+            installId={install?.id}
+            orgId={orgId}
+            offset={sp['offset'] || '0'}
+            q={sp['q'] || ''}
+            types={sp['types'] || ''}
+          />
+        </Suspense>
+      </ErrorBoundary>
+      {/* old layout stuff */}
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
@@ -55,20 +101,20 @@ export default async function InstallComponentsPage({ params, searchParams }) {
           {install?.metadata?.managed_by &&
           install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
             <span className="flex flex-col gap-2">
-              <Text isMuted>Managed By</Text>
-              <Text>
+              <OldText isMuted>Managed By</OldText>
+              <OldText>
                 <FileCodeIcon />
                 Config File
-              </Text>
+              </OldText>
             </span>
           ) : null}
           <span className="flex flex-col gap-2">
-            <Text isMuted>App config</Text>
-            <Text>
+            <OldText isMuted>App config</OldText>
+            <OldText>
               <Link href={`/${orgId}/apps/${install?.app_id}`}>
                 {install?.app?.name}
               </Link>
-            </Text>
+            </OldText>
           </span>
           <InstallStatuses />
 

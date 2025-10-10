@@ -18,7 +18,7 @@ export const Badge: FC<IBadge> = ({
   return (
     <span
       className={classNames(
-        'text-sm px-2 py-1 border flex items-center justify-start gap-2 w-fit h-fit leading-normal',
+        'text-xs px-2 py-1 border flex items-center justify-start gap-2 w-fit h-fit leading-normal',
         {
           'rounded-full': variant === 'default',
           'rounded-lg font-mono tracking-wide': variant === 'code',

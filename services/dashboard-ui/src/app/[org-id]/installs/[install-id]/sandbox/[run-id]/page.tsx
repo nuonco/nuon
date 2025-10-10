@@ -1,7 +1,25 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+
+import {
+  CalendarBlankIcon,
+  CaretLeftIcon,
+  TimerIcon,
+} from '@phosphor-icons/react/dist/ssr'
+import { BackLink } from '@/components/common/BackLink'
+import { BackToTop } from '@/components/common/BackToTop'
+import { PageSection } from '@/components/layout/PageSection'
+
+import {
+  getInstallById,
+  getInstallSandboxRunById,
+  getWorkflowById,
+  getOrgById,
+} from '@/lib'
+import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
+
+// NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
-import { CalendarBlank, CaretLeft, Timer } from '@phosphor-icons/react/dist/ssr'
 import {
   AppSandboxConfig,
   AppSandboxVariables,
@@ -22,12 +40,6 @@ import {
   Time,
   ToolTip,
 } from '@/components'
-import {
-  getInstallById,
-  getInstallSandboxRunById,
-  getWorkflowById,
-} from '@/lib'
-import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -51,13 +63,15 @@ export default async function SandboxRuns({ params }) {
     ['install-id']: installId,
     ['run-id']: runId,
   } = await params
-  const [{ data: install }, { data: sandboxRun }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getInstallSandboxRunById({
-      orgId,
-      runId,
-    }),
-  ])
+  const [{ data: install }, { data: sandboxRun }, { data: org }] =
+    await Promise.all([
+      getInstallById({ installId, orgId }),
+      getInstallSandboxRunById({
+        orgId,
+        runId,
+      }),
+      getOrgById({ orgId }),
+    ])
 
   const { data: workflow } = await getWorkflowById({
     orgId,
@@ -69,7 +83,89 @@ export default async function SandboxRuns({ params }) {
         ?.at(-1)
     : null
 
-  return (
+  const containerId = 'sandbox-run-page'
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection className="!p-0" id={containerId} isScrollable>
+      {/* old page content */}
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+        <div className="md:col-span-8">
+          <BackLink className="ml-6 mt-6" />
+
+          {workflow &&
+          step &&
+          step?.approval &&
+          !step?.approval?.response &&
+          step?.status?.status !== 'auto-skipped' ? (
+            <Section
+              className="border-b"
+              childrenClassName="flex flex-col gap-6"
+              heading="Approve change"
+            >
+              <ApprovalStep
+                step={step}
+                approval={step.approval}
+                workflowId={workflow?.id}
+              />
+            </Section>
+          ) : null}
+
+          <LogStreamProvider initLogStream={sandboxRun?.log_stream}>
+            <OperationLogsSection
+              heading={sentanceCase(sandboxRun?.run_type) + ' logs'}
+            />
+          </LogStreamProvider>
+
+          {workflow &&
+          step &&
+          step?.approval &&
+          step?.approval?.response &&
+          step?.status?.status !== 'auto-skipped' ? (
+            <Section
+              className="border-t"
+              childrenClassName="flex flex-col gap-6"
+              heading="Approve change"
+            >
+              <ApprovalStep
+                step={step}
+                approval={step.approval}
+                workflowId={workflow?.id}
+              />
+            </Section>
+          ) : null}
+        </div>
+
+        <div className="divide-y flex flex-col md:col-span-4">
+          <Section className="flex-initial" heading="Sandbox">
+            <div className="flex flex-col gap-3">
+              <AppSandboxConfig sandboxConfig={sandboxRun.app_sandbox_config} />
+              <AppSandboxVariables
+                variables={sandboxRun.app_sandbox_config?.variables}
+              />
+            </div>
+          </Section>
+
+          {sandboxRun?.runner_jobs?.at(0)?.outputs ? (
+            <Section className="flex-initial" heading="Sandbox outputs">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Text variant="med-12">Outputs</Text>
+                  <ClickToCopy className="hover:bg-black/10 rounded-md p-1 text-sm">
+                    <span className="hidden">
+                      {JSON.stringify(sandboxRun?.runner_jobs?.at(0).outputs)}
+                    </span>
+                  </ClickToCopy>
+                </div>
+                <JsonView data={sandboxRun?.runner_jobs?.at(0)?.outputs} />
+              </div>
+            </Section>
+          ) : null}
+        </div>
+      </div>
+
+      {/* old page content */}
+      <BackToTop containerId={containerId} />
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
@@ -93,7 +189,7 @@ export default async function SandboxRuns({ params }) {
           <Link
             href={`/${orgId}/installs/${installId}/workflows/${sandboxRun?.install_workflow_id}?target=${step?.id}`}
           >
-            <CaretLeft />
+            <CaretLeftIcon />
             View workflow
           </Link>
         ) : null
@@ -101,14 +197,14 @@ export default async function SandboxRuns({ params }) {
       meta={
         <div className="flex gap-8 items-center justify-start pb-6">
           <Text>
-            <CalendarBlank />
+            <CalendarBlankIcon />
             <Time time={sandboxRun.created_at} />
           </Text>
           {sandboxRun?.runner_jobs?.at(0)?.status === 'finished' ||
           sandboxRun?.runner_jobs?.at(0)?.status === 'failed' ||
           sandboxRun?.runner_jobs?.at(0)?.status === 'cancelled' ? (
             <Text>
-              <Timer />
+              <TimerIcon />
               <Duration
                 beginTime={sandboxRun.created_at}
                 endTime={sandboxRun.updated_at}
