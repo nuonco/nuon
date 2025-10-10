@@ -161,7 +161,7 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
         : null}
       <Button
         disabled={hasBeenApproved}
-        className={classNames('text-sm !font-medium w-fit', {
+        className={classNames('text-sm w-fit !h-[32px] !leading-none', {
           [`${buttonClassName}`]: Boolean(buttonClassName),
         })}
         onClick={() => {

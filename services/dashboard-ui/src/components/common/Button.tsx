@@ -58,9 +58,9 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   `,
   ghost: `
     border border-transparent rounded-md bg-inherit
-    hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500
-    focus:outline-primary-400/80 focus:bg-cool-grey-50 dark:focus:bg-dark-grey-500
-    active:bg-cool-grey-100 dark:active:bg-dark-grey-400
+    hover:bg-black/3 dark:hover:bg-white/3
+    focus:outline-primary-400/80 focus:bg-black/5 dark:focus:bg-white/5
+    active:bg-black/6 dark:active:bg-white/6
     disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:dark:bg-transparent
   `,
   secondary: `
@@ -73,9 +73,9 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   tab: `
     border-b-3 border-transparent bg-transparent dark:bg-transparent text-primary-600 dark:text-primary-400
     hover:!border-primary-600/50
-    focus:outline-primary-400/80 focus:bg-cool-grey-50 dark:focus:bg-dark-grey-500
+    focus:outline-none focus:bg-cool-grey-50/20 dark:focus:bg-dark-grey-500/20
     active:!border-primary-600/80
-    disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
+    disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700 disabled:hover:!border-transparent
   `,
 }
 

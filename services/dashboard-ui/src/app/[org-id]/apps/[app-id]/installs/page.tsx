@@ -1,6 +1,13 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { PageSection } from '@/components/layout/PageSection'
+import { Text } from '@/components/common/Text'
+import { getAppById, getOrgById } from '@/lib'
+import { AppInstalls } from './installs'
+
+// NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
 import {
   AppCreateInstallButton,
@@ -10,8 +17,6 @@ import {
   Loading,
   Section,
 } from '@/components'
-import { getAppById } from '@/lib'
-import { AppInstalls } from './installs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
@@ -25,13 +30,42 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function AppInstallsPage({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
-  const { data: app, error } = await getAppById({ appId, orgId })
+  const [{ data: app, error }, { data: org }] = await Promise.all([
+    getAppById({ appId, orgId }),
+    getOrgById({ orgId }),
+  ])
 
   if (error) {
     notFound()
   }
 
-  return (
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection isScrollable>
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          App installs
+        </Text>
+      </HeadingGroup>
+
+      {/* old layout stuff */}
+      <ErrorBoundary fallbackRender={ErrorFallback}>
+        <Suspense
+          fallback={
+            <Loading variant="page" loadingText="Loading installs..." />
+          }
+        >
+          <AppInstalls
+            app={app}
+            appId={appId}
+            orgId={orgId}
+            offset={sp['offset'] || '0'}
+            q={sp['q'] || ''}
+          />
+        </Suspense>
+      </ErrorBoundary>
+      {/* old layout stuff */}
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },

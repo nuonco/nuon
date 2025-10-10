@@ -1,23 +1,29 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Link } from '@/components/common/Link'
+import { PageSection } from '@/components/layout/PageSection'
+import { Text } from '@/components/common/Text'
+import { getInstallById, getOrgById } from '@/lib'
+import { CurrentInputs } from './inputs'
+import { Readme } from './readme'
+
+// NOTE: old install components
+import { ErrorBoundary } from 'react-error-boundary'
 import {
   DashboardContent,
   ErrorFallback,
   InstallPageSubNav,
   InstallStatuses,
   InstallManagementDropdown,
-  Link,
+  Link as OldLink,
   Loading,
   Section,
-  Text,
+  Text as OldText,
   Time,
 } from '@/components'
-import { getInstallById } from '@/lib'
-import { CurrentInputs } from './inputs'
-import { Readme } from './readme'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -30,14 +36,10 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
 export default async function Install({ params }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const {
-    data: install,
-    error,
-    status,
-  } = await getInstallById({ installId, orgId }).catch((err) => {
-    console.error(err)
-    notFound()
-  })
+  const [{ data: install, error, status }, { data: org }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getOrgById({ orgId }),
+  ])
 
   if (error) {
     if (status === 404) {
@@ -47,7 +49,43 @@ export default async function Install({ params }) {
     }
   }
 
-  return (
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection className="!pt-0" isScrollable>
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+        <Section
+          heading="README"
+          className="md:col-span-8 !p-0"
+          headingClassName="px-6 pt-6"
+          childrenClassName="overflow-auto px-6 pb-6"
+        >
+          <ErrorBoundary fallbackRender={ErrorFallback}>
+            <Suspense
+              fallback={
+                <Loading
+                  variant="stack"
+                  loadingText="Loading install README..."
+                />
+              }
+            >
+              <Readme installId={installId} orgId={orgId} />
+            </Suspense>
+          </ErrorBoundary>
+        </Section>
+
+        <div className="divide-y flex flex-col col-span-4">
+          <Section className="flex-initial">
+            <ErrorBoundary fallbackRender={ErrorFallback}>
+              <Suspense
+                fallback={<Loading loadingText="Loading install inputs..." />}
+              >
+                <CurrentInputs installId={installId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
+          </Section>
+        </div>
+      </div>
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
@@ -68,20 +106,20 @@ export default async function Install({ params }) {
           {install?.metadata?.managed_by &&
           install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
             <span className="flex flex-col gap-2">
-              <Text isMuted>Managed By</Text>
-              <Text>
+              <OldText isMuted>Managed By</OldText>
+              <OldText>
                 <FileCodeIcon />
                 Config File
-              </Text>
+              </OldText>
             </span>
           ) : null}
           <span className="flex flex-col gap-2">
-            <Text isMuted>App config</Text>
-            <Text>
-              <Link href={`/${orgId}/apps/${install.app_id}`}>
+            <OldText isMuted>App config</OldText>
+            <OldText>
+              <OldLink href={`/${orgId}/apps/${install.app_id}`}>
                 {install?.app?.name}
-              </Link>
-            </Text>
+              </OldLink>
+            </OldText>
           </span>
           <InstallStatuses />
 

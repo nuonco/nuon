@@ -32,7 +32,7 @@ export const RadioInput: FC<IRadioInput> = ({
         {...props}
         type="radio"
       />
-      <span className="font-medium text-sm">{labelText}</span>
+      <span className="font-medium text-xs">{labelText}</span>
     </label>
   )
 }
@@ -72,7 +72,7 @@ export const CheckboxInput = forwardRef<HTMLInputElement, ICheckboxInput>(
         />
         {labelText ? (
           <span
-            className={classNames('font-medium text-sm', {
+            className={classNames('font-medium text-xs', {
               [`${labelTextClassName}`]: Boolean(labelTextClassName),
             })}
           >
@@ -92,7 +92,7 @@ export const Input: FC<
   return (
     <input
       className={classNames(
-        'px-3 py-2 text-base rounded border shadow-sm bg-cool-grey-50 dark:bg-dark-grey-200 [&:user-invalid]:border-red-600 [&:user-invalid]:dark:border-red-600 focus:outline outline-1 outline-primary-500 dark:outline-primary-400 disable-ligatures font-mono',
+        'px-3 py-2 text-sm rounded border shadow-sm bg-cool-grey-50 dark:bg-dark-grey-800 [&:user-invalid]:border-red-600 [&:user-invalid]:dark:border-red-600 focus:outline outline-1 outline-primary-500 dark:outline-primary-400 disable-ligatures font-mono',
         {
           'bg-cool-grey-200 text-cool-grey-500 dark:bg-dark-grey-300 dark:text-dark-grey-900 cursor-not-allowed':
             props?.disabled,
