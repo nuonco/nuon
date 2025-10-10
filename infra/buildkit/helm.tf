@@ -1,15 +1,15 @@
 locals {
   buildkit = {
-    value_file = "values/buildkit.yaml"
+    value_file    = "values/buildkit.yaml"
     override_file = "values/${var.env}.yaml"
   }
 }
 
 resource "helm_release" "buildkit" {
-  namespace        = local.vars.namespace
-  name             = "buildkit"
+  namespace = local.vars.namespace
+  name      = "buildkit"
 
-  create_namespace = true
+  create_namespace = false
 
   repository = "./charts"
   chart      = "buildkit"
