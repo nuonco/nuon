@@ -50,9 +50,9 @@ OS=$(uname -s |  awk '{print tolower($0)}')
 echo "✅ using version ${OS}_${ARCH}..."
 
 # Check if version override is provided
-if [ -n "${NUONCTL_VERSION:-}" ]; then
-  echo "⚠️  overriding version with NUONCTL_VERSION=${NUONCTL_VERSION}"
-  VERSION=$NUONCTL_VERSION
+if [ -n "${NUON_VERSION:-}" ]; then
+  echo "⚠️  overriding version with NUON_VERSION=${NUON_VERSION}"
+  VERSION=$NUON_VERSION
 else
   echo "calculating latest version..."
   VERSION=$(curl -s $BASE_URL/latest.txt)
