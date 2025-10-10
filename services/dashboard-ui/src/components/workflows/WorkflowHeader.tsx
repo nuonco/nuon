@@ -1,5 +1,6 @@
 'use client'
 
+import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/Badge'
 import { Link } from '@/components/Link'
 import { Notice } from '@/components/Notice'
@@ -37,6 +38,8 @@ export const WorkflowHeader = ({
 
   return (
     <header className="px-6 py-8 flex flex-col pt-6 gap-6 border-b">
+      <BackLink />
+
       {error?.error ? (
         <Notice>{error?.error || 'Unable to load workflow'}</Notice>
       ) : null}

@@ -39,7 +39,7 @@ export const OrgSummary: FC<IOrgSummary> = ({
         <div className="org-summary-name">
           <Text
             className={classNames(
-              'text-md !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
+              'text-[12px] !font-medium leading-normal max-w-[150px] mb-1 break-all text-left !flex-nowrap'
             )}
             title={org?.sandbox_mode ? 'Org is in sandbox mode' : undefined}
           >

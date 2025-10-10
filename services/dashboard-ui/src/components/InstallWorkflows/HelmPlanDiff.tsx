@@ -25,6 +25,7 @@ interface HelmPlan {
   op: string
   plan: string
   helm_content_diff?: HelmContentDiff[]
+  k8s_content_diff?:  HelmContentDiff[]
 }
 // payload contains n lines seprated by \n
 // delta 1 : before
@@ -106,7 +107,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
       {/* Header */}
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
         <Text variant="med-18">
-          Helm Changes Overview
+          {planData?.k8s_content_diff ? "Kubernetes" : "Helm"} changes overview
         </Text>
         <Text isMuted>Operation: {planData.op}</Text>
       </div>
@@ -154,7 +155,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
       <div className="divide-y">
         {changes.map((change, index) => {
           const isExpanded = expandedIndex === index
-          const diff = findDiffForChange(change, planData.helm_content_diff)
+          const diff = findDiffForChange(change, planData.helm_content_diff || planData?.k8s_content_diff)
           return (
             <div key={index} className="px-4 py-4 sm:px-6">
               {/* Change row */}

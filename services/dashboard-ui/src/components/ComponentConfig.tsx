@@ -451,7 +451,7 @@ export const ConfigVariables: FC<{
   isNotTruncated?: boolean
 }> = ({ keys, variables, isNotTruncated = false }) => {
   return (
-    <div className="grid grid-cols-kv">
+    <div className="grid grid-cols-[fit-content(30rem)_auto]">
       <Text className="text-sm !font-medium text-cool-grey-600 dark:text-cool-grey-500 pb-3 pr-4 border-b">
         Name
       </Text>

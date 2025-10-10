@@ -38,7 +38,7 @@ export const DataTable: FC<IDataTable> = ({ headers, initData }) => {
         <thead>
           <tr className="border-b text-left">
             {headers.map((header, i) => (
-              <th className="text-sm" key={`header-${i}`}>
+              <th className="text-xs font-sans" key={`header-${i}`}>
                 {header}
               </th>
             ))}
@@ -112,7 +112,7 @@ export const Table: FC<ITable> = ({
               {group.headers.map((header) => (
                 <th
                   className={classNames(
-                    'text-base font-medium leading-normal p-4 text-cool-grey-600 dark:text-cool-grey-500',
+                    'text-sm font-sans font-medium leading-normal p-4 text-cool-grey-600 dark:text-cool-grey-500',
                     {
                       'cursor-pointer': header.column.getCanSort(),
                     }
@@ -180,7 +180,7 @@ export const DataTableSearch: FC<{
     <label className="relative">
       <MagnifyingGlass className="text-cool-grey-600 dark:text-cool-grey-500 absolute top-2.5 left-2" />
       <input
-        className="rounded-md pl-8 pr-3.5 py-1.5 h-[36px] text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
+        className="rounded-md pl-8 pr-3.5 py-1.5 h-[36px] text-sm font-sans border bg-white dark:bg-dark-grey-800 placeholder:text-cool-grey-600 dark:placeholder:text-cool-grey-500 md:min-w-80"
         type="search"
         placeholder="Search..."
         value={value}

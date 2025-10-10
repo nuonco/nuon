@@ -1,10 +1,12 @@
-import React from 'react'
+import type { HTMLAttributes } from 'react'
+import { Icon } from '@/components/common/Icon'
+import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
 import { kebabToWords, toSentenceCase } from '@/utils/string-utils'
 import { getStatusTheme, getStatusIconVariant } from '@/utils/status-utils'
-import { Icon } from './Icon'
 
 // Status type and variant
+export type TStatusTheme = TTheme
 export type TStatusType = string | 'success' | 'error'
 type TStatusVariant = 'default' | 'badge' | 'timeline'
 
@@ -29,9 +31,10 @@ const INDICATOR_SIZE: Record<TStatusVariant, string> = {
 
 const INDICATOR_THEME_CLASSES: Record<
   TStatusVariant,
-  Record<string, string>
+  Record<TTheme, string>
 > = {
   default: {
+    default: 'bg-cool-grey-600 dark:bg-white/70',
     neutral: 'bg-cool-grey-600 dark:bg-white/70',
     success: 'bg-green-600 dark:bg-green-500',
     error: 'bg-red-600 dark:bg-red-500',
@@ -40,6 +43,7 @@ const INDICATOR_THEME_CLASSES: Record<
     brand: 'bg-primary-600 dark:bg-primary-400',
   },
   badge: {
+    default: 'bg-cool-grey-600 dark:bg-white/70',
     neutral: 'bg-cool-grey-600 dark:bg-white/70',
     success: 'bg-green-600 dark:bg-green-500',
     error: 'bg-red-600 dark:bg-red-500',
@@ -48,6 +52,7 @@ const INDICATOR_THEME_CLASSES: Record<
     brand: 'bg-primary-600 dark:bg-primary-400',
   },
   timeline: {
+    default: 'bg-cool-grey-200 dark:bg-cool-grey-800 dark:text-cool-grey-400',
     neutral: 'bg-cool-grey-200 dark:bg-cool-grey-800 dark:text-cool-grey-400',
     success:
       'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400',
@@ -66,7 +71,7 @@ const STATUS_TEXT_CLASSES = {
 }
 
 export interface IStatus
-  extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'> {
+  extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   children?: React.ReactNode
   iconSize?: number
   isWithoutText?: boolean

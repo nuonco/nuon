@@ -10,8 +10,8 @@ import {
 } from '@/lib/segment-analytics'
 import { AccountProvider } from '@/providers/account-provider'
 import { UserJourneyProvider } from '@/providers/user-journey-provider'
-import './globals.css'
 import './old-styles.css'
+import './globals.css'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -54,7 +54,7 @@ export default function RootLayout({
           </>
         ) : null}
         <body
-          className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures`}
+          className={`${inter.variable} ${hack.variable} overflow-hidden disable-ligatures antialiased`}
         >
           <EnvScript
             env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}

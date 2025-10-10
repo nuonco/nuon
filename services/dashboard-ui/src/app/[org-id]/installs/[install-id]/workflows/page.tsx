@@ -1,21 +1,33 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Link } from '@/components/common/Link'
+import { PageSection } from '@/components/layout/PageSection'
+import { Text } from '@/components/common/Text'
+import type { TPageProps } from '@/types'
+import { getInstallById, getOrgById } from '@/lib'
+import { InstallWorkflows } from './install-workflows'
+
+// NOTE: old layout stuff
 import {
   DashboardContent,
-  Link,
+  Link as OldLink,
   Loading,
   InstallPageSubNav,
   InstallStatuses,
   InstallManagementDropdown,
   Section,
-  Text,
+  Text as OldText,
   Time,
 } from '@/components'
-import { getInstallById } from '@/lib'
-import { InstallWorkflows } from './install-workflows'
 
-export async function generateMetadata({ params }): Promise<Metadata> {
+type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
+
+export async function generateMetadata({
+  params,
+}: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const { data: install } = await getInstallById({ installId, orgId })
 
@@ -24,12 +36,39 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function Install({ params, searchParams }) {
+export default async function InstallWorkflowsPage({
+  params,
+  searchParams,
+}: TInstallPageProps) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const { data: install } = await getInstallById({ installId, orgId })
+  const [{ data: install }, { data: org }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getOrgById({ orgId }),
+  ])
 
-  return (
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection isScrollable>
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          Workflows
+        </Text>
+      </HeadingGroup>
+      <ErrorBoundary fallback={<Text>Unable to load install workflows.</Text>}>
+        <Suspense
+          fallback={
+            <Loading loadingText="Loading install history..." variant="page" />
+          }
+        >
+          <InstallWorkflows
+            installId={installId}
+            orgId={orgId}
+            offset={sp['workflows'] || '0'}
+          />
+        </Suspense>
+      </ErrorBoundary>
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
@@ -54,20 +93,20 @@ export default async function Install({ params, searchParams }) {
           {install?.metadata?.managed_by &&
           install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
             <span className="flex flex-col gap-2">
-              <Text isMuted>Managed By</Text>
-              <Text>
+              <OldText isMuted>Managed By</OldText>
+              <OldText>
                 <FileCodeIcon />
                 Config File
-              </Text>
+              </OldText>
             </span>
           ) : null}
           <span className="flex flex-col gap-2">
-            <Text isMuted>App config</Text>
-            <Text>
-              <Link href={`/${orgId}/apps/${install.app_id}`}>
+            <OldText isMuted>App config</OldText>
+            <OldText>
+              <OldLink href={`/${orgId}/apps/${install.app_id}`}>
                 {install?.app?.name}
-              </Link>
-            </Text>
+              </OldLink>
+            </OldText>
           </span>
           <InstallStatuses />
 
@@ -77,7 +116,7 @@ export default async function Install({ params, searchParams }) {
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <div className="flex flex-col lg:flex-row flex-auto">
-        <Section heading="Install history" className="overflow-auto">
+        <Section heading="Install workflows" className="overflow-auto">
           <Suspense
             fallback={
               <Loading
