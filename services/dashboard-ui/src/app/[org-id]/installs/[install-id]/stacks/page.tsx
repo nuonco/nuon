@@ -1,22 +1,32 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { PageSection } from '@/components/layout/PageSection'
+import { Text } from '@/components/common/Text'
+import { getInstallById, getOrgById } from '@/lib'
+import { TPageProps } from '@/types'
+import { Stacks } from './stacks'
+
+// NOTE: old layout stuff
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   DashboardContent,
   ErrorFallback,
   InstallStatuses,
   InstallPageSubNav,
   InstallManagementDropdown,
-  Link,
+  Link as OldLink,
   Loading,
-  Text,
+  Text as OldText,
   Time,
 } from '@/components'
-import { getInstallById } from '@/lib'
-import { Stacks } from './stacks'
 
-export async function generateMetadata({ params }): Promise<Metadata> {
+type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
+
+export async function generateMetadata({
+  params,
+}: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const { data: install }: any = await getInstallById({ installId, orgId })
 
@@ -25,11 +35,37 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function InstallStack({ params }) {
+export default async function InstallStack({ params }: TInstallPageProps) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install } = await getInstallById({ installId, orgId })
+  const [{ data: install }, { data: org }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getOrgById({
+      orgId,
+    }),
+  ])
 
-  return (
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection isScrollable>
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          Install stacks
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          View your install stack versions below.
+        </Text>
+      </HeadingGroup>
+
+      <OldErrorBoundary fallbackRender={ErrorFallback}>
+        <Suspense
+          fallback={
+            <Loading loadingText="Loading components..." variant="page" />
+          }
+        >
+          <Stacks installId={install?.id} orgId={orgId} />
+        </Suspense>
+      </OldErrorBoundary>
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
@@ -54,20 +90,20 @@ export default async function InstallStack({ params }) {
           {install?.metadata?.managed_by &&
           install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
             <span className="flex flex-col gap-2">
-              <Text isMuted>Managed By</Text>
-              <Text>
+              <OldText isMuted>Managed By</OldText>
+              <OldText>
                 <FileCodeIcon />
                 Config File
-              </Text>
+              </OldText>
             </span>
           ) : null}
           <span className="flex flex-col gap-2">
-            <Text isMuted>App config</Text>
-            <Text>
-              <Link href={`/${orgId}/apps/${install.app_id}`}>
+            <OldText isMuted>App config</OldText>
+            <OldText>
+              <OldLink href={`/${orgId}/apps/${install.app_id}`}>
                 {install?.app?.name}
-              </Link>
-            </Text>
+              </OldLink>
+            </OldText>
           </span>
           <InstallStatuses />
 
@@ -77,7 +113,7 @@ export default async function InstallStack({ params }) {
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <section className="px-6 py-8">
-        <ErrorBoundary fallbackRender={ErrorFallback}>
+        <OldErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
               <Loading loadingText="Loading components..." variant="page" />
@@ -85,7 +121,7 @@ export default async function InstallStack({ params }) {
           >
             <Stacks installId={install?.id} orgId={orgId} />
           </Suspense>
-        </ErrorBoundary>
+        </OldErrorBoundary>
       </section>
     </DashboardContent>
   )

@@ -1,16 +1,11 @@
-import React from 'react'
+import type { HTMLAttributes } from 'react'
+import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
 
 type TBadgeVariant = 'default' | 'code'
-export type TBadgeTheme =
-  | 'neutral'
-  | 'brand'
-  | 'success'
-  | 'warn'
-  | 'error'
-  | 'info'
+export type TBadgeTheme = TTheme
 
-export interface IBadge extends React.HTMLAttributes<HTMLSpanElement> {
+export interface IBadge extends HTMLAttributes<HTMLSpanElement> {
   size?: 'sm' | 'md' | 'lg'
   theme?: TBadgeTheme
   variant?: TBadgeVariant
@@ -30,8 +25,10 @@ const VARIANT_CLASSES: Record<NonNullable<IBadge['variant']>, string> = {
 const THEME_CLASSES: Record<NonNullable<IBadge['theme']>, string> = {
   brand:
     'bg-primary-50 !border-primary-200 text-primary-600 dark:bg-[#1B1026] dark:!border-[#351F4D] dark:text-primary-400',
-  neutral:
+  default:
     'bg-cool-grey-50 text-dark-grey-950 dark:bg-dark-grey-800 dark:text-cool-grey-100 !border-cool-grey-400 dark:!border-dark-grey-500',
+  neutral:
+    'bg-cool-grey-100 text-cool-grey-700 dark:bg-dark-grey-600 dark:text-cool-grey-500 !border-cool-grey-500 dark:!border-dark-grey-100',
   success:
     'bg-[#F4FBF7] text-green-800 !border-green-400 dark:bg-[#0C1B14] dark:!border-green-500/40 dark:text-green-500',
   warn: 'bg-[#FFF5EB] text-orange-800 !border-orange-400 dark:bg-[#2E1E10] dark:!border-orange-500/40 dark:text-orange-500',

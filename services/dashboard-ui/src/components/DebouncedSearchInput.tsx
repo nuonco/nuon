@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { type FC, useState, useEffect, useRef } from 'react'
-import { MagnifyingGlass, XCircle } from '@phosphor-icons/react'
+import { MagnifyingGlassIcon, XCircleIcon } from '@phosphor-icons/react'
 import { Button } from './Button'
 
 interface IDebouncedSearchInput {
@@ -55,10 +55,10 @@ export const DebouncedSearchInput: FC<IDebouncedSearchInput> = ({
 
   return (
     <label className="relative">
-      <MagnifyingGlass className="text-cool-grey-500 dark:text-cool-grey-700 absolute top-2.5 left-2" />
+      <MagnifyingGlassIcon className="text-cool-grey-500 dark:text-cool-grey-700 absolute top-2.5 left-2" />
       <input
-        className={`rounded-md pl-8 pr-3.5 py-1.5 h-[36px] text-base border bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700 md:min-w-80 ${className}`}
-        type="search"
+        className={`rounded-md pl-8 pr-3.5 py-1.5 h-[36px] text-base border bg-white dark:bg-dark-grey-800 placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700 md:min-w-80 ${className}`}
+        type="text"
         placeholder={placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -72,7 +72,7 @@ export const DebouncedSearchInput: FC<IDebouncedSearchInput> = ({
           value=""
           onClick={(e) => setValue((e.target as HTMLButtonElement).value)}
         >
-          <XCircle />
+          <XCircleIcon />
         </Button>
       ) : null}
     </label>

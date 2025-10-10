@@ -53,7 +53,7 @@ const PanelBase = ({
   return (
     <>
       <TransitionDiv
-        className="panel-wrapper absolute top-0 left-0 w-screen h-screen flex"
+        className="panel-wrapper absolute top-0 left-0 w-screen h-screen flex z-10"
         isVisible={isVisible}
       >
         <div

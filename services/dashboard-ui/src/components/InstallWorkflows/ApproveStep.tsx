@@ -15,8 +15,7 @@ import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 import { HelmChangesViewer } from './HelmPlanDiff'
 import { TerraformPlanViewer } from './TerraformPlanDiff'
-import { KubernetesManifestDiffViewer } from './KubernetesPlanDiff'
-import {SplitButton} from '../SplitButton'
+import { SplitButton } from '../SplitButton'
 
 const APPROVAL_NOTICE: Record<
   string,
@@ -112,7 +111,14 @@ export const ApprovalStep: FC<IApprovalStep> = ({
     }
   }, [approval])
 
-  const approve = (responseType: 'approve' | 'deny' | 'retry' | 'deny-skip-current' | 'deny-skip-current-and-dependents') => {
+  const approve = (
+    responseType:
+      | 'approve'
+      | 'deny'
+      | 'retry'
+      | 'deny-skip-current'
+      | 'deny-skip-current-and-dependents'
+  ) => {
     setIsKickedOff(true)
     approveWorkflowStep({
       approvalId: approval?.id,
@@ -145,19 +151,11 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       >
         <SplitButton
           id="deny-button"
-          buttonText={isDenyLoading ? (
-              "Denying plan"
-          ) : (
-              "Deny plan"
-          )}
-          buttonIcon={isDenyLoading ? (
-              <SpinnerSVG />
-          ): (
-              <XIcon />
-          )}
+          buttonText={isDenyLoading ? 'Denying plan' : 'Deny plan'}
+          buttonIcon={isDenyLoading ? <SpinnerSVG /> : <XIcon />}
           buttonOnClick={() => {
-                setIsDenyLoading(true)
-                approve('deny')
+            setIsDenyLoading(true)
+            approve('deny')
           }}
           alignment="right"
           className={classNames(
@@ -173,7 +171,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               variant="menu"
               onClick={() => {
                 setIsDenyLoading(true)
-                approve("deny-skip-current")
+                approve('deny-skip-current')
               }}
             >
               {isDenyLoading ? (
@@ -182,9 +180,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
                   Denying plan
                 </>
               ) : (
-                <>
-                  Deny plan and continue
-                </>
+                <>Deny plan and continue</>
               )}
             </Button>
             {/*this flow is never triggered, since backend is a bit flaky for this now*/}
@@ -202,9 +198,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
                     Denying plan
                   </>
                 ) : (
-                  <>
-                    Deny plan and skip dependents
-                  </>
+                  <>Deny plan and skip dependents</>
                 )}
               </Button>
             )}
@@ -318,7 +312,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
             ) : approval?.type === 'helm_approval' && plan ? (
               <HelmChangesViewer planData={plan} />
             ) : approval?.type === 'kubernetes_manifest_approval' && plan ? (
-              <KubernetesManifestDiffViewer approvalContents={plan} />
+              <HelmChangesViewer planData={plan} />
             ) : plan ? (
               <TerraformPlanViewer
                 plan={plan}
