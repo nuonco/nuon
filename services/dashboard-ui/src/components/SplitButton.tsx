@@ -8,6 +8,7 @@ import { Dropdown, type IDropdown } from '@/components/Dropdown'
 
 interface ISplitButton extends Omit<IDropdown, 'text' | 'noIcon' | 'variant'> {
   buttonText: ReactNode
+  buttonIcon?: ReactNode,
   buttonOnClick?: (event: MouseEvent<HTMLButtonElement>) => void
   variant?: 'default' | 'primary' | 'danger' | 'caution'
 }
@@ -16,6 +17,7 @@ export const SplitButton = ({
   className,
   children,
   buttonText,
+  buttonIcon,
   buttonOnClick,
   variant = 'default',
   ...props
@@ -30,11 +32,14 @@ export const SplitButton = ({
       )}
     >
       <Button
-        className="!rounded-e-none !border-none"
+        className="!rounded-e-none !border-none flex"
         variant={variant}
         onClick={buttonOnClick}
       >
-        {buttonText}
+        <span className="flex items-center gap-2">
+          {buttonIcon}
+          {buttonText}
+        </span>
       </Button>
       <Dropdown
         variant={variant === 'caution' ? 'default' : variant}
