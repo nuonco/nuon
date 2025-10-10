@@ -16,6 +16,7 @@ import { removeSnakeCase } from '@/utils'
 import { HelmChangesViewer } from './HelmPlanDiff'
 import { TerraformPlanViewer } from './TerraformPlanDiff'
 import { KubernetesManifestDiffViewer } from './KubernetesPlanDiff'
+import {SplitButton} from '../SplitButton'
 
 const APPROVAL_NOTICE: Record<
   string,
@@ -39,6 +40,16 @@ const APPROVAL_NOTICE: Record<
   deny: {
     title: 'Plan denied',
     copy: 'This plan was denied and changes will not be applied.',
+    variant: 'warn',
+  },
+  'deny-skip-current-and-dependents': {
+    title: 'Plan denied',
+    copy: 'This plan was denied, discarding plan and skipping dependent components.',
+    variant: 'warn',
+  },
+  'deny-skip-current': {
+    title: 'Plan denied',
+    copy: 'This plan was denied, discarding plan and skipping component.',
     variant: 'warn',
   },
   'auto-approve': {
@@ -101,7 +112,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
     }
   }, [approval])
 
-  const approve = (responseType: 'approve' | 'deny' | 'retry') => {
+  const approve = (responseType: 'approve' | 'deny' | 'retry' | 'deny-skip-current' | 'deny-skip-current-and-dependents') => {
     setIsKickedOff(true)
     approveWorkflowStep({
       approvalId: approval?.id,
@@ -132,11 +143,23 @@ export const ApprovalStep: FC<IApprovalStep> = ({
           'self-end ml-auto': !inBanner,
         })}
       >
-        <Button
-          onClick={() => {
-            setIsDenyLoading(true)
-            approve('deny')
+        <SplitButton
+          id="deny-button"
+          buttonText={isDenyLoading ? (
+              "Denying plan"
+          ) : (
+              "Deny plan"
+          )}
+          buttonIcon={isDenyLoading ? (
+              <SpinnerSVG />
+          ): (
+              <XIcon />
+          )}
+          buttonOnClick={() => {
+                setIsDenyLoading(true)
+                approve('deny')
           }}
+          alignment="right"
           className={classNames(
             'text-sm font-sans flex items-center gap-2 h-[32px] !transition-all',
             {
@@ -144,21 +167,49 @@ export const ApprovalStep: FC<IApprovalStep> = ({
                 inBanner,
             }
           )}
-          disabled={isKickedOff}
-          variant={inBanner ? 'ghost' : 'default'}
         >
-          {isDenyLoading ? (
-            <>
-              <SpinnerSVG />
-              Denying plan
-            </>
-          ) : (
-            <>
-              <XIcon />
-              Deny plan
-            </>
-          )}
-        </Button>
+          <div className="min-w-[256px] rounded-md overflow-hidden p-2 flex flex-col gap-1">
+            <Button
+              variant="menu"
+              onClick={() => {
+                setIsDenyLoading(true)
+                approve("deny-skip-current")
+              }}
+            >
+              {isDenyLoading ? (
+                <>
+                  <SpinnerSVG />
+                  Denying plan
+                </>
+              ) : (
+                <>
+                  Deny plan and continue
+                </>
+              )}
+            </Button>
+            {/*this flow is never triggered, since backend is a bit flaky for this now*/}
+            {false && (
+              <Button
+                variant="menu"
+                onClick={() => {
+                  setIsDenyLoading(true)
+                  approve('deny-skip-current-and-dependents')
+                }}
+              >
+                {isDenyLoading ? (
+                  <>
+                    <SpinnerSVG />
+                    Denying plan
+                  </>
+                ) : (
+                  <>
+                    Deny plan and skip dependents
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </SplitButton>
 
         <Button
           onClick={() => {
