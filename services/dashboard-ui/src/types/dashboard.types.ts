@@ -73,6 +73,16 @@ export type TPaginationParams = {
   limit?: number | string
 }
 
+// theme types
+export type TTheme =
+  | 'default'
+  | 'neutral'
+  | 'info'
+  | 'success'
+  | 'warn'
+  | 'brand'
+  | 'error'
+
 // page nav link types
 export type TNavLink = {
   iconVariant?: TIconVariant

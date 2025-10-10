@@ -34,13 +34,13 @@ export const ToolTip: FC<IToolTip> = ({
         >
           <div
             className={classNames(
-              'bg-dark text-light dark:bg-light dark:text-dark text-sm px-2 py-1.5 rounded drop-shadow-md max-w-96'
+              'bg-dark-grey-900 text-white dark:bg-white dark:text-dark-grey-900 text-sm px-2 py-1.5 rounded drop-shadow-md max-w-96'
             )}
           >
             {tipContent}
           </div>
         </span>
-        <span className="flex items-center gap-1 text-sm">
+        <span className="flex items-center gap-1 text-xs">
           {children}
           {isIconHidden ? null : (
             <Info className="text-cool-grey-600 dark:text-cool-grey-500" />

@@ -12,7 +12,7 @@ interface Option {
 
 const classNames = {
   menuButton: ({ isDisabled }) =>
-    `flex text-base border rounded shadow-sm transition-all duration-300 ${
+    `flex text-sm border rounded shadow-sm transition-all duration-300 ${
       isDisabled
         ? 'bg-cool-grey-200 text-cool-grey-500 dark:bg-dark-grey-300 dark:text-dark-grey-900 cursor-not-allowed'
         : 'bg-cool-grey-50 dark:bg-dark-grey-200 [&:user-invalid]:border-red-600 [&:user-invalid]:dark:border-red-600 focus:outline outline-1 outline-primary-500 dark:outline-primary-400'

@@ -1,4 +1,4 @@
-import { InstallComponentDeploys, Pagination, Text } from '@/components'
+import { InstallComponentDeploys, Pagination, Empty } from '@/components'
 import { getDeploysByComponentId } from '@/lib'
 import type { TComponent } from '@/types'
 
@@ -43,6 +43,10 @@ export const Deploys = async ({
       />
     </div>
   ) : (
-    <Text>Unable to load deploy history.</Text>
+    <Empty
+      emptyMessage="Waiting on deployments"
+      emptyTitle="No deploys"
+      variant="history"
+    />
   )
 }

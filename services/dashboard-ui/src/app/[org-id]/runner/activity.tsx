@@ -1,5 +1,5 @@
 import { Pagination } from '@/components/Pagination'
-import { RunnerPastJobs } from '@/components/Runners/RunnerPastJobs'
+import { RunnerPastJobs } from '@/components/OldRunners/RunnerPastJobs'
 import { getRunnerJobs } from '@/lib'
 
 export const Activity = async ({

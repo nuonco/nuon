@@ -1,5 +1,13 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { PageSection } from '@/components/layout/PageSection'
+import { Text } from '@/components/common/Text'
+import { getAppById, getAppConfigs, getOrgById } from '@/lib'
+import type { TPageProps } from '@/types'
+import { AppComponents } from './components'
+
+// NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
 import {
   AppCreateInstallButton,
@@ -9,10 +17,12 @@ import {
   Loading,
   Section,
 } from '@/components'
-import { getAppById, getAppConfigs } from '@/lib'
-import { AppComponents } from './components'
 
-export async function generateMetadata({ params }): Promise<Metadata> {
+type TAppPageProps = TPageProps<'org-id' | 'app-id'>
+
+export async function generateMetadata({
+  params,
+}: TAppPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const { data: app } = await getAppById({ appId, orgId })
 
@@ -21,15 +31,48 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function AppComponentsPage({ params, searchParams }) {
+export default async function AppComponentsPage({
+  params,
+  searchParams,
+}: TAppPageProps) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
-  const [{ data: app }, { data: configs }] = await Promise.all([
+  const [{ data: app }, { data: configs }, { data: org }] = await Promise.all([
     getAppById({ appId, orgId }),
     getAppConfigs({ appId, orgId }),
+    getOrgById({ orgId }),
   ])
 
-  return (
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection isScrollable>
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          App components
+        </Text>
+      </HeadingGroup>
+
+      {/* old layout stuff */}
+      <div className="flex flex-auto">
+        <ErrorBoundary fallbackRender={ErrorFallback}>
+          <Suspense
+            fallback={
+              <Loading variant="page" loadingText="Loading components..." />
+            }
+          >
+            <AppComponents
+              appId={appId}
+              configId={configs?.at(0)?.id}
+              orgId={orgId}
+              offset={sp['offset'] || '0'}
+              q={sp['q'] || ''}
+              types={sp['types'] || ''}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+      {/* old layout stuff */}
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/apps`, text: 'Apps' },
