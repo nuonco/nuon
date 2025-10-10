@@ -31,7 +31,7 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
         setIsLoading(false)
         setError(err?.message || 'Unable to fetch org features list')
       })
-  }, [])
+  }, [isOpen])
 
   return (
     <>
