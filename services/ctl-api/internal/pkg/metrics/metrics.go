@@ -15,7 +15,6 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Wr
 	tags := []string{
 		fmt.Sprintf("service_deployment:%s", cfg.ServiceDeployment),
 		fmt.Sprintf("service_type:%s", cfg.ServiceType),
-		fmt.Sprintf("git_ref:%s", cfg.GitRef),
 	}
 	tags = append(tags, cfg.MetricsTags...)
 

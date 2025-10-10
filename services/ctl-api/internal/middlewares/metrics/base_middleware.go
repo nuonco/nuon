@@ -31,8 +31,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 		path := c.FullPath()
 
 		// https://docs.datadoghq.com/getting_started/tagging/ dashes are not permitted in tags
-		path = strings.ReplaceAll(path, "-", "_")
-		endpoint := fmt.Sprintf("%s__%s", c.Request.Method, path)
+		endpoint := strings.ReplaceAll(path, "-", "_")
 
 		ctxObj := &cctx.MetricContext{
 			Endpoint: endpoint,
@@ -61,7 +60,6 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			"is_deprecated:" + strconv.FormatBool(ctxObj.IsDeprecated),
 		}
 
-		m.writer.Incr("api.request.status", tags)
 		m.writer.Gauge("api.request.size", float64(c.Request.ContentLength), tags)
 		m.writer.Timing("api.request.latency", time.Since(startTS), tags)
 		m.writer.Gauge("gorm_operation.endpoint_count", float64(ctxObj.DBQueryCount), tags)
