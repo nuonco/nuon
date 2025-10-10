@@ -19,6 +19,7 @@ var levelStyleMap = map[string]lipgloss.CompleteAdaptiveColor{
 	"warning": styles.WarningColor,
 	"error":   styles.ErrorColor,
 	"info":    styles.InfoColor,
+	"success": styles.SuccessColor,
 }
 
 type FullPageDialogRequest struct {
