@@ -21,13 +21,13 @@ buildkit:
     storageClass: "gp2"
     size: "300Gi"
   port: 1234
-  
+
   # BuildKit configuration as raw TOML
   toml: |
     debug = true
     trace = false
     root = "/var/lib/buildkit"
-    
+
     [log]
       format = "text"
 
@@ -35,24 +35,24 @@ buildkit:
       # 48 hours (in seconds)
       maxAge = 172800
       maxEntries = 100
-    
+
     [worker.oci]
       enabled = true
       platforms = ["linux/amd64"]
       rootless = false
       noProcessSandbox = false
       gc = true
-      reservedSpace = "30%"
       maxUsedSpace = "60%"
       minFreeSpace = "20GB"
-      
+      reservedSpace = "30%"
+
       [[worker.oci.gcpolicy]]
         filters = ["type==source.local", "type==source.git.checkout", "type==exec.cachemount"]
         keepDuration = "24h"
         maxUsedSpace = "50GB"
         reservedSpace = "20GB"
         minFreeSpace = "20GB"
-      
+
       [[worker.oci.gcpolicy]]
         all = true
         keepDuration = "24h"
@@ -67,7 +67,7 @@ proxy:
     repository: envoyproxy/envoy-dev
     tag: latest
     pullPolicy: IfNotPresent
-  resources: 
+  resources:
     limits:
       cpu: 1000m
       memory: 1Gi
@@ -78,7 +78,7 @@ proxy:
   config:
     admin:
       port: 9901
-      
+
 
 # TLS configuration
 tls:
