@@ -49,7 +49,6 @@ func (a *actInterceptor) ExecuteActivity(
 			tags["status"] = "panic"
 		}
 
-		a.mw.Incr("temporal_activity.status", metrics.ToTags(tags))
 		a.mw.Timing("temporal_activity.latency", time.Since(startTS), metrics.ToTags(tags))
 
 		if rec != nil {
