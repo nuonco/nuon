@@ -121,7 +121,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 
 	res = s.db.WithContext(ctx).Create(&install)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install TEST: %w", res.Error)
+		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
 
 	if req.InstallConfig != nil {
