@@ -41,8 +41,10 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		ctx.Writer = w
 		childLogger := m.setCTXLogger(ctx)
 
+		path := ctx.FullPath()
+
 		logRequests := false
-		if m.cfg.ServiceDeployment == "admin" {
+		if m.cfg.ServiceDeployment == "admin" && path != "/livez" && path != "/readyz" && path != "/healthz" {
 			logRequests = true
 		} else if m.cfg.ForceDebugMode {
 			logRequests = true
@@ -55,7 +57,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		if logRequests {
 			reqZapFields := m.requestToZapFields(ctx, startAt)
-			requestMessage := fmt.Sprintf("req: %s %s", ctx.Request.Method, ctx.FullPath())
+			requestMessage := fmt.Sprintf("req: %s %s", ctx.Request.Method, path)
 			childLogger.Info(requestMessage, reqZapFields...)
 		}
 
@@ -64,7 +66,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		status := ctx.Writer.Status()
 		duration := float64(time.Since(startAt).Milliseconds())
 		respZapFields := m.responseToZapFields(ctx, w, startAt)
-		responseMessage := fmt.Sprintf("res: %s %s %d (%.2fms)", ctx.Request.Method, ctx.FullPath(), status, duration)
+		responseMessage := fmt.Sprintf("res: %s %s %d (%.2fms)", ctx.Request.Method, path, status, duration)
 
 		if status >= 500 {
 			childLogger.Error(responseMessage, respZapFields...)
