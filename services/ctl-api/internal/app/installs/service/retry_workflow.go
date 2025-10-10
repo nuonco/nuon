@@ -182,7 +182,6 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 	}
 
 	// TODO: support more than just installs workflow retries
-
 	if workflow.OwnerType != "installs" {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("workflow %s retry not support for owner type", workflow.ID),

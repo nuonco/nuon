@@ -14,11 +14,11 @@ import (
 type WorkflowStepResponseType string
 
 const (
-	WorkflowStepApprovalResponseTypeDeny    WorkflowStepResponseType = "deny"
-	WorkflowStepApprovalResponseTypeApprove WorkflowStepResponseType = "approve"
-	WorkflowStepApprovalResponseTypeSkip    WorkflowStepResponseType = "skip"
-
-	WorkflowStepApprovalResponseTypeRetryPlan WorkflowStepResponseType = "retry"
+	WorkflowStepApprovalResponseTypeDeny                     WorkflowStepResponseType = "deny"
+	WorkflowStepApprovalResponseTypeApprove                  WorkflowStepResponseType = "approve"
+	WorkflowStepApprovalResponseTypeSkipCurrent              WorkflowStepResponseType = "deny-skip-current"
+	WorkflowStepApprovalResponseTypeSkipCurrentAndDependents WorkflowStepResponseType = "deny-skip-current-and-dependents"
+	WorkflowStepApprovalResponseTypeRetryPlan                WorkflowStepResponseType = "retry"
 
 	// auto approve is when the workflow uses auto-approve
 	WorkflowStepApprovalResponseTypeAutoApprove WorkflowStepResponseType = "auto-approve"
