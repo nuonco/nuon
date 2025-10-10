@@ -2,8 +2,9 @@
 
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useUser } from '@auth0/nextjs-auth0'
-import { Gear } from '@phosphor-icons/react'
+import { GearIcon } from '@phosphor-icons/react'
 import { AdminOrgActions } from '@/components/AdminOrgActions'
 import { AdminInstallActions } from '@/components/AdminInstallActions'
 import { AdminOrgFeatures } from '@/components/AdminOrgFeatures'
@@ -49,10 +50,47 @@ export const AdminModal: FC<{
   isSidebarOpen: boolean
   isModalOpen?: string
 }> = ({ isSidebarOpen, isModalOpen }) => {
-  const params = useParams()
   const { user } = useUser()
-  const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(Boolean(isModalOpen))
+
+  return user && /@nuon.co\s*$/.test(user?.email) ? (
+    <>
+      <Button
+        className="text-sm !font-medium flex items-center justify-center gap-2 w-full"
+        onClick={() => {
+          setIsOpen(true)
+        }}
+        variant="ghost"
+      >
+        <span className="inline-block w-[18px] h-[18px]">
+          <GearIcon size={18} />
+        </span>{' '}
+        {isSidebarOpen ? (
+          <span className="text-nowrap truncate">Admin controls</span>
+        ) : null}
+      </Button>
+      {isOpen
+        ? createPortal(
+            <Modal
+              heading="Admin controls"
+              actions={<AdminRunnerModal />}
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false)
+              }}
+            >
+              <AdminControls />
+            </Modal>,
+            document?.body
+          )
+        : null}
+    </>
+  ) : null
+}
+
+export const AdminControls = () => {
+  const params = useParams()
+  const { org } = useOrg()
 
   const orgActions: Array<TAdminAction> = [
     {
@@ -177,70 +215,50 @@ export const AdminModal: FC<{
       text: 'Invalidate install runner token',
     },
   ]
+  return (
+    <div className="flex flex-col gap-8 divide-y">
+      <div className="py-4">
+        <AdminOrgActions orgId={params?.['org-id'] as string}>
+          <Grid>
+            {orgActions.map((action) => (
+              <AdminAction key={action.text} {...action} />
+            ))}
+            <AdminOrgFeatures org={org} />
+            <AdminRunnerModal showText />
+          </Grid>
+        </AdminOrgActions>
+      </div>
 
-  return user && /@nuon.co\s*$/.test(user?.email) ? (
-    <>
-      <Button
-        className="text-sm !font-medium flex items-center justify-center gap-2 w-full"
-        onClick={() => {
-          setIsOpen(true)
-        }}
-        variant="ghost"
-      >
-        <span className="inline-block w-[18px] h-[18px]">
-          <Gear size={18} />
-        </span>{' '}
-        {isSidebarOpen ? (
-          <span className="text-nowrap truncate">Admin controls</span>
-        ) : null}
-      </Button>
-      <Modal
-        heading="Admin controls"
-        actions={<AdminRunnerModal />}
-        isOpen={isOpen}
-        onClose={() => {
-          setIsOpen(false)
-        }}
-      >
-        <div className="flex flex-col gap-8 divide-y">
-          <AdminOrgActions orgId={params?.['org-id'] as string}>
+      {params?.['app-id'] ? (
+        <div className="py-4">
+          <div className="flex flex-col gap-4 pt-4">
+            <Text variant="semi-18">App admin controls</Text>
+            <AdminTemporalLink
+              namespace="apps"
+              id={params?.['app-id'] as string}
+            />
             <Grid>
-              {orgActions.map((action) => (
+              {appActions.map((action) => (
                 <AdminAction key={action.text} {...action} />
               ))}
-              <AdminOrgFeatures org={org} />
-              <AdminRunnerModal showText />
             </Grid>
-          </AdminOrgActions>
-
-          {params?.['app-id'] ? (
-            <div className="flex flex-col gap-4 pt-4">
-              <Text variant="semi-18">App admin controls</Text>
-              <AdminTemporalLink
-                namespace="apps"
-                id={params?.['app-id'] as string}
-              />
-              <Grid>
-                {appActions.map((action) => (
-                  <AdminAction key={action.text} {...action} />
-                ))}
-              </Grid>
-            </div>
-          ) : null}
-
-          {params?.['install-id'] ? (
-            <AdminInstallActions installId={params?.['install-id'] as string}>
-              <Grid>
-                {installActions.map((action) => (
-                  <AdminAction key={action.text} {...action} />
-                ))}
-              </Grid>
-            </AdminInstallActions>
-          ) : null}
+          </div>
         </div>
-      </Modal>
-    </>
-  ) : null
+      ) : null}
+
+      {params?.['install-id'] ? (
+        <div className="py-4">
+          <AdminInstallActions installId={params?.['install-id'] as string}>
+            <Grid>
+              {installActions.map((action) => (
+                <AdminAction key={action.text} {...action} />
+              ))}
+            </Grid>
+          </AdminInstallActions>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 const AdminAction: FC<{ action: any; description: string; text: string }> = ({

@@ -2,7 +2,7 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CalendarBlank, Minus, DotsThreeVertical } from '@phosphor-icons/react'
+import { CalendarBlankIcon, MinusIcon, DotsThreeVerticalIcon } from '@phosphor-icons/react'
 import { DataTableSearch, Table } from '@/components/DataTable'
 import { Dropdown } from '@/components/Dropdown'
 import { StatusBadge } from '@/components/Status'
@@ -14,7 +14,6 @@ import { StackOutputsModal } from './StackOutputsModal'
 import type {
   TInstallStack,
   TInstallStackVersion,
-  TInstallStackVersionRun,
 } from '@/types'
 
 export interface IStacksTable {
@@ -43,7 +42,7 @@ export const StacksTable: FC<IStacksTable> = ({ stack }) => {
         accessorKey: 'composite_status.status',
         cell: (props) => {
           const status = props.getValue<string>()
-          return status ? <StatusBadge status={status} /> : <Minus />
+          return status ? <StatusBadge status={status} /> : <MinusIcon />
         },
       },
       {
@@ -59,34 +58,14 @@ export const StacksTable: FC<IStacksTable> = ({ stack }) => {
         header: 'Created',
         accessorKey: 'created_at',
         cell: (props) => (
-          <Text className="inline truncate">
-            <CalendarBlank size="16" />
+          <Text className="!flex truncate">
+            <CalendarBlankIcon size="16" />
             <Time format="relative" time={props.getValue<string>()} />
           </Text>
         ),
-      },
-      /* {
-       *   accessorKey: 'quick_link_url',
-       *   header: 'Quick link',
-       *   cell: (props) => (
-       *     <Text className="flex flex-nowrap max-w-[160px] items-center gap-2">
-       *       <span className="truncate">{props.getValue<string>()}</span>{' '}
-       *       <ClickToCopyButton textToCopy={props.getValue<string>()} />
-       *     </Text>
-       *   ),
-       * },
-       * {
-       *   accessorKey: 'template_url',
-       *   header: 'Template link',
-       *   cell: (props) => (
-       *     <Text className="flex flex-nowrap max-w-[160px] items-center gap-2">
-       *       <span className="truncate">{props.getValue<string>()}</span>{' '}
-       *       <ClickToCopyButton textToCopy={props.getValue<string>()} />
-       *     </Text>
-       *   ),
-       * }, */
+      },    
       {
-        id: 'runs',
+        id: 'more',
         enableSorting: false,
         cell: (props) => {
           return (
@@ -94,7 +73,7 @@ export const StacksTable: FC<IStacksTable> = ({ stack }) => {
               <Dropdown
                 className="!p-1"
                 id="more-stack"
-                text={<DotsThreeVertical size="14" />}
+                text={<DotsThreeVerticalIcon size="14" />}
                 noIcon
                 alignment="right"
               >

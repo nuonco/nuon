@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React from 'react'
-import { MagnifyingGlass, XCircle } from '@phosphor-icons/react'
+import { MagnifyingGlassIcon, XCircleIcon } from '@phosphor-icons/react'
 import { Button } from './Button'
 
 export interface ISearchInput
@@ -32,15 +32,15 @@ export const SearchInput = ({
         [`${labelClassName}`]: Boolean(labelClassName),
       })}
     >
-      <MagnifyingGlass className="text-cool-grey-500 dark:text-cool-grey-600 absolute top-2.5 left-2" />
+      <MagnifyingGlassIcon className="text-cool-grey-500 dark:text-cool-grey-600 absolute top-2.5 left-2" />
       <input
         className={classNames(
-          'rounded-md pl-8 pr-3.5 py-1.5 h-[36px] font-sans md:min-w-80 border text-sm bg-white dark:bg-dark-grey-100 placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
+          'rounded-md pl-8 pr-3.5 py-1.5 h-[36px] font-sans md:min-w-80 border text-sm bg-white dark:bg-dark-grey-800 placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
           {
             [`${className}`]: Boolean(className),
           }
         )}
-        type="search"
+        type="text"
         placeholder={placeholder}
         autoComplete="off"
         value={value}
@@ -54,7 +54,7 @@ export const SearchInput = ({
           title="clear search"
           onClick={() => (onClear ? onClear() : onChange(''))}
         >
-          <XCircle />
+          <XCircleIcon />
         </Button>
       ) : null}
     </label>

@@ -1,9 +1,19 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Link } from '@/components/common/Link'
+import { PageSection } from '@/components/layout/PageSection'
+import { Text } from '@/components/common/Text'
+import { getInstallById, getOrgById } from '@/lib'
+import type { TPageProps } from '@/types'
+import { InstallActions } from './actions'
+
+// NOTE: old layout stuff
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
-  Link,
+  Link as OldLink,
   InstallManagementDropdown,
   InstallPageSubNav,
   InstallStatuses,
@@ -11,13 +21,15 @@ import {
   ErrorFallback,
   Loading,
   Section,
-  Text,
+  Text as OldText,
   Time,
 } from '@/components'
-import { getInstallById } from '@/lib'
-import { InstallActions } from './actions'
 
-export async function generateMetadata({ params }): Promise<Metadata> {
+type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
+
+export async function generateMetadata({
+  params,
+}: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const { data: install } = await getInstallById({ installId, orgId })
 
@@ -26,12 +38,51 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function InstallWorkflowRuns({ params, searchParams }) {
+export default async function InstallActionsPage({
+  params,
+  searchParams,
+}: TInstallPageProps) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
-  const { data: install } = await getInstallById({ installId, orgId })
+  const [{ data: install }, { data: org }] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getOrgById({ orgId }),
+  ])
 
-  return (
+  return org?.features?.['stratus-layout'] ? (
+    <PageSection isScrollable>
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          Actions
+        </Text>
+        <Text theme="neutral">
+          View and manage all actions for this install.
+        </Text>
+      </HeadingGroup>
+      <ErrorBoundary
+        fallback={
+          <Text>
+            An error loading your install components, please refresh the page
+            and try again.
+          </Text>
+        }
+      >
+        {/* old page stuff */}
+        <Suspense
+          fallback={<Loading variant="page" loadingText="Loading actions..." />}
+        >
+          <InstallActions
+            installId={installId}
+            orgId={orgId}
+            offset={sp['offset'] || '0'}
+            q={sp['q'] || ''}
+            trigger_types={sp['trigger_types'] || ''}
+          />
+        </Suspense>
+        {/* old page stuff */}
+      </ErrorBoundary>
+    </PageSection>
+  ) : (
     <DashboardContent
       breadcrumb={[
         { href: `/${orgId}/installs`, text: 'Installs' },
@@ -49,20 +100,20 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
           {install?.metadata?.managed_by &&
           install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
             <span className="flex flex-col gap-2">
-              <Text isMuted>Managed By</Text>
-              <Text>
+              <OldText isMuted>Managed By</OldText>
+              <OldText>
                 <FileCodeIcon />
                 Config File
-              </Text>
+              </OldText>
             </span>
           ) : null}
           <span className="flex flex-col gap-2">
-            <Text isMuted>App config</Text>
-            <Text>
-              <Link href={`/${orgId}/apps/${install.app_id}`}>
+            <OldText isMuted>App config</OldText>
+            <OldText>
+              <OldLink href={`/${orgId}/apps/${install.app_id}`}>
                 {install?.app?.name}
-              </Link>
-            </Text>
+              </OldLink>
+            </OldText>
           </span>
           <InstallStatuses />
 
@@ -72,7 +123,7 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
       meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
     >
       <Section childrenClassName="flex flex-auto">
-        <ErrorBoundary fallbackRender={ErrorFallback}>
+        <OldErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
               <Loading variant="page" loadingText="Loading actions..." />
@@ -86,7 +137,7 @@ export default async function InstallWorkflowRuns({ params, searchParams }) {
               trigger_types={sp['trigger_types'] || ''}
             />
           </Suspense>
-        </ErrorBoundary>
+        </OldErrorBoundary>
       </Section>
     </DashboardContent>
   )

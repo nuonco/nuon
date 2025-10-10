@@ -81,7 +81,7 @@ export const Modal: FC<IModal> = ({
       {/* Modal with scale + fade transition */}
       <div
         className={classNames(
-          'relative z-[60] border rounded-lg shadow-lg m-auto w-full bg-white text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 focus:outline outline-1 outline-primary-500 dark:outline-white/40 transition-all duration-300 ease-out transform',
+          'relative z-[60] border rounded-lg shadow-lg m-auto w-full bg-white text-cool-grey-950 dark:bg-dark-grey-900 dark:text-cool-grey-50 focus:outline outline-1 outline-primary-500 dark:outline-white/40 transition-all duration-300 ease-out transform max-w-[calc(100vw_-_4rem)]',
           isVisible
             ? 'opacity-100 scale-100 translate-y-0'
             : 'opacity-0 scale-95 translate-y-4',

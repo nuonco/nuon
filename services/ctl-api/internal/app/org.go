@@ -50,6 +50,7 @@ const (
 	OrgFeatureTerraformWorkspace      OrgFeature = "terraform-workspace"
 	OrgFeatureDevCommand              OrgFeature = "dev-command"
 	OrgFeatureAppBranches             OrgFeature = "app-branches"
+  OrgFeatureStratusLayout           OrgFeature = "stratus-layout"
 )
 
 type Org struct {
@@ -147,7 +148,8 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		// Disabled by default
 		OrgFeatureOrgDashboard:      false,
 		OrgFeatureInstallBreakGlass: false,
-
+    OrgFeatureStratusLayout:     false,
+    
 		// Enabled by default
 		OrgFeatureAPIPagination:           true,
 		OrgFeatureOrgRunner:               true,
@@ -203,5 +205,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureTerraformWorkspace,
 		OrgFeatureDevCommand,
 		OrgFeatureAppBranches,
+    OrgFeatureStratusLayout,
 	}
 }
