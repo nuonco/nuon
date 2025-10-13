@@ -9,7 +9,7 @@ on:
       disable_github_oidc:
         type: boolean
         required: false
-        default: true
+        default: false
     outputs: {}
 
 defaults:
@@ -19,12 +19,12 @@ defaults:
 jobs:
   build-base:
     name: build-base
-    runs-on: build-only
+    runs-on: mono
     timeout-minutes: 15
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
       NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
-      DISABLE_GITHUB_OIDC: ${{ inputs.disable_github_oidc }}
+      DISABLE_GITHUB_OIDC: false
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
       - name: Checkout repo
