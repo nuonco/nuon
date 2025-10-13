@@ -29,19 +29,21 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 
 	sandbox, sbOk := stateData["sandbox"]
 	if sbOk {
-		outputs, opOk := sandbox.(map[string]interface{})["outputs"]
-		if opOk {
-			_, clOk := outputs.(map[string]interface{})["cluster"]
-			if !clOk {
-				l.Info("sandbox outputs do not include kubernetes cluster info, skipping")
-				return nil, nil
+		sb, ok := sandbox.(map[string]any)
+		if ok {
+			outputs, ok := sb["outputs"]
+			if ok {
+				outputsMap, ok := outputs.(map[string]any)
+				if ok {
+					res, clOk := outputsMap["cluster"]
+					if !clOk || res == nil {
+						l.Info("sandbox outputs do not include kubernetes cluster info, skipping")
+						return nil, nil
+					}
+				}
 			}
 		}
 	}
-	// if ok := render.Exists(".nuon.sandbox.outputs.cluster", stateData); !ok {
-	// 	l.Info("sandbox outputs do not include kubernetes cluster info, skipping")
-	// 	return nil, nil
-	// }
 
 	l.Info("sandbox outputs contain kubernetes cluster info, parsing")
 	obj := &kube.ClusterInfo{}
