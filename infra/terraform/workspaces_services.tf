@@ -18,6 +18,7 @@ module "ctl-api-stage" {
   variable_sets      = ["aws-environment-credentials", "slack-webhooks"]
   project_id         = tfe_project.services.id
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
+  trigger_prefixes   = ["infra/modules/service"]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
@@ -39,6 +40,7 @@ module "ctl-api-prod" {
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 module "dashboard-ui-stage" {
@@ -55,6 +57,7 @@ module "dashboard-ui-stage" {
   variable_sets      = ["aws-environment-credentials", "slack-webhooks"]
   project_id         = tfe_project.services.id
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
+  trigger_prefixes   = ["infra/modules/service"]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
@@ -76,6 +79,7 @@ module "dashboard-ui-prod" {
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 module "wiki-stage" {
@@ -92,6 +96,7 @@ module "wiki-stage" {
   variable_sets      = ["aws-environment-credentials", "slack-webhooks"]
   project_id         = tfe_project.services.id
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
+  trigger_prefixes   = ["infra/modules/service"]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
@@ -113,6 +118,7 @@ module "wiki-prod" {
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 module "workers-canary-stage" {
@@ -136,6 +142,7 @@ module "workers-canary-stage" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
   trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 module "workers-canary-prod" {
@@ -159,6 +166,7 @@ module "workers-canary-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 module "workers-executors-prod" {
@@ -176,6 +184,7 @@ module "workers-executors-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 module "workers-executors-stage" {
@@ -193,6 +202,7 @@ module "workers-executors-stage" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
   trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 
@@ -216,6 +226,7 @@ module "workers-infra-tests-stage" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
   trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
 
 module "workers-infra-tests-prod" {
@@ -238,4 +249,5 @@ module "workers-infra-tests-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
   trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
+  trigger_prefixes                = ["infra/modules/service"]
 }
