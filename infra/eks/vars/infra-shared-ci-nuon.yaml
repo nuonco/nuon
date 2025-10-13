@@ -34,10 +34,13 @@ additional_nodepools:
 
   - name: self-hosted-runners
     instance_types:
-      - c5a.xlarge
+      - m6a.16xlarge   # 64 vCPU, 256GB - PRIMARY
+      - m6a.24xlarge   # 96 vCPU, 384GB
+      - m6i.16xlarge   # Intel alternative
+      - m6i.24xlarge   # Intel alternative
     limits:
-      cpu: 32
-      memory: "62Gi"
+      cpu: 500
+      memory: "2000Gi"
     expireAfter: "Never"
     disruption:
       consolidationPolicy: "WhenEmpty"
