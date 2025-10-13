@@ -40,6 +40,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/020-break-glass-actions",          
           "updates/019-self-service",
           "updates/018-management-mode",
           "updates/017-noop-approvals-stability-updates",
