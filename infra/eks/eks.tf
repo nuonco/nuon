@@ -22,7 +22,7 @@ locals {
   # default access entries used for each cluster
   default_access_entries = {
     "gha:{{SessionName}}" = {
-      principal_arn = module.github_actions.iam_role_arn
+      principal_arn = aws_iam_role.github_actions.arn
       kubernetes_groups = [
         # "system:masters",
       ],
