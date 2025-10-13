@@ -15,7 +15,7 @@ defaults:
 jobs:
   build-base:
     name: build-base
-    runs-on: mono
+    runs-on: build-only
     timeout-minutes: 15
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
