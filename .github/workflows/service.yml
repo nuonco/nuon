@@ -27,7 +27,7 @@ jobs:
   # time.
   service:
     name: all
-    runs-on: mono
+    runs-on: build-only
     timeout-minutes: 30
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
