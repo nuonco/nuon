@@ -14,7 +14,9 @@ runs:
       uses: crazy-max/ghaction-github-runtime@v3
 
     # we default to using a docker-container driver for builds, that uses buildkit
+    # only run on GitHub-hosted runners (self-hosted runners have Docker pre-configured)
     - name: Set up Docker Buildx
+      if: ${{ runner.environment != 'self-hosted' }}
       uses: docker/setup-buildx-action@v3
 
     - name: install nuonctl
