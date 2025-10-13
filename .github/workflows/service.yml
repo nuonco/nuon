@@ -15,6 +15,10 @@ name: service
       tag:
         type: string
         required: true
+      disable_github_oidc:
+        type: boolean
+        required: false
+        default: true
     outputs: {}
 
 defaults:
@@ -32,6 +36,7 @@ jobs:
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
       NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
+      DISABLE_GITHUB_OIDC: ${{ inputs.disable_github_oidc }}
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
 
