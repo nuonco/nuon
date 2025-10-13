@@ -42,7 +42,6 @@
         "cross-stack-output-aws_organizations_account.sandbox-se.id": "cross-stack-output-aws_organizations_accountsandbox-seid",
         "cross-stack-output-aws_organizations_account.sandbox-sk.id": "cross-stack-output-aws_organizations_accountsandbox-skid",
         "cross-stack-output-aws_organizations_account.sandbox-stardog.id": "cross-stack-output-aws_organizations_accountsandbox-stardogid",
-        "cross-stack-output-aws_organizations_account.sandbox-tw.id": "cross-stack-output-aws_organizations_accountsandbox-twid",
         "cross-stack-output-aws_organizations_account.stage.id": "cross-stack-output-aws_organizations_accountstageid",
         "cross-stack-output-aws_organizations_account.test.id": "cross-stack-output-aws_organizations_accounttestid",
         "org-last-updated": "org-last-updated"
@@ -222,10 +221,6 @@
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-stardog.id}"
     },
-    "cross-stack-output-aws_organizations_accountsandbox-twid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.sandbox-tw.id}"
-    },
     "cross-stack-output-aws_organizations_accountstageid": {
       "sensitive": true,
       "value": "${aws_organizations_account.stage.id}"
@@ -236,7 +231,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-09-30T09:28:31.413Z"
+      "value": "2025-10-13T21:21:37.839Z"
     }
   },
   "provider": {
@@ -868,24 +863,6 @@
         "name": "sandbox-stardog",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
       },
-      "sandbox-tw": {
-        "//": {
-          "metadata": {
-            "path": "org/sandbox-tw",
-            "uniqueId": "sandbox-tw"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+sandbox-tw@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "sandbox-tw",
-        "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
-      },
       "stage": {
         "//": {
           "metadata": {
@@ -1401,17 +1378,6 @@
         "name": "sandbox-stardog-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_sandbox-tw": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_sandbox-tw",
-            "uniqueId": "env_tag_policy_sandbox-tw"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-tw\"]}}}}",
-        "name": "sandbox-tw-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
       "env_tag_policy_stage": {
         "//": {
           "metadata": {
@@ -1785,16 +1751,6 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-stardog.id}",
         "target_id": "${aws_organizations_account.sandbox-stardog.id}"
-      },
-      "env_tag_policy_attach_sandbox-tw": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_sandbox-tw",
-            "uniqueId": "env_tag_policy_attach_sandbox-tw"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-tw.id}",
-        "target_id": "${aws_organizations_account.sandbox-tw.id}"
       },
       "env_tag_policy_attach_stage": {
         "//": {
