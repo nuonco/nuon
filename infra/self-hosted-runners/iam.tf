@@ -42,10 +42,12 @@ data "aws_iam_policy_document" "runner_policy" {
     actions = [
       "sts:AssumeRole",
     ]
-    resources = [
-      for account_name, account_id in local.accounts :
-      "arn:aws:iam::${account_id}:role/github/actions/gha-*"
-    ]
+    resources = flatten([
+      for account_name, account_id in local.accounts : [
+        "arn:aws:iam::${account_id}:role/github/actions/gha-*",
+        "arn:aws:iam::${account_id}:role/github/actions/github-actions-role-*"
+      ]
+    ])
   }
 }
 
@@ -57,7 +59,7 @@ resource "aws_iam_role" "runner_scale_set_roles" {
   assume_role_policy = data.aws_iam_policy_document.runner_assume_role[each.key].json
 
   tags = merge(local.tags, {
-    Name = "${local.name}-${each.key}-runner"
+    Name         = "${local.name}-${each.key}-runner"
     ScaleSetName = each.key
   })
 }
