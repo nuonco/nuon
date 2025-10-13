@@ -1,7 +1,7 @@
 resource "pagerduty_user" "casey" {
   name  = "Casey"
   email = "casey@nuon.co"
-  role  = "admin"
+  role  = "owner"
 }
 
 resource "pagerduty_user" "fred" {
@@ -25,7 +25,7 @@ resource "pagerduty_user" "jon" {
 resource "pagerduty_user" "jordan" {
   name  = "Jordan Acosta"
   email = "jordan@nuon.co"
-  role  = "owner"
+  role  = "admin"
 }
 
 resource "pagerduty_user" "nat" {
