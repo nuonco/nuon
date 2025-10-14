@@ -125,6 +125,10 @@ accounts:
   "958110090201":
     presets:
       - common
+  # sandbox-se
+  "622185967174":
+    presets:
+      - common
 
 presets:
   common:
