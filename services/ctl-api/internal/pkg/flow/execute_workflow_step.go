@@ -34,8 +34,6 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, nil
 	}
 
-	fmt.Println("sk step name", step.Name, step.Status.Status)
-
 	defer func() {
 		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
 			l.Error("unable to update finished at", zap.Error(err))
