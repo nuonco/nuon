@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import { CaretUpDown, CaretDown } from '@phosphor-icons/react'
+import { CaretUpDownIcon, CaretDownIcon } from '@phosphor-icons/react'
 import { Button, IButton } from '@/components/Button'
 
 export interface IDropdown extends IButton {
@@ -22,6 +22,7 @@ export const Dropdown: FC<IDropdown> = ({
   alignment = 'left',
   className,
   children,
+  disabled = false,
   hasCustomPadding = false,
   id,
   isFullWidth = false,
@@ -56,6 +57,7 @@ export const Dropdown: FC<IDropdown> = ({
               position === 'overlay' && alignment === 'overlay',
             [`${className}`]: Boolean(className),
           })}
+          disabled={disabled}
           hasCustomPadding={hasCustomPadding}
           id={`dropdown-button-${id}`}
           type="button"
@@ -65,9 +67,9 @@ export const Dropdown: FC<IDropdown> = ({
             {text}
 
             {noIcon ? null : variant !== 'ghost' && isDownIcon ? (
-              <CaretDown />
+              <CaretDownIcon />
             ) : (
-              <CaretUpDown />
+              <CaretUpDownIcon />
             )}
           </div>
         </Button>
