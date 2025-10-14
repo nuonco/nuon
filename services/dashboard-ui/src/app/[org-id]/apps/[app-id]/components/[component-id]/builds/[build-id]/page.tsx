@@ -8,8 +8,10 @@ import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { BuildDetails } from '@/components/Components/BuildDetails'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { getAppById, getComponentBuildById, getOrgById } from '@/lib'
 import { ComponentConfig } from './config'
+import { Logs, LogsError, LogsSkeleton } from './logs'
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -19,7 +21,7 @@ import {
   Duration,
   ErrorFallback,
   Loading,
-  LogStreamProvider,
+  LogStreamProvider as OldLogStreamProvider,
   OperationLogsSection,
   Section,
   Time,
@@ -91,9 +93,18 @@ export default async function AppComponentBuildPage({ params }) {
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
           {build?.log_stream ? (
-            <LogStreamProvider initLogStream={build?.log_stream}>
-              <OperationLogsSection heading="Build logs" />
-            </LogStreamProvider>
+            <Section heading="Build logs">
+              <LogStreamProvider
+                initLogStream={build?.log_stream}
+                shouldPoll={build?.log_stream?.open}
+              >
+                <ErrorBoundary fallback={<LogsError />}>
+                  <Suspense fallback={<LogsSkeleton />}>
+                    <Logs logStreamId={build?.log_stream?.id} orgId={orgId} />
+                  </Suspense>
+                </ErrorBoundary>
+              </LogStreamProvider>
+            </Section>
           ) : (
             <Section heading="Build logs">
               <OldText>Waiting on log stream</OldText>
@@ -210,9 +221,9 @@ export default async function AppComponentBuildPage({ params }) {
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">
           {build?.log_stream ? (
-            <LogStreamProvider initLogStream={build?.log_stream}>
+            <OldLogStreamProvider initLogStream={build?.log_stream}>
               <OperationLogsSection heading="Build logs" />
-            </LogStreamProvider>
+            </OldLogStreamProvider>
           ) : (
             <Section heading="Build logs">
               <OldText>Waiting on log stream</OldText>

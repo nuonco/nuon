@@ -38,7 +38,7 @@ export const LogPanel = ({ className, log, ...props }: ILogPanel) => {
         <span className="flex items-center gap-2 justify-between">
           <Text weight="strong">Log details</Text>
 
-          <Text variant="subtext" className="flex items-center gap-2">
+          <Text variant="subtext" className="!flex items-center gap-2">
             Copy link
             <ClickToCopyButton textToCopy={url} />
           </Text>
