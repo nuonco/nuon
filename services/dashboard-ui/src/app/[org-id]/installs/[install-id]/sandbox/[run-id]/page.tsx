@@ -9,7 +9,7 @@ import {
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { PageSection } from '@/components/layout/PageSection'
-
+import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
   getInstallById,
   getInstallSandboxRunById,
@@ -17,6 +17,7 @@ import {
   getOrgById,
 } from '@/lib'
 import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
+import { Logs, LogsError, LogsSkeleton } from './logs'
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -30,7 +31,7 @@ import {
   InstallWorkflowCancelModal,
   Loading,
   Link,
-  LogStreamProvider,
+  LogStreamProvider as OldLogStreamProvider,
   JsonView,
   OperationLogsSection,
   RunnerJobPlanModal,
@@ -109,11 +110,21 @@ export default async function SandboxRuns({ params }) {
             </Section>
           ) : null}
 
-          <LogStreamProvider initLogStream={sandboxRun?.log_stream}>
-            <OperationLogsSection
-              heading={sentanceCase(sandboxRun?.run_type) + ' logs'}
-            />
-          </LogStreamProvider>
+          <Section>
+            <LogStreamProvider
+              initLogStream={sandboxRun?.log_stream}
+              shouldPoll={sandboxRun?.log_stream?.open}
+            >
+              <ErrorBoundary fallback={<LogsError />}>
+                <Suspense fallback={<LogsSkeleton />}>
+                  <Logs
+                    logStreamId={sandboxRun?.log_stream?.id}
+                    orgId={orgId}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </LogStreamProvider>
+          </Section>
 
           {workflow &&
           step &&
@@ -284,11 +295,11 @@ export default async function SandboxRuns({ params }) {
             </Section>
           ) : null}
 
-          <LogStreamProvider initLogStream={sandboxRun?.log_stream}>
+          <OldLogStreamProvider initLogStream={sandboxRun?.log_stream}>
             <OperationLogsSection
               heading={sentanceCase(sandboxRun?.run_type) + ' logs'}
             />
-          </LogStreamProvider>
+          </OldLogStreamProvider>
 
           {workflow &&
           step &&
