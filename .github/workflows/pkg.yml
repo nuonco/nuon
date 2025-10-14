@@ -63,7 +63,7 @@ jobs:
       # TODO(jm): need to implement a way to run tests
       #- name: 😎 Tests
         #run: |
-          #CI=true nuonctl tests run-all --name=${{inputs.service}}
+          #CI=true nuonctl tests run-all ${{inputs.service}}
 
   update_status:
     name: update status
