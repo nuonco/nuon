@@ -151,19 +151,24 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       >
         <SplitButton
           id="deny-button"
+          disabled={isKickedOff}
           buttonText={isDenyLoading ? 'Denying plan' : 'Deny plan'}
           buttonIcon={isDenyLoading ? <SpinnerSVG /> : <XIcon />}
           buttonOnClick={() => {
             setIsDenyLoading(true)
             approve('deny')
           }}
+          buttonClassName={classNames({
+            '!bg-black/10 dark:!bg-black/50 hover:!bg-black/20 dark:hover:!bg-black/60':
+              inBanner,
+          })}
+          dropdownClassName={classNames({
+            '!bg-black/10 dark:!bg-black/50 hover:!bg-black/20 dark:hover:!bg-black/60':
+              inBanner,
+          })}
           alignment="right"
           className={classNames(
-            'text-sm font-sans flex items-center gap-2 h-[32px] !transition-all',
-            {
-              '!bg-black/10 dark:!bg-black/50 hover:!bg-black/20 dark:hover:!bg-black/60':
-                inBanner,
-            }
+            'text-sm font-sans flex items-center gap-0 h-[32px] !transition-all'
           )}
         >
           <div className="min-w-[256px] rounded-md overflow-hidden p-2 flex flex-col gap-1">
@@ -283,7 +288,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
         step?.status?.status !== 'error' &&
         step?.status?.status === 'approval-awaiting' ? (
         <Notice className="!p-4 w-full" variant="warn">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <Text variant="med-14" className="mb-2">
                 Action needed: {removeSnakeCase(approval?.type)}
