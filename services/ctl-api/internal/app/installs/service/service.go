@@ -135,7 +135,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep, api.APIContextTypePublic, true)
 	s.POST(ge, "/v1/install-workflows/:install_workflow_id/cancel", s.CancelInstallWorkflow, api.APIContextTypePublic, true)
 	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval, api.APIContextTypePublic, true)
-	s.POST(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id/response", s.CreateInstallWorkflowStepApprovalResponse, api.APIContextTypePublic, true)
+	// s.POST(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id/response", s.CreateInstallWorkflowStepApprovalResponse, api.APIContextTypePublic, true)
 
 	// install runner group
 	ge.GET("/v1/installs/:install_id/runner-group", s.GetInstallRunnerGroup)
