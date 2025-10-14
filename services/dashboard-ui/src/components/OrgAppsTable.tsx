@@ -19,7 +19,7 @@ type TData = {
   appId: string
   name: string
   platform: string
-  runner_type: string
+  config_version: number
   sandbox_repo: string | null
   isGithubConnected: boolean
 }
@@ -39,8 +39,8 @@ function parseAppsToTableData(apps: Array<TApp>): Array<TData> {
     return {
       appId: app.id,
       name: app.name,
-      platform: app?.runner_config?.cloud_platform,
-      runner_type: app?.runner_config?.app_runner_type,
+      platform: app?.cloud_platform,
+      config_version: app?.app_configs?.length,
       sandbox_repo,
       isGithubConnected,
     }
@@ -101,10 +101,10 @@ export const OrgAppsTable: FC<IOrgAppsTable> = ({ apps, orgId }) => {
         },
       },
       {
-        header: 'Runner',
-        accessorKey: 'runner_type',
+        header: 'Config version',
+        accessorKey: 'config_version',
         cell: (props) => (
-          <Text>{props.getValue<string>() || <MinusIcon />}</Text>
+          <Text>{props.getValue<number>() || <MinusIcon />}</Text>
         ),
       },
       {
