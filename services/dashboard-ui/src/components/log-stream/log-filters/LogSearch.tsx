@@ -8,7 +8,7 @@ export const LogSearch = () => {
   } = useLogs()
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3">
       <SearchInput
         placeholder="Search logs..."
         value={searchQuery}
