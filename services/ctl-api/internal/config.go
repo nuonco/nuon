@@ -60,6 +60,8 @@ func init() {
 	config.RegisterDefault("evaluation_journey_enabled", true)
 
 	config.RegisterDefault("temporal_workflow_failure_panic", false)
+
+	config.RegisterDefault("action_crons_enabled", false)
 }
 
 type Config struct {
@@ -201,6 +203,9 @@ type Config struct {
 	ChaosErrors []string      `config:"chaos_errors"`
 	ChaosRoutes []string      `config:"chaos_routes"`
 	ChaosSleep  time.Duration `config:"chaos_sleep"`
+
+	//
+	ActionCronsEnabled bool `config:"action_crons_enabled"`
 }
 
 func NewConfig() (*Config, error) {
