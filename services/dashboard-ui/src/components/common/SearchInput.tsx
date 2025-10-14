@@ -36,7 +36,7 @@ export const SearchInput = ({
           'bg-white dark:bg-dark-grey-900 placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
           className
         )}
-        type="search"
+        type="text"
         placeholder={placeholder}
         autoComplete="off"
         value={value}

@@ -6,11 +6,11 @@ import { Button } from '@/components/common/Button'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { SearchInput } from '@/components/common/SearchInput'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
-import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { Text } from '@/components/common/Text'
 import { GITHUB_APP_NAME } from '@/configs/github-app'
 import { useSidebar } from '@/hooks/use-sidebar'
@@ -189,26 +189,63 @@ const OrgsNav = ({}: IOrgsNav) => {
   const params = useQueryParams({ offset, limit, q: searchTerm })
   const {
     data: orgs,
-    isLoading,
     error,
+    headers,
+    isLoading,
   } = useQuery<TOrg[]>({
     path: `/api/orgs${params}`,
   })
 
   return (
-    <>
-      {isLoading
-        ? Array.from({ length: 5 }).map((_, i) => <LoadingOrgSummary key={i} />)
-        : orgs?.map((o) => (
-            <Link
-              key={o?.id}
-              className="!h-fit !block w-full"
-              href={`/${o?.id}`}
-              variant="ghost"
-            >
-              <OrgSummary org={o} />
-            </Link>
-          ))}
-    </>
+    <div className="w-full">
+      {true ? (
+        <div className="p-2 w-full">
+          <SearchInput
+            labelClassName="md:!min-w-full md:!w-full"
+            className="md:!min-w-full md:!w-full"
+            placeholder="Search org by name..."
+            value={searchTerm}
+            onChange={(value) => {
+              setSearchTerm(value)
+            }}
+          />
+        </div>
+      ) : null}
+      {isLoading ? (
+        Array.from({ length: 5 }).map((_, i) => <LoadingOrgSummary key={i} />)
+      ) : orgs?.length ? (
+        orgs?.map((o) => (
+          <Link
+            key={o?.id}
+            className="!h-fit !block w-full"
+            href={`/${o?.id}`}
+            variant="ghost"
+          >
+            <OrgSummary org={o} />
+          </Link>
+        ))
+      ) : (
+        <div className="flex flex-col items-center text-center w-full px-2 py-4">
+          <Text variant="base" weight="strong">
+            No org found
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Clear your search and try again
+          </Text>
+        </div>
+      )}
+      {orgs?.length > enablePaginationCount &&
+      headers?.['x-nuon-page-next'] === 'true' ? (
+        <Button
+          className="w-full justify-center mt-4"
+          onClick={() => {
+            setLimit(limit + 10)
+          }}
+          variant="ghost"
+        >
+          Load more
+        </Button>
+      ) : null}
+    </div>
   )
 }
