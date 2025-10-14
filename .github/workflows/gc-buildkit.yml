@@ -28,7 +28,7 @@ jobs:
 
       - name: Use nuon buildkit in infra-shared-ci
         run: |
-          CI=true nuonctl builds driver --name ctl-api  && nuonctl builds driver-health --name ctl-api || docker buildx ls
+          CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
 
       - name: Docker buildx prune
         run: |
