@@ -1,5 +1,6 @@
 'use client'
 
+import { redirect } from "next/navigation"
 import { useUser } from '@auth0/nextjs-auth0'
 import { Avatar } from '@/components/common/Avatar'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -7,12 +8,9 @@ import { Text } from '@/components/common/Text'
 
 export const UserProfile = () => {
   const { user, error, isLoading } = useUser()
-  if (error)
-    return (
-      <Text className="!leading-none" variant="body" weight="strong">
-        Unknown
-      </Text>
-    )
+  if (error) {
+    redirect("/")  
+  }
 
   return (
     <div className="flex gap-4 items-center min-w-40">
