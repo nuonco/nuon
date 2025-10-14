@@ -52,7 +52,7 @@ jobs:
         working-directory: pkg
     runs-on: mono
     env:
-      DISABLE_GITHUB_OIDC: false
+      DISABLE_GITHUB_OIDC: ${{ runner.environment == 'self-hosted' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
