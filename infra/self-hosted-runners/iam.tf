@@ -45,7 +45,7 @@ data "aws_iam_policy_document" "runner_policy" {
     resources = flatten([
       for account_name, account_id in local.accounts : [
         "arn:aws:iam::${account_id}:role/github/actions/gha-*",
-        "arn:aws:iam::${account_id}:role/github/actions/github-actions-role-*"
+        "arn:aws:iam::${account_id}:role/github-actions-role-*"
       ]
     ])
   }
