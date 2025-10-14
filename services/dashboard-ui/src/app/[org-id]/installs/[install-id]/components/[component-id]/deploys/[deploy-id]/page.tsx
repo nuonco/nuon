@@ -8,6 +8,7 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
   getInstallById,
   getDeployById,
@@ -17,6 +18,7 @@ import {
 import { CANCEL_RUNNER_JOBS, sizeToMbOrGB } from '@/utils'
 import { Build } from './build'
 import { ComponentConfig } from './config'
+import { Logs, LogsError, LogsSkeleton } from './logs'
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -38,7 +40,7 @@ import {
   InstallWorkflowCancelModal,
   Link as OldLink,
   Loading,
-  LogStreamProvider,
+  LogStreamProvider as OldLogStreamProvider,
   OperationLogsSection,
   RunnerJobPlanModal,
   Section,
@@ -279,9 +281,18 @@ export default async function InstallComponentDeploy({ params }) {
             </Section>
           ) : null}
 
-          <LogStreamProvider initLogStream={deploy?.log_stream}>
-            <OperationLogsSection heading="Deploy logs" />
-          </LogStreamProvider>
+          <Section childrenClassName="!flex-auto" className="flex-auto">
+            <LogStreamProvider
+              initLogStream={deploy?.log_stream}
+              shouldPoll={deploy?.log_stream?.open}
+            >
+              <ErrorBoundary fallback={<LogsError />}>
+                <Suspense fallback={<LogsSkeleton />}>
+                  <Logs logStreamId={deploy?.log_stream?.id} orgId={orgId} />
+                </Suspense>
+              </ErrorBoundary>
+            </LogStreamProvider>
+          </Section>
 
           {workflow &&
           step &&
@@ -574,9 +585,9 @@ export default async function InstallComponentDeploy({ params }) {
             </Section>
           ) : null}
 
-          <LogStreamProvider initLogStream={deploy?.log_stream}>
+          <OldLogStreamProvider initLogStream={deploy?.log_stream}>
             <OperationLogsSection heading="Deploy logs" />
-          </LogStreamProvider>
+          </OldLogStreamProvider>
 
           {workflow &&
           step &&

@@ -16,7 +16,7 @@ export const LogSeverity = ({
 }: ILogSeverity) => {
   return (
     <Text
-      className={cn('flex items-center gap-1', className)}
+      className={cn('!flex items-center gap-1', className)}
       family={family}
       {...props}
     >

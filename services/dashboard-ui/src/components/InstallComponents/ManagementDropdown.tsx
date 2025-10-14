@@ -29,7 +29,7 @@ export const InstallComponentManagementDropdown = ({
         </>
       }
       isDownIcon
-      wrapperClassName="z-20"
+      wrapperClassName="z-10"
     >
       <div className="min-w-[256px] rounded-md overflow-hidden p-2 flex flex-col gap-1">
         <Text className="px-2 pt-2 pb-1 text-cool-grey-600 dark:text-cool-grey-400">
