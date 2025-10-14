@@ -470,6 +470,7 @@ func (c *WorkflowConductor[DomainSignal]) markWorkflowApprovalPlanDenied(ctx wor
 		if !slices.Contains([]app.Status{
 			app.StatusPending,
 			app.AwaitingApproval,
+			app.StatusNotAttempted,
 			app.WorkflowStepApprovalStatusApprovalRetryPlan,
 		}, step.Status.Status) {
 			continue
