@@ -122,7 +122,7 @@ export default async function OrgRunner({ params, searchParams }) {
       banner={
         runner?.status === 'error' ? (
           <Notice className="!border-none !rounded-none">
-            Buld runner is unhealthy
+            Build runner is unhealthy
           </Notice>
         ) : null
       }
