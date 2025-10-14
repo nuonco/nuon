@@ -14,7 +14,7 @@ export const Logs = ({}: ILogs) => {
 
   return (
     <div className="flex flex-col flex-auto">
-      <div className="sticky -top-6 bg-background border-b">
+      <div className="sticky -top-2 bg-background border-b">
         <LogFilters />
         <div className="grid grid-cols-[3rem_15rem_3rem_1fr] gap-6 py-2">
           <Text variant="subtext" weight="strong" theme="neutral">
@@ -47,7 +47,7 @@ export const Logs = ({}: ILogs) => {
         <LogsSkeleton />
       ) : (
         <EmptyState
-          className="!my-auto"
+          className="!my-8"
           variant="table"
           emptyMessage="There are no logs to display. This could be because no logs have been created yet, or your current filters do not match any results."
           emptyTitle="No logs found"
