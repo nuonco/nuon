@@ -27,6 +27,10 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 	}
 	l.Info("starting children event loops for action crons")
 
+	if !w.cfg.ActionCronsEnabled {
+		return nil
+	}
+
 	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
