@@ -30,6 +30,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   cancelled: 'warn',
   outdated: 'warn',
   warn: 'warn',
+  drifted: 'warn',
 
   // Info
   executing: 'info',
