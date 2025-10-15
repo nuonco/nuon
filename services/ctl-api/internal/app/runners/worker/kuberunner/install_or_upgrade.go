@@ -57,7 +57,7 @@ func (a *Activities) InstallOrUpgrade(ctx context.Context, req *InstallOrUpgrade
 
 	// determine the insance types (box size) for the nodepool
 	instanceTypeName := "t3a.medium"
-	if a.config.Env != "prod" && a.config.Env != "production" {
+	if a.config.Env != "prod" && a.config.Env != "production" && a.config.Env != "byoc" {
 		instanceTypeName = "t3a.small"
 	}
 	req.InstanceTypeName = instanceTypeName
