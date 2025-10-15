@@ -68,7 +68,9 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, preDeploySteps...)
+	if !flw.PlanOnly {
+		steps = append(steps, preDeploySteps...)
+	}
 
 	// sync image
 	if comp.Type.IsImage() {
@@ -119,7 +121,9 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, postDeploySteps...)
+	if !flw.PlanOnly {
+		steps = append(steps, postDeploySteps...)
+	}
 
 	// now queue up any deploy that _depend_ on the input
 	componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
