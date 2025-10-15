@@ -88,3 +88,4 @@ docker_env:
   NUON_ORG_RUNNER: true
   NUON_CTL_API_ADMIN_URL: http://host.nuon.dev:8082
   NUON_TEMPORAL_UI_URL: http://host.nuon.dev:8234
+  NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING: false

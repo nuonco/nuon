@@ -1,120 +1,95 @@
 'use client'
 
-import { useParams } from 'next/navigation'
 import { useState, useEffect, createContext, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { ProductionReadyChecklistModal } from '@/components/Apps/ProductionReadyChecklistModal'
+import { FullScreenOnboarding } from '@/components/Apps/FullScreenOnboarding'
 import { useAccount } from '@/hooks/use-account'
-import type { TUserJourney } from '@/types'
+import type { TAccount } from '@/types'
+import { getUserJourney } from '@/utils/user-journey-utils'
 
 interface UserJourneyContextValue {
-  showChecklist: () => void
-  hideChecklist: () => void
-  isChecklistOpen: boolean
+  isViewOpen: boolean
+  openOnboarding: () => void
 }
 
 export const UserJourneyContext = createContext<
   UserJourneyContextValue | undefined
 >(undefined)
 
+// check if any journey steps are incomplete
+const incompleteSteps = (account: TAccount) => {
+  const evaluationJourney = getUserJourney(account, 'evaluation')
+  if (!evaluationJourney) return false
+
+  // Show view if ANY step is incomplete - view persists until journey complete
+  const hasIncompleteSteps = evaluationJourney.steps.some(
+    (step: any) => !step.complete
+  )
+
+  return hasIncompleteSteps
+}
+
 export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
-  const params = useParams()
-  const { ['org-id']: orgId } = params
   const { account, refreshAccount } = useAccount()
-  const [showChecklistModal, setShowChecklistModal] = useState(false)
-  const [userDismissedForNavigation, setUserDismissedForNavigation] =
-    useState(false)
+  const [showJourneyView, setShowJourneyView] = useState(false)
+  const [manuallyOpened, setManuallyOpened] = useState(false)
 
-  // Get evaluation journey from account
-  const getEvaluationJourney = () => {
-    const accountWithJourneys = account as any
-    if (!accountWithJourneys?.user_journeys) return null
-
-    return (accountWithJourneys.user_journeys as TUserJourney[]).find(
-      (journey) => journey.name === 'evaluation'
-    )
-  }
-
-  // Check if user should see the journey modal (for any incomplete steps)
-  const shouldShowChecklist = () => {
-    const evaluationJourney = getEvaluationJourney()
-    if (!evaluationJourney) return false
-
-    // Show modal if ANY step is incomplete - modal persists until journey complete
-    const hasIncompleteSteps = evaluationJourney.steps.some(
-      (step) => !step.complete
-    )
-
-    return hasIncompleteSteps
-  }
-
-  // Show journey modal based on incomplete steps and dismissal state
+  // Show journey view based on incomplete steps and manually opened
   useEffect(() => {
-    const shouldShow = shouldShowChecklist() && !userDismissedForNavigation
-    setShowChecklistModal(shouldShow)
-  }, [account, userDismissedForNavigation])
-
-  // Reset dismissal flag when journey is complete (for future journeys)
-  useEffect(() => {
-    const evaluationJourney = getEvaluationJourney()
-    const allStepsComplete =
-      evaluationJourney?.steps.every((step) => step.complete) ?? false
-
-    if (allStepsComplete && userDismissedForNavigation) {
-      setUserDismissedForNavigation(false)
+    // Skip auto logic when manually opened
+    if (manuallyOpened) {
+      setShowJourneyView(true)
+      return
     }
-  }, [account, userDismissedForNavigation])
 
-  const handleCloseChecklistModal = async () => {
+    setShowJourneyView(incompleteSteps(account))
+  }, [account, manuallyOpened])
+
+  // Add method to manually open onboarding (without affecting journey state)
+  const openOnboarding = () => {
+    setManuallyOpened(true) // Prevent auto-close logic
+    setShowJourneyView(true)
+    // Note: This does NOT update journey steps, just reopens the modal
+  }
+
+  const handleCloseViewModal = async () => {
+    // Reset manual flag to allow auto logic to resume
+    setManuallyOpened(false)
+
     // Check if all journey steps are complete before allowing close
-    const evaluationJourney = getEvaluationJourney()
+    const evaluationJourney = getUserJourney(account, 'evaluation')
     const allStepsComplete =
-      evaluationJourney?.steps.every((step) => step.complete) ?? false
+      evaluationJourney?.steps.every((step: any) => step.complete) ?? false
 
     if (allStepsComplete) {
-      // All steps complete - allow modal to close
-      setShowChecklistModal(false)
+      // All steps complete - allow view to close
+      setShowJourneyView(false)
     } else {
       // Steps still incomplete - just refresh account data
       await refreshAccount()
     }
   }
 
-  const showChecklist = () => {
-    // Modal visibility is now purely based on journey completion
-    // This method is kept for API compatibility but doesn't override journey logic
-  }
-
-  const hideChecklist = () => {
-    // Modal visibility is now purely based on journey completion
-    // This method is kept for API compatibility but doesn't override journey logic
-  }
-
   const contextValue: UserJourneyContextValue = {
-    showChecklist,
-    hideChecklist,
-    isChecklistOpen: showChecklistModal,
+    isViewOpen: showJourneyView,
+    openOnboarding,
   }
+
+  const onboarding = (
+    <FullScreenOnboarding
+      isOpen={showJourneyView}
+      onClose={handleCloseViewModal}
+      account={account}
+    />
+  )
 
   return (
     <UserJourneyContext.Provider value={contextValue}>
       {children}
 
-      {/* Journey checklist modal - shows for all incomplete steps including org creation */}
-      {showChecklistModal && typeof document !== 'undefined'
-        ? createPortal(
-            <ProductionReadyChecklistModal
-              isOpen={showChecklistModal}
-              onClose={handleCloseChecklistModal}
-              account={account}
-              orgId={orgId as string}
-              onForceClose={() => {
-                setUserDismissedForNavigation(true)
-                setShowChecklistModal(false)
-              }}
-            />,
-            document.body
-          )
+      {/* Journey checklist - shows for all incomplete steps including org creation */}
+      {showJourneyView && typeof document !== 'undefined'
+        ? createPortal(onboarding, document.body)
         : null}
     </UserJourneyContext.Provider>
   )
