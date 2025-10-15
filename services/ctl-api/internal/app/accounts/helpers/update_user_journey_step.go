@@ -121,7 +121,7 @@ func (h *Helpers) updateUserJourneyStepIfIncomplete(ctx context.Context, params 
 }
 
 // buildNavigationMetadata creates metadata for navigation purposes
-func buildNavigationMetadata(appID, installID *string) map[string]interface{} {
+func buildNavigationMetadata(appID, installID, orgID *string) map[string]interface{} {
 	metadata := make(map[string]interface{}) // Never return nil
 
 	if appID != nil && *appID != "" {
@@ -130,12 +130,15 @@ func buildNavigationMetadata(appID, installID *string) map[string]interface{} {
 	if installID != nil && *installID != "" {
 		metadata["install_id"] = *installID
 	}
+	if orgID != nil && *orgID != "" {
+		metadata["org_id"] = *orgID
+	}
 
 	return metadata
 }
 
 // UpdateUserJourneyStepForFirstOrg updates the org_created step when user creates their first org
-func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountID string) error {
+func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountID, orgID string) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
 		AccountID:        accountID,
 		JourneyName:      "evaluation",
@@ -143,7 +146,7 @@ func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountI
 		Complete:         true,
 		CompletionMethod: "auto",
 		CompletionSource: "system",
-		Metadata:         buildNavigationMetadata(nil, nil),
+		Metadata:         buildNavigationMetadata(nil, nil, &orgID),
 		NeedsRoleData:    true,
 	})
 }
@@ -157,7 +160,7 @@ func (h *Helpers) UpdateUserJourneyStepForCLIInstalled(ctx context.Context, acco
 		Complete:         true,
 		CompletionMethod: "auto",
 		CompletionSource: "cli", // Detected when CLI makes first API call
-		Metadata:         buildNavigationMetadata(nil, nil),
+		Metadata:         buildNavigationMetadata(nil, nil, nil),
 		NeedsRoleData:    false,
 	})
 }
@@ -171,7 +174,7 @@ func (h *Helpers) UpdateUserJourneyStepForFirstAppCreate(ctx context.Context, ac
 		Complete:         true,
 		CompletionMethod: "auto",
 		CompletionSource: "api", // Triggered by app creation API
-		Metadata:         buildNavigationMetadata(&appID, nil),
+		Metadata:         buildNavigationMetadata(&appID, nil, nil),
 		NeedsRoleData:    false,
 	})
 }
@@ -185,7 +188,7 @@ func (h *Helpers) UpdateUserJourneyStepForFirstAppSync(ctx context.Context, acco
 		Complete:         true,
 		CompletionMethod: "auto",
 		CompletionSource: "cli", // Triggered by `nuon apps sync`
-		Metadata:         buildNavigationMetadata(&appID, nil),
+		Metadata:         buildNavigationMetadata(&appID, nil, nil),
 		NeedsRoleData:    false,
 	})
 }
@@ -199,7 +202,7 @@ func (h *Helpers) UpdateUserJourneyStepForFirstInstallCreate(ctx context.Context
 		Complete:         true,
 		CompletionMethod: "auto",
 		CompletionSource: "dashboard", // Usually created via dashboard
-		Metadata:         buildNavigationMetadata(nil, &installID),
+		Metadata:         buildNavigationMetadata(nil, &installID, nil),
 		NeedsRoleData:    false,
 	})
 }

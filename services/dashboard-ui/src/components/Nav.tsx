@@ -3,19 +3,22 @@
 import classNames from 'classnames'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
-import React, { type FC } from 'react'
+import React, { type FC, useContext } from 'react'
 import {
   AppWindow,
   ArrowSquareOut,
   Books,
   CaretRight,
   Cube,
+  GraduationCap,
+  Signpost,
   ListDashes,
   SneakerMove,
   SquaresFour,
   UsersThree,
 } from '@phosphor-icons/react'
 import { useOrg } from '@/hooks/use-org'
+import { UserJourneyContext } from '@/providers/user-journey-provider'
 import { Link } from './Link'
 import { Text } from './Typography'
 
@@ -23,6 +26,7 @@ export type TLink = {
   href: string
   text?: React.ReactNode
   isExternal?: boolean
+  onClick?: () => void
 }
 
 export const MainNav: FC<{
@@ -30,6 +34,7 @@ export const MainNav: FC<{
 }> = ({ isSidebarOpen }) => {
   const { org } = useOrg()
   const path = usePathname()
+  const { openOnboarding } = useContext(UserJourneyContext) || {}
   const links: Array<TLink> = [
     {
       href: `/${org.id}`,
@@ -127,6 +132,20 @@ export const MainNav: FC<{
       ),
       isExternal: true,
     },
+    {
+      href: '#',
+      text: (
+        <>
+          <span>
+            <Signpost weight="bold" />
+          </span>
+          {isSidebarOpen ? (
+            <span className="overflow-hidden">Review Onboarding</span>
+          ) : null}
+        </>
+      ),
+      onClick: openOnboarding,
+    },
   ]
 
   const NavLink: FC<{ link: TLink }> = ({ link }) => {
@@ -145,10 +164,21 @@ export const MainNav: FC<{
       }
     )
 
+    const handleClick = (e: React.MouseEvent) => {
+      if (link.onClick) {
+        e.preventDefault()
+        link.onClick()
+      }
+    }
+
     return link.isExternal ? (
       <Link className={classes} href={link.href} target="_blank">
         {link.text}
       </Link>
+    ) : link.onClick ? (
+      <button className={classes} onClick={handleClick}>
+        {link.text}
+      </button>
     ) : (
       <NextLink key={link.href} className={classes} href={link.href}>
         {link.text}
