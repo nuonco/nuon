@@ -12,14 +12,6 @@ interface CLIInstallStepContentProps {
 export const CLIInstallStepContent: FC<CLIInstallStepContentProps> = ({
   stepComplete,
 }) => {
-  const installMethods = [
-    {
-      title: 'macOS (Homebrew)',
-      command: 'brew install nuonco/tap/nuon',
-      description: 'Recommended for macOS users',
-    },
-  ]
-
   return (
     <div className="space-y-6">
       {/* Success Message - Shown when step is complete */}
@@ -71,8 +63,6 @@ export const CLIInstallStepContent: FC<CLIInstallStepContentProps> = ({
           title="2. Log in to your account"
           description='When prompted, select "Nuon Cloud"'
         />
-
-        <CommandBlock command="nuon orgs select" title="3. Select your org" />
       </div>
     </div>
   )
