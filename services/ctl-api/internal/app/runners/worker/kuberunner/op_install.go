@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
+	"helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -26,6 +27,7 @@ func (h *Activities) install(ctx context.Context, actionCfg *action.Configuratio
 	client.DryRun = false
 	client.DisableHooks = false
 	client.WaitForJobs = false
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = false
 	client.DependencyUpdate = true
 	client.Timeout = req.Timeout
