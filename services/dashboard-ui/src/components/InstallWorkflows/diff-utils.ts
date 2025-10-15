@@ -49,6 +49,9 @@ export function diffEntries(
   const lines: string[] = [];
   
   for (const entry of entries) {
+    // Skip entries without payload
+    if (!entry.payload) continue;
+    
     const entryLines = entry.payload.split('\n');
     
     for (const line of entryLines) {
