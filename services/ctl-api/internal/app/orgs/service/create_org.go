@@ -84,7 +84,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	})
 
 	// Update user journey for first org creation
-	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstOrg(ctx, acct.ID); err != nil {
+	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstOrg(ctx, acct.ID, newOrg.ID); err != nil {
 		// Log error but don't fail org creation
 		s.l.Warn("failed to update user journey for first org",
 			zap.String("account_id", acct.ID),

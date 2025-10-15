@@ -7,9 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type UpdateAppConfigRequest struct {
@@ -61,6 +63,22 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app inputs config: %w", err))
 		return
+	}
+
+	// Update user journey step for first app sync when status becomes active
+	if req.Status == app.AppConfigStatusActive {
+		user, err := cctx.AccountFromGinContext(ctx)
+		if err == nil && cfg != nil {
+			// Only update if this is the user's first app sync (app_synced step incomplete)
+			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, user.ID, cfg.AppID); err != nil {
+				// Log but don't fail the update
+				s.l.Warn("failed to update user journey for first app sync",
+					zap.String("account_id", user.ID),
+					zap.String("app_id", cfg.AppID),
+					zap.String("app_config_id", cfg.ID),
+					zap.Error(err))
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)

@@ -1,6 +1,8 @@
 package auth
 
-import "github.com/golang-jwt/jwt/v4"
+import (
+	"github.com/golang-jwt/jwt/v4"
+)
 
 type IDClaims struct {
 	Email string `json:"email"`
