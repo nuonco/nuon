@@ -27,7 +27,7 @@ func (h *handler) uninstall(ctx context.Context, l *zap.Logger, actionCfg *actio
 	l.Info("uninstalling release", zap.String("release", prevRel.Name))
 	client := action.NewUninstall(actionCfg)
 	// NOTE(fd): determine what the right wait strategy should be here
-	client.WaitStrategy = kube.LegacyStrategy
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Timeout = h.state.timeout
 	_, err = client.Run(prevRel.Name)
 	if err != nil {
