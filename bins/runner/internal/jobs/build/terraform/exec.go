@@ -22,6 +22,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	l.Info("fetching source files")
 	srcFiles, err := h.getSourceFiles(ctx, src.AbsPath())
 	if err != nil {
+		l.Error("failed to get source files", zap.Error(err))
 		h.writeErrorResult(ctx, "fetch files", err)
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
@@ -33,6 +34,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("packing terraform files into archive")
 	if err := h.state.arch.Pack(ctx, l, srcFiles); err != nil {
+		l.Error("failed to pack files", zap.Error(err))
 		h.writeErrorResult(ctx, "packing files", err)
 		return err
 	}
@@ -45,6 +47,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		h.state.resultTag,
 	)
 	if err != nil {
+		l.Error("failed to copy", zap.Error(err))
 		h.writeErrorResult(ctx, "copy image", err)
 		return fmt.Errorf("unable to copy image: %w", err)
 	}
