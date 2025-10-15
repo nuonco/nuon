@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -37,6 +38,9 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 		First(&appCfg)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get app config")
+	}
+	if appCfg.Status != app.AppConfigStatusActive {
+		return nil, fmt.Errorf("app config %s is in an error state", appCfg.ID)
 	}
 
 	missingComponentIds := make([]string, 0)
