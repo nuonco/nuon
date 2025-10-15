@@ -8,6 +8,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -65,10 +66,45 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 
 	// get user info from ID token
 	user := a.getUserInfo(tokens.IDToken)
+	view.Print(fmt.Sprintf("Logged in as %s", user.Name))
 
-	view.Render([][]string{
-		{"Now logged in as", user.Name, user.Email},
+	// update apiClient with newly-fetched token so we can list orgs
+	api, err := nuon.New(
+		nuon.WithValidator(validator.New()),
+		nuon.WithAuthToken(tokens.AccessToken),
+		nuon.WithURL(cliCfg.APIURL),
+	)
+	if err != nil {
+		return view.Error(fmt.Errorf("unable to init API client: %w", err))
+	}
+	a.api = api
+
+	// If user only has a single org, select it
+	orgs, _, err := a.api.GetOrgs(ctx, &models.GetPaginatedQuery{
+		Offset: 0,
+		Limit:  10,
 	})
+	if err != nil {
+		return view.Error(err)
+	}
+
+	switch len(orgs) {
+	case 0:
+		// prompt user to create an org
+		view.Print(fmt.Sprintf("You are not a member of any orgs. You must create an org, or request an invite to one to continue."))
+
+	case 1:
+		org := orgs[0]
+		cliCfg.Set("org_id", org.ID)
+		err = cliCfg.WriteConfig()
+		if err != nil {
+			return view.Error(err)
+		}
+		view.Print(fmt.Sprintf("Using org %s", org.Name))
+
+	default:
+		view.Print(fmt.Sprintf("You are a member of multiple orgs. Select one to continue."))
+	}
 
 	return nil
 }
@@ -76,33 +112,33 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 // selectAPIURL prompts the user to select their deployment type and returns the appropriate API URL
 func (a *Service) selectAPIURL() (string, error) {
 	const defaultURL = "https://api.nuon.co"
-	
+
 	var deploymentType string
 	prompt := &survey.Select{
 		Message: "Which Nuon deployment are you using?",
 		Options: []string{"Nuon Cloud", "BYOC Nuon"},
 		Default: "Nuon Cloud",
 	}
-	
+
 	if err := survey.AskOne(prompt, &deploymentType); err != nil {
 		return "", fmt.Errorf("failed to get deployment type: %w", err)
 	}
-	
+
 	if deploymentType == "Nuon Cloud" {
 		return defaultURL, nil
 	}
-	
+
 	// For BYOC Nuon, ask for custom hostname
 	var customHostname string
 	hostPrompt := &survey.Input{
 		Message: "Enter your Nuon API hostname:",
 		Help:    "Example: api.your-domain.com",
 	}
-	
+
 	if err := survey.AskOne(hostPrompt, &customHostname, survey.WithValidator(survey.Required)); err != nil {
 		return "", fmt.Errorf("failed to get custom hostname: %w", err)
 	}
-	
+
 	customHostname = strings.TrimSpace(customHostname)
 	if !strings.HasPrefix(customHostname, "http://") && !strings.HasPrefix(customHostname, "https://") {
 		// Use http:// for localhost, https:// for everything else
@@ -112,7 +148,7 @@ func (a *Service) selectAPIURL() (string, error) {
 			customHostname = "https://" + customHostname
 		}
 	}
-	
+
 	return customHostname, nil
 }
 
@@ -120,13 +156,13 @@ func (a *Service) selectAPIURL() (string, error) {
 func (a *Service) updateAPIClient(apiURL string, cliCfg *config.Config) error {
 	// Create a new validator instance
 	v := validator.New()
-	
+
 	// Create a new API client with the updated URL
 	// Note: We don't have an API token yet since this is during login
 	api, err := nuon.New(
 		nuon.WithValidator(v),
 		nuon.WithAuthToken(""), // Empty token during login
-		nuon.WithOrgID(""),     // Empty org ID during login  
+		nuon.WithOrgID(""),     // Empty org ID during login
 		nuon.WithURL(apiURL),
 	)
 	if err != nil {
@@ -135,6 +171,6 @@ func (a *Service) updateAPIClient(apiURL string, cliCfg *config.Config) error {
 
 	// Update the service's API client
 	a.api = api
-	
+
 	return nil
 }
