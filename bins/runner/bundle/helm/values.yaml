@@ -18,8 +18,8 @@ serviceAccount:
 autoscaling:
   minReplicas: 1
   maxReplicas: 1
-  targetCPUUtilizationPercentage: 50
-  targetMemoryUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 100
+  targetMemoryUtilizationPercentage: 100
 
 #
 # NOTE(fd): atm, we only support t3a.medium based on the EC2NodeClass (see infra/eks/karpenter)
@@ -32,6 +32,9 @@ resources:
   requests:
     cpu: 500m
     memory: 512Mi
+  limit:
+    cpu: 1750m
+    memory: 3072Mi
 
 node_pool:
   # if we want the deployment to create and run on its own NodePool, we must enable this
