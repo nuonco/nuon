@@ -15,7 +15,7 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
 import { useAccount } from '@/hooks/use-account'
-import type { TAppConfig, TUserJourney } from '@/types'
+import type { TAppConfig } from '@/types'
 
 interface IAppCreateInstallButton {
   platform: string | 'aws' | 'azure'
@@ -121,19 +121,6 @@ const CreateInstallFromAppConfig = ({
   const { app } = useApp()
   const { account } = useAccount()
 
-  // Check if this install creation will complete the evaluation journey
-  const isCompletingEvaluationJourney = () => {
-    const accountWithJourneys = account as any
-    const evaluationJourney = accountWithJourneys?.user_journeys?.find(
-      (journey: TUserJourney) => journey.name === 'evaluation'
-    )
-
-    if (!evaluationJourney) return false
-
-    // Check if install_created step is the only incomplete step
-    const incompleteSteps = evaluationJourney.steps.filter((step: any) => !step.complete)
-    return incompleteSteps.length === 1 && incompleteSteps[0].name === 'install_created'
-  }
   const {
     data: config,
     isLoading,
@@ -164,15 +151,9 @@ const CreateInstallFromAppConfig = ({
           }}
           onSuccess={({ data: install, error, headers, status }) => {
             if (!error && status === 201) {
-              const workflowUrl = `/${org.id}/installs/${install?.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
-
-              // Add completion parameter if this completes the evaluation journey
-              const isCompletingJourney = isCompletingEvaluationJourney()
-              const finalUrl = isCompletingJourney
-                ? `${workflowUrl}?onboardingComplete=true`
-                : workflowUrl
-
-              router.push(finalUrl)
+              router.push(
+                `/${org.id}/installs/${install?.id}/workflows/${headers?.['x-nuon-install-workflow-id']}?onboardingComplete=true`
+              )
             }
           }}
           onCancel={onClose}
