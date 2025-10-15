@@ -11,9 +11,10 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 
 	// errs "github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/pkg/zapwriter"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/powertoolsdev/mono/pkg/zapwriter"
 )
 
 // regex to match full git commit hash
@@ -35,7 +36,7 @@ func (w *workspace) clone(ctx context.Context) error {
 	pWriter := zapwriter.New(w.L, zapcore.DebugLevel, "")
 
 	w.L.Info("cloning repository", zap.String("url", w.Src.Url))
-	repo, err := git.PlainCloneContext(ctx, w.rootDir(), false, &git.CloneOptions{
+	repo, err := git.PlainCloneContext(ctx, w.rootDir(), true, &git.CloneOptions{
 		URL:      w.Src.Url,
 		Progress: pWriter,
 	})
