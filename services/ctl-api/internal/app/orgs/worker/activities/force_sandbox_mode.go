@@ -30,6 +30,7 @@ func (a *Activities) forceSandboxMode(ctx context.Context, orgID string) error {
 		Model(org).
 		Updates(app.Org{
 			SandboxMode: true,
+			OrgType:     app.OrgTypeSandbox,
 		})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to force sandbox mode")
