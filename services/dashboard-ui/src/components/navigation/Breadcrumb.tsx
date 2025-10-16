@@ -49,9 +49,6 @@ export const BreadcrumbNav = ({ baseCrumbs }: IBreadcrumbNav) => {
             '/' +
             segments.slice(0, idx + 1).join('/')
 
-          // Skip index === 1 as in original (if this is not intentional, remove this)
-          if (idx === 1) return null
-
           return (
             <li key={href} className="flex items-center gap-2">
               <Separator />
