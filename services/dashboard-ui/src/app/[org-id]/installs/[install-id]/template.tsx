@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -60,7 +61,8 @@ export default function Template({ children }: { children: React.ReactNode }) {
             </HeadingGroup>
 
             <div className="flex flex-wrap gap-4 md:gap-8">
-              <LabeledValue label="App config">
+              <TemporalLink namespace="installs" eventLoopId={install?.id} />
+              <LabeledValue label="App">
                 <Text variant="subtext">
                   <Link href={`/${org.id}/apps/${install.app_id}`}>
                     {install?.app?.name}

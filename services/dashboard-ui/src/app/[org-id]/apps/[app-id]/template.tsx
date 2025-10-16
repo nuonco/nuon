@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -44,7 +45,8 @@ export default function Template({ children }: { children: React.ReactNode }) {
         <>
           <PageHeader>
             <PageHeadingGroup title={app.name} subtitle={<ID>{app.id}</ID>} />
-            <div>
+            <div className="flex items-center gap-4">
+              <TemporalLink namespace="apps" eventLoopId={app?.id} />
               <AppCreateInstallButton
                 platform={app?.runner_config.app_runner_type}
               />
