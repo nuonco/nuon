@@ -25,7 +25,7 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	appCfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
+	appCfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get full app config")
 	}

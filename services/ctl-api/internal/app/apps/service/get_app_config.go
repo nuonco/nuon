@@ -43,7 +43,7 @@ func (s *service) GetAppConfig(ctx *gin.Context) {
 
 	var appConfig *app.AppConfig
 	if recurse {
-		appConfig, err = s.helpers.GetFullAppConfig(ctx, appConfigID)
+		appConfig, err = s.helpers.GetFullAppConfig(ctx, appConfigID, true)
 	} else {
 		appConfig, err = s.getAppConfig(ctx, org.ID, appID, appConfigID)
 	}
