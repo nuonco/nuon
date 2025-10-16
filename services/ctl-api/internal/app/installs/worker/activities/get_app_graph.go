@@ -19,7 +19,7 @@ func (a *Activities) GetAppGraph(ctx context.Context, req GetAppGraphRequest) ([
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	cfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
+	cfg, err := a.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
