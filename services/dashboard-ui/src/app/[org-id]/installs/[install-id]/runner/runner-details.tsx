@@ -1,15 +1,17 @@
-import { Card } from "@/components/common/Card";
-import { RunnerDetailsCard } from "@/components/runners/RunnerDetailsCard";
-import { Text } from "@/components/common/Text";
-import { getRunnerById, getRunnerLatestHeartbeat } from "@/lib";
-import type { TRunnerGroup } from "@/types";
+import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
+import { RunnerDetailsCard } from '@/components/runners/RunnerDetailsCard'
+import { getRunnerById, getRunnerLatestHeartbeat } from '@/lib'
+import type { TRunnerGroup, TRunnerSettings } from '@/types'
 
 export async function RunnerDetails({
   orgId,
   runnerId,
+  settings,
 }: {
-  orgId: string;
-  runnerId: string;
+  orgId: string
+  runnerId: string
+  settings: TRunnerSettings
 }) {
   const [
     { data: runnerHeartbeat, error: runnerHeartbeatError },
@@ -23,25 +25,29 @@ export async function RunnerDetails({
       orgId,
       runnerId,
     }),
-  ]);
+  ])
 
-  const error = runnerError || runnerHeartbeatError || null;
+  const error = runnerError || runnerHeartbeatError || null
 
   return runner && !error ? (
     <RunnerDetailsCard
       className="md:flex-initial"
       initHeartbeat={runnerHeartbeat}
       runner={runner}
-      runnerGroup={{ platform: "local" } as TRunnerGroup}
+      runnerGroup={settings as TRunnerGroup}
       shouldPoll
     />
   ) : (
     <RunnerDetailsError />
-  );
+  )
 }
 
 export const RunnerDetailsError = () => (
   <Card className="flex-auto">
-    <Text>Unable to load build runner</Text>
+    <EmptyState
+      emptyMessage="Runner details will display here once available."
+      emptyTitle="No runner details"
+      variant="table"
+    />
   </Card>
-);
+)
