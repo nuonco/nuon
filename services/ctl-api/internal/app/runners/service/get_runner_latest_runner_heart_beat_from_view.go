@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -61,7 +60,6 @@ func (s *service) getRunnerLatestHeartBeatFromView(ctx context.Context, runnerID
 	// NOTE(fd): the view de-dupes but that's eventually consistent so we're going to dedupe here as we compose the repsonse.
 	heartbeats := LatestRunnerHeartBeats{}
 	for _, rhb := range runnerHeartBeats {
-		fmt.Printf("\n\n%+v\n\n", rhb)
 		process := string(rhb.Process)
 		value, ok := heartbeats[process]
 		if !ok { // not found: add
