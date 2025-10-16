@@ -25,8 +25,8 @@ autoscaling:
 # docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium
 resources:
   requests:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 1500m
+    memory: 1536Mi
   limit:
     cpu: 1750m
     memory: 3072Mi
