@@ -10,8 +10,8 @@ installs of your apps.
 
 ## Adding a README to an App
 
-To add a README to an App, define the `readme` field in your App Config. We'll
-start with something simple.
+To add a README to an App, define the `readme` field in your app. We'll start
+with something simple.
 
 ```toml metadata.toml
 name = "My App"
@@ -59,7 +59,7 @@ This app consists of the following components.
 ## Reference a README.md file
 
 To cleanly separate markdown from TOML, you can reference a `README.md` file in
-your App Config directory. This is often easier to manage, especially for longer
+your app directory. This is often easier to manage, especially for longer
 documents.
 
 ```toml metadata.toml
@@ -75,7 +75,7 @@ readme       = "./README.md"
 READMEs support variables. These will be rendered server-side in the context of
 each install, just as they are in component and actions fields. We will use
 variables here to add some install info. We can also parametrize the app info,
-to make sure the README is up to date if we change the app config later.
+to make sure the README is up to date if we change the app later.
 
 ```toml metadata.toml
 name = "My App"

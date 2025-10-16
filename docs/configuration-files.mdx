@@ -262,7 +262,7 @@ region = "us-west-2"
 
 You can create and manage [Installs](/concepts/installs) by creating
 `<install>.toml` files in an `installs` directory managed separately from the
-app configs. An Install config must declare a `name` field and any relevant
+apps. An Install config must declare a `name` field and any relevant
 install-specific configuration.
 
 The inputs are defined as a list of input groups. This is just for logical
@@ -270,10 +270,10 @@ grouping, and inputs from different groups can be defined together. Note that if
 an input is defined multiple times, the last defined value would be used.
 
 When you generate a config, inputs will be grouped together, reflecting the
-input groups you have defined in the app config. Sensitive inputs will be
-excluded, to avoid saving them in plain text in version control. When syncing
-install config files, sensitive inputs will be ignored. They can still be
-managed manually via the Dashboard.
+input groups you have defined in the app. Sensitive inputs will be excluded, to
+avoid saving them in plain text in version control. When syncing install config
+files, sensitive inputs will be ignored. They can still be managed manually via
+the Dashboard.
 
 <Note>
 	Currently only AWS installs are supported using Install config files.
@@ -330,5 +330,3 @@ approval_option = "prompt" # set this to "approve-all" to enable auto approval
 	All input values should be defined as strings. They will be parsed into the
 	correct type by Nuon.
 </Note>
-
-

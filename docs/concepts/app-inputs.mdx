@@ -1,13 +1,16 @@
 ---
-title: 'Inputs'
-description: "Inputs allow you to define customer provided values that can be used to configure your App."
+title: "Inputs"
+description:
+  "Inputs allow you to define customer provided values that can be used to
+  configure your App."
 ---
 
 Inputs are used to collect customer provider values for configuring your App.
 
 ## Defining Inputs
 
-Inputs are configured in a `inputs.toml` file inside the root of your App Config directory.
+Inputs are configured in a `inputs.toml` file inside the root of your app
+directory.
 
 Add Inputs to your App using the following configuration block
 
@@ -30,10 +33,11 @@ sensitive    = false
 
 ## Configuration Using Inputs
 
-Inputs can be used to configure both Sandboxes and Components. All Inputs are made available via
-[variable](/guides/using-variables) configuration.
+Inputs can be used to configure both Sandboxes and Components. All Inputs are
+made available via [variable](/guides/using-variables) configuration.
 
-Inputs are defined in a `inputs.toml` file inside the root of your App Config directory.
+Inputs are defined in a `inputs.toml` file inside the root of your app
+directory.
 
 All Inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`.
 
@@ -41,7 +45,8 @@ All Inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`.
 
 You can configure Sandboxes by using Inputs as `var`s.
 
-For example, to use the `root_domain` Input, as a variable to configure the Sandbox:
+For example, to use the `root_domain` Input, as a variable to configure the
+Sandbox:
 
 ```toml sandbox.toml
 
@@ -59,8 +64,8 @@ public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
 
 ### Configuring Components
 
-Depending upon the Component type, you can use install Inputs to configure Components using Helm values, Terraform
-variables or environment variables.
+Depending upon the Component type, you can use install Inputs to configure
+Components using Helm values, Terraform variables or environment variables.
 
 To use Inputs in a Terraform module.
 
@@ -117,11 +122,12 @@ docker_build_registry_password = "{{.nuon.install.inputs.docker_build_registry_p
 
 ## App Input Groups
 
-You can organize Inputs into Groups, which are useful for structuring how they are visualized in the installer. By 
-default, all Inputs are created in the `default` group.
+You can organize Inputs into Groups, which are useful for structuring how they
+are visualized in the installer. By default, all Inputs are created in the
+`default` group.
 
-To create a Group, and add an Input to it, simply declare the Group in your config or terraform and set the `group` 
-field on any input belonging to it.
+To create a Group, and add an Input to it, simply declare the Group in your
+config or terraform and set the `group` field on any input belonging to it.
 
 ```toml inputs.toml
 #:schema http://localhost:8081/v1/general/config-schema?type=inputs
@@ -141,22 +147,26 @@ group        = "db"
 
 ## Inputs For Customer Resources
 
-Inputs are commonly used to allow a customer to provide access to existing resources. For example, an Input can be
-used for:
+Inputs are commonly used to allow a customer to provide access to existing
+resources. For example, an Input can be used for:
 
-* accepting a database url, or database ID to connect to
-* accepting a VPC ID to install an app into
-* accepting a token to access a third party cloud provider or account
+- accepting a database url, or database ID to connect to
+- accepting a VPC ID to install an app into
+- accepting a token to access a third party cloud provider or account
 
-You can even use Inputs to manage resources from [third party cloud providers](/concepts/platforms#supporting-custom-platforms).
+You can even use Inputs to manage resources from
+[third party cloud providers](/concepts/platforms#supporting-custom-platforms).
 
 ## Updating Inputs
 
-If you add a required Input _after_ an install is created, the Inputs must be added to the Install before it can process
-  any new Sandbox updates or Component provision/deprovision jobs.
+If you add a required Input _after_ an install is created, the Inputs must be
+added to the Install before it can process any new Sandbox updates or Component
+provision/deprovision jobs.
 
-Currently, updating Inputs is only supported via our [api](/api-ref/installs/update-an-install).
+Currently, updating Inputs is only supported via our
+[api](/api-ref/installs/update-an-install).
 
 <Note>
-We recommend avoiding adding backwards incompatible Input changes in the same App.
+	We recommend avoiding adding backwards incompatible Input changes in the same
+	App.
 </Note>

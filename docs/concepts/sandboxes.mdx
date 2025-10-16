@@ -99,9 +99,9 @@ reference in your `sandbox.toml`.
 
 ## Runner Types
 
-Update the `runner.toml` in your App Config to specify the type of Cloud runner
-to use for your App. The runner is responsible for executing the deployment of
-your App into the customer's account.
+Update the `runner.toml` in your app to specify the type of Cloud runner to use
+for your App. The runner is responsible for executing the deployment of your App
+into the customer's account.
 
 ```toml runner.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=runner
@@ -144,25 +144,25 @@ See the
 [outputs.tf](https://github.com/nuonco/aws-eks-sandbox/blob/main/outputs.tf) for
 the AWS EKS Sandbox for a full list of available outputs or the
 [outputs.tf](https://github.com/nuonco/aws-min-sandbox/blob/main/outputs.tf) for
-the AWS Min Sandbox. 
+the AWS Min Sandbox.
 
 Example outputs include:
-* `account.id` - The AWS Account ID
-* `account.region` - The AWS Region
-* `vpc.id` - The VPC ID
-* `cluster.cluster_name` - The EKS Cluster name
-* `cluster.cluster_endpoint` - The EKS Cluster endpoint
-* `ecr.repository_url` - The ECR repository URL
-* `ecr.registry_url` - The ECR registry URL
-* `nuon_dns.public_domain` - The public root domain for the install
-* `nuon_dns.internal_domain` - The internal root domain for the install
-* `namespaces` - A list of namespaces created in the cluster
+
+- `account.id` - The AWS Account ID
+- `account.region` - The AWS Region
+- `vpc.id` - The VPC ID
+- `cluster.cluster_name` - The EKS Cluster name
+- `cluster.cluster_endpoint` - The EKS Cluster endpoint
+- `ecr.repository_url` - The ECR repository URL
+- `ecr.registry_url` - The ECR registry URL
+- `nuon_dns.public_domain` - The public root domain for the install
+- `nuon_dns.internal_domain` - The internal root domain for the install
+- `namespaces` - A list of namespaces created in the cluster
 
 ## Configure Sandboxes
 
-Each Sandbox has a set of variable inputs. Most variables are either
-supplied by the Nuon platform during install, via Inputs, or by setting default
-values.
+Each Sandbox has a set of variable inputs. Most variables are either supplied by
+the Nuon platform during install, via Inputs, or by setting default values.
 
 ### Use Default Values
 
@@ -226,9 +226,9 @@ While our [open source Sandboxes](#nuon-managed-sandboxes) are a great starting
 point, you can always fork them, or create your own Sandbox to support
 customizing.
 
-To use a custom Sandbox, simply update your App Config's `sandbox.toml` to point
-to your new Sandbox code. Custom Sandboxes can also use private GitHub repos,
-that are connected to Nuon.
+To use a custom Sandbox, simply update your app's `sandbox.toml` to point to
+your new Sandbox code. Custom Sandboxes can also use private GitHub repos, that
+are connected to Nuon.
 
 ```toml sandbox.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
