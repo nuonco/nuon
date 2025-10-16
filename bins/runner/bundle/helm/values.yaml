@@ -21,11 +21,6 @@ autoscaling:
   targetCPUUtilizationPercentage: 100
   targetMemoryUtilizationPercentage: 100
 
-#
-# NOTE(fd): atm, we only support t3a.medium based on the EC2NodeClass (see infra/eks/karpenter)
-#           if we wanted to, we could dynamically create `EC2NodeClass` here the same way we create
-#           the `NodePool`
-
 # limits should be based on the instance_types
 # docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium
 resources:
