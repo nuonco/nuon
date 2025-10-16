@@ -44,11 +44,12 @@ func FullPageDialog(req FullPageDialogRequest) string {
 	dialog := lipgloss.Place(req.Width, req.Height,
 		lipgloss.Center, lipgloss.Center,
 		dialogBoxStyle.
+			BorderForeground(levelStyle).
 			Width(lipgloss.Width(req.Content)).
 			Height(lipgloss.Height(req.Content)).
 			Render(req.Content),
-		lipgloss.WithWhitespaceChars("猫咪"),
-		lipgloss.WithWhitespaceForeground(levelStyle),
+		lipgloss.WithWhitespaceChars("⦾∙"),
+		lipgloss.WithWhitespaceForeground(styles.Ghost),
 	)
 	return dialog
 }

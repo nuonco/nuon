@@ -2,10 +2,10 @@ package action
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
 	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
@@ -25,15 +25,16 @@ func (m model) headerView() string {
 	}
 
 	// top header row
+	// [[⚪️title [status]] ... [[E] Execute]]
 	// 1. title and status from latest run
-	title := ""
-	status := ""
-	latestStatus := ""
-	if m.installActionWorkflow.ActionWorkflow != nil {
-		title = m.installActionWorkflow.ActionWorkflow.Name
-	}
+	// 2. Action Indicator/Prompt
 
-	// Get status from the latest run (first in the list)
+	title := m.installActionWorkflow.ActionWorkflow.Name
+	status := ""
+	prompt := styles.TextSuccess.Padding(0, 1).Render("[E] Execute this Action")
+
+	latestStatus := ""
+	// get status from the latest run (first in the list)
 	if len(m.installActionWorkflow.Runs) > 0 {
 		latestRun := m.installActionWorkflow.Runs[0]
 		latestStatus = latestRun.Status
@@ -45,18 +46,21 @@ func (m model) headerView() string {
 			icon := getRunStatusIcon(latestStatus)
 			title = statusStyle.Render(fmt.Sprintf("%s ", icon)) + title
 		}
-		status = fmt.Sprintf("%s %s ", styles.TextDim.Render("latest status:"), statusStyle.Render(latestStatus))
+		status = statusStyle.Render(fmt.Sprintf(" [%s]", latestStatus))
 	}
+
+	left := lipgloss.JoinHorizontal(lipgloss.Left, title, status)
+	right := lipgloss.JoinHorizontal(lipgloss.Left, prompt)
+	spacer := strings.Repeat(" ", common.Max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
 
 	// top row has two sections:
 	// [ title ] ... [ status ] with spacing between
-	spacer := strings.Repeat(" ", int(math.Max(float64(m.width-2-lipgloss.Width(title)-lipgloss.Width(status)), float64(0))))
 	topRow := lipgloss.NewStyle().Width(m.width).Render(
 		lipgloss.JoinHorizontal(
 			lipgloss.Center,
-			title,
+			left,
 			spacer,
-			status,
+			right,
 		),
 	)
 
