@@ -11,7 +11,7 @@ import (
 )
 
 func (h *Helpers) GetComponentDependents(ctx context.Context, appCfgID string, compID string) ([]string, error) {
-	appCfg, err := h.GetFullAppConfig(ctx, appCfgID)
+	appCfg, err := h.GetFullAppConfig(ctx, appCfgID, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
 	}

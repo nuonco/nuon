@@ -28,7 +28,7 @@ import (
 func (s *service) GetAppConfigGraph(ctx *gin.Context) {
 	appConfigID := ctx.Param("app_config_id")
 
-	appConfig, err := s.helpers.GetFullAppConfig(ctx, appConfigID)
+	appConfig, err := s.helpers.GetFullAppConfig(ctx, appConfigID, true)
 	if err != nil {
 		ctx.Error(err)
 		return

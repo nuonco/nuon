@@ -51,7 +51,7 @@ func (s *service) AdminConfigGraph(ctx *gin.Context) {
 		cfgID = cfgs[0].ID
 	}
 
-	appCfg, err := s.helpers.GetFullAppConfig(ctx, cfgID)
+	appCfg, err := s.helpers.GetFullAppConfig(ctx, cfgID, true)
 	if err != nil {
 		ctx.Error(err)
 		return

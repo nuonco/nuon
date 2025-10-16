@@ -206,8 +206,10 @@ type Config struct {
 	ChaosRoutes []string      `config:"chaos_routes"`
 	ChaosSleep  time.Duration `config:"chaos_sleep"`
 
-	//
+	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
+
+	MinCLIVersion string `config:"min_cli_version"`
 }
 
 func NewConfig() (*Config, error) {

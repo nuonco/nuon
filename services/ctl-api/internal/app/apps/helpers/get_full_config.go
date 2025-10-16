@@ -6,11 +6,12 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*app.AppConfig, error) {
+func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipVersionCheck bool) (*app.AppConfig, error) {
 	appCfg := app.AppConfig{}
 	res := h.db.WithContext(ctx).
 		Where(app.AppConfig{
@@ -41,6 +42,17 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 	}
 	if appCfg.Status == app.AppConfigStatusError {
 		return nil, fmt.Errorf("app config %s is in an error state", appCfg.ID)
+	}
+
+	if !skipVersionCheck {
+		versionAllowed, err := h.CliVerisionAllowed(ctx, appCfg.CLIVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to check cli version")
+		}
+
+		if !versionAllowed {
+			return nil, fmt.Errorf("resync config with a newer cli version: app_config_id %s", appCfg.ID)
+		}
 	}
 
 	missingComponentIds := make([]string, 0)
@@ -105,4 +117,31 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 	}
 
 	return &appCfg, nil
+}
+
+func (h *Helpers) CliVerisionAllowed(ctx context.Context, version string) (bool, error) {
+	fmt.Println("rb - checking CLI version:", version, "against minimum required version:", h.cfg.MinCLIVersion)
+	// If no minimum version is set, all versions are allowed
+	if h.cfg.MinCLIVersion == "" {
+		return true, nil
+	}
+
+	// Allow development versions
+	if version == "development" {
+		return true, nil
+	}
+
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		return false, err
+	}
+
+	constraint, err := semver.NewConstraint(">= " + h.cfg.MinCLIVersion)
+	if err != nil {
+		return false, err
+	}
+
+	allowed := constraint.Check(v)
+	fmt.Println("rb - CLI version allowed:", allowed)
+	return constraint.Check(v), nil
 }
