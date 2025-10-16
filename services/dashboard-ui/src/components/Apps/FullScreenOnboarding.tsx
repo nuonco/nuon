@@ -34,6 +34,7 @@ const OnboardingNavigation: FC<{
   onSkip: () => void
   canNavigateBack: boolean
   canNavigateForward: boolean
+  canSkip: boolean
 }> = ({
   currentStepIndex,
   steps,
@@ -42,6 +43,7 @@ const OnboardingNavigation: FC<{
   onSkip,
   canNavigateBack,
   canNavigateForward,
+  canSkip,
 }) => {
   return (
     <div className="border-b flex items-center justify-between p-4 md:p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-10 transition-all duration-200">
@@ -104,16 +106,17 @@ const OnboardingNavigation: FC<{
         </div>
       </div>
 
-      {/* Right: Skip */}
       <div className="flex items-center gap-2 md:gap-3">
-        <Button
-          variant="secondary"
-          onClick={onSkip}
-          className="transition-all duration-200 hover:scale-105"
-        >
-          <span className="hidden sm:inline">Skip</span>
-          <span className="sm:hidden">Skip</span>
-        </Button>
+        {canSkip && (
+          <Button
+            variant="secondary"
+            onClick={onSkip}
+            className="transition-all duration-200 hover:scale-105"
+          >
+            <span className="hidden sm:inline">Skip</span>
+            <span className="sm:hidden">Skip</span>
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -270,6 +273,7 @@ export const FullScreenOnboarding: FC<FullScreenOnboardingProps> = ({
         onSkip={handleSkipAll}
         canNavigateBack={canNavigateBack}
         canNavigateForward={canNavigateForward}
+        canSkip={!!orgId}
       />
 
       {/* Main Content */}
@@ -294,6 +298,7 @@ export const FullScreenOnboarding: FC<FullScreenOnboardingProps> = ({
                 {displayStep.name === 'account_created' ? (
                   <CreateAccountStepContent
                     stepComplete={displayStep.complete}
+                    account={account}
                   />
                 ) : displayStep.name === 'org_created' ? (
                   <OrgCreationStepContent
