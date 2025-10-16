@@ -5,7 +5,7 @@ terraform {
     organization = "nuonco"
 
     workspaces {
-      prefix = "buildkit-"
+      prefix = "self-hosted-runners"
     }
   }
 

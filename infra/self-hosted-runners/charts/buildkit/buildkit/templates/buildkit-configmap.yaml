@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remote-buildkit-agent
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "buildkit.labels" . | nindent 4 }}
+data:
+  buildkitd.toml: |
+{{ .Values.buildkit.toml | indent 4 }}

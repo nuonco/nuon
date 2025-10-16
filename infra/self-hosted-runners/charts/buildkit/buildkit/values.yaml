@@ -1,0 +1,64 @@
+# Default values for buildkit chart
+
+# Node pool configuration
+nodePool:
+  name: "buildkit"  # The name of the node pool to deploy on
+
+# BuildKit agent configuration
+buildkit:
+  replicas: 1
+  image:
+    repository: moby/buildkit
+    tag: latest
+    pullPolicy: Always
+  resources:
+    limits:
+      cpu: 30000m
+      memory: 56Gi
+  securityContext:
+    privileged: true
+  persistence:
+    storageClass: "gp2"
+    size: "300Gi"
+  port: 1234
+
+  # BuildKit configuration as raw TOML
+  toml: |
+    debug = true
+    trace = false
+    root = "/var/lib/buildkit"
+
+    [log]
+      format = "text"
+
+    [history]
+      # 48 hours (in seconds)
+      maxAge = 172800
+      maxEntries = 100
+
+    [worker.oci]
+      enabled = true
+      platforms = ["linux/amd64"]
+      rootless = false
+      noProcessSandbox = false
+      gc = true
+      maxUsedSpace = "60%"
+      minFreeSpace = "20GB"
+      reservedSpace = "30%"
+
+      [[worker.oci.gcpolicy]]
+        filters = ["type==source.local", "type==source.git.checkout", "type==exec.cachemount"]
+        keepDuration = "24h"
+        maxUsedSpace = "50GB"
+        reservedSpace = "20GB"
+        minFreeSpace = "20GB"
+
+      [[worker.oci.gcpolicy]]
+        all = true
+        keepDuration = "24h"
+        maxUsedSpace = "25GB"
+        reservedSpace = "10GB"
+        minFreeSpace = "10GB"
+
+# Namespace to deploy resources
+namespace: buildkit

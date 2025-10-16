@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: remote-buildkit-agent
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: remote-buildkit-agent
+    {{- include "buildkit.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: remote-buildkit-agent
+  template:
+    metadata:
+      labels:
+        app: remote-buildkit-agent
+    spec:
+      nodeSelector:
+        karpenter.sh/nodepool: {{ .Values.nodePool.name }}
+      tolerations:
+        - key: "pool.nuon.co"
+          operator: "Equal"
+          value: {{ .Values.nodePool.name }}
+          effect: "NoSchedule"
+      containers:
+        - name: buildkitd
+          image: "{{ .Values.buildkit.image.repository }}:{{ .Values.buildkit.image.tag }}"
+          imagePullPolicy: {{ .Values.buildkit.image.pullPolicy }}
+          args:
+            - --addr
+            - unix:///run/user/1000/buildkit/buildkitd.sock
+            - --addr
+            - tcp://0.0.0.0:{{ .Values.buildkit.port }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/buildkit
+            - name: var-lib-buildkit
+              mountPath: /var/lib/buildkit
+          resources:
+            {{- toYaml .Values.buildkit.resources | nindent 12 }}
+          readinessProbe:
+            exec:
+              command:
+                - buildctl
+                - --addr=unix:///run/user/1000/buildkit/buildkitd.sock
+                - debug
+                - workers
+            initialDelaySeconds: 1
+            periodSeconds: 30
+          livenessProbe:
+            exec:
+              command:
+                - buildctl
+                - --addr=unix:///run/user/1000/buildkit/buildkitd.sock
+                - debug
+                - workers
+            initialDelaySeconds: 1
+            periodSeconds: 30
+          securityContext:
+            {{- toYaml .Values.buildkit.securityContext | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.buildkit.port }}
+      volumes:
+        - name: config
+          configMap:
+            name: remote-buildkit-agent
+        - name: var-lib-buildkit
+          emptyDir: 
+            # Optional: Set a size limit for the volume if needed
+            sizeLimit: 500Gi

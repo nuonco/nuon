@@ -4,6 +4,7 @@ region: us-west-2
 pool: nuon
 
 # Namespace separation
+buildkit_namespace: buildkit
 controller_namespace: arc-systems
 runner_namespace: arc-runners
 node_pool_name: self-hosted-runners

@@ -1,0 +1,63 @@
+# Default values for buildkit chart
+
+# BuildKit agent configuration
+# buildkit:
+#   replicas: 1
+#   image:
+#     repository: moby/buildkit
+#     tag: latest
+#     pullPolicy: IfNotPresent
+#   resources:
+#     limits:
+#       cpu: 1000m
+#       memory: 1Gi
+#   securityContext:
+#     privileged: true
+#   persistence:
+#     storageClass: "ebi"
+#     size: "5Gi"
+#   port: 1234
+  
+#   # BuildKit configuration
+#   config:
+#     root: "/var/lib/buildkit"
+#     worker:
+#       containerd:
+#         enabled: false
+#       oci:
+#         enabled: true
+#         gc: true
+#         gckeepstorage: 30000000000
+#         snapshotter: "overlayfs"
+#         gcpolicy:
+#           - filters: ["type==source.local", "type==exec.cachemount", "type==source.git.checkout"]
+#             keepBytes: 10240000000
+#             keepDuration: 604800
+#           - keepBytes: 30000000000
+#           - all: true
+#             keepBytes: 30000000000
+
+# # Envoy proxy configuration
+# proxy:
+#   replicas: 1
+#   image:
+#     repository: envoyproxy/envoy-dev
+#     tag: latest
+#     pullPolicy: IfNotPresent
+#   resources: {}
+#   service:
+#     type: LoadBalancer
+
+#   # Envoy configuration
+#   config:
+#     admin:
+#       port: 9901
+
+# # TLS configuration
+# tls:
+#   enabled: true
+#   # When enabled, create these secrets or provide them externally
+#   secretName: buildkit-envoy-certs
+
+# # Namespace to deploy resources
+# namespace: buildkit

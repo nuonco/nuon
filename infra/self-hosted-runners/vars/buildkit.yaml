@@ -1,0 +1,38 @@
+---
+root_domain: nuon.cloud
+region: us-west-2
+pool: nuon
+namespace: buildkit
+
+buildkit:
+  port: 1234
+  replicas: 1
+  image:
+    repository: moby/buildkit
+    tag: latest
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  securityContext:
+    privileged: true
+  persistence:
+    storageClass: "ebi"
+    size: "5Gi"
+  config:
+    root: "/var/lib/buildkit"
+    worker:
+      containerd:
+        enabled: false
+      oci:
+        enabled: true
+        gc: true
+        gckeepstorage: 30000000000
+        snapshotter: "overlayfs"
+        gcpolicy:
+          - filters: ["type==source.local", "type==exec.cachemount", "type==source.git.checkout"]
+            keepBytes: 10240000000
+            keepDuration: 604800
+          - keepBytes: 30000000000
+          - all: true
+            keepBytes: 30000000000
