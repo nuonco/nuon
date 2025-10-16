@@ -26,7 +26,7 @@ export const RunnerDetailsCard = ({
   ...props
 }: IRunnerDetailsCard) => {
   const { org } = useOrg()
-  const { data: heartbeats, error } = usePolling<TRunnerMngHeartbeat>({
+  const { data: heartbeats } = usePolling<TRunnerMngHeartbeat>({
     path: `/api/orgs/${org?.id}/runners/${runner?.id}/heartbeat`,
     shouldPoll,
     initData: initHeartbeat,
@@ -46,49 +46,45 @@ export const RunnerDetailsCard = ({
         Runner details
       </Text>
 
-      {error ? (
-        <Text>Unable to refresh runner heartbeat: {error?.error}</Text>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          <LabeledValue label="Status">
-            <Status
-              status={runner?.status === 'active' ? 'healthy' : 'unhealthy'}
-              variant="badge"
-            />
-          </LabeledValue>
+      <div className="grid gap-6 md:grid-cols-2">
+        <LabeledValue label="Status">
+          <Status
+            status={runner?.status === 'active' ? 'healthy' : 'unhealthy'}
+            variant="badge"
+          />
+        </LabeledValue>
 
-          <LabeledValue label="Connectivity">
-            <Status
-              status={
-                isLessThan15SecondsOld(runnerHeartbeat?.created_at)
-                  ? 'connected'
-                  : 'not-connected'
-              }
-              variant="badge"
-            />
-          </LabeledValue>
+        <LabeledValue label="Connectivity">
+          <Status
+            status={
+              isLessThan15SecondsOld(runnerHeartbeat?.created_at)
+                ? 'connected'
+                : 'not-connected'
+            }
+            variant="badge"
+          />
+        </LabeledValue>
 
-          <LabeledValue label="Version">
-            <Text variant="subtext">
-              {runnerHeartbeat?.version || 'Waiting on version'}
-            </Text>
-          </LabeledValue>
+        <LabeledValue label="Version">
+          <Text variant="subtext">
+            {runnerHeartbeat?.version || 'Waiting on version'}
+          </Text>
+        </LabeledValue>
 
-          <LabeledValue label="Platform">
-            <Text variant="subtext" className="uppercase">
-              {runnerGroup?.platform}
-            </Text>
-          </LabeledValue>
+        <LabeledValue label="Platform">
+          <Text variant="subtext" className="uppercase">
+            {runnerGroup?.platform}
+          </Text>
+        </LabeledValue>
 
-          <LabeledValue label="Started at">
-            <Time variant="subtext" time={runnerHeartbeat?.started_at} />
-          </LabeledValue>
+        <LabeledValue label="Started at">
+          <Time variant="subtext" time={runnerHeartbeat?.started_at} />
+        </LabeledValue>
 
-          <LabeledValue label="Runner ID">
-            <ID theme="default">{runner?.id}</ID>
-          </LabeledValue>
-        </div>
-      )}
+        <LabeledValue label="Runner ID">
+          <ID theme="default">{runner?.id}</ID>
+        </LabeledValue>
+      </div>
     </Card>
   )
 }
