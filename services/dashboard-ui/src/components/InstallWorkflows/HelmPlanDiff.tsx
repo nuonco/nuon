@@ -25,16 +25,17 @@ interface HelmPlan {
   op: string
   plan: string
   helm_content_diff?: HelmContentDiff[]
-  k8s_content_diff?:  HelmContentDiff[]
+  k8s_content_diff?: HelmContentDiff[]
 }
+
 // payload contains n lines seprated by \n
 // delta 1 : before
 // delta 2 : after
 export interface HelmContentDiffEntry {
-  delta: 1 | 2 | 0;
-  payload: string;
-};
-
+  delta?: 1 | 2 | 0;
+  type?: 1 | 2 | 0;  // Added type field which is an alternative to delta
+  payload?: string;
+}
 
 interface HelmContentDiff {
   _version: string

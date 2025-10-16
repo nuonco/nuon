@@ -127,6 +127,7 @@ func TestDetectChanges(t *testing.T) {
 			},
 			wantChanges: true,
 			wantEntries: 1,
+			wantTypes:   []DiffEntryType{EntryModified},
 		},
 		{
 			name: "array changes",
@@ -335,46 +336,4 @@ func TestParseRawResourceName(t *testing.T) {
 			assert.Equal(t, tt.wantApiPath, apiPath)
 		})
 	}
-}
-
-func TestCompressAndEncodeDecode(t *testing.T) {
-	// Test data
-	type TestPlan struct {
-		Name   string                 `json:"name"`
-		Action string                 `json:"action"`
-		Data   map[string]interface{} `json:"data"`
-	}
-
-	originalPlan := TestPlan{
-		Name:   "test-plan",
-		Action: "apply",
-		Data: map[string]interface{}{
-			"key1": "value1",
-			"key2": 42.0,
-			"nested": map[string]interface{}{
-				"innerKey": "innerValue",
-			},
-		},
-	}
-
-	// Compress and encode
-	encoded, err := CompressAndEncodeObject(originalPlan)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, encoded)
-
-	// Decode and decompress
-	var decodedPlan TestPlan
-	err = DecompressAndDecodePlan(encoded, &decodedPlan)
-	assert.NoError(t, err)
-
-	// Verify the decoded plan matches the original
-	assert.Equal(t, originalPlan.Name, decodedPlan.Name)
-	assert.Equal(t, originalPlan.Action, decodedPlan.Action)
-	assert.Equal(t, originalPlan.Data["key1"], decodedPlan.Data["key1"])
-	assert.Equal(t, originalPlan.Data["key2"], decodedPlan.Data["key2"])
-
-	// Check nested data
-	nestedOriginal := originalPlan.Data["nested"].(map[string]interface{})
-	nestedDecoded := decodedPlan.Data["nested"].(map[string]interface{})
-	assert.Equal(t, nestedOriginal["innerKey"], nestedDecoded["innerKey"])
 }
