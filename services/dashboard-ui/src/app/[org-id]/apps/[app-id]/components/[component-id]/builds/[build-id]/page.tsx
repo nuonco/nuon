@@ -9,7 +9,12 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { BuildDetails } from '@/components/Components/BuildDetails'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { getAppById, getComponentBuildById, getOrgById } from '@/lib'
+import {
+  getAppById,
+  getComponentBuildById,
+  getComponentById,
+  getOrgById,
+} from '@/lib'
 import { ComponentConfig } from './config'
 import { Logs, LogsError, LogsSkeleton } from './logs'
 
@@ -17,6 +22,7 @@ import { Logs, LogsError, LogsSkeleton } from './logs'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CalendarBlankIcon, TimerIcon } from '@phosphor-icons/react/dist/ssr'
 import {
+  ComponentConfigType,
   DashboardContent,
   Duration,
   ErrorFallback,
@@ -55,11 +61,13 @@ export default async function AppComponentBuildPage({ params }) {
     ['build-id']: buildId,
   } = await params
 
-  const [{ data: app }, { data: build }, { data: org }] = await Promise.all([
-    getAppById({ appId, orgId }),
-    getComponentBuildById({ componentId, buildId, orgId }),
-    getOrgById({ orgId }),
-  ])
+  const [{ data: app }, { data: build }, { data: component }, { data: org }] =
+    await Promise.all([
+      getAppById({ appId, orgId }),
+      getComponentBuildById({ componentId, buildId, orgId }),
+      getComponentById({ componentId, orgId }),
+      getOrgById({ orgId }),
+    ])
 
   const containerId = 'component-build-page'
   return org?.features?.['stratus-layout'] ? (
@@ -68,9 +76,12 @@ export default async function AppComponentBuildPage({ params }) {
       <div className="p-6 border-b flex justify-between">
         <HeadingGroup>
           <BackLink className="mb-6" />
-          <Text variant="base" weight="strong">
-            {build?.component_name}
-          </Text>
+          <span className="flex items-center gap-2">
+            <ComponentConfigType configType={component?.type} isIconOnly />
+            <Text variant="base" weight="strong">
+              {build?.component_name}
+            </Text>
+          </span>
           <ID>{buildId}</ID>
           <div className="flex gap-8 items-center justify-start mt-2">
             <Text className="!flex items-center gap-1">
@@ -214,6 +225,7 @@ export default async function AppComponentBuildPage({ params }) {
             <TimerIcon />
             <Duration beginTime={build.created_at} endTime={build.updated_at} />
           </OldText>
+          <ComponentConfigType configType={component?.type} />
         </div>
       }
       statues={<BuildDetails initBuild={build} shouldPoll />}
