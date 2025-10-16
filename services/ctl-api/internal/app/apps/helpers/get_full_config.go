@@ -39,7 +39,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string) (*ap
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get app config")
 	}
-	if appCfg.Status != app.AppConfigStatusError {
+	if appCfg.Status == app.AppConfigStatusError {
 		return nil, fmt.Errorf("app config %s is in an error state", appCfg.ID)
 	}
 
