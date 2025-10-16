@@ -1,20 +1,23 @@
 ---
-title: 'Package'
+title: "Package"
 description: ""
-icon: 'code'
+icon: "code"
 ---
 
-You package an App for Nuon by creating an [App Config](/concepts/apps).
-This is where you will define what environment the app needs, what components it consists of, and how it will be configured during deployment.
+You package an App for Nuon by creating an [App](/concepts/apps). This is where
+you will define what environment the app needs, what components it consists of,
+and how it will be configured during deployment.
 
 ## Inputs
 
-[Inputs](/concepts/app-inputs) are how your [App](/concepts/apps) will be configured during deployment.
+[Inputs](/concepts/app-inputs) are how your [App](/concepts/apps) will be
+configured during deployment.
 
 ### Integrating with the Customer Environment
 
-Because the customer will be hosting your app in their environment, you may want to include security and cost management options.
-A few example of options you might include are:
+Because the customer will be hosting your app in their environment, you may want
+to include security and cost management options. A few example of options you
+might include are:
 
 - Integrate with their own auth provider, such as Auth0.
 - Configure what VPC to deploy in for security reasons.
@@ -22,8 +25,7 @@ A few example of options you might include are:
 
 ### Grouping
 
-To keep things managable, we recommend grouping inputs by domain.
-For example:
+To keep things managable, we recommend grouping inputs by domain. For example:
 
 - App Preferences: admin user, admin password, and other app settings
 - VPC Configuration: VPC ID, Private Subnet ID, Public Subnet ID
@@ -31,71 +33,102 @@ For example:
 
 ### Secrets
 
-If your customer needs to configure passwords, private tokens, or other sensitive values, define an input as a [Secret](/concepts/app-secrets). Secret values are saved to the target platform's secret store in the customer's account, and are never stored or accessed by the Nuon control plane.
+If your customer needs to configure passwords, private tokens, or other
+sensitive values, define an input as a [Secret](/concepts/app-secrets). Secret
+values are saved to the target platform's secret store in the customer's
+account, and are never stored or accessed by the Nuon control plane.
 
 ### App Configuration
 
-While you can use [Inputs](/concepts/app-inputs) for your App's own internal configuration and preferences -- such as setting an admin password or connecting to a customer database -- we recommend against this if possible.
-Allowing your customer to update settings like this within your app will likely provide a better experience.
+While you can use [Inputs](/concepts/app-inputs) for your App's own internal
+configuration and preferences -- such as setting an admin password or connecting
+to a customer database -- we recommend against this if possible. Allowing your
+customer to update settings like this within your app will likely provide a
+better experience.
 
 ## Sandbox
 
-The [Sandbox](/concepts/sandboxes) is where you define the environment your App will run in, and therefore acts as part of the contract you are making with your customer regarding access and security.
-This is where you will make foundational decisions about the network resources will be deployed to, so it pays to be thoughtful about what your App's requirements are.
+The [Sandbox](/concepts/sandboxes) is where you define the environment your App
+will run in, and therefore acts as part of the contract you are making with your
+customer regarding access and security. This is where you will make foundational
+decisions about the network resources will be deployed to, so it pays to be
+thoughtful about what your App's requirements are.
 
-We provide off-the-shelf sandboxes to get you started quickly.
-See the [Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) page to learn how to use these.
-A Sandbox is just a Terraform module, though, so you can also create a custom Sandbox to meet more specialized needs.
+We provide off-the-shelf sandboxes to get you started quickly. See the
+[Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) page to learn how to use
+these. A Sandbox is just a Terraform module, though, so you can also create a
+custom Sandbox to meet more specialized needs.
 
-Regardless of which Sandbox you use, we recommend pinning to a specific version, and upgrading carefully to avoid disrupting your customer's experience of your App.
+Regardless of which Sandbox you use, we recommend pinning to a specific version,
+and upgrading carefully to avoid disrupting your customer's experience of your
+App.
 
 ### Isolated vs Customer-Managed Networks
 
-The most important consideration for the Sandbox is whether your app will run in it's own, isolated network, or be deployed into a customer-provided network.
-If the latter, you will need to provide inputs to configure what network to deploy in, and other options that will depend on the cloud platform you are deploying to.
+The most important consideration for the Sandbox is whether your app will run in
+it's own, isolated network, or be deployed into a customer-provided network. If
+the latter, you will need to provide inputs to configure what network to deploy
+in, and other options that will depend on the cloud platform you are deploying
+to.
 
 ### Network Configuration
 
-If you have the option of defining the network your App will be deployed in, there are some best practices we recommend. Even if the customer is managing the network, you may want to discuss these with them to ensure you are being set up for success.
+If you have the option of defining the network your App will be deployed in,
+there are some best practices we recommend. Even if the customer is managing the
+network, you may want to discuss these with them to ensure you are being set up
+for success.
 
-Be thoughtful about what subnets you define and how you use them. In most cases, we recommend having 3 types:
+Be thoughtful about what subnets you define and how you use them. In most cases,
+we recommend having 3 types:
 
-- Private Subnets: This is where you should put most of your resources by default.
-- Public Subnets: These should only be used for internet-facing resources, like public load balancers.
-- Database Subnets: If your app includes any database, isolating them in their own subnet is a common best practice.
+- Private Subnets: This is where you should put most of your resources by
+  default.
+- Public Subnets: These should only be used for internet-facing resources, like
+  public load balancers.
+- Database Subnets: If your app includes any database, isolating them in their
+  own subnet is a common best practice.
 
 <Warning>
-Before making a load balancer internet-facing, consider whether it needs to be.
-Your customer may prefer keeping the App private to the network it's deployed in, and can access it using a VPN.
+	Before making a load balancer internet-facing, consider whether it needs to
+	be. Your customer may prefer keeping the App private to the network it's
+	deployed in, and can access it using a VPN.
 </Warning>
 
-If your App does require internet-facing components, consider putting a WAF in place to provide an extra layer of monitoring and protection.
+If your App does require internet-facing components, consider putting a WAF in
+place to provide an extra layer of monitoring and protection.
 
 ## Components
 
-[Components](/concepts/components) are how you model your app's architecture in Nuon.
-How you configure these will define how your app is deployed and updated.
+[Components](/concepts/components) are how you model your app's architecture in
+Nuon. How you configure these will define how your app is deployed and updated.
 
 ### Dependencies
 
-Components typically have dependencies on each other.
-In the [App Config](/concepts/apps) you can use Outputs from one Component as Inputs to another to integrate them.
-Ensure you define Components in the correct order, so a Component's dependencies are in place before it is deployed.
+Components typically have dependencies on each other. In the
+[app](/concepts/apps) you can use Outputs from one Component as Inputs to
+another to integrate them. Ensure you define Components in the correct order, so
+a Component's dependencies are in place before it is deployed.
 
 <Warning>
-Even if Components are deployed in the correct order, dependencies may still fail.
-Certain cloud resources may not be ready for use, even if they have been created successfully.
-When testing your App, look for potential race conditions that may require retries or other mitigations.
+	Even if Components are deployed in the correct order, dependencies may still
+	fail. Certain cloud resources may not be ready for use, even if they have been
+	created successfully. When testing your App, look for potential race
+	conditions that may require retries or other mitigations.
 </Warning>
 
 ### Networking and DNS
 
-You will typically need to manage DNS with your components to host your App at a private or public URL.
-Customers often want to see apps hosted at a subdomain under a domain they own, which will require integrating with a DNS zone that they manage.
+You will typically need to manage DNS with your components to host your App at a
+private or public URL. Customers often want to see apps hosted at a subdomain
+under a domain they own, which will require integrating with a DNS zone that
+they manage.
 
 ### Databases and Other Stateful Components
 
-Stateful components can be challenging to manage with infra-as-code.
-This is especially true of databases, as they tend to be costly, operationally complex, and involve the risk of data loss.
+Stateful components can be challenging to manage with infra-as-code. This is
+especially true of databases, as they tend to be costly, operationally complex,
+and involve the risk of data loss.
 
-Beyond just defining a [Component](/concepts/components) for resources like these, you may want to use [Actions](/concepts/actions) to implement things like schema migrations and configuration updates.
+Beyond just defining a [Component](/concepts/components) for resources like
+these, you may want to use [Actions](/concepts/actions) to implement things like
+schema migrations and configuration updates.

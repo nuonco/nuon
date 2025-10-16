@@ -7,13 +7,13 @@ This guide walks you through packaging an AWS EKS Traefik `whomami` application
 and deploying it to an Install.
 
 <Note>
-	This [App Config](/concepts/apps) can be found in a [GitHub
+	This [app](/concepts/apps) can be found in a [GitHub
 	repository](https://github.com/nuonco/example-app-configs).
 </Note>
 
-For a more complex app config example, read the blog post on
+For a more complex app example, read the blog post on
 [Deploying Coder with Nuon](https://nuon.co/blog/installing-coder-with-nuon/) or
-review the app config in the
+review the app in the
 [example-app-configs repository](https://github.com/nuonco/example-app-configs).
 
 ## Prerequisites
@@ -35,9 +35,9 @@ This tutorial will walk you through creating the following:
 <Note>
 	You can alternatively clone the [`example-app-configs`
 	repository](https://github.com/nuonco/example-app-configs) which includes the
-	`eks-simple` App Config versus creating each config file manually. This guide
-	is meant to explain the concepts behind each config file, so you can create
-	your own App Configs in the future.
+	`eks-simple` app versus creating each config file manually. This guide is
+	meant to explain the concepts behind each config file, so you can create your
+	own app in the future.
 </Note>
 
 ## Configure App
@@ -350,7 +350,7 @@ kubectl create -n whoami secret generic whoami \
 
 ### Other Configuration Files
 
-Look at the `eks-simple` App Config in the
+Look at the `eks-simple` app in the
 [`example-app-configs` repository](https://github.com/nuonco/example-app-configs)
 for the remaining and required directory structure and files. The files created
 above are marked in \*\*.
@@ -394,9 +394,9 @@ above are marked in \*\*.
     - stack.toml
 ```
 
-### Sync App Config to Nuon
+### Sync App to Nuon
 
-You now have a complete Nuon App Config.
+You now have a complete Nuon app.
 
 This is a good place to stop and sync it to Nuon.
 
@@ -409,7 +409,7 @@ nuon apps sync .
 Select the App in the Dashboard, and you should now see the updated Inputs,
 Sandbox, Components, and Runner configuration.
 
-![App Config](/images/get-started/create-your-first-app/tutorial-3.jpeg)
+![App](/images/get-started/create-your-first-app/tutorial-3.jpeg)
 
 ## Create an Install
 
@@ -531,12 +531,12 @@ Congratulations, you just deployed a BYOC app to AWS!
 
 A few suggestions for where to go next:
 
-- Try the Mattermost or Coder app configs in the
+- Try the Mattermost or Coder appa in the
   [example-app-configs repository](https://github.com/nuonco/example-app-configs)
   to see how to deploy a more complex app.
 
-- Dig into our [App Configuration](/concepts/apps) guide to learn how to
-  configure more complex apps.
+- Dig into our [app](/concepts/apps) guide to learn how to configure more
+  complex apps.
 
 - Share your installer with a friend and have them install your app in their AWS
   account.
