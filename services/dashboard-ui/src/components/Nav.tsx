@@ -3,7 +3,7 @@
 import classNames from 'classnames'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
-import React, { type FC, useContext } from 'react'
+import React, { type FC } from 'react'
 import {
   AppWindow,
   ArrowSquareOut,
@@ -18,7 +18,7 @@ import {
   UsersThree,
 } from '@phosphor-icons/react'
 import { useOrg } from '@/hooks/use-org'
-import { UserJourneyContext } from '@/providers/user-journey-provider'
+import { useUserJourney } from '@/hooks/use-user-journey'
 import { Link } from './Link'
 import { Text } from './Typography'
 
@@ -34,7 +34,7 @@ export const MainNav: FC<{
 }> = ({ isSidebarOpen }) => {
   const { org } = useOrg()
   const path = usePathname()
-  const { openOnboarding } = useContext(UserJourneyContext) || {}
+  const { openOnboarding } = useUserJourney() || {}
   const links: Array<TLink> = [
     {
       href: `/${org.id}`,
