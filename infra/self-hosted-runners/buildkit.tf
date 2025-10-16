@@ -7,7 +7,7 @@ locals {
 
 resource "helm_release" "buildkit" {
   namespace = local.vars.buildkit_namespace
-  name      = "buildkit"
+  name      = "buildkit-runners"
 
   create_namespace = false
 
