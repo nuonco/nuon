@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
