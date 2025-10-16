@@ -116,3 +116,15 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
 
   return undefined
 }
+
+export function getWorkflowStep({
+  workflow,
+  stepTargetId,
+}: {
+  workflow: TWorkflow
+  stepTargetId: string
+}): TWorkflowStep | null {
+  return workflow
+    ? workflow?.steps?.filter((s) => s?.step_target_id === stepTargetId)?.at(-1)
+    : null
+}

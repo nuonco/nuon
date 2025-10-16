@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { ClickToCopy } from '@/components/ClickToCopy'
 import { CancelRunnerJobButton } from '@/components/CancelRunnerJobButton'
