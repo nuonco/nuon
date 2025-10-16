@@ -14,6 +14,7 @@ import { Text } from '@/components/Typography'
 import type { TInstallWorkflowStep } from '@/types'
 import { removeSnakeCase } from '@/utils'
 import { HelmChangesViewer } from './HelmPlanDiff'
+import { K8SPlanDiff } from './K8SPlanDiff'
 import { TerraformPlanViewer } from './TerraformPlanDiff'
 import { SplitButton } from '../SplitButton'
 
@@ -137,6 +138,32 @@ export const ApprovalStep: FC<IApprovalStep> = ({
       }
     })
   }
+
+  const hasK8SDiffs = (planData: any) => {
+    // Check in the plan data directly
+    if (planData?.k8s_content_diff && 
+        Array.isArray(planData.k8s_content_diff) && 
+        planData.k8s_content_diff.length > 0) {
+      return true;
+    }
+    
+    // Check if the data might be in stringified form in the plan field
+    if (typeof planData?.plan === 'string') {
+      try {
+        const parsedPlan = JSON.parse(planData.plan);
+        return (
+          parsedPlan?.k8s_content_diff && 
+          Array.isArray(parsedPlan.k8s_content_diff) && 
+          parsedPlan.k8s_content_diff.length > 0
+        );
+      } catch (e) {
+        // If parsing fails, it's not JSON
+        return false;
+      }
+    }
+    
+    return false;
+  };
 
   const ApprovalButtons = ({ inBanner = false }: { inBanner?: boolean }) =>
     !approval?.response &&
@@ -314,6 +341,8 @@ export const ApprovalStep: FC<IApprovalStep> = ({
               <div className="p-6 mb-2  border rounded-md bg-black/5 dark:bg-white/5">
                 <Loading variant="stack" loadingText="Loading plan..." />
               </div>
+            ) : approval?.type === 'kubernetes_manifest_approval' && plan && hasK8SDiffs(plan) ? (
+              <K8SPlanDiff planData={plan} />
             ) : approval?.type === 'helm_approval' && plan ? (
               <HelmChangesViewer planData={plan} />
             ) : approval?.type === 'kubernetes_manifest_approval' && plan ? (
