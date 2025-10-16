@@ -17,8 +17,8 @@ managing updates and paves the way for future runner features.
 
 This release introduces runner management mode into GA as an opt-in feature
 which can be enabled by configuring the `init_script_url` attribute in
-`runner.toml` in the app config. We recommend all new installs make use of it
-from day-1.
+`runner.toml` in the app. We recommend all new installs make use of it from
+day-1.
 
 ## Migrating an existing Install
 
@@ -35,7 +35,7 @@ init_script_url = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/ma
 runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/runner/asg/stack.yaml"
 ```
 
-3. Sync the app config with `nuon apps sync`
+3. Sync the app with `nuon apps sync`
 
 4. Reprovision the install and apply the new stack as a CF change-set.
 

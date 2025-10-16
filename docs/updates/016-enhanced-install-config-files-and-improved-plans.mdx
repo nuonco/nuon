@@ -1,15 +1,19 @@
 ---
 title: 016 - Enhanced Install Config Files and Improved Plans
-description: Directory and file-level install config file syncing. More clear Helm diffs. Improved performance with optimized state management.
+description:
+  Directory and file-level install config file syncing. More clear Helm diffs.
+  Improved performance with optimized state management.
 ---
+
 _August 19th, 2025_
 
 <div className="badge badge--primary">v0.19.619</div>
 
 ## New Installs Sync CLI Command
 
-Syncing installs is now independent from app config syncing. The new "installs sync" command can
-be used with a single [Install config file](/configuration-files#install-config) or with a directory
+Syncing installs is now independent from app syncing. The new "installs sync"
+command can be used with a single
+[Install config file](/configuration-files#install-config) or with a directory
 containing multiple install config files.
 
 ```bash
@@ -20,7 +24,9 @@ nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
 
 ## Forget Install CLI Command
 
-The "forget install" command is now available in our CLI client, bringing feature parity with the Dashboard UI. This gives developers more flexibility in managing their installs directly from the command line.
+The "forget install" command is now available in our CLI client, bringing
+feature parity with the Dashboard UI. This gives developers more flexibility in
+managing their installs directly from the command line.
 
 ```bash
 nuon installs forget -i inlcz0349isibg7pyw1f5p8zf5 --confirm
@@ -28,13 +34,17 @@ nuon installs forget -i inlcz0349isibg7pyw1f5p8zf5 --confirm
 
 ## Improved Plans
 
-Added inline YAML diff support to Helm plan UI so Helm plan changes now display with inline YAML diffs for better visibility.
+Added inline YAML diff support to Helm plan UI so Helm plan changes now display
+with inline YAML diffs for better visibility.
 
 ![improved_diff](/updates/assets/016_improved_diff.png)
 
 ## State Management Improvements
 
-We've refactored our install state generation and fetching to deliver better performance across the platform. This optimization reduces loading times for Dashboard views that rely on state data and improves memory efficiency in our temporal background processes.
+We've refactored our install state generation and fetching to deliver better
+performance across the platform. This optimization reduces loading times for
+Dashboard views that rely on state data and improves memory efficiency in our
+temporal background processes.
 
 ## Bug Fixes
 

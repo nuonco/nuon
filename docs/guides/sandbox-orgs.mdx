@@ -4,7 +4,7 @@ description: 'How to test your App without creating real cloud resources.'
 icon: 'code'
 ---
 
-If you would like to test App Configs without creating real cloud resources, you can create a Sandbox Org. A Sandbox Org will simulate the provisioning of cloud resources on the backend. If a process has a step that interacts with a cloud platform, that step will be skipped, and the process will assume it succeeded. Otherwise everything will work exactly the same as in a real Org.
+If you would like to test apps without creating real cloud resources, you can create a Sandbox Org. A Sandbox Org will simulate the provisioning of cloud resources on the backend. If a process has a step that interacts with a cloud platform, that step will be skipped, and the process will assume it succeeded. Otherwise everything will work exactly the same as in a real Org.
 
 <Warning>
 A a Sandbox Org cannot be converted into a real Org, or vice-versa. If you create a Sandbox Org, we recommend giving it an explicit name to identify it as such.
@@ -16,4 +16,4 @@ nuon orgs create --name={your-real-org-name}-sandbox --sandbox-mode=true
 
 ## Limitations
 
-You can use sandbox mode to test that your app configuration is valid, that variables are interpolating correctly, and that releases will work as intended. But, because Sandbox mode doesn't interact with your target platform, it won't test your Component or Sandbox source code. We recommend testing the source code of each Component beforehand as part of your CI process, as testing it by deploying all of your Components to an install can be time-consuming and costly.
+You can use sandbox mode to test that your app is valid, that variables are interpolating correctly, and that releases will work as intended. But, because Sandbox mode doesn't interact with your target platform, it won't test your Component or Sandbox source code. We recommend testing the source code of each Component beforehand as part of your CI process, as testing it by deploying all of your Components to an install can be time-consuming and costly.

@@ -26,13 +26,13 @@ types:
 ## How do you configure a Component?
 
 A Component is configured in an individual `<component name>.toml` file inside a
-directory called `components` in the root of your App Config directory. e.g., a
-Helm chart Component named `grafana` would be defined in a file named
-`grafana.toml` inside a directory named `components`.
+directory called `components` in the root of your app directory. e.g., a Helm
+chart Component named `grafana` would be defined in a file named `grafana.toml`
+inside a directory named `components`.
 
 Additional Component configuration files can be added to the `components`
-directory or another directory in the App Config directory, and referenced in
-the Component's config file. e.g., you can have a `values.yaml` file for a Helm
+directory or another directory in the app directory, and referenced in the
+Component's config file. e.g., you can have a `values.yaml` file for a Helm
 chart Component to deploy observability platform from Grafana Labs located in
 `components/values/grafana`
 
@@ -58,7 +58,7 @@ dependencies   = ["prometheus"]
 ````
 </CodeGroup>
 
-By default, every Component must have a `git` repository to store its source files, but you can include them in the App Config directory and reference the same App Config repo in the Component TOML file. This example shows a Component that uses the same repo as the App Config to store its AWS Terraform module to create the certificate in AWS:
+By default, every Component must have a `git` repository to store its source files, but you can include them in the app directory and reference the same app repo in the Component TOML file. This example shows a Component that uses the same repo as the app to store its AWS Terraform module to create the certificate in AWS:
 
 <CodeGroup>
 ```toml components/certificate.toml
@@ -124,10 +124,9 @@ nuon components latest-config -c <component_id or component_name>
 
 ### Component Builds
 
-All Components must be built before releasing. Syncing an App Config for the
-first time or if a Component configuration has changed will also trigger a
-Build. The release commands support an `-auto-build` flag which will trigger a
-Build.
+All Components must be built before releasing. Syncing an app for the first time
+or if a Component configuration has changed will also trigger a Build. The
+release commands support an `-auto-build` flag which will trigger a Build.
 
 **Create a Build** - Create a Build using the latest Component configuration.
 
