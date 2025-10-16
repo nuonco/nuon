@@ -4,9 +4,8 @@ description: "Learn how to package an app for BYOC distribution."
 ---
 
 This guide walks you through packaging an application with the Nuon CLI into a
-Nuon App Config and deploying it as an Install to an AWS cloud account. Nuon
-supports Azure and soon Google Cloud, but to keep it simple, this guide focuses
-on AWS.
+Nuon app and deploying it as an Install to an AWS cloud account. Nuon supports
+Azure and soon Google Cloud, but to keep it simple, this guide focuses on AWS.
 
 ## Choose A Sample App
 
@@ -17,13 +16,13 @@ Choose from the following options to get started:
 - [eks-simple](./app-aws-k8s): An AWS Kubernetes Traefik `whoami` application
 
 <Note>
-	These [App Configs](/concepts/apps) can be found in Nuon's [GitHub
+	These [apps](/concepts/apps) can be found in Nuon's [GitHub
 	repository](https://github.com/nuonco/example-app-configs).
 </Note>
 
-## Other App Configs to Explore
+## Other Apps to Explore
 
-For more App Config examples, clone the
+For more App examples, clone the
 [example-app-configs repository](https://github.com/nuonco/example-app-configs).
 Then run the following commands:
 
@@ -35,11 +34,16 @@ nuon apps create --name <app directory>
 nuon apps sync
 ```
 
-Example App Configs:
+Example Apps:
 
-- Observability software vendor [Grafana](https://grafana.com). Read the blog post on [Installing Grafana with Nuon](https://nuon.co/blog/installing-grafana-with-nuon/)
-- [httpbin](https://httpbingo.org/) on an AWS EC2 VM as a service using a Docker container
-- Collaboration software vendor [Mattermost](https://mattermost.com). Read the blog post on [Installing Mattermost with Nuon](https://nuon.co/blog/installing-mattermost-with-nuon/)
+- Observability software vendor [Grafana](https://grafana.com). Read the blog
+  post on
+  [Installing Grafana with Nuon](https://nuon.co/blog/installing-grafana-with-nuon/)
+- [httpbin](https://httpbingo.org/) on an AWS EC2 VM as a service using a Docker
+  container
+- Collaboration software vendor [Mattermost](https://mattermost.com). Read the
+  blog post on
+  [Installing Mattermost with Nuon](https://nuon.co/blog/installing-mattermost-with-nuon/)
 - Design software vendor [Penpot](https://penpot.com)
 - Cloud Development Environment software vendor [Coder](https://coder.com). Read
   the blog post on

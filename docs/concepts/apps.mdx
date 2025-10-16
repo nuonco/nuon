@@ -1,78 +1,111 @@
 ---
-title: 'Apps'
-description: "Package your existing application code and infrastructure to create Bring Your Own Cloud installable versions of your product."
+title: "Apps"
+description:
+  "Package your existing application code and infrastructure to create Bring
+  Your Own Cloud installable versions of your product."
 ---
 
-Apps are versions of your application code and infrastructure that can be deployed into a customer cloud account.
+Apps are versions of your application code and infrastructure that can be
+deployed into a customer cloud account.
 
-Nuon is designed so you can lift and shift your _existing_ application and infrastructure into new deployment options. Most Nuon users will create multiple Apps to offer different "flavors" of BYOC to their customers. e.g., AWS, Azure versions, dev, prod environment versions, create a VPC, re-use a VPC versions, etc.
+Nuon is designed so you can lift and shift your _existing_ application and
+infrastructure into new deployment options. Most Nuon users will create multiple
+Apps to offer different "flavors" of BYOC to their customers. e.g., AWS, Azure
+versions, dev, prod environment versions, create a VPC, re-use a VPC versions,
+etc.
 
 <Note>
-Nuon is designed to lift and shift your existing application and infrastructure code, so you can quickly create one or more BYOC deployable versions of your product.
+	Nuon is designed to lift and shift your existing application and
+	infrastructure code, so you can quickly create one or more BYOC deployable
+	versions of your product.
 </Note>
 
 ## What Is An App?
 
-When you first set up Nuon, you will map your existing product into one or more Apps. An App is a fully configured version of your product that can be installed into your customer's cloud account. 
+When you first set up Nuon, you will map your existing product into one or more
+Apps. An App is a fully configured version of your product that can be installed
+into your customer's cloud account.
 
 ## How do you configure an App?
 
-Each App is represented as multiple configuration `.toml` files and collectively known as an `App Config`.
+Each App is represented as multiple configuration `.toml` files.
 
 Each App consists of the following parts:
 
-* `Sandbox` - The base infrastructure layer e.g., AWS EKS, Azure AKS
-* `Runner` - The Nuon service that manages the install
-* `Inputs` - Customer-provided input values specific to each install e.g., app release, domain name
-* `Components` - Your application e.g., Helm, manifests, load balancers, certificates, Terraform
+- `Sandbox` - The base infrastructure layer e.g., AWS EKS, Azure AKS
+- `Runner` - The Nuon service that manages the install
+- `Inputs` - Customer-provided input values specific to each install e.g., app
+  release, domain name
+- `Components` - Your application e.g., Helm, manifests, load balancers,
+  certificates, Terraform
 
 ## Sandbox
 
-The Sandbox is the base layer of each App and is responsible for setting up any shared infrastructure to configure an install. In most cases, Sandboxes consist of the following resources:
+The Sandbox is the base layer of each App and is responsible for setting up any
+shared infrastructure to configure an install. In most cases, Sandboxes consist
+of the following resources:
 
-* Basic cloud account access and controls (such as IAM on AWS)
-* Basic network infrastructure (such as an AWS VPC)
-* Compute infrastructure (such as a Kubernetes or ECS cluster)
+- Basic cloud account access and controls (such as IAM on AWS)
+- Basic network infrastructure (such as an AWS VPC)
+- Compute infrastructure (such as a Kubernetes or ECS cluster)
 
 Read more about Sandbox configuration [here](/concepts/sandboxes).
 
 ## Inputs
 
-Inputs allow you to define different inputs that customers can provide to a App. This enables you to create "configuration" knobs that your customers can manage to control your application.
+Inputs allow you to define different inputs that customers can provide to a App.
+This enables you to create "configuration" knobs that your customers can manage
+to control your application.
 
 Inputs are commonly used to:
 
-* Allow users to select regions and provide access to an account
-* Customize app & infrastructure versions, such as pinning a Kubernetes cluster version
-* Re-use existing infrastructure, such as providing a `vpc_id` that has been granted access
+- Allow users to select regions and provide access to an account
+- Customize app & infrastructure versions, such as pinning a Kubernetes cluster
+  version
+- Re-use existing infrastructure, such as providing a `vpc_id` that has been
+  granted access
 
 Read more about Inputs [here](/concepts/app-inputs).
 
 ## Components
 
-Components are used to connect your existing application and infrastructure code to your Nuon App.
+Components are used to connect your existing application and infrastructure code
+to your Nuon App.
 
 Components allow you to:
-* Import existing images, or build Dockerfiles and sync these artifacts into customer accounts
-* Deploy Helm charts 
-* Deploy Kubernetes manifests
-* Deploy Terraform code 
 
-Common components include certificates, load balancers, Kubernetes operators or Helm to deploy an app or database, etc. 
+- Import existing images, or build Dockerfiles and sync these artifacts into
+  customer accounts
+- Deploy Helm charts
+- Deploy Kubernetes manifests
+- Deploy Terraform code
 
-Apps allow you to create dependencies between components and expose a rich configuration language to share outputs
-between components for configuration. You can use [variables](/guides/using-variables) to configure components with
+Common components include certificates, load balancers, Kubernetes operators or
+Helm to deploy an app or database, etc.
+
+Apps allow you to create dependencies between components and expose a rich
+configuration language to share outputs between components for configuration.
+You can use [variables](/guides/using-variables) to configure components with
 the outputs of other components.
 
 Read more about Components [here](/concepts/components).
 
 ## READMEs
 
-When running an App in an [Install](/concepts/installs), you often need to document important info. e.g., the app's access URL, the install state, links to documentation.
+When running an App in an [Install](/concepts/installs), you often need to
+document important info. e.g., the app's access URL, the install state, links to
+documentation.
 
-It can also be nice to have some level of programmability, such being able to render a button that will trigger an [Action](/concepts/actions). Additionally, this documentation must be rendered per-Install because certain values -- such as URLs -- will be different for each Install.
+It can also be nice to have some level of programmability, such being able to
+render a button that will trigger an [Action](/concepts/actions). Additionally,
+this documentation must be rendered per-Install because certain values -- such
+as URLs -- will be different for each Install.
 
-App READMEs were introduced to support this. Each App has a `readme` text field where you can define a Markdown document which will be rendered in the Dashboard for each Install of that App. You can use all valid Markdown, including HTML. You can also use variables, so that the document will be custom-rendered for each Install.
+App READMEs were introduced to support this. Each App has a `readme` text field
+where you can define a Markdown document which will be rendered in the Dashboard
+for each Install of that App. You can use all valid Markdown, including HTML.
+You can also use variables, so that the document will be custom-rendered for
+each Install.
 
 See the [Using READMEs](guides/using-readmes) guide for more details.
 
@@ -86,102 +119,64 @@ To see all available commands, run: `nuon apps --help`.
 
 Commands for creating, deleting, and viewing apps.
 
-**Create a local App directory** - Create a directory and name it after your App. This directory will contain your App's configuration files.
+**Create a local App directory** - Create a directory and name it after your
+App. This directory will contain your App's configuration files.
 
-<CodeGroup>
-```sh nuon
-mkdir your-app
-cd your-app
-```
-</CodeGroup>
+<CodeGroup>```sh nuon mkdir your-app cd your-app ```</CodeGroup>
 
-**Create an App** - Config files are used to sync the configuration for a single App. For consistency, the app name must be the same name as the directory you created above.
+**Create an App** - Config files are used to sync the configuration for a single
+App. For consistency, the app name must be the same name as the directory you
+created above.
 
-<CodeGroup>
-```sh nuon
-nuon apps create  \
-  --name=your-app
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps create \ --name=your-app ```</CodeGroup>
 
 **List all Apps** - List all apps
 
-<CodeGroup>
-```sh nuon
-nuon apps list
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps list ```</CodeGroup>
 
 ### Pinning an App
 
-You can pin an App, which will set its ID as a default argument to all app commands. This is helpful to avoid
-having to pass `-a` to each command.
+You can pin an App, which will set its ID as a default argument to all app
+commands. This is helpful to avoid having to pass `-a` to each command.
 
-<CodeGroup>
-```sh nuon
-nuon apps select
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps select ```</CodeGroup>
 
-<Note>
-Each example below assumes you have run `nuon apps select` first.
-</Note>
+<Note>Each example below assumes you have run `nuon apps select` first.</Note>
 
 To show the currently pinned App:
 
-<CodeGroup>
-```sh nuon
-nuon apps current
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps current ```</CodeGroup>
 
 **Get an App** - Get basic info about app
 
-<CodeGroup>
-```sh nuon
-nuon apps get
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps get ```</CodeGroup>
 
 **Rename** - Rename an App
 
-<CodeGroup>
-```sh nuon
-nuon apps rename --name=new-name
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps rename --name=new-name ```</CodeGroup>
 
 ### Configuration
 
-You can view various configs for an app and sync configuration files using the [CLI](/cli).
+You can view various configs for an app and sync configuration files using the
+[CLI](/cli).
 
 **Sync** - Sync config files to the Nuon control and data plane
 
 Sync all config files in the current directory:
-<CodeGroup>
-```sh nuon
-nuon apps sync
-```
-</CodeGroup>
+
+<CodeGroup>```sh nuon nuon apps sync ```</CodeGroup>
 
 **Configs** - List all config versions for an app
 
-<CodeGroup>
-```sh nuon
-nuon apps configs
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps configs ```</CodeGroup>
 
 **Runner-config** - Print the current Runner config
 
-<CodeGroup>
-```sh nuon
-nuon apps runner-config
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps runner-config ```</CodeGroup>
 
 <Note>
-The output of the following 2 sub-commands are JSON so to improve readability, use `jq` or `python`
+	The output of the following 2 sub-commands are JSON so to improve readability,
+	use `jq` or `python`
 </Note>
 
 <CodeGroup>
@@ -193,26 +188,19 @@ nuon apps <sub-command> | python -m json.tool
 
 **Sandbox-config** - Print the current Sandbox config
 
-<CodeGroup>
-```sh nuon
-nuon apps sandbox-config
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps sandbox-config ```</CodeGroup>
 
 **Input-config** - Print the current Input config
 
-<CodeGroup>
-```sh nuon
-nuon apps input-config
-```
-</CodeGroup>
+<CodeGroup>```sh nuon nuon apps input-config ```</CodeGroup>
 
 ## App Metadata
 
-You can add the following metadata to your application, which is used in installers:
+You can add the following metadata to your application, which is used in
+installers:
 
-* `display_name`
-* `description`
+- `display_name`
+- `description`
 
 This metadata can be added via a config file in the App root directory:
 

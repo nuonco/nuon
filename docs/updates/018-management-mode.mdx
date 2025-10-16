@@ -34,8 +34,8 @@ runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/
 ## Sensitive Inputs and Install Config Files
 
 When you generate a config, inputs will now be grouped together, reflecting the
-input groups you have defined in the app config. Sensitive inputs will be
-excluded, to avoid saving them in plain text in version control.
+input groups you have defined in the app. Sensitive inputs will be excluded, to
+avoid saving them in plain text in version control.
 
 ```toml
 name = "my_install"
@@ -58,7 +58,7 @@ still be managed manually via the Dashboard.
 ## App Variables
 
 App Variables is a feature that allows you to define values you can use across
-all installs of an app. The values are not managed in the app config itself, and
+all installs of an app. The values are not managed in the app itself, and
 therefore do not need to be stored in version control, and are not displayed to
 your customer during the install process.
 
@@ -68,7 +68,7 @@ You can create app variables via the CLI.
 nuon apps variables create --name=my_var --value="some value"
 ```
 
-To use an app variable, interpolate them in your app config.
+To use an app variable, interpolate them in your app.
 
 ```toml actions/demo_action.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
