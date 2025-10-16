@@ -48,7 +48,7 @@ func (s *service) GetAppLatestConfig(ctx *gin.Context) {
 
 	response := &app.AppConfigs[0]
 	if recurse {
-		response, err = s.helpers.GetFullAppConfig(ctx, app.AppConfigs[0].ID)
+		response, err = s.helpers.GetFullAppConfig(ctx, app.AppConfigs[0].ID, true)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to get app config %s: %w", app.AppConfigs[0].ID, err))
 			return

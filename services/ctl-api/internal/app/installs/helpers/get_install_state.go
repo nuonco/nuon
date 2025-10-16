@@ -58,7 +58,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 			return errors.Wrap(err, "unable to get install")
 		}
 
-		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID)
+		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
 		if err != nil {
 			return errors.Wrap(err, "unable to get app config")
 		}
