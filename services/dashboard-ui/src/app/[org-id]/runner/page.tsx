@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageContent } from '@/components/layout/PageContent'
@@ -87,6 +88,11 @@ export default async function OrgRunner({ params, searchParams }) {
             View your organizations build runner performance and activities.
           </Text>
         </HeadingGroup>
+
+        <div className="flex items-center gap-4">
+          <TemporalLink namespace="runners" eventLoopId={runner?.id} />
+          <ManageRunnerDropdown runner={runner} settings={settings} />
+        </div>
       </PageHeader>
       <PageContent>
         <PageSection className="flex-row gap-6">
