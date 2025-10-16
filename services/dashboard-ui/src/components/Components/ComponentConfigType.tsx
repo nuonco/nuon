@@ -16,6 +16,7 @@ export type TComponentConfigType =
   | 'helm_chart'
   | 'job'
   | 'kubernetes_manifest'
+  | 'unknown'
 
 export const ComponentConfigType: FC<{
   configType: TComponentConfigType
