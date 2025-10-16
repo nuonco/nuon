@@ -252,15 +252,18 @@ func (h *handler) handleCreateApplyPlan(
 		return fmt.Errorf("kubernetes manifest dry run apply failed: %w", err)
 	}
 
+	// Format the diffs to use line-by-line entries
+	formattedDiffs := diff.FormatResourceDiffs(*dryRunApplyOutput)
+
 	// Add all apply diffs to our resource diffs
-	resourceDiffs = append(resourceDiffs, *dryRunApplyOutput...)
+	resourceDiffs = append(resourceDiffs, formattedDiffs...)
 
 	// Store the detailed diffs in the plan
 	manifestPlan.ContentDiff = resourceDiffs
 
 	// Convert to JSON for the plan field
 	jsonBytes, err := json.MarshalIndent(map[string]interface{}{
-		"diff": resourceDiffs,
+		"k8s_content_diff": resourceDiffs,
 	}, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal combined dry run results to JSON: %w", err)
@@ -317,10 +320,13 @@ func (h *handler) handleCreateTeardownPlan(
 		return fmt.Errorf("kubernetes manifest dry run delete failed: %w", err)
 	}
 
-	manifestPlan.ContentDiff = *dryRunDeleteOutput
+	// Format the diffs to use line-by-line entries
+	formattedDiffs := diff.FormatResourceDiffs(*dryRunDeleteOutput)
+
+	manifestPlan.ContentDiff = formattedDiffs
 
 	jsonBytes, err := json.MarshalIndent(map[string]interface{}{
-		"diff": *dryRunDeleteOutput,
+		"diff": formattedDiffs,
 	}, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal dry run delete results to JSON: %w", err)
@@ -405,8 +411,11 @@ func (h *handler) handleApplyPlan(
 			return fmt.Errorf("failed to delete resources: %w", err)
 		}
 
+		// Format the diffs to use line-by-line entries
+		formattedDiffs := diff.FormatResourceDiffs(*deleteOutput)
+
 		// Store the results
-		h.state.outputs["diff"] = append(h.state.outputs["diff"].([]diff.ResourceDiff), *deleteOutput...)
+		h.state.outputs["diff"] = append(h.state.outputs["diff"].([]diff.ResourceDiff), formattedDiffs...)
 
 		l.Info("Successfully deleted resources",
 			zap.Int("resourceCount", len(desiredKubernetesResources)),
@@ -424,8 +433,11 @@ func (h *handler) handleApplyPlan(
 			return fmt.Errorf("failed to apply resources: %w", err)
 		}
 
+		// Format the diffs to use line-by-line entries
+		formattedDiffs := diff.FormatResourceDiffs(*applyOutput)
+
 		// Store the results
-		h.state.outputs["diff"] = append(h.state.outputs["diff"].([]diff.ResourceDiff), *applyOutput...)
+		h.state.outputs["diff"] = append(h.state.outputs["diff"].([]diff.ResourceDiff), formattedDiffs...)
 
 		l.Info("Successfully applied resources",
 			zap.Int("resourceCount", len(desiredKubernetesResources)),
