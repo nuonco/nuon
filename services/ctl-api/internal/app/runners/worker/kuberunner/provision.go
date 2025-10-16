@@ -48,7 +48,7 @@ func (w Wkflow) ProvisionRunner(ctx workflow.Context, req *ProvisionRunnerReques
 		APIToken:                 req.APIToken,
 		APIURL:                   req.APIURL,
 	}); err != nil {
-		return nil, fmt.Errorf("unable to uninstall runner: %w", err)
+		return nil, fmt.Errorf("unable to provision runner: %w", err)
 	}
 
 	return &executors.ProvisionRunnerResponse{}, nil
