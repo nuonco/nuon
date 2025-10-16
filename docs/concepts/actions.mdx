@@ -25,8 +25,8 @@ Actions can be used for:
 
 ## How do you configure an Action?
 
-Create an `actions` directory at the root of the App Config, and create a TOML
-file for each action. e.g., `alb_healthcheck.toml` `deployment_restart.toml`
+Create an `actions` directory at the root of the app, and create a TOML file for
+each action. e.g., `alb_healthcheck.toml` `deployment_restart.toml`
 `kubectl_logs.toml`.
 
 If Actions need to connect to a VCS, use either a public repo (using a
@@ -44,15 +44,11 @@ timeout = "30s"
 
 [[triggers]] type = "manual"
 
-[[steps]]
-name            = "kubectl logs"
-inline_contents = """
-#!/usr/bin/env sh
-kubectl logs -n $NAMESPACE --all-containers=true -l app.kubernetes.io/name=ctl-api-api
+[[steps]] name = "kubectl logs" inline_contents = """ #!/usr/bin/env sh kubectl
+logs -n $NAMESPACE --all-containers=true -l app.kubernetes.io/name=ctl-api-api
 """
 
-[steps.env_vars]
-NAMESPACE = "default"
+[steps.env_vars] NAMESPACE = "default"
 
 ````
 </CodeGroup>

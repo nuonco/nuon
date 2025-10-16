@@ -1,7 +1,10 @@
 ---
-title: '005 - nuon dev and improvements'
-description: '`nuon dev` allows you to iterate on configs with a single command, view install state, view an app dependency graph and more.'
+title: "005 - nuon dev and improvements"
+description:
+  "`nuon dev` allows you to iterate on configs with a single command, view
+  install state, view an app dependency graph and more."
 ---
+
 _May 16th, 2025_
 
 <div className="badge badge--primary">v0.19.550</div>
@@ -9,10 +12,12 @@ _May 16th, 2025_
 ## `nuon dev` CLI Command
 
 <Warning>
-This feature is currently in alpha. Please reach out to use if you are interested in using it.
+	This feature is currently in alpha. Please reach out to use if you are
+	interested in using it.
 </Warning>
 
-We have added a new CLI command, `nuon dev`, that you can use to create a new app version and deploy it to a dev install.
+We have added a new CLI command, `nuon dev`, that you can use to create a new
+app version and deploy it to a dev install.
 
 ```bash
 ~nuon (main)$ nuon dev ~/nuon/byoc/byoc-nuon -y
@@ -36,38 +41,40 @@ Checking that you are ready to create a new app version...
 
 To use it:
 
-1. Open a nuon app config directory.
+1. Open a nuon app directory.
 1. Create a dev branch.
 1. Run `nuon installs select` to select the install you want to develop with.
 1. Make some changes and push them to your remote.
 1. Run `nuon dev` and follow the prompts.
 
-A new app version will be created and deployed to your dev install.
-This new version will __only__ be deployed to your dev install.
-Other installs will not be affected.
+A new app version will be created and deployed to your dev install. This new
+version will **only** be deployed to your dev install. Other installs will not
+be affected.
 
-Additionally, you can pass the flag `--yes` to auto-approve all prompts. Make sure you have the correct branch and install set up before you do this.
+Additionally, you can pass the flag `--yes` to auto-approve all prompts. Make
+sure you have the correct branch and install set up before you do this.
 
 <Note>
-If you update only the source code of a component, and not it's config, a new build will not be created.
-You must create a build for that component yourself.
-This shortcoming will be resolved in a future update of this feature.
+	If you update only the source code of a component, and not it's config, a new
+	build will not be created. You must create a build for that component
+	yourself. This shortcoming will be resolved in a future update of this
+	feature.
 </Note>
 
-Using the existing `nuon apps sync` command will update _all_ installs to the config being synced, where as `nuon dev` 
-will only update the _current_ install.
+Using the existing `nuon apps sync` command will update _all_ installs to the
+config being synced, where as `nuon dev` will only update the _current_ install.
 
 ## View Component Dependency Graph
 
-You can now view a graph of component dependencies for an app.
-On the the "Components" tab of any app, click the "View dependency graph" button.
+You can now view a graph of component dependencies for an app. On the the
+"Components" tab of any app, click the "View dependency graph" button.
 
 ![View Dependency Graph 1](assets/005/view-dependency-graph-1.png)
 
 ## View Install State
 
-You can now view the complete state of an install in JSON format.
-On any install, click the "View state" item in the "Manage" drop-down menu.
+You can now view the complete state of an install in JSON format. On any
+install, click the "View state" item in the "Manage" drop-down menu.
 
 ![View Install State One](assets/005/view-state-1.png)
 
@@ -75,13 +82,15 @@ On any install, click the "View state" item in the "Manage" drop-down menu.
 
 ## Improved Step Viewer
 
-We have made improvements to the step viewer that make it easier to work with and debug steps.
+We have made improvements to the step viewer that make it easier to work with
+and debug steps.
 
 ![Improved Step Viewer](assets/2025-05-16-14-44-48.png)
 
 ## Improved Components Page Performance
 
-The install components page has been overhauled to load faster, and support rendering more components.
+The install components page has been overhauled to load faster, and support
+rendering more components.
 
 ![Improved Components Page Performance](assets/2025-05-16-14-45-53.png)
 
@@ -93,10 +102,15 @@ You can now cancel workflows from the history page.
 
 ## Fixes
 
-* Fixed a bug where cancelling a reprovision would leave a runner unable to recover.
-* Fixed a bug where inputs did not properly use their defaults.
-* Fixed a bug where manual env-var overrides on an action run were not respected.
-* Fixed a bug where `current-inputs` would show all historical inputs.
-* Fixed a bug where you could not update an input with an install name (needed an install id), via the CLI.
-* Fixed a bug where cancelling future workflows did not give the expected behavior.
-* Fixed a bug where cancelling an in-progress workflow left a deploy, sandbox run or other in an in-progress status.
+- Fixed a bug where cancelling a reprovision would leave a runner unable to
+  recover.
+- Fixed a bug where inputs did not properly use their defaults.
+- Fixed a bug where manual env-var overrides on an action run were not
+  respected.
+- Fixed a bug where `current-inputs` would show all historical inputs.
+- Fixed a bug where you could not update an input with an install name (needed
+  an install id), via the CLI.
+- Fixed a bug where cancelling future workflows did not give the expected
+  behavior.
+- Fixed a bug where cancelling an in-progress workflow left a deploy, sandbox
+  run or other in an in-progress status.
