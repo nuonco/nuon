@@ -1,6 +1,6 @@
 import { Card } from '@/components/common/Card'
-import { RunnerHealthCard } from '@/components/runners/RunnerHealthCard'
 import { EmptyState } from '@/components/common/EmptyState'
+import { RunnerHealthCard } from '@/components/runners/RunnerHealthCard'
 import { getRunnerRecentHealthChecks } from '@/lib'
 import type { TOrg } from '@/types'
 
@@ -29,6 +29,7 @@ export const RunnerHealthError = () => (
     <EmptyState
       emptyMessage="Runner health checks will display here once available."
       emptyTitle="No health check data"
+      variant="diagram"
     />
   </Card>
 )
