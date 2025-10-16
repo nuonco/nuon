@@ -57,7 +57,7 @@ type DiffEntry struct {
 	Applied  interface{}            `json:"applied,omitempty"`
 	Type     DiffEntryType          `json:"type"`
 	Changes  map[string]interface{} `json:"changes,omitempty"` // For nested changes
-	Payload  string                 `json:"payload,omitempty"` // For raw diff content
+	Payload  string                 `json:"payload,omitempty"` // For raw diff content or line content
 }
 
 // ResourceDiff represents the diff for a Kubernetes resource
