@@ -35,7 +35,7 @@ export const SUPPORT_LINKS: TNavLink[] = [
   {
     iconVariant: 'BookOpenText',
     path: `https://docs.nuon.co/get-started/introduction`,
-    text: 'Devloper docs',
+    text: 'Developer docs',
     isExternal: true,
   },
   // {
