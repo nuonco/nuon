@@ -15,12 +15,15 @@ import { UserProfile } from './UserProfile'
 
 import { InvitePanel } from '../OrgInviteModal'
 
+import { useUserJourney } from '@/hooks/use-user-journey'
+
 export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {}
 
 export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
   const { user } = useUser()
   const { addPanel } = useSurfaces()
+  const { openOnboarding } = useUserJourney() || {}
 
   return (
     <Dropdown
@@ -40,6 +43,13 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
           }}
         >
           Invite team member <Icon variant="UserPlus" />
+        </Button>
+        <Button
+          onClick={() => {
+            openOnboarding()
+          }}
+        >
+          Review onboarding <Icon variant="Signpost" />
         </Button>
         {/* <Link href="/settings">
             Report bug <Icon variant="Bug" />
