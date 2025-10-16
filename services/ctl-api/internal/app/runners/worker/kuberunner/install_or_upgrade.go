@@ -55,12 +55,8 @@ func (a *Activities) InstallOrUpgrade(ctx context.Context, req *InstallOrUpgrade
 		return nil, fmt.Errorf("unable to get previous helm release: %w", err)
 	}
 
-	// determine the insance types (box size) for the nodepool
-	instanceTypeName := "t3a.medium"
-	if a.config.Env != "prod" && a.config.Env != "production" && a.config.Env != "byoc" {
-		instanceTypeName = "t3a.small"
-	}
-	req.InstanceTypeName = instanceTypeName
+	// determine the instance types, aka node size, for the org runner's nodepool
+	req.InstanceTypeName = a.config.OrgRunnerInstanceType
 
 	var (
 		rel *release.Release
