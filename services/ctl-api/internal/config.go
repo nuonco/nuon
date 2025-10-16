@@ -49,6 +49,7 @@ func init() {
 	config.RegisterDefault("app_repository_region", "%s/%s")
 
 	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
+	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
@@ -178,6 +179,7 @@ type Config struct {
 	OrgRunnerHelmChartDir       string `config:"org_runner_helm_chart_dir" validate:"required"`
 	OrgRunnerK8sIAMRoleARN      string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
 	OrgRunnerK8sUseDefaultCreds bool   `config:"org_runner_k8s_use_default_creds"`
+	OrgRunnerInstanceType       string `config:"org_runner_instance_type" validate:"required"`
 
 	// configuration for managing the public dns zone
 	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
