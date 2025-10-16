@@ -45,7 +45,7 @@ func (m *model) populateActionConfigView(setContent bool) {
 }
 
 func (m model) renderStepsHeader() string {
-	return styles.TextBold.MarginBottom(1).Render("Latest Configured Steps")
+	return styles.TextBold.Render("Latest Configured Steps")
 }
 
 func (m model) renderStep(step *models.AppActionWorkflowStepConfig, stepNumber int) string {
@@ -84,7 +84,7 @@ func (m model) renderStep(step *models.AppActionWorkflowStepConfig, stepNumber i
 	stepContent := lipgloss.JoinVertical(lipgloss.Left, sections...)
 	return lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(styles.PrimaryColor).
+		BorderForeground(styles.Dim).
 		Padding(1).
 		Width(m.stepsWidth - 6).
 		Render(stepContent)

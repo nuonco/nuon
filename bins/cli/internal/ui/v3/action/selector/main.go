@@ -134,13 +134,13 @@ func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, appI
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(styles.PrimaryColor).
+		BorderForeground(styles.TextColor).
 		BorderBottom(true).
 		Bold(true).
-		Foreground(styles.PrimaryColor)
+		Foreground(styles.Dim)
 	s.Selected = s.Selected.
 		Foreground(styles.TextColor).
-		Background(styles.PrimaryColor).
+		Background(styles.AccentColor).
 		Bold(false)
 	t.SetStyles(s)
 

@@ -31,6 +31,7 @@ type keyMap struct {
 	Copy    key.Binding
 	Slash   key.Binding
 	Browser key.Binding
+	Execute key.Binding
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
@@ -45,6 +46,31 @@ func (k keyMap) FullHelp() [][]key.Binding {
 
 func (k keyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Help, k.Tab, k.Quit, k.Esc, k.Browser}
+}
+
+// updateNavigationKeys updates the Up/Down key bindings based on view mode
+func (k *keyMap) updateNavigationKeys(viewMode string) {
+	if viewMode == "execute" {
+		// Execute mode: Only arrow keys for scrolling
+		k.Up = key.NewBinding(
+			key.WithKeys("up"),
+			key.WithHelp("↑", "scroll up"),
+		)
+		k.Down = key.NewBinding(
+			key.WithKeys("down"),
+			key.WithHelp("↓", "scroll down"),
+		)
+	} else {
+		// Runs mode: Both arrow keys and j/k for navigation
+		k.Up = key.NewBinding(
+			key.WithKeys("up", "k"),
+			key.WithHelp("↑/k", "up"),
+		)
+		k.Down = key.NewBinding(
+			key.WithKeys("down", "j"),
+			key.WithHelp("↓/j", "down"),
+		)
+	}
 }
 
 var keys = keyMap{
@@ -107,5 +133,10 @@ var keys = keyMap{
 	Browser: key.NewBinding(
 		key.WithKeys("B"),
 		key.WithHelp("B", "Browser"),
+	),
+	Execute: key.NewBinding(
+		key.WithKeys("E"),
+		key.WithHelp("E", "Execute"),
+		key.WithDisabled(), // disabled by default. only enabled IFF the action has a manual trigger.
 	),
 }
