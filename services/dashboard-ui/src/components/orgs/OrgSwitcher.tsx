@@ -198,7 +198,7 @@ const OrgsNav = ({}: IOrgsNav) => {
 
   return (
     <div className="w-full">
-      {true ? (
+      {orgs?.length > enablePaginationCount || searchTerm ? (
         <div className="p-2 w-full">
           <SearchInput
             labelClassName="md:!min-w-full md:!w-full"
