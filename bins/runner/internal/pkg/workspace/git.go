@@ -36,7 +36,7 @@ func (w *workspace) clone(ctx context.Context) error {
 	pWriter := zapwriter.New(w.L, zapcore.DebugLevel, "")
 
 	w.L.Info("cloning repository", zap.String("url", w.Src.Url))
-	repo, err := git.PlainCloneContext(ctx, w.rootDir(), true, &git.CloneOptions{
+	repo, err := git.PlainCloneContext(ctx, w.rootDir(), false, &git.CloneOptions{
 		URL:      w.Src.Url,
 		Progress: pWriter,
 	})
@@ -112,7 +112,6 @@ func (w *workspace) clone(ctx context.Context) error {
 		RefSpecs: []config.RefSpec{config.RefSpec(refSpecStr)},
 	})
 	if err != nil {
-
 		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			w.L.Info("failed to fetch remote origin",
 				zap.String("url", w.Src.Url),
