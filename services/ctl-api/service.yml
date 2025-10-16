@@ -137,6 +137,8 @@ env:
   # CHAOS_ROUTES: get_/v1/orgs,get_/v1/apps
   # CHAOS_SLEEP: 1s
 
+  MIN_CLI_VERSION: 0.19.632
+
 env_secrets:
   GITHUB_APP_KEY:
     name: ctl-api-github-app-key

@@ -15,7 +15,7 @@ func (h *Helpers) ValidateGraph(ctx context.Context, appID string) error {
 		return errors.Wrap(err, "unable to get latest config")
 	}
 
-	appCfg, err := h.GetFullAppConfig(ctx, latestCfg.ID)
+	appCfg, err := h.GetFullAppConfig(ctx, latestCfg.ID, false)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
 	}
