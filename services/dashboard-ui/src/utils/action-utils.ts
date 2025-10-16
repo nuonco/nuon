@@ -1,5 +1,9 @@
 import type { TActionConfig, TInstallActionRun } from '@/types'
 
+export type THydratedActionRunSteps = Array<
+  TInstallActionRun['steps'][number] & { name?: string; idx?: number }
+>
+
 /**
  * Hydrates action run steps with their corresponding idx and name from the config.
  * @param params Object with steps and stepConfigs
@@ -11,9 +15,7 @@ export function hydrateActionRunSteps({
 }: {
   steps: TInstallActionRun['steps']
   stepConfigs: TActionConfig['steps']
-}): Array<
-  TInstallActionRun['steps'][number] & { name?: string; idx?: number }
-> {
+}): THydratedActionRunSteps {
   if (!steps || !stepConfigs) return steps ?? []
 
   // Build a map for fast lookup by step id
