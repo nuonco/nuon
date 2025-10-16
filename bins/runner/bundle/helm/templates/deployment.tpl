@@ -35,13 +35,6 @@ spec:
           command:
             - /bin/runner
             - org
-          resources:
-            limits:
-              cpu: {{ .Values.node_pool.instance_type.cpu }}
-              memory: {{ cat .Values.node_pool.instance_type.memory  "Mi" | replace " " "" | quote }}
-            requests:
-              cpu: {{ .Values.resources.requests.cpu }}
-              memory: {{ .Values.resources.requests.memory }}
           envFrom:
             - configMapRef:
                 name: {{ include "common.fullname" . }}
