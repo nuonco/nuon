@@ -60,11 +60,6 @@ Install workflows page also marks the workflows that are drift scans.
   your workflow will be queued until the drift workflow completes.
 - We're actively working to remove this limitation in an upcoming release.
 
-## Bug Fixes and Improvements
-
-- Improvements to generate steps to improve resilience in Temporal.
-- Fix to disable server side apply on helm client for components.
-- Fix where some Nuon plans can not be generated if outputs are not ready yet.
 
 ### Deny plans and continue workflow
 
@@ -87,3 +82,12 @@ NUON_PREVIEW=true nuon installs actions
 
 The stack has been updated to remove a policty in order to reduce permissions available to the Runner ASG instances. It
 is recommended to update the stack to version `v0.1.8`.
+
+## Bug Fixes and Improvements
+
+- Improvements to generate steps to improve resilience in Temporal.
+- Fix to disable server side apply on helm client for components.
+- Fix where some Nuon plans can not be generated if outputs are not ready yet.
+- Fix where some app configs from older cli versions (pre 0.19.620) would not correctly build.
+- Fix where some build runners could run out of memory and not recover.
+
