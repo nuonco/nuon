@@ -36,7 +36,6 @@ func (r *diffReporter) Report(rs cmp.Result) {
 		if !exists {
 			entry = &DiffEntry{
 				Path: pathStr,
-				Type: EntryModified, // Default type, may change later
 			}
 			r.entries[pathStr] = entry
 		}
@@ -50,9 +49,9 @@ func (r *diffReporter) Report(rs cmp.Result) {
 		}
 
 		// Determine the type of change
-		if !vx.IsValid() {
+		if !vx.IsValid() && vy.IsValid() {
 			entry.Type = EntryAdded
-		} else if !vy.IsValid() {
+		} else if vx.IsValid() && !vy.IsValid() {
 			entry.Type = EntryRemoved
 		} else {
 			entry.Type = EntryModified
