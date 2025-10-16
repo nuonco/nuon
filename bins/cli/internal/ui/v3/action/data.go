@@ -44,4 +44,25 @@ func (m *model) handleLatestConfigFetched(msg latestConfigFetchedMsg) {
 	m.latestConfig = config
 	m.configLoading = false
 	m.populateActionConfigView(true)
+
+	// Enable Execute key if config has manual trigger
+	m.updateExecuteKeyState()
+}
+
+func (m *model) updateExecuteKeyState() {
+	hasManualTrigger := false
+	if m.latestConfig != nil && m.latestConfig.Triggers != nil {
+		for _, trigger := range m.latestConfig.Triggers {
+			if trigger != nil && trigger.Type == "manual" {
+				hasManualTrigger = true
+				break
+			}
+		}
+	}
+
+	if hasManualTrigger {
+		m.keys.Execute.SetEnabled(true)
+	} else {
+		m.keys.Execute.SetEnabled(false)
+	}
 }
