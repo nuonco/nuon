@@ -97,7 +97,11 @@ export default async function Runner({
           <Suspense
             fallback={<RunnerDetailsCardSkeleton className="flex-initial" />}
           >
-            <RunnerDetails orgId={orgId} runnerId={install?.runner_id} settings={settings} />
+            <RunnerDetails
+              orgId={orgId}
+              runnerId={install?.runner_id}
+              settings={settings}
+            />
           </Suspense>
         </ErrorBoundary>
 

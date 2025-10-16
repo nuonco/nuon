@@ -132,7 +132,7 @@ export const RunnerHealthEmptyCard = ({
       <Text variant="base" weight="strong">
         Health status
       </Text>
-      <EmptyState emptyMessage={caption} emptyTitle={title} />
+      <EmptyState emptyMessage={caption} emptyTitle={title} variant="diagram" />
     </Card>
   )
 }
