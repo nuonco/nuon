@@ -136,20 +136,23 @@ export const InstallWorkflowCancelModal: FC<IInstallWorkflowCancelModal> = ({
             document.body
           )
         : null}
-      <Button
-        disabled={hasBeenCanceled}
-        className={classNames('text-sm !font-medium w-fit', {
-          'text-red-800 dark:text-red-500': !hasBeenCanceled,
-          'text-red-800/50 dark:text-red-500/50': hasBeenCanceled,
-          [`${buttonClassName}`]: Boolean(buttonClassName),
-        })}
-        onClick={() => {
-          setIsOpen(true)
-        }}
-        variant={buttonVariant}
-      >
-        Cancel {workflowType}
-      </Button>
+      {!installWorkflow?.finished &&
+      installWorkflow?.status?.status !== 'cancelled' ? (
+        <Button
+          disabled={hasBeenCanceled}
+          className={classNames('text-sm !font-medium w-fit', {
+            'text-red-800 dark:text-red-500': !hasBeenCanceled,
+            'text-red-800/50 dark:text-red-500/50': hasBeenCanceled,
+            [`${buttonClassName}`]: Boolean(buttonClassName),
+          })}
+          onClick={() => {
+            setIsOpen(true)
+          }}
+          variant={buttonVariant}
+        >
+          Cancel {workflowType}
+        </Button>
+      ) : null}
     </>
   )
 }
