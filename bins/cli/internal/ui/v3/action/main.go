@@ -10,12 +10,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 
@@ -78,6 +81,15 @@ type model struct {
 	// keys
 	keys keyMap
 
+	// execute form state
+	viewMode       string // "runs" or "execute"
+	formInputs     []textinput.Model
+	formFocusIndex int
+	formMappings   []executeInputMapping
+	formSubmitting bool
+	formError      error
+	formViewport   viewport.Model
+
 	// other
 	error    error
 	quitting bool
@@ -122,7 +134,9 @@ func initialModel(
 		spinner: s,
 		status:  common.StatusBarRequest{Message: ""},
 
-		keys: keys,
+		keys:         keys,
+		viewMode:     "runs",
+		formViewport: viewport.New(minRequiredWidth, 30),
 	}
 	m.actionConfig.SetContent("Loading")
 
@@ -133,6 +147,140 @@ func (m *model) setLogMessage(message string, level string) {
 	// for use from within m.Update
 	m.status.Message = message
 	m.status.Level = level
+}
+
+func (m *model) initializeExecuteForm() {
+	m.formInputs = make([]textinput.Model, 0)
+	m.formMappings = make([]executeInputMapping, 0)
+
+	// Collect all unique env vars from all steps
+	envVarsMap := make(map[string]string) // map[varName]defaultValue
+	if m.latestConfig != nil && m.latestConfig.Steps != nil {
+		for _, step := range m.latestConfig.Steps {
+			if step == nil || step.EnvVars == nil {
+				continue
+			}
+
+			for name, value := range step.EnvVars {
+				// Only add if not already present (first step wins for default value)
+				if _, exists := envVarsMap[name]; !exists {
+					envVarsMap[name] = value
+				}
+			}
+		}
+	}
+
+	// Sort env var names for consistent ordering
+	var sortedNames []string
+	for name := range envVarsMap {
+		sortedNames = append(sortedNames, name)
+	}
+	sort.Strings(sortedNames)
+
+	// Create inputs from the collected env vars in sorted order
+	for _, name := range sortedNames {
+		value := envVarsMap[name]
+
+		ti := textinput.New()
+		ti.Placeholder = fmt.Sprintf("Enter %s", name)
+		ti.CharLimit = 500
+		ti.Width = 50
+		ti.Prompt = ""
+
+		// Set default value
+		if value != "" {
+			ti.SetValue(value)
+		}
+
+		m.formInputs = append(m.formInputs, ti)
+		m.formMappings = append(m.formMappings, executeInputMapping{
+			name:  name,
+			value: value,
+			input: name,
+		})
+	}
+
+	// Focus the first input
+	if len(m.formInputs) > 0 {
+		m.formInputs[0].Focus()
+		m.formFocusIndex = 0
+	}
+
+	// Update the form viewport content
+	m.updateFormViewportContent()
+}
+
+func (m *model) updateFormViewportContent() {
+	content := m.renderExecuteFormContent()
+	m.formViewport.SetContent(content)
+}
+
+func (m *model) nextFormInput() {
+	if len(m.formInputs) == 0 {
+		return
+	}
+
+	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
+		m.formInputs[m.formFocusIndex].Blur()
+	}
+
+	m.formFocusIndex++
+	if m.formFocusIndex >= len(m.formInputs) {
+		m.formFocusIndex = 0
+	}
+
+	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
+		m.formInputs[m.formFocusIndex].Focus()
+	}
+}
+
+func (m *model) prevFormInput() {
+	if len(m.formInputs) == 0 {
+		return
+	}
+
+	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
+		m.formInputs[m.formFocusIndex].Blur()
+	}
+
+	m.formFocusIndex--
+	if m.formFocusIndex < 0 {
+		m.formFocusIndex = len(m.formInputs) - 1
+	}
+
+	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
+		m.formInputs[m.formFocusIndex].Focus()
+	}
+}
+
+func (m *model) submitExecuteForm() tea.Cmd {
+	return func() tea.Msg {
+		// Build env vars map
+		envVars := make(map[string]string)
+		for i, mapping := range m.formMappings {
+			value := strings.TrimSpace(m.formInputs[i].Value())
+			// Use the value if provided, otherwise use the default
+			if value != "" {
+				envVars[mapping.name] = value
+			} else if mapping.value != "" {
+				envVars[mapping.name] = mapping.value
+			}
+		}
+
+		// Create the request
+		req := &models.ServiceCreateInstallActionWorkflowRunRequest{
+			ActionWorkflowConfigID: m.latestConfig.ID,
+			RunEnvVars:             envVars,
+		}
+
+		// Call the API
+		err := m.api.CreateInstallActionWorkflowRun(m.ctx, m.installID, req)
+		if err != nil {
+			return executeFormSubmittedMsg{err: err}
+		}
+
+		return executeFormSubmittedMsg{}
+	}
 }
 
 func (m model) Init() tea.Cmd {
@@ -167,6 +315,10 @@ func (m *model) resize() {
 	runsListHeight := m.height - vMarginHeight
 	m.runsList.SetHeight(runsListHeight)
 	m.runsList.SetWidth(m.runsWidth - 1) // minus one because of the padding we render the list with
+
+	// resize the form viewport (same height as runs list)
+	m.formViewport.Height = runsListHeight
+	m.formViewport.Width = m.runsWidth - 4 // account for padding
 
 	// make the steps detail viewport
 	vpWidth := m.width - (m.runsWidth + 2) - 2 // actual width plus margin
@@ -205,11 +357,37 @@ func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m *model) setFormError(err error) {
+	m.formError = err
+	m.updateFormViewportContent()
+}
+
+func (m *model) resetForm() {
+	m.formError = nil
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+
+	case executeFormSubmittedMsg:
+		m.formSubmitting = false
+		if msg.err != nil {
+			m.setLogMessage(fmt.Sprintf("Error executing action: %s", msg.err), "error")
+			m.setFormError(msg.err)
+		} else {
+			m.setLogMessage("Action executed successfully!", "success")
+			// Switch back to runs view and refresh data
+			m.viewMode = "runs"
+			m.keys.updateNavigationKeys("runs")
+			return m, tea.Batch(
+				m.fetchInstallActionWorkflowCmd,
+				m.fetchLatestConfigCmd,
+			)
+		}
+		return m, nil
 
 	// handle tick: data refresh and ticks
 	case tickMsg:
@@ -235,6 +413,67 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// handle keystrokes
 	case tea.KeyMsg:
+		// Handle execute mode keys
+		if m.viewMode == "execute" {
+			switch {
+			case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
+				m.setQuitting()
+				return m, tea.Quit
+			case key.Matches(msg, m.keys.Esc): // "esc": go back to runs view
+				m.viewMode = "runs"
+				m.keys.updateNavigationKeys("runs")
+				m.setLogMessage("", "")
+				m.resetForm()
+				return m, nil
+			case key.Matches(msg, m.keys.Tab):
+				if len(m.formInputs) > 0 {
+					m.nextFormInput()
+					m.updateFormViewportContent()
+				}
+				return m, nil
+			case msg.String() == "shift+tab":
+				if len(m.formInputs) > 0 {
+					m.prevFormInput()
+					m.updateFormViewportContent()
+				}
+				return m, nil
+			case msg.String() == "enter":
+				if !m.formSubmitting {
+					m.formSubmitting = true
+					m.setLogMessage("Executing action...", "info")
+					return m, m.submitExecuteForm()
+				}
+				return m, nil
+			case key.Matches(msg, m.keys.Up):
+				// Up arrow scrolls the viewport
+				m.formViewport, cmd = m.formViewport.Update(msg)
+				cmds = append(cmds, cmd)
+				return m, tea.Batch(cmds...)
+			case key.Matches(msg, m.keys.Down):
+				// Down arrow scrolls the viewport
+				m.formViewport, cmd = m.formViewport.Update(msg)
+				cmds = append(cmds, cmd)
+				return m, tea.Batch(cmds...)
+			case key.Matches(msg, m.keys.PageDown):
+				m.formViewport, cmd = m.formViewport.Update(msg)
+				cmds = append(cmds, cmd)
+				return m, tea.Batch(cmds...)
+			case key.Matches(msg, m.keys.PageUp):
+				m.formViewport, cmd = m.formViewport.Update(msg)
+				cmds = append(cmds, cmd)
+				return m, tea.Batch(cmds...)
+			default:
+				// Handle text input
+				if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
+					m.formInputs[m.formFocusIndex], cmd = m.formInputs[m.formFocusIndex].Update(msg)
+					cmds = append(cmds, cmd)
+					m.updateFormViewportContent()
+				}
+			}
+			return m, tea.Batch(cmds...)
+		}
+
+		// Handle runs mode keys
 		switch {
 		case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
 			m.setQuitting()
@@ -283,6 +522,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Copy):
 			m.copyActionWorkflowID()
 
+		case key.Matches(msg, m.keys.Execute):
+			// Only allow execution if we have a config and it's not disabled
+			if !m.keys.Execute.Enabled() {
+				return m, nil
+			}
+			// Switch to execute mode
+			if m.latestConfig != nil {
+				m.initializeExecuteForm()
+				m.viewMode = "execute"
+				m.keys.updateNavigationKeys("execute")
+				m.setLogMessage("Fill in the form and press Enter to execute", "info")
+			}
+			return m, nil
+
 		// search
 		case key.Matches(msg, m.keys.Slash):
 			m.runsList.Update(msg)
@@ -292,6 +545,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 		m.spinner, cmd = m.spinner.Update(msg)
 		cmds = append(cmds, cmd)
+
+		// Handle mouse events for viewport scrolling in execute mode
+		if m.viewMode == "execute" {
+			m.formViewport, cmd = m.formViewport.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	}
 
 	return m, tea.Batch(cmds...)
@@ -337,12 +596,19 @@ func (m model) View() string {
 		}
 
 	} else {
-		runsList := ""
-		if m.focus == "runs" {
-			runsList = appStyleFocus.Width(m.runsWidth).Padding(0, 1, 0, 0).Render(m.runsList.View())
+		leftPanel := ""
+		if m.viewMode == "execute" {
+			// Render execute form in left panel
+			leftPanel = appStyleFocus.Width(m.runsWidth).Padding(0, 1, 0, 0).Render(m.renderExecuteForm())
 		} else {
-			runsList = appStyleBlur.Width(m.runsWidth).Padding(0, 1, 0, 0).Render(m.runsList.View())
+			// Render runs list in left panel
+			if m.focus == "runs" {
+				leftPanel = appStyleFocus.Width(m.runsWidth).Padding(0, 1, 0, 0).Render(m.runsList.View())
+			} else {
+				leftPanel = appStyleBlur.Width(m.runsWidth).Padding(0, 1, 0, 0).Render(m.runsList.View())
+			}
 		}
+
 		stepsDetail := ""
 		if m.focus == "steps" {
 			stepsDetail = appStyleFocus.Render(m.actionConfig.View())
@@ -351,7 +617,7 @@ func (m model) View() string {
 		}
 		content = lipgloss.JoinHorizontal(
 			lipgloss.Left,
-			runsList,
+			leftPanel,
 			stepsDetail,
 		)
 	}
@@ -370,7 +636,7 @@ func ActionWorkflowApp(
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, action_workflow_id)
 	// initialize the program
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)
