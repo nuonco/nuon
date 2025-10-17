@@ -60,7 +60,7 @@ func (a *API) registerMiddlewares() error {
 	}
 
 	for _, middleware := range a.configuredMiddlewares {
-		a.l.Info("middleware", zap.String("name", middleware))
+		a.l.Info(fmt.Sprintf("registering middleware: %s", middleware), zap.String("name", middleware))
 		fn, ok := middlewaresLookup[middleware]
 		if !ok {
 			return fmt.Errorf("middleware not found: %s", middleware)
@@ -147,7 +147,7 @@ func (a *API) start(shutdowner fx.Shutdowner) error {
 	a.l.Info(fmt.Sprintf("starting %s api", a.name), zap.String("addr", a.srv.Addr))
 
 	go func() {
-		if err := a.srv.ListenAndServe(); err != nil {
+		if err := a.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			a.l.Error(fmt.Sprintf("unable to run %s api", a.name), zap.Error(err))
 			shutdowner.Shutdown(fx.ExitCode(127))
 		}
