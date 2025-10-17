@@ -1,10 +1,13 @@
 package stderr
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -14,6 +17,24 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 )
+
+// Response Writer that caches the response body
+type CachedResponseWriter struct {
+	gin.ResponseWriter
+	Body *bytes.Buffer
+}
+
+func (w *CachedResponseWriter) Write(b []byte) (int, error) {
+	w.Body.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
+func NewCachedResponseWriter(w gin.ResponseWriter) *CachedResponseWriter {
+	return &CachedResponseWriter{
+		ResponseWriter: w,
+		Body:           bytes.NewBufferString(""),
+	}
+}
 
 type middleware struct {
 	l *zap.Logger
@@ -25,22 +46,27 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		defer func() {
-			if r := recover(); r != nil {
-				// Log the panic
-				m.l.Error("Panic recovered",
-					zap.Any("panic", r),
-					zap.Stack("stack"),
-				)
+		// Capture the request body
+		var requestBody string
+		if c.Request.Body != nil {
+			b, _ := io.ReadAll(c.Request.Body)
+			requestBody = string(b)
+			c.Request.Body = io.NopCloser(bytes.NewReader(b)) // Restore the body for the actual handler to use
+		}
 
-				// Return a system error response
-				c.JSON(http.StatusInternalServerError, ErrResponse{
-					Error:       "internal server error",
-					UserError:   false,
-					Description: "An unexpected error occurred",
-				})
-				c.Abort()
-			}
+		// Capture the response body
+		writer := NewCachedResponseWriter(c.Writer)
+		c.Writer = writer
+
+		// Log server errors
+		defer func() {
+			m.LogErrors(c, requestBody, writer.Body.String())
+		}()
+
+		// Panic recovery (called last, executes first)
+		// Execute this first because it writes the response after recovering
+		defer func() {
+			m.RecoverFromPanic(c)
 		}()
 
 		c.Next()
@@ -50,6 +76,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		err := c.Errors[0]
+
 		// Check if this is a binding error
 		if err.Type == gin.ErrorTypeBind {
 			m.l.Error("response already set, this usually means the endpoint is using ctx.BindJSON instead of ctx.ShouldBindJSON")
@@ -77,7 +104,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, ErrResponse{
 				Error:       err.Error(),
 				UserError:   true,
-				Description: uErr.Description,
+				Description: cfgErr.Description,
 			})
 			return
 		}
@@ -113,7 +140,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			c.JSON(http.StatusConflict, ErrResponse{
 				Error:       err.Error(),
 				UserError:   true,
-				Description: sysErr.Description,
+				Description: nrErr.Description,
 			})
 			return
 		}
@@ -174,7 +201,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		var ivReqErr ErrInvalidRequest
 		if errors.As(err, &ivReqErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:       fmt.Sprintf("invalid request"),
+				Error:       "invalid request",
 				UserError:   true,
 				Description: fmt.Sprintf("invalid request input: %s", err),
 			})
@@ -192,9 +219,50 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		c.JSON(http.StatusInternalServerError, ErrResponse{
 			Error:       err.Error(),
-			UserError:   true,
+			UserError:   false,
 			Description: err.Error(),
 		})
+	}
+}
+
+func (m *middleware) RecoverFromPanic(c *gin.Context) {
+	if r := recover(); r != nil {
+		// Log the panic
+		m.l.Error("panic recovered",
+			zap.Any("panic", r),
+			zap.Stack("stack"),
+		)
+
+		// Return a system error response
+		c.JSON(http.StatusInternalServerError, ErrResponse{
+			Error:       "internal server error",
+			UserError:   false,
+			Description: "An unexpected error occurred",
+		})
+		c.Abort()
+	}
+}
+
+func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string) {
+	// Log errors for status >= 500
+	if c.Writer.Status() >= 500 {
+		fields := []zap.Field{
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.Int("status", c.Writer.Status()),
+			zap.String("request_body", requestBody),
+			zap.String("response_body", responseBody),
+			zap.Stack("stack"),
+		}
+
+		var msg string
+		if len(c.Errors) > 0 {
+			errorList := strings.Join(c.Errors.Errors(), ", ")
+			msg = fmt.Sprintf("internal server error. errors: %s", errorList)
+		} else {
+			msg = "internal server error."
+		}
+		m.l.Error(msg, fields...)
 	}
 }
 
