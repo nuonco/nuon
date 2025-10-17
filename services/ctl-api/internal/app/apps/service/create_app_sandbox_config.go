@@ -25,7 +25,7 @@ type CreateAppSandboxConfigRequest struct {
 	Variables      map[string]*string `json:"variables" validate:"required"`
 	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
 
-	References []string `json:"references" validate:"required"`
+	References []string `json:"references"`
 
 	AppConfigID string `json:"app_config_id"`
 }
