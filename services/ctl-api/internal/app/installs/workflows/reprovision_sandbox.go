@@ -15,6 +15,18 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
+	sandboxReprovisionSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, sandboxReprovisionSteps...)
+
+	return steps, nil
+}
+
+func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup) ([]*app.WorkflowStep, error) {
+	steps := make([]*app.WorkflowStep, 0)
+
 	sg.nextGroup() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateState,
@@ -40,7 +52,6 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	steps = append(steps, lifecycleSteps...)
 
 	sg.nextGroup() // sandbox plan + apply
-
 	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandboxPlan,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -49,57 +60,59 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	}
 	steps = append(steps, step)
 
-	if !flw.PlanOnly {
-		step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox apply", pgtype.Hstore{}, &signals.Signal{
-			Type: signals.OperationReprovisionSandboxApplyPlan,
-		}, flw.PlanOnly)
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, step)
-
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg)
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, lifecycleSteps...)
-
-		sg.nextGroup() // sync secrets
-		step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
-			Type: signals.OperationSyncSecrets,
-		}, flw.PlanOnly, WithSkippable(false))
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, step)
-
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg)
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, lifecycleSteps...)
-
-		sg.nextGroup()
-		step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
-			Type: signals.OperationProvisionDNS,
-		}, flw.PlanOnly)
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, step)
-
-		deploySteps, err := deployAllComponents(ctx, installID, flw, sg)
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, deploySteps...)
-
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovisionSandbox, sg)
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, lifecycleSteps...)
+	if flw.PlanOnly {
+		return steps, nil
 	}
+
+	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox apply", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationReprovisionSandboxApplyPlan,
+	}, flw.PlanOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
+	sg.nextGroup() // sync secrets
+	step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationSyncSecrets,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
+
+	sg.nextGroup()
+	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox dns if enabled", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationProvisionDNS,
+	}, flw.PlanOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	deploySteps, err := deployAllComponents(ctx, installID, flw, sg)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, deploySteps...)
+
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovisionSandbox, sg)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	return steps, nil
 }

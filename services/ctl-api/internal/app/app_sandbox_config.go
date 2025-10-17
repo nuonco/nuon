@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
@@ -42,6 +43,9 @@ type AppSandboxConfig struct {
 	EnvVars        pgtype.Hstore  `json:"env_vars,omitzero" temporalsjson:"env_vars" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
 	VariablesFiles pq.StringArray `gorm:"type:text[]" json:"variables_files,omitzero" swaggertype:"array,string" features:"template" temporaljson:"variables_files,omitzero,omitempty"`
 
+	References pq.StringArray `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
+	Refs       []refs.Ref     `gorm:"-"`
+
 	TerraformVersion string `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
 	DriftSchedule    string `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
 
@@ -69,6 +73,12 @@ func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
 
 // NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts
 func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
+	cRefs := make([]refs.Ref, 0)
+	for _, ref := range c.References {
+		cRefs = append(cRefs, refs.NewFromString(ref))
+	}
+	c.Refs = cRefs
+
 	// set the vcs connection type correctly
 	if c.ConnectedGithubVCSConfig != nil {
 		c.VCSConnectionType = VCSConnectionTypeConnectedRepo

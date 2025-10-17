@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 
+	"github.com/powertoolsdev/mono/pkg/config/refs"
 	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
@@ -19,6 +21,7 @@ type AppSandboxConfig struct {
 	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
 	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
 	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
+	References     []refs.Ref               `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 }
 
 func (a *AppSandboxConfig) parse() error {
@@ -27,6 +30,12 @@ func (a *AppSandboxConfig) parse() error {
 			Description: "an app sandbox config is required",
 		}
 	}
+
+	references, err := refs.Parse(a)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse components")
+	}
+	a.References = references
 
 	if a.Source == "" {
 		return nil
