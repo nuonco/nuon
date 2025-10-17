@@ -19,7 +19,8 @@ func (w *writer) handleErr(err error) {
 		return
 	}
 
-	w.Log.Error("unable to write", zap.String("addr", w.Address))
+	msg := fmt.Sprintf("unable to write metric. error: %s", err.Error())
+	w.Log.Error(msg, zap.String("addr", w.Address))
 }
 
 func (w *writer) Flush() {
