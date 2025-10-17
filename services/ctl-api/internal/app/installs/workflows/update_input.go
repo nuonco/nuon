@@ -60,6 +60,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 		})
 	}
 
+	// Get all components that reference the changed inputs
 	var componentIDs []string
 	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs) {
 		componentIDs = append(componentIDs, comp.ID)
@@ -76,11 +77,26 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	componentIDs = generics.UniqueSlice(componentIDs)
 
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
+	// Check if sandbox config references contain any of the changed inputs
+	sandboxNeedsReprovision, err := checkSandboxNeedsReprovision(ctx, appConfig, &changedRefs)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get component deploy steps")
+		return nil, errors.Wrap(err, "unable to check if sandbox needs reprovision")
 	}
-	steps = append(steps, deploySteps...)
+
+	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
+	if sandboxNeedsReprovision {
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get sandbox reprovision steps")
+		}
+		steps = append(steps, sandboxSteps...)
+	} else {
+		deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get component deploy steps")
+		}
+		steps = append(steps, deploySteps...)
+	}
 
 	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostUpdateInputs, sg)
 	if err != nil {
@@ -104,4 +120,18 @@ func getComponentsForChangedInputs(appConfig *app.AppConfig, changedRefs *[]refs
 		}
 	}
 	return components
+}
+
+// checkSandboxNeedsReprovision checks if the sandbox configuration references any of the changed inputs
+func checkSandboxNeedsReprovision(ctx workflow.Context, appCfg *app.AppConfig, changedRefs *[]refs.Ref) (bool, error) {
+	// Check if any of the sandbox's references match the changed inputs
+	for _, sandboxRef := range appCfg.SandboxConfig.Refs {
+		for _, changedRef := range *changedRefs {
+			if sandboxRef.Name == changedRef.Name && sandboxRef.Type == changedRef.Type {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }
