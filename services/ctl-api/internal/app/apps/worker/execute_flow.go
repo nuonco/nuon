@@ -52,7 +52,17 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 	}
 
 	// return ufm.Handle(ctx, sreq.InstallWorkflowID)
-	return fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID)
+
+	err := fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID, sreq.StartFromStepIdx)
+	if err != nil {
+		cerr, ok := err.(*flow.ContinueAsNewErr)
+		if ok && cerr != nil {
+			sreq.StartFromStepIdx = cerr.StartFromStepIdx
+			return workflow.NewContinueAsNewError(ctx, w.ExecuteFlow, sreq)
+		}
+		return err
+	}
+	return nil
 }
 
 func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.WorkflowType]flow.WorkflowStepGenerator {
