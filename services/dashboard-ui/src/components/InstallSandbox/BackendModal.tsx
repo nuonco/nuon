@@ -3,8 +3,6 @@
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { useUser } from "@auth0/nextjs-auth0"
-import { API_URL } from '@/configs/api'
 import { createFileDownload } from '@/utils/file-download'
 import { Button } from '@/components/Button'
 import { Modal } from '@/components/Modal'
@@ -20,16 +18,18 @@ interface IBackendModal {
 export const BackendModal: FC<IBackendModal> = ({
   orgId,
   workspace,
-  token  
+  token,
 }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const backendBlock = `
 terraform {
   backend "http" {
-    address = "${API_URL}/v1/terraform-backend?workspace_id=${workspace.id}&org_id=${orgId}&token=${token}"
-    lock_address = "${API_URL}/v1/terraform-workspaces/${workspace.id}/lock?org_id=${orgId}&token=${token}"
-    unlock_address = "${API_URL}/v1/terraform-workspaces/${workspace.id}/unlock?org_id=${orgId}&token=${token}"
+    lock_method    = "POST"
+    unlock_method  = "POST"
+    address = "${process.env.NEXT_PUBLIC_API_URL}/v1/terraform-backend?workspace_id=${workspace.id}&org_id=${orgId}&token=${token}"
+    lock_address = "${process.env.NEXT_PUBLIC_API_URL}/v1/terraform-workspaces/${workspace.id}/lock?org_id=${orgId}&token=${token}"
+    unlock_address = "${process.env.NEXT_PUBLIC_API_URL}/v1/terraform-workspaces/${workspace.id}/unlock?org_id=${orgId}&token=${token}"
   }
 }
 `
@@ -48,7 +48,8 @@ terraform {
             >
               <Text className="!leading-loose" variant="reg-14">
                 To manage the Terraform state directly, download the backend
-                config, add it to your Terraform project, and run the following command.
+                config, add it to your Terraform project, and run the following
+                command.
               </Text>
               <Code className="mt-4">terraform init -reconfigure</Code>
               <div className="mt-4 flex gap-3 justify-end">
