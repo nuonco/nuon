@@ -34,6 +34,7 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 		Variables:        map[string]string{},
 		EnvVars:          map[string]string{},
 		VariablesFiles:   make([]string, 0),
+		References:       make([]string, 0),
 	}
 
 	if s.cfg.Sandbox.DriftSchedule != nil {
@@ -48,6 +49,9 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 	}
 	for _, v := range s.cfg.Sandbox.VariablesFiles {
 		req.VariablesFiles = append(req.VariablesFiles, v.Contents)
+	}
+	for _, ref := range s.cfg.Sandbox.References {
+		req.References = append(req.References, ref.String())
 	}
 
 	if s.cfg.Sandbox.ConnectedRepo != nil {
