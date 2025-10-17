@@ -70,6 +70,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 
 	if requestType == phoneHomeRequestTypeDelete {
 		ctx.JSON(http.StatusOK, "ok")
+		return
 	}
 
 	if err := s.updateInstallPhoneHome(ctx, installID, phoneHomeID, &req); err != nil {
