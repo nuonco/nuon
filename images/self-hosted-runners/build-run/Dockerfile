@@ -23,11 +23,16 @@ RUN mkdir -p /opt/cni/bin && \
     tar -xzf /tmp/cni.tgz -C /opt/cni/bin && \
     rm /tmp/cni.tgz
 
-# Check if docker exists and remove it, then create symlink to nerdctl
+# Copy docker wrapper script
+COPY docker-wrapper.sh /usr/local/bin/docker-wrapper.sh
+RUN chmod +x /usr/local/bin/docker-wrapper.sh
+
+# Remove existing docker and create symlink to wrapper
 RUN if [ -f /usr/local/bin/docker ] || [ -L /usr/local/bin/docker ]; then \
         rm -f /usr/local/bin/docker; \
     fi && \
-    ln -s /usr/local/bin/nerdctl /usr/local/bin/docker
+    ln -s /usr/local/bin/docker-wrapper.sh /usr/local/bin/docker && \
+    chmod +x /usr/local/bin/nerdctl /usr/local/bin/docker
 
 # Make executable
 RUN chmod +x /usr/local/bin/nerdctl /usr/local/bin/docker
