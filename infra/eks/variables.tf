@@ -16,8 +16,8 @@ locals {
     terraform   = "infra-eks-${var.account}-${var.pool}"
   }
 
-  github_repository      = "mono"
-  github_organization    = "powertoolsdev"
+  github_repository   = "mono"
+  github_organization = "powertoolsdev"
 
   vars = yamldecode(data.utils_deep_merge_yaml.vars.output)
 }

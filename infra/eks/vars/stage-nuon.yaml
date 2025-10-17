@@ -17,12 +17,12 @@ managed_node_group:
     - t3a.medium
 
 ec2nodeclasses:
- - clickhouse-installation
- - clickhouse-keeper
- - ctl-api-api
- - ctl-api-worker
- - public
- - temporal
+  - name: clickhouse-installation
+  - name: clickhouse-keeper
+  - name: ctl-api-api
+  - name: ctl-api-worker
+  - name: public
+  - name: temporal
 
 additional_nodepools:
   - name: public

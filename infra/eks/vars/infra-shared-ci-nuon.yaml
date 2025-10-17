@@ -16,9 +16,12 @@ karpenter:
 
 
 ec2nodeclasses:
- - buildkit
- - self-hosted-runners
-
+  - name: buildkit
+  - name: self-hosted-runners
+    block_devices:
+      device_name: "/dev/xvda"
+      volume_size: "250Gi"
+      volume_type: "gp3"
 
 additional_nodepools:
   - name: buildkit

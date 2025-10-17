@@ -1,12 +1,12 @@
 locals {
   controller = {
-    value_file = "values/controller.yaml"
+    value_file    = "values/controller.yaml"
     override_file = "values/controller-${var.env}.yaml"
   }
-  
+
   # Base configuration for runner scale sets
   scale_set_base = {
-    value_file = "values/scale-set.yaml"
+    value_file    = "values/scale-set.yaml"
     override_file = "values/scale-set-${var.env}.yaml"
   }
 }
@@ -53,8 +53,8 @@ resource "kubectl_manifest" "gha_runner_github_secret" {
 resource "helm_release" "gha_runner_scale_sets" {
   for_each = lookup(local.vars, "scale_sets", {})
 
-  namespace = local.vars.runner_namespace
-  name      = each.key
+  namespace        = local.vars.runner_namespace
+  name             = each.key
   create_namespace = true
 
   repository = "./charts"
@@ -92,7 +92,7 @@ resource "helm_release" "gha_runner_scale_sets" {
           }
           labels = {
             "nuon.co/scale-set-name" = each.key
-            "nuon.co/iam-role-name" = aws_iam_role.runner_scale_set_roles[each.key].name
+            "nuon.co/iam-role-name"  = aws_iam_role.runner_scale_set_roles[each.key].name
           }
         }
       }
@@ -100,12 +100,12 @@ resource "helm_release" "gha_runner_scale_sets" {
       listenerTemplate = {
         spec = {
           nodeSelector = {
-            "karpenter.sh/nodepool" = local.vars.node_pool_name
+            "karpenter.sh/controller" = "true"
           }
           tolerations = [{
-            key      = "pool.nuon.co"
+            key      = "karpenter.sh/controller"
             operator = "Equal"
-            value    = local.vars.node_pool_name
+            value    = "true"
             effect   = "NoSchedule"
           }]
         }

@@ -16,7 +16,18 @@ variable "node_iam_role_name" {}
 
 variable "tags" {}
 
-variable "ec2nodeclasses" {}
+variable "ec2nodeclasses" {
+  description = "List of EC2NodeClasses to create"
+  type = list(object({
+    name = string
+    block_devices = optional(object({
+      device_name = string
+      volume_size = string
+      volume_type = string
+    }))
+  }))
+  default = []
+}
 variable "instance_types" {}
 
 variable "additional_nodepools" {}

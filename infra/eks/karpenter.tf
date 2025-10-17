@@ -21,7 +21,7 @@ module "karpenter" {
   node_iam_role_name   = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
   oidc_provider_arn    = module.eks.oidc_provider_arn
   tags                 = local.tags
-  ec2nodeclasses       = local.vars.ec2nodeclasses
+  ec2nodeclasses       = lookup(local.vars, "ec2nodeclasses", [])
   instance_types       = local.vars.karpenter.instance_types
   additional_nodepools = local.vars.additional_nodepools
 }

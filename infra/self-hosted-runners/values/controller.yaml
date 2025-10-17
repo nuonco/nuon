@@ -4,15 +4,15 @@
 # Default controller configuration
 # Additional static configurations can be added here if needed
 
-# Node selector for controller pod
+# Node selector for controller pod - run on karpenter controller nodes
 nodeSelector:
-  karpenter.sh/nodepool: self-hosted-runners
+  karpenter.sh/controller: "true"
 
-# Tolerations for dedicated node pool
+# Tolerations for karpenter controller node pool
 tolerations:
-  - key: "pool.nuon.co"
+  - key: "karpenter.sh/controller"
     operator: "Equal"
-    value: "self-hosted-runners"
+    value: "true"
     effect: "NoSchedule"
 
 

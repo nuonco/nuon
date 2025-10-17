@@ -85,7 +85,7 @@ resource "kubectl_manifest" "additional_nodepools" {
     metadata = {
       name = each.value.name
       labels = lookup(each.value, "labels", {
-            "pool.nuon.co" : each.value.name
+        "pool.nuon.co" : each.value.name
       })
     }
     spec = {
@@ -104,7 +104,7 @@ resource "kubectl_manifest" "additional_nodepools" {
           nodeClassRef = {
             group = "karpenter.k8s.aws"
             kind  = "EC2NodeClass"
-            name  = lookup(each.value, "nodeclass" , each.value.name)
+            name  = lookup(each.value, "nodeclass", each.value.name)
           }
           requirements = [
             {
