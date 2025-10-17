@@ -1,0 +1,36 @@
+---
+title: 022 - Nuon CLI Github Action
+description: todo.
+---
+
+_Oct 17, 2025_
+
+<div className="badge badge--primary">v0.19.673</div>
+
+## Nuon CLI GitHub Action
+
+A GitHub Action is now available for setting up the Nuon CLI in your CI/CD workflows. Here's an
+example of how the action can be used:
+
+```yaml
+- name: Run Nuon command
+  uses: nuonco/actions-nuon@v1
+  with:
+    org_id: ${{ secrets.NUON_ORG_ID }}
+    api_token: ${{ secrets.NUON_API_TOKEN }}
+    command: 'orgs current'
+```
+
+Take a look at [nuonco/actions-nuon GitHub repo](https://github.com/nuonco/actions-nuon) for documentation.
+
+## Improvements
+
+- Onboarding flow can now be re-opened from the sidebar.
+
+## Bug Fixes
+
+- Fixed various issues with Terraform backend download.
+- Fixed bug causing user to get stuck in onboarding if they close the view before creating an org.
+- Fixed bug causing sandboxes to not reprovision after input update.
+- Fixed bug causing helm diffs to not render changes.
+- Assorted small UI fixes.
