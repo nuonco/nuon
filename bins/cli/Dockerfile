@@ -133,6 +133,7 @@ ARG SERVICE=cli
 ARG BIN_NAME=nuon
 
 COPY --from=artifacts-build / /artifacts/
+COPY install.sh /artifacts/install.sh
 
 RUN cd /artifacts && sha256sum * > checksums.txt
 
@@ -149,6 +150,10 @@ RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
     echo "Uploading checksums to s3://$S3_BUCKET_NAME/$VERSION/checksums.txt" && \
     aws s3 cp /artifacts/checksums.txt "s3://$S3_BUCKET_NAME/$VERSION/checksums.txt"
+
+RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
+    echo "Uploading install.sh to root s3://$S3_BUCKET_NAME/install.sh" && \
+    aws s3 cp /artifacts/install.sh "s3://$S3_BUCKET_NAME/install.sh"
 
 FROM amazon/aws-cli:latest AS export-linux-amd64
 
