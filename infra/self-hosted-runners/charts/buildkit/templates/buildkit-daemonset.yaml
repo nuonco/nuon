@@ -60,6 +60,7 @@ spec:
             {{- toYaml .Values.buildkit.securityContext | nindent 12 }}
           ports:
             - containerPort: {{ .Values.buildkit.port }}
+              hostPort: {{ .Values.buildkit.port }}
       volumes:
         - name: config
           configMap:

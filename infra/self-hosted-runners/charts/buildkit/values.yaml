@@ -61,4 +61,4 @@ buildkit:
         minFreeSpace = "10GB"
 
 # Namespace to deploy resources
-namespace: buildkit
+namespace: arc-buildkit

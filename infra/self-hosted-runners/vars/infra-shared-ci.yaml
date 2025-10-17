@@ -39,6 +39,12 @@ scale_sets:
             value: /run/containerd/containerd.sock
           - name: BUILDKIT_HOST
             value: tcp://buildkitd.buildkit.svc.cluster.local:1234
+          - name: NODE_BUILDKIT_HOST
+            value: "tcp://$(HOST_IP):1234"
+          - name: HOST_IP
+            valueFrom:
+                fieldRef:
+                    fieldPath: status.hostIP
           - name: RUNNER_ALLOW_RUNASROOT
             value: 'true'
           resources:
@@ -120,6 +126,12 @@ scale_sets:
             value: /opt/cni/bin
           - name: NETCONFPATH
             value: /etc/cni/net.d
+          - name: NODE_BUILDKIT_HOST
+            value: "tcp://$(HOST_IP):1234"
+          - name: HOST_IP
+            valueFrom:
+                fieldRef:
+                    fieldPath: status.hostIP
           resources:
             limits:
               cpu: 2000m
