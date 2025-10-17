@@ -280,6 +280,10 @@ Display helm values files in UI.
 
 UI handle null install input values.
 
+## v0.19.357
+
+UI handle null install input values.
+
 ## v0.19.356
 
 UI install management dropdown
