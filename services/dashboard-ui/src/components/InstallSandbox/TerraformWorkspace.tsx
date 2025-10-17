@@ -18,14 +18,14 @@ function getResourceAddresses(state: TTerraformState['values']['root_module']) {
   const addresses = []
 
   // Top-level resources
-  if (state.resources && Array.isArray(state.resources)) {
+  if (state && state.resources && Array.isArray(state.resources)) {
     for (const res of state.resources) {
       if (res.address) addresses.push(res.address)
     }
   }
 
   // Resources in child_modules
-  if (state.child_modules && Array.isArray(state.child_modules)) {
+  if (state && state.child_modules && Array.isArray(state.child_modules)) {
     for (const mod of state.child_modules) {
       if (mod.resources && Array.isArray(mod.resources)) {
         for (const res of mod.resources) {
