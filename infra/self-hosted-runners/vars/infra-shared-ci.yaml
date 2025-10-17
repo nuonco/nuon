@@ -84,7 +84,7 @@ scale_sets:
   build-run:
     github_config_url: https://github.com/powertoolsdev
     runner_group: nuon-self-hosted
-    max_runners: 20
+    max_runners: 40
     min_runners: 1
     container_mode:
       type: kubernetes
