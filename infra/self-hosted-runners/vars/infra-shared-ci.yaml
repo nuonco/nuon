@@ -37,14 +37,12 @@ scale_sets:
             value: actions
           - name: CONTAINERD_ADDRESS
             value: /run/containerd/containerd.sock
-          - name: BUILDKIT_HOST
-            value: tcp://buildkitd.buildkit.svc.cluster.local:1234
-          - name: NODE_BUILDKIT_HOST
-            value: "tcp://$(HOST_IP):1234"
           - name: HOST_IP
             valueFrom:
                 fieldRef:
                     fieldPath: status.hostIP
+          - name: BUILDKIT_HOST
+            value: "tcp://$(HOST_IP):1234"
           - name: RUNNER_ALLOW_RUNASROOT
             value: 'true'
           resources:
