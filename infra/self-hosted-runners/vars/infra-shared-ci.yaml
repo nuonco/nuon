@@ -116,15 +116,13 @@ scale_sets:
             value: actions
           - name: CONTAINERD_ADDRESS
             value: /run/containerd/containerd.sock
-          - name: BUILDKIT_HOST
-            value: tcp://buildkitd.buildkit.svc.cluster.local:1234
           - name: RUNNER_ALLOW_RUNASROOT
             value: 'true'
           - name: CNI_PATH
             value: /opt/cni/bin
           - name: NETCONFPATH
             value: /etc/cni/net.d
-          - name: NODE_BUILDKIT_HOST
+          - name: BUILDKIT_HOST
             value: "tcp://$(HOST_IP):1234"
           - name: HOST_IP
             valueFrom:
