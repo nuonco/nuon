@@ -33,10 +33,13 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 		// https://docs.datadoghq.com/getting_started/tagging/ dashes are not permitted in tags
 		endpoint := strings.ReplaceAll(path, "-", "_")
 
+		rawUrlWithParams := c.Request.RequestURI
+
 		ctxObj := &cctx.MetricContext{
-			Endpoint: endpoint,
-			Method:   c.Request.Method,
-			Context:  m.context,
+			RequestURI: rawUrlWithParams,
+			Endpoint:   endpoint,
+			Method:     c.Request.Method,
+			Context:    m.context,
 		}
 		c.Set(keys.MetricsKey, ctxObj)
 
