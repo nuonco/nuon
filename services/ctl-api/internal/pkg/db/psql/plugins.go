@@ -11,7 +11,7 @@ import (
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {
-	db.Use(metrics.NewMetricsPlugin(d.MetricsWriter, "psql"))
+	db.Use(metrics.NewMetricsPlugin(d.MetricsWriter, "psql", &d.Logger))
 	db.Use(afterquery.NewAfterQueryPlugin())
 	db.Use(views.NewViewsPlugin(AllModels()))
 	db.Use(pagination.NewOffsetPaginationPlugin())

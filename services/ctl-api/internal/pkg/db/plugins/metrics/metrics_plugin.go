@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"moul.io/zapgorm2"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
 
@@ -29,16 +30,18 @@ var _ gorm.Plugin = (*metricsWriterPlugin)(nil)
 // It is semi-inspired by https://github.com/go-gorm/prometheus/blob/master/prometheus.go which takes this a step
 // further by pulling in database metrics and emitting them via prometheus, however prometheus is lower level than what
 // we have here.
-func NewMetricsPlugin(mw metrics.Writer, dbType string) *metricsWriterPlugin {
+func NewMetricsPlugin(mw metrics.Writer, dbType string, L *zapgorm2.Logger) *metricsWriterPlugin {
 	return &metricsWriterPlugin{
 		metricsWriter: mw,
 		dbType:        dbType,
+		l:             L,
 	}
 }
 
 type metricsWriterPlugin struct {
 	metricsWriter metrics.Writer
 	dbType        string
+	l             *zapgorm2.Logger
 }
 
 func (m *metricsWriterPlugin) Name() string {
@@ -138,6 +141,19 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 	m.metricsWriter.Gauge("gorm_operation.response_size", float64(respSize), tags)
 	m.metricsWriter.Gauge("gorm_operation.preload_count", preloadCount, tags)
 	m.metricsWriter.Gauge("gorm_operation.rows_affected", float64(tx.RowsAffected), tags)
+
+	largeResultSetThreshold := 350
+
+	if respSize >= largeResultSetThreshold {
+		m.l.Warn(ctx, "large response_size",
+			"table", schema.Table,
+			"request_uri", metricCtx.RequestURI,
+			"endpoint", metricCtx.Endpoint,
+			"method", metricCtx.Method,
+			"org_id", metricCtx.OrgID,
+			"response_size", respSize,
+		)
+	}
 
 	if m.dbType == "ch" {
 		return
