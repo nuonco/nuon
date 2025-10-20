@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // Response Writer that caches the response body
@@ -244,25 +245,29 @@ func (m *middleware) RecoverFromPanic(c *gin.Context) {
 }
 
 func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string) {
+	cl := cctx.GetLogger(c, m.l)
 	// Log errors for status >= 500
 	if c.Writer.Status() >= 500 {
 		fields := []zap.Field{
 			zap.String("method", c.Request.Method),
-			zap.String("path", c.Request.URL.Path),
 			zap.Int("status", c.Writer.Status()),
+			zap.String("host", c.Request.Host),
+			zap.String("url", c.Request.URL.String()),
+			zap.String("path", c.FullPath()),
+			zap.String("query", c.Request.URL.RawQuery),
+			zap.String("ip", c.ClientIP()),
 			zap.String("request_body", requestBody),
 			zap.String("response_body", responseBody),
-			zap.Stack("stack"),
 		}
 
 		var msg string
 		if len(c.Errors) > 0 {
 			errorList := strings.Join(c.Errors.Errors(), ", ")
-			msg = fmt.Sprintf("internal server error. errors: %s", errorList)
+			msg = fmt.Sprintf("stderr 5xx errors: %s", errorList)
 		} else {
 			msg = "internal server error."
 		}
-		m.l.Error(msg, fields...)
+		cl.Error(msg, fields...)
 	}
 }
 
