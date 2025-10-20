@@ -9,11 +9,12 @@ import (
 var ErrMetricContextNotFound error = fmt.Errorf("metric context not found")
 
 type MetricContext struct {
-	Endpoint string
-	Method   string
-	OrgID    string
-	RunnerID string
-	Context  string
+	Endpoint   string
+	Method     string
+	RequestURI string
+	OrgID      string
+	RunnerID   string
+	Context    string
 
 	IsPanic      bool
 	IsTimeout    bool
