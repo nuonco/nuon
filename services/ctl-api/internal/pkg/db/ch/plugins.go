@@ -11,7 +11,7 @@ import (
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {
-	if err := db.Use(metrics.NewMetricsPlugin(d.MetricsWriter, "ch")); err != nil {
+	if err := db.Use(metrics.NewMetricsPlugin(d.MetricsWriter, "ch", &d.Logger)); err != nil {
 		return errors.Wrap(err, "unable to register metrics plugin")
 	}
 
