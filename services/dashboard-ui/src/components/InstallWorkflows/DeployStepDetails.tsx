@@ -37,7 +37,7 @@ export const DeployStepDetails = ({
           <br></br>
         </div>
       ) : null}
-      {isLoading ? (
+      {isLoading && !deploy ? (
         <div className="border rounded-md p-6">
           <Loading loadingText="Loading deploy details..." variant="stack" />
         </div>
