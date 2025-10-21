@@ -13,6 +13,36 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// @ID						GetInstallActions
+// @Summary				get an installs action workflows
+// @Description.markdown	get_install_action_workflows.md
+// @Param					install_id					path	string	true	"install ID"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.InstallActionWorkflow
+// @Router					/v1/installs/{install_id}/actions [GET]
+func (s *service) GetInstallActions(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+	installActionWorkflows, err := s.getInstallActionWorkflows(ctx, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, installActionWorkflows)
+}
+
 // @ID						GetInstallActionWorkflows
 // @Summary				get an installs action workflows
 // @Description.markdown	get_install_action_workflows.md
@@ -25,6 +55,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated     true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

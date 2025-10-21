@@ -13,6 +13,42 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// @ID						GetAppComponentBuild
+// @Summary				get a build for a component
+// @Description.markdown	get_component_build.md
+// @Param					component_id	path	string	true	"component ID"
+// @Param					build_id		path	string	true	"build ID"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.ComponentBuild
+// @Router					/v1/apps/{app_id}/components/{component_id}/builds/{build_id} [GET]
+func (s *service) GetAppComponentBuild(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+	cmpID := ctx.Param("component_id")
+	cmp, err := s.getAppComponent(ctx, appID, cmpID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app component: %w", err))
+		return
+	}
+	bldID := ctx.Param("build_id")
+
+	bld, err := s.getComponentBuild(ctx, cmp.ID, bldID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component build: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, bld)
+}
+
 // @ID						GetComponentBuild
 // @Summary				get a build for a component
 // @Description.markdown	get_component_build.md
@@ -23,6 +59,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
@@ -48,16 +85,16 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 
 	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
 	res := s.db.WithContext(ctx).
-    Preload("CreatedBy").
+		Preload("CreatedBy").
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
 		}).
-		Preload("ComponentConfigConnection.Component").    
+		Preload("ComponentConfigConnection.Component").
 		Preload("RunnerJob", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews)
 		}).
-    Preload("LogStream").
+		Preload("LogStream").
 		First(&bld, "id = ?", bldID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)

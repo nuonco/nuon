@@ -9,8 +9,50 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
+
+// @ID						GetInstallComponentDeploy
+// @Summary				get an install deploy
+// @Description.markdown	get_install_deploy.md
+// @Param					install_id	path	string	true	"install ID"
+// @Param					component_id	path	string	true	"component ID"
+// @Param					deploy_id	path	string	true	"deploy ID"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Deprecated    true
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.InstallDeploy
+// @Router					/v1/installs/{install_id}/components/{component_id}/deploys/{deploy_id} [get]
+func (s *service) GetInstallComponentDeploy(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+	deployID := ctx.Param("deploy_id")
+
+	installDeploy, err := s.getInstallDeploy(ctx, installID, deployID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install deploy %s: %w", deployID, err))
+		return
+	}
+
+	componentID := ctx.Param("component_id")
+	if installDeploy.InstallComponent.ComponentID != componentID {
+		ctx.Error(stderr.ErrNotFound{
+			Err:         gorm.ErrRecordNotFound,
+			Description: fmt.Sprintf("deploy %s does not belong to component %s", deployID, componentID),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, installDeploy)
+}
 
 // @ID						GetInstallDeploy
 // @Summary				get an install deploy
@@ -57,7 +99,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").
 		Preload("ComponentBuild.ComponentConfigConnection.Component").
-    Preload("ComponentBuild.VCSConnectionCommit").
+		Preload("ComponentBuild.VCSConnectionCommit").
 		Where("install_components.install_id = ?", installID).
 		First(&installDeploy, "install_deploys.id = ?", deployID)
 	if res.Error != nil {

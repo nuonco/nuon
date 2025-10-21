@@ -12,6 +12,50 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
+// @ID						DeleteAction
+// @Summary				delete an action
+// @Description.markdown	delete_action_workflow.md
+// @Param					action_id	path	string	true	"action ID"
+// @Tags					actions
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{boolean}	true
+// @Router					/v1/actions/{action_id} [DELETE]
+func (s *service) DeleteAppAction(ctx *gin.Context) {
+	awID := ctx.Param("action_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	aw, err := s.getActionWorkflowWithOrg(ctx, org.ID, awID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	err = s.deleteActionWorkflow(ctx, org.ID, aw.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	// trigger signal
+	s.evClient.Send(ctx, aw.ID, &signals.Signal{
+		Type: signals.OperationDelete,
+	})
+
+	ctx.JSON(http.StatusOK, true)
+}
+
 // @ID						DeleteActionWorkflow
 // @Summary				delete an action workflow
 // @Description.markdown	delete_action_workflow.md
@@ -21,6 +65,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
