@@ -75,9 +75,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	s.GET(ge, "/v1/installs/:install_id/deploys", s.GetInstallDeploys, api.APIContextTypePublic, true) // Deprecated
 	ge.GET("/v1/installs/:install_id/components/deploys", s.GetInstallComponentsDeploys)
 	// ge.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
-	s.POST(ge, "/v1/installs/:install_id/deploys", s.CreateInstallDeploy, api.APIContextTypePublic, true)                 // Deprecated
-	s.GET(ge, "/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy, api.APIContextTypePublic, true)        // Deprecated
-	s.GET(ge, "/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallComponentDeploy, api.APIContextTypePublic, true) // Deprecated
+	s.POST(ge, "/v1/installs/:install_id/deploys", s.CreateInstallDeploy, api.APIContextTypePublic, true)          // Deprecated
+	s.GET(ge, "/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy, api.APIContextTypePublic, true) // Deprecated
+	s.GET(ge, "/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy, api.APIContextTypePublic, true)   // Deprecated
 	ge.GET("/v1/installs/:install_id/components/:component_id/deploys/:deploy_id", s.GetInstallComponentDeploy)
 
 	// install readme
