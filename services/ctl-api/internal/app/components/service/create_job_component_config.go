@@ -33,6 +33,36 @@ func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error 
 	return nil
 }
 
+// @ID						CreateAppJobComponentConfig
+// @Summary				create a job component config
+// @Description.markdown	create_job_component_config.md
+// @Param					req				body	CreateJobComponentConfigRequest	true	"Input"
+// @Param					component_id	path	string							true	"component ID"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.JobComponentConfig
+// @Router					/v1/components/{component_id}/configs/job [POST]
+func (s *service) CreateAppJobComponentConfig(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+	cmpID := ctx.Param("component_id")
+	_, err := s.getAppComponent(ctx, appID, cmpID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component: %w", err))
+		return
+	}
+
+	// reuse the same logic as non-app scoped endpoint
+	s.CreateJobComponentConfig(ctx)
+}
+
 // @ID						CreateJobComponentConfig
 // @Summary				create a job component config
 // @Description.markdown	create_job_component_config.md
@@ -43,6 +73,7 @@ func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error 
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

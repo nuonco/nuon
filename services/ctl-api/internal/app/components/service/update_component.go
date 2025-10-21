@@ -12,6 +12,46 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
+// @ID						UpdateAppComponent
+// @Summary				update a component
+// @Description.markdown	update_component.md
+// @Param					app_id			path	string					true	"app ID"
+// @Param					component_id	path	string					true	"component ID"
+// @Param					req				body	UpdateComponentRequest	true	"Input"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Deprecated    true
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.Component
+// @Router					/v1/apps/{app_id}/components/{component_id} [PATCH]
+func (s *service) UpdateAppComponent(ctx *gin.Context) {
+	componentID := ctx.Param("component_id")
+	var req UpdateComponentRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	component, err := s.updateComponent(ctx, componentID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to update %s: %w", componentID, err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, component)
+}
+
 type UpdateComponentRequest struct {
 	Name    string `json:"name" validate:"required,interpolated_name"`
 	VarName string `json:"var_name" validate:"interpolated_name"`
@@ -36,6 +76,7 @@ func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

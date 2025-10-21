@@ -69,13 +69,16 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 	ge.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
 	ge.POST("/v1/installs/:install_id/forget", s.ForgetInstall)
-	ge.POST("/v1/installs/:install_id/retry-workflow", s.RetryWorkflow) // Deprecated, use workflows instead
+	s.POST(ge, "/v1/installs/:install_id/retry-workflow", s.RetryWorkflow, api.APIContextTypePublic, true) // Deprecated
 
 	// install deploys
-	ge.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
-	ge.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
-	ge.GET("/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy)
-	ge.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
+	s.GET(ge, "/v1/installs/:install_id/deploys", s.GetInstallDeploys, api.APIContextTypePublic, true) // Deprecated
+	ge.GET("/v1/installs/:install_id/components/deploys", s.GetInstallComponentsDeploys)
+	// ge.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
+	s.POST(ge, "/v1/installs/:install_id/deploys", s.CreateInstallDeploy, api.APIContextTypePublic, true)                 // Deprecated
+	s.GET(ge, "/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy, api.APIContextTypePublic, true)        // Deprecated
+	s.GET(ge, "/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallComponentDeploy, api.APIContextTypePublic, true) // Deprecated
+	ge.GET("/v1/installs/:install_id/components/:component_id/deploys/:deploy_id", s.GetInstallComponentDeploy)
 
 	// install readme
 	ge.GET("/v1/installs/:install_id/readme", s.GetInstallReadme)
@@ -91,7 +94,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	ge.POST("/v1/installs/:install_id/reprovision-sandbox", s.ReprovisionInstallSandbox)
 	ge.POST("/v1/installs/:install_id/deprovision-sandbox", s.DeprovisionInstallSandbox)
 	ge.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
-	ge.GET("/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun)
+	ge.GET("/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun) // Deprecated
+	ge.GET("/v1/installs/:install_id/sandbox-runs/:run_id", s.GetInstallSandboxRunV2)
 
 	// install inputs
 	ge.GET("/v1/installs/:install_id/inputs", s.GetInstallInputs)
@@ -110,6 +114,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	ge.GET("/v1/installs/:install_id/components/:component_id/outputs", s.GetInstallComponentOutputs)
 	ge.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
 	ge.POST("/v1/installs/:install_id/sync-secrets", s.SyncSecrets)
+	ge.POST("/v1/installs/:install_id/components/:component_id/deploys", s.CreateInstallComponentDeploy)
 
 	// install events
 	ge.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
@@ -126,7 +131,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	ge.POST("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/response", s.CreateWorkflowStepApprovalResponse)
 	ge.GET("/v1/workflows/:workflow_id/steps/:workflow_step_id/approvals/:approval_id/contents", s.GetWorkflowStepApprovalContents)
 	// retry workflow
-	ge.POST("/v1/workflows/:workflow_id/retry", s.RetryOwnerWorkflow)
+	ge.POST("/v1/workflows/:workflow_id/retry", s.RetryOwnerWorkflow) // Deprecated
+	ge.POST("/v1/workflows/:workflow_id/steps/:workflow_step_id/retry", s.RetryWorkflowStep)
 
 	// deprecated
 	s.GET(ge, "/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow, api.APIContextTypePublic, true)

@@ -14,6 +14,30 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// @ID						GetAppActions
+// @Summary				get action workflows for an app
+// @Description.markdown	get_app_action_workflows.md
+// @Param					app_id						path	string	true	"app ID"
+// @Param         q 						query	string	false	"search query to filter action workflows by name"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
+// @Tags					actions
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.ActionWorkflow
+// @Router					/v1/apps/{app_id}/action-workflows [get]
+func (s *service) GetAppActions(ctx *gin.Context) {
+	s.GetAppActionWorkflows(ctx)
+}
+
 // @ID						GetActionWorkflows
 // @Summary				get action workflows for an app
 // @Description.markdown	get_app_action_workflows.md
@@ -27,6 +51,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
