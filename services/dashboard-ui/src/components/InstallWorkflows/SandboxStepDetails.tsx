@@ -23,7 +23,6 @@ export const SandboxStepDetails = ({
     isLoading,
     error,
   } = usePolling<TSandboxRun>({
-    initIsLoading: true,
     path: `/api/orgs/${org.id}/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`,
     pollInterval,
     shouldPoll,
@@ -31,7 +30,7 @@ export const SandboxStepDetails = ({
 
   return (
     <>
-      {isLoading ? (
+      {isLoading && !sandboxRun ? (
         <div className="border rounded-md p-6">
           <Loading loadingText="Loading sandobx details..." variant="stack" />
         </div>
