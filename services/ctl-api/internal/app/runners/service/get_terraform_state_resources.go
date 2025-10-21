@@ -15,6 +15,27 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
+// @ID						GetTerraformWorkspaceStateJSONResourcesV2
+// @Summary				get terraform state resources. This output is similar to "terraform state list"
+// @Description.markdown	get_terraform_state_json_resources.md
+// @Param					workspace_id	path	string	true	"workspace ID"
+// @Param					state_id 		path	string	true	"state ID"
+// @Tags					runners
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	interface{}
+// @Router					/v1/terraform-workspace/{workspace_id}/state-json/{state_id}/resources [get]
+func (s *service) GetTerraformWorkspaceStateResourcesV2(ctx *gin.Context) {
+	s.GetTerraformWorkspaceStateResources(ctx)
+}
+
 // @ID						GetTerraformWorkspaceStateJSONResources
 // @Summary				get terraform state resources. This output is similar to "terraform state list"
 // @Description.markdown	get_terraform_state_json_resources.md
@@ -25,6 +46,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated     true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

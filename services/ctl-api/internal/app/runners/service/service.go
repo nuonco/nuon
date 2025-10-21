@@ -69,19 +69,27 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	tfWorkspacePath := "/v1/terraform-workspaces"
 	api.GET(tfWorkspacePath, s.GetTerraformWorkpaces)
 	api.GET(tfWorkspacePath+"/:workspace_id", s.GetTerraformWorkpace)
+	api.POST(tfWorkspacePath, s.CreateTerraformWorkspaceV2)
 	api.DELETE(tfWorkspacePath+"/:workspace_id", s.DeleteTerraformWorkpace)
 	api.GET(tfWorkspacePath+"/:workspace_id/lock", s.GetTerraformWorkspaceLock)
 	api.POST(tfWorkspacePath+"/:workspace_id/lock", s.LockTerraformWorkspace)
 	api.POST(tfWorkspacePath+"/:workspace_id/unlock", s.UnlockTerraformWorkspace)
+	api.GET(tfWorkspacePath+"/:workspace_id/states", s.GetTerraformWorkspaceStatesV2)
+	api.GET(tfWorkspacePath+"/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByIDV2)
+	api.GET(tfWorkspacePath+"/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
 
-	api.POST("/v1/terraform-workspace", s.CreateTerraformWorkspace)
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/states", s.GetTerraformWorkspaceStates)
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID)
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResources)
+	api.GET(tfWorkspacePath+"/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSONV2)
+	api.GET(tfWorkspacePath+"/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByIDV2)
+	api.GET(tfWorkspacePath+"/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
 
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSON)
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByID)
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResources)
+	api.POST("/v1/terraform-workspace", s.CreateTerraformWorkspace)                                                            // deprecated
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/states", s.GetTerraformWorkspaceStates)                             // deprecated
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID)                // deprecated
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResources) // deprecated
+
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSON)                         // deprecated
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByID)           // deprecated
+	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResources) // deprecated
 
 	tfBackendPath := "/v1/terraform-backend"
 	api.GET(tfBackendPath, s.GetTerraformCurrentStateData)
@@ -149,11 +157,14 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.GET("/settings", s.GetRunnerSettings)
 	runners.POST("/traces", s.OtelWriteTraces)
 	runners.POST("/metrics", s.OtelWriteMetrics)
+	runners.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
+	runners.GET("/jobs/:job_id", s.GetRunnerJobV2)
+	runners.PATCH("", s.UpdateRunnerJobV2)
 
 	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
-	runnerJobs.GET("", s.GetRunnerJob)
-	runnerJobs.PATCH("", s.UpdateRunnerJob)
-	runnerJobs.GET("/plan", s.GetRunnerJobPlan)
+	runnerJobs.GET("", s.GetRunnerJob)          //deprecated
+	runnerJobs.PATCH("", s.UpdateRunnerJob)     //deprecated
+	runnerJobs.GET("/plan", s.GetRunnerJobPlan) //deprecated
 
 	executions := runnerJobs.Group("/executions")
 	executions.POST("", s.CreateRunnerJobExecution)
@@ -177,6 +188,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	tfWorkspaces.DELETE("/:workspace_id", s.DeleteTerraformWorkpace)
 	tfWorkspaces.POST("/:workspace_id/lock", s.LockTerraformWorkspace)
 	tfWorkspaces.POST("/:workspace_id/unlock", s.UnlockTerraformWorkspace)
+	// terraform state json
+	tfWorkspaces.POST("/:workspace_id/state-json", s.UpdateTerraformWorkspaceStateJSON)
+	tfWorkspaces.DELETE("/:workspace_id/states", s.DeleteTerraformWorkspaceStateJSON)
 
 	// helm release api
 	helmReleasePath := "/v1/helm-releases/:helm_chart_id/releases/"
@@ -186,9 +200,6 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST(helmReleasePath+":namespace/:key", s.CreateHelmRelease)
 	api.PUT(helmReleasePath+":namespace/:key", s.UpdateHelmRelease)
 	api.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
-	// terraform state json
-	tfWorkspaces.POST("/:workspace_id/state-json", s.UpdateTerraformWorkspaceStateJSON)
-	tfWorkspaces.DELETE("/:workspace_id/states", s.DeleteTerraformWorkspaceStateJSON)
 
 	// TODO(jm): these will be moved to the otel namespace
 	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)

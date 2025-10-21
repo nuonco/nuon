@@ -44,6 +44,37 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 	return nil
 }
 
+// @ID						CreateAppHelmComponentConfig
+// @Summary				create a helm component config
+// @Description.markdown	create_helm_component_config.md
+// @Param					req				body	CreateHelmComponentConfigRequest	true	"Input"
+// @Param					app_id			path	string								true	"app ID"
+// @Param					component_id	path	string								true	"component ID"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.HelmComponentConfig
+// @Router					/v1/apps/{app_id}/components/{component_id}/configs/helm [POST]
+func (s *service) CreateAppHelmComponentConfig(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+	cmpID := ctx.Param("component_id")
+	_, err := s.getAppComponent(ctx, appID, cmpID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component: %w", err))
+		return
+	}
+
+	// reuse the same logic as non-app scoped endpoint
+	s.CreateHelmComponentConfig(ctx)
+}
+
 // @ID						CreateHelmComponentConfig
 // @Summary				create a helm component config
 // @Description.markdown	create_helm_component_config.md
@@ -54,6 +85,7 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

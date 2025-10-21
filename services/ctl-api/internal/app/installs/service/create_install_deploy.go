@@ -15,6 +15,95 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
+type CreateInstallComponentDeployRequest struct {
+	BuildID          string `json:"build_id"`
+	DeployDependents bool   `json:"deploy_dependents"`
+
+	PlanOnly bool `json:"plan_only"`
+}
+
+func (c *CreateInstallComponentDeployRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+// @ID                      CreateInstallComponentDeploy
+// @Summary                 deploy a build to an install
+// @Description.markdown    create_install_deploy.md
+// @Param                   install_id  path    string                      true    "install ID"
+// @Param                   component_id path   string                      true    "component ID"
+// @Param                   req         body    CreateInstallComponentDeployRequest  true    "Input"
+// @Tags                    installs
+// @Accept                  json
+// @Produce                 json
+// @Security                APIKey
+// @Security                OrgID
+// @Failure                 400 {object} stderr.ErrResponse
+// @Failure                 401 {object} stderr.ErrResponse
+// @Failure                 403 {object} stderr.ErrResponse
+// @Failure                 404 {object} stderr.ErrResponse
+// @Failure                 500 {object} stderr.ErrResponse
+// @Success                 201 {object} app.InstallDeploy
+// @Router                  /v1/installs/{install_id}/components/{component_id}/deploys [post]
+func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+	componentID := ctx.Param("component_id")
+	_, er := s.helpers.GetComponent(ctx, componentID)
+	if er != nil {
+		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, er))
+		return
+	}
+	var req CreateInstallDeployRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
+	deploy, err := s.createInstallDeploy(ctx, installID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create install: %w", err))
+		return
+	}
+
+	deploy, err = s.getInstallDeploy(ctx, installID, deploy.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get newly created deploy %s:  %w", deploy.ID, err))
+		return
+	}
+
+	workflow, err := s.helpers.CreateWorkflow(ctx,
+		installID,
+		app.WorkflowTypeManualDeploy,
+		map[string]string{
+			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
+			"install_deploy_id":                       deploy.ID,
+			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
+		},
+		app.StepErrorBehaviorAbort,
+		req.PlanOnly,
+	)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if err := s.helpers.UpdateDeployWithWorkflowID(ctx, deploy.ID, workflow.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to update install deploy with workflow ID: %w", err))
+		return
+	}
+
+	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type:              signals.OperationExecuteFlow,
+		InstallWorkflowID: workflow.ID,
+	})
+
+	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
+
+	ctx.JSON(http.StatusCreated, deploy)
+}
+
 type CreateInstallDeployRequest struct {
 	BuildID          string `json:"build_id"`
 	DeployDependents bool   `json:"deploy_dependents"`
@@ -29,23 +118,24 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID						CreateInstallDeploy
-// @Summary				deploy a build to an install
-// @Description.markdown	create_install_deploy.md
-// @Param					install_id	path	string						true	"install ID"
-// @Param					req			body	CreateInstallDeployRequest	true	"Input"
-// @Tags					installs
-// @Accept					json
-// @Produce				json
-// @Security				APIKey
-// @Security				OrgID
-// @Failure				400	{object}	stderr.ErrResponse
-// @Failure				401	{object}	stderr.ErrResponse
-// @Failure				403	{object}	stderr.ErrResponse
-// @Failure				404	{object}	stderr.ErrResponse
-// @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	app.InstallDeploy
-// @Router					/v1/installs/{install_id}/deploys [post]
+// @ID                      CreateInstallDeploy
+// @Summary                 deploy a build to an install
+// @Description.markdown    create_install_deploy.md
+// @Param                   install_id  path    string                      true    "install ID"
+// @Param                   req         body    CreateInstallDeployRequest  true    "Input"
+// @Tags                    installs
+// @Accept                  json
+// @Produce                 json
+// @Security                APIKey
+// @Security                OrgID
+// @Deprecated              true
+// @Failure                 400 {object} stderr.ErrResponse
+// @Failure                 401 {object} stderr.ErrResponse
+// @Failure                 403 {object} stderr.ErrResponse
+// @Failure                 404 {object} stderr.ErrResponse
+// @Failure                 500 {object} stderr.ErrResponse
+// @Success                 201 {object} app.InstallDeploy
+// @Router                  /v1/installs/{install_id}/deploys [post]
 func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
