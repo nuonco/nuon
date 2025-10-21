@@ -120,7 +120,6 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 }
 
 func (h *Helpers) CliVerisionAllowed(ctx context.Context, version string) (bool, error) {
-	fmt.Println("rb - checking CLI version:", version, "against minimum required version:", h.cfg.MinCLIVersion)
 	// If no minimum version is set, all versions are allowed
 	if h.cfg.MinCLIVersion == "" {
 		return true, nil
@@ -141,7 +140,5 @@ func (h *Helpers) CliVerisionAllowed(ctx context.Context, version string) (bool,
 		return false, err
 	}
 
-	allowed := constraint.Check(v)
-	fmt.Println("rb - CLI version allowed:", allowed)
 	return constraint.Check(v), nil
 }
