@@ -11,6 +11,29 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// @ID						GetTerraformWorkspaceStatesJSONV2
+// @Summary				get terraform states json
+// @Description.markdown	get_terraform_states_json.md
+// @Param					workspace_id	path	string	true	"workspace ID"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
+// @Tags					runners
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}	app.TerraformWorkspaceStateJSON
+// @Router					/v1/terraform-workspaces/{workspace_id}/state-json [get]
+func (s *service) GetTerraformWorkspaceStatesJSONV2(ctx *gin.Context) {
+	s.GetTerraformWorkspaceStatesJSON(ctx)
+}
+
 // @ID						GetTerraformWorkspaceStatesJSON
 // @Summary				get terraform states json
 // @Description.markdown	get_terraform_states_json.md
@@ -23,6 +46,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated     true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

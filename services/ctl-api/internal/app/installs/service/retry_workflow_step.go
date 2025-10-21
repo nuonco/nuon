@@ -1,14 +1,11 @@
 package service
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
@@ -17,29 +14,27 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-type RetryWorkflowByIDRequest struct {
-	// StepID is the ID of the step to start the retry from
-	StepID string `json:"step_id" swaggertype:"string"`
+type RetryWorkflowStepRequest struct {
 	// Retry indicates whether to retry the current step or not
 	Operation RetryOperation `json:"operation" swaggertype:"string"`
 }
 
-type RetryWorkflowByIDResponse struct {
+type RetryWorkflowStepResponse struct {
 	WorkflowID string `json:"workflow_id" swaggertype:"string"`
 }
 
-func (c *RetryWorkflowByIDRequest) Validate(v *validator.Validate) error {
+func (c *RetryWorkflowStepResponse) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 	return nil
 }
 
-// @ID						RetryOwnerWorkflowByID
+// @ID						RetryWorkflowStep
 // @Summary					rerun the workflow steps starting from input step id, can be used to retry a failed step
 // @Description.markdown	retry_workflow_by_id.md
 // @Param					workflow_id	path	string					true	"workflow ID"
-// @Param					req			body	RetryWorkflowByIDRequest	true	"Input"
+// @Param					req			body	RetryWorkflowStepResponse	true	"Input"
 // @Tags					installs
 // @Accept					json
 // @Produce					json
@@ -52,18 +47,13 @@ func (c *RetryWorkflowByIDRequest) Validate(v *validator.Validate) error {
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					201	{object}	RetryWorkflowByIDResponse
-// @Router					/v1/workflows/{workflow_id}/retry [post]
-func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
+// @Router					/v1/workflows/{workflow_id}/step/{step_id}/retry [post]
+func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 	var req RetryWorkflowByIDRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: err,
 		})
-		return
-	}
-
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(err)
 		return
 	}
 
@@ -76,7 +66,8 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	step, err := s.getWorkflowStep(ctx, workflow.ID, req.StepID)
+	stepID := ctx.Param("step_id")
+	step, err := s.getWorkflowStep(ctx, workflow.ID, stepID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("install workflow step not found: %s", req.StepID),
@@ -204,38 +195,4 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 	ctx.JSON(201, RetryWorkflowByIDResponse{
 		WorkflowID: workflow.ID,
 	})
-}
-
-// getRunnerJob returns slice of runner jobs with specific owner id
-func (s *service) getRunnerJob(ctx context.Context, ownerID string, operation app.RunnerJobOperationType) (*app.RunnerJob, error) {
-	var job app.RunnerJob
-	res := s.db.WithContext(ctx).
-		Where("owner_id = ? AND operation = ? ", ownerID, operation).
-		Order("created_at DESC").
-		First(&job)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get workflow step")
-	}
-	return &job, nil
-}
-
-func (s *service) getPlanStepForApplyStep(ctx context.Context, workflow *app.Workflow, applyStep *app.WorkflowStep, signalType *[]eventloop.SignalType) (*app.WorkflowStep, error) {
-	var steps []app.WorkflowStep
-	res := s.db.WithContext(ctx).
-		Where("step_target_id = ? ", applyStep.StepTargetID).
-		Order("created_at DESC").
-		Find(&steps)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get workflow step")
-	}
-
-	var planStep *app.WorkflowStep
-	for _, s := range steps {
-		if generics.SliceContains(eventloop.SignalType(s.Signal.Type), *signalType) {
-			planStep = &s
-			break
-		}
-	}
-
-	return planStep, nil
 }

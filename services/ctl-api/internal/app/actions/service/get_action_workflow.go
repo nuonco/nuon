@@ -13,6 +13,40 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// @ID						GetAppAction
+// @Summary				get an app action workflow by action workflow id
+// @Description.markdown	get_app_action_workflow.md
+// @Param					app_id		path	string	true	"app ID"
+// @Param					action_id	path	string	true	"action ID or name"
+// @Tags					actions
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.ActionWorkflow
+// @Router					/v1/apps/{app_id}/actions/{action_id} [get]
+func (s *service) GetAppAction(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	awID := ctx.Param("action_id")
+	aw, err := s.findActionWorkflow(ctx, org.ID, awID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", awID, err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, aw)
+}
+
 // @ID						GetActionWorkflow
 // @Summary				get an app action workflow by action workflow id
 // @Description.markdown	get_app_action_workflow.md
@@ -22,6 +56,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
