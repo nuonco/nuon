@@ -48,7 +48,7 @@ export const ActionStepDetails = ({
 
   return (
     <>
-      {isLoading ? (
+      {isLoading && !actionRun ? (
         <div className="border rounded-md p-6">
           <Loading
             loadingText="Loading action run details..."
