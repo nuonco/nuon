@@ -52,7 +52,6 @@ func NewRequestSignal(req eventloop.EventLoopRequest, signal *Signal) RequestSig
 type RequestSignal struct {
 	*Signal
 	eventloop.EventLoopRequest
-	StartFromStepIdx int
 }
 
 var _ eventloop.Signal = (*Signal)(nil)

@@ -166,7 +166,6 @@ func NewRequestSignal(req eventloop.EventLoopRequest, signal *Signal) RequestSig
 type RequestSignal struct {
 	*Signal `validate:"required"`
 	eventloop.EventLoopRequest
-	StartFromStepIdx int
 }
 
 var _ eventloop.Signal = (*Signal)(nil)
