@@ -91,7 +91,7 @@ export const InstallWorkflowHistory = ({
 
   return (
     <div className="flex flex-col gap-2">
-      {error ? (
+      {error?.error ? (
         <Notice>{error?.error || 'Error loading workflows'}</Notice>
       ) : null}
       {Object.keys(workflowHistory).map((k) => (
