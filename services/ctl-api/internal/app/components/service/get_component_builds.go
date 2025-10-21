@@ -15,6 +15,58 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// @ID						GetAppComponentBuilds
+// @Summary				get builds for components
+// @Description.markdown	get_component_builds.md
+// @Param					app_id						query	string	false	"app id to filter by"
+// @Param					component_id				query	string	false	"component id to filter by"
+// @Param					offset						query	int		false	"offset of results to return"	Default(0)
+// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					page						query	int		false	"page number of results to return"	Default(0)
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		app.ComponentBuild
+// @Router					/v1/apps/{app_id}/components/{component_id}/builds [GET]
+func (s *service) GetAppComponentBuilds(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+	cmpID := ctx.Param("component_id")
+	if cmpID == "" && appID == "" {
+		ctx.Error(fmt.Errorf("component id or app id must be passed in"))
+		return
+	}
+
+	limitStr := ctx.DefaultQuery("limit", "50")
+	limitVal, err := strconv.Atoi(limitStr)
+	if err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
+			Description: "invalid limit",
+		})
+		return
+	}
+
+	var blds []app.ComponentBuild
+	if cmpID != "" {
+		blds, err = s.getComponentBuilds(ctx, cmpID)
+	} else {
+		blds, err = s.getAppBuilds(ctx, appID, limitVal)
+	}
+
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get builds: %w", err))
+		return
+	}
+	ctx.JSON(http.StatusOK, blds)
+}
+
 // @ID						GetComponentBuilds
 // @Summary				get builds for components
 // @Description.markdown	get_component_builds.md
@@ -28,6 +80,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

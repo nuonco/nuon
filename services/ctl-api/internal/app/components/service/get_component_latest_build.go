@@ -11,6 +11,41 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
+// @ID						GetAppComponentLatestBuild
+// @Summary				get latest build for a component
+// @Description.markdown	get_component_latest_build.md
+// @Param					app_id			path	string	true	"app ID"
+// @Param					component_id	path	string	true	"component ID"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.ComponentBuild
+// @Router					/v1/apps/{app_id}/components/{component_id}/builds/latest [GET]
+func (s *service) GetAppComponentLatestBuild(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+	cmpID := ctx.Param("component_id")
+	cmp, err := s.getAppComponent(ctx, appID, cmpID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app component: %w", err))
+		return
+	}
+
+	bld, err := s.getComponentLatestBuild(ctx, cmp.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component builds: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, bld)
+}
+
 // @ID						GetComponentLatestBuild
 // @Summary				get latest build for a component
 // @Description.markdown	get_component_latest_build.md
@@ -20,6 +55,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
