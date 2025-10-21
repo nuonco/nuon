@@ -24,7 +24,7 @@ import (
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					200	{array}	app.TerraformWorkspace
-// @Router						/v1/terraform-workspace/{workspace_id} [delete]
+// @Router						/v1/terraform-workspaces/{workspace_id} [delete]
 func (s *service) DeleteTerraformWorkpace(ctx *gin.Context) {
 	workspaceID := ctx.Param("workspace_id")
 

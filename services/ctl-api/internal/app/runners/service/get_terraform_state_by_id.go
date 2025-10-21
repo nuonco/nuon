@@ -8,6 +8,27 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
+// @ID						GetTerraformWorkspaceStateByIDV2
+// @Summary				get terraform state by ID
+// @Description.markdown	get_terraform_state_by_id.md
+// @Param					workspace_id	path	string	true	"workspace ID"
+// @Param					state_id 		path	string	true	"state ID"
+// @Tags					runners,runners/runner
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.TerraformWorkspaceState
+// @Router					/v1/terraform-workspaces/{workspace_id}/states/{state_id} [get]
+func (s *service) GetTerraformWorkspaceStateByIDV2(ctx *gin.Context) {
+	s.GetTerraformWorkspaceStateByID(ctx)
+}
+
 // @ID						GetTerraformWorkspaceStateByID
 // @Summary				get terraform state by ID
 // @Description.markdown	get_terraform_state_by_id.md
@@ -18,6 +39,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

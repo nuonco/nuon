@@ -146,6 +146,16 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		var nfErr ErrNotFound
+		if errors.As(err, &nfErr) {
+			c.JSON(http.StatusNotFound, ErrResponse{
+				Error:       err.Error(),
+				UserError:   true,
+				Description: nfErr.Description,
+			})
+			return
+		}
+
 		var authzErr ErrAuthorization
 		if errors.As(err, &authzErr) {
 			c.JSON(http.StatusForbidden, ErrResponse{
