@@ -172,7 +172,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
     step?.status?.status !== 'error' &&
     step?.status?.status !== 'auto-skipped' ? (
       <div
-        className={classNames('flex items-center gap-4', {
+        className={classNames('flex flex-wrap items-center gap-2 lg:gap-3', {
           'self-end ml-auto': !inBanner,
         })}
       >
@@ -315,7 +315,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
         step?.status?.status !== 'error' &&
         step?.status?.status === 'approval-awaiting' ? (
         <Notice className="!p-4 w-full" variant="warn">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <Text variant="med-14" className="mb-2">
                 Action needed: {removeSnakeCase(approval?.type)}

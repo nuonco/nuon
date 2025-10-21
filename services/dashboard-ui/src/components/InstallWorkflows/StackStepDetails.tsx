@@ -36,7 +36,7 @@ export const StackStep = ({
 
   return (
     <>
-      {isLoading ? (
+      {isLoading && !stack ? (
         <div className="border rounded-md p-6">
           <Loading loadingText="Loading stack details..." variant="stack" />
         </div>
@@ -74,7 +74,7 @@ const GenerateStack = ({ stack }: { stack: TInstallStack }) => {
 
   return (
     <>
-      {isLoading ? (
+      {isLoading && !stackConfig ? (
         <Loading loadingText="Loading stack infromation..." variant="stack" />
       ) : (
         <>
