@@ -19,6 +19,69 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
+// @ID						CreateActionConfig
+// @Summary				create action config
+// @Description.markdown	create_action_workflow_config.md
+// @Param					app_id		path	string	true	"app ID"
+// @Param					action_id	path	string	true	"action ID"
+// @Tags					actions
+// @Accept					json
+// @Param					req	body	CreateActionWorkflowConfigRequest	true	"Input"
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.ActionWorkflowConfig
+// @Router					/v1/apps/{app_id}/actions/{action_id}/configs [post]
+func (s *service) CreateAppActionConfig(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	awID := ctx.Param("action_id")
+	aw, err := s.findActionWorkflow(ctx, org.ID, awID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get action workflow %s: %w", awID, err))
+		return
+	}
+
+	parentApp, err := s.findApp(ctx, org.ID, aw.AppID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", parentApp.ID, err))
+		return
+	}
+
+	var req CreateActionWorkflowConfigRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	awc, err := s.createActionWorkflowConfig(ctx, parentApp, org.ID, awID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		return
+	}
+
+	s.evClient.Send(ctx, awID, &signals.Signal{
+		Type: signals.OperationConfigCreated,
+
+		ConfigID: awc.ID,
+	})
+
+	ctx.JSON(http.StatusCreated, awc)
+}
+
 type CreateActionWorkflowConfigRequest struct {
 	AppConfigID string                                     `json:"app_config_id" validate:"required"`
 	Triggers    []CreateActionWorkflowConfigTriggerRequest `json:"triggers" validate:"required,dive"`
@@ -121,6 +184,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

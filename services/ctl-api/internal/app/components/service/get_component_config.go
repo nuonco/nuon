@@ -8,6 +8,36 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
+// @ID						GetAppComponentConfig
+// @Summary					get a config for a component
+// @Description.markdown	get_component_config.md
+// @Param					component_id				path	string	true	"component ID"
+// @Param					config_id					path	string	true	"config ID"
+// @Tags					components
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}		app.ComponentConfigConnection
+// @Router					/v1/apps/{app_id}/components/{component_id}/configs/{config_id} [GET]
+func (s *service) GetAppComponentConfig(ctx *gin.Context) {
+	cmpID := ctx.Param("component_id")
+	cfgID := ctx.Param("config_id")
+
+	cfg, err := s.getComponentConfig(ctx, cmpID, cfgID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component configs: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, cfg)
+}
+
 // @ID						GetComponentConfig
 // @Summary					get a config for a component
 // @Description.markdown	get_component_config.md
@@ -18,6 +48,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
