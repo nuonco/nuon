@@ -11,23 +11,46 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-//	@ID						GetInstallActionWorkflowRun
-//	@Summary				get action workflow runs by install id and run id
-//	@Description.markdown	get_install_action_workflow_run.md
-//	@Param					install_id	path	string	true	"install ID"
-//	@Param					run_id		path	string	true	"run ID"
-//	@Tags					actions, actions/runner
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{object}	app.InstallActionWorkflowRun
-//	@Router					/v1/installs/{install_id}/action-workflows/runs/{run_id} [get]
+//		@ID						GetInstallActionRun
+//		@Summary				get action workflow runs by install id and run id
+//		@Description.markdown	get_install_action_workflow_run.md
+//		@Param					install_id	path	string	true	"install ID"
+//		@Param					run_id		path	string	true	"run ID"
+//		@Tags					actions, actions/runner
+//		@Accept					json
+//		@Produce				json
+//		@Security				APIKey
+//		@Security				OrgID
+//	 @Deprecated     true
+//		@Failure				400	{object}	stderr.ErrResponse
+//		@Failure				401	{object}	stderr.ErrResponse
+//		@Failure				403	{object}	stderr.ErrResponse
+//		@Failure				404	{object}	stderr.ErrResponse
+//		@Failure				500	{object}	stderr.ErrResponse
+//		@Success				200	{object}	app.InstallActionWorkflowRun
+//		@Router					/v1/installs/{install_id}/actions/runs/{run_id} [get]
+func (s *service) GetInstallActionRun(ctx *gin.Context) {
+	s.GetInstallActionWorkflowRun(ctx)
+}
+
+//		@ID						GetInstallActionWorkflowRun
+//		@Summary				get action workflow runs by install id and run id
+//		@Description.markdown	get_install_action_workflow_run.md
+//		@Param					install_id	path	string	true	"install ID"
+//		@Param					run_id		path	string	true	"run ID"
+//		@Tags					actions, actions/runner
+//		@Accept					json
+//		@Produce				json
+//		@Security				APIKey
+//		@Security				OrgID
+//	 @Deprecated     true
+//		@Failure				400	{object}	stderr.ErrResponse
+//		@Failure				401	{object}	stderr.ErrResponse
+//		@Failure				403	{object}	stderr.ErrResponse
+//		@Failure				404	{object}	stderr.ErrResponse
+//		@Failure				500	{object}	stderr.ErrResponse
+//		@Success				200	{object}	app.InstallActionWorkflowRun
+//		@Router					/v1/installs/{install_id}/action-workflows/runs/{run_id} [get]
 func (s *service) GetInstallActionWorkflowRun(ctx *gin.Context) {
 	runID := ctx.Param("run_id")
 	run, err := s.findInstallActionWorkflowRun(ctx, runID)

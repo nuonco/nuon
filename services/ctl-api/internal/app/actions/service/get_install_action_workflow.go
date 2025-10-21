@@ -11,6 +11,36 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
+// @ID						GetInstallAction
+// @Summary				get an install action
+// @Description.markdown	get_install_action_workflow.md
+// @Param					install_id			path	string	true	"install ID"
+// @Param					action_id	path	string	true	"action ID"
+// @Tags					installs
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.InstallActionWorkflow
+// @Router					/v1/installs/{install_id}/actions/{action_id} [get]
+func (s *service) GetInstallAction(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+	actionWorkflowID := ctx.Param("action_id")
+
+	installActionWorkflow, err := s.getInstallActionWorkflow(ctx, installID, actionWorkflowID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get install action workflow"))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, installActionWorkflow)
+}
+
 // @ID						GetInstallActionWorkflow
 // @Summary				get an install action workflow
 // @Description.markdown	get_install_action_workflow.md

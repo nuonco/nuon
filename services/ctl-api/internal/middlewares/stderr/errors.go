@@ -38,6 +38,15 @@ func (u ErrNotReady) Error() string {
 	return u.Err.Error()
 }
 
+type ErrNotFound struct {
+	Err         error
+	Description string
+}
+
+func (e ErrNotFound) Error() string {
+	return e.Err.Error()
+}
+
 type ErrResponse struct {
 	Error       string `json:"error,omitzero"`
 	UserError   bool   `json:"user_error,omitzero"`
