@@ -4,6 +4,7 @@ import { useUser } from '@auth0/nextjs-auth0'
 import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 import { Link } from '@/components/Link'
 import { Text } from '@/components/Typography'
+import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstallWorkflow } from '@/types'
 
 interface IInstallWorkflowActivity {
@@ -14,6 +15,9 @@ export const InstallWorkflowActivity = ({
   installWorkflow,
 }: IInstallWorkflowActivity) => {
   const { user, isLoading } = useUser()
+  const temporalLinkParams = useQueryParams({
+    query: `WorkflowId=${installWorkflow?.owner_id}-execute-workflow-${installWorkflow?.id}`,
+  })
   const workflowSteps =
     installWorkflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
 
@@ -70,7 +74,7 @@ export const InstallWorkflowActivity = ({
       {!isLoading && user?.email?.endsWith('@nuon.co') ? (
         <Link
           className="text-base gap-2 mt-3 ml-auto"
-          href={`/admin/temporal/namespaces/installs/workflows/${installWorkflow?.owner_id}-execute-workflow-${installWorkflow?.id}`}
+          href={`/admin/temporal/namespaces/installs/workflows${temporalLinkParams}`}
           target="_blank"
         >
           View in Temporal <ArrowSquareOutIcon />
