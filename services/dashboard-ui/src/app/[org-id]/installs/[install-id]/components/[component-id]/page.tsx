@@ -112,7 +112,7 @@ export default async function InstallComponentPage({
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="divide-y flex-auto flex flex-col md:col-span-8">
           {installComponent?.drifted_object ? (
-            <Section className="!border-b-0">
+            <Section className="!border-b-0 !pb-0">
               <DriftedBanner drifted={installComponent?.drifted_object} />
             </Section>
           ) : null}
@@ -267,7 +267,7 @@ export default async function InstallComponentPage({
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="divide-y flex-auto flex flex-col md:col-span-8">
           {installComponent?.drifted_object ? (
-            <Section className="!border-b-0">
+            <Section className="!border-b-0 !pb-0">
               <DriftedBanner drifted={installComponent?.drifted_object} />
             </Section>
           ) : null}

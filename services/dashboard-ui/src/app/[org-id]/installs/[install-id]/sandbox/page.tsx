@@ -67,7 +67,7 @@ export default async function InstallSandboxPage({
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y  md:divide-x">
         <div className="md:col-span-8 divide-y flex-auto flex flex-col">
           {driftedObject ? (
-            <Section className="!border-b-0">
+            <Section className="!border-b-0 !pb-0">
               <DriftedBanner drifted={driftedObject} />
             </Section>
           ) : null}
@@ -206,7 +206,7 @@ export default async function InstallSandboxPage({
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y  md:divide-x">
         <div className="md:col-span-8 divide-y flex-auto flex flex-col">
           {driftedObject ? (
-            <Section className="!border-b-0">
+            <Section className="!border-b-0 !pb-0">
               <DriftedBanner drifted={driftedObject} />
             </Section>
           ) : null}
