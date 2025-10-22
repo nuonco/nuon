@@ -207,6 +207,7 @@ export const DeprovisionSandboxModal = () => {
         onClick={() => {
           setIsOpen(true)
         }}
+        variant="ghost"
       >
         <BoxArrowDownIcon size="16" /> Deprovision sandbox
       </Button>

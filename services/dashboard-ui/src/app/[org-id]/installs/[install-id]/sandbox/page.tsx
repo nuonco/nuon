@@ -26,6 +26,7 @@ import {
 } from '@/components'
 import { DriftedBanner } from '@/components/DriftedBanner'
 import { TerraformWorkspace } from '@/components/InstallSandbox'
+import { SandboxManagementDropdown } from '@/components/InstallSandbox/ManagementDropdown'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -61,10 +62,10 @@ export default async function InstallSandboxPage({
   )
 
   return org?.features?.['stratus-layout'] ? (
-    <PageSection isScrollable className="!pt-0">
+    <PageSection isScrollable className="!p-0">
       {/* old layout stuff*/}
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y  md:divide-x">
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y md:divide-x">
         <div className="md:col-span-8 divide-y flex-auto flex flex-col">
           {driftedObject ? (
             <Section className="!border-b-0 !pb-0">
@@ -129,8 +130,7 @@ export default async function InstallSandboxPage({
         <div className="divide-y flex flex-col md:col-span-4">
           <Section heading="Sandbox controls" className="flex-initial">
             <div className="flex items-center gap-4 flex-wrap">
-              <ReprovisionSandboxModal />
-              <DeprovisionSandboxModal />
+              <SandboxManagementDropdown />
             </div>
           </Section>
           <Section heading="Sandbox history">
@@ -268,8 +268,7 @@ export default async function InstallSandboxPage({
         <div className="divide-y flex flex-col md:col-span-4">
           <Section heading="Sandbox controls" className="flex-initial">
             <div className="flex items-center gap-4 flex-wrap">
-              <ReprovisionSandboxModal />
-              <DeprovisionSandboxModal />
+              <SandboxManagementDropdown />
             </div>
           </Section>
           <Section heading="Sandbox history">

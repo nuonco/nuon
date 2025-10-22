@@ -59,7 +59,7 @@ export const DriftScanButton = ({
   useEffect(() => {
     if (error) {
       trackEvent({
-        event: 'component_deploy',
+        event: 'component_drift_scan',
         user,
         status: 'error',
         props: {
@@ -74,7 +74,7 @@ export const DriftScanButton = ({
 
     if (deploy) {
       trackEvent({
-        event: 'component_deploy',
+        event: 'component_drift_scan',
         user,
         status: 'ok',
         props: {
