@@ -103,6 +103,8 @@ export default async function InstallComponentPage({
           <InstallComponentManagementDropdown
             componentId={installComponent?.component_id}
             componentName={installComponent?.component?.name}
+            componentType={installComponent?.component?.type}
+            currentBuildId={installComponent?.install_deploys?.at(0)?.build_id}
           />
         </div>
       </div>
@@ -256,6 +258,8 @@ export default async function InstallComponentPage({
           <InstallComponentManagementDropdown
             componentId={installComponent?.component_id}
             componentName={installComponent?.component?.name}
+            componentType={installComponent?.component?.type}
+            currentBuildId={installComponent?.install_deploys?.at(0)?.build_id}
           />
         </div>
       }

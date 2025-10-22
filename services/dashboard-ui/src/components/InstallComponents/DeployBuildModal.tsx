@@ -145,15 +145,6 @@ export const InstallDeployBuildModal: FC<{
               </div>
 
               <div className="p-6 border-t">
-                <CheckboxInput
-                  name="ack"
-                  defaultChecked={planOnly}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setPlanOnly(Boolean(e?.currentTarget?.checked))
-                  }}
-                  labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
-                  labelText={'Plan Only?'}
-                />
                 <div className="flex gap-3 justify-between flex-wrap">
                   <div className="flex items-start">
                     <CheckboxInput
@@ -185,7 +176,7 @@ export const InstallDeployBuildModal: FC<{
                     </Button>
                     <Button
                       disabled={!buildId || isKickedOff}
-                      className="text-base flex items-center gap-1"
+                      className="text-sm flex items-center gap-1"
                       onClick={() => {
                         setIsKickedOff(true)
                         execute({
@@ -224,13 +215,14 @@ export const InstallDeployBuildModal: FC<{
         }}
         variant={buttonVariant}
       >
+        <CloudArrowUpIcon size="18" />
         {buttonText}
       </Button>
     </>
   )
 }
 
-const BuildOptions: FC<{
+export const BuildOptions: FC<{
   buildId?: string
   componentId: string
   setBuildId: (id: string) => void
