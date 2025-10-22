@@ -89,6 +89,7 @@ type model struct {
 	help       help.Model
 	keys       keyMap
 	loading    bool
+	limit      int
 	offset     int
 	hasMore    bool
 	selectedID string
@@ -104,7 +105,7 @@ type actionsLoadedMsg struct {
 	err     error
 }
 
-func loadActions(ctx context.Context, api nuon.Client, appID string, offset int) tea.Cmd {
+func loadActions(ctx context.Context, api nuon.Client, appID string, limit, offset int) tea.Cmd {
 	return func() tea.Msg {
 		actions, hasMore, err := api.GetActionWorkflows(ctx, appID, &models.GetPaginatedQuery{
 			Offset: offset,
@@ -118,7 +119,7 @@ func loadActions(ctx context.Context, api nuon.Client, appID string, offset int)
 	}
 }
 
-func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, appID string, installID string) model {
+func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, installID string, limit, offset int) model {
 	columns := []table.Column{
 		{Title: "ID", Width: 28},
 		{Title: "NAME", Width: 20},
@@ -152,20 +153,20 @@ func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, appI
 		ctx:       ctx,
 		cfg:       cfg,
 		api:       api,
-		appID:     appID,
 		installID: installID,
 		table:     t,
 		spinner:   sp,
 		help:      help.New(),
 		keys:      keys,
 		loading:   true,
-		offset:    0,
+		limit:     limit,
+		offset:    offset,
 	}
 }
 
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
-		loadActions(m.ctx, m.api, m.appID, m.offset),
+		loadActions(m.ctx, m.api, m.cfg.AppID, m.limit, m.offset),
 		m.spinner.Tick,
 	)
 }
@@ -231,7 +232,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.offset += limit
 				m.loading = true
 				return m, tea.Batch(
-					loadActions(m.ctx, m.api, m.appID, m.offset),
+					loadActions(m.ctx, m.api, m.cfg.AppID, m.limit, m.offset),
 					m.spinner.Tick,
 				)
 			}
@@ -245,7 +246,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.loading = true
 				return m, tea.Batch(
-					loadActions(m.ctx, m.api, m.appID, m.offset),
+					loadActions(m.ctx, m.api, m.cfg.AppID, m.limit, m.offset),
 					m.spinner.Tick,
 				)
 			}
@@ -281,7 +282,7 @@ func (m model) View() string {
 			Width(m.width - 2).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(styles.ErrorColor)
-		return errorStyle.Render(fmt.Sprintf("Error: %v\napp id: %s install id: %s", m.err, m.appID, m.installID)) + "\n"
+		return errorStyle.Render(fmt.Sprintf("Error: %v\napp id: %s install id: %s", m.err, m.cfg.AppID, m.installID)) + "\n"
 	}
 
 	var content string
@@ -328,14 +329,14 @@ func (m model) View() string {
 }
 
 // ActionSelectorApp runs the action selector and returns the selected action ID
-func ActionSelectorApp(
+func App(
 	ctx context.Context,
 	cfg *config.Config,
 	api nuon.Client,
-	appID string,
 	installID string,
+	limit, offset int,
 ) (string, error) {
-	m := initialModel(ctx, cfg, api, appID, installID)
+	m := initialModel(ctx, cfg, api, installID, limit, offset)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	finalModel, err := p.Run()

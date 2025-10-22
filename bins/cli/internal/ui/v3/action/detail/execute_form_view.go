@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"fmt"
@@ -8,12 +8,12 @@ import (
 	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
-func (m model) renderExecuteForm() string {
+func (m Model) renderExecuteForm() string {
 	// Return the viewport view which handles scrolling and height constraints
 	return m.formViewport.View()
 }
 
-func (m model) renderExecuteFormContent() string {
+func (m Model) renderExecuteFormContent() string {
 	if m.formError != nil {
 		req := common.FullPageDialogRequest{
 			Width:   m.runsList.Width(),

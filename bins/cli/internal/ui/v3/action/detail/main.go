@@ -4,12 +4,11 @@ An alt-screen TUI for viewing action workflows and their runs.
 
 */
 
-package action
+package detail
 
 import (
 	"context"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -28,6 +27,7 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 
+	ac "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/common"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
 	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
@@ -38,7 +38,18 @@ const (
 	dataRefreshInterval time.Duration = time.Second * 5
 )
 
-type model struct {
+type ViewMode string
+type FocusArea string
+
+const (
+	ExecuteView    ViewMode  = "execute"
+	RunsView       ViewMode  = "runs"
+	RunsFocusArea  FocusArea = "runs"
+	StepsFocusArea FocusArea = "steps"
+)
+
+type Model struct {
+	log *common.Logger
 	// common/base
 	ctx context.Context
 	cfg *config.Config
@@ -67,7 +78,7 @@ type model struct {
 	runsList     list.Model
 	actionConfig viewport.Model
 	footer       viewport.Model
-	focus        string // one of "runs" or "steps"
+	focus        FocusArea // one of "runs" or "steps"
 
 	// 2. ui
 	spinner spinner.Model
@@ -82,7 +93,7 @@ type model struct {
 	keys keyMap
 
 	// execute form state
-	viewMode       string // "runs" or "execute"
+	viewMode       ViewMode // "runs" or "execute"
 	formInputs     []textinput.Model
 	formFocusIndex int
 	formMappings   []executeInputMapping
@@ -105,19 +116,38 @@ func initialRunsList() list.Model {
 	return runsList
 }
 
+func New(
+	ctx context.Context,
+	cfg *config.Config,
+	api nuon.Client,
+	installID string,
+	actionWorkflowID string,
+) Model {
+	m := initialModel(
+		ctx,
+		cfg,
+		api,
+		installID,
+		actionWorkflowID,
+	)
+	return m
+}
+
 func initialModel(
 	ctx context.Context,
 	cfg *config.Config,
 	api nuon.Client,
 	installID string,
 	actionWorkflowID string,
-) model {
+) Model {
+	log, _ := common.NewLogger("install-action-detail")
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(styles.AccentColor)
 	runsList := initialRunsList()
 
-	m := model{
+	m := Model{
+		log:              log,
 		ctx:              ctx,
 		cfg:              cfg,
 		api:              api,
@@ -128,14 +158,14 @@ func initialModel(
 		runsList:     runsList,
 		actionConfig: viewport.New(minRequiredWidth, 30),
 		footer:       viewport.New(minRequiredWidth, 4),
-		focus:        "runs",
+		focus:        RunsFocusArea,
 
 		help:    help.New(),
 		spinner: s,
 		status:  common.StatusBarRequest{Message: ""},
 
 		keys:         keys,
-		viewMode:     "runs",
+		viewMode:     RunsView,
 		formViewport: viewport.New(minRequiredWidth, 30),
 	}
 	m.actionConfig.SetContent("Loading")
@@ -143,13 +173,13 @@ func initialModel(
 	return m
 }
 
-func (m *model) setLogMessage(message string, level string) {
+func (m *Model) setLogMessage(message string, level string) {
 	// for use from within m.Update
 	m.status.Message = message
 	m.status.Level = level
 }
 
-func (m *model) initializeExecuteForm() {
+func (m *Model) initializeExecuteForm() {
 	m.formInputs = make([]textinput.Model, 0)
 	m.formMappings = make([]executeInputMapping, 0)
 
@@ -210,12 +240,12 @@ func (m *model) initializeExecuteForm() {
 	m.updateFormViewportContent()
 }
 
-func (m *model) updateFormViewportContent() {
+func (m *Model) updateFormViewportContent() {
 	content := m.renderExecuteFormContent()
 	m.formViewport.SetContent(content)
 }
 
-func (m *model) nextFormInput() {
+func (m *Model) nextFormInput() {
 	if len(m.formInputs) == 0 {
 		return
 	}
@@ -234,7 +264,7 @@ func (m *model) nextFormInput() {
 	}
 }
 
-func (m *model) prevFormInput() {
+func (m *Model) prevFormInput() {
 	if len(m.formInputs) == 0 {
 		return
 	}
@@ -253,7 +283,7 @@ func (m *model) prevFormInput() {
 	}
 }
 
-func (m *model) submitExecuteForm() tea.Cmd {
+func (m *Model) submitExecuteForm() tea.Cmd {
 	return func() tea.Msg {
 		// Build env vars map
 		envVars := make(map[string]string)
@@ -283,7 +313,7 @@ func (m *model) submitExecuteForm() tea.Cmd {
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchInstallActionWorkflowCmd,
 		m.fetchLatestConfigCmd,
@@ -292,12 +322,12 @@ func (m model) Init() tea.Cmd {
 	)
 }
 
-func (m *model) setQuitting() {
+func (m *Model) setQuitting() {
 	m.setLogMessage("quitting ...", "warning")
 	m.quitting = true
 }
 
-func (m *model) resize() {
+func (m *Model) resize() {
 	// vertical margin height is the height of the header + the height of the footer
 	vMarginHeight := lipgloss.Height(m.headerView()) + lipgloss.Height(m.footerView()) + 2
 	// runs take 2/3, steps take 1/3
@@ -330,7 +360,7 @@ func (m *model) resize() {
 	m.populateActionConfigView(true)
 }
 
-func (m *model) handleResize(msg tea.WindowSizeMsg) {
+func (m *Model) handleResize(msg tea.WindowSizeMsg) {
 	// when the window resizes, store the dimensions of the window
 	m.width = msg.Width
 	m.height = msg.Height
@@ -338,18 +368,18 @@ func (m *model) handleResize(msg tea.WindowSizeMsg) {
 	m.resize()
 }
 
-func (m *model) toggleFocus() {
-	if m.focus == "runs" {
-		m.focus = "steps"
+func (m *Model) toggleFocus() {
+	if m.focus == RunsFocusArea {
+		m.focus = StepsFocusArea
 	} else {
-		m.focus = "runs"
+		m.focus = RunsFocusArea
 	}
 }
 
 // handle up and down
-func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *Model) handleNav(msg tea.KeyMsg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
-	if m.focus == "steps" {
+	if m.focus == StepsFocusArea {
 		m.actionConfig, cmd = m.actionConfig.Update(msg)
 	} else {
 		m.runsList, cmd = m.runsList.Update(msg)
@@ -357,16 +387,16 @@ func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *model) setFormError(err error) {
+func (m *Model) setFormError(err error) {
 	m.formError = err
 	m.updateFormViewportContent()
 }
 
-func (m *model) resetForm() {
+func (m *Model) resetForm() {
 	m.formError = nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -380,8 +410,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.setLogMessage("Action executed successfully!", "success")
 			// Switch back to runs view and refresh data
-			m.viewMode = "runs"
-			m.keys.updateNavigationKeys("runs")
+			m.viewMode = RunsView
+			m.keys.updateNavigationKeys(RunsView)
 			return m, tea.Batch(
 				m.fetchInstallActionWorkflowCmd,
 				m.fetchLatestConfigCmd,
@@ -414,14 +444,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// handle keystrokes
 	case tea.KeyMsg:
 		// Handle execute mode keys
-		if m.viewMode == "execute" {
+		if m.viewMode == ExecuteView {
 			switch {
 			case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
 				m.setQuitting()
 				return m, tea.Quit
 			case key.Matches(msg, m.keys.Esc): // "esc": go back to runs view
-				m.viewMode = "runs"
-				m.keys.updateNavigationKeys("runs")
+				m.viewMode = RunsView
+				m.keys.updateNavigationKeys(RunsView)
 				m.setLogMessage("", "")
 				m.resetForm()
 				return m, nil
@@ -485,10 +515,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// nav
 		case key.Matches(msg, m.keys.Up):
-			m, cmd := m.handleNav(msg)
+			_, cmd := m.handleNav(msg)
 			return m, cmd
 		case key.Matches(msg, m.keys.Down):
-			m, cmd := m.handleNav(msg)
+			_, cmd := m.handleNav(msg)
 			return m, cmd
 		case key.Matches(msg, m.keys.Left):
 			m.toggleFocus()
@@ -510,8 +540,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.runsList.Update(msg)
 
 		// selection
-		// case key.Matches(msg, m.keys.Enter):
-		// 	m.runsList.Update(msg)
+		case key.Matches(msg, m.keys.Enter):
+			selectedItem := m.runsList.SelectedItem()
+			if run, ok := selectedItem.(listRun); ok {
+				// Return the message to parent
+				return m, func() tea.Msg {
+					return ac.SwitchToRunViewMsg{RunID: run.run.ID}
+				}
+			}
 
 		case key.Matches(msg, m.keys.Tab):
 			m.toggleFocus()
@@ -530,8 +566,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Switch to execute mode
 			if m.latestConfig != nil {
 				m.initializeExecuteForm()
-				m.viewMode = "execute"
-				m.keys.updateNavigationKeys("execute")
+				m.viewMode = ExecuteView
+				m.keys.updateNavigationKeys(ExecuteView)
 				m.setLogMessage("Fill in the form and press Enter to execute", "info")
 			}
 			return m, nil
@@ -547,7 +583,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 
 		// Handle mouse events for viewport scrolling in execute mode
-		if m.viewMode == "execute" {
+		if m.viewMode == ExecuteView {
 			m.formViewport, cmd = m.formViewport.Update(msg)
 			cmds = append(cmds, cmd)
 		}
@@ -556,7 +592,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	if m.quitting {
 		return "quitting " + m.spinner.View()
 	}
@@ -597,7 +633,7 @@ func (m model) View() string {
 
 	} else {
 		leftPanel := ""
-		if m.viewMode == "execute" {
+		if m.viewMode == ExecuteView {
 			// Render execute form in left panel
 			leftPanel = appStyleFocus.Width(m.runsWidth).Padding(0, 1, 0, 0).Render(m.renderExecuteForm())
 		} else {
@@ -624,21 +660,4 @@ func (m model) View() string {
 	footer := m.footerView()
 	s := lipgloss.JoinVertical(lipgloss.Top, header, content, footer)
 	return s
-}
-
-func ActionWorkflowApp(
-	ctx context.Context,
-	cfg *config.Config,
-	api nuon.Client,
-	install_id string,
-	action_workflow_id string,
-) {
-	// initialize the model
-	m := initialModel(ctx, cfg, api, install_id, action_workflow_id)
-	// initialize the program
-	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Something has gone terribly wrong: %v", err)
-		os.Exit(1)
-	}
 }
