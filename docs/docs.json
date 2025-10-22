@@ -23,7 +23,7 @@
           },
           {
             "group": "Resources",
-            "pages": ["configuration-files", "cli", "nuon-api", "sdks"]
+            "pages": ["configuration-files", "cli", "dashboard-ui","nuon-api", "sdks"]
           },
           {
             "group": "Platform Support",
