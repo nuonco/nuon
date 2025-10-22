@@ -95,7 +95,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	if awc.AppConfigID != install.AppConfigID {
-		ctx.Error(stderr.ErrSystem{
+		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("action workflow config does not belong to the install's app config"),
 			Description: "action workflow config does not belong to the install's app config",
 		})

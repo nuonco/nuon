@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -23,6 +24,7 @@ import (
 type CachedResponseWriter struct {
 	gin.ResponseWriter
 	Body *bytes.Buffer
+	CFG  *internal.Config
 }
 
 func (w *CachedResponseWriter) Write(b []byte) (int, error) {
@@ -38,7 +40,8 @@ func NewCachedResponseWriter(w gin.ResponseWriter) *CachedResponseWriter {
 }
 
 type middleware struct {
-	l *zap.Logger
+	l   *zap.Logger
+	cfg *internal.Config
 }
 
 func (m *middleware) Name() string {
@@ -266,8 +269,15 @@ func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string)
 			zap.String("path", c.FullPath()),
 			zap.String("query", c.Request.URL.RawQuery),
 			zap.String("ip", c.ClientIP()),
-			zap.String("request_body", requestBody),
 			zap.String("response_body", responseBody),
+		}
+
+		// Add request body if configured
+		if c.Request.Body != nil && m.cfg.LogRequestBody {
+			body, err := c.GetRawData()
+			if err == nil || len(body) > 0 {
+				fields = append(fields, zap.String("request_body", string(body)))
+			}
 		}
 
 		var msg string
@@ -281,8 +291,9 @@ func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string)
 	}
 }
 
-func New(l *zap.Logger) *middleware {
+func New(l *zap.Logger, cfg *internal.Config) *middleware {
 	return &middleware{
-		l: l,
+		l:   l,
+		cfg: cfg,
 	}
 }
