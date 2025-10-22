@@ -19,7 +19,11 @@ import (
 )
 
 const (
-	limit = 20
+	limit         = 20
+	maxNameWidth  = 40
+	minNameWidth  = 20
+	idColumnWidth = 28
+	triggerWidth  = 20
 )
 
 type keyMap struct {
@@ -119,11 +123,42 @@ func loadActions(ctx context.Context, api nuon.Client, appID string, limit, offs
 	}
 }
 
+// calculateNameWidth determines the optimal width for the name column
+// based on the longest name in the actions list, capped at maxNameWidth
+func calculateNameWidth(actions []*models.AppActionWorkflow) int {
+	maxLen := minNameWidth
+	for _, action := range actions {
+		nameLen := len(action.Name)
+		if nameLen > maxLen {
+			maxLen = nameLen
+		}
+	}
+
+	// Cap at maximum width
+	if maxLen > maxNameWidth {
+		maxLen = maxNameWidth
+	}
+
+	return maxLen
+}
+
+// truncateName truncates a name to the specified width with ellipsis if needed
+func truncateName(name string, width int) string {
+	if len(name) <= width {
+		return name
+	}
+	if width < 3 {
+		return name[:width]
+	}
+	return name[:width-3] + "..."
+}
+
 func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, installID string, limit, offset int) model {
+	// Initial columns with default name width
 	columns := []table.Column{
-		{Title: "ID", Width: 28},
-		{Title: "NAME", Width: 20},
-		{Title: "TRIGGERS", Width: 20},
+		{Title: "ID", Width: idColumnWidth},
+		{Title: "NAME", Width: minNameWidth}, // Will be adjusted when actions load
+		{Title: "TRIGGERS", Width: triggerWidth},
 	}
 
 	t := table.New(
@@ -190,7 +225,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.actions = msg.actions
 		m.hasMore = msg.hasMore
 
-		// Convert actions to table rows
+		// Calculate optimal name column width based on data
+		nameWidth := calculateNameWidth(m.actions)
+
+		// Update table columns with new name width
+		columns := []table.Column{
+			{Title: "ID", Width: idColumnWidth},
+			{Title: "NAME", Width: nameWidth},
+			{Title: "TRIGGERS", Width: triggerWidth},
+		}
+		m.table.SetColumns(columns)
+
+		// Convert actions to table rows with truncated names
 		rows := []table.Row{}
 		for _, action := range m.actions {
 			triggers := []string{}
@@ -200,7 +246,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			rows = append(rows, table.Row{
 				action.ID,
-				action.Name,
+				truncateName(action.Name, nameWidth),
 				strings.Join(triggers, ", "),
 			})
 		}
