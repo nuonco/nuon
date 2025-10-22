@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
-	kube "helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
@@ -48,25 +47,14 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	}
 	l.Info("rendered values", zap.Any("values", values))
 
-	client := action.NewUpgrade(actionCfg)
+	client := helm.DefaultUpgrade(actionCfg)
+	// configure the client with additional, chart and context -specific values
 	client.DryRun = true
-	client.DisableHooks = false
 	// wait logic
-	client.WaitForJobs = false
-	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = true
-	client.DependencyUpdate = true
-	client.Timeout = h.state.timeout
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
-	client.SkipCRDs = false
-	client.SubNotes = true
-	client.DisableOpenAPIValidation = false
-	client.Description = ""
-	client.ResetValues = false
-	client.ReuseValues = false
-	client.MaxHistory = 0
-	client.CleanupOnFail = false
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
+	client.Timeout = h.state.timeout
 
 	crds := chart.CRDObjects()
 	if len(crds) > 0 {
@@ -95,27 +83,14 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	}
 
 	l.Info("upgrading helm release")
-	client = action.NewUpgrade(actionCfg)
+	client = helm.DefaultUpgrade(actionCfg)
+
 	client.DryRun = false
-	client.DisableHooks = false
 	client.ServerSideApply = "false"
-
-	client.WaitForJobs = false
-	client.WaitStrategy = kube.StatusWatcherStrategy
-
 	client.Devel = true
-	client.DependencyUpdate = true
-	client.Timeout = h.state.timeout
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
-	client.SkipCRDs = false
-	client.SubNotes = true
-	client.DisableOpenAPIValidation = false
-	client.Description = ""
-	client.ResetValues = false
-	client.ReuseValues = false
-	client.MaxHistory = 0
-	client.CleanupOnFail = false
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
+	client.Timeout = h.state.timeout
 
 	rel, err := helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, l)
 	if err != nil {
