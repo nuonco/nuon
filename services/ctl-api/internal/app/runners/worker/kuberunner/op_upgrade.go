@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
-	"helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -29,23 +28,13 @@ func (h *Activities) upgrade(ctx context.Context, actionCfg *action.Configuratio
 	}
 
 	// We have a previous release, upgrade.
-	client := action.NewUpgrade(actionCfg)
-	client.DryRun = false
-	client.DisableHooks = false
-	client.WaitStrategy = kube.StatusWatcherStrategy
-	client.WaitForJobs = false
+	client := helm.DefaultUpgrade(actionCfg)
+	// set values
 	client.Devel = false
-	client.DependencyUpdate = true
-	client.Timeout = req.Timeout
+	client.DryRun = false
+	client.ServerSideApply = "false" // NOTE(fd): this is the actual change
 	client.Namespace = req.Namespace
-	client.SkipCRDs = false
-	client.SubNotes = true
-	client.DisableOpenAPIValidation = false
-	client.Description = ""
-	client.ResetValues = false
-	client.ReuseValues = false
-	client.MaxHistory = 0
-	client.CleanupOnFail = false
+	client.Timeout = req.Timeout
 
 	l.Info("loading values")
 	vals := h.getValues(req)
