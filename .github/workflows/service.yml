@@ -70,6 +70,8 @@ jobs:
             --env=stage \
             --tag=${{inputs.tag}} \
             --dry-run=true
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.STAGE_DEPLOYS_SLACK_WEBHOOK_URL }}
 
       - name: ⬆️ Deploy Stage
         if: ${{ inputs.stage }}
@@ -78,6 +80,8 @@ jobs:
             ${{inputs.service}} \
             --env=stage \
             --tag=${{inputs.tag}}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.STAGE_DEPLOYS_SLACK_WEBHOOK_URL }}
 
       - name: 🚪 Dry-Run Deploy Prod
         if: ${{ inputs.prod }}
@@ -87,6 +91,8 @@ jobs:
             --env=prod \
             --tag=${{inputs.tag}} \
             --dry-run=true
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.PROD_DEPLOYS_SLACK_WEBHOOK_URL }}
 
       - name: 🌎 Deploy Prod
         if: ${{ inputs.prod }}
@@ -95,3 +101,5 @@ jobs:
             ${{inputs.service}} \
             --env=prod \
             --tag=${{inputs.tag}}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.PROD_DEPLOYS_SLACK_WEBHOOK_URL }}
