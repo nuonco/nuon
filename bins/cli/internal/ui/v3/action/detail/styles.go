@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"github.com/charmbracelet/lipgloss"

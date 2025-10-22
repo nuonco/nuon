@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
-func (m model) headerView() string {
+func (m Model) headerView() string {
 	/*
 		renders two rows
 		1. title + status indicator
