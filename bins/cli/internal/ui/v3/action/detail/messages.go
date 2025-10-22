@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"time"
@@ -21,7 +21,7 @@ type installActionWorkflowFetchedMsg struct {
 	err                   error
 }
 
-func (m model) fetchInstallActionWorkflowCmd() tea.Msg {
+func (m Model) fetchInstallActionWorkflowCmd() tea.Msg {
 	// This runs in a goroutine automatically
 	installActionWorkflow, _, err := m.api.GetInstallActionWorkflowRecentRuns(m.ctx, m.installID, m.actionWorkflowID, nil)
 	return installActionWorkflowFetchedMsg{installActionWorkflow: installActionWorkflow, err: err}
@@ -32,7 +32,7 @@ type latestConfigFetchedMsg struct {
 	err    error
 }
 
-func (m model) fetchLatestConfigCmd() tea.Msg {
+func (m Model) fetchLatestConfigCmd() tea.Msg {
 	// This runs in a goroutine automatically
 	config, err := m.api.GetActionWorkflowLatestConfig(m.ctx, m.actionWorkflowID)
 	return latestConfigFetchedMsg{config: config, err: err}

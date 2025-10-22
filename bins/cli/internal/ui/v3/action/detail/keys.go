@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"github.com/charmbracelet/bubbles/key"
@@ -13,7 +13,7 @@ type keyMap struct {
 	// hybrid key
 	Esc key.Binding
 
-	// Enter key.Binding
+	Enter key.Binding
 
 	// nav controls (we override or handle directly)
 	Up   key.Binding
@@ -39,7 +39,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 		{k.Help, k.Quit},
 		{k.Up, k.Down},
 		{k.Tab},
-		// {k.Enter},
+		{k.Enter},
 		{k.Copy, k.Browser},
 	}
 }
@@ -49,8 +49,8 @@ func (k keyMap) ShortHelp() []key.Binding {
 }
 
 // updateNavigationKeys updates the Up/Down key bindings based on view mode
-func (k *keyMap) updateNavigationKeys(viewMode string) {
-	if viewMode == "execute" {
+func (k *keyMap) updateNavigationKeys(viewMode ViewMode) {
+	if viewMode == ExecuteView {
 		// Execute mode: Only arrow keys for scrolling
 		k.Up = key.NewBinding(
 			key.WithKeys("up"),
@@ -118,10 +118,10 @@ var keys = keyMap{
 		key.WithHelp("→/l", "right"),
 	),
 
-	// Enter: key.NewBinding(
-	// 	key.WithKeys("enter"),
-	// 	key.WithHelp("↳", "select"),
-	// ),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("↳", "select run"),
+	),
 	Copy: key.NewBinding(
 		key.WithKeys("c"),
 		key.WithHelp("c", "Copy Id"),
