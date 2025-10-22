@@ -3,7 +3,6 @@ package selector
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -76,17 +75,17 @@ var keys = keyMap{
 }
 
 type model struct {
-	ctx       context.Context
-	cfg       *config.Config
-	api       nuon.Client
-	installID string
+	ctx context.Context
+	cfg *config.Config
+	api nuon.Client
 
-	workflows  []*models.AppWorkflow
+	installs   []*models.AppInstall
 	table      table.Model
 	spinner    spinner.Model
 	help       help.Model
 	keys       keyMap
 	loading    bool
+	limit      int
 	offset     int
 	hasMore    bool
 	selectedID string
@@ -96,34 +95,32 @@ type model struct {
 	quitting   bool
 }
 
-type workflowsLoadedMsg struct {
-	workflows []*models.AppWorkflow
-	hasMore   bool
-	err       error
+type installsLoadedMsg struct {
+	installs []*models.AppInstall
+	hasMore  bool
+	err      error
 }
 
-func loadWorkflows(ctx context.Context, api nuon.Client, installID string, offset int) tea.Cmd {
+func loadInstalls(ctx context.Context, api nuon.Client, appID string, limit, offset int) tea.Cmd {
 	return func() tea.Msg {
-		workflows, hasMore, err := api.GetWorkflows(ctx, installID, &models.GetPaginatedQuery{
+		installs, hasMore, err := api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{
 			Offset: offset,
 			Limit:  limit,
 		})
-		return workflowsLoadedMsg{
-			workflows: workflows,
-			hasMore:   hasMore,
-			err:       err,
+		return installsLoadedMsg{
+			installs: installs,
+			hasMore:  hasMore,
+			err:      err,
 		}
 	}
 }
 
-func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, installID string) model {
+func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, limit, offset int) model {
 	columns := []table.Column{
 		{Title: "ID", Width: 28},
-		{Title: "NAME", Width: 20},
-		{Title: "TYPE", Width: 15},
+		{Title: "NAME", Width: 30},
+		{Title: "REGION", Width: 15},
 		{Title: "STATUS", Width: 15},
-		{Title: "STARTED AT", Width: 20},
-		{Title: "FINISHED AT", Width: 20},
 	}
 
 	t := table.New(
@@ -150,22 +147,22 @@ func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, inst
 	sp.Style = lipgloss.NewStyle().Foreground(styles.AccentColor)
 
 	return model{
-		ctx:       ctx,
-		cfg:       cfg,
-		api:       api,
-		installID: installID,
-		table:     t,
-		spinner:   sp,
-		help:      help.New(),
-		keys:      keys,
-		loading:   true,
-		offset:    0,
+		ctx:     ctx,
+		cfg:     cfg,
+		api:     api,
+		table:   t,
+		spinner: sp,
+		help:    help.New(),
+		keys:    keys,
+		loading: true,
+		limit:   limit,
+		offset:  offset,
 	}
 }
 
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
-		loadWorkflows(m.ctx, m.api, m.installID, m.offset),
+		loadInstalls(m.ctx, m.api, m.cfg.AppID, m.limit, m.offset),
 		m.spinner.Tick,
 	)
 }
@@ -180,42 +177,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.help.Width = msg.Width
 		return m, nil
 
-	case workflowsLoadedMsg:
+	case installsLoadedMsg:
 		m.loading = false
 		if msg.err != nil {
 			m.err = msg.err
 			return m, nil
 		}
-		m.workflows = msg.workflows
+		m.installs = msg.installs
 		m.hasMore = msg.hasMore
 
-		// Convert workflows to table rows
+		// Convert installs to table rows
 		rows := []table.Row{}
-		for _, workflow := range m.workflows {
-			startedAt := ""
-			if workflow.StartedAt != "" {
-				if t, err := time.Parse(time.RFC3339Nano, workflow.StartedAt); err == nil {
-					startedAt = t.Format(time.Stamp)
-				}
+		for _, install := range m.installs {
+			name := install.Name
+			region := ""
+			if install.AwsAccount != nil {
+				region = install.AwsAccount.Region
 			}
-			finishedAt := ""
-			if workflow.FinishedAt != "" {
-				if t, err := time.Parse(time.RFC3339Nano, workflow.FinishedAt); err == nil {
-					finishedAt = t.Format(time.Stamp)
-				}
-			}
-			status := ""
-			if workflow.Status != nil {
-				status = string(workflow.Status.Status)
-			}
+			status := install.Status
 
 			rows = append(rows, table.Row{
-				workflow.ID,
-				workflow.Name,
-				string(workflow.Type),
+				install.ID,
+				name,
+				region,
 				status,
-				startedAt,
-				finishedAt,
 			})
 		}
 		m.table.SetRows(rows)
@@ -232,10 +217,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case key.Matches(msg, m.keys.Enter):
-			if len(m.workflows) > 0 {
+			if len(m.installs) > 0 {
 				selectedIdx := m.table.Cursor()
-				if selectedIdx < len(m.workflows) {
-					m.selectedID = m.workflows[selectedIdx].ID
+				if selectedIdx < len(m.installs) {
+					m.selectedID = m.installs[selectedIdx].ID
 					return m, tea.Quit
 				}
 			}
@@ -246,7 +231,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.offset += limit
 				m.loading = true
 				return m, tea.Batch(
-					loadWorkflows(m.ctx, m.api, m.installID, m.offset),
+					loadInstalls(m.ctx, m.api, m.cfg.AppID, m.limit, m.offset),
 					m.spinner.Tick,
 				)
 			}
@@ -260,7 +245,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.loading = true
 				return m, tea.Batch(
-					loadWorkflows(m.ctx, m.api, m.installID, m.offset),
+					loadInstalls(m.ctx, m.api, m.cfg.AppID, m.limit, m.offset),
 					m.spinner.Tick,
 				)
 			}
@@ -293,9 +278,10 @@ func (m model) View() string {
 		errorStyle := lipgloss.NewStyle().
 			Foreground(styles.ErrorColor).
 			Padding(1, 2).
+			Width(m.width - 2).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(styles.ErrorColor)
-		return errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n"
+		return errorStyle.Render(fmt.Sprintf("Error: %v\napp id: %s", m.err, m.cfg.AppID)) + "\n"
 	}
 
 	var content string
@@ -304,12 +290,12 @@ func (m model) View() string {
 		loadingStyle := lipgloss.NewStyle().
 			Foreground(styles.AccentColor).
 			Padding(1, 2)
-		content = loadingStyle.Render(fmt.Sprintf("%s Loading workflows...", m.spinner.View()))
-	} else if len(m.workflows) == 0 {
+		content = loadingStyle.Render(fmt.Sprintf("%s Loading installs...", m.spinner.View()))
+	} else if len(m.installs) == 0 {
 		emptyStyle := lipgloss.NewStyle().
 			Foreground(styles.SubtleColor).
 			Padding(1, 2)
-		content = emptyStyle.Render("No workflows found")
+		content = emptyStyle.Render("No installs found")
 	} else {
 		content = m.table.View()
 	}
@@ -320,7 +306,7 @@ func (m model) View() string {
 			Foreground(styles.SubtleColor).
 			Padding(0, 1)
 		start := m.offset + 1
-		end := m.offset + len(m.workflows)
+		end := m.offset + len(m.installs)
 		moreIndicator := ""
 		if m.hasMore {
 			moreIndicator = "+"
@@ -341,19 +327,19 @@ func (m model) View() string {
 	)
 }
 
-// WorkflowSelectorApp runs the workflow selector and returns the selected workflow ID
-func WorkflowSelectorApp(
+// InstallSelectorApp runs the install selector and returns the selected install ID
+func App(
 	ctx context.Context,
 	cfg *config.Config,
 	api nuon.Client,
-	installID string,
+	limit, offset int,
 ) (string, error) {
-	m := initialModel(ctx, cfg, api, installID)
+	m := initialModel(ctx, cfg, api, limit, offset)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	finalModel, err := p.Run()
 	if err != nil {
-		return "", fmt.Errorf("error running workflow selector: %w", err)
+		return "", fmt.Errorf("error running install selector: %w", err)
 	}
 
 	if fm, ok := finalModel.(model); ok {
@@ -362,5 +348,5 @@ func WorkflowSelectorApp(
 		}
 	}
 
-	return "", fmt.Errorf("no workflow selected")
+	return "", fmt.Errorf("no install selected")
 }

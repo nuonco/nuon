@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"github.com/charmbracelet/lipgloss"
@@ -6,14 +6,14 @@ import (
 	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
-func (m model) logMessageView() string {
+func (m Model) logMessageView() string {
 	if m.status.Message == "" {
 		return ""
 	}
 	return common.StatusBar(m.status)
 }
 
-func (m model) footerView() string {
+func (m Model) footerView() string {
 	/*
 
 		renders two rows
