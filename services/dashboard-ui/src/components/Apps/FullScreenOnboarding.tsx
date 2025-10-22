@@ -46,7 +46,7 @@ const OnboardingNavigation: FC<{
   canSkip,
 }) => {
   return (
-    <div className="border-b flex items-center justify-between p-4 md:p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-10 transition-all duration-200">
+    <div className="border-b flex items-center justify-between p-4 md:p-6 bg-white/95 dark:bg-dark-grey-900/95 backdrop-blur-sm z-10 transition-all duration-200">
       {/* Left: Navigation arrows */}
       <div className="flex items-center gap-2">
         <Button
@@ -263,7 +263,7 @@ export const FullScreenOnboarding: FC<FullScreenOnboardingProps> = ({
   const canNavigateForward = displayStepIndex < allJourneySteps.length - 1
 
   return (
-    <div className="fixed inset-0 z-100 bg-white dark:bg-gray-900 overflow-hidden transition-all duration-300 ease-out flex flex-col">
+    <div className="fixed inset-0 z-100 bg-white dark:bg-dark-grey-900 overflow-hidden transition-all duration-300 ease-out flex flex-col">
       {/* Navigation Header */}
       <OnboardingNavigation
         currentStepIndex={displayStepIndex}
