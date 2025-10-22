@@ -24,6 +24,14 @@ func (c *CreateWorkflowStepApprovalResponseRequest) Validate(v *validator.Valida
 	return nil
 }
 
+// NOTE(fd): y tho? because if we return app.WorkflowStepApprovalResponse it breaks some naive
+// SDK generators (cough, openapi-python)
+type CreateWorkflowStepApprovalResponseResponse struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	Note string `json:"note"`
+}
+
 // @ID						CreateWorkflowStepApprovalResponse
 // @Summary					Create an approval response for a workflow step.
 // @Description.markdown	create_workflow_step_approval_response.md
@@ -41,7 +49,7 @@ func (c *CreateWorkflowStepApprovalResponseRequest) Validate(v *validator.Valida
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
-// @Success					201	{object}	app.WorkflowStepApprovalResponse
+// @Success					201	{object}	CreateWorkflowStepApprovalResponseResponse
 // @Router					/v1/workflows/{workflow_id}/steps/{workflow_step_id}/approvals/{approval_id}/response [post]
 func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -81,10 +89,17 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		return
 	}
 
-	response, err := s.createWorkflowStepApprovalResponse(ctx, approval.ID, &req)
+	// create the response
+	wfsaResponse, err := s.createWorkflowStepApprovalResponse(ctx, approval.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
+	}
+
+	response := CreateWorkflowStepApprovalResponseResponse{
+		ID:   wfsaResponse.ID,
+		Type: string(wfsaResponse.Type),
+		Note: string(wfsaResponse.Note),
 	}
 
 	ctx.JSON(http.StatusCreated, response)
