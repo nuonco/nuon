@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"golang.design/x/clipboard"
 )
 
-func (m model) openInBrowser() {
+func (m Model) openInBrowser() {
 	if m.installActionWorkflow == nil {
 		m.setLogMessage("no action workflow loaded", "warning")
 		return
@@ -25,7 +25,7 @@ func (m model) openInBrowser() {
 	browser.OpenURL(dashboardURL)
 }
 
-func (m *model) copyActionWorkflowID() {
+func (m *Model) copyActionWorkflowID() {
 	clipboard.Write(clipboard.FmtText, []byte(m.actionWorkflowID))
 	m.setLogMessage("action workflow id copied to clipboard", "info")
 }
