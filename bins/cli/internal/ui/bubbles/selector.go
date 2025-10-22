@@ -27,27 +27,40 @@ func (i SelectorItem) IsEvaluation() bool  { return i.isEvaluation }
 
 // SelectorModel represents the list selection component
 type SelectorModel struct {
-	items         []SelectorItem
-	filteredItems []SelectorItem
-	choice        string
-	selected      bool
-	quitting      bool
-	cursor        int
-	width         int
-	searchQuery   string
-	searchMode    bool
+	items          []SelectorItem
+	filteredItems  []SelectorItem
+	choice         string
+	selected       bool
+	quitting       bool
+	cursor         int
+	width          int
+	height         int
+	searchQuery    string
+	searchMode     bool
+	maxVisibleRows int // Maximum number of rows to display at once, 0 = auto-calculate
+	viewportOffset int // Scroll offset for visible items
 }
 
 // NewSelectorModel creates a new selector model
 func NewSelectorModel(title string, items []SelectorItem) SelectorModel {
 	return SelectorModel{
-		items:         items,
-		filteredItems: items,
-		cursor:        0,
-		width:         60,
-		searchQuery:   "",
-		searchMode:    false,
+		items:          items,
+		filteredItems:  items,
+		cursor:         0,
+		width:          60,
+		height:         24, // Default terminal height
+		searchQuery:    "",
+		searchMode:     false,
+		maxVisibleRows: 0, // Auto-calculate based on terminal height
+		viewportOffset: 0,
 	}
+}
+
+// NewSelectorModelWithMaxRows creates a new selector model with a specific max visible rows
+func NewSelectorModelWithMaxRows(title string, items []SelectorItem, maxVisibleRows int) SelectorModel {
+	model := NewSelectorModel(title, items)
+	model.maxVisibleRows = maxVisibleRows
+	return model
 }
 
 // Init initializes the selector model
@@ -84,18 +97,69 @@ func (m *SelectorModel) filterItems() {
 	if m.cursor < 0 {
 		m.cursor = 0
 	}
+
+	// Adjust viewport after filtering
+	m.adjustViewport()
+}
+
+// adjustViewport ensures the cursor is visible within the viewport
+func (m *SelectorModel) adjustViewport() {
+	visibleRows := m.getVisibleRows()
+
+	if visibleRows <= 0 || len(m.filteredItems) <= visibleRows {
+		// No scrolling needed
+		m.viewportOffset = 0
+		return
+	}
+
+	// Scroll down if cursor is below viewport
+	if m.cursor >= m.viewportOffset+visibleRows {
+		m.viewportOffset = m.cursor - visibleRows + 1
+	}
+
+	// Scroll up if cursor is above viewport
+	if m.cursor < m.viewportOffset {
+		m.viewportOffset = m.cursor
+	}
+
+	// Ensure viewport doesn't go beyond list bounds
+	maxOffset := len(m.filteredItems) - visibleRows
+	if m.viewportOffset > maxOffset {
+		m.viewportOffset = Max(0, maxOffset)
+	}
+}
+
+// getVisibleRows calculates the number of rows that can be displayed
+func (m *SelectorModel) getVisibleRows() int {
+	if m.maxVisibleRows > 0 {
+		return m.maxVisibleRows
+	}
+
+	// Calculate based on terminal height
+	// Reserve space for: search box (3 lines), help text (2 lines), border/padding (4 lines)
+	reservedLines := 9
+	availableHeight := m.height - reservedLines
+
+	// Ensure at least 5 items are visible
+	if availableHeight < 5 {
+		availableHeight = 5
+	}
+
+	return availableHeight
 }
 
 // Update handles messages for the selector model
 func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		// Update width for terminal size
+		// Update width and height for terminal size
 		if msg.Width > 64 {
 			m.width = 60
 		} else {
 			m.width = msg.Width - 4
 		}
+		m.height = msg.Height
+		m.adjustViewport() // Recalculate viewport with new height
 		return m, nil
 
 	case tea.KeyMsg:
@@ -125,11 +189,13 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyUp:
 				if m.cursor > 0 {
 					m.cursor--
+					m.adjustViewport()
 				}
 				return m, nil
 			case tea.KeyDown:
 				if m.cursor < len(m.filteredItems)-1 {
 					m.cursor++
+					m.adjustViewport()
 				}
 				return m, nil
 			default:
@@ -150,12 +216,14 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyUp:
 				if m.cursor > 0 {
 					m.cursor--
+					m.adjustViewport()
 				}
 				return m, nil
 
 			case tea.KeyDown:
 				if m.cursor < len(m.filteredItems)-1 {
 					m.cursor++
+					m.adjustViewport()
 				}
 				return m, nil
 
@@ -242,7 +310,22 @@ func (m SelectorModel) View() string {
 		b.WriteString(noResultsStyle.Render("No matches found"))
 		b.WriteString("\n")
 	} else {
-		for i, item := range m.filteredItems {
+		visibleRows := m.getVisibleRows()
+		startIdx := m.viewportOffset
+		endIdx := Min(startIdx+visibleRows, len(m.filteredItems))
+
+		// Show scroll indicator at top if there are items above
+		if startIdx > 0 {
+			scrollIndicatorStyle := lipgloss.NewStyle().
+				Foreground(styles.SubtleColor).
+				Italic(true)
+			b.WriteString(scrollIndicatorStyle.Render(fmt.Sprintf("  ↑ %d more above...", startIdx)))
+			b.WriteString("\n")
+		}
+
+		// Render visible items only
+		for i := startIdx; i < endIdx; i++ {
+			item := m.filteredItems[i]
 			var itemStyle lipgloss.Style
 			prefix := "  "
 
@@ -264,6 +347,16 @@ func (m SelectorModel) View() string {
 			}
 
 			b.WriteString(itemStyle.Render(line))
+			b.WriteString("\n")
+		}
+
+		// Show scroll indicator at bottom if there are items below
+		if endIdx < len(m.filteredItems) {
+			scrollIndicatorStyle := lipgloss.NewStyle().
+				Foreground(styles.SubtleColor).
+				Italic(true)
+			remainingItems := len(m.filteredItems) - endIdx
+			b.WriteString(scrollIndicatorStyle.Render(fmt.Sprintf("  ↓ %d more below...", remainingItems)))
 			b.WriteString("\n")
 		}
 	}
@@ -318,9 +411,41 @@ func SelectFromOptions(title string, options []string) (string, error) {
 	return SelectFromItems(title, items)
 }
 
+// SelectFromOptionsWithMaxRows shows a selector with simple string options and a specific max visible rows
+func SelectFromOptionsWithMaxRows(title string, options []string, maxVisibleRows int) (string, error) {
+	items := make([]SelectorItem, len(options))
+	for i, option := range options {
+		items[i] = SelectorItem{
+			title: option,
+			value: option,
+		}
+	}
+
+	return SelectFromItemsWithMaxRows(title, items, maxVisibleRows)
+}
+
 // SelectFromItems shows a selector with SelectorItem structs
 func SelectFromItems(title string, items []SelectorItem) (string, error) {
 	model := NewSelectorModel(title, items)
+
+	// Run inline without full-screen mode
+	program := tea.NewProgram(model)
+	finalModel, err := program.Run()
+	if err != nil {
+		return "", err
+	}
+
+	selectorModel := finalModel.(SelectorModel)
+	if !selectorModel.Selected() {
+		return "", fmt.Errorf("selection cancelled")
+	}
+
+	return selectorModel.Choice(), nil
+}
+
+// SelectFromItemsWithMaxRows shows a selector with SelectorItem structs and a specific max visible rows
+func SelectFromItemsWithMaxRows(title string, items []SelectorItem, maxVisibleRows int) (string, error) {
+	model := NewSelectorModelWithMaxRows(title, items, maxVisibleRows)
 
 	// Run inline without full-screen mode
 	program := tea.NewProgram(model)
