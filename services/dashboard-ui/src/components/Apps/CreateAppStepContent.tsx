@@ -27,7 +27,7 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
     <div className="space-y-6">
       {/* Success Message - Shown when step is complete */}
       {stepComplete && (
-        <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="space-y-3 pb-4 border-b">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
             <Text
