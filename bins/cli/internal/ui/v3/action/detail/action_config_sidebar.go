@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
-func (m *model) populateActionConfigView(setContent bool) {
+func (m *Model) populateActionConfigView(setContent bool) {
 	if !setContent {
 		return
 	}
@@ -44,11 +44,11 @@ func (m *model) populateActionConfigView(setContent bool) {
 	m.actionConfig.SetContent(lipgloss.JoinVertical(lipgloss.Top, content...))
 }
 
-func (m model) renderStepsHeader() string {
+func (m Model) renderStepsHeader() string {
 	return styles.TextBold.Render("Latest Configured Steps")
 }
 
-func (m model) renderStep(step *models.AppActionWorkflowStepConfig, stepNumber int) string {
+func (m Model) renderStep(step *models.AppActionWorkflowStepConfig, stepNumber int) string {
 	if step == nil {
 		return ""
 	}
@@ -90,11 +90,11 @@ func (m model) renderStep(step *models.AppActionWorkflowStepConfig, stepNumber i
 		Render(stepContent)
 }
 
-func (m model) renderSectionHeader(title string) string {
+func (m Model) renderSectionHeader(title string) string {
 	return styles.TextDim.Underline(true).Render(title)
 }
 
-func (m model) renderRepositoryDetails(step *models.AppActionWorkflowStepConfig) string {
+func (m Model) renderRepositoryDetails(step *models.AppActionWorkflowStepConfig) string {
 	details := []string{}
 
 	// Connected GitHub VCS
@@ -128,7 +128,7 @@ func (m model) renderRepositoryDetails(step *models.AppActionWorkflowStepConfig)
 	return strings.Join(details, "\n")
 }
 
-func (m model) renderCommand(step *models.AppActionWorkflowStepConfig) string {
+func (m Model) renderCommand(step *models.AppActionWorkflowStepConfig) string {
 	if step.Command == "" && step.InlineContents == "" {
 		return ""
 	}
@@ -149,7 +149,7 @@ func (m model) renderCommand(step *models.AppActionWorkflowStepConfig) string {
 	return ""
 }
 
-func (m model) renderVariables(step *models.AppActionWorkflowStepConfig) string {
+func (m Model) renderVariables(step *models.AppActionWorkflowStepConfig) string {
 	if len(step.EnvVars) == 0 {
 		return styles.TextBold.BorderBottom(true).BorderForeground(styles.SubtleColor).Render("no env vars")
 	}
