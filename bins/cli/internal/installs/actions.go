@@ -6,7 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	actionui "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/app"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/selector"
 	// workflowui "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow"
 )
@@ -22,11 +22,11 @@ func (s *Service) Actions(ctx context.Context, installID string, offset, limit i
 	}
 
 	// Show workflow selector
-	selectedActionWorkflowID, err := selector.ActionSelectorApp(ctx, s.cfg, s.api, s.cfg.AppID, installID)
+	selectedActionWorkflowID, err := selector.App(ctx, s.cfg, s.api, installID, limit, offset)
 	if err != nil {
 		return ui.PrintError(err)
 	}
-	actionui.ActionWorkflowApp(ctx, s.cfg, s.api, installID, selectedActionWorkflowID)
+	app.App(ctx, s.cfg, s.api, installID, selectedActionWorkflowID)
 
 	// TODO: execute the action
 	// workflowID := ...

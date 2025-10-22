@@ -1,4 +1,4 @@
-package action
+package detail
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 )
 
-func (m *model) handleInstallActionWorkflowFetched(msg installActionWorkflowFetchedMsg) {
+func (m *Model) handleInstallActionWorkflowFetched(msg installActionWorkflowFetchedMsg) {
 	installActionWorkflow := msg.installActionWorkflow
 	err := msg.err
 	if err != nil {
@@ -33,7 +33,7 @@ func (m *model) handleInstallActionWorkflowFetched(msg installActionWorkflowFetc
 	m.loading = false
 }
 
-func (m *model) handleLatestConfigFetched(msg latestConfigFetchedMsg) {
+func (m *Model) handleLatestConfigFetched(msg latestConfigFetchedMsg) {
 	config := msg.config
 	err := msg.err
 	if err != nil {
@@ -49,7 +49,7 @@ func (m *model) handleLatestConfigFetched(msg latestConfigFetchedMsg) {
 	m.updateExecuteKeyState()
 }
 
-func (m *model) updateExecuteKeyState() {
+func (m *Model) updateExecuteKeyState() {
 	hasManualTrigger := false
 	if m.latestConfig != nil && m.latestConfig.Triggers != nil {
 		for _, trigger := range m.latestConfig.Triggers {
