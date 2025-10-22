@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
-	kube "helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
@@ -33,27 +32,14 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	}
 	l.Info("rendered values", zap.Any("values", values))
 
-	client := action.NewInstall(actionCfg)
-	client.ClientOnly = false
-	client.DisableHooks = false
-	// wait logic
-	client.WaitForJobs = false
-	client.WaitStrategy = kube.StatusWatcherStrategy
-	client.Devel = true
-	client.DependencyUpdate = true
-	client.Timeout = h.state.timeout
+	// get the default client
+	client := helm.DefaultInstall(actionCfg)
+	// configure the client with additional, chart and context -specific values
+	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
 	client.ReleaseName = h.state.plan.HelmDeployPlan.Name
-	client.GenerateName = false
-	client.NameTemplate = ""
-	client.OutputDir = ""
-	client.SkipCRDs = false
-	client.SubNotes = true
-	client.DisableOpenAPIValidation = false
-	client.Replace = false
-	client.Description = ""
-	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
+	client.Timeout = h.state.timeout
 	client.DryRun = true
 
 	// determine if we're going to calculate the diff
