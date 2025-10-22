@@ -13,6 +13,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type AppSandboxConfig struct {
@@ -67,6 +69,16 @@ func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 				"created_at DESC",
 			},
+		},
+	}
+}
+
+func (i *AppSandboxConfig) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &AppSandboxConfig{}, "latest_view_v1"),
+			SQL:           viewsql.AppSandboxConfigsLatestViewV1,
+			AlwaysReapply: true,
 		},
 	}
 }
