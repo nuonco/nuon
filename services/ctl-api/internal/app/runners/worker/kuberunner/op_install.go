@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
-	"helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -21,26 +20,16 @@ func (h *Activities) install(ctx context.Context, actionCfg *action.Configuratio
 	if err != nil {
 		return nil, fmt.Errorf("unable to load chart: %w", err)
 	}
-
-	client := action.NewInstall(actionCfg)
-	client.ClientOnly = false
-	client.DryRun = false
-	client.DisableHooks = false
-	client.WaitForJobs = false
-	client.WaitStrategy = kube.StatusWatcherStrategy
+	// get an install action "client"
+	client := helm.DefaultInstall(actionCfg)
+	// overrides some default values
 	client.Devel = false
-	client.DependencyUpdate = true
-	client.Timeout = req.Timeout
-	client.Namespace = req.Namespace
-	client.GenerateName = false
-	client.ReleaseName = fmt.Sprintf("runner-%s", req.RunnerID)
-	client.OutputDir = ""
-	client.SkipCRDs = false
-	client.SubNotes = true
-	client.DisableOpenAPIValidation = false
-	client.Replace = false
-	client.Description = ""
+	// set values not provided by default install action "client" config
 	client.CreateNamespace = true
+	client.Namespace = req.Namespace
+	client.ReleaseName = fmt.Sprintf("runner-%s", req.RunnerID)
+	client.Timeout = req.Timeout
+	client.DryRun = false
 
 	l.Info("loading values")
 	vals := h.getValues(req)
