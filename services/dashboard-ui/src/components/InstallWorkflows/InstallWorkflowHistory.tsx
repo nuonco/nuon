@@ -132,8 +132,9 @@ export const InstallWorkflowHistory = ({
                           <Badge
                             className="!text-[10px] p-1 !leading-none ml-2"
                             variant="code"
+                            theme="info"
                           >
-                            Plan only
+                            Drift scan
                           </Badge>
                         ) : null}
 
@@ -142,9 +143,8 @@ export const InstallWorkflowHistory = ({
                           <Badge
                             className="!text-[10px] p-1 !leading-none ml-1"
                             variant="code"
-                            theme="info"
                           >
-                            Drift scan
+                            cron scheduled
                           </Badge>
                         ) : null}
                       </span>
@@ -190,8 +190,9 @@ export const InstallWorkflowHistory = ({
                             <Badge
                               className="!text-[10px] p-1 !leading-none ml-2"
                               variant="code"
+                              theme="info"
                             >
-                              Plan only
+                              Drift scan
                             </Badge>
                           ) : null}
 
@@ -200,9 +201,8 @@ export const InstallWorkflowHistory = ({
                             <Badge
                               className="!text-[10px] p-1 !leading-none ml-1"
                               variant="code"
-                              theme="info"
                             >
-                              Drift scan
+                              cron scheduled
                             </Badge>
                           ) : null}
                         </span>
