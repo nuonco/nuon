@@ -46,6 +46,10 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return err
 	}
 
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
+	}()
+
 	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,
