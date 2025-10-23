@@ -4,10 +4,15 @@ import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
-import { Link } from '@/components/common/Link'
+import { Code } from '@/components/common/Code'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
-import { getInstallActionById, getInstallById, getOrgById } from '@/lib'
+import {
+  getInstallActionById,
+  getInstallById,
+  getInstallState,
+  getOrgById,
+} from '@/lib'
 import type { TPageProps } from '@/types'
 import { ActionRuns } from './action-runs'
 
@@ -62,12 +67,17 @@ export default async function InstallActionPage({
     ['action-id']: actionId,
   } = await params
   const sp = await searchParams
-  const [{ data: install }, { data: installAction }, { data: org }] =
-    await Promise.all([
-      getInstallById({ installId, orgId }),
-      getInstallActionById({ actionId, installId, orgId }),
-      getOrgById({ orgId }),
-    ])
+  const [
+    { data: install },
+    { data: installAction },
+    { data: installState },
+    { data: org },
+  ] = await Promise.all([
+    getInstallById({ installId, orgId }),
+    getInstallActionById({ actionId, installId, orgId }),
+    getInstallState({ installId, orgId }),
+    getOrgById({ orgId }),
+  ])
 
   const containerId = 'install-action-page'
 
@@ -168,6 +178,69 @@ export default async function InstallActionPage({
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
+          {installAction.action_workflow?.configs?.[0]
+            .break_glass_role_arn!! ? (
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-4"
+              heading={
+                <div className="flex justify-between items-center gap-4 w-full">
+                  <span>Break glass role</span>
+                  <StatusBadge
+                    description={
+                      installState?.install_stack?.outputs?.break_glass_roles?.[
+                        installAction.action_workflow?.configs?.[0]
+                          ?.break_glass_role_arn
+                      ]
+                        ? 'Role provisioned'
+                        : 'Role not provisioned'
+                    }
+                    status={
+                      installState?.install_stack?.outputs?.break_glass_roles?.[
+                        installAction.action_workflow?.configs?.[0]
+                          .break_glass_role_arn
+                      ]
+                        ? 'provisioned'
+                        : 'not provisioned'
+                    }
+                  />
+                </div>
+              }
+            >
+              <Text variant="body" weight="strong" level={5}>
+                Access Permissions
+              </Text>
+              <Text>
+                Break Glass Role{' '}
+                <Code variant="inline">
+                  {
+                    installAction?.action_workflow?.configs?.[0]
+                      ?.break_glass_role_arn
+                  }
+                </Code>{' '}
+                must be enabled in install stack before running this action.
+              </Text>
+              <br></br>
+              {installState?.install_stack?.outputs?.break_glass_roles?.[
+                installAction.action_workflow?.configs?.[0]
+                  ?.break_glass_role_arn
+              ]!! ? (
+                <div>
+                  <Text variant="body" weight="strong">
+                    Role ARN
+                  </Text>
+                  <Text>
+                    {
+                      installState?.install_stack?.outputs?.break_glass_roles?.[
+                        installAction.action_workflow?.configs?.[0]
+                          ?.break_glass_role_arn
+                      ]
+                    }
+                  </Text>
+                </div>
+              ) : null}
+            </Section>
+          ) : null}
           <Section className="flex-initial" heading="Latest configured steps">
             <div className="flex flex-col gap-2">
               {installAction?.action_workflow?.configs?.[0]?.steps
@@ -324,6 +397,67 @@ export default async function InstallActionPage({
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
+          {installAction.action_workflow?.configs?.[0]
+            .break_glass_role_arn!! ? (
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-4"
+              heading={
+                <div className="flex justify-between items-center gap-4 w-full">
+                  <span>Break glass role</span>
+                  <StatusBadge
+                    description={
+                      installState?.install_stack?.outputs?.break_glass_roles?.[
+                        installAction.action_workflow?.configs?.[0]
+                          ?.break_glass_role_arn
+                      ]
+                        ? 'Role provisioned'
+                        : 'Role not provisioned'
+                    }
+                    status={
+                      installState?.install_stack?.outputs?.break_glass_roles?.[
+                        installAction.action_workflow?.configs?.[0]
+                          .break_glass_role_arn
+                      ]
+                        ? 'provisioned'
+                        : 'not provisioned'
+                    }
+                  />
+                </div>
+              }
+            >
+              <OldText variant="med-14" level={5}>
+                Access Permissions
+              </OldText>
+              <OldText variant="med-12">
+                Break Glass Role{' '}
+                <OldText variant="mono-12">
+                  {
+                    installAction?.action_workflow?.configs?.[0]
+                      ?.break_glass_role_arn
+                  }
+                </OldText>{' '}
+                must be enabled in install stack before running this action.
+              </OldText>
+              <br></br>
+              {installState?.install_stack?.outputs?.break_glass_roles?.[
+                installAction.action_workflow?.configs?.[0]
+                  ?.break_glass_role_arn
+              ]!! ? (
+                <div>
+                  <OldText variant="med-14">Role ARN</OldText>
+                  <OldText variant="med-12">
+                    {
+                      installState?.install_stack?.outputs?.break_glass_roles?.[
+                        installAction.action_workflow?.configs?.[0]
+                          ?.break_glass_role_arn
+                      ]
+                    }
+                  </OldText>
+                </div>
+              ) : null}
+            </Section>
+          ) : null}
           <Section className="flex-initial" heading="Latest configured steps">
             <div className="flex flex-col gap-2">
               {installAction?.action_workflow?.configs?.[0]?.steps
