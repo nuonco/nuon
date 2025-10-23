@@ -34,6 +34,7 @@ func (c *RetryWorkflowStepResponse) Validate(v *validator.Validate) error {
 // @Summary					rerun the workflow steps starting from input step id, can be used to retry a failed step
 // @Description.markdown	retry_workflow_by_id.md
 // @Param					workflow_id	path	string					true	"workflow ID"
+// @Param					step_id		path	string					true	"step ID"
 // @Param					req			body	RetryWorkflowStepResponse	true	"Input"
 // @Tags					installs
 // @Accept					json
