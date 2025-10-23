@@ -166,7 +166,7 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	syncDirCmd := &cobra.Command{
 		Deprecated:        "use `nuon sync` instead",
-		Use:               "sync-dir",
+		Use:               "sync",
 		Short:             "Sync nuon app directory (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
