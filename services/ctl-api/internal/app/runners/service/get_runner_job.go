@@ -70,7 +70,7 @@ func (s *service) getRunnerJob(ctx context.Context, runnerJobID string) (*app.Ru
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.RunnerJob
-// @Router					/v1/runner-jobs/{runner_job_id} [get]
+// @Router					/v1/runners/{runner_id}/jobs/{job_id} [get]
 func (s *service) GetRunnerJobV2(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 	_, err := s.getRunner(ctx, runnerID)
@@ -78,7 +78,7 @@ func (s *service) GetRunnerJobV2(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get runner: %w", err))
 		return
 	}
-	runnerJobID := ctx.Param("runner_job_id")
+	runnerJobID := ctx.Param("job_id")
 
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {

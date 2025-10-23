@@ -18,8 +18,8 @@ import (
 // @ID						GetAppComponentBuilds
 // @Summary				get builds for components
 // @Description.markdown	get_component_builds.md
-// @Param					app_id						query	string	false	"app id to filter by"
-// @Param					component_id				query	string	false	"component id to filter by"
+// @Param					app_id						path	string	true	"app id to filter by"
+// @Param					component_id				path	string	true	"component id to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
