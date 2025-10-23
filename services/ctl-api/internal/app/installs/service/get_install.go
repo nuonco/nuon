@@ -17,6 +17,7 @@ import (
 // @Summary				get an install
 // @Description.markdown	get_install.md
 // @Param					install_id	path	string	true	"install ID"
+// @Param					include_drifted_objects	query	bool	false	"whether to include drifted objects" Default(false)
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -42,6 +43,18 @@ func (s *service) GetInstall(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
+	}
+
+	includeDriftedObjects := ctx.DefaultQuery("include_drifted_objects", "false")
+	if includeDriftedObjects == "true" {
+		dos, err := s.findDriftedObjects(ctx, org.ID, install.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get drifted objects for install %s: %w", installID, err))
+			return
+		}
+		if dos != nil {
+			install.DriftedObjects = dos
+		}
 	}
 
 	ctx.JSON(http.StatusOK, install)
