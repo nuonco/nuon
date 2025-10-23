@@ -2,6 +2,7 @@ import cronstrue from 'cronstrue'
 import type { Metadata } from 'next'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
+import { Code } from '@/components/common/Code'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
@@ -139,6 +140,21 @@ export default async function AppActionPage({ params }) {
               ))}
             </div>
           </Section>
+          {action.configs?.[0]?.break_glass_role_arn!! ? (
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-4"
+              heading="Break glass role"
+            >
+              <Text>
+                Role{' '}
+                <Code variant="inline">
+                  {action?.configs?.[0]?.break_glass_role_arn}
+                </Code>{' '}
+                must be enabled in install stack before running this action.
+              </Text>
+            </Section>
+          ) : null}
         </div>
       </div>
       {/* old page layout */}
@@ -234,6 +250,22 @@ export default async function AppActionPage({ params }) {
               ))}
             </div>
           </Section>
+          {action.configs?.[0]?.break_glass_role_arn!! ? (
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-2"
+              heading="Break glass role"
+            >
+              <OldText variant="med-14">Access Permissions</OldText>
+              <OldText variant="med-12">
+                Break glass role{' '}
+                <Code variant="inline">
+                  {action?.configs?.[0]?.break_glass_role_arn}
+                </Code>{' '}
+                must be enabled in install stack before running this action.
+              </OldText>
+            </Section>
+          ) : null}
         </div>
       </div>
     </DashboardContent>
