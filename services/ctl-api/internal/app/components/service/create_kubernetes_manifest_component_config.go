@@ -38,6 +38,7 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 // @Summary					create a kubernetes manifest component config
 // @Description.markdown	create_kubernetes_manifest_component_config.md
 // @Param					req				body	CreateKubernetesManifestComponentConfigRequest	true	"Input"
+// @Param					app_id		path	string							true	"app ID"
 // @Param					component_id	path	string							true	"component ID"
 // @Tags					components
 // @Accept					json
