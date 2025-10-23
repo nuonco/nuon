@@ -28,9 +28,9 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.ActionWorkflowConfig
-// @Router					/v1/apps/{app_id}/actions/{action_id}/configs/{action_workflow_config_id} [get]
+// @Router					/v1/apps/{app_id}/actions/{action_id}/configs/{action_config_id} [get]
 func (s *service) GetAppActionConfig(ctx *gin.Context) {
-	awcID := ctx.Param("action_workflow_config_id")
+	awcID := ctx.Param("action_config_id")
 	awc, err := s.findActionWorkflowConfig(ctx, awcID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflow config %s: %w", awcID, err))
