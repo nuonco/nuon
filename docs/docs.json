@@ -102,6 +102,7 @@
           {
             "group": "How To",
             "pages": [
+              "guides/app-install-life-cycle",
               "guides/install-access-permissions",
               "guides/using-variables",
               "guides/using-readmes",
