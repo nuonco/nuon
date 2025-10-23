@@ -15,7 +15,7 @@ import (
 // @Summary				get an app action workflow's latest config
 // @Description.markdown	get_action_workflow_latest_config.md
 // @Param					app_id				path	string	true	"app ID"
-// @Param					action_workflow_id	path	string	true	"action workflow ID"
+// @Param					action_id	path	string	true	"action workflow ID"
 // @Tags					actions,actions/runner
 // @Accept					json
 // @Produce				json

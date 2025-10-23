@@ -25,6 +25,7 @@ func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 // @ID						CreateAppComponentBuild
 // @Summary				create component build
 // @Description.markdown	create_component_build.md
+// @Param					app_id			path	string						true	"app ID"
 // @Param					component_id	path	string						true	"component ID"
 // @Param					req				body	CreateComponentBuildRequest	true	"Input"
 // @Tags					components
