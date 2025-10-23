@@ -40,6 +40,11 @@ env:
   NUON_TEMPORAL_UI_URL: http://localhost:8234
   REFRESH_PAGE_INTERVAL: 600000
   REFRESH_PAGE_WARNING: false
+  SERVICE_TYPE: ui
+  SERVICE_DEPLOYMENT: ui
+  DISABLE_METRICS: true
+  LOG_METRICS: true
+
 env_secrets:
   AUTH0_CLIENT_SECRET:
     name: dashboard-ui-auth0-client-secret-dev
