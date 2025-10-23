@@ -11,6 +11,7 @@ import (
 // @ID						GetAppComponentLatestConfig
 // @Summary				get latest config for a component
 // @Description.markdown	get_component_latest_config.md
+// @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
 // @Security				APIKey
