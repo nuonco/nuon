@@ -156,6 +156,10 @@ function extractRouteName(url: string): string {
     return '/_next'
   }
 
+  if (path.startsWith('/admin/temporal')) {
+    return '/admin/temporal'
+  }
+
   // Replace IDs with :prefix_id format
   return path
     .split('/')
