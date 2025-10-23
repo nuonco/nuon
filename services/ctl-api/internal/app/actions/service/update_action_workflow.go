@@ -41,7 +41,7 @@ func (c *UpdateActionRequest) Validate(v *validator.Validate) error {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.ActionWorkflow
-// @Router					/v1/apps/{app_id}/action-workflows/{action_workflow_id} [patch]
+// @Router					/v1/apps/{app_id}/actions/{action_id} [patch]
 func (s *service) UpdateAppAction(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

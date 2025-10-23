@@ -17,7 +17,7 @@ import (
 // @Summary				get action workflow for an app
 // @Description.markdown	get_action_workflow_configs.md
 // @Param					app_id						path	string	true	"app ID"
-// @Param					action_workflow_id			path	string	true	"action workflow ID"
+// @Param					action_id			path	string	true	"action workflow ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -32,7 +32,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.ActionWorkflowConfig
-// @Router					/v1/apps/{app_id}/action-workflows/{action_id}/configs [get]
+// @Router					/v1/apps/{app_id}/action/{action_id}/configs [get]
 func (s *service) GetAppActionConfigs(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
