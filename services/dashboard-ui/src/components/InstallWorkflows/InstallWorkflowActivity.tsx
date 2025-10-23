@@ -16,7 +16,7 @@ export const InstallWorkflowActivity = ({
 }: IInstallWorkflowActivity) => {
   const { user, isLoading } = useUser()
   const temporalLinkParams = useQueryParams({
-    query: `WorkflowId=${installWorkflow?.owner_id}-execute-workflow-${installWorkflow?.id}`,
+    query: `\`WorkflowId\`="${installWorkflow?.owner_id}-execute-workflow-${installWorkflow?.id}"`,
   })
   const workflowSteps =
     installWorkflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
