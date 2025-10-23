@@ -54,6 +54,10 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return err
 	}
 
+	defer func() {
+		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
+	}()
+
 	op := app.RunnerJobOperationTypeApplyPlan
 	jobTyp := build.ComponentConfigConnection.Type.DeployJobType()
 
