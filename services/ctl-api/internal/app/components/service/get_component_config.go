@@ -11,6 +11,7 @@ import (
 // @ID						GetAppComponentConfig
 // @Summary					get a config for a component
 // @Description.markdown	get_component_config.md
+// @Param					app_id						path	string	true	"app ID"
 // @Param					component_id				path	string	true	"component ID"
 // @Param					config_id					path	string	true	"config ID"
 // @Tags					components

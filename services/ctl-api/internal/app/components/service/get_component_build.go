@@ -16,6 +16,7 @@ import (
 // @ID						GetAppComponentBuild
 // @Summary				get a build for a component
 // @Description.markdown	get_component_build.md
+// @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Param					build_id		path	string	true	"build ID"
 // @Tags					components
