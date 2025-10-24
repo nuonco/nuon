@@ -1,4 +1,5 @@
-import { RunnerMeta } from '@/components/OldRunners/RunnerMeta'
+// old runner layout
+import { RunnerMeta } from '@/components/old/OldRunners/RunnerMeta'
 import { getRunnerLatestHeartbeat } from '@/lib'
 import type { TRunner, TRunnerSettings } from '@/types'
 

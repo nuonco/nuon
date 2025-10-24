@@ -13,7 +13,8 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
 import { UserProfile } from './UserProfile'
 
-import { InvitePanel } from '../OrgInviteModal'
+// old components
+import { InvitePanel } from '../old/OrgInviteModal'
 
 import { useUserJourney } from '@/hooks/use-user-journey'
 

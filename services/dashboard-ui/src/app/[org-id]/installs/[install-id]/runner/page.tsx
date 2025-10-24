@@ -32,8 +32,8 @@ import {
   Text as OldText,
   Time,
 } from '@/components'
-import { InstallManagementDropdown } from '@/components/Installs'
-import { ManageRunnerDropdown } from '@/components/OldRunners/ManageDropdown'
+import { InstallManagementDropdown } from '@/components/old/Installs'
+import { ManageRunnerDropdown } from '@/components/old/OldRunners/ManageDropdown'
 import { Activity } from './activity'
 import { Details } from './details'
 import { Health } from './health'

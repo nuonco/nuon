@@ -16,8 +16,8 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 
 // NOTE: old install components
-import { InstallStatuses } from '@/components/InstallStatuses'
-import { InstallManagementDropdown } from '@/components/Installs/ManagementDropdown'
+import { InstallStatuses } from '@/components/old/InstallStatuses'
+import { InstallManagementDropdown } from '@/components/old/Installs/ManagementDropdown'
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathName = usePathname()

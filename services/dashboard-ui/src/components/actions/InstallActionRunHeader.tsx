@@ -19,8 +19,8 @@ import { toSentenceCase } from '@/utils/string-utils'
 import { getWorkflowStep } from '@/utils/workflow-utils'
 
 // NOTE: old components
-import { RunnerJobPlanModal } from '@/components/OldRunners'
-import { InstallWorkflowCancelModal } from '@/components/InstallWorkflows'
+import { RunnerJobPlanModal } from '@/components/old/OldRunners'
+import { InstallWorkflowCancelModal } from '@/components/old/InstallWorkflows'
 
 interface IInstallActionRunHeader {
   actionId: string
