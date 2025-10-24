@@ -1,8 +1,10 @@
+// TODO: this should be moved to the components/old dir
+
 'use client'
 
 import React, { type FC, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { OnboardingCompletionBanner } from '@/components/OnboardingCompletionBanner'
+import { OnboardingCompletionBanner } from '@/components/old/OnboardingCompletionBanner'
 import { useConfetti } from '@/hooks/use-confetti'
 
 interface OnboardingCelebrationWrapperProps {

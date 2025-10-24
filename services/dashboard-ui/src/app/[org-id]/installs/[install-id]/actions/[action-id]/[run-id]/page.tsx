@@ -38,8 +38,8 @@ import {
   Time,
   ToolTip,
 } from '@/components'
-import { InstallActionCancelButton } from '@/components/InstallActionRunCancelButton'
-import { InstallActionRunDetails } from '@/components/InstallActionRunDetails'
+import { InstallActionCancelButton } from '@/components/old/InstallActionRunCancelButton'
+import { InstallActionRunDetails } from '@/components/old/InstallActionRunDetails'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {

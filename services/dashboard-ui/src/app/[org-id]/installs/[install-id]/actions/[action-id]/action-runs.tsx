@@ -1,5 +1,5 @@
 import { Pagination, Text } from '@/components'
-import { InstallActionRuns } from '@/components/InstallActionRuns'
+import { InstallActionRuns } from '@/components/old/InstallActionRuns'
 import { getInstallActionById } from '@/lib'
 
 export const ActionRuns = async ({
