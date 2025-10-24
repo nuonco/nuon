@@ -38,12 +38,15 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
             </Text>
           </div>
           <Text className="text-gray-600 dark:text-gray-400">
-            Your app is now configured and ready. You can proceed to the next step
-            to sync your app configuration.
+            Your app is now configured and ready. You can proceed to the next
+            step to sync your app configuration.
           </Text>
           {appId && (
             <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-              <Text variant="reg-12" className="text-gray-600 dark:text-gray-400">
+              <Text
+                variant="reg-12"
+                className="text-gray-600 dark:text-gray-400"
+              >
                 App ID:{' '}
                 <code className="font-mono text-gray-800 dark:text-gray-200">
                   {appId}
@@ -60,7 +63,8 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
         <div className="space-y-3">
           <Text variant="semi-14">Choose your example app</Text>
           <Text variant="reg-12" className="text-gray-600 dark:text-gray-400">
-            Start with a curated example to learn Nuon patterns and get up and running quickly.
+            Start with a curated example to learn Nuon patterns and get up and
+            running quickly.
           </Text>
           <ExampleAppsGrid
             selectedApp={selectedApp}
@@ -90,4 +94,3 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
     </div>
   )
 }
-

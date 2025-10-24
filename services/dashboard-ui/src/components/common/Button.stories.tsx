@@ -7,8 +7,13 @@ export const Variants = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Button Variants</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        The <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">variant</code> prop controls the visual style and semantic meaning of the button. 
-        Each variant includes appropriate colors, hover states, focus indicators, and dark mode styling.
+        The{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          variant
+        </code>{' '}
+        prop controls the visual style and semantic meaning of the button. Each
+        variant includes appropriate colors, hover states, focus indicators, and
+        dark mode styling.
       </p>
     </div>
 
@@ -22,35 +27,68 @@ export const Variants = () => (
         <Button variant="tab">Tab</Button>
       </div>
     </div>
-    
+
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Active State</h4>
       <div className="flex flex-wrap gap-4 items-center">
-        <Button variant="primary" isActive>Primary Active</Button>
-        <Button variant="secondary" isActive>Secondary Active</Button>
-        <Button variant="danger" isActive>Danger Active</Button>
-        <Button variant="ghost" isActive>Ghost Active</Button>
-        <Button variant="tab" isActive>Tab Active</Button>
+        <Button variant="primary" isActive>
+          Primary Active
+        </Button>
+        <Button variant="secondary" isActive>
+          Secondary Active
+        </Button>
+        <Button variant="danger" isActive>
+          Danger Active
+        </Button>
+        <Button variant="ghost" isActive>
+          Ghost Active
+        </Button>
+        <Button variant="tab" isActive>
+          Tab Active
+        </Button>
       </div>
     </div>
-    
+
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Disabled State</h4>
       <div className="flex flex-wrap gap-4 items-center">
-        <Button variant="primary" disabled>Primary Disabled</Button>
-        <Button variant="secondary" disabled>Secondary Disabled</Button>
-        <Button variant="danger" disabled>Danger Disabled</Button>
-        <Button variant="ghost" disabled>Ghost Disabled</Button>
-        <Button variant="tab" disabled>Tab Disabled</Button>
+        <Button variant="primary" disabled>
+          Primary Disabled
+        </Button>
+        <Button variant="secondary" disabled>
+          Secondary Disabled
+        </Button>
+        <Button variant="danger" disabled>
+          Danger Disabled
+        </Button>
+        <Button variant="ghost" disabled>
+          Ghost Disabled
+        </Button>
+        <Button variant="tab" disabled>
+          Tab Disabled
+        </Button>
       </div>
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
-      <div><strong>primary:</strong> Purple filled button for main actions and CTAs</div>
-      <div><strong>secondary:</strong> Outlined button for secondary actions (default)</div>
-      <div><strong>danger:</strong> Red outlined button for destructive actions</div>
-      <div><strong>ghost:</strong> Transparent button with minimal styling for subtle actions</div>
-      <div><strong>tab:</strong> Special variant with bottom border for tab navigation</div>
+      <div>
+        <strong>primary:</strong> Purple filled button for main actions and CTAs
+      </div>
+      <div>
+        <strong>secondary:</strong> Outlined button for secondary actions
+        (default)
+      </div>
+      <div>
+        <strong>danger:</strong> Red outlined button for destructive actions
+      </div>
+      <div>
+        <strong>ghost:</strong> Transparent button with minimal styling for
+        subtle actions
+      </div>
+      <div>
+        <strong>tab:</strong> Special variant with bottom border for tab
+        navigation
+      </div>
     </div>
   </div>
 )
@@ -60,8 +98,16 @@ export const Sizes = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Button Sizes</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        The <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">size</code> prop controls the dimensions, padding, and typography of the button. 
-        Default size is <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">md</code> if no size prop is provided.
+        The{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          size
+        </code>{' '}
+        prop controls the dimensions, padding, and typography of the button.
+        Default size is{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          md
+        </code>{' '}
+        if no size prop is provided.
       </p>
     </div>
 
@@ -72,12 +118,21 @@ export const Sizes = () => (
         <Button size="md">Medium</Button>
         <Button size="lg">Large</Button>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm mt-4">
-        <div><strong>xs:</strong> 12px text, 16px height, minimal padding</div>
-        <div><strong>sm:</strong> 12px text, 24px height, 8px horizontal padding</div>
-        <div><strong>md:</strong> 14px text, 32px height, 12px horizontal padding (default)</div>
-        <div><strong>lg:</strong> 14px text, 36px height, 12px horizontal padding</div>
+        <div>
+          <strong>xs:</strong> 12px text, 16px height, minimal padding
+        </div>
+        <div>
+          <strong>sm:</strong> 12px text, 24px height, 8px horizontal padding
+        </div>
+        <div>
+          <strong>md:</strong> 14px text, 32px height, 12px horizontal padding
+          (default)
+        </div>
+        <div>
+          <strong>lg:</strong> 14px text, 36px height, 12px horizontal padding
+        </div>
       </div>
     </div>
   </div>
@@ -88,28 +143,56 @@ export const Links = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Button as Link</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        When you provide an <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">href</code> prop, the Button automatically renders as a link while maintaining button styling. 
-        Internal links use Next.js Link component, while external links use standard anchor tags with proper security attributes.
+        When you provide an{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          href
+        </code>{' '}
+        prop, the Button automatically renders as a link while maintaining
+        button styling. Internal links use Next.js Link component, while
+        external links use standard anchor tags with proper security attributes.
       </p>
     </div>
 
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4 items-center">
         <Button href="/">Internal Link</Button>
-        <Button href="/dashboard" variant="primary">Dashboard Link</Button>
-        <Button href="https://nuon.co" target="_blank" rel="noopener noreferrer">
+        <Button href="/dashboard" variant="primary">
+          Dashboard Link
+        </Button>
+        <Button
+          href="https://nuon.co"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           External Link
         </Button>
-        <Button href="https://docs.nuon.co" target="_blank" rel="noopener noreferrer" variant="secondary">
+        <Button
+          href="https://docs.nuon.co"
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="secondary"
+        >
           Documentation
         </Button>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-4">
-        <div><strong>Internal Links:</strong> Use &quot;/&quot; prefix, rendered with Next.js Link for client-side navigation</div>
-        <div><strong>External Links:</strong> Use full URLs, rendered as anchor tags with security attributes</div>
-        <div><strong>Accessibility:</strong> Automatically includes proper ARIA attributes and keyboard navigation</div>
-        <div><strong>Styling:</strong> Maintains all button variants, sizes, and states when used as links</div>
+        <div>
+          <strong>Internal Links:</strong> Use &quot;/&quot; prefix, rendered
+          with Next.js Link for client-side navigation
+        </div>
+        <div>
+          <strong>External Links:</strong> Use full URLs, rendered as anchor
+          tags with security attributes
+        </div>
+        <div>
+          <strong>Accessibility:</strong> Automatically includes proper ARIA
+          attributes and keyboard navigation
+        </div>
+        <div>
+          <strong>Styling:</strong> Maintains all button variants, sizes, and
+          states when used as links
+        </div>
       </div>
     </div>
   </div>
@@ -120,8 +203,12 @@ export const WithIcons = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Buttons with Icons</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Buttons automatically support icons through CSS detection. Include <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">Icon</code> components as children 
-        and the button will apply proper spacing and alignment. Icons can be placed before or after text.
+        Buttons automatically support icons through CSS detection. Include{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          Icon
+        </code>{' '}
+        components as children and the button will apply proper spacing and
+        alignment. Icons can be placed before or after text.
       </p>
     </div>
 
@@ -209,10 +296,22 @@ export const WithIcons = () => (
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
-      <div><strong>Automatic Spacing:</strong> CSS selector detects SVG icons and applies proper gap</div>
-      <div><strong>Icon Sizing:</strong> Match icon size to button size (xs=12px, sm=14px, md=16px, lg=18px)</div>
-      <div><strong>Icon Position:</strong> Place before text for leading icons, after text for trailing icons</div>
-      <div><strong>Icon-Only:</strong> Use custom padding for square icon-only buttons</div>
+      <div>
+        <strong>Automatic Spacing:</strong> CSS selector detects SVG icons and
+        applies proper gap
+      </div>
+      <div>
+        <strong>Icon Sizing:</strong> Match icon size to button size (xs=12px,
+        sm=14px, md=16px, lg=18px)
+      </div>
+      <div>
+        <strong>Icon Position:</strong> Place before text for leading icons,
+        after text for trailing icons
+      </div>
+      <div>
+        <strong>Icon-Only:</strong> Use custom padding for square icon-only
+        buttons
+      </div>
     </div>
 
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
@@ -222,7 +321,9 @@ export const WithIcons = () => (
         <li>Place icons before text for actions, after text for navigation</li>
         <li>Ensure icon-only buttons have accessible labels or tooltips</li>
         <li>Choose icons that clearly represent the button's action</li>
-        <li>Use the same icon variant across similar actions for consistency</li>
+        <li>
+          Use the same icon variant across similar actions for consistency
+        </li>
       </ul>
     </div>
   </div>
