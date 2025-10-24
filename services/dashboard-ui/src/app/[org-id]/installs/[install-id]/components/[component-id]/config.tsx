@@ -1,5 +1,5 @@
 import { ComponentConfiguration, Text } from '@/components'
-import { ValuesFileModal } from '@/components/InstallSandbox'
+import { ValuesFileModal } from '@/components/old/InstallSandbox'
 import { getAppConfigById } from '@/lib'
 import type { TInstall } from '@/types'
 

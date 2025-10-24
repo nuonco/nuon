@@ -1,5 +1,7 @@
-import { Pagination } from '@/components/Pagination'
-import { RunnerUpcomingJobs } from '@/components/OldRunners/RunnerUpcomingJobs'
+// old runner layout
+
+import { Pagination } from '@/components/old/Pagination'
+import { RunnerUpcomingJobs } from '@/components/old/OldRunners/RunnerUpcomingJobs'
 import { getRunnerJobs } from '@/lib'
 
 export const UpcomingJobs = async ({

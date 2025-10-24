@@ -1,5 +1,5 @@
 import { FaGithub } from 'react-icons/fa'
-import { Text } from '@/components/Typography'
+import { Text } from '@/components/old/Typography'
 import type { TVCSConnection } from '@/types'
 import { RemoveVCSConnection } from './RemoveVCSConnection'
 
