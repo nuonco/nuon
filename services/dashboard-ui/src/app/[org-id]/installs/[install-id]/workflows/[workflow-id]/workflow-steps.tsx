@@ -1,5 +1,5 @@
 import { WorkflowSteps as Steps } from '@/components/workflows/WorkflowSteps'
-import { Empty } from '@/components/Empty'
+import { Empty } from '@/components/old/Empty'
 import { getWorkflowById } from '@/lib'
 
 // TODO(nnnat): this should fetch only the steps

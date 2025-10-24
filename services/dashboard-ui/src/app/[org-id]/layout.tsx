@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { getIsSidebarOpenFromCookie } from '@/actions/layout/main-sidebar-cookie'
-import { Layout as OldLayout } from '@/components/Layout'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { REFRESH_PAGE_INTERVAL, REFRESH_PAGE_WARNING } from '@/configs/app'
 import { getAPIVersion, getOrgById, getOrgs } from '@/lib'
@@ -11,6 +10,9 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import type { TLayoutProps } from '@/types'
 import { VERSION } from '@/utils'
+
+// NOTE: old layout stuff
+import { Layout as OldLayout } from '@/components/old/Layout'
 
 export default async function OrgLayout({
   children,
