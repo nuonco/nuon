@@ -27,8 +27,8 @@ import {
   Section,
   Text as OldText,
 } from '@/components'
-import { DriftedBanner } from '@/components/DriftedBanner'
-import { TerraformWorkspace } from '@/components/InstallSandbox'
+import { DriftedBanner } from '@/components/old/DriftedBanner'
+import { TerraformWorkspace } from '@/components/old/InstallSandbox'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id' | 'component-id'>
 
