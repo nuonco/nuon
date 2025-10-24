@@ -29,7 +29,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, nil
 	}
 
-	if step.Status.Status != app.StatusPending {
+	if step.Status.Status != app.StatusPending && step.Status.Status != app.StatusNotAttempted {
 		fmt.Println("sk step name", step.Name, step.Status.Status)
 		return false, nil
 	}
