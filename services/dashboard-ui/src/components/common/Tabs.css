@@ -38,24 +38,32 @@
   position: relative;
 }
 
-.tabs > .tab-group:after {  
+.tabs > .tab-group:after {
   background-color: var(--color-primary-500);
   bottom: 0;
-  content: "";
+  content: '';
   height: 3px;
   left: var(--active-tab-left);
   position: absolute;
   width: var(--active-tab-width);
-  transition: left var(--duration-fastest) var(--ease-cubic), width var(--duration-fastest) var(--ease-cubic);
+  transition:
+    left var(--duration-fastest) var(--ease-cubic),
+    width var(--duration-fastest) var(--ease-cubic);
 }
 
-.tabs > .tab-group:before {  
-  background-color: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+.tabs > .tab-group:before {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary-500) 30%,
+    transparent
+  );
   bottom: 0;
-  content: "";
+  content: '';
   height: 3px;
   left: var(--hovered-tab-left);
   position: absolute;
   width: var(--hovered-tab-width);
-  transition: left var(--duration-fastest) var(--ease-cubic), width var(--duration-fastest) var(--ease-cubic);
+  transition:
+    left var(--duration-fastest) var(--ease-cubic),
+    width var(--duration-fastest) var(--ease-cubic);
 }

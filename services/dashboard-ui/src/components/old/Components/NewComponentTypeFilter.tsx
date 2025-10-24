@@ -13,14 +13,14 @@ type TComponentConfigTypeText =
   | 'external_image'
   | 'helm_chart'
   | 'terraform_module'
-  | "kubernetes_manifest"
+  | 'kubernetes_manifest'
 
 const FILTER_OPTIONS: Array<TComponentConfigTypeText> = [
   'docker_build',
   'external_image',
   'helm_chart',
   'terraform_module',
-  "kubernetes_manifest",
+  'kubernetes_manifest',
 ]
 
 const groupClasses = {

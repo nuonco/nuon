@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { CaretRightIcon } from '@phosphor-icons/react'
-import { Badge } from "../Badge"
+import { Badge } from '../Badge'
 import { CodeBlock } from '../CodeBlock'
 import { Text } from '../Typography'
 import { diffEntries, diffLines } from './diff-utils'
@@ -32,9 +32,9 @@ interface HelmPlan {
 // delta 1 : before
 // delta 2 : after
 export interface HelmContentDiffEntry {
-  delta?: 1 | 2 | 0;
-  type?: 1 | 2 | 0;  // Added type field which is an alternative to delta
-  payload?: string;
+  delta?: 1 | 2 | 0
+  type?: 1 | 2 | 0 // Added type field which is an alternative to delta
+  payload?: string
 }
 
 interface HelmContentDiff {
@@ -108,7 +108,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
       {/* Header */}
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
         <Text variant="med-18">
-          {planData?.k8s_content_diff ? "Kubernetes" : "Helm"} changes overview
+          {planData?.k8s_content_diff ? 'Kubernetes' : 'Helm'} changes overview
         </Text>
         <Text isMuted>Operation: {planData.op}</Text>
       </div>
@@ -139,10 +139,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
             </Text>
           </div>
           <div className="flex items-center gap-1.5">
-            <Text
-              variant="med-14"
-              className="text-red-600 dark:text-red-400"
-            >
+            <Text variant="med-14" className="text-red-600 dark:text-red-400">
               {summary.destroy}
             </Text>
             <Text variant="reg-12" isMuted>
@@ -156,7 +153,10 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
       <div className="divide-y">
         {changes.map((change, index) => {
           const isExpanded = expandedIndex === index
-          const diff = findDiffForChange(change, planData.helm_content_diff || planData?.k8s_content_diff)
+          const diff = findDiffForChange(
+            change,
+            planData.helm_content_diff || planData?.k8s_content_diff
+          )
           return (
             <div key={index} className="px-4 py-4 sm:px-6">
               {/* Change row */}
@@ -202,7 +202,9 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
                   {diff ? (
                     <div className="flex flex-col md:flex-row gap-4 px-2 py-2 bg-white dark:bg-dark-grey-100 rounded border">
                       <CodeBlock className="w-full" language="yaml" isDiff>
-                        { diff?._version == '2' ? diffEntries(diff?.entries) : diffLines(diff?.before, diff?.after)}
+                        {diff?._version == '2'
+                          ? diffEntries(diff?.entries)
+                          : diffLines(diff?.before, diff?.after)}
                       </CodeBlock>
                     </div>
                   ) : (

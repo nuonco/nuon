@@ -39,7 +39,7 @@ export const DashboardHeader: FC = () => {
         <div className="flex gap-4 items-center">
           <Link href="https://docs.nuon.co" target="_blank" variant="ghost">
             Docs
-          </Link>          
+          </Link>
           <SignOutButton />
         </div>
       </div>

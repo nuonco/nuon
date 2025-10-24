@@ -63,7 +63,7 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'user-skipped' ||
     status === 'auto-skipped'
 
-  const statusText = isLabelStatusText ? label : status  
+  const statusText = isLabelStatusText ? label : status
 
   const Status = (
     <span

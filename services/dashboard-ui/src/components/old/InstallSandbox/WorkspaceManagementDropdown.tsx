@@ -30,7 +30,7 @@ export const WorkspaceManagementDropdown: FC<IWorkspaceManagementDropdown> = ({
       isDownIcon
       wrapperClassName="z-20"
     >
-      <div className="min-w-[256px] rounded-md overflow-hidden p-2 flex flex-col gap-1">       
+      <div className="min-w-[256px] rounded-md overflow-hidden p-2 flex flex-col gap-1">
         <BackendModal orgId={orgId} workspace={workspace} token={token} />
       </div>
     </Dropdown>

@@ -85,18 +85,16 @@ export const AppWorkflowsTable: FC<IAppWorkflowsTable> = ({
         accessorKey: 'triggers',
         cell: (props) => (
           <Text className="gap-4">
-            {props
-              .getValue<TActionConfigTriggerType[]>()
-              ?.map((t, i) => (
-                <ActionTriggerType
-                  key={`${t}-${i}`}
-                  triggerType={t}
-                  componentName={
-                    props.row.original.ogTriggers?.at(i)?.component?.name
-                  }
-                  componentPath={`/${orgId}/apps/${appId}/components/${props.row.original.ogTriggers?.at(i)?.component?.id}`}
-                />
-              ))}
+            {props.getValue<TActionConfigTriggerType[]>()?.map((t, i) => (
+              <ActionTriggerType
+                key={`${t}-${i}`}
+                triggerType={t}
+                componentName={
+                  props.row.original.ogTriggers?.at(i)?.component?.name
+                }
+                componentPath={`/${orgId}/apps/${appId}/components/${props.row.original.ogTriggers?.at(i)?.component?.id}`}
+              />
+            ))}
           </Text>
         ),
       },
