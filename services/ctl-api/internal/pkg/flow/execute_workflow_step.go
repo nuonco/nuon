@@ -30,7 +30,9 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	if step.Status.Status != app.StatusPending && step.Status.Status != app.StatusNotAttempted {
-		fmt.Println("sk step name", step.Name, step.Status.Status)
+		l.Debug("step status not pending or not-attempted, exiting",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
 		return false, nil
 	}
 
@@ -77,6 +79,9 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	if step.ExecutionType != app.WorkflowStepExecutionTypeApproval {
+		l.Debug("step type non approval, step successfull",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
@@ -103,6 +108,9 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, nil
 	}
 
+	l.Debug("looking up approval contents",
+		zap.String("step_id", step.ID),
+		zap.String("workflow_id", flw.ID))
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
@@ -137,6 +145,9 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 	// check for plan contents here, if noop then mark auto approved + nex step as skipped since its noop change
 	if noopPlan {
+		l.Debug("approval plan contents empty",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
 		if err := c.handleNoopDeployPlan(ctx, step, flw); err != nil {
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
@@ -201,6 +212,9 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 
 	switch resp.Type {
 	case app.WorkflowStepApprovalResponseTypeApprove:
+		l.Debug("handling approval response type: approved",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
@@ -218,6 +232,10 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, nil
 	// approval response retry flow
 	case app.WorkflowStepApprovalResponseTypeRetryPlan:
+		l.Debug("handling approval response type: retry plan",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
+
 		// cloned step which will be retried next
 		err := c.cloneWorkflowStep(ctx, step, flw)
 		if err != nil {
@@ -248,6 +266,10 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 
 		return true, nil
 	case app.WorkflowStepApprovalResponseTypeSkipCurrent:
+		l.Debug("handling approval response type: skip current and continue",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
+
 		if err := c.markWorkflowApprovalPlanDenied(ctx, flw, step); err != nil {
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: flw.ID,
@@ -262,7 +284,12 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		}
 		return true, nil
 		// update step status to approval denied and somehow figureout how to skip at the top
+		// this is not being used rn dashboardui cant trigger this
 	case app.WorkflowStepApprovalResponseTypeSkipCurrentAndDependents:
+		l.Debug("handling approval response type: skip current and dependents",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
+
 		if err := c.markDependentStepsAsSkipped(ctx, flw, step); err != nil {
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: flw.ID,
@@ -467,6 +494,8 @@ func (c *WorkflowConductor[DomainSignal]) markWorkflowApprovalPlanDenied(ctx wor
 		if step.ID == approvalStep.ID {
 			continue
 		}
+
+		// todo(sk): this is probably code smell, need better way to handle this
 		if !slices.Contains([]app.Status{
 			app.StatusPending,
 			app.AwaitingApproval,
