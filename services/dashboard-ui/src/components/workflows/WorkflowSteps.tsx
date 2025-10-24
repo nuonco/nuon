@@ -1,7 +1,7 @@
 'use client'
 
-import { Notice } from '@/components/Notice'
-import { InstallWorkflowSteps } from '@/components/InstallWorkflows/InstallWorkflowSteps'
+import { Notice } from '@/components/old/Notice'
+import { InstallWorkflowSteps } from '@/components/old/InstallWorkflows/InstallWorkflowSteps'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TWorkflow } from '@/types'
