@@ -14,7 +14,8 @@ export const Grid: FC<IGrid> = ({
   return (
     <div
       className={classNames('grid gap-6 w-full', {
-        'auto-rows-fr grid-cols-[repeat(auto-fill,_minmax(18rem,_1fr))]': variant === 'default',
+        'auto-rows-fr grid-cols-[repeat(auto-fill,_minmax(18rem,_1fr))]':
+          variant === 'default',
         'grid-cols-1 md:grid-cols-2 lg:grid-cols-3  h-fit overflow-hidden':
           variant === '3-cols',
         'grid-cols-1 md:grid-cols-2  h-fit overflow-hidden':

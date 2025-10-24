@@ -21,9 +21,7 @@ export interface ILogsViewerProvider {
   children: React.ReactNode
 }
 
-export const LogsViewerProvider: FC<ILogsViewerProvider> = ({
-  children,
-}) => {
+export const LogsViewerProvider: FC<ILogsViewerProvider> = ({ children }) => {
   const [columnFilters, setColumnFilters] = useState([
     {
       id: 'severity_text',
@@ -66,7 +64,7 @@ export const LogsViewerProvider: FC<ILogsViewerProvider> = ({
   }
 
   const handleGlobalFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value || "")
+    setGlobalFilter(e.target.value || '')
   }
 
   const handleColumnSort = () => {

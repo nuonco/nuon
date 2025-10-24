@@ -1,5 +1,5 @@
 import React, { type FC } from 'react'
-import { CreateInstallModal } from "@/components/old/Installs"
+import { CreateInstallModal } from '@/components/old/Installs'
 import { Link } from '@/components/old/Link'
 import { Text, CodeInline } from '@/components/old/Typography'
 
@@ -21,7 +21,7 @@ export const NoInstalls: FC = () => {
             Learn more
           </Link>{' '}
           about installs.
-        </Text>        
+        </Text>
       </div>
 
       <CreateInstallModal />

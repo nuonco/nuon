@@ -54,7 +54,7 @@ export const RunnerStepDetails = ({
 
   return (
     <div className="flex flex-col gap-8">
-      {(isRunnerLoading && !runner) || (isSettingsLoading && !settings)  ? (
+      {(isRunnerLoading && !runner) || (isSettingsLoading && !settings) ? (
         <div className="border rounded-md p-6">
           <Loading loadingText="Loading runner details..." variant="stack" />
         </div>

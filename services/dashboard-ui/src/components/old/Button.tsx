@@ -15,7 +15,7 @@ export type TButtonVariant =
   | 'caution'
   | 'danger'
   | 'secondary'
-| 'menu'
+  | 'menu'
 
 export interface IButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   hasCustomPadding?: boolean
@@ -46,7 +46,8 @@ export const Button = forwardRef<HTMLButtonElement, IButton>(
             [`${defaultStyles} !border-transparent`]: variant === 'ghost',
             [`${defaultStyles} border-red-800 text-red-800 dark:border-red-500 dark:text-red-500`]:
               variant === 'caution',
-            [`${defaultStyles} border bg-cool-grey-300 text-primary-400 dark:bg-dark-grey-600 dark:text-primary-400`]: variant === 'secondary',
+            [`${defaultStyles} border bg-cool-grey-300 text-primary-400 dark:bg-dark-grey-600 dark:text-primary-400`]:
+              variant === 'secondary',
             'bg-red-700 hover:bg-red-600': variant === 'danger',
             'text-gray-50 px-5 border-transparent font-medium':
               variant === 'primary' || variant === 'danger',
@@ -56,9 +57,10 @@ export const Button = forwardRef<HTMLButtonElement, IButton>(
             'cursor-not-allowed !text-cool-grey-500 !bg-primary-900 hover:!bg-primary-900':
               props.disabled && variant === 'primary',
             'cursor-not-allowed !text-cool-grey-500 !bg-red-900 hover:!bg-red-900':
-            props.disabled && variant === 'danger',
-            [`${defaultStyles} border-transparent text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full`]: variant === 'menu',
-            "hover:!cursor-pointer": true,
+              props.disabled && variant === 'danger',
+            [`${defaultStyles} border-transparent text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full`]:
+              variant === 'menu',
+            'hover:!cursor-pointer': true,
             [`${className}`]: Boolean(className),
           }
         )}
