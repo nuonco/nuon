@@ -30,12 +30,22 @@ export const Tabs = ({
   ...props
 }: ITabs) => {
   const tabKeys = Object.keys(tabs)
-  const [activeTabWidth, setActiveTabWidth] = useState<number | undefined>(undefined)
-  const [activeTabLeft, setActiveTabLeft] = useState<number | undefined>(undefined)
-  const [hoveredTabWidth, setHoveredTabWidth] = useState<number | undefined>(undefined)
-  const [hoveredTabLeft, setHoveredTabLeft] = useState<number | undefined>(undefined)
+  const [activeTabWidth, setActiveTabWidth] = useState<number | undefined>(
+    undefined
+  )
+  const [activeTabLeft, setActiveTabLeft] = useState<number | undefined>(
+    undefined
+  )
+  const [hoveredTabWidth, setHoveredTabWidth] = useState<number | undefined>(
+    undefined
+  )
+  const [hoveredTabLeft, setHoveredTabLeft] = useState<number | undefined>(
+    undefined
+  )
   const [activeTab, setActiveTab] = useState(initActiveTab || tabKeys.at(0))
-  const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined)
+  const [containerHeight, setContainerHeight] = useState<number | undefined>(
+    undefined
+  )
   const contentRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const tabButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const containerRef = useRef<HTMLDivElement>(null)
@@ -49,7 +59,9 @@ export const Tabs = ({
       setActiveTabWidth(activeButton.offsetWidth)
       const parentRect = activeButton.parentElement?.getBoundingClientRect()
       const buttonRect = activeButton.getBoundingClientRect()
-      let left = parentRect ? buttonRect.left - parentRect.left : buttonRect.left
+      let left = parentRect
+        ? buttonRect.left - parentRect.left
+        : buttonRect.left
       setActiveTabLeft(left)
       setHoveredTabLeft(left) // Always sync hovered left to active left on load/active change
     }
@@ -74,7 +86,9 @@ export const Tabs = ({
       setHoveredTabWidth(button.offsetWidth)
       const parentRect = button.parentElement?.getBoundingClientRect()
       const buttonRect = button.getBoundingClientRect()
-      let left = parentRect ? buttonRect.left - parentRect.left : buttonRect.left
+      let left = parentRect
+        ? buttonRect.left - parentRect.left
+        : buttonRect.left
       setHoveredTabLeft(left)
     }
   }
@@ -128,12 +142,14 @@ export const Tabs = ({
           tabControlsClassName
         )}
         onMouseLeave={handleTabsMouseLeave}
-        style={{
-          '--active-tab-width': `${activeTabWidth ?? 0}px`,
-          '--active-tab-left': `${activeTabLeft ?? 0}px`,
-          '--hovered-tab-width': `${hoveredTabWidth ?? 0}px`,
-          '--hovered-tab-left': `${hoveredTabLeft ?? 0}px`,
-        } as CSSProperties}
+        style={
+          {
+            '--active-tab-width': `${activeTabWidth ?? 0}px`,
+            '--active-tab-left': `${activeTabLeft ?? 0}px`,
+            '--hovered-tab-width': `${hoveredTabWidth ?? 0}px`,
+            '--hovered-tab-left': `${hoveredTabLeft ?? 0}px`,
+          } as CSSProperties
+        }
       >
         {tabKeys.map((tabKey, idx) => (
           <Button

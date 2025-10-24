@@ -63,7 +63,6 @@ const RemoveUserModal = ({ user }: { user: TAccount }) => {
     }
   }, [account, error])
 
-
   return (
     <>
       {isOpen

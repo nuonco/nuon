@@ -75,4 +75,3 @@ export const ExampleAppsGrid: FC<ExampleAppsGridProps> = ({
 }
 
 export type { ExampleApp }
-

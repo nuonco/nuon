@@ -2,7 +2,11 @@
 
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowsOutSimpleIcon, CheckIcon, MinusIcon } from '@phosphor-icons/react'
+import {
+  ArrowsOutSimpleIcon,
+  CheckIcon,
+  MinusIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/old/Button'
 import { Expand } from '@/components/old/Expand'
 import { Modal } from '@/components/old/Modal'

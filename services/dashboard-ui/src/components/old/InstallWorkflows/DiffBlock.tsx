@@ -9,22 +9,31 @@ interface DiffBlockProps {
   children?: string
 }
 
-export const DiffBlock: React.FC<DiffBlockProps> = ({ className, children }) => {
+export const DiffBlock: React.FC<DiffBlockProps> = ({
+  className,
+  children,
+}) => {
   // Removed console.log to fix linting error
 
   if (!children) {
     return (
-      <div className={`p-4 bg-cool-grey-50 dark:bg-dark-grey-300 rounded ${className || ''}`}>
-        <Text variant="reg-14" isMuted>No diff content available.</Text>
+      <div
+        className={`p-4 bg-cool-grey-50 dark:bg-dark-grey-300 rounded ${className || ''}`}
+      >
+        <Text variant="reg-14" isMuted>
+          No diff content available.
+        </Text>
       </div>
-    );
+    )
   }
 
   // Check if this is an "all unchanged" diff - all lines start with two spaces
-  const lines = children.split('\n');
-  const allUnchanged = lines.every(line => line.startsWith('  '));
-  const hasChanges = lines.some(line => line.startsWith('+ ') || line.startsWith('- '));
-  
+  const lines = children.split('\n')
+  const allUnchanged = lines.every((line) => line.startsWith('  '))
+  const hasChanges = lines.some(
+    (line) => line.startsWith('+ ') || line.startsWith('- ')
+  )
+
   // If it's just a display of a resource with no changes
   if (allUnchanged && !hasChanges) {
     return (
@@ -35,10 +44,10 @@ export const DiffBlock: React.FC<DiffBlockProps> = ({ className, children }) => 
           </Text>
         </div>
         <CodeBlock language="yaml">
-          {lines.map(line => line.substring(2)).join('\n')}
+          {lines.map((line) => line.substring(2)).join('\n')}
         </CodeBlock>
       </div>
-    );
+    )
   }
 
   // If there are actual changes (additions/removals)
@@ -48,5 +57,5 @@ export const DiffBlock: React.FC<DiffBlockProps> = ({ className, children }) => 
         {children}
       </CodeBlock>
     </div>
-  );
-};
+  )
+}
