@@ -452,7 +452,13 @@ function ResourceChangesViewer({
   )
 }
 
-export function TerraformPlanViewer({ plan, showNoops = false }: { plan: any, showNoops?: boolean }) {
+export function TerraformPlanViewer({
+  plan,
+  showNoops = false,
+}: {
+  plan: any
+  showNoops?: boolean
+}) {
   // Default: hide no-op changes, so set true
   const [hideNoOps, setHideNoOps] = useState<boolean>(!showNoops)
 

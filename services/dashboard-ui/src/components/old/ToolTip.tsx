@@ -23,9 +23,11 @@ export const ToolTip: FC<IToolTip> = ({
 }) => {
   return (
     <>
-      <span className={classNames('tooltip', {
-        [`${parentClassName}`]: Boolean(parentClassName),
-      })}>
+      <span
+        className={classNames('tooltip', {
+          [`${parentClassName}`]: Boolean(parentClassName),
+        })}
+      >
         <span
           className={classNames('tooltip-wrapper !z-20', {
             [`${alignment}`]: true,

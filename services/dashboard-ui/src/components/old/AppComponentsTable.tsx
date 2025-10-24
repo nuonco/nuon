@@ -65,7 +65,6 @@ export interface IAppComponentsTable extends IPollingProps, TPaginationParams {
   types?: string
 }
 
-
 // TODO(nnnnat): need to rely on the component status and not the latest build
 export const AppComponentsTable: FC<IAppComponentsTable> = ({
   appId,
@@ -77,7 +76,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
   offset,
   limit,
   q,
-  types
+  types,
 }) => {
   /* const { org } = useOrg()
    * const { app } = useApp()
@@ -157,9 +156,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
       {
         header: 'Build',
         accessorKey: 'build',
-        cell: (props) => (
-          <StatusBadge status={props.getValue<string>()} />
-        ),
+        cell: (props) => <StatusBadge status={props.getValue<string>()} />,
       },
       {
         header: 'Config',

@@ -8,7 +8,7 @@ import { LogsViewerProvider } from './logs-viewer-context'
 import { useLogs } from './logs-context'
 import { Section } from '@/components/old/Card'
 import { Loading } from '@/components/old/Loading'
-import { Notice } from "@/components/old/Notice"
+import { Notice } from '@/components/old/Notice'
 
 export interface IOperationLogsSection {
   actions?: React.ReactNode
@@ -20,13 +20,13 @@ export const OperationLogsSection: FC<IOperationLogsSection> = ({
   heading,
 }) => {
   const { error, isLoading, logs } = useLogs()
-  
+
   return (
     <LogsViewerProvider>
       <Section
         heading={heading}
         actions={
-          !error && logs?.length  ? (
+          !error && logs?.length ? (
             <div className="flex items-center divide-x">
               {actions ? <div className="mr-4">{actions}</div> : null}
               <div className="pl-4">
@@ -40,8 +40,14 @@ export const OperationLogsSection: FC<IOperationLogsSection> = ({
         }
       >
         {error ? (
-          <Notice variant={error?.message === "Log stream not created yet." ? "warn" : "error" }>
-            {error?.message || "Unable to load log stream."}
+          <Notice
+            variant={
+              error?.message === 'Log stream not created yet.'
+                ? 'warn'
+                : 'error'
+            }
+          >
+            {error?.message || 'Unable to load log stream.'}
           </Notice>
         ) : !logs?.length && isLoading ? (
           <div className="mt-12">

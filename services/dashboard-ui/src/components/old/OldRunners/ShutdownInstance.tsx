@@ -19,7 +19,9 @@ interface IShutdownInstanceModal {
   runnerId: string
 }
 
-export const ShutdownInstanceModal: FC<IShutdownInstanceModal> = ({ runnerId }) => {
+export const ShutdownInstanceModal: FC<IShutdownInstanceModal> = ({
+  runnerId,
+}) => {
   const path = usePathname()
   const { user } = useUser()
   const { org } = useOrg()
@@ -95,8 +97,7 @@ export const ShutdownInstanceModal: FC<IShutdownInstanceModal> = ({ runnerId }) 
                 <Text variant="med-18">Shutdown this runner instance.</Text>
                 <Text variant="reg-14" className="leading-relaxed max-w-md">
                   The runner VM will be shutdown and restarted.
-                </Text>                
-                
+                </Text>
               </div>
               <div className="flex gap-3 justify-end">
                 <Button

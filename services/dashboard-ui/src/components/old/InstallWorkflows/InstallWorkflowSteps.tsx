@@ -18,7 +18,7 @@ import { Duration } from '@/components/old/Time'
 import { Text } from '@/components/old/Typography'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import type { IPollingProps } from "@/hooks/use-polling"
+import type { IPollingProps } from '@/hooks/use-polling'
 import type {
   TInstallWorkflow,
   TInstallWorkflowStep,

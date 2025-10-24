@@ -1,14 +1,14 @@
 import React from 'react'
 
 interface ISkeleton {
-  className: string;
+  className: string
   lines?: number
   width?: string | string[]
   height?: string
 }
 
 export const Skeleton = ({
-  className = "", 
+  className = '',
   lines = 1,
   width = '100%',
   height = '1rem',

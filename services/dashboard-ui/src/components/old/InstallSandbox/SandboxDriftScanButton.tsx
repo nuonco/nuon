@@ -24,7 +24,7 @@ export const DriftScanSandboxModal = () => {
 
   const [isOpen, setIsOpen] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
-  
+
   const { data, error, execute, headers, isLoading } = useServerAction({
     action: reprovisionSandbox,
   })
@@ -92,8 +92,6 @@ export const DriftScanSandboxModal = () => {
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to drift scan this sandbox?
                 </Text>
-
-                
               </div>
               <div className="flex gap-3 justify-end">
                 <Button

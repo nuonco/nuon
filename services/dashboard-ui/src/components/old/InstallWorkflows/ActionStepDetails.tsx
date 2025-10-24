@@ -9,8 +9,8 @@ import { StatusBadge } from '@/components/old/Status'
 import { EventStatus } from '@/components/old/Timeline'
 import { Duration } from '@/components/old/Time'
 import { Text } from '@/components/old/Typography'
-import {useOrg} from "@/hooks/use-org"
-import {usePolling} from "@/hooks/use-polling"
+import { useOrg } from '@/hooks/use-org'
+import { usePolling } from '@/hooks/use-polling'
 import type { TActionConfig, TInstallActionRun } from '@/types'
 import { sentanceCase } from '@/utils'
 import type { IPollStepDetails } from './InstallWorkflowSteps'
@@ -35,12 +35,16 @@ export const ActionStepDetails = ({
   shouldPoll = false,
   pollInterval = 5000,
 }: IPollStepDetails) => {
-  const {org } = useOrg();
-  const { data: actionRun, isLoading, error} = usePolling<TInstallActionRun>({
+  const { org } = useOrg()
+  const {
+    data: actionRun,
+    isLoading,
+    error,
+  } = usePolling<TInstallActionRun>({
     initIsLoading: true,
     path: `/api/orgs/${org.id}/installs/${step?.owner_id}/actions/runs/${step?.step_target_id}`,
     pollInterval,
-    shouldPoll,    
+    shouldPoll,
   })
 
   const componentName = actionRun?.run_env_vars?.COMPONENT_NAME
@@ -57,7 +61,11 @@ export const ActionStepDetails = ({
         </div>
       ) : (
         <>
-          {error?.error ? <Notice>{error?.error || "Unable to load action run details."}</Notice> : null}
+          {error?.error ? (
+            <Notice>
+              {error?.error || 'Unable to load action run details.'}
+            </Notice>
+          ) : null}
           {actionRun ? (
             <div className="flex flex-col border rounded-md shadow">
               <div className="flex items-center justify-between p-3 border-b">
