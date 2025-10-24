@@ -54,6 +54,14 @@ func (w *Workflows) ExecuteDeployComponentSyncImage(ctx workflow.Context, sreq s
 		sreq.DeployID = installDeploy.ID
 	}
 
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   installDeploy.ID,
+		StepTargetType: plugins.TableName(w.db, installDeploy),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install workflow")
+	}
+
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
 		DeployID: sreq.DeployID,
 	})
@@ -74,6 +82,14 @@ func (w *Workflows) ExecuteDeployComponentSyncImage(ctx workflow.Context, sreq s
 	if err := w.execSync(ctx, install, installDeploy, sreq.SandboxMode); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
 		return errors.Wrap(err, "unable to execute sync")
+	}
+
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   installDeploy.ID,
+		StepTargetType: plugins.TableName(w.db, installDeploy),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install workflow")
 	}
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
