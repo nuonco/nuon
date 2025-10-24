@@ -4,7 +4,7 @@ import { Text } from '@/components/common/Text'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 
 // NOTE: Old admin controls
-import { AdminControls } from '@/components/AdminModal'
+import { AdminControls } from '@/components/old/AdminModal'
 
 export const AdminPanel = ({ size = 'full', ...props }: IPanel) => {
   return (

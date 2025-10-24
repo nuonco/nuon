@@ -2,7 +2,7 @@
 
 import { useState, useEffect, createContext, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { FullScreenOnboarding } from '@/components/Apps/FullScreenOnboarding'
+import { FullScreenOnboarding } from '@/components/old/Apps/FullScreenOnboarding'
 import { useAccount } from '@/hooks/use-account'
 import type { TAccount } from '@/types'
 import { getUserJourney } from '@/utils/user-journey-utils'

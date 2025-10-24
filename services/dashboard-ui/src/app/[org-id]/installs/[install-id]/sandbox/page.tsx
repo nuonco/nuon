@@ -24,9 +24,9 @@ import {
   Text as OldText,
   Time,
 } from '@/components'
-import { DriftedBanner } from '@/components/DriftedBanner'
-import { TerraformWorkspace } from '@/components/InstallSandbox'
-import { SandboxManagementDropdown } from '@/components/InstallSandbox/ManagementDropdown'
+import { DriftedBanner } from '@/components/old/DriftedBanner'
+import { TerraformWorkspace } from '@/components/old/InstallSandbox'
+import { SandboxManagementDropdown } from '@/components/old/InstallSandbox/ManagementDropdown'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import { DashboardContent, Section, Text } from '@/components'
-import { BreakGlassForm } from '@/components/Installs'
+import { BreakGlassForm } from '@/components/old/Installs'
 import { getInstallById } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
