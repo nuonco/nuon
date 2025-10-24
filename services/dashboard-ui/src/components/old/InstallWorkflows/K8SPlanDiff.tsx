@@ -2,49 +2,49 @@
 
 import React, { useState } from 'react'
 import { CaretRightIcon } from '@phosphor-icons/react'
-import { Badge } from "../Badge"
+import { Badge } from '../Badge'
 import { Text } from '../Typography'
-import { DiffBlock } from './DiffBlock';
-import { formatK8SDiff, K8SDiffEntry } from './diff-utils';
+import { DiffBlock } from './DiffBlock'
+import { formatK8SDiff, K8SDiffEntry } from './diff-utils'
 
 // Types for K8S content diff
-type K8SContentDiffEntry = K8SDiffEntry;
+type K8SContentDiffEntry = K8SDiffEntry
 
 interface K8SContentDiff {
-  _version: string;
-  name: string;
-  namespace: string;
-  kind: string;
-  api: string;
-  resource: string;
-  op: string;
-  type: number; // 0 = unchanged, 1 = deleted, 2 = created, 3 = modified
-  dry_run: boolean;
-  entries: K8SContentDiffEntry[];
+  _version: string
+  name: string
+  namespace: string
+  kind: string
+  api: string
+  resource: string
+  op: string
+  type: number // 0 = unchanged, 1 = deleted, 2 = created, 3 = modified
+  dry_run: boolean
+  entries: K8SContentDiffEntry[]
 }
 
 interface K8SPlan {
-  op: string;
-  plan: string;
-  k8s_content_diff?: K8SContentDiff[];
+  op: string
+  plan: string
+  k8s_content_diff?: K8SContentDiff[]
 }
 
 interface K8SChange {
-  name: string;
-  namespace: string;
-  kind: string;
-  resource: string;
-  action: string;
+  name: string
+  namespace: string
+  kind: string
+  resource: string
+  action: string
 }
 
 interface PlanSummary {
-  add: number;
-  change: number;
-  destroy: number;
+  add: number
+  change: number
+  destroy: number
 }
 
 interface K8SPlanDiffProps {
-  planData: K8SPlan;
+  planData: K8SPlan
 }
 
 /**
@@ -52,11 +52,16 @@ interface K8SPlanDiffProps {
  */
 const getActionFromType = (type: number): string => {
   switch (type) {
-    case 0: return 'unchanged';
-    case 1: return 'deleted';
-    case 2: return 'created';
-    case 3: return 'modified';
-    default: return 'unknown';
+    case 0:
+      return 'unchanged'
+    case 1:
+      return 'deleted'
+    case 2:
+      return 'created'
+    case 3:
+      return 'modified'
+    default:
+      return 'unknown'
   }
 }
 
@@ -65,14 +70,14 @@ const getActionFromType = (type: number): string => {
  */
 function tryParseJSON(jsonString: any): any {
   if (typeof jsonString !== 'string') {
-    return jsonString;
+    return jsonString
   }
-  
+
   try {
-    return JSON.parse(jsonString);
+    return JSON.parse(jsonString)
   } catch (e) {
-    console.error("Failed to parse JSON string:", e);
-    return null;
+    console.error('Failed to parse JSON string:', e)
+    return null
   }
 }
 
@@ -82,67 +87,65 @@ function tryParseJSON(jsonString: any): any {
 const parseK8SChanges = (
   planData: K8SPlan
 ): { changes: K8SChange[]; summary: PlanSummary } => {
-  const changes: K8SChange[] = [];
-  const summary: PlanSummary = { add: 0, change: 0, destroy: 0 };
-  
-  let k8sDiffs = planData.k8s_content_diff;
-  
+  const changes: K8SChange[] = []
+  const summary: PlanSummary = { add: 0, change: 0, destroy: 0 }
+
+  let k8sDiffs = planData.k8s_content_diff
+
   // If k8s_content_diff is not available, try to extract it from plan string
   if (!k8sDiffs && planData.plan) {
-    const parsedPlan = tryParseJSON(planData.plan);
+    const parsedPlan = tryParseJSON(planData.plan)
     if (parsedPlan && parsedPlan.k8s_content_diff) {
-      k8sDiffs = parsedPlan.k8s_content_diff;
+      k8sDiffs = parsedPlan.k8s_content_diff
     }
   }
-  
+
   if (!k8sDiffs || k8sDiffs.length === 0) {
-    return { changes, summary };
+    return { changes, summary }
   }
 
   // Process each diff entry
   k8sDiffs.forEach((diff) => {
-    const action = getActionFromType(diff.type);
-    
+    const action = getActionFromType(diff.type)
+
     // Add to appropriate summary counter
-    if (diff.type === 2) summary.add++;
-    else if (diff.type === 3) summary.change++;
-    else if (diff.type === 1) summary.destroy++;
-    
+    if (diff.type === 2) summary.add++
+    else if (diff.type === 3) summary.change++
+    else if (diff.type === 1) summary.destroy++
+
     changes.push({
       name: diff.name,
       namespace: diff.namespace,
       kind: diff.kind,
       resource: diff.resource,
-      action: action
-    });
-  });
+      action: action,
+    })
+  })
 
-  return { changes, summary };
+  return { changes, summary }
 }
 
-export const K8SPlanDiff: React.FC<K8SPlanDiffProps> = ({
-  planData,
-}) => {
+export const K8SPlanDiff: React.FC<K8SPlanDiffProps> = ({ planData }) => {
   const [parsedPlanData, setParsedPlanData] = useState<K8SPlan>(() => {
     // If the plan field is a string that contains JSON, parse it
     if (typeof planData.plan === 'string' && !planData.k8s_content_diff) {
       try {
-        const parsed = JSON.parse(planData.plan);
+        const parsed = JSON.parse(planData.plan)
         if (parsed.k8s_content_diff) {
           return {
             ...planData,
-            k8s_content_diff: parsed.k8s_content_diff
-          };
+            k8s_content_diff: parsed.k8s_content_diff,
+          }
         }
       } catch (e) {
-        console.error("Failed to parse plan data:", e);
+        console.error('Failed to parse plan data:', e)
       }
     }
-    return planData;
-  });
-  
-  const { changes, summary } = parseK8SChanges(parsedPlanData);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    return planData
+  })
+
+  const { changes, summary } = parseK8SChanges(parsedPlanData)
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
 
   // If no changes, return early with a message
   if (changes.length === 0) {
@@ -153,16 +156,14 @@ export const K8SPlanDiff: React.FC<K8SPlanDiffProps> = ({
           <Text>No Kubernetes changes detected.</Text>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="bg-cool-grey-50 dark:bg-dark-grey-200 rounded-lg border">
       {/* Header */}
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
-        <Text variant="med-18">
-          Kubernetes changes overview
-        </Text>
+        <Text variant="med-18">Kubernetes changes overview</Text>
         <Text isMuted>Operation: {parsedPlanData.op}</Text>
       </div>
 
@@ -192,10 +193,7 @@ export const K8SPlanDiff: React.FC<K8SPlanDiffProps> = ({
             </Text>
           </div>
           <div className="flex items-center gap-1.5">
-            <Text
-              variant="med-14"
-              className="text-red-600 dark:text-red-400"
-            >
+            <Text variant="med-14" className="text-red-600 dark:text-red-400">
               {summary.destroy}
             </Text>
             <Text variant="reg-12" isMuted>
@@ -208,9 +206,9 @@ export const K8SPlanDiff: React.FC<K8SPlanDiffProps> = ({
       {/* Changes List */}
       <div className="divide-y">
         {changes.map((change, index) => {
-          const isExpanded = expandedIndex === index;
-          const diffEntries = parsedPlanData.k8s_content_diff?.[index]?.entries;
-          
+          const isExpanded = expandedIndex === index
+          const diffEntries = parsedPlanData.k8s_content_diff?.[index]?.entries
+
           return (
             <div key={index} className="px-4 py-4 sm:px-6">
               {/* Change row */}
@@ -269,9 +267,9 @@ export const K8SPlanDiff: React.FC<K8SPlanDiffProps> = ({
                 </div>
               )}
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 }

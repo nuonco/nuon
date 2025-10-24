@@ -2,7 +2,11 @@
 
 import React, { type FC, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CalendarBlankIcon, MinusIcon, DotsThreeVerticalIcon } from '@phosphor-icons/react'
+import {
+  CalendarBlankIcon,
+  MinusIcon,
+  DotsThreeVerticalIcon,
+} from '@phosphor-icons/react'
 import { DataTableSearch, Table } from '@/components/old/DataTable'
 import { Dropdown } from '@/components/old/Dropdown'
 import { StatusBadge } from '@/components/old/Status'
@@ -11,10 +15,7 @@ import { ID, Text } from '@/components/old/Typography'
 import { StackLinksModal } from './StackLinksModal'
 import { StackOutputsModal } from './StackOutputsModal'
 // eslint-disable-next-line import/no-cycle
-import type {
-  TInstallStack,
-  TInstallStackVersion,
-} from '@/types'
+import type { TInstallStack, TInstallStackVersion } from '@/types'
 
 export interface IStacksTable {
   stack: TInstallStack
@@ -63,7 +64,7 @@ export const StacksTable: FC<IStacksTable> = ({ stack }) => {
             <Time format="relative" time={props.getValue<string>()} />
           </Text>
         ),
-      },    
+      },
       {
         id: 'more',
         enableSorting: false,

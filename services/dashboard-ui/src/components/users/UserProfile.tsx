@@ -1,6 +1,6 @@
 'use client'
 
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 import { useUser } from '@auth0/nextjs-auth0'
 import { Avatar } from '@/components/common/Avatar'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -9,7 +9,7 @@ import { Text } from '@/components/common/Text'
 export const UserProfile = () => {
   const { user, error, isLoading } = useUser()
   if (error) {
-    redirect("/")  
+    redirect('/')
   }
 
   return (

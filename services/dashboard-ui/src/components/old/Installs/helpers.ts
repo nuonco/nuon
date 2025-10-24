@@ -19,7 +19,7 @@
 //     params = {
 //       templateUrl:
 //         sandboxConfig?.artifacts?.cloudformation_stack_template,
-//       stackName: `nuon-${sandboxConfig?.public_git_vcs_config?.directory}-permissions`,    
+//       stackName: `nuon-${sandboxConfig?.public_git_vcs_config?.directory}-permissions`,
 //     }
 //   }
 

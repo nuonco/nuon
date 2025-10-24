@@ -15,8 +15,14 @@ interface IConfirmUpdateModal {
   onClose: (isConfirmed: boolean) => void
 }
 
-export const ConfirmUpdateModal: FC<IConfirmUpdateModal> = ({ install, isOpen: isUpOpen, onClose }) => {
-  const isInstallManagedByConfig = install?.metadata && install?.metadata?.managed_by === 'nuon/cli/install-config'
+export const ConfirmUpdateModal: FC<IConfirmUpdateModal> = ({
+  install,
+  isOpen: isUpOpen,
+  onClose,
+}) => {
+  const isInstallManagedByConfig =
+    install?.metadata &&
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const [isOpen, setIsOpen] = useState(isUpOpen)
 
@@ -31,7 +37,6 @@ export const ConfirmUpdateModal: FC<IConfirmUpdateModal> = ({ install, isOpen: i
     }
   }, [isOpen])
 
-
   if (!isInstallManagedByConfig) {
     return <></>
   }
@@ -45,7 +50,9 @@ export const ConfirmUpdateModal: FC<IConfirmUpdateModal> = ({ install, isOpen: i
               heading={
                 <span className="flex gap-2 text-orange-800">
                   <WarningIcon size={24} />
-                  <Text variant="med-18">Override changes to this install?</Text>
+                  <Text variant="med-18">
+                    Override changes to this install?
+                  </Text>
                 </span>
               }
               isOpen={isOpen}

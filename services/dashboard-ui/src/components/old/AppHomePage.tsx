@@ -3,7 +3,7 @@
 import React, { type FC, useState, useEffect } from 'react'
 import classNames from 'classnames'
 import { ArrowLineLeftIcon, ArrowLineRightIcon } from '@phosphor-icons/react'
-import { getIsSidebarOpenFromCookie } from "@/actions/layout/main-sidebar-cookie"
+import { getIsSidebarOpenFromCookie } from '@/actions/layout/main-sidebar-cookie'
 import { Button } from '@/components/old/Button'
 import { Logo } from '@/components/old/Logo'
 import { SignOutButton } from '@/components/old/Profile'
@@ -98,7 +98,6 @@ export const AppHomePage: FC = () => {
     })
   }, [])
 
-
   return (
     <>
       <AppLayout
@@ -113,4 +112,3 @@ export const AppHomePage: FC = () => {
     </>
   )
 }
-

@@ -201,5 +201,4 @@ const DownloadInstallAuditLog = ({ handleClose }) => {
       </div>
     </>
   )
-  
 }

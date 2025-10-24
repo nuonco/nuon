@@ -1,5 +1,5 @@
 .org-avatar {
-  --slow: 500ms
+  --slow: 500ms;
 }
 
 .org-avatar .enter .status {
@@ -9,7 +9,8 @@
 }
 
 .org-avatar .exit .status {
-  animation: exit-org-status-above var(--duration-fastest) var(--ease-cubic) forwards;
+  animation: exit-org-status-above var(--duration-fastest) var(--ease-cubic)
+    forwards;
 }
 
 @keyframes enter-org-status-above {

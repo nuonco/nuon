@@ -15,7 +15,13 @@ export interface ITime extends Omit<IText, 'role'> {
   alignment?: IToolTip['alignment']
 }
 
-function getDateTime({ time, nanos }: { time?: string, nanos?: number | string | bigint }) {
+function getDateTime({
+  time,
+  nanos,
+}: {
+  time?: string
+  nanos?: number | string | bigint
+}) {
   if (nanos !== undefined && nanos !== null) {
     const ns = typeof nanos === 'bigint' ? nanos : BigInt(nanos)
     // Convert to milliseconds and round to nearest ms
@@ -37,18 +43,20 @@ export const Time: FC<ITime & { useMicro?: boolean }> = ({
   useMicro = false,
   ...props
 }) => {
-  const datetime = useMicro ? DateTime.fromISO(time) : getDateTime({ time, nanos });
+  const datetime = useMicro
+    ? DateTime.fromISO(time)
+    : getDateTime({ time, nanos })
   let formatted: string
 
   if (format === 'relative') {
     formatted = datetime.toRelative() ?? ''
   } else if (format === 'long') {
-    formatted = datetime.toFormat("yyyy-MM-dd HH:mm:ss.SSS")
+    formatted = datetime.toFormat('yyyy-MM-dd HH:mm:ss.SSS')
   } else if (format === 'time-only') {
-    formatted = datetime.toFormat("HH:mm:ss.SSS")
+    formatted = datetime.toFormat('HH:mm:ss.SSS')
   } else {
     // default (old-style): 7/29/2025, 8:21:11:562 PM
-    formatted = datetime.toFormat("M/d/yyyy, h:mm:ss.SSSs a ZZZZ")
+    formatted = datetime.toFormat('M/d/yyyy, h:mm:ss.SSSs a ZZZZ')
   }
 
   const TimeComp = (
@@ -59,7 +67,7 @@ export const Time: FC<ITime & { useMicro?: boolean }> = ({
 
   return format === 'relative' ? (
     <ToolTip
-      tipContent={datetime.toFormat("M/d/yyyy, h:mm:ss:SSS a")}
+      tipContent={datetime.toFormat('M/d/yyyy, h:mm:ss:SSS a')}
       alignment={alignment}
       position={position}
     >
