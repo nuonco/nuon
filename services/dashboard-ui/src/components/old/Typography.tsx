@@ -179,7 +179,8 @@ export const Text: FC<IText> = ({
         'font-strong text-lg': variant === 'med-18',
         'font-strong text-base': variant === 'med-14',
         'font-strong text-xs tracking-wide': variant === 'med-12',
-        'font-strong text-[10px] leading-tight tracking-wide': variant === 'med-8',
+        'font-strong text-[10px] leading-tight tracking-wide':
+          variant === 'med-8',
         'text-sm leading-normal': variant === 'reg-14',
         'text-xs leading-normal tracking-wide': variant === 'reg-12',
         '!font-mono font-normal text-sm leading-loose': variant === 'mono-14',

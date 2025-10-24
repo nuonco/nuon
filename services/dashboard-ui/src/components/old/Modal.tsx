@@ -32,11 +32,14 @@ export const Modal: FC<IModal> = ({
   const [isVisible, setIsVisible] = useState(false)
   const [shouldRender, setShouldRender] = useState(false)
 
-  const onEscape = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose()
-    }
-  }, [onClose])
+  const onEscape = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    },
+    [onClose]
+  )
 
   useEffect(() => {
     document.addEventListener('keydown', onEscape, false)

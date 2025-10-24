@@ -10,7 +10,6 @@ interface HomePageWithModalProps {
 export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
   showModal,
 }) => {
-
   return (
     <>
       <Dashboard isLandingPage>
@@ -28,7 +27,8 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
               for everyone.
             </Text>
             <Text className="!text-lg md:!text-xl !leading-loose">
-              Get started with Nuon by logging in or signing up. You&rsquo;ll be able to create your organization and manage your deployments.
+              Get started with Nuon by logging in or signing up. You&rsquo;ll be
+              able to create your organization and manage your deployments.
             </Text>
             {!showModal && (
               <div className="flex items-center gap-4 mt-4">
@@ -77,4 +77,3 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
     </>
   )
 }
-

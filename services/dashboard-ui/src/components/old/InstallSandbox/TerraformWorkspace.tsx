@@ -141,9 +141,7 @@ export const TerraformWorkspace = async ({
         heading="Terraform state"
         actions={
           <div className="flex items-center gap-4">
-            {lock ? (
-              <UnlockModal workspace={workspace} lock={lock} />
-            ) : null}
+            {lock ? <UnlockModal workspace={workspace} lock={lock} /> : null}
             <BackendModal
               orgId={orgId}
               workspace={workspace}
