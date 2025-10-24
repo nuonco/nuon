@@ -26,10 +26,10 @@ ec2nodeclasses:
 additional_nodepools:
   - name: buildkit
     instance_types:
-      - c5a.8xlarge
+      - c5a.2xlarge
     limits:
-      cpu: 32
-      memory: "62Gi"
+      cpu: 8
+      memory: "16Gi"
     expireAfter: "Never"
     disruption:
       consolidationPolicy: "WhenEmpty"
@@ -38,13 +38,11 @@ additional_nodepools:
   - name: self-hosted-runners
     instance_types:
       - m6a.16xlarge   # 64 vCPU, 256GB - PRIMARY
-      - m6a.24xlarge   # 96 vCPU, 384GB
       - m6i.16xlarge   # Intel alternative
-      - m6i.24xlarge   # Intel alternative
     limits:
       cpu: 500
       memory: "2000Gi"
     expireAfter: "Never"
     disruption:
       consolidationPolicy: "WhenEmpty"
-      consolidateAfter: "30m"
+      consolidateAfter: "15m"

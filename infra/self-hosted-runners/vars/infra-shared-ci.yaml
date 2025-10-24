@@ -48,10 +48,10 @@ scale_sets:
           resources:
             limits:
               cpu: 16000m
-              memory: 55Gi
+              memory: 60Gi
             requests:
               cpu: 13000m
-              memory: 55Gi
+              memory: 60Gi
           volumeMounts:
           - name: work
             mountPath: /home/runner/_work
