@@ -121,54 +121,6 @@ module "wiki-prod" {
   trigger_prefixes                = ["infra/modules/service"]
 }
 
-module "workers-canary-stage" {
-  source = "./modules/workspace"
-
-  name       = "workers-canary-stage"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/workers-canary/infra"
-  vars = {
-    env               = "stage"
-    github_install_id = "41323514"
-  }
-  variable_sets = [
-    "aws-environment-credentials",
-    "slack-webhooks",
-    "api-stage",
-    "canary-azure-stage"
-  ]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
-  trigger_workspaces              = [module.infra-eks-stage-nuon.workspace_id, module.infra-orgs-stage.workspace_id]
-  trigger_prefixes                = ["infra/modules/service"]
-}
-
-module "workers-canary-prod" {
-  source = "./modules/workspace"
-
-  name       = "workers-canary-prod"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/workers-canary/infra"
-  vars = {
-    env               = "prod"
-    github_install_id = "41959553"
-  }
-  variable_sets = [
-    "aws-environment-credentials",
-    "slack-webhooks",
-    "api-prod",
-    "canary-azure-prod",
-  ]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
-  trigger_workspaces              = [module.infra-eks-prod-nuon.workspace_id, module.infra-orgs-prod.workspace_id]
-  trigger_prefixes                = ["infra/modules/service"]
-}
-
 module "workers-executors-prod" {
   source = "./modules/workspace"
 
