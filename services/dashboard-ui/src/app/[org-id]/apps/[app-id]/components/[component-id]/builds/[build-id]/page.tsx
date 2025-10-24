@@ -7,7 +7,6 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
-import { BuildDetails } from '@/components/Components/BuildDetails'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
   getAppById,
@@ -35,6 +34,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
+import { BuildDetails } from '@/components/old/Components/BuildDetails'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getOrgIdFromCookie } from '@/actions/orgs/org-session-cookie'
-import { HomePageWithModal } from '@/components/HomePageWithModal'
-import { AppHomePage } from '@/components/AppHomePage'
+import { HomePageWithModal } from '@/components/old/HomePageWithModal'
+import { AppHomePage } from '@/components/old/AppHomePage'
 import { auth0 } from '@/lib/auth'
 import { getOrgs } from '@/lib'
 
