@@ -45,7 +45,8 @@ export const AppSyncStepContent: FC<AppSyncStepContentProps> = ({
             </Text>
           </div>
           <Text className="text-gray-600 dark:text-gray-400">
-            Your {appName} configuration has been synced and builds are in progress. You can now proceed to create an install.
+            Your {appName} configuration has been synced and builds are in
+            progress. You can now proceed to create an install.
           </Text>
         </div>
       )}
@@ -53,13 +54,13 @@ export const AppSyncStepContent: FC<AppSyncStepContentProps> = ({
       {/* Original Step Instructions - Always shown */}
       <div className={`space-y-3 ${stepComplete ? 'opacity-75' : ''}`}>
         <Text>
-          Now sync your {appName} configuration to make it available for deployment.
+          Now sync your {appName} configuration to make it available for
+          deployment.
         </Text>
         <Text>
-          In addition to syncing your app config, this will trigger
-          builds to package the component source code for deployment.
-          You don&apos;t need to wait for these to finish, and can move on
-          to creating an install.
+          In addition to syncing your app config, this will trigger builds to
+          package the component source code for deployment. You don&apos;t need
+          to wait for these to finish, and can move on to creating an install.
         </Text>
         <CommandBlock command="nuon apps sync" />
       </div>

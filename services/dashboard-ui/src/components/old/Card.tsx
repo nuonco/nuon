@@ -22,7 +22,7 @@ export interface ISection extends React.HTMLAttributes<HTMLDivElement> {
   actions?: React.ReactNode | null
   childrenClassName?: string
   heading?: React.ReactNode
-    headingClassName?: string
+  headingClassName?: string
   isHeadingFixed?: boolean
 }
 

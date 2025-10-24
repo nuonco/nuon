@@ -2,7 +2,12 @@
 
 import React, { type FC, useEffect, useMemo, useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { CaretRightIcon, TimerIcon, CalendarBlankIcon, MinusIcon } from '@phosphor-icons/react'
+import {
+  CaretRightIcon,
+  TimerIcon,
+  CalendarBlankIcon,
+  MinusIcon,
+} from '@phosphor-icons/react'
 import { ActionTriggerType } from '@/components/old/ActionTriggerType'
 import { Table } from '@/components/old/DataTable'
 import { DebouncedSearchInput } from '@/components/old/DebouncedSearchInput'

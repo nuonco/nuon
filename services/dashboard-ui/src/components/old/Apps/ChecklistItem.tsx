@@ -107,4 +107,3 @@ export const ChecklistItem: FC<ChecklistItemProps> = ({
     </div>
   )
 }
-
