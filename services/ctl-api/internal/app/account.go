@@ -9,6 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
@@ -43,6 +44,25 @@ type Account struct {
 	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
 
 	IsEmployee bool `json:"-"`
+}
+
+func (a *Account) Indexes(db *gorm.DB) []migrations.Index {
+
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Account{}, "email"),
+			Columns: []string{
+				"email",
+				"deleted_at",
+			},
+		},
+		{Name: indexes.Name(db, &Account{}, "subject"),
+			Columns: []string{
+				"subject",
+				"deleted_at",
+			},
+		},
+	}
 }
 
 func (a *Account) BeforeCreate(tx *gorm.DB) error {
