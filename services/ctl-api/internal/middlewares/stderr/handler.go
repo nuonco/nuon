@@ -269,15 +269,8 @@ func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string)
 			zap.String("path", c.FullPath()),
 			zap.String("query", c.Request.URL.RawQuery),
 			zap.String("ip", c.ClientIP()),
+			zap.String("request_body", requestBody),
 			zap.String("response_body", responseBody),
-		}
-
-		// Add request body if configured
-		if c.Request.Body != nil && m.cfg.LogRequestBody {
-			body, err := c.GetRawData()
-			if err == nil || len(body) > 0 {
-				fields = append(fields, zap.String("request_body", string(body)))
-			}
 		}
 
 		var msg string
