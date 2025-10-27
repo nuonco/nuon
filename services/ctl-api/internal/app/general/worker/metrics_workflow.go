@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -48,6 +50,18 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 		"clickhouse_tables": func(ctx workflow.Context) error {
 			return w.writeCHTableMetrics(ctx)
 		},
+		"clickhouse_pending_inserts": func(ctx workflow.Context) error {
+			return w.writeCHPendingInserts(ctx)
+		},
+		"clickhouse_parts_per_partitions": func(ctx workflow.Context) error {
+			return w.writeCHPartsPerPartition(ctx)
+		},
+		"clickhouse_parts_rows_stats": func(ctx workflow.Context) error {
+			return w.writeCHPartRowStats(ctx)
+		},
+		"clickhouse_parts_active_stats": func(ctx workflow.Context) error {
+			return w.writeCHPartStats(ctx)
+		},
 		"temporal_orgs": func(ctx workflow.Context) error {
 			return w.temporalNamespaceMetrics(ctx, "orgs")
 		},
@@ -73,6 +87,85 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 			l.Error("error executing metrics step", zap.String("name", name))
 			return errors.Wrap(err, "unable to execute step "+name)
 		}
+	}
+
+	return nil
+}
+
+func (w *Workflows) writeCHPendingInserts(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true", "db_type": "ch"}
+
+	insert, err := activities.AwaitGetCHPendingInserts(ctx, activities.GetCHPendingInsertsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get pending inserts")
+	}
+
+	for _, i := range insert {
+		w.mw.Gauge(ctx, "pending_inserts_count",
+			float64(i.Queries),
+			metrics.ToTags(generics.MergeMap(map[string]string{
+				"node": fmt.Sprintf("%d", i.N),
+			}, defaultTags))...)
+	}
+
+	return nil
+}
+
+func (w *Workflows) writeCHPartsPerPartition(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true", "db_type": "ch"}
+
+	partitions, err := activities.AwaitGetCHPartsPerPartition(ctx, activities.GetCHPartsPerPartitionRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get partition metrics")
+	}
+	for _, partition := range partitions {
+		w.mw.Gauge(ctx, "parts_per_partition", float64(partition.PartsPerPartition), metrics.ToTags(generics.MergeMap(map[string]string{
+			"table_name": partition.Table,
+			"partition":  partition.PartitionID,
+		}, defaultTags))...)
+	}
+
+	return nil
+}
+
+func (w *Workflows) writeCHPartRowStats(ctx workflow.Context) error {
+	// currently, we only query this stat for runner_heart_beat_table
+	defaultTags := map[string]string{"general": "true", "db_type": "ch", "table": "runner_heart_beats"}
+
+	stats, err := activities.AwaitGetCHRowsPerPartStats(ctx, activities.GetCHPartStatisticsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get partition metrics")
+	}
+
+	for _, stat := range stats {
+		w.mw.Gauge(ctx, "num_parts_created", float64(stat.NumPartsCreated), metrics.ToTags(defaultTags)...)
+
+		w.mw.Gauge(ctx, "min_rows_per_part", float64(stat.MinRowsPerPart), metrics.ToTags(defaultTags)...)
+
+		w.mw.Gauge(ctx, "avg_rows_per_part", float64(stat.AvgRowsPerPart), metrics.ToTags(defaultTags)...)
+
+		w.mw.Gauge(ctx, "max_rows_per_part", float64(stat.MaxRowsPerPart), metrics.ToTags(defaultTags)...)
+	}
+
+	return nil
+}
+
+func (w *Workflows) writeCHPartStats(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true", "db_type": "ch"}
+
+	stats, err := activities.AwaitGetCHActivePartStats(ctx, activities.GetCHActivePartStatsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get partition metrics")
+	}
+
+	for _, stat := range stats {
+		w.mw.Gauge(ctx, "levels", float64(stat.Level), metrics.ToTags(generics.MergeMap(map[string]string{
+			"part_name": stat.Name,
+		}, defaultTags))...)
+
+		w.mw.Gauge(ctx, "rows", float64(stat.Rows), metrics.ToTags(generics.MergeMap(map[string]string{
+			"part_name": stat.Name,
+		}, defaultTags))...)
 	}
 
 	return nil
@@ -124,7 +217,7 @@ func (w *Workflows) temporalNamespaceMetrics(ctx workflow.Context, ns string) er
 
 	w.mw.Gauge(ctx, "eventloops.count",
 		float64(m.EventLoops),
-		metrics.ToTags(generics.MergeMap(map[string]string{}, defaultTags))...)
+		metrics.ToTags(defaultTags)...)
 
 	w.mw.Gauge(ctx, "workflows.count",
 		float64(m.AllWorkflows),
@@ -134,7 +227,7 @@ func (w *Workflows) temporalNamespaceMetrics(ctx workflow.Context, ns string) er
 
 	w.mw.Gauge(ctx, "eventloops.expected_count",
 		float64(m.ExpectedEventLoops),
-		metrics.ToTags(generics.MergeMap(map[string]string{}, defaultTags))...)
+		metrics.ToTags(defaultTags)...)
 
 	return nil
 }
