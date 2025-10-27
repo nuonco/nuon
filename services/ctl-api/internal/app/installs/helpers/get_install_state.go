@@ -17,7 +17,7 @@ import (
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
-func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool) (*state.State, error) {
+func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) {
 	es, err := h.getInstallStateFromDB(ctx, installID)
 	if err == nil {
 		return es, nil
@@ -58,7 +58,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 			return errors.Wrap(err, "unable to get install")
 		}
 
-		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
+		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, skipVersionCheck)
 		if err != nil {
 			return errors.Wrap(err, "unable to get app config")
 		}
