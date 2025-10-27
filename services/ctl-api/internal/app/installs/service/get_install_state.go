@@ -29,7 +29,7 @@ import (
 // @Router					/v1/installs/{install_id}/state [get]
 func (s *service) GetInstallState(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	is, err := s.helpers.GetInstallState(ctx, installID, true)
+	is, err := s.helpers.GetInstallState(ctx, installID, true, true)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
 		return
