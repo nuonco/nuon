@@ -21,11 +21,22 @@ func (w *Workflows) RerunFlow(ctx workflow.Context, sreq signals.RequestSignal) 
 		ExecFn:     w.getExecuteFlowExecFn(sreq),
 	}
 
-	return fc.Rerun(ctx, sreq.EventLoopRequest, flow.RerunInput{
-		FlowID:       sreq.FlowID,
-		StepID:       sreq.RerunConfiguration.StepID,
-		StalePlan:    sreq.RerunConfiguration.StalePlan,
-		RePlanStepID: sreq.RerunConfiguration.RePlanStepID,
-		Operation:    flow.RerunOperation(sreq.RerunConfiguration.StepOperation),
+	err := fc.Rerun(ctx, sreq.EventLoopRequest, flow.RerunInput{
+		ContinueFromIdx: sreq.StartFromStepIdx,
+		FlowID:          sreq.FlowID,
+		StepID:          sreq.RerunConfiguration.StepID,
+		StalePlan:       sreq.RerunConfiguration.StalePlan,
+		RePlanStepID:    sreq.RerunConfiguration.RePlanStepID,
+		Operation:       flow.RerunOperation(sreq.RerunConfiguration.StepOperation),
 	})
+	if err != nil {
+		cerr, ok := err.(*flow.ContinueAsNewErr)
+		if ok && cerr != nil {
+			sreq.StartFromStepIdx = cerr.StartFromStepIdx
+			return workflow.NewContinueAsNewError(ctx, w.RerunFlow, sreq)
+		}
+		return err
+	}
+
+	return nil
 }
