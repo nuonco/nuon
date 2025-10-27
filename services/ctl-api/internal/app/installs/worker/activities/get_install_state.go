@@ -17,7 +17,7 @@ type GetInstallStateRequest struct {
 // @by-id InstallID
 // @timeout 10s
 func (a *Activities) GetInstallState(ctx context.Context, req *GetInstallStateRequest) (*state.State, error) {
-	state, err := a.helpers.GetInstallState(ctx, req.InstallID, false)
+	state, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
@@ -28,7 +28,7 @@ func (a *Activities) GetInstallState(ctx context.Context, req *GetInstallStateRe
 		})
 	}
 
-	state, err = a.helpers.GetInstallState(ctx, req.InstallID, false)
+	state, err = a.helpers.GetInstallState(ctx, req.InstallID, false, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install state")
 	}

@@ -47,7 +47,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 		return
 	}
 
-	installState, err := s.helpers.GetInstallState(ctx, installID, true)
+	installState, err := s.helpers.GetInstallState(ctx, installID, true, true)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
 		return
