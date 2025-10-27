@@ -23,7 +23,13 @@
           },
           {
             "group": "Resources",
-            "pages": ["configuration-files", "cli", "dashboard-ui","nuon-api", "sdks"]
+            "pages": [
+              "configuration-files",
+              "cli",
+              "dashboard-ui",
+              "nuon-api",
+              "sdks"
+            ]
           },
           {
             "group": "Platform Support",
@@ -40,6 +46,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/023-drift-workflow-improvements",
           "updates/022-nuon-cli-github-actions",
           "updates/021-drift-detection",
           "updates/020-break-glass-actions",
