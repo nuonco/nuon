@@ -12,6 +12,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+const (
+	workflowStepBatchSize = 5
+)
+
 var FlowCancellationErr = fmt.Errorf("workflow cancelled")
 
 func (c *WorkflowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Workflow) error {
@@ -39,6 +43,11 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 			}
 		}
 		if err == nil {
+			nextIdx := i + 1
+			if nextIdx < len(steps) && nextIdx-startingStepNumber == workflowStepBatchSize {
+				// after a batch of steps, continue as new to avoid workflow history size limits
+				return NewContinueAsNewErr(nextIdx)
+			}
 			continue
 		}
 
