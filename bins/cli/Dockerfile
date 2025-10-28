@@ -132,15 +132,27 @@ ARG VERSION
 ARG SERVICE=cli
 ARG BIN_NAME=nuon
 
+# Install p7zip for compression
+RUN yum install -y p7zip p7zip-plugins && yum clean all
+
 COPY --from=artifacts-build / /artifacts/
 COPY install.sh /artifacts/install.sh
 
+# Create 7z compressed versions of all binaries (skip install.sh)
+RUN cd /artifacts && \
+    for file in ${BIN_NAME}_*; do \
+      echo "Compressing $file with 7z..." && \
+      7za a -t7z -mx=9 "${file}.7z" "$file"; \
+    done
+
+# Generate checksums for both original and compressed files
 RUN cd /artifacts && sha256sum * > checksums.txt
 
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
     echo "Verifying AWS credentials" && \
     aws sts get-caller-identity
 
+# Upload both original binaries and .7z compressed versions
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
     for file in $(ls /artifacts/ | grep -v "checksums.txt"); do \
     echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/$file" && \
@@ -161,16 +173,29 @@ ARG S3_BUCKET_NAME=nuon-artifacts/cli
 ARG VERSION
 ARG BIN_NAME=nuon
 
+# Install p7zip for compression
+RUN yum install -y p7zip p7zip-plugins && yum clean all
+
 COPY --from=build-linux-amd64 /out/${BIN_NAME}_linux_amd64 /artifacts/${BIN_NAME}_linux_amd64
+
+# Create 7z compressed version
+RUN cd /artifacts && \
+    echo "Compressing ${BIN_NAME}_linux_amd64 with 7z..." && \
+    7za a -t7z -mx=9 "${BIN_NAME}_linux_amd64.7z" "${BIN_NAME}_linux_amd64"
+
+# Generate checksums for both original and compressed files
 RUN sha256sum /artifacts/* > /artifacts/checksums.txt
 
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
     echo "Verifying AWS credentials" && \
     aws sts get-caller-identity
 
+# Upload both original and compressed binary
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
     echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64" && \
-    aws s3 cp /artifacts/${BIN_NAME}_linux_amd64 "s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64"
+    aws s3 cp /artifacts/${BIN_NAME}_linux_amd64 "s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64" && \
+    echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64.7z" && \
+    aws s3 cp /artifacts/${BIN_NAME}_linux_amd64.7z "s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64.7z"
 
 RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
     echo "Uploading checksums to s3://$S3_BUCKET_NAME/$VERSION/checksums.txt" && \
