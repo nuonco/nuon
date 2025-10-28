@@ -13,7 +13,7 @@ import { PaginationProvider } from '@/providers/pagination-provider'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/utils/classnames'
 import { DebouncedSearchInput } from './DeboundedSearch'
-import { EmptyState } from './EmptyState'
+import { EmptyState, type IEmptyState } from './EmptyState'
 import { Icon } from './Icon'
 import { Pagination, type IPagination } from './Pagination'
 import { Skeleton } from './Skeleton'
@@ -28,6 +28,7 @@ export interface ITable<TData extends object> {
   columns: ColumnDef<TData, any>[]
   data: TData[]
   emptyMessage?: string
+  emptyStateProps?: Omit<IEmptyState, 'variant'>
   enableSorting?: boolean
   filterActions?: ReactNode
   isLoading?: boolean
@@ -41,6 +42,7 @@ export function TableBase<TData extends object>({
   columns,
   data,
   emptyMessage = 'No data found',
+  emptyStateProps = { emptyMessage: 'No data found' },
   enableSorting = true,
   filterActions,
   isLoading = false, // default isLoading to false
@@ -76,7 +78,7 @@ export function TableBase<TData extends object>({
     ))
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6">
+    <div className="flex flex-col gap-4 md:gap-6 w-full">
       <div className="flex flex-row flex-wrap justify-between">
         <DebouncedSearchInput placeholder={searchPlaceholder} />
         {filterActions ? (
@@ -136,14 +138,14 @@ export function TableBase<TData extends object>({
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="text-center py-8">
-                  <EmptyState variant="table" emptyMessage={emptyMessage} />
+                  <EmptyState variant="table" {...emptyStateProps} />
                 </td>
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="py-3 px-4 border-t">
+                    <td key={cell.id} className="py-3 px-4 border-t align-top">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -155,9 +157,11 @@ export function TableBase<TData extends object>({
             )}
           </tbody>
         </table>
-        <div className="flex items-center justify-center w-full border-t py-2">
-          <Pagination {...pagination} />
-        </div>
+        {pagination?.hasNext || pagination?.offset !== 0 ? (
+          <div className="flex items-center justify-center w-full border-t py-2">
+            <Pagination {...pagination} />
+          </div>
+        ) : null}
       </div>
     </div>
   )

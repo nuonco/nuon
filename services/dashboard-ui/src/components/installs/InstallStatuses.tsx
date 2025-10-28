@@ -169,3 +169,21 @@ export const InstallStatusesContainer = (
   const { install } = useInstall()
   return <InstallStatuses install={install} {...props} />
 }
+
+export const SimpleInstallStatuses = ({ install }: { install: TInstall }) => {
+  return (
+    <div className={cn('flex items-center gap-4')}>
+      <LabeledValue label="Runner">
+        <Status status={install.sandbox_status} variant="badge" />
+      </LabeledValue>
+
+      <LabeledValue label="Sandbox">
+        <Status status={install.sandbox_status} variant="badge" />
+      </LabeledValue>
+
+      <LabeledValue label="Components">
+        <Status status={install.composite_component_status} variant="badge" />
+      </LabeledValue>
+    </div>
+  )
+}

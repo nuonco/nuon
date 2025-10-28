@@ -23,7 +23,7 @@ export interface IModal
   modalKey?: string
   onClose?: () => void
   primaryActionTrigger?: IButtonAsButton
-  size?: 'default' | 'half' | 'full'
+  size?: 'default' | 'half' | '3/4' | 'full'
   triggerButton?: Omit<IButtonAsButton, 'onClick'>
 }
 
@@ -71,6 +71,7 @@ export const ModalBase = ({
             {
               'max-w-xl': size === 'default',
               'max-w-1/2': size === 'half',
+              'max-w-3/4': size === '3/4',
             },
             className
           )}
@@ -144,15 +145,11 @@ export const Modal = ({ triggerButton, ...props }: IModal) => {
     }
   }, [])
 
-  return (
-    <>
-      {triggerButton ? (
-        <Button onClick={handleAddModal} {...triggerButton}>
-          {triggerButton.children}
-        </Button>
-      ) : (
-        modal
-      )}
-    </>
+  return triggerButton ? (
+    <Button onClick={handleAddModal} {...triggerButton}>
+      {triggerButton.children}
+    </Button>
+  ) : (
+    modal
   )
 }

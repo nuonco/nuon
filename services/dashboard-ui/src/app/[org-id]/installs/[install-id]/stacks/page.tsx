@@ -6,7 +6,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { getInstallById, getOrgById } from '@/lib'
 import { TPageProps } from '@/types'
-import { Stacks } from './stacks'
+import { InstallStacksTable, InstallStacksTableSkeleton } from './stacks-table'
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -21,6 +21,7 @@ import {
   Text as OldText,
   Time,
 } from '@/components'
+import { Stacks } from './stacks'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -56,12 +57,8 @@ export default async function InstallStack({ params }: TInstallPageProps) {
       </HeadingGroup>
 
       <OldErrorBoundary fallbackRender={ErrorFallback}>
-        <Suspense
-          fallback={
-            <Loading loadingText="Loading components..." variant="page" />
-          }
-        >
-          <Stacks installId={install?.id} orgId={orgId} />
+        <Suspense fallback={<InstallStacksTableSkeleton />}>
+          <InstallStacksTable installId={install?.id} orgId={orgId} />
         </Suspense>
       </OldErrorBoundary>
     </PageSection>

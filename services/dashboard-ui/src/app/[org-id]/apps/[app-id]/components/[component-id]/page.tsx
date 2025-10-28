@@ -6,6 +6,7 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
+import { ComponentType } from "@/components/components/ComponentType"
 import { PageSection } from '@/components/layout/PageSection'
 
 import { getAppById, getComponentById, getOrgById } from '@/lib'
@@ -68,9 +69,12 @@ export default async function AppComponent({ params, searchParams }) {
       <div className="p-6 border-b flex justify-between">
         <HeadingGroup>
           <BackLink className="mb-6" />
-          <Text variant="base" weight="strong">
+          <span className="flex items-center gap-2">
+            <ComponentType type={component?.type} displayVariant="icon-only" />
+            <Text variant="base" weight="strong">
             {component?.name}
           </Text>
+          </span>
           <ID>{component.id}</ID>
         </HeadingGroup>
 

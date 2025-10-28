@@ -2,6 +2,7 @@
 
 import { DateTime, type DateTimeFormatOptions } from 'luxon'
 import { Text, type IText } from './Text'
+import { Tooltip, type ITooltip } from './Tooltip'
 
 const SHORT_DATETIME_FORMAT: DateTimeFormatOptions = {
   year: 'numeric',
@@ -42,6 +43,7 @@ export interface ITime extends Omit<IText, 'role'> {
     | 'log-datetime'
   time?: string
   seconds?: number
+  tooltipProps?: ITooltip
 }
 
 export const Time = ({
@@ -80,7 +82,13 @@ export const Time = ({
     }
   }
 
-  return (
+  return format === 'relative' ? (
+    <Tooltip tipContent={datetime.toLocaleString(LONG_DATETIME_FORMAT)}>
+      <Text {...props} role="time">
+        {getFormattedTime()}
+      </Text>
+    </Tooltip>
+  ) : (
     <Text {...props} role="time">
       {getFormattedTime()}
     </Text>
