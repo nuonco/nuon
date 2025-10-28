@@ -69,16 +69,40 @@ export const ComponentTypeFilterDropdown: React.FC<
         )
 
   const setTypesInUrl = (types: TComponentConfigTypeText[]) => {
+    // If this code might run during SSR, bail out since it relies on window/router
+    if (typeof window === 'undefined') return
+
     const params = new URLSearchParams(window.location.search)
-    // If all types are selected, remove the search param (API default)
-    if (types.length === FILTER_OPTIONS.length) {
+
+    // Normalize existing and new types to strings for reliable comparison
+    const existingTypes = params.get('types')
+      ? params.get('types')!.split(',')
+      : []
+    const newTypes = types.map(String)
+
+    // Compare as sets (order doesn't matter)
+    const setsEqual = (a: string[], b: string[]) => {
+      if (a.length !== b.length) return false
+      const s = new Set(a)
+      return b.every((x) => s.has(x))
+    }
+
+    // Only reset pagination/offset when the selected types actually change
+    if (!setsEqual(existingTypes, newTypes)) {
+      params.delete('offset')
+    }
+
+    // If all types are selected, remove the param (API default)
+    if (newTypes.length === FILTER_OPTIONS.length) {
       params.delete('types')
-    } else if (types.length > 0) {
-      params.set('types', types.join(','))
+    } else if (newTypes.length > 0) {
+      params.set('types', newTypes.join(','))
     } else {
       params.delete('types')
     }
-    router.replace(`?${params.toString()}`)
+
+    const query = params.toString()
+    router.replace(`${window.location.pathname}${query ? `?${query}` : ''}`)
   }
 
   // Checkbox toggle handler

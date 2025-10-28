@@ -12,79 +12,65 @@ import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { type IPagination } from '@/components/common/Pagination'
-import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
+import { ComponentDependencies } from '@/components/components/ComponentDependencies'
 import { ComponentType } from '@/components/components/ComponentType'
-import { useInstall } from '@/hooks/use-install'
+import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
-import type { TInstallComponent } from '@/types'
+import type { TComponent } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 
 // NOTE: old stuff
-
 import { ComponentTypeFilterDropdown } from '@/components/old/Components/NewComponentTypeFilter'
 
-type TComponentDeps = {
-  id: string
-  component_id: string
-  dependencies: string[]
-}
-
-export type InstallComponentRow = {
+export type TComponentRow = {
+  buildStatus: ReactNode
   componentId: string
   componentName: string
   componentType: ReactNode
-  deployStatus: ReactNode
-  driftStatus: ReactNode
   href: string
   dependencies: ReactNode
 }
 
-function parseInstallComponentSummaryToTableData(
-  components: TInstallComponent[],
-  deps: TComponentDeps[],
+function parseComponentToTableData(
+  components: TComponent[],
   orgId: string,
-  installId: string
-): InstallComponentRow[] {
+  appId: string
+): TComponentRow[] {
   return components.map((component) => {
-    const depIndex = deps?.findIndex((dep) => dep?.id === component?.id)
-
     return {
-      componentId: component.component_id,
-      componentName: component.component?.name,
+      componentId: component.id,
+      componentName: component.name,
       componentType: (
         <ComponentType
-          type={component?.component?.type}
+          type={component.type}
           variant="subtext"
           displayVariant="abbr"
         />
       ),
-      deployStatus: (
+      buildStatus: (
         <Tooltip
           position="top"
           tipContent={
-            toSentenceCase(component.status_v2?.status_human_description) ||
-            'Status unknown'
+            toSentenceCase(component.status_description) || 'Status unknown'
           }
         >
-          <Status variant="badge" status={component.status_v2?.status} />
+          <Status variant="badge" status={component.status} />
         </Tooltip>
       ),
-      driftStatus: component?.drifted_object ? (
-        <Status variant="badge" status="drifted" />
+
+      dependencies: component?.dependencies?.length ? (
+        <ComponentDependencies deps={component?.dependencies} />
       ) : (
         <Icon variant="MinusIcon" />
       ),
-      dependencies: (
-        <InstallComponentDependencies deps={deps?.at(depIndex)?.dependencies} />
-      ),
-      href: `/${orgId}/installs/${installId}/components/${component.component_id}`,
+      href: `/${orgId}/apps/${appId}/components/${component.id}`,
     }
   })
 }
 
-const columns: ColumnDef<InstallComponentRow>[] = [
+const columns: ColumnDef<TComponentRow>[] = [
   {
     accessorKey: 'componentName',
     header: 'Component name',
@@ -113,24 +99,16 @@ const columns: ColumnDef<InstallComponentRow>[] = [
   },
   {
     enableSorting: false,
-    accessorKey: 'deployStatus',
-    header: 'Latest deploy',
+    accessorKey: 'buildStatus',
+    header: 'Latest build',
     cell: (info) => (
       <Text className="flex">{info.getValue() as ReactNode}</Text>
     ),
   },
   {
     enableSorting: false,
-    accessorKey: 'driftStatus',
-    header: 'Drifted',
-    cell: (info) => (
-      <Text className="!flex">{info.getValue() as ReactNode}</Text>
-    ),
-  },
-  {
-    enableSorting: false,
     accessorKey: 'href',
-    id: 'action',
+    id: 'href',
     header: '',
     cell: (info) => (
       <Text>
@@ -142,20 +120,18 @@ const columns: ColumnDef<InstallComponentRow>[] = [
   },
 ]
 
-export const InstallComponentsTable = ({
+export const ComponentsTable = ({
   components: initComponents,
-  deps,
   pagination,
   pollInterval = 20000,
   shouldPoll,
 }: {
-  components: TInstallComponent[]
-  deps: TComponentDeps[]
+  components: TComponent[]
   pagination: IPagination
 } & IPollingProps) => {
   const searchParams = useSearchParams()
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { app } = useApp()
   const queryParams = useQueryParams({
     offset: pagination?.offset,
     limit: pagination?.limit,
@@ -163,20 +139,17 @@ export const InstallComponentsTable = ({
     types: searchParams.get('types'),
   })
   const { data: components } = usePolling({
+    dependencies: [queryParams],
     initData: initComponents,
-    path: `/api/orgs/${org.id}/installs/${install.id}/components${queryParams}`,
+    path: `/api/orgs/${org.id}/apps/${app.id}/components${queryParams}`,
     pollInterval,
     shouldPoll,
   })
+
   return (
-    <Table<InstallComponentRow>
+    <Table<TComponentRow>
       columns={columns}
-      data={parseInstallComponentSummaryToTableData(
-        components,
-        deps,
-        org.id,
-        install.id
-      )}
+      data={parseComponentToTableData(components, org.id, app.id)}
       filterActions={<ComponentTypeFilterDropdown />}
       emptyMessage="No components found"
       pagination={pagination}
@@ -185,6 +158,6 @@ export const InstallComponentsTable = ({
   )
 }
 
-export const InstallComponentsTableSkeleton = () => {
+export const ComponentsTableSkeleton = () => {
   return <TableSkeleton columns={columns} skeletonRows={5} />
 }

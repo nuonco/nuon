@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -14,16 +13,15 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Tooltip } from '@/components/common/Tooltip'
 import { type IPagination } from '@/components/common/Pagination'
-import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
-import { ComponentType } from '@/components/components/ComponentType'
+import { Modal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstallStack } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
+import { StackLinks } from './StackLinks'
+import { StackOutputs } from './StackOutputs'
 
 export type TInstallStackRow = {
   versionId: string
@@ -38,7 +36,6 @@ export type TInstallStackRow = {
 function parseInstallStackSummaryToTableData(
   stack: TInstallStack,
   orgId: string,
-  installId: string,
   appId: string
 ): TInstallStackRow[] {
   return stack?.versions.map((version) => {
@@ -60,12 +57,39 @@ function parseInstallStackSummaryToTableData(
           buttonText={<Icon variant="DotsThree" />}
         >
           <Menu>
-            <Button>
-              View links <Icon variant="Link" />
-            </Button>
-            <Button>
-              View outputs <Icon variant="CodeBlock" />
-            </Button>
+            <Modal
+              size="3/4"
+              heading="View stack links"
+              triggerButton={{
+                children: (
+                  <>
+                    View links <Icon variant="Link" />
+                  </>
+                ),
+                isMenuButton: true,
+                variant: 'ghost',
+              }}
+            >
+              <StackLinks
+                quick_link_url={version?.quick_link_url}
+                template_url={version?.template_url}
+              />
+            </Modal>
+            <Modal
+              size="3/4"
+              heading="View stack outputs"
+              triggerButton={{
+                children: (
+                  <>
+                    View outputs <Icon variant="CodeBlock" />
+                  </>
+                ),
+                isMenuButton: true,
+                variant: 'ghost',
+              }}
+            >
+              <StackOutputs runs={version?.runs} />
+            </Modal>
           </Menu>
         </Dropdown>
       ),
@@ -151,12 +175,7 @@ export const InstallStacksTable = ({
   return (
     <Table<TInstallStackRow>
       columns={columns}
-      data={parseInstallStackSummaryToTableData(
-        stack,
-        org.id,
-        install.id,
-        install.app_id
-      )}
+      data={parseInstallStackSummaryToTableData(stack, org.id, install.app_id)}
       emptyMessage="No stack found"
       pagination={pagination}
       searchPlaceholder="Search stack version..."

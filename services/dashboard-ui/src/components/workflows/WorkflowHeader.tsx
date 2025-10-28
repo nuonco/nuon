@@ -116,6 +116,7 @@ export const WorkflowHeader = ({
                       workflowSteps.filter(
                         (s) =>
                           s?.status?.status === 'success' ||
+                          s?.status?.status === 'noop' ||
                           s?.status?.status === 'active' ||
                           s?.status?.status === 'error' ||
                           s?.status?.status === 'approved'

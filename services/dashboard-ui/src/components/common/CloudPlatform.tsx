@@ -4,12 +4,13 @@ import type { TCloudPlatform } from '@/types'
 
 interface ICloudPlatform extends Omit<IText, 'children'> {
   displayVariant?: 'abbr' | 'name' | 'icon-only'
+  iconSize?: string
   platform: TCloudPlatform
 }
 
 interface ICloudPlatformConfig {
   abbr: string
-  icon: React.ReactElement
+  iconVariant: 'AWS' | 'Azure' | 'GCP' | 'Question'
   name: string
 }
 
@@ -19,28 +20,29 @@ const CLOUD_PLATFORM_CONFIG: Record<
 > = {
   aws: {
     abbr: 'AWS',
-    icon: <Icon variant="AWS" aria-hidden="true" />,
+    iconVariant: 'AWS',
     name: 'Amazone Web Services',
   },
   azure: {
     abbr: 'Azure',
-    icon: <Icon variant="Azure" aria-hidden="true" />,
+    iconVariant: 'Azure',
     name: 'Micosoft Azure',
   },
   gcp: {
     abbr: 'GCP',
-    icon: <Icon variant="GCP" aria-hidden="true" />,
+    iconVariant: 'GCP',
     name: 'Google Cloud',
   },
   unknown: {
     abbr: 'Unknown',
-    icon: <Icon variant="Question" aria-hidden="true" />,
+    iconVariant: 'Question',
     name: 'Unknown',
   },
 } as const
 
 export const CloudPlatform = ({
   displayVariant = 'abbr',
+  iconSize,
   platform,
   ...props
 }: ICloudPlatform) => {
@@ -50,11 +52,11 @@ export const CloudPlatform = ({
 
   return (
     <Text
-      className="flex items-center gap-2 text-nowrap"
+      className="!flex items-center gap-2 text-nowrap"
       {...props}
       title={isIconOnly ? config.name : undefined}
     >
-      {config.icon}
+      <Icon variant={config?.iconVariant} aria-hidden="true" size={iconSize} />
       {!isIconOnly && (
         <span>{displayVariant === 'name' ? config.name : config.abbr}</span>
       )}
