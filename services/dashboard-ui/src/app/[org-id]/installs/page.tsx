@@ -4,17 +4,20 @@ import { Suspense } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { InstallsTableSkeleton } from "@/components/installs/InstallsTable";
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { Installs } from './installs'
+import { InstallsTable } from './installs-table'
+
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import { DashboardContent, ErrorFallback, Loading, Section } from '@/components'
+import { Installs } from './installs'
 
 type TInstallsPageProps = TPageProps<'org-id'>
 
@@ -75,10 +78,10 @@ export default async function InstallsPage({
           >
             <Suspense
               fallback={
-                <Loading variant="page" loadingText="Loading installs..." />
+                <InstallsTableSkeleton />
               }
             >
-              <Installs
+              <InstallsTable
                 orgId={orgId}
                 offset={sp['offset'] || '0'}
                 q={sp['q'] || ''}

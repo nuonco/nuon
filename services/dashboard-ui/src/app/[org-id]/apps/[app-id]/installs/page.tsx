@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { getAppById, getOrgById } from '@/lib'
-import { AppInstalls } from './installs'
+import { InstallsTable, InstallsTableSkeleton } from './installs-table'
 
 // NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   AppCreateInstallButton,
   AppPageSubNav,
@@ -17,6 +18,7 @@ import {
   Loading,
   Section,
 } from '@/components'
+import { AppInstalls } from './installs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
@@ -48,14 +50,9 @@ export default async function AppInstallsPage({ params, searchParams }) {
       </HeadingGroup>
 
       {/* old layout stuff */}
-      <ErrorBoundary fallbackRender={ErrorFallback}>
-        <Suspense
-          fallback={
-            <Loading variant="page" loadingText="Loading installs..." />
-          }
-        >
-          <AppInstalls
-            app={app}
+      <ErrorBoundary fallback={<>Error loading app installs</>}>
+        <Suspense fallback={<InstallsTableSkeleton />}>
+          <InstallsTable
             appId={appId}
             orgId={orgId}
             offset={sp['offset'] || '0'}
@@ -82,7 +79,7 @@ export default async function AppInstallsPage({ params, searchParams }) {
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <Section>
-        <ErrorBoundary fallbackRender={ErrorFallback}>
+        <OldErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
               <Loading variant="page" loadingText="Loading installs..." />
@@ -96,7 +93,7 @@ export default async function AppInstallsPage({ params, searchParams }) {
               q={sp['q'] || ''}
             />
           </Suspense>
-        </ErrorBoundary>
+        </OldErrorBoundary>
       </Section>
     </DashboardContent>
   )

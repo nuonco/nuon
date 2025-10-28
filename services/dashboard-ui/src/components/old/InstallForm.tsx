@@ -6,6 +6,8 @@ import { useUser } from '@auth0/nextjs-auth0'
 import { CheckCircleIcon, CubeIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/old/Button'
 import { CodeViewer } from '@/components/old/Code'
+import { Link } from '@/components/old/Link'
+import { Empty } from '@/components/old/Empty'
 import { CheckboxInput, Input, RadioInput } from '@/components/old/Input'
 import { SpinnerSVG, Loading } from '@/components/old/Loading'
 import { Notice } from '@/components/old/Notice'
@@ -87,7 +89,7 @@ export const InstallForm: FC<IInstallForm> = ({
     <>
       <form
         className={classNames(
-          'min-h-[600px] flex-auto flex flex-col gap-8 justify-between focus:outline-none relative pt-6'
+          'flex-auto flex flex-col gap-8 justify-between focus:outline-none relative pt-6'
         )}
         onKeyDown={handleTabChange}
         ref={formRef}
@@ -323,17 +325,28 @@ const InputConfigs: FC<{
 }> = ({ inputConfig, install }) => {
   return (
     <>
-      {inputConfig?.input_groups
-        ? inputConfig?.input_groups
-            ?.sort((a, b) => a?.index - b.index)
-            ?.map((group) => (
-              <InputGroupFields
-                key={group.id}
-                groupInputs={group}
-                install={install}
-              />
-            ))
-        : null}
+      {inputConfig?.input_groups ? (
+        inputConfig?.input_groups
+          ?.sort((a, b) => a?.index - b.index)
+          ?.map((group) => (
+            <InputGroupFields
+              key={group.id}
+              groupInputs={group}
+              install={install}
+            />
+          ))
+      ) : install ? (
+        <div className="flex flex-col items-center ml-auto mr-40">
+          <Empty
+            variant="diagram"
+            emptyTitle="Install has no inputs"
+            emptyMessage="Add inputs to your app config."
+          />
+          <Link href="https://docs.nuon.co/concepts/app-inputs" isExternal>
+            Learn more
+          </Link>
+        </div>
+      ) : null}
     </>
   )
 }
