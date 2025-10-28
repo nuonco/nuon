@@ -1,7 +1,7 @@
 ---
 account: prod
 env: prod
-data_volume_storage: 100Gi
+data_volume_storage: 200Gi
 
 logLevel: warning
 
