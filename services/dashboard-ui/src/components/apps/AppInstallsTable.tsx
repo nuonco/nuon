@@ -12,19 +12,17 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { type IPagination } from '@/components/common/Pagination'
+import { SimpleInstallStatuses } from '@/components/installs/InstallStatuses'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstall, TCloudPlatform } from '@/types'
-import { InstallStatuses } from './InstallStatuses'
 
 // NOTE: Old stufff
 import { CreateInstallModal } from '@/components/old/Installs'
 
 export type InstallRow = {
-  actionHref: string
-  appHref: string
-  appName: string
+  actionHref: string  
   installId: string
   name: string
   nameHref: string
@@ -35,12 +33,12 @@ export type InstallRow = {
 
 function parseInstallsToTableData(
   installs: TInstall[],
-  orgId: string
+  orgId: string,
+  appId?: string
 ): InstallRow[] {
   return installs.map((install) => ({
-    actionHref: `/${orgId}/installs/${install.id}`,
-    appHref: `/${install.org_id}/apps/${install.app_id}/configs/${install.app_config_id}`,
-    appName: install?.app?.name,
+    actionHref: `/${orgId}/installs/${install.id}`,    
+    appName: appId ? undefined : install?.app?.name,
     name: install.name,
     nameHref: `/${orgId}/installs/${install.id}`,
     installId: install.id,
@@ -53,7 +51,7 @@ function parseInstallsToTableData(
       />
     ),
     statuses: (
-      <InstallStatuses install={install} isLabelHidden tooltipPosition="top" />
+      <SimpleInstallStatuses install={install} />
     ),
     platform: (
       <CloudPlatform
@@ -79,14 +77,7 @@ const columns: ColumnDef<InstallRow>[] = [
       </span>
     ),
     enableSorting: true,
-  },
-  {
-    accessorKey: 'appName',
-    header: 'App',
-    cell: (info) => (
-      <Link href={info.row.original.appHref}>{info.getValue() as string}</Link>
-    ),
-  },
+  },  
   {
     enableSorting: false,
     accessorKey: 'statuses',
@@ -124,12 +115,14 @@ const columns: ColumnDef<InstallRow>[] = [
   },
 ]
 
-export const InstallsTable = ({
+export const AppInstallsTable = ({
+  appId,
   installs: initInstalls,
   pagination,
   pollInterval = 20000,
   shouldPoll,
 }: {
+  appId?: string
   installs: TInstall[]
   pagination: IPagination
 } & IPollingProps) => {
@@ -142,27 +135,26 @@ export const InstallsTable = ({
   })
   const { data: installs } = usePolling({
     initData: initInstalls,
-    path: `/api/orgs/${org.id}/installs${queryParams}`,
+    path: `/api/orgs/${org.id}/apps/${appId}/installs${queryParams}`,      
     pollInterval,
     shouldPoll,
   })
   return (
     <Table<InstallRow>
       columns={columns}
-      data={parseInstallsToTableData(installs, org.id)}
+      data={parseInstallsToTableData(installs, org.id, appId)}
       emptyStateProps={{
         emptyMessage:
           'An install is an instance of an application running in a customer cloud account.',
         emptyTitle: 'No installs created',
         action: <CreateInstallModal />,
       }}
-      filterActions={<CreateInstallModal />}
       pagination={pagination}
       searchPlaceholder="Search install name..."
     />
   )
 }
 
-export const InstallsTableSkeleton = () => {
+export const AppInstallsTableSkeleton = () => {
   return <TableSkeleton columns={columns} skeletonRows={5} />
 }

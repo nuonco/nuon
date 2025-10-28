@@ -1,27 +1,25 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getComponents } from '@/lib'
+import { getInstallActionsLatestRuns } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
   request: NextRequest,
-  { params }: TRouteProps<'orgId' | 'appId'>
+  { params }: TRouteProps<'orgId' | 'installId'>
 ) {
-  const { appId, orgId } = await params
+  const { installId, orgId } = await params
   const { searchParams } = new URL(request.url)
   const limit = searchParams.get('limit') || undefined
   const offset = searchParams.get('offset') || undefined
   const q = searchParams.get('q') || undefined
-  const types = searchParams.get('types') || undefined
-  const component_ids = searchParams.get('component_ids') || undefined
+  const trigger_types = searchParams.get('trigger_types') || undefined
 
-  const response = await getComponents({
-    appId,
+  const response = await getInstallActionsLatestRuns({
+    installId,
     orgId,
     limit,
     offset,
     q,
-    types,
-    component_ids,
+    trigger_types,
   })
   return NextResponse.json(response)
 }

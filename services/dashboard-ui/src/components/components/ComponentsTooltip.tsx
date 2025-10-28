@@ -3,14 +3,35 @@ import {
   type TContextTooltipItem,
 } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
-import type { TInstallComponent } from '@/types'
+import type { TComponent, TInstallComponent } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
+
+export function getContextTooltipItemsFromComponents(
+  components: TComponent[],
+  pathname: string
+): TContextTooltipItem[] {
+  return components?.map((comp) => ({
+    id: comp?.id,
+    href: `${pathname}/${comp?.id}`,
+    leftContent: (
+      <Status
+        status={comp?.status}
+        isWithoutText
+        variant="timeline"
+        iconSize={16}
+      />
+    ),
+    title: comp?.name,
+    subtitle: toSentenceCase(comp?.status),
+  }))
+}
+
 
 export function getContextTooltipItemsFromInstallComponents(
   components: TInstallComponent[],
   pathname: string
 ): TContextTooltipItem[] {
-  return components.map((comp) => ({
+  return components?.map((comp) => ({
     id: comp?.component_id,
     href: `${pathname}/${comp?.component_id}`,
     leftContent: (

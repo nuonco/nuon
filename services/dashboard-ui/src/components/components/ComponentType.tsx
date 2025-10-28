@@ -65,7 +65,7 @@ export const ComponentType = ({
 
   return (
     <Text
-      className="flex items-center gap-1 text-nowrap"
+      className="!flex items-center gap-1 text-nowrap"
       {...props}
       title={isIconOnly ? config.name : undefined}
     >

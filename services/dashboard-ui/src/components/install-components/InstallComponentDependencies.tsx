@@ -8,10 +8,10 @@ import {
   getContextTooltipItemsFromInstallComponents,
 } from '@/components/components/ComponentsTooltip'
 import { useInstall } from '@/hooks/use-install'
-import type { TComponent, TInstallComponent } from '@/types'
+import type { TInstallComponent } from '@/types'
 
 interface IInstallComponentDependencies {
-  deps: Array<TComponent>
+  deps: string[]
 }
 
 export const InstallComponentDependencies = ({
@@ -20,7 +20,7 @@ export const InstallComponentDependencies = ({
   const pathname = usePathname()
   const { install } = useInstall()
 
-  const depIds = new Set(deps?.map((d) => d.id) ?? [])
+  const depIds = new Set(deps?.map((d) => d) ?? [])
   const depSummaries = getContextTooltipItemsFromInstallComponents(
     install.install_components.filter((ic) =>
       depIds.has(ic.component_id)
@@ -29,7 +29,7 @@ export const InstallComponentDependencies = ({
   )
 
   return depSummaries?.length === 0 ? (
-    <Icon variant="Minus" />
+    <Icon variant="MinusIcon" />
   ) : (
     <ComponentsTooltip
       title="Total dependencies"
