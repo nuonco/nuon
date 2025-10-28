@@ -35,6 +35,7 @@
         "cross-stack-output-aws_organizations_account.sandbox-ja.id": "cross-stack-output-aws_organizations_accountsandbox-jaid",
         "cross-stack-output-aws_organizations_account.sandbox-jm.id": "cross-stack-output-aws_organizations_accountsandbox-jmid",
         "cross-stack-output-aws_organizations_account.sandbox-mm.id": "cross-stack-output-aws_organizations_accountsandbox-mmid",
+        "cross-stack-output-aws_organizations_account.sandbox-ms.id": "cross-stack-output-aws_organizations_accountsandbox-msid",
         "cross-stack-output-aws_organizations_account.sandbox-nh.id": "cross-stack-output-aws_organizations_accountsandbox-nhid",
         "cross-stack-output-aws_organizations_account.sandbox-pk.id": "cross-stack-output-aws_organizations_accountsandbox-pkid",
         "cross-stack-output-aws_organizations_account.sandbox-rb.id": "cross-stack-output-aws_organizations_accountsandbox-rbid",
@@ -193,6 +194,10 @@
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-mm.id}"
     },
+    "cross-stack-output-aws_organizations_accountsandbox-msid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.sandbox-ms.id}"
+    },
     "cross-stack-output-aws_organizations_accountsandbox-nhid": {
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-nh.id}"
@@ -231,7 +236,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-10-13T21:21:37.839Z"
+      "value": "2025-10-28T15:41:37.913Z"
     }
   },
   "provider": {
@@ -735,6 +740,24 @@
           ]
         },
         "name": "sandbox-mm",
+        "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
+      },
+      "sandbox-ms": {
+        "//": {
+          "metadata": {
+            "path": "org/sandbox-ms",
+            "uniqueId": "sandbox-ms"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+sandbox-ms@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "sandbox-ms",
         "parent_id": "${aws_organizations_organizational_unit.engineers.id}"
       },
       "sandbox-nh": {
@@ -1301,6 +1324,17 @@
         "name": "sandbox-mm-environment-tag-policy",
         "type": "TAG_POLICY"
       },
+      "env_tag_policy_sandbox-ms": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_sandbox-ms",
+            "uniqueId": "env_tag_policy_sandbox-ms"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox-ms\"]}}}}",
+        "name": "sandbox-ms-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
       "env_tag_policy_sandbox-nh": {
         "//": {
           "metadata": {
@@ -1681,6 +1715,16 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-mm.id}",
         "target_id": "${aws_organizations_account.sandbox-mm.id}"
+      },
+      "env_tag_policy_attach_sandbox-ms": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_sandbox-ms",
+            "uniqueId": "env_tag_policy_attach_sandbox-ms"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox-ms.id}",
+        "target_id": "${aws_organizations_account.sandbox-ms.id}"
       },
       "env_tag_policy_attach_sandbox-nh": {
         "//": {
