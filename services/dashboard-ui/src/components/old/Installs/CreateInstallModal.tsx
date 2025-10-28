@@ -23,6 +23,7 @@ export const CreateInstallModal = ({}: ICreateInstallModal) => {
   const [app, selectApp] = useState<TApp | undefined>()
 
   const onClose = () => {
+    selectApp(undefined)
     setIsOpen(false)
   }
 

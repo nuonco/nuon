@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { getAppById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { AppActions } from './actions'
+import { ActionsTable, ActionsTableSkeleton } from './actions-table'
 
 // NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   AppCreateInstallButton,
   AppPageSubNav,
@@ -17,6 +18,7 @@ import {
   Loading,
   Section,
 } from '@/components'
+import { AppActions } from './actions'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 
@@ -51,11 +53,11 @@ export default async function AppActionsPage({
       </HeadingGroup>
 
       {/* old layout stuff */}
-      <ErrorBoundary fallbackRender={ErrorFallback}>
+      <ErrorBoundary fallback={<>Error loading app actions</>}>
         <Suspense
-          fallback={<Loading variant="page" loadingText="Loading actions..." />}
+          fallback={<ActionsTableSkeleton />}
         >
-          <AppActions
+          <ActionsTable
             appId={appId}
             orgId={orgId}
             offset={sp['offset'] || '0'}
@@ -82,7 +84,7 @@ export default async function AppActionsPage({
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <Section childrenClassName="flex flex-auto">
-        <ErrorBoundary fallbackRender={ErrorFallback}>
+        <OldErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
               <Loading variant="page" loadingText="Loading actions..." />
@@ -95,7 +97,7 @@ export default async function AppActionsPage({
               q={sp['q'] || ''}
             />
           </Suspense>
-        </ErrorBoundary>
+        </OldErrorBoundary>
       </Section>
     </DashboardContent>
   )

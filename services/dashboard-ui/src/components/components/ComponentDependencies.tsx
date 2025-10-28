@@ -3,31 +3,37 @@
 import { usePathname } from 'next/navigation'
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
-import { useInstall } from '@/hooks/use-install'
-import type { TComponent, TInstallComponent } from '@/types'
+import { Skeleton } from '@/components/common/Skeleton'
+import { useApp } from '@/hooks/use-app'
+import { useOrg } from '@/hooks/use-org'
+import { useQuery } from '@/hooks/use-query'
+import { useQueryParams } from '@/hooks/use-query-params'
 import {
   ComponentsTooltip,
-  getContextTooltipItemsFromInstallComponents,
+  getContextTooltipItemsFromComponents,
 } from './ComponentsTooltip'
 
 interface IComponentDependencies {
-  deps: Array<TComponent>
+  deps: string[]
 }
 
-// TODO: make this for app component deps
 export const ComponentDependencies = ({ deps }: IComponentDependencies) => {
   const pathname = usePathname()
-  const { install } = useInstall()
+  const { org } = useOrg()
+  const { app } = useApp()
+  const params = useQueryParams({ component_ids: deps.toString() })
+  const { data: components, isLoading } = useQuery({
+    path: `/api/orgs/${org?.id}/apps/${app?.id}/components${params}`,
+  })
 
-  const depIds = new Set(deps?.map((d) => d.id) ?? [])
-  const depSummaries = getContextTooltipItemsFromInstallComponents(
-    install.install_components.filter((ic) =>
-      depIds.has(ic.component_id)
-    ) as TInstallComponent[],
+  const depSummaries = getContextTooltipItemsFromComponents(
+    components,
     pathname
   )
 
-  return depSummaries?.length === 0 ? (
+  return isLoading ? (
+    <Skeleton height="27px" width="33px" />
+  ) : depSummaries?.length === 0 ? (
     <Icon variant="Minus" />
   ) : (
     <ComponentsTooltip

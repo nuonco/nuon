@@ -4,9 +4,11 @@ import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { InstallComponentsTableSkeleton } from "@/components/install-components/InstallComponentsTable";
 import { getInstallById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { InstallComponents } from './components'
+import { InstallComponentsTable } from "./components-table";
+
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -21,6 +23,7 @@ import {
   Text as OldText,
   Time,
 } from '@/components'
+import { InstallComponents } from './components'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -64,7 +67,7 @@ export default async function InstallComponentsPage({
             <Loading loadingText="Loading components..." variant="page" />
           }
         >
-          <InstallComponents
+          <InstallComponentsTable
             install={install}
             installId={install?.id}
             orgId={orgId}
