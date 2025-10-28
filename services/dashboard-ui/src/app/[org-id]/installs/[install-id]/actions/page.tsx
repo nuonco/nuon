@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { InstallActionsTableSkeleton  } from "@/components/actions/InstallActionsTable";
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
@@ -8,7 +9,8 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { getInstallById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { InstallActions } from './actions'
+import { InstallActionsTable } from './actions-table'
+
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -24,6 +26,7 @@ import {
   Text as OldText,
   Time,
 } from '@/components'
+import { InstallActions } from './actions'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -67,11 +70,10 @@ export default async function InstallActionsPage({
           </Text>
         }
       >
-        {/* old page stuff */}
         <Suspense
-          fallback={<Loading variant="page" loadingText="Loading actions..." />}
+          fallback={<InstallActionsTableSkeleton />}
         >
-          <InstallActions
+          <InstallActionsTable
             installId={installId}
             orgId={orgId}
             offset={sp['offset'] || '0'}
@@ -79,7 +81,6 @@ export default async function InstallActionsPage({
             trigger_types={sp['trigger_types'] || ''}
           />
         </Suspense>
-        {/* old page stuff */}
       </ErrorBoundary>
     </PageSection>
   ) : (

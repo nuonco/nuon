@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { getAppById, getAppConfigs, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { AppComponents } from './components'
+import { ComponentsTable, ComponentsTableSkeleton } from './components-table'
 
 // NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   AppCreateInstallButton,
   AppPageSubNav,
@@ -17,6 +18,7 @@ import {
   Loading,
   Section,
 } from '@/components'
+import { AppComponents } from './components'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 
@@ -53,15 +55,10 @@ export default async function AppComponentsPage({
 
       {/* old layout stuff */}
       <div className="flex flex-auto">
-        <ErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading components..." />
-            }
-          >
-            <AppComponents
+        <ErrorBoundary fallback={<>Error with components</>}>
+          <Suspense fallback={<ComponentsTableSkeleton />}>
+            <ComponentsTable
               appId={appId}
-              configId={configs?.at(0)?.id}
               orgId={orgId}
               offset={sp['offset'] || '0'}
               q={sp['q'] || ''}
@@ -89,7 +86,7 @@ export default async function AppComponentsPage({
       meta={<AppPageSubNav appId={appId} orgId={orgId} />}
     >
       <Section childrenClassName="flex flex-auto">
-        <ErrorBoundary fallbackRender={ErrorFallback}>
+        <OldErrorBoundary fallbackRender={ErrorFallback}>
           <Suspense
             fallback={
               <Loading variant="page" loadingText="Loading components..." />
@@ -104,7 +101,7 @@ export default async function AppComponentsPage({
               types={sp['types'] || ''}
             />
           </Suspense>
-        </ErrorBoundary>
+        </OldErrorBoundary>
       </Section>
     </DashboardContent>
   )

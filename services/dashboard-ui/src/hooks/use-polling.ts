@@ -137,7 +137,7 @@ export function usePolling<T = any>({
     }
 
     // fetch wrapper that supports timeout via AbortController
-    const fetchWithTimeout = (input: RequestInfo, init?: RequestInit) => {
+    const fetchWithTimeout = async (input: RequestInfo, init?: RequestInit) => {
       const controller = new AbortController()
       const timeoutId = window.setTimeout(() => controller.abort(), requestTimeout)
       inFlightRef.current = controller
@@ -166,7 +166,7 @@ export function usePolling<T = any>({
         })) as TAPIResponse<T>
 
         if (!mountedRef.current) return
-
+        
         // success
         setIsLoading(false)
         setStatus(res?.status || response.status || 200)
@@ -249,7 +249,7 @@ export function usePolling<T = any>({
     currentDelayRef.current = backoff?.initialDelay ?? 1000
     retryCountRef.current = 0
   }, [initData, backoff?.initialDelay])
-
+  
   return {
     data,
     error,

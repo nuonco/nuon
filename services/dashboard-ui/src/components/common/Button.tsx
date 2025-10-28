@@ -105,6 +105,8 @@ export const Button = forwardRef<
       {
         '!border-primary-600 !hover:!border-primary-600':
           isActive && variant === 'tab',
+        '!p-2 text-sm !leading-none h-8 w-full flex justify-between':
+          isMenuButton,
       },
       className
     )
