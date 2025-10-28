@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-
+import { AppsTableSkeleton } from '@/components/apps/AppsTable'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageLayout } from '@/components/layout/PageLayout'
@@ -10,12 +9,14 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { getOrgById } from '@/lib'
+import { AppsTable } from './apps-table'
 // TODO(nnnat): move segment init script to org dashboard
 import { SegmentAnalyticsSetOrg } from '@/lib/segment-analytics'
-import { Apps } from './apps'
 
 // old layout components
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import { DashboardContent, ErrorFallback, Loading, Section } from '@/components'
+import { Apps } from './apps'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -68,12 +69,8 @@ export default async function AppsPage({ params, searchParams }) {
                   </Text>
                 }
               >
-                <Suspense
-                  fallback={
-                    <Loading variant="page" loadingText="Loading apps..." />
-                  }
-                >
-                  <Apps
+                <Suspense fallback={<AppsTableSkeleton />}>
+                  <AppsTable
                     orgId={orgId}
                     offset={sp['offset'] || '0'}
                     q={sp['q'] || ''}

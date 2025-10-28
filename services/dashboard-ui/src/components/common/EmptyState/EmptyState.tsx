@@ -49,7 +49,7 @@ export const EmptyState = ({
         </Text>
       </span>
 
-      {action ? <div>{action}</div> : null}
+      {action ? <div className="mt-2">{action}</div> : null}
     </div>
   )
 }
