@@ -2,6 +2,8 @@
 
 import { useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
+import { CloudPlatform } from '@/components/common/CloudPlatform'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
@@ -11,11 +13,12 @@ import { type IPagination } from '@/components/common/Pagination'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
-import type { TApp } from '@/types'
+import type { TApp, TCloudPlatform } from '@/types'
 
 export type TAppRow = {
   actionHref: string
   appId: string
+  configVersion: number
   defaultBranch: string
   name: string
   nameHref: string
@@ -25,16 +28,21 @@ export type TAppRow = {
 }
 
 function parseAppsToTableData(apps: TApp[], orgId: string): TAppRow[] {
-  return apps.map((app) => ({
-    actionHref: `/${orgId}/apps/${app.id}`,
-    appId: app.id,
-    defaultBranch: app?.config_repo || 'main',
-    name: app.name,
-    nameHref: `/${orgId}/apps/${app.id}`,
-    platform: app?.runner_config?.cloud_platform || 'aws',
-    sandboxHref: `https://${app?.sandbox_config?.public_git_vcs_config?.repo}`,
-    sandboxName: app.name,
-  }))
+  return apps.map((app) => {
+    const sandbox = app?.sandbox_config?.public_git_vcs_config ||
+      app?.sandbox_config?.connected_github_vcs_config || { repo: undefined }
+    return {
+      actionHref: `/${orgId}/apps/${app.id}`,
+      appId: app.id,
+      configVersion: app?.app_configs?.length,
+      defaultBranch: app?.config_repo || 'main',
+      name: app.name,
+      nameHref: `/${orgId}/apps/${app.id}`,
+      platform: app?.runner_config?.cloud_platform || 'unknown',
+      sandboxHref: `https://${sandbox?.repo}`,
+      sandboxName: sandbox?.repo,
+    }
+  })
 }
 
 const columns: ColumnDef<TAppRow>[] = [
@@ -42,22 +50,33 @@ const columns: ColumnDef<TAppRow>[] = [
     accessorKey: 'name',
     header: 'App name',
     cell: (info) => (
-      <Link href={info.row.original.nameHref}>{info.getValue() as string}</Link>
+      <span>
+        <Text variant="body">
+          <Link href={info.row.original.nameHref}>
+            {info.getValue() as string}
+          </Link>
+        </Text>
+        <ID>{info?.row?.original?.appId}</ID>
+      </span>
     ),
     enableSorting: true,
   },
+  /* {
+   *   accessorKey: 'defaultBranch',
+   *   header: 'Default branch',
+   *   cell: (info) => (
+   *     <Text family="mono" theme="neutral">
+   *       {info.getValue() as string}
+   *     </Text>
+   *   ),
+   *   enableSorting: true,
+   * }, */
   {
-    accessorKey: 'appId',
-    header: 'App ID',
-    cell: (info) => <ID>{info.getValue() as string}</ID>,
-    enableSorting: true,
-  },
-  {
-    accessorKey: 'defaultBranch',
-    header: 'Default branch',
+    accessorKey: 'configVersion',
+    header: 'Config version',
     cell: (info) => (
       <Text family="mono" theme="neutral">
-        {info.getValue() as string}
+        {info.getValue() as number}
       </Text>
     ),
     enableSorting: true,
@@ -66,29 +85,37 @@ const columns: ColumnDef<TAppRow>[] = [
     accessorKey: 'sandboxName',
     header: 'Sandbox',
     cell: (info) => (
-      <Link href={info.row.original.sandboxHref}>
-        {info.getValue() as string}
-      </Link>
+      <Text>
+        <Link href={info.row.original.sandboxHref} isExternal>
+          {info.getValue() as string}
+          <Icon variant="ArrowSquareOutIcon" />
+        </Link>
+      </Text>
     ),
   },
   {
     accessorKey: 'platform',
     header: 'Platform',
     cell: (info) => (
-      <Text className="flex items-center gap-1">
-        {info.getValue() as string}
-      </Text>
+      <CloudPlatform
+        displayVariant="icon-only"
+        iconSize="24"
+        platform={info?.getValue() as TCloudPlatform}
+      />
     ),
     enableSorting: true,
   },
   {
     enableSorting: false,
     accessorKey: 'actionHref',
-    header: 'Action',
+    id: 'action',
+    header: '',
     cell: (info) => (
-      <Link className="text-left" href={info.getValue() as string}>
-        View
-      </Link>
+      <Text>
+        <Link className="text-left" href={info.getValue() as string}>
+          View <Icon variant="CaretRightIcon" />
+        </Link>
+      </Text>
     ),
   },
 ]

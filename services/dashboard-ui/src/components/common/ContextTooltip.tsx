@@ -49,7 +49,7 @@ export const ContextTooltip = ({
         <div className={`${width}`}>
           {title ? (
             <Text
-              className="px-3 py-2 border-b flex items-center justify-between !leading-none"
+              className="px-3 py-2 border-b !flex items-center justify-between !leading-none"
               variant="subtext"
               weight="strong"
             >

@@ -36,7 +36,7 @@ export function LogsProvider({
   const { org } = useOrg()
   const { logStream } = useLogStream()
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
-  const [offset, setOffset] = useState<string>()
+  const [offset, setOffset] = useState<string>()  
   const { data, error, headers, isLoading } = usePolling<TOTELLog[]>({
     path: `/api/orgs/${org.id}/log-streams/${logStream.id}/logs`,
     dependencies: [offset],
@@ -59,7 +59,7 @@ export function LogsProvider({
       data.forEach((log) => logMap.set(log.id, log))
       return Array.from(logMap.values())
     })
-
+    
     const logOffset = headers?.['x-nuon-api-next']
     if (logOffset) {
       setOffset(logOffset)
