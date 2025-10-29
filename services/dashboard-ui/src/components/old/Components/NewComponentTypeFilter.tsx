@@ -5,7 +5,7 @@ import { Funnel } from '@phosphor-icons/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ComponentConfigType } from './ComponentConfigType'
 import { Button } from '@/components/old/Button'
-import { Dropdown } from '@/components/old/Dropdown'
+import { Dropdown } from '@/components/common/Dropdown'
 import { CheckboxInput } from '@/components/old/Input'
 
 type TComponentConfigTypeText =
@@ -186,14 +186,14 @@ export const ComponentTypeFilterDropdown: React.FC<
   ) : (
     <Dropdown
       alignment="right"
-      className="text-sm !font-medium !p-2 h-[32px]"
+      className="!p-2"
       id="logs-filter"
-      text={
+      variant="ghost"
+      buttonText={
         <>
           <Funnel size="14" /> Filter ({selectedTypes.length})
         </>
       }
-      isDownIcon
     >
       <div className="min-w-[200px]">
         <form>
@@ -202,7 +202,7 @@ export const ComponentTypeFilterDropdown: React.FC<
           </div>
           <hr />
           <Button
-            className="w-full !rounded-t-none !text-base flex items-center gap-2 pl-4"
+            className="w-full !rounded-t-none !text-sm flex items-center gap-2 pl-4"
             type="button"
             onClick={handleShowAll}
             variant="ghost"
