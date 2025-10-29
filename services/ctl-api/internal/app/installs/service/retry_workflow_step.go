@@ -35,13 +35,12 @@ func (c *RetryWorkflowStepResponse) Validate(v *validator.Validate) error {
 // @Description.markdown	retry_workflow_by_id.md
 // @Param					workflow_id	path	string					true	"workflow ID"
 // @Param					step_id		path	string					true	"step ID"
-// @Param					req			body	RetryWorkflowStepResponse	true	"Input"
+// @Param					req			body	RetryWorkflowStepRequest	true	"Input"
 // @Tags					installs
 // @Accept					json
 // @Produce					json
 // @Security				APIKey
 // @Security				OrgID
-// @Deprecated      true
 // @Failure					400	{object}	stderr.ErrResponse
 // @Failure					401	{object}	stderr.ErrResponse
 // @Failure					403	{object}	stderr.ErrResponse

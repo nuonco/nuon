@@ -14,7 +14,7 @@ import (
 // @Summary					get a workflow step
 // @Description.markdown	get_workflow_step.md
 // @Param					workflow_id		path	string	true	"workflow id"
-// @Param					workflow_step_id		path	string	true	"step id"
+// @Param					step_id		path	string	true	"step id"
 // @Tags					installs
 // @Accept					json
 // @Produce					json
@@ -26,7 +26,7 @@ import (
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					200	{object}	app.WorkflowStep
-// @Router					/v1/workflows/{workflow_id}/steps/{workflow_step_id} [GET]
+// @Router					/v1/workflows/{workflow_id}/steps/{step_id} [GET]
 func (s *service) GetWorkflowStep(ctx *gin.Context) {
 	workflowID := ctx.Param("workflow_id")
 	stepID := ctx.Param("workflow_step_id")
