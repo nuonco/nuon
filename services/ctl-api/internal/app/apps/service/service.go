@@ -46,84 +46,151 @@ var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// manage apps
-	api.POST("/v1/apps", s.CreateApp)
-	api.GET("/v1/apps", s.GetApps)
-	api.PATCH("/v1/apps/:app_id", s.UpdateApp)
-	api.GET("/v1/apps/:app_id", s.GetApp)
-	api.DELETE("/v1/apps/:app_id", s.DeleteApp)
+	apps := api.Group("/v1/apps")
+	{
+		apps.POST("", s.CreateApp)
+		apps.GET("", s.GetApps)
+		apps.PATCH("/:app_id", s.UpdateApp)
+		apps.GET("/:app_id", s.GetApp)
+		apps.DELETE("/:app_id", s.DeleteApp)
+	}
 
-	// app configs
-	api.GET("/v1/apps/:app_id/template-config", s.GetAppConfigTemplate)
-	api.POST("/v1/apps/:app_id/config", s.CreateAppConfig)
-	api.GET("/v1/apps/:app_id/configs", s.GetAppConfigs)
-	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetAppConfig)
-	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig)
-	api.POST("/v1/apps/:app_id/config/:app_config_id/update-installs", s.UpdateAppConfigInstalls)
-	api.GET("/v1/apps/:app_id/config/:app_config_id/graph", s.GetAppConfigGraph)
+	// app-specific routes
+	app := api.Group("/v1/apps/:app_id")
+	{
+		// app configs
+		app.GET("/template-config", s.GetAppConfigTemplate)
+		appConfig := app.Group("/config")
+		{
+			appConfig.POST("", s.CreateAppConfig)
+			appConfig.GET("/:app_config_id", s.GetAppConfig)
+			appConfig.PATCH("/:app_config_id", s.UpdateAppConfig)
+			appConfig.POST("/:app_config_id/update-installs", s.UpdateAppConfigInstalls)
+			appConfig.GET("/:app_config_id/graph", s.GetAppConfigGraph)
+		}
 
-	// app sandbox management
-	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
-	api.GET("/v1/apps/:app_id/sandbox-configs", s.GetAppSandboxConfigs)
+		appConfigs := app.Group("/configs")
+		{
+			appConfigs.GET("", s.GetAppConfigs)
+		}
 
-	// app secrets management
-	api.POST("/v1/apps/:app_id/secrets-configs", s.CreateAppSecretsConfig)
-	api.GET("/v1/apps/:app_id/secrets-configs", s.GetAppSecretsConfig)
+		// app sandbox management
+		sandboxConfig := app.Group("/sandbox-config")
+		{
+			sandboxConfig.POST("", s.CreateAppSandboxConfig)
+		}
 
-	// app stack configs
-	api.POST("/v1/apps/:app_id/stack-configs", s.CreateAppStackConfig)
-	api.GET("/v1/apps/:app_id/stack-configs/:config_id", s.GetAppSecretsConfig)
+		sandboxConfigs := app.Group("/sandbox-configs")
+		{
+			sandboxConfigs.GET("", s.GetAppSandboxConfigs)
+		}
 
-	// app policies management
-	api.POST("/v1/apps/:app_id/policies-configs", s.CreateAppPoliciesConfig)
-	api.GET("/v1/apps/:app_id/policies-configs/:app_policies_config_id", s.GetAppPoliciesConfig)
+		// app secrets configs management
+		secretsConfigs := app.Group("/secrets-configs")
+		{
+			secretsConfigs.POST("", s.CreateAppSecretsConfig)
+			secretsConfigs.GET("", s.GetAppSecretsConfig)
+		}
 
-	// app break glass
-	api.POST("/v1/apps/:app_id/break-glass-configs", s.CreateAppBreakGlasssConfig)
-	api.GET("/v1/apps/:app_id/break-glass-configs/:app_break_glass_config_id", s.GetAppBreakGlassConfig)
+		// app stack configs
+		stackConfigs := app.Group("/stack-configs")
+		{
+			stackConfigs.POST("", s.CreateAppStackConfig)
+			stackConfigs.GET("/:config_id", s.GetAppSecretsConfig)
+		}
 
-	// app permissions
-	api.POST("/v1/apps/:app_id/permissions-configs", s.CreateAppPermissionsConfig)
-	api.GET("/v1/apps/:app_id/permissions-configs/:app_permissions_config_id", s.GetAppPermissionsConfig)
+		// app policies management
+		policiesConfigs := app.Group("/policies-configs")
+		{
+			policiesConfigs.POST("", s.CreateAppPoliciesConfig)
+			policiesConfigs.GET("/:app_policies_config_id", s.GetAppPoliciesConfig)
+		}
 
-	// app runner management
-	api.POST("/v1/apps/:app_id/runner-configs", s.CreateAppRunnerConfig)
-	api.GET("/v1/apps/:app_id/runner-configs", s.GetAppRunnerConfigs)
+		// app break glass
+		breakGlassConfigs := app.Group("/break-glass-configs")
+		{
+			breakGlassConfigs.POST("", s.CreateAppBreakGlasssConfig)
+			breakGlassConfigs.GET("/:app_break_glass_config_id", s.GetAppBreakGlassConfig)
+		}
 
-	// app input management
-	api.POST("/v1/apps/:app_id/input-config", s.CreateAppInputsConfig)
-	api.GET("/v1/apps/:app_id/input-configs", s.GetAppInputConfigs)
-	api.GET("/v1/apps/:app_id/input-configs/:input_config_id", s.GetAppInputConfig)
+		// app permissions
+		permissionsConfigs := app.Group("/permissions-configs")
+		{
+			permissionsConfigs.POST("", s.CreateAppPermissionsConfig)
+			permissionsConfigs.GET("/:app_permissions_config_id", s.GetAppPermissionsConfig)
+		}
 
-	// app secrets management
-	api.POST("/v1/apps/:app_id/secret", s.CreateAppSecret)
-	api.GET("/v1/apps/:app_id/secrets", s.GetAppSecrets)
-	api.DELETE("/v1/apps/:app_id/secret/:secret_id", s.DeleteAppSecret)
+		// app runner management
+		runnerConfigs := app.Group("/runner-configs")
+		{
+			runnerConfigs.POST("", s.CreateAppRunnerConfig)
+			runnerConfigs.GET("", s.GetAppRunnerConfigs)
+		}
 
-	// app branches
-	api.POST("/v1/apps/:app_id/branches", s.CreateAppBranch)
-	api.GET("/v1/apps/:app_id/branches", s.GetAppBranches)
-	api.GET("/v1/apps/:app_id/branches/:app_branch_id/configs", s.GetAppBranchAppConfigs)
+		// app input management
+		app.POST("/input-config", s.CreateAppInputsConfig)
+		inputConfigs := app.Group("/input-configs")
+		{
+			inputConfigs.GET("", s.GetAppInputConfigs)
+			inputConfigs.GET("/:input_config_id", s.GetAppInputConfig)
+		}
 
-	// TODO deprecate
-	api.GET("/v1/apps/:app_id/latest-break-glass-config", s.GetLatestAppBreakGlassConfig)
-	api.GET("/v1/apps/:app_id/runner-latest-config", s.GetAppRunnerLatestConfig)
-	api.GET("/v1/apps/:app_id/input-latest-config", s.GetAppInputLatestConfig)
-	api.GET("/v1/apps/:app_id/latest-policies-config", s.GetLatestAppPoliciesConfig)
-	api.GET("/v1/apps/:app_id/latest-config", s.GetAppLatestConfig)
-	api.GET("/v1/apps/:app_id/sandbox-latest-config", s.GetAppSandboxLatestConfig)
-	api.GET("/v1/apps/:app_id/latest-secrets-config", s.GetLatestAppSecretsConfig)
-	api.GET("/v1/apps/:app_id/latest-permissions-config", s.GetLatestAppPermissionsConfig)
+		// app secrets management
+		app.POST("/secret", s.CreateAppSecret)
+		secret := app.Group("/secret")
+		{
+			secret.DELETE("/:secret_id", s.DeleteAppSecret)
+		}
+
+		secrets := app.Group("/secrets")
+		{
+			secrets.GET("", s.GetAppSecrets)
+
+		}
+
+		// app branches
+		branches := app.Group("/branches")
+		{
+			branches.POST("", s.CreateAppBranch)
+			branches.GET("", s.GetAppBranches)
+			branches.GET("/:app_branch_id/configs", s.GetAppBranchAppConfigs)
+		}
+
+		// TODO deprecate - latest config routes
+		app.GET("/latest-break-glass-config", s.GetLatestAppBreakGlassConfig)
+		app.GET("/runner-latest-config", s.GetAppRunnerLatestConfig)
+		app.GET("/input-latest-config", s.GetAppInputLatestConfig)
+		app.GET("/latest-policies-config", s.GetLatestAppPoliciesConfig)
+		app.GET("/latest-config", s.GetAppLatestConfig)
+		app.GET("/sandbox-latest-config", s.GetAppSandboxLatestConfig)
+		app.GET("/latest-secrets-config", s.GetLatestAppSecretsConfig)
+		app.GET("/latest-permissions-config", s.GetLatestAppPermissionsConfig)
+	}
 
 	return nil
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.GET("/v1/apps", s.GetAllApps)
-	api.POST("/v1/apps/:app_id/admin-reprovision", s.AdminReprovisionApp)
-	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
-	api.POST("/v1/apps/:app_id/admin-config-graph", s.AdminConfigGraph)
-	api.POST("/v1/app-branches/:app_branch_id/admin-test-app-branch-workflow", s.AdminTestAppBranchWorkflow)
-	api.POST("/v1/app-branches/:app_branch_id/admin-restart", s.AdminRestartAppBranch)
+	// apps
+	apps := api.Group("/v1/apps")
+	{
+		apps.GET("", s.GetAllApps)
+
+		// app admin routes
+		app := apps.Group("/:app_id")
+		{
+			app.POST("/admin-reprovision", s.AdminReprovisionApp)
+			app.POST("/admin-restart", s.RestartApp)
+			app.POST("/admin-config-graph", s.AdminConfigGraph)
+		}
+	}
+
+	// app branches admin routes
+	appBranches := api.Group("/v1/app-branches/:app_branch_id")
+	{
+		appBranches.POST("/admin-test-app-branch-workflow", s.AdminTestAppBranchWorkflow)
+		appBranches.POST("/admin-restart", s.AdminRestartAppBranch)
+	}
 
 	return nil
 }

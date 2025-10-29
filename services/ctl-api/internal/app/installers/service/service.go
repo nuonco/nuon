@@ -38,14 +38,20 @@ var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// installers
-	api.GET("/v1/installers", s.GetInstallers)
-	api.POST("/v1/installers", s.CreateInstaller)
+	installers := api.Group("/v1/installers")
+	{
+		installers.GET("", s.GetInstallers)
+		installers.POST("", s.CreateInstaller)
 
-	api.PATCH("/v1/installers/:installer_id", s.UpdateInstaller)
-	api.DELETE("/v1/installers/:installer_id", s.DeleteInstaller)
-	api.GET("/v1/installers/:installer_id", s.GetInstaller)
+		installer := installers.Group("/:installer_id")
+		{
+			installer.PATCH("", s.UpdateInstaller)
+			installer.DELETE("", s.DeleteInstaller)
+			installer.GET("", s.GetInstaller)
+			installer.GET("/render", s.RenderAppInstaller)
+		}
+	}
 
-	api.GET("/v1/installers/:installer_id/render", s.RenderAppInstaller)
 	return nil
 }
 

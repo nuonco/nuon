@@ -31,13 +31,18 @@ var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// vcs connections
-	api.POST("/v1/vcs/connection-callback", s.CreateConnectionCallback)
-	api.POST("/v1/vcs/connections", s.CreateConnection)
+	vcs := api.Group("/v1/vcs")
+	{
+		vcs.POST("/connection-callback", s.CreateConnectionCallback)
 
-	api.GET("/v1/vcs/connections", s.GetConnections)
-	api.GET("/v1/vcs/connections/:connection_id", s.GetConnection)
-	api.DELETE("/v1/vcs/connections/:connection_id", s.DeleteConnection)
-
+		connections := vcs.Group("/connections")
+		{
+			connections.POST("", s.CreateConnection)
+			connections.GET("", s.GetConnections)
+			connections.GET("/:connection_id", s.GetConnection)
+			connections.DELETE("/:connection_id", s.DeleteConnection)
+		}
+	}
 	return nil
 }
 
