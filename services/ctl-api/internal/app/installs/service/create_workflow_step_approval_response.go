@@ -36,7 +36,7 @@ type CreateWorkflowStepApprovalResponseResponse struct {
 // @Summary					Create an approval response for a workflow step.
 // @Description.markdown	create_workflow_step_approval_response.md
 // @Param					workflow_id			path	string	true	"workflow id"
-// @Param					workflow_step_id	path	string	true	"step id"
+// @Param					step_id	path	string	true	"step id"
 // @Param					approval_id			path	string	true	"approval id"
 // @Param					req					body	CreateWorkflowStepApprovalResponseRequest	true	"Input"
 // @Tags					installs
@@ -50,7 +50,7 @@ type CreateWorkflowStepApprovalResponseResponse struct {
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					201	{object}	CreateWorkflowStepApprovalResponseResponse
-// @Router					/v1/workflows/{workflow_id}/steps/{workflow_step_id}/approvals/{approval_id}/response [post]
+// @Router					/v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response [post]
 func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -69,7 +69,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	}
 
 	workflowID := ctx.Param("workflow_id")
-	stepID := ctx.Param("workflow_step_id")
+	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
 	_, err = s.getWorkflowStep(ctx, workflowID, stepID)
