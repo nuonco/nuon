@@ -39,60 +39,88 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-
 	// apps
-	api.POST("/v1/apps/:app_id/actions", s.CreateAppAction)
-	api.GET("/v1/apps/:app_id/actions", s.GetAppActions)
-	api.GET("/v1/apps/:app_id/actions/:action_id", s.GetAppAction)
-	api.PATCH("/v1/apps/:app_id/actions/:action_id", s.UpdateAppAction)
-	api.DELETE("/v1/apps/:app_id/actions/:action_id", s.DeleteAppAction)
+	apps := api.Group("/v1/apps/:app_id")
+	{
+		actions := apps.Group("/actions")
+		{
+			actions.POST("", s.CreateAppAction)
+			actions.GET("", s.GetAppActions)
+			actions.GET("/:action_id", s.GetAppAction)
+			actions.PATCH("/:action_id", s.UpdateAppAction)
+			actions.DELETE("/:action_id", s.DeleteAppAction)
+			actions.POST("/:action_id/configs", s.CreateAppActionConfig)
+			actions.GET("/:action_id/configs", s.GetAppActionConfigs)
+			actions.GET("/:action_id/latest-config", s.GetAppActionLatestConfig)
+			actions.GET("/configs/:action_config_id", s.GetAppActionConfig)
+		}
+	}
 
-	api.POST("/v1/apps/:app_id/actions/:action_id/configs", s.CreateAppActionConfig)
-	api.GET("/v1/apps/:app_id/actions/:action_id/configs", s.GetAppActionConfigs)
-	api.GET("/v1/apps/:app_id/actions/:action_id/latest-config", s.GetAppActionLatestConfig)
-	api.GET("/v1/apps/:app_id/actions/configs/:action_config_id", s.GetAppActionConfig)
+	// installs
+	installs := api.Group("/v1/installs/:install_id")
+	{
+		// install action runs
+		actionRuns := installs.Group("/actions/runs")
+		{
+			actionRuns.POST("", s.CreateInstallActionRun)
+			actionRuns.GET("", s.GetInstallActionRuns)
+			actionRuns.GET("/:run_id", s.GetInstallActionRun)
+			actionRuns.GET("/:run_id/steps/:step_id", s.GetInstallActionRunStep)
+		}
 
-	// install runs
-	api.POST("/v1/installs/:install_id/actions/runs", s.CreateInstallActionRun)
-	api.GET("/v1/installs/:install_id/actions/runs", s.GetInstallActionRuns)
-	api.GET("/v1/installs/:install_id/actions/runs/:run_id", s.GetInstallActionRun)
-	api.GET("/v1/installs/:install_id/actions/runs/:run_id/steps/:step_id", s.GetInstallActionRunStep)
-
-	// install actions
-	api.GET("/v1/installs/:install_id/actions", s.GetInstallActions)
-	api.GET("/v1/installs/:install_id/actions/:action_id/recent-runs", s.GetInstallActionRecentRuns)
-	api.GET("/v1/installs/:install_id/actions/latest-runs", s.GetInstallActionsLatestRuns)
-	api.POST("/v1/installs/:install_id/actions/:action_id", s.GetInstallAction)
+		// install actions
+		installActions := installs.Group("/actions")
+		{
+			installActions.GET("", s.GetInstallActions)
+			installActions.GET("/:action_id/recent-runs", s.GetInstallActionRecentRuns)
+			installActions.GET("/latest-runs", s.GetInstallActionsLatestRuns)
+			installActions.POST("/:action_id", s.GetInstallAction)
+		}
+	}
 
 	// Deprecated routes
-
 	// work with actions apps path
-	api.POST("/v1/apps/:app_id/action-workflows", s.CreateAppActionWorkflow)                 // deprecated
-	api.GET("/v1/apps/:app_id/action-workflows", s.GetAppActionWorkflows)                    // deprecated
-	api.GET("/v1/apps/:app_id/action-workflows/:action_workflow_id", s.GetAppActionWorkflow) // deprecated
+	deprecatedApps := api.Group("/v1/apps/:app_id")
+	{
+		deprecatedApps.POST("/action-workflows", s.CreateAppActionWorkflow)                 // deprecated
+		deprecatedApps.GET("/action-workflows", s.GetAppActionWorkflows)                    // deprecated
+		deprecatedApps.GET("/action-workflows/:action_workflow_id", s.GetAppActionWorkflow) // deprecated
+	}
 
-	//  work with actions directly
-	api.PATCH("/v1/action-workflows/:action_workflow_id", s.UpdateActionWorkflow)  // deprecated
-	api.GET("/v1/action-workflows/:action_workflow_id", s.GetActionWorkflow)       // deprecated
-	api.DELETE("/v1/action-workflows/:action_workflow_id", s.DeleteActionWorkflow) // deprecated
+	// work with actions directly
+	actionWorkflows := api.Group("/v1/action-workflows")
+	{
+		actionWorkflows.PATCH("/:action_workflow_id", s.UpdateActionWorkflow)  // deprecated
+		actionWorkflows.GET("/:action_workflow_id", s.GetActionWorkflow)       // deprecated
+		actionWorkflows.DELETE("/:action_workflow_id", s.DeleteActionWorkflow) // deprecated
 
-	// config versions
-	api.POST("/v1/action-workflows/:action_workflow_id/configs", s.CreateActionWorkflowConfig)         // deprecated
-	api.GET("/v1/action-workflows/:action_workflow_id/configs", s.GetActionWorkflowConfigs)            // deprecated
-	api.GET("/v1/action-workflows/:action_workflow_id/latest-config", s.GetActionWorkflowLatestConfig) // deprecated
-	api.GET("/v1/action-workflows/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)      // deprecated
+		// config versions
+		actionWorkflows.POST("/:action_workflow_id/configs", s.CreateActionWorkflowConfig)         // deprecated
+		actionWorkflows.GET("/:action_workflow_id/configs", s.GetActionWorkflowConfigs)            // deprecated
+		actionWorkflows.GET("/:action_workflow_id/latest-config", s.GetActionWorkflowLatestConfig) // deprecated
+		actionWorkflows.GET("/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)      // deprecated
+	}
 
-	// install runs
-	api.POST("/v1/installs/:install_id/action-workflows/runs", s.CreateInstallActionWorkflowRun)                        // deprecated
-	api.GET("/v1/installs/:install_id/action-workflows/runs", s.GetInstallActionWorkflowRuns)                           // deprecated
-	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)                    // deprecated
-	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id/steps/:step_id", s.GetInstallActionWorkflowRunStep) // deprecated
+	// install runs (deprecated)
+	deprecatedInstalls := api.Group("/v1/installs/:install_id")
+	{
+		actionWorkflowRuns := deprecatedInstalls.Group("/action-workflows/runs")
+		{
+			actionWorkflowRuns.POST("", s.CreateInstallActionWorkflowRun)                        // deprecated
+			actionWorkflowRuns.GET("", s.GetInstallActionWorkflowRuns)                           // deprecated
+			actionWorkflowRuns.GET("/:run_id", s.GetInstallActionWorkflowRun)                    // deprecated
+			actionWorkflowRuns.GET("/:run_id/steps/:step_id", s.GetInstallActionWorkflowRunStep) // deprecated
+		}
 
-	// install action workflows
-	api.GET("/v1/installs/:install_id/action-workflows", s.GetInstallActionWorkflows)                                          // deprecated
-	api.GET("/v1/installs/:install_id/action-workflows/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns) // deprecated
-	api.GET("/v1/installs/:install_id/action-workflows/latest-runs", s.GetInstallActionWorkflowsLatestRuns)                    // deprecated
-	api.POST("/v1/installs/:install_id/action-workflows/:action_workflow_id", s.GetInstallActionWorkflow)                      // deprecated
+		// install action workflows (deprecated)
+		installActionWorkflows := deprecatedInstalls.Group("/action-workflows")
+		{
+			installActionWorkflows.GET("", s.GetInstallActionWorkflows)                                          // deprecated
+			installActionWorkflows.GET("/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns) // deprecated
+			installActionWorkflows.GET("/latest-runs", s.GetInstallActionWorkflowsLatestRuns)                    // deprecated
+			installActionWorkflows.POST("/:action_workflow_id", s.GetInstallActionWorkflow)                      // deprecated
+		}
+	}
 
 	return nil
 }
@@ -104,11 +132,20 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	api.GET("/v1/action-workflows/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
-	api.GET("/v1/action-workflows/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
+	// action workflows
+	actionWorkflows := api.Group("/v1/action-workflows")
+	{
+		actionWorkflows.GET("/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
+		actionWorkflows.GET("/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
+	}
 
-	api.PUT("/v1/installs/:install_id/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
-	api.GET("/v1/installs/:install_id/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)
+	// installs
+	installs := api.Group("/v1/installs/:install_id")
+	{
+		installs.PUT("/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
+		installs.GET("/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)
+	}
+
 	return nil
 }
 
