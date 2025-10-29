@@ -116,6 +116,13 @@ resource "kubectl_manifest" "clickhouse_installation" {
               </s3>
             </clickhouse>
           EOT
+          "config.d/processors_profile_log.xml" = <<-EOT
+          <clickhouse>
+            <processors_profile_log>
+              <ttl>3d</ttl>
+            </processors_profile_log>
+          </clickhouse>
+          EOT
         }
       }
       "defaults" = {
