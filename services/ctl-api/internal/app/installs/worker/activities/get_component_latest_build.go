@@ -2,10 +2,13 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"gorm.io/gorm"
 )
 
 type GetComponentLatestBuildRequest struct {
@@ -24,6 +27,9 @@ func (a *Activities) GetComponentLatestBuild(ctx context.Context, req GetCompone
 		Order("created_at DESC").
 		First(&build)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, generics.TemporalGormError(gorm.ErrRecordNotFound, "component build not found")
+		}
 		return nil, fmt.Errorf("unable to load component build: %w", res.Error)
 	}
 
