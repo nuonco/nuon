@@ -191,6 +191,7 @@ func (h *handler) addDependencyReposAndUpdate(l *zap.Logger, chartDir string, re
 		RegistryClient:   registryClient,
 		RepositoryConfig: settings.RepositoryConfig,
 		RepositoryCache:  settings.RepositoryCache,
+		ContentCache:     settings.ContentCache,
 		Debug:            true,
 	}
 	if client.Verify {
