@@ -15,7 +15,7 @@ import (
 // @Summary				get a workflow step approval contents
 // @Description.markdown	get_workflow_step_approval_contents.md
 // @Param					workflow_id			path	string	true	"workflow id"
-// @Param					workflow_step_id	path	string	true	"step id"
+// @Param					step_id	path	string	true	"step id"
 // @Param					approval_id			path	string	true	"approval id"
 // @Tags					installs
 // @Accept					json
@@ -29,7 +29,7 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	interface{}
 // @Header					200	{string}	Content-Encoding	"gzip"
-// @Router					/v1/workflows/{workflow_id}/steps/{workflow_step_id}/approvals/{approval_id}/contents  [GET]
+// @Router					/v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/contents  [GET]
 func (s *service) GetWorkflowStepApprovalContents(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
