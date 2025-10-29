@@ -33,47 +33,58 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	api.GET("/v1/general/current-user", s.GetCurrentUser)
-	api.GET("/v1/general/cli-config", s.GetCLIConfig)
-	api.GET("/v1/general/cloud-platform/:cloud_platform/regions", s.GetCloudPlatformRegions)
-	api.GET("/v1/general/config-schema", s.GetConfigSchema)
-	api.POST("/v1/general/waitlist", s.CreateWaitlist)
+	general := api.Group("/v1/general")
+	{
+		general.GET("/current-user", s.GetCurrentUser)
+		general.GET("/cli-config", s.GetCLIConfig)
+		general.GET("/cloud-platform/:cloud_platform/regions", s.GetCloudPlatformRegions)
+		general.GET("/config-schema", s.GetConfigSchema)
+		general.POST("/waitlist", s.CreateWaitlist)
+	}
 
 	return nil
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	// manage canaries
-	api.POST("/v1/general/provision-canary", s.ProvisionCanary)
-	api.POST("/v1/general/deprovision-canary", s.DeprovisionCanary)
-	api.POST("/v1/general/start-canary-cron", s.StartCanaryCron)
-	api.POST("/v1/general/stop-canary-cron", s.StopCanaryCron)
-	api.POST("/v1/general/canary-user", s.CreateCanaryUser)
+	general := api.Group("/v1/general")
+	{
+		// manage canaries
+		general.POST("/provision-canary", s.ProvisionCanary)
+		general.POST("/deprovision-canary", s.DeprovisionCanary)
+		general.POST("/start-canary-cron", s.StartCanaryCron)
+		general.POST("/stop-canary-cron", s.StopCanaryCron)
+		general.POST("/canary-user", s.CreateCanaryUser)
 
-	// manage infra tests
-	api.POST("/v1/general/infra-tests", s.InfraTests)
-	api.POST("/v1/general/infra-tests/deprovision", s.InfraTestsDeprovision)
+		// manage infra tests
+		infraTests := general.Group("/infra-tests")
+		{
+			infraTests.POST("", s.InfraTests)
+			infraTests.POST("/deprovision", s.InfraTestsDeprovision)
+		}
 
-	// create users for testing/seeding
-	api.POST("/v1/general/integration-user", s.CreateIntegrationUser)
-	api.POST("/v1/general/seed-user", s.CreateSeedUser)
+		// create users for testing/seeding
+		general.POST("/integration-user", s.CreateIntegrationUser)
+		general.POST("/seed-user", s.CreateSeedUser)
 
-	// migrations
-	api.GET("/v1/general/migrations", s.GetMigrations)
+		// migrations
+		general.GET("/migrations", s.GetMigrations)
 
-	// create a customer token
-	api.POST("/v1/general/admin-static-token", s.AdminCreateStaticToken)
-	api.POST("/v1/general/admin-delete-account", s.AdminDeleteAccount)
+		// admin operations
+		general.POST("/admin-static-token", s.AdminCreateStaticToken)
+		general.POST("/admin-delete-account", s.AdminDeleteAccount)
+		general.POST("/promotion", s.AdminPromotion)
+		general.POST("/terminate-event-loops", s.AdminTerminateEventLoops)
+		general.GET("/waitlist", s.AdminGetWaitlist)
 
-	// (re)start EventLoopReconcile
-	api.POST("/v1/general/restart-event-loop", s.RestartGeneralEventLoop)
-	api.POST("/v1/general/promotion", s.AdminPromotion)
-	api.POST("/v1/general/terminate-event-loops", s.AdminTerminateEventLoops)
+		// event loop management
+		general.POST("/restart-event-loop", s.RestartGeneralEventLoop)
 
-	api.GET("/v1/general/waitlist", s.AdminGetWaitlist)
+		// seed and utilities
+		general.POST("/seed", s.Seed)
 
-	api.POST("/v1/general/seed", s.Seed)
-	api.POST("/v1/general/temporal-codec/decode", s.TemporalCodecDecode)
+		// temporal codec
+		general.POST("/temporal-codec/decode", s.TemporalCodecDecode)
+	}
 
 	return nil
 }
