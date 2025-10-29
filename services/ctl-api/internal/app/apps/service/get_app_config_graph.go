@@ -8,6 +8,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @ID						GetAppConfigGraphV2
+// @Summary				get an app config graph
+// @Description.markdown	get_app_config_graph.md
+// @Param					app_id			path	string	true	"app ID"
+// @Param					app_config_id	path	string	true	"app config ID"
+// @Tags					apps
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	string
+// @Router					/v1/apps/{app_id}/configs/{app_config_id}/graph [get]
+func (s *service) GetAppConfigGraphV2(ctx *gin.Context) {
+	s.GetAppConfigGraph(ctx)
+}
+
 // @ID						GetAppConfigGraph
 // @Summary				get an app config graph
 // @Description.markdown	get_app_config_graph.md
@@ -18,6 +39,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
