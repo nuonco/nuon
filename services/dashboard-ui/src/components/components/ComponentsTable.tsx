@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ComponentsGraph } from '@/components/apps/ConfigGraph'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -42,13 +43,7 @@ function parseComponentToTableData(
     return {
       componentId: component.id,
       componentName: component.name,
-      componentType: (
-        <ComponentType
-          type={component.type}
-          variant="subtext"
-          displayVariant="abbr"
-        />
-      ),
+      componentType: <ComponentType type={component.type} variant="subtext" />,
       buildStatus: (
         <Tooltip
           position="top"
@@ -150,7 +145,15 @@ export const ComponentsTable = ({
     <Table<TComponentRow>
       columns={columns}
       data={parseComponentToTableData(components, org.id, app.id)}
-      filterActions={<ComponentTypeFilterDropdown />}
+      filterActions={
+        <div className="flex items-center gap-3">
+          <ComponentsGraph
+            appId={app?.id}
+            configId={app?.app_configs?.at(-1)?.id}
+          />
+          <ComponentTypeFilterDropdown />
+        </div>
+      }
       emptyMessage="No components found"
       pagination={pagination}
       searchPlaceholder="Search component name..."
