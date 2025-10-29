@@ -48,6 +48,8 @@ type AWSStackOutputs struct {
 	MaintenanceIAMRoleARN string            `json:"maintenance_iam_role_arn,omitzero" mapstructure:"maintenance_iam_role_arn" temporaljson:"maintenance_iam_role_arn,omitzero,omitempty"`
 	RunnerIAMRoleARN      string            `json:"runner_iam_role_arn,omitzero" mapstructure:"runner_iam_role_arn" temporaljson:"runner_iam_role_arn,omitzero,omitempty"`
 	BreakGlassRoleARNs    map[string]string `json:"break_glass_role_arns,omitzero" mapstructure:"break_glass_role_arns" temporaljson:"break_glass_role_arns,omitzero,omitempty"`
+	// rename with install_inputs
+	AppInputs map[string]string `json:"app_inputs,omitzero" mapstructure:"app_inputs" temporaljson:"app_inputs,omitzero,omitempty"`
 }
 
 type AzureStackOutputs struct {

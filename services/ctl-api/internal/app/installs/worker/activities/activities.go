@@ -36,6 +36,7 @@ type Params struct {
 	Cfg               *internal.Config
 	Features          *features.Features
 	L                 *zap.Logger
+	AccountsHelpers   *account.Client
 }
 
 type Activities struct {
@@ -53,6 +54,7 @@ type Activities struct {
 	vcsHelpers        *vcshelpers.Helpers
 	features          *features.Features
 	l                 *zap.Logger
+	accountsHelpers   *account.Client
 }
 
 func New(params Params) *Activities {
@@ -71,5 +73,6 @@ func New(params Params) *Activities {
 		componentsHelpers: params.ComponentsHelpers,
 		features:          params.Features,
 		l:                 params.L,
+		accountsHelpers:   params.AccountsHelpers,
 	}
 }
