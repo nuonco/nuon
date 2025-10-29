@@ -38,6 +38,13 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 	for idx, input := range s.cfg.Inputs.Inputs {
 		input := input
 
+		var inputSource models.AppAppInputSource
+		if input.UserConfigurable {
+			inputSource = models.AppAppInputSourceCustomer
+		} else {
+			inputSource = models.AppAppInputSourceVendor
+		}
+
 		inp := models.ServiceAppInputRequest{
 			Description: &input.Description,
 			DisplayName: &input.DisplayName,
@@ -46,6 +53,7 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 			Sensitive:   input.Sensitive,
 			Internal:    input.Internal,
 			Type:        generics.ValOrDefault(input.Type, "string"),
+			Source:      inputSource,
 			Index:       generics.ToPtr(int64(idx)),
 		}
 		if input.Default != nil {
