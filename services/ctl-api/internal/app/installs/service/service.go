@@ -189,7 +189,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			steps.GET("/:step_id", s.GetWorkflowStep)
 			steps.POST("/:step_id/retry", s.RetryWorkflowStep)
 
-			approvals := steps.Group("/:workflow_step_id/approvals/:approval_id")
+			approvals := steps.Group("/:step_id/approvals/:approval_id")
 			{
 				approvals.GET("", s.GetWorkflowStepApproval)
 				approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)

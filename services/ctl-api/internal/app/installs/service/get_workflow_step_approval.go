@@ -14,7 +14,7 @@ import (
 // @Summary								get an workflow step approval
 // @Description.markdown				get_workflow_step_approval.md
 // @Param	workflow_id			path	string	true	"workflow id"
-// @Param	workflow_step_id	path	string	true	"step id"
+// @Param	step_id	path	string	true	"step id"
 // @Param	approval_id					path	string	true	"approval id"
 // @Tags								installs
 // @Accept								json
@@ -27,7 +27,7 @@ import (
 // @Failure								404	{object}	stderr.ErrResponse
 // @Failure								500	{object}	stderr.ErrResponse
 // @Success								200	{object}		app.WorkflowStepApproval
-// @Router 								/v1/workflows/{workflow_id}/steps/{workflow_step_id}/approvals/{approval_id} [GET]
+// @Router 								/v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id} [GET]
 func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -36,7 +36,7 @@ func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 	}
 
 	workflowID := ctx.Param("workflow_id")
-	stepID := ctx.Param("workflow_step_id")
+	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
 	_, err = s.getWorkflowStep(ctx, workflowID, stepID)
