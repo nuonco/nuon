@@ -97,7 +97,7 @@ export const Link = ({
       {children}
     </a>
   ) : (
-    <NextLink className={classes} href={href} {...props}>
+    <NextLink className={classes} href={href} prefetch={false} {...props}>
       {children}
     </NextLink>
   )
