@@ -116,11 +116,25 @@ resource "kubectl_manifest" "clickhouse_installation" {
               </s3>
             </clickhouse>
           EOT
-          "config.d/processors_profile_log.xml" = <<-EOT
+          "config.d/z_log_disable.xml" = <<-EOT
           <clickhouse>
-            <processors_profile_log>
-                <ttl>event_time + INTERVAL 3 DAY</ttl>
-            </processors_profile_log>
+              <asynchronous_metric_log remove="1"/>
+              <backup_log remove="1"/>
+              <error_log remove="1"/>
+              <metric_log remove="1"/>
+              <query_metric_log remove="1"/>
+              <query_thread_log remove="1" />  
+              <query_log remove="1" />
+              <query_views_log remove="1" />
+              <part_log remove="1"/>
+              <session_log remove="1"/>
+              <text_log remove="1" />
+              <trace_log remove="1"/>
+              <crash_log remove="1"/>
+              <opentelemetry_span_log remove="1"/>
+              <zookeeper_log remove="1"/>
+              <processors_profile_log remove="1"/>
+              <latency_log remove="1"/>
           </clickhouse>
           EOT
         }
