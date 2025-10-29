@@ -32,6 +32,7 @@ export const Link: FC<ILink> = ({
           variant === 'ghost',
         [`${className}`]: Boolean(className),
       })}
+      prefetch={false}
       href={href}
       {...props}
     >

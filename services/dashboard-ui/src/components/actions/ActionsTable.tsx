@@ -28,10 +28,10 @@ export type TActionRow = {
 function parseActionsToTableData(
   actions: TAction[],
   orgId: string,
-  installId: string
+  appId: string
 ): TActionRow[] {
   return actions.map((action) => {
-    const basePath = `/${orgId}/installs/${installId}`
+    const basePath = `/${orgId}/apps/${appId}`
 
     return {
       actionId: action?.id,
