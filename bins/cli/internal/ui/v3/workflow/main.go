@@ -66,7 +66,7 @@ type model struct {
 	steps                        [][]*models.AppWorkflowStep // standlone so we can sort them, nested so we can group them
 	selectedIndex                int                         // used to set selectedStep on data refresh (smells, use map or something better)
 	selectedStep                 *models.AppWorkflowStep
-	selectedStepApprovalResponse *models.AppWorkflowStepApprovalResponse
+	selectedStepApprovalResponse *models.ServiceCreateWorkflowStepApprovalResponseResponse
 
 	// conditional
 	stack        *models.AppInstallStack
