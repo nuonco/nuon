@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ComponentsGraph } from '@/components/apps/ConfigGraph'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -177,7 +178,15 @@ export const InstallComponentsTable = ({
         org.id,
         install.id
       )}
-      filterActions={<ComponentTypeFilterDropdown />}
+      filterActions={
+        <div className="flex items-center gap-3">
+          <ComponentsGraph
+            appId={install?.app_id}
+            configId={install?.app_config_id}
+          />
+          <ComponentTypeFilterDropdown />
+        </div>
+      }
       emptyMessage="No components found"
       pagination={pagination}
       searchPlaceholder="Search component name..."
