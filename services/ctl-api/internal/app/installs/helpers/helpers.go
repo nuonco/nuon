@@ -9,6 +9,7 @@ import (
 	actionshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 )
@@ -23,6 +24,7 @@ type Params struct {
 	ActionsHelpers   *actionshelpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
+	EvClient         eventloop.Client
 }
 
 type Helpers struct {
@@ -32,6 +34,7 @@ type Helpers struct {
 	appsHelpers      *appshelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
 	db               *gorm.DB
+	evClient         eventloop.Client
 }
 
 func New(params Params) *Helpers {
@@ -42,5 +45,6 @@ func New(params Params) *Helpers {
 		actionsHelpers:   params.ActionsHelpers,
 		appsHelpers:      params.AppsHelpers,
 		db:               params.DB,
+		evClient:         params.EvClient,
 	}
 }

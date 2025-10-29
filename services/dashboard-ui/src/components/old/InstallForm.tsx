@@ -357,6 +357,16 @@ const InputGroupFields: FC<{
 }> = ({ groupInputs, install }) => {
   const installInputs = install ? install?.install_inputs?.at(0)?.values : {}
 
+  // Filter inputs to only show those with source type 'user'
+  const userInputs = groupInputs?.app_inputs?.filter(
+    (input) => !input?.source || input?.source === 'user'
+  )
+
+  // Don't render the group if there are no user inputs
+  if (!userInputs || userInputs.length === 0) {
+    return null
+  }
+
   return (
     <fieldset className="flex flex-col gap-6 border-t">
       <legend className="flex flex-col gap-0 mb-6 pr-6">
@@ -366,7 +376,7 @@ const InputGroupFields: FC<{
         <span className="text-sm font-normal">{groupInputs?.description}</span>
       </legend>
 
-      {groupInputs?.app_inputs
+      {userInputs
         ?.sort((a, b) => a?.index - b?.index)
         ?.map((input) =>
           Boolean(input?.default === 'true' || input?.default === 'false') ||
