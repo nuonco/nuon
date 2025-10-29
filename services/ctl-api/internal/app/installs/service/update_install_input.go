@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -90,34 +88,24 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
+	// Validate that only user-source inputs are being updated
+	err = s.validateUserSourceInputs(ctx, pinnedAppInputConfig, req.Inputs)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	inputs, changedInputs, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *pinnedAppInputConfig, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx, install.ID, app.WorkflowTypeInputUpdate, map[string]string{
-		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
-		// rendering things in the UI and other such things, which is why we are just using a string slice here,
-		// maybe that will change at some point, but this metadata should not be abused.
-		"inputs": strings.Join(*changedInputs, ","),
-	}, app.StepErrorBehaviorAbort,
-		false,
-	)
+	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(ctx, install.ID, *changedInputs)
 	if err != nil {
-		ctx.Error(err)
-
+		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
 	}
-
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationUpdated,
-		InstallWorkflowID: workflow.ID,
-	})
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteFlow,
-		InstallWorkflowID: workflow.ID,
-	})
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
@@ -204,4 +192,25 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 	latestInstallInputs.Values = nil
 
 	return latestInstallInputs, &changedInputs, nil
+}
+
+func (s *service) validateUserSourceInputs(ctx context.Context, appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
+	appInputSources := map[string]app.AppInputSource{}
+	for _, input := range appInputConfig.AppInputs {
+		appInputSources[input.Name] = input.Source
+	}
+
+	for name := range inputs {
+		source, ok := appInputSources[name]
+		if !ok {
+			return fmt.Errorf("input %s is not defined in app input config", name)
+		}
+
+		// Reject install_stack sourced inputs
+		if source == app.AppInputSourceCustomer {
+			return fmt.Errorf("%s has source install_stack, cannot be updated via api", name)
+		}
+	}
+
+	return nil
 }

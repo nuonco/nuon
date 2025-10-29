@@ -10,16 +10,24 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
+type AppInputSource string
+
+const (
+	AppInputSourceVendor   AppInputSource = "vendor"
+	AppInputSourceCustomer AppInputSource = "customer"
+)
+
 type AppInput struct {
-	Name        string `mapstructure:"name"`
-	DisplayName string `mapstructure:"display_name" jsonschema:"required"`
-	Description string `mapstructure:"description" jsonschema:"required"`
-	Group       string `mapstructure:"group" jsonschema:"required"`
-	Default     any    `mapstructure:"default,omitempty"`
-	Required    bool   `mapstructure:"required,omitempty"`
-	Sensitive   bool   `mapstructure:"sensitive"`
-	Type        string `mapstructure:"type"`
-	Internal    bool   `mapstructure:"internal"`
+	Name             string `mapstructure:"name"`
+	DisplayName      string `mapstructure:"display_name" jsonschema:"required"`
+	Description      string `mapstructure:"description" jsonschema:"required"`
+	Group            string `mapstructure:"group" jsonschema:"required"`
+	Default          any    `mapstructure:"default,omitempty"`
+	Required         bool   `mapstructure:"required,omitempty"`
+	Sensitive        bool   `mapstructure:"sensitive"`
+	Type             string `mapstructure:"type"`
+	Internal         bool   `mapstructure:"internal"`
+	UserConfigurable bool   `mapstructure:"user_configurable"`
 }
 
 func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -33,6 +41,7 @@ func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "sensitive", "Denote whether this is a sensitive input, which will prevent the value from being displayed after the install is created.")
 	addDescription(schema, "type", "Type of input supported, can be a string, number, list, json or bool")
 	addDescription(schema, "internal", "Internal inputs are only settable via the admin panel")
+	addDescription(schema, "source", "Source of the input value. Can be 'user' (default, provided during install creation) or 'install_stack' (provided by CloudFormation/Bicep stack outputs via phone home).")
 }
 
 type AppInputGroup struct {
