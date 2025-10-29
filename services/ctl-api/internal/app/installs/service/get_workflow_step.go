@@ -29,7 +29,7 @@ import (
 // @Router					/v1/workflows/{workflow_id}/steps/{step_id} [GET]
 func (s *service) GetWorkflowStep(ctx *gin.Context) {
 	workflowID := ctx.Param("workflow_id")
-	stepID := ctx.Param("workflow_step_id")
+	stepID := ctx.Param("step_id")
 
 	workflow, err := s.getWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
