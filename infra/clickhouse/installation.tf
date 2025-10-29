@@ -119,7 +119,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
           "config.d/processors_profile_log.xml" = <<-EOT
           <clickhouse>
             <processors_profile_log>
-              <ttl>3d</ttl>
+                <ttl>event_time + INTERVAL 3 DAY</ttl>
             </processors_profile_log>
           </clickhouse>
           EOT
