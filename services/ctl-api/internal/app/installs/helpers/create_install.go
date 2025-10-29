@@ -55,10 +55,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	if err := s.validateApp(&parentApp); err != nil {
-		return nil, err
-	}
-
 	// make sure the inputs are valid
 	latestAppInputConfig, err := s.GetLatestAppInputConfig(ctx, appID)
 	if err != nil {

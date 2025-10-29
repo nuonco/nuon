@@ -37,6 +37,49 @@ func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
+// @ID						CreateAppSandboxConfigV2
+// @Summary				create an app sandbox config
+// @Description.markdown	create_app_sandbox_config.md
+// @Tags					apps
+// @Accept					json
+// @Param					req	body	CreateAppSandboxConfigRequest	true	"Input"
+// @Produce				json
+// @Param					app_id	path	string	true	"app ID"
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.AppSandboxConfig
+// @Router					/v1/apps/{app_id}/sandbox-configs [post]
+func (s *service) CreateAppSandboxConfigV2(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+
+	var req CreateAppSandboxConfigRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	sandboxConfig, err := s.createAppSandboxConfig(ctx, appID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create app sandbox config: %w", err))
+		return
+	}
+
+	s.evClient.Send(ctx, appID, &signals.Signal{
+		Type:               signals.OperationUpdateSandbox,
+		AppSandboxConfigID: sandboxConfig.ID,
+	})
+	ctx.JSON(http.StatusCreated, sandboxConfig)
+}
+
 // @ID						CreateAppSandboxConfig
 // @Summary				create an app sandbox config
 // @Description.markdown	create_app_sandbox_config.md
@@ -47,6 +90,7 @@ func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 // @Param					app_id	path	string	true	"app ID"
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
