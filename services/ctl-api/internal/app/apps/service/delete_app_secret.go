@@ -9,23 +9,53 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-//	@ID						DeleteAppSecret
-//	@Summary				delete an app secret
-//	@Description.markdown	delete_app_secret.md
-//	@Param					app_id		path	string	true	"app ID"
-//	@Param					secret_id	path	string	true	"secret ID"
-//	@Tags					apps
-//	@Accept					json
-//	@Produce				json
-//	@Security				APIKey
-//	@Security				OrgID
-//	@Failure				400	{object}	stderr.ErrResponse
-//	@Failure				401	{object}	stderr.ErrResponse
-//	@Failure				403	{object}	stderr.ErrResponse
-//	@Failure				404	{object}	stderr.ErrResponse
-//	@Failure				500	{object}	stderr.ErrResponse
-//	@Success				200	{boolean}	true
-//	@Router					/v1/apps/{app_id}/secret/{secret_id} [DELETE]
+// @ID						DeleteAppSecretV2
+// @Summary				delete an app secret
+// @Description.markdown	delete_app_secret.md
+// @Param					app_id		path	string	true	"app ID"
+// @Param					secret_id	path	string	true	"secret ID"
+// @Tags					apps
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{boolean}	true
+// @Router					/v1/apps/{app_id}/secrets/{secret_id} [DELETE]
+func (s *service) DeleteAppSecretV2(ctx *gin.Context) {
+	secretID := ctx.Param("secret_id")
+
+	err := s.deleteAppSecret(ctx, secretID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, true)
+}
+
+// @ID						DeleteAppSecret
+// @Summary				delete an app secret
+// @Description.markdown	delete_app_secret.md
+// @Param					app_id		path	string	true	"app ID"
+// @Param					secret_id	path	string	true	"secret ID"
+// @Tags					apps
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Deprecated    true
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{boolean}	true
+// @Router					/v1/apps/{app_id}/secret/{secret_id} [DELETE]
 func (s *service) DeleteAppSecret(ctx *gin.Context) {
 	secretID := ctx.Param("secret_id")
 

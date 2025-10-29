@@ -56,12 +56,14 @@ var _ api.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// get all installs across orgs
 	ge.GET("/v1/installs", s.GetOrgInstalls)
+	ge.POST("/v1/installs", s.CreateInstallV2)
 
 	// get / create installs for an app
 	apps := ge.Group("/v1/apps/:app_id")
 	{
 		apps.GET("/installs", s.GetAppInstalls)
-		apps.POST("/installs", s.CreateInstall)
+		// apps.POST("/installs", s.CreateInstall)
+		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
 	}
 
 	// deprecated sandbox run route
