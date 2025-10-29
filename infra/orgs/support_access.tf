@@ -47,6 +47,7 @@ module "support_role" {
   create_role = true
 
   role_name = "nuon-internal-support-${var.env}"
+  max_session_duration = 43200
 
   create_custom_role_trust_policy = true
   custom_role_trust_policy        = data.aws_iam_policy_document.support_trust.json
