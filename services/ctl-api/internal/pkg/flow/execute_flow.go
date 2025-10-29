@@ -28,14 +28,14 @@ func NewContinueAsNewErr(startsFromStepIdx int) *ContinueAsNewErr {
 	}
 }
 
-func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, fid string, startFromStepIdx int) error {
+func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId, signalId string, startFromStepIdx int) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil
 	}
 
-	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, fid)
+	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, flowId)
 	if err != nil {
 		return errors.Wrap(err, "unable to get workflow object")
 	}
@@ -50,7 +50,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			defer cancelCtxCancel()
 
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-				ID: fid,
+				ID: flowId,
 				Status: app.CompositeStatus{
 					Status: app.StatusCancelled,
 				},
@@ -62,13 +62,13 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 
 	// Generate steps only for the first execution of the workflow.
 	if startFromStepIdx == 0 {
-		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, fid); err != nil {
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, flowId); err != nil {
 			return err
 		}
 
 		l.Debug("generating steps for workflow")
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: fid,
+			ID: flowId,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
 				StatusHumanDescription: "generating steps for workflow",
@@ -77,10 +77,10 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			return err
 		}
 
-		flw, err = c.generateSteps(ctx, flw)
+		flw, err = c.generateSteps(ctx, flw, signalId)
 		if err != nil {
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: fid,
+				ID: flowId,
 				Status: app.CompositeStatus{
 					Status:                 app.StatusError,
 					StatusHumanDescription: "error while generating steps",
@@ -95,7 +95,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			return errors.Wrap(err, "unable to generate workflow steps")
 		}
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: fid,
+			ID: flowId,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
 				StatusHumanDescription: "successfully generated all steps",
@@ -122,7 +122,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		}
 	}
 
-	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, fid); err != nil {
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, flowId); err != nil {
 		l.Error("unable to update finished at", zap.Error(err))
 	}
 
@@ -136,7 +136,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		}
 
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID:     fid,
+			ID:     flowId,
 			Status: status,
 		}); err != nil {
 			return err
@@ -146,7 +146,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: fid,
+		ID: flowId,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusSuccess,
 			StatusHumanDescription: "successfully executed workflow",
@@ -158,7 +158,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 	return nil
 }
 
-func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, flw *app.Workflow) (*app.Workflow, error) {
+func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, flw *app.Workflow, signalId string) (*app.Workflow, error) {
 	gen, has := c.Generators[flw.Type]
 	if !has {
 		return nil, errors.Errorf("no workflow step generator registered for workflow type %s", flw.Type)
@@ -170,6 +170,7 @@ func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, fl
 	}
 
 	steps, err = workflowsflow.AwaitGenerateWorkflowSteps(ctx, &workflowsflow.GenerateWorkflowStepsRequest{
+		SignalID:   signalId,
 		WorkflowID: flw.ID,
 		Steps:      steps,
 	})
