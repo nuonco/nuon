@@ -219,10 +219,42 @@ function exec_and_cleanup() {
   local exec_path="$1"
   shift
 
-  echo >&2 "executing $exec_path..."
+  purge_stale
 
+  echo >&2 "executing $exec_path..."
   exec "$exec_path" "$@"
-  rm -f "$exec_path"
+}
+
+function purge_stale() {
+  # Detect OS and set paths/commands accordingly
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    TMP_DIR="/private/tmp"
+    get_mtime() { stat -f %m "$1" 2>/dev/null; }
+  else
+    # Linux
+    TMP_DIR="/tmp"
+    get_mtime() { stat -c %Y "$1" 2>/dev/null; }
+  fi
+
+  echo >&2 "purging stale temporary files in $TMP_DIR..."
+  to_delete=()
+  for file in "$TMP_DIR"/nuonctl-* "$TMP_DIR"/nctl-*; do
+    if [ -e "$file" ]; then
+      age=$(($(date +%s) - $(get_mtime "$file")))
+      if [ $age -gt 7200 ]; then
+        to_delete+=("$file")
+      fi
+    fi
+  done
+
+  if [ ${#to_delete[@]} -eq 0 ]; then
+    return
+  fi
+
+  for file in "${to_delete[@]}"; do
+    rm "$file"
+  done
 }
 
 # Check if we should build locally
