@@ -57,6 +57,7 @@ func (c *RetryWorkflowRequest) Validate(v *validator.Validate) error {
 // @Success					201	{object}	RetryWorkflowResponse
 // @Router					/v1/installs/{install_id}/retry-workflow [post]
 func (s *service) RetryWorkflow(ctx *gin.Context) {
+	fmt.Println("rb - RetryWorkflow called")
 	install_id := ctx.Param("install_id")
 
 	var req RetryWorkflowRequest
