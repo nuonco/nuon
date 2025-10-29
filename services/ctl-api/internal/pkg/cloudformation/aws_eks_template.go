@@ -1,7 +1,10 @@
 package cloudformation
 
 import (
+	"maps"
+
 	"github.com/awslabs/goformation/v7/cloudformation"
+	"github.com/iancoleman/strcase"
 
 	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
@@ -18,9 +21,7 @@ func (t *Templates) getAWSTemplate(inp *TemplateInput) (*cloudformation.Template
 	// build nested resources
 	tmpl.Resources["VPC"] = t.getVPCNestedStack(inp, tb)
 	vpcParams := t.getVPCNestedStackParams()
-	for name, param := range vpcParams {
-		tmpl.Parameters[name] = param
-	}
+	maps.Copy(tmpl.Parameters, vpcParams)
 
 	// NOTE(fd): this uses the configurable neste runner asg cf stack
 	tmpl.Resources["RunnerAutoScalingGroup"] = t.getRunnerASGNestedStack(inp, tb)
@@ -37,37 +38,34 @@ func (t *Templates) getAWSTemplate(inp *TemplateInput) (*cloudformation.Template
 	tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)
 	tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
 
-	// build roles
 	paramlabels := map[string]any{}
+
+	// build roles
 	roles := t.getRolesResources(inp, tb)
-	for rsrcName, rsrc := range roles {
-		tmpl.Resources[rsrcName] = rsrc
-	}
+	maps.Copy(tmpl.Resources, roles)
 	roleParams := t.getRolesParameters(inp)
-	for name, param := range roleParams {
-		tmpl.Parameters[name] = param
-	}
+	maps.Copy(tmpl.Parameters, roleParams)
 	roleConditions := t.getRoleConditions(inp)
-	for name, condition := range roleConditions {
-		tmpl.Conditions[name] = condition
-	}
+	maps.Copy(tmpl.Conditions, roleConditions)
 	roleParamLabels := t.getRolesParamLabels(inp)
-	for name, paramLabel := range roleParamLabels {
-		paramlabels[name] = paramLabel
-	}
+	maps.Copy(paramlabels, roleParamLabels)
 
 	// build secrets
 	secrets := t.getSecretsResources(inp, tb)
-	for rsrcName, rsrc := range secrets {
-		tmpl.Resources[rsrcName] = rsrc
-	}
+	maps.Copy(tmpl.Resources, secrets)
 	secretParams := t.getSecretsParameters(inp)
-	for name, param := range secretParams {
-		tmpl.Parameters[name] = param
-	}
+	maps.Copy(tmpl.Parameters, secretParams)
 	secretParamLabels := t.getSecretsParamLabels(inp)
-	for name, paramLabel := range secretParamLabels {
-		paramlabels[name] = paramLabel
+	maps.Copy(paramlabels, secretParamLabels)
+
+	// build app input parameters for install_stack sourced inputs
+	installGroupParameters := t.getInstallInputGroupParameters(inp)
+	for _, installGroupParameter := range installGroupParameters {
+		maps.Copy(tmpl.Parameters, installGroupParameter)
+	}
+	installGroupInputParamLables := t.getInstallInputGroupParamLable(inp)
+	for _, installGroupParameLables := range installGroupInputParamLables {
+		maps.Copy(paramlabels, installGroupParameLables)
 	}
 
 	// parameter groups
@@ -92,6 +90,17 @@ func (t *Templates) getAWSTemplate(inp *TemplateInput) (*cloudformation.Template
 			"Parameters": pkggenerics.MapToKeys(t.getRolesParameters(inp)),
 		},
 	}...)
+
+	// add app input parameter group if there are any install_stack sourced inputs
+	for groupName, installGroupParameters := range installGroupParameters {
+		pgs = append(pgs, map[string]any{
+			"Label": map[string]any{
+				"default": "Install Inputs: " + strcase.ToCamel(groupName),
+			},
+			"Parameters": pkggenerics.MapToKeys(installGroupParameters),
+		})
+	}
+
 	tmpl.Metadata["AWS::CloudFormation::Interface"] = map[string]any{
 		"ParameterLabels": paramlabels,
 		"ParameterGroups": pgs,

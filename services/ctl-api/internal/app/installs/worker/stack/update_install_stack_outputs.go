@@ -136,6 +136,25 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to validate region")
 	}
 
+	// TODO(sk): this can be aws or azure
+	data, err := stacks.DecodeAWSStackOutputData(run.Data)
+	if err != nil {
+		return errors.Wrap(err, "unable to decode run data")
+	}
+
+	// extract app_inputs from stack outputs for install_stack sourced inputs
+	inputValues := extractAppInputsFromStackOutputs(data)
+	if len(inputValues) > 0 {
+		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
+			InstallID:             install.ID,
+			InputConfigID:         appCfg.InputConfig.ID,
+			InputValues:           inputValues,
+			InstallStackVersionID: version.ID,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update install inputs from stack outputs")
+		}
+	}
+
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   run.ID,
@@ -161,4 +180,23 @@ func validateRegion(install app.Install, outputs app.InstallStackOutputs) error 
 	}
 
 	return nil
+}
+
+// extractAppInputsFromStackOutputs extracts the app_inputs nested object from stack outputs
+func extractAppInputsFromStackOutputs(stackOutputs map[string]interface{}) map[string]string {
+	inputValues := make(map[string]string)
+
+	// Extract app_inputs from stack outputs
+	appInputsRaw, ok := stackOutputs["app_inputs"]
+	if !ok {
+		return inputValues
+	}
+
+	// Convert app_inputs to map[string]interface{}
+	appInputsMap, ok := appInputsRaw.(map[string]string)
+	if !ok {
+		return inputValues
+	}
+
+	return appInputsMap
 }

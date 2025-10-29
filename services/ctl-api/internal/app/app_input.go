@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/iancoleman/strcase"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -17,6 +18,13 @@ const (
 	AppInputTypeBool   AppInputType = "bool"
 	AppInputTypeList   AppInputType = "list"
 	AppInputTypeJSON   AppInputType = "json"
+)
+
+type AppInputSource string
+
+const (
+	AppInputSourceVendor   AppInputSource = "vendor"
+	AppInputSourceCustomer AppInputSource = "customer"
 )
 
 type AppInput struct {
@@ -43,9 +51,14 @@ type AppInput struct {
 	Required    bool   `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
 	Sensitive   bool   `json:"sensitive,omitzero" temporaljson:"sensitive,omitzero,omitempty"`
 
-	Index    int          `json:"index,omitzero"`
-	Internal bool         `json:"internal,omitzero"`
-	Type     AppInputType `json:"type,omitzero" swaggertype:"string"`
+	Index    int            `json:"index,omitzero"`
+	Internal bool           `json:"internal,omitzero"`
+	Type     AppInputType   `json:"type,omitzero" swaggertype:"string"`
+	Source   AppInputSource `json:"source,omitzero" gorm:"not null;default:'customer'" swaggertype:"string" temporaljson:"source"`
+
+	// CloudFormation configuration (computed fields, not stored in DB)
+	CloudFormationStackName      string `json:"cloudformation_stack_name,omitzero" gorm:"-" temporaljson:"cloudformation_stack_name,omitzero,omitempty"`
+	CloudFormationStackParamName string `json:"cloudformation_stack_parameter_name,omitzero" gorm:"-" temporaljson:"cloudformation_stack_parameter_name,omitzero,omitempty"`
 }
 
 func (a *AppInput) BeforeCreate(tx *gorm.DB) error {
@@ -59,4 +72,23 @@ func (a *AppInput) BeforeCreate(tx *gorm.DB) error {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 	return nil
+}
+
+func (a *AppInput) AfterQuery(tx *gorm.DB) error {
+	// Compute CloudFormation configuration fields for install_stack sourced inputs
+	if a.Source == AppInputSourceCustomer {
+		a.CloudFormationStackName = computeCloudFormationStackName(a.Name)
+		a.CloudFormationStackParamName = computeCloudFormationStackParameterName(a.Name)
+	}
+	return nil
+}
+
+// computeCloudFormationStackName generates the CloudFormation stack resource name
+func computeCloudFormationStackName(inputName string) string {
+	return "Install" + strcase.ToCamel(inputName)
+}
+
+// computeCloudFormationStackParameterName generates the CloudFormation parameter name
+func computeCloudFormationStackParameterName(inputName string) string {
+	return "Install" + strcase.ToCamel(inputName)
 }
