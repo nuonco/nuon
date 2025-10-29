@@ -38,7 +38,7 @@ func (s *service) GetWorkflowStepApprovalContents(ctx *gin.Context) {
 	}
 
 	workflowID := ctx.Param("workflow_id")
-	stepID := ctx.Param("workflow_step_id")
+	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
 	_, err = s.getWorkflowStep(ctx, workflowID, stepID)
