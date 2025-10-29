@@ -11,6 +11,28 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
+// @ID						GetAppConflgV2
+// @Summary				get an app config
+// @Description.markdown	get_app_config.md
+// @Param					app_id			path	string	true	"app ID"
+// @Param					app_config_id	path	string	true	"app config ID"
+// @Param recurse query bool false "load all children configs" Default(false)
+// @Tags					apps
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.AppConfig
+// @Router					/v1/apps/{app_id}/configs/{app_config_id} [get]
+func (s *service) GetAppConfigV2(ctx *gin.Context) {
+	s.GetAppConfig(ctx)
+}
+
 // @ID						GetAppConfig
 // @Summary				get an app config
 // @Description.markdown	get_app_config.md
@@ -22,6 +44,7 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
