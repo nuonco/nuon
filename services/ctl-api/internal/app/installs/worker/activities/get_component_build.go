@@ -2,9 +2,12 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"gorm.io/gorm"
 )
 
 type GetComponentBuildRequest struct {
@@ -27,10 +30,12 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigConnection.JobComponentConfig").
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
-
-		// load first result
 		First(&build)
+
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, generics.TemporalGormError(gorm.ErrRecordNotFound, "component build not found")
+		}
 		return nil, fmt.Errorf("unable to load component build: %w", res.Error)
 	}
 
