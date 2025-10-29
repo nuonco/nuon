@@ -61,62 +61,79 @@ var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// global routes
-	ge.POST("/v1/orgs", s.CreateOrg)
-	ge.GET("/v1/orgs", s.GetCurrentUserOrgs)
+	orgs := ge.Group("/v1/orgs")
+	{
+		orgs.POST("", s.CreateOrg)
+		orgs.GET("", s.GetCurrentUserOrgs)
 
-	// update your current org
-	ge.GET("/v1/orgs/current", s.GetOrg)
-	ge.DELETE("/v1/orgs/current", s.DeleteOrg)
-	ge.PATCH("/v1/orgs/current", s.UpdateOrg)
-	ge.POST("/v1/orgs/current/user", s.CreateUser)
-	ge.POST("/v1/orgs/current/remove-user", s.RemoveUser)
+		// update your current org
+		current := orgs.Group("/current")
+		{
+			current.GET("", s.GetOrg)
+			current.DELETE("", s.DeleteOrg)
+			current.PATCH("", s.UpdateOrg)
+			current.POST("/user", s.CreateUser)
+			current.POST("/remove-user", s.RemoveUser)
 
-	// accounts
-	ge.GET("/v1/orgs/current/accounts", s.GetOrgAccounts)
+			// accounts
+			current.GET("/accounts", s.GetOrgAccounts)
 
-	// invites
-	ge.GET("/v1/orgs/current/invites", s.GetOrgInvites)
-	ge.POST("/v1/orgs/current/invites", s.CreateOrgInvite)
+			// invites
+			invites := current.Group("/invites")
+			{
+				invites.GET("", s.GetOrgInvites)
+				invites.POST("", s.CreateOrgInvite)
+			}
 
-	// runners
-	ge.GET("/v1/orgs/current/runner-group", s.GetOrgRunnerGroup)
+			// runners
+			current.GET("/runner-group", s.GetOrgRunnerGroup)
+		}
+	}
 
 	return nil
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.GET("/v1/orgs", s.GetAllOrgs)
-	api.GET("/v1/orgs/admin-get", s.AdminGetOrg)
-	api.GET("/v1/orgs/:org_id/admin-get-runner", s.AdminGetOrgRunner)
-	api.POST("/v1/orgs/admin-delete-canarys", s.AdminDeleteCanaryOrgs)
-	api.POST("/v1/orgs/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)
+	orgs := api.Group("/v1/orgs")
+	{
+		// global org operations
+		orgs.GET("", s.GetAllOrgs)
+		orgs.GET("/admin-get", s.AdminGetOrg)
+		orgs.POST("/admin-delete-canarys", s.AdminDeleteCanaryOrgs)
+		orgs.POST("/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)
+		orgs.POST("/admin-restart-all", s.RestartAllOrgs)
 
-	api.POST("/v1/orgs/:org_id/admin-add-user", s.CreateOrgUser)
-	api.POST("/v1/orgs/:org_id/admin-support-users", s.CreateSupportUsers)
-	api.POST("/v1/orgs/:org_id/admin-remove-support-users", s.RemoveSupportUsers)
-	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
-	api.POST("/v1/orgs/:org_id/admin-reprovision", s.AdminReprovisionOrg)
-	api.POST("/v1/orgs/:org_id/admin-deprovision", s.AdminDeprovisionOrg)
-	api.POST("/v1/orgs/:org_id/admin-restart", s.RestartOrg)
-	api.POST("/v1/orgs/:org_id/admin-restart-children", s.RestartOrgChildren)
-	api.POST("/v1/orgs/:org_id/admin-rename", s.AdminRenameOrg)
-	api.POST("/v1/orgs/:org_id/admin-internal-slack-webhook-url", s.AdminSetInternalSlackWebhookURLOrg)
-	api.POST("/v1/orgs/:org_id/admin-customer-slack-webhook-url", s.AdminSetCustomerSlackWebhookURLOrg)
-	api.POST("/v1/orgs/:org_id/admin-add-vcs-connection", s.AdminAddVCSConnection)
-	api.POST("/v1/orgs/:org_id/admin-service-account", s.AdminCreateServiceAccount)
-	api.POST("/v1/orgs/:org_id/admin-add-logo", s.AdminAddLogo)
-	api.POST("/v1/orgs/:org_id/admin-migrate", s.AdminMigrateOrg)
-	api.POST("/v1/orgs/:org_id/admin-debug-mode", s.AdminDebugModeOrg)
-	api.POST("/v1/orgs/:org_id/admin-add-priority", s.AdminAddPriority)
-	api.POST("/v1/orgs/:org_id/admin-forget", s.AdminForgetOrg)
-	api.POST("/v1/orgs/:org_id/admin-force-sandbox-mode", s.AdminForceSandboxMode)
-	api.POST("/v1/orgs/:org_id/admin-restart-runners", s.AdminRestartRunners)
-	api.PATCH("/v1/orgs/:org_id/admin-features", s.AdminUpdateOrgFeatures)
+		// org features (all orgs)
+		orgs.GET("/admin-features", s.AdminGetOrgFeatures)
+		orgs.PATCH("/admin-features", s.AdminUpdateOrgsFeatures)
 
-	// for updating all
-	api.GET("/v1/orgs/admin-features", s.AdminGetOrgFeatures)
-	api.PATCH("/v1/orgs/admin-features", s.AdminUpdateOrgsFeatures)
-	api.POST("/v1/orgs/admin-restart-all", s.RestartAllOrgs)
+		// org-specific admin routes
+		org := orgs.Group("/:org_id")
+		{
+			org.GET("/admin-get-runner", s.AdminGetOrgRunner)
+			org.POST("/admin-add-user", s.CreateOrgUser)
+			org.POST("/admin-support-users", s.CreateSupportUsers)
+			org.POST("/admin-remove-support-users", s.RemoveSupportUsers)
+			org.POST("/admin-delete", s.AdminDeleteOrg)
+			org.POST("/admin-reprovision", s.AdminReprovisionOrg)
+			org.POST("/admin-deprovision", s.AdminDeprovisionOrg)
+			org.POST("/admin-restart", s.RestartOrg)
+			org.POST("/admin-restart-children", s.RestartOrgChildren)
+			org.POST("/admin-rename", s.AdminRenameOrg)
+			org.POST("/admin-internal-slack-webhook-url", s.AdminSetInternalSlackWebhookURLOrg)
+			org.POST("/admin-customer-slack-webhook-url", s.AdminSetCustomerSlackWebhookURLOrg)
+			org.POST("/admin-add-vcs-connection", s.AdminAddVCSConnection)
+			org.POST("/admin-service-account", s.AdminCreateServiceAccount)
+			org.POST("/admin-add-logo", s.AdminAddLogo)
+			org.POST("/admin-migrate", s.AdminMigrateOrg)
+			org.POST("/admin-debug-mode", s.AdminDebugModeOrg)
+			org.POST("/admin-add-priority", s.AdminAddPriority)
+			org.POST("/admin-forget", s.AdminForgetOrg)
+			org.POST("/admin-force-sandbox-mode", s.AdminForceSandboxMode)
+			org.POST("/admin-restart-runners", s.AdminRestartRunners)
+			org.PATCH("/admin-features", s.AdminUpdateOrgFeatures)
+		}
+	}
 
 	return nil
 }
