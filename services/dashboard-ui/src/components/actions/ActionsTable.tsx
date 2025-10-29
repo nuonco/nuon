@@ -49,17 +49,18 @@ function parseActionsToTableData(
             ))}
         </ol>
       ),
-      actionTriggers: action?.configs
-        ?.at(-1)
-        ?.triggers?.map((trigger) => (
-          <ActionTriggerType
-            key={trigger?.id}
-            componentName={trigger?.component?.name}
-            componentPath={`${basePath}/components/${trigger?.component?.id}`}
-            triggerType={trigger?.type as TActionConfigTriggerType}
-          />
-        )),
-
+      actionTriggers: (
+        <div className="flex flex-wrap gap-2">
+          {action?.configs?.at(-1)?.triggers?.map((trigger) => (
+            <ActionTriggerType
+              key={trigger?.id}
+              componentName={trigger?.component?.name}
+              componentPath={`${basePath}/components/${trigger?.component?.id}`}
+              triggerType={trigger?.type as TActionConfigTriggerType}
+            />
+          ))}
+        </div>
+      ),
       href: `${basePath}/actions/${action.id}`,
     }
   })
