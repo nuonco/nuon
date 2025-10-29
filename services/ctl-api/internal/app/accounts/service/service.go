@@ -26,17 +26,22 @@ func New(params Params) *service {
 		db: params.DB,
 	}
 }
-
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// accounts
-	api.GET("/v1/account", s.GetCurrentAccount)
+	account := api.Group("/v1/account")
+	{
+		account.GET("", s.GetCurrentAccount)
 
-	// user journeys
-	api.GET("/v1/account/user-journeys", s.GetUserJourneys)
-	api.POST("/v1/account/user-journeys", s.CreateUserJourney)
-	api.PATCH("/v1/account/user-journeys/:journey_name/steps/:step_name", s.UpdateUserJourneyStep)
-	api.POST("/v1/account/user-journeys/:journey_name/reset", s.ResetUserJourney)
-	api.POST("/v1/account/user-journeys/:journey_name/complete", s.CompleteUserJourney)
+		// user journeys
+		userJourneys := account.Group("/user-journeys")
+		{
+			userJourneys.GET("", s.GetUserJourneys)
+			userJourneys.POST("", s.CreateUserJourney)
+			userJourneys.PATCH("/:journey_name/steps/:step_name", s.UpdateUserJourneyStep)
+			userJourneys.POST("/:journey_name/reset", s.ResetUserJourney)
+			userJourneys.POST("/:journey_name/complete", s.CompleteUserJourney)
+		}
+	}
 	return nil
 }
 

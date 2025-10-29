@@ -49,62 +49,92 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/components", s.GetOrgComponents)
 
 	// components belong to an app
-	api.GET("/v1/apps/:app_id/components", s.GetAppComponents)
-	api.POST("/v1/apps/:app_id/components", s.CreateComponent)
-	api.POST("/v1/apps/:app_id/components/build-all", s.BuildAllComponents)
-	api.GET("/v1/apps/:app_id/component/:component_name_or_id", s.GetAppComponent)
-	api.PATCH("/v1/apps/:app_id/components/:component_id", s.UpdateAppComponent)
-	api.DELETE("/v1/apps/:app_id/components/:component_id", s.DeleteAppComponent)
+	apps := api.Group("/v1/apps/:app_id")
+	{
+		components := apps.Group("/components")
+		{
+			components.GET("", s.GetAppComponents)
+			components.POST("", s.CreateComponent)
+			components.POST("/build-all", s.BuildAllComponents)
+		}
 
-	// get a component's dependencies
-	api.GET("/v1/apps/:app_id/components/:component_id/dependencies", s.GetAppComponentDependencies)
-	api.GET("/v1/apps/:app_id/components/:component_id/dependents", s.GetAppComponentDependents)
+		// single component routes
+		component := apps.Group("/component")
+		{
+			component.GET("/:component_name_or_id", s.GetAppComponent)
+		}
 
-	// builds
-	api.POST("/v1/apps/:app_id/components/:component_id/builds", s.CreateAppComponentBuild)
-	api.GET("/v1/apps/:app_id/components/:component_id/builds/latest", s.GetAppComponentLatestBuild)
-	api.GET("/v1/apps/:app_id/components/:component_id/builds/:build_id", s.GetAppComponentBuild)
-	api.GET("/v1/apps/:app_id/components/:component_id/builds", s.GetAppComponentBuilds)
+		// component-specific routes
+		comp := apps.Group("/components/:component_id")
+		{
+			comp.PATCH("", s.UpdateAppComponent)
+			comp.DELETE("", s.DeleteAppComponent)
 
-	// component configurations
-	api.POST("/v1/apps/:app_id/components/:component_id/configs/terraform-module", s.CreateAppTerraformModuleComponentConfig)
-	api.POST("/v1/apps/:app_id/components/:component_id/configs/helm", s.CreateAppHelmComponentConfig)
-	api.POST("/v1/apps/:app_id/components/:component_id/configs/docker-build", s.CreateAppDockerBuildComponentConfig)
-	api.POST("/v1/apps/:app_id/components/:component_id/configs/external-image", s.CreateAppExternalImageComponentConfig)
-	api.POST("/v1/apps/:app_id/components/:component_id/configs/job", s.CreateAppJobComponentConfig)
-	api.POST("/v1/apps/:app_id/components/:component_id/configs/kubernetes-manifest", s.CreateAppKubernetesManifestComponentConfig)
+			// dependencies
+			comp.GET("/dependencies", s.GetAppComponentDependencies)
+			comp.GET("/dependents", s.GetAppComponentDependents)
 
-	api.GET("/v1/apps/:app_id/components/:component_id/configs", s.GetAppComponentConfigs)
-	api.GET("/v1/apps/:app_id/components/:component_id/configs/:config_id", s.GetAppComponentConfig)
-	api.GET("/v1/apps/:app_id/components/:component_id/configs/latest", s.GetAppComponentLatestConfig)
+			// builds
+			builds := comp.Group("/builds")
+			{
+				builds.POST("", s.CreateAppComponentBuild)
+				builds.GET("/latest", s.GetAppComponentLatestBuild)
+				builds.GET("/:build_id", s.GetAppComponentBuild)
+				builds.GET("", s.GetAppComponentBuilds)
+			}
+
+			// component configurations
+			configs := comp.Group("/configs")
+			{
+				configs.POST("/terraform-module", s.CreateAppTerraformModuleComponentConfig)
+				configs.POST("/helm", s.CreateAppHelmComponentConfig)
+				configs.POST("/docker-build", s.CreateAppDockerBuildComponentConfig)
+				configs.POST("/external-image", s.CreateAppExternalImageComponentConfig)
+				configs.POST("/job", s.CreateAppJobComponentConfig)
+				configs.POST("/kubernetes-manifest", s.CreateAppKubernetesManifestComponentConfig)
+				configs.GET("", s.GetAppComponentConfigs)
+				configs.GET("/:config_id", s.GetAppComponentConfig)
+				configs.GET("/latest", s.GetAppComponentLatestConfig)
+			}
+		}
+	}
 
 	// deprecated routes
+	deprecatedComponents := api.Group("/v1/components/:component_id")
+	{
+		// crud ops for components
+		deprecatedComponents.GET("", s.GetComponent)       // Deprecated
+		deprecatedComponents.PATCH("", s.UpdateComponent)  // Deprecated
+		deprecatedComponents.DELETE("", s.DeleteComponent) // Deprecated
 
-	// crud ops for components
-	api.GET("/v1/components/:component_id", s.GetComponent)       // Deprecated
-	api.PATCH("/v1/components/:component_id", s.UpdateComponent)  // Deprecated
-	api.DELETE("/v1/components/:component_id", s.DeleteComponent) // Deprecated
+		// dependencies
+		deprecatedComponents.GET("/dependencies", s.GetComponentDependencies) // Deprecated
+		deprecatedComponents.GET("/dependents", s.GetComponentDependents)     // Deprecated
 
-	// get a component's dependencies
-	api.GET("/v1/components/:component_id/dependencies", s.GetComponentDependencies) // Deprecated
-	api.GET("/v1/components/:component_id/dependents", s.GetComponentDependents)     // Deprecated
+		// component configurations
+		deprecatedConfigs := deprecatedComponents.Group("/configs")
+		{
+			deprecatedConfigs.POST("/terraform-module", s.CreateTerraformModuleComponentConfig)       // Deprecated
+			deprecatedConfigs.POST("/helm", s.CreateHelmComponentConfig)                              // Deprecated
+			deprecatedConfigs.POST("/docker-build", s.CreateDockerBuildComponentConfig)               // Deprecated
+			deprecatedConfigs.POST("/external-image", s.CreateExternalImageComponentConfig)           // Deprecated
+			deprecatedConfigs.POST("/job", s.CreateJobComponentConfig)                                // Deprecated
+			deprecatedConfigs.POST("/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig) // Deprecated
+			deprecatedConfigs.GET("", s.GetComponentConfigs)                                          // Deprecated
+			deprecatedConfigs.GET("/:config_id", s.GetComponentConfig)                                // Deprecated
+			deprecatedConfigs.GET("/latest", s.GetComponentLatestConfig)                              // Deprecated
+		}
 
-	// create component configurations
-	api.POST("/v1/components/:component_id/configs/terraform-module", s.CreateTerraformModuleComponentConfig)       // Deprecated
-	api.POST("/v1/components/:component_id/configs/helm", s.CreateHelmComponentConfig)                              // Deprecated
-	api.POST("/v1/components/:component_id/configs/docker-build", s.CreateDockerBuildComponentConfig)               // Deprecated
-	api.POST("/v1/components/:component_id/configs/external-image", s.CreateExternalImageComponentConfig)           // Deprecated
-	api.POST("/v1/components/:component_id/configs/job", s.CreateJobComponentConfig)                                // Deprecated
-	api.POST("/v1/components/:component_id/configs/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig) // Deprecated
-	api.GET("/v1/components/:component_id/configs", s.GetComponentConfigs)                                          // Deprecated
-	api.GET("/v1/components/:component_id/configs/:config_id", s.GetComponentConfig)                                // Deprecated
-	api.GET("/v1/components/:component_id/configs/latest", s.GetComponentLatestConfig)
+		// builds
+		deprecatedBuilds := deprecatedComponents.Group("/builds")
+		{
+			deprecatedBuilds.POST("", s.CreateComponentBuild)          // Deprecated
+			deprecatedBuilds.GET("/latest", s.GetComponentLatestBuild) // Deprecated
+			deprecatedBuilds.GET("/:build_id", s.GetComponentBuild)    // Deprecated
+		}
+	}
 
-	// builds are immutable
-	api.POST("/v1/components/:component_id/builds", s.CreateComponentBuild)          // Deprecated
-	api.GET("/v1/components/:component_id/builds/latest", s.GetComponentLatestBuild) // Deprecated
-	api.GET("/v1/components/:component_id/builds/:build_id", s.GetComponentBuild)    // Deprecated
-
+	// other deprecated build routes
 	api.GET("/v1/builds", s.GetComponentBuilds)            // deprecated
 	api.GET("/v1/components/builds/:build_id", s.GetBuild) // deprecated
 
@@ -112,9 +142,17 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.GET("/v1/components", s.GetAllComponents)
-	api.POST("/v1/components/:component_id/admin-restart", s.RestartComponent)
-	api.POST("/v1/components/:component_id/admin-delete", s.AdminDeleteComponent)
+	components := api.Group("/v1/components")
+	{
+		components.GET("", s.GetAllComponents)
+
+		// component admin routes
+		component := components.Group("/:component_id")
+		{
+			component.POST("/admin-restart", s.RestartComponent)
+			component.POST("/admin-delete", s.AdminDeleteComponent)
+		}
+	}
 
 	return nil
 }
