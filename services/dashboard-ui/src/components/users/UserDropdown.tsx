@@ -70,6 +70,7 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
           isExternal
+          target="_self"
         >
           Log out <Icon variant="SignOut" />
         </Link>
