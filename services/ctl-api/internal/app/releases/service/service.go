@@ -39,18 +39,44 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	api.POST("/v1/components/:component_id/releases", s.CreateComponentRelease)
-	api.GET("/v1/components/:component_id/releases", s.GetComponentReleases)
-	api.GET("/v1/apps/:app_id/releases", s.GetAppReleases)
+	// component releases
+	components := api.Group("/v1/components/:component_id")
+	{
+		releases := components.Group("/releases")
+		{
+			releases.POST("", s.CreateComponentRelease)
+			releases.GET("", s.GetComponentReleases)
+		}
+	}
 
-	api.GET("/v1/releases/:release_id", s.GetRelease)
-	api.GET("/v1/releases/:release_id/steps", s.GetReleaseSteps)
+	// app releases
+	apps := api.Group("/v1/apps/:app_id")
+	{
+		apps.GET("/releases", s.GetAppReleases)
+	}
+
+	// release-specific routes
+	releases := api.Group("/v1/releases/:release_id")
+	{
+		releases.GET("", s.GetRelease)
+		releases.GET("/steps", s.GetReleaseSteps)
+	}
+
 	return nil
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.GET("/v1/releases", s.GetAllReleases)
-	api.POST("/v1/releases/:release_id/admin-restart", s.RestartRelease)
+	releases := api.Group("/v1/releases")
+	{
+		releases.GET("", s.GetAllReleases)
+
+		// release-specific admin routes
+		release := releases.Group("/:release_id")
+		{
+			release.POST("/admin-restart", s.RestartRelease)
+		}
+	}
+
 	return nil
 }
 

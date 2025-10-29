@@ -100,50 +100,81 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	return nil
 }
-
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.GET("/v1/runners", s.AdminGetAllRunners)
+	// runners
+	runners := api.Group("/v1/runners")
+	{
+		runners.GET("", s.AdminGetAllRunners)
+		runners.POST("/restart", s.AdminRestartRunners)
+		runners.PATCH("/bulk-update", s.AdminBulkUpdateRunners)
 
-	// runner management methods
-	api.GET("/v1/runners/:runner_id", s.AdminGetRunner)
-	api.GET("/v1/runners/:runner_id/settings", s.AdminGetRunnerSettings)
-	api.PATCH("/v1/runners/:runner_id/settings", s.AdminUpdateRunnerSettings)
-	api.POST("/v1/runners/:runner_id/reprovision", s.AdminReprovisionRunner)
-	api.POST("/v1/runners/:runner_id/deprovision", s.AdminDeprovisionRunner)
-	api.POST("/v1/runners/:runner_id/delete", s.AdminDeleteRunner)
-	api.POST("/v1/runners/:runner_id/force-delete", s.AdminForceDeleteRunner)
-	api.POST("/v1/runners/:runner_id/restart", s.RestartRunner)
-	api.POST("/v1/runners/:runner_id/offline-check", s.AdminOfflineCheck)
-	api.POST("/v1/runners/:runner_id/service-account-token", s.AdminCreateRunnerServiceAccountToken)
-	api.POST("/v1/runners/:runner_id/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
-	api.POST("/v1/runners/:runner_id/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
-	api.POST("/v1/runners/:runner_id/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
-	api.GET("/v1/runners/:runner_id/service-account", s.AdminGetRunnerServiceAccount)
-	api.POST("/v1/runners/restart", s.AdminRestartRunners)
-	api.PATCH("/v1/runners/bulk-update", s.AdminBulkUpdateRunners)
-	api.GET("/v1/runner-groups/:runner_group_id", s.AdminGetRunnerGroup)
-	api.GET("/v1/runners/:runner_id/jobs/queue", s.AdminGetRunnerJobsQueue)
+		// runner-specific operations
+		runner := runners.Group("/:runner_id")
+		{
+			runner.GET("", s.AdminGetRunner)
 
-	// trigger specific jobs
-	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.AdminGracefulShutDown)
-	api.POST("/v1/runners/:runner_id/force-shutdown", s.AdminForceShutDown)
-	api.POST("/v1/runners/:runner_id/noop-job", s.AdminCreateNoopJob)
-	api.POST("/v1/runners/:runner_id/health-check-job", s.AdminCreateHealthCheck)
+			// runner settings
+			runner.GET("/settings", s.AdminGetRunnerSettings)
+			runner.PATCH("/settings", s.AdminUpdateRunnerSettings)
 
-	// job management
-	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.AdminCancelRunnerJob)
-	api.GET("/v1/runner-jobs/:runner_job_id", s.AdminGetRunnerJob)
+			// runner lifecycle
+			runner.POST("/reprovision", s.AdminReprovisionRunner)
+			runner.POST("/deprovision", s.AdminDeprovisionRunner)
+			runner.POST("/delete", s.AdminDeleteRunner)
+			runner.POST("/force-delete", s.AdminForceDeleteRunner)
+			runner.POST("/restart", s.RestartRunner)
+			runner.POST("/offline-check", s.AdminOfflineCheck)
+
+			// service account management
+			runner.POST("/service-account-token", s.AdminCreateRunnerServiceAccountToken)
+			runner.POST("/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
+			runner.POST("/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
+			runner.GET("/service-account", s.AdminGetRunnerServiceAccount)
+
+			// job management
+			runner.POST("/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
+			runner.GET("/jobs/queue", s.AdminGetRunnerJobsQueue)
+
+			// trigger specific jobs
+			runner.POST("/graceful-shutdown", s.AdminGracefulShutDown)
+			runner.POST("/force-shutdown", s.AdminForceShutDown)
+			runner.POST("/noop-job", s.AdminCreateNoopJob)
+			runner.POST("/health-check-job", s.AdminCreateHealthCheck)
+		}
+	}
+
+	// runner groups
+	runnerGroups := api.Group("/v1/runner-groups/:runner_group_id")
+	{
+		runnerGroups.GET("", s.AdminGetRunnerGroup)
+	}
+
+	// runner job management
+	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
+	{
+		runnerJobs.POST("/cancel", s.AdminCancelRunnerJob)
+		runnerJobs.GET("", s.AdminGetRunnerJob)
+	}
 
 	// otel admin endpoints
-	api.GET("/v1/log-streams/:log_stream_id/logs", s.AdminGetLogStreamLogs)
-	api.GET("/v1/log-streams/:log_stream_id", s.AdminGetLogStream)
+	logStreams := api.Group("/v1/log-streams/:log_stream_id")
+	{
+		logStreams.GET("/logs", s.AdminGetLogStreamLogs)
+		logStreams.GET("", s.AdminGetLogStream)
+	}
 
 	// install runners
-	api.POST("/v1/installs/:install_id/runners/shutdown-job", s.AdminCreateInstallRunnerqShutDownJob)
+	installs := api.Group("/v1/installs/:install_id")
+	{
+		installs.POST("/runners/shutdown-job", s.AdminCreateInstallRunnerqShutDownJob)
+	}
 
-	// workspace management
-	api.POST("/v1/terraform-workspaces/:workspace_id/lock", s.AdminLockWorkspace)
-	api.POST("/v1/terraform-workspaces/:workspace_id/unlock", s.AdminUnlockWorkspace)
+	// terraform workspace management
+	workspaces := api.Group("/v1/terraform-workspaces/:workspace_id")
+	{
+		workspaces.POST("/lock", s.AdminLockWorkspace)
+		workspaces.POST("/unlock", s.AdminUnlockWorkspace)
+	}
 
 	return nil
 }
