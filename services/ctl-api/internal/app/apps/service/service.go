@@ -28,9 +28,11 @@ type Params struct {
 	Helpers         *appshelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	EvClient        eventloop.Client
+	EndpointAudit   *api.EndpointAudit
 }
 
 type service struct {
+	api.RouteRegister
 	v               *validator.Validate
 	db              *gorm.DB
 	mw              metrics.Writer
@@ -44,9 +46,9 @@ type service struct {
 
 var _ api.Service = (*service)(nil)
 
-func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// manage apps
-	apps := api.Group("/v1/apps")
+	apps := ge.Group("/v1/apps")
 	{
 		apps.POST("", s.CreateApp)
 		apps.GET("", s.GetApps)
@@ -56,33 +58,39 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	}
 
 	// app-specific routes
-	app := api.Group("/v1/apps/:app_id")
+	app := ge.Group("/v1/apps/:app_id")
 	{
 		// app configs
 		app.GET("/template-config", s.GetAppConfigTemplate)
-		appConfig := app.Group("/config")
+		appConfig := app.Group("/config") // deprecated singular route
 		{
-			appConfig.POST("", s.CreateAppConfig)
-			appConfig.GET("/:app_config_id", s.GetAppConfig)
-			appConfig.PATCH("/:app_config_id", s.UpdateAppConfig)
-			appConfig.POST("/:app_config_id/update-installs", s.UpdateAppConfigInstalls)
-			appConfig.GET("/:app_config_id/graph", s.GetAppConfigGraph)
+			s.POST(appConfig, "", s.CreateAppConfig, api.APIContextTypePublic, true)                                        // deprecated singular route
+			s.GET(appConfig, "/:app_config_id", s.GetAppConfig, api.APIContextTypePublic, true)                             // deprecated singular route
+			s.PATCH(appConfig, "/:app_config_id", s.UpdateAppConfig, api.APIContextTypePublic, true)                        // deprecated singular route
+			s.POST(appConfig, "/:app_config_id/update-installs", s.UpdateAppConfigInstalls, api.APIContextTypePublic, true) // deprecated singular route
+			s.GET(appConfig, "/:app_config_id/graph", s.GetAppConfigGraph, api.APIContextTypePublic, true)                  // deprecated singular route
 		}
 
 		appConfigs := app.Group("/configs")
 		{
 			appConfigs.GET("", s.GetAppConfigs)
+			appConfigs.POST("", s.CreateAppConfigV2)
+			appConfigs.PATCH("/:app_config_id", s.UpdateAppConfigV2)
+			appConfigs.GET("/:app_config_id", s.GetAppConfigV2)
+			appConfigs.POST("/:app_config_id/update-installs", s.UpdateAppConfigInstallsV2)
+			appConfigs.GET("/:app_config_id/graph", s.GetAppConfigGraphV2)
 		}
 
 		// app sandbox management
 		sandboxConfig := app.Group("/sandbox-config")
 		{
-			sandboxConfig.POST("", s.CreateAppSandboxConfig)
+			s.POST(sandboxConfig, "", s.CreateAppSandboxConfigV2, api.APIContextTypePublic, true) // deprecated singular route
 		}
 
 		sandboxConfigs := app.Group("/sandbox-configs")
 		{
 			sandboxConfigs.GET("", s.GetAppSandboxConfigs)
+			sandboxConfigs.POST("", s.CreateAppSandboxConfigV2)
 		}
 
 		// app secrets configs management
@@ -136,15 +144,17 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 
 		// app secrets management
-		app.POST("/secret", s.CreateAppSecret)
+		s.POST(app, "/secret", s.CreateAppSecretV2, api.APIContextTypePublic, true) // deprecated singular route
+		app.POST("/secrets", s.CreateAppSecretV2)
 		secret := app.Group("/secret")
 		{
-			secret.DELETE("/:secret_id", s.DeleteAppSecret)
+			s.DELETE(secret, "/:secret_id", s.DeleteAppSecret, api.APIContextTypePublic, true) // deprecated singular route
 		}
 
 		secrets := app.Group("/secrets")
 		{
 			secrets.GET("", s.GetAppSecrets)
+			secrets.DELETE("/:secret_id", s.DeleteAppSecretV2)
 
 		}
 
@@ -202,6 +212,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister: api.RouteRegister{
+			EndpointAudit: params.EndpointAudit,
+		},
 		cfg:             params.Cfg,
 		v:               params.V,
 		db:              params.DB,

@@ -29,6 +29,27 @@ func (c *UpdateAppConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
+// @ID						UpdateAppConflgV2
+// @Description.markdown	update_app_config.md
+// @Tags					apps
+// @Accept					json
+// @Param					req	body	UpdateAppConfigRequest	true	"Input"
+// @Produce				json
+// @Param					app_id			path	string	true	"app ID"
+// @Param					app_config_id	path	string	true	"app config ID"
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				201	{object}	app.AppConfig
+// @Router					/v1/apps/{app_id}/config/{app_config_id} [PATCH]
+func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
+	s.UpdateAppConfig(ctx)
+}
+
 // @ID						UpdateAppConfig
 // @Description.markdown	update_app_config.md
 // @Tags					apps
@@ -39,6 +60,7 @@ func (c *UpdateAppConfigRequest) Validate(v *validator.Validate) error {
 // @Param					app_config_id	path	string	true	"app config ID"
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecation    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
