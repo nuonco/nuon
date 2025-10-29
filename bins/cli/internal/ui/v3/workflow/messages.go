@@ -41,7 +41,7 @@ func (m model) fetchStackCmd() tea.Msg {
 }
 
 type createWorkflowStepApprovalResponseMsg struct {
-	selectedStepApprovalResponse *models.AppWorkflowStepApprovalResponse
+	selectedStepApprovalResponse *models.ServiceCreateWorkflowStepApprovalResponseResponse
 	err                          error
 }
 
@@ -51,9 +51,9 @@ func (m model) createWorkflowStepApprovalResponseCmd() tea.Msg {
 		ResponseType: models.AppWorkflowStepResponseTypeApprove,
 		Note:         "",
 	}
-	approvalResponse, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, m.selectedStep.ID, m.selectedStep.Approval.ID, req)
-	m.setLogMessage(fmt.Sprintf("[%s] step approved %s", approvalResponse.Type, approvalResponse.InstallWorkflowStepApprovalID), "success")
-	return createWorkflowStepApprovalResponseMsg{selectedStepApprovalResponse: approvalResponse, err: err}
+	approvalResponseResponse, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, m.selectedStep.ID, m.selectedStep.Approval.ID, req)
+	m.setLogMessage(fmt.Sprintf("[%s] step approved %s", approvalResponseResponse.Type, approvalResponseResponse.ID), "success")
+	return createWorkflowStepApprovalResponseMsg{selectedStepApprovalResponse: approvalResponseResponse, err: err}
 }
 
 type cancelWorkflowMsg struct {
