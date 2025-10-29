@@ -54,7 +54,6 @@ func (c *RetryWorkflowByIDRequest) Validate(v *validator.Validate) error {
 // @Success					201	{object}	RetryWorkflowByIDResponse
 // @Router					/v1/workflows/{workflow_id}/retry [post]
 func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
-	fmt.Println("rb - RetryOwnerWorkflow called")
 	var req RetryWorkflowByIDRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.ErrUser{
