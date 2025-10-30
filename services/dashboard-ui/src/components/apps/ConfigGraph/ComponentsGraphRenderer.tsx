@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, memo, useMemo } from 'react'
 import {
   ReactFlow,
   Node,
@@ -10,17 +10,23 @@ import {
   useNodesState,
   useEdgesState,
   MarkerType,
+  NodeProps,
+  Handle,
+  Position,
 } from '@xyflow/react'
 import dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
 
 import { Banner } from '@/components/common/Banner'
 import { Code } from '@/components/common/Code'
+import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { ComponentType } from '@/components/components/ComponentType'
 import { Modal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
+import type { TComponentType } from '@/types'
 
 const getLayoutedElements = (
   nodes: Node[],
@@ -30,7 +36,7 @@ const getLayoutedElements = (
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
 
-  const nodeWidth = 200 // Increased width for longer labels
+  const nodeWidth = 200
   const nodeHeight = 40
 
   dagreGraph.setGraph({ rankdir: direction })
@@ -69,13 +75,23 @@ export const ComponentsGraphRenderer = ({
   return (
     <Modal
       heading={
-        <Text variant="body" weight="strong">
-          App component dependency graph
+        <Text
+          className="!inline-flex gap-4 items-center"
+          variant="h3"
+          weight="strong"
+          theme="info"
+        >
+          <Icon variant="GraphIcon" size="24" />
+          Component dependency graph
         </Text>
       }
       triggerButton={{
-        children: 'View dependency graph',
-        // isMenuButton: true,
+        children: (
+          <>
+            View dependency graph <Icon variant="GraphIcon" />
+          </>
+        ),
+        isMenuButton: true,
         variant: 'ghost',
       }}
       size="full"
@@ -104,6 +120,48 @@ export const ComponentsGraphRenderer = ({
   )
 }
 
+// Custom node component that renders the JSX
+const CustomComponentNode = memo(({ data, id }: NodeProps) => {
+  const backgroundColor = data.color === 'blue' ? '#1e50c0' : '#991B1B'
+
+  return (
+    <>
+      <Handle type="target" position={Position.Left} />
+      <div
+        className="flex items-center gap-2 px-3 py-2"
+        style={{
+          background: backgroundColor,
+          color: '#FAFAFA',
+          borderRadius: '4px',
+          fontFamily: 'var(--font-hack)',
+          fontSize: '12px',
+          fontWeight: 500,
+          minWidth: '150px',
+          textAlign: 'center',
+          border: 'none',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {data.componentType && (
+          <ComponentType
+            type={data.componentType as TComponentType}
+            displayVariant="icon-only"
+            variant="subtext"
+          />
+        )}
+        <span>{(data.componentLabel as string) || id}</span>
+      </div>
+      <Handle type="source" position={Position.Right} />
+    </>
+  )
+})
+
+CustomComponentNode.displayName = 'CustomComponentNode'
+
+const nodeTypes = {
+  customComponent: CustomComponentNode,
+}
+
 const ComponentsGraph = ({
   appId,
   configId,
@@ -119,102 +177,101 @@ const ComponentsGraph = ({
     path: `/api/orgs/${org?.id}/apps/${appId}/configs/${configId}/graph`,
   })
 
-  const updateNodes = (nodes: any[]) => {
-    // First, create a map of nodes with data
-    const dataMap = nodes.reduce(
-      (acc, node) => {
-        if (node.data?.label && node.data?.type) {
-          acc[node.id] = {
-            label: node.data.label,
-            type: node.data.type,
-          }
-        }
-        return acc
-      },
-      {} as Record<string, { label: string; type: string }>
-    )
-
-    // Then update nodes that have empty data
-    return nodes.map((node) => {
-      if (!node.data?.label && !node.data?.type && dataMap[node.id]) {
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            label: dataMap[node.id].label,
-            type: dataMap[node.id].type,
-          },
-        }
-      }
-      return node
-    })
-  }
-
   const convertDotToFlowData = (dotGraph: string) => {
-    const nodes: Node[] = []
+    const nodesMap = new Map<string, Node>()
     const edges: Edge[] = []
+    const allNodeIds = new Set<string>()
 
-    // Parse nodes with their attributes
-    const nodeRegex = /"([^"]+)"\s*\[\s*([^\]]+)\]/g
+    // First pass: Find all node declarations with attributes
+    // Must NOT have "->" before the node (which would make it part of an edge)
+    const nodeWithAttrsRegex = /^\s*"([^"]+)"\s*\[\s*([^\]]+?)\s*\];?\s*$/gm
     let match
 
-    while ((match = nodeRegex.exec(dotGraph)) !== null) {
-      const [, id, attrs] = match
-      const attributes = Object.fromEntries(
-        attrs.split(',').map((attr) => {
-          const [key, value] = attr
-            .split('=')
-            .map((s) => s.trim().replace(/"/g, ''))
-          return [key, value]
-        })
-      )
+    while ((match = nodeWithAttrsRegex.exec(dotGraph)) !== null) {
+      const [fullMatch, id, attrs] = match
 
-      nodes.push({
-        id,
-        type: 'default',
-        data: {
-          label: attributes.label,
-          type: attributes.type,
-        },
+      allNodeIds.add(id)
+
+      // Parse attributes
+      const attributes: Record<string, string> = {}
+      const attrRegex = /(\w+)\s*=\s*"([^"]*)"/g
+      let attrMatch
+
+      while ((attrMatch = attrRegex.exec(attrs)) !== null) {
+        attributes[attrMatch[1]] = attrMatch[2]
+      }
+
+      const nodeData = {
+        componentLabel: String(attributes.label || attributes.name || id),
+        componentType: String(attributes.type || '') as TComponentType,
+        color: attributes.color === 'blue' ? 'blue' : 'red',
+      }
+
+      nodesMap.set(id, {
+        id: String(id),
+        type: 'customComponent',
+        data: nodeData,
         position: { x: 0, y: 0 },
-        style: {
-          background: attributes.color === 'blue' ? '#1e50c0' : '#991B1B',
-          color: '#FAFAFA',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          fontFamily: 'var(--font-hack)',
-          fontSize: '12px',
-          fontWeight: 500,
-          width: 'auto',
-          minWidth: '150px',
-          textAlign: 'center',
-          border: 'none',
-        },
       })
     }
 
-    // Parse edges
-    const edgeRegex = /"([^"]+)"\s*->\s*"([^"]+)"\s*\[\s*([^\]]+)\]/g
+    // Second pass: Parse edges and collect any node IDs not yet seen
+    const edgeRegex =
+      /^\s*"([^"]+)"\s*->\s*"([^"]+)"\s*\[\s*([^\]]*)\s*\];?\s*$/gm
     while ((match = edgeRegex.exec(dotGraph)) !== null) {
       const [, source, target, attrs] = match
+
+      // Track node IDs
+      allNodeIds.add(source)
+      allNodeIds.add(target)
+
+      // Parse edge attributes
+      const attributes: Record<string, string> = {}
+      const attrRegex = /(\w+)\s*=\s*"([^"]*)"/g
+      let attrMatch
+
+      while ((attrMatch = attrRegex.exec(attrs)) !== null) {
+        attributes[attrMatch[1]] = attrMatch[2]
+      }
+
+      const edgeColor = attributes.color === 'red' ? '#991B1B' : '#1e50c0'
+
       edges.push({
         id: `${source}-${target}`,
-        source,
-        target,
+        source: String(source),
+        target: String(target),
         type: 'smoothstep',
         animated: false,
         style: {
-          stroke: '#991B1B',
+          stroke: edgeColor,
           strokeWidth: 2,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: '#991B1B',
+          color: edgeColor,
         },
       })
     }
 
-    return getLayoutedElements(updateNodes(nodes), edges)
+    // Third pass: Create basic nodes for any IDs that don't have attribute declarations
+    allNodeIds.forEach((id) => {
+      if (!nodesMap.has(id)) {
+        nodesMap.set(id, {
+          id: String(id),
+          type: 'customComponent',
+          data: {
+            componentLabel: String(id),
+            componentType: '' as TComponentType,
+            color: 'red',
+          },
+          position: { x: 0, y: 0 },
+        })
+      }
+    })
+
+    const nodes = Array.from(nodesMap.values())
+
+    return getLayoutedElements(nodes, edges)
   }
 
   useEffect(() => {
@@ -223,7 +280,10 @@ const ComponentsGraph = ({
       setNodes(newNodes)
       setEdges(newEdges)
     }
-  }, [data])
+  }, [data, setNodes, setEdges])
+
+  const memoizedNodeTypes = useMemo(() => nodeTypes, [])
+
   return (
     <>
       {isLoading ? (
@@ -237,6 +297,7 @@ const ComponentsGraph = ({
           <ReactFlow
             nodes={nodes}
             edges={edges}
+            nodeTypes={memoizedNodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             fitView
