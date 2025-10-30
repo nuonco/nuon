@@ -25,7 +25,7 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 		ExecFn:     w.getExecuteFlowExecFn(sreq),
 	}
 
-	err := fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID, sreq.ID, sreq.StartFromStepIdx)
+	err := fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID, sreq.StartFromStepIdx)
 	if err != nil {
 		cerr, ok := err.(*flow.ContinueAsNewErr)
 		if ok && cerr != nil {
