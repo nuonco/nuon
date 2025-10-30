@@ -1,3 +1,5 @@
+
+
 'use client'
 
 import classNames from 'classnames'
@@ -357,13 +359,13 @@ const InputGroupFields: FC<{
 }> = ({ groupInputs, install }) => {
   const installInputs = install ? install?.install_inputs?.at(0)?.values : {}
 
-  // Filter inputs to only show those with source type 'user'
-  const userInputs = groupInputs?.app_inputs?.filter(
-    (input) => !input?.source || input?.source === 'user'
+  // Filter inputs to only show those with source type 'vendor'
+  const vendorInputs = groupInputs?.app_inputs?.filter(
+    (input) => !input?.source || input?.source === 'vendor'
   )
 
-  // Don't render the group if there are no user inputs
-  if (!userInputs || userInputs.length === 0) {
+  // Don't render the group if there are no vendor inputs
+  if (!vendorInputs || vendorInputs.length === 0) {
     return null
   }
 
@@ -376,7 +378,7 @@ const InputGroupFields: FC<{
         <span className="text-sm font-normal">{groupInputs?.description}</span>
       </legend>
 
-      {userInputs
+      {vendorInputs
         ?.sort((a, b) => a?.index - b?.index)
         ?.map((input) =>
           Boolean(input?.default === 'true' || input?.default === 'false') ||
