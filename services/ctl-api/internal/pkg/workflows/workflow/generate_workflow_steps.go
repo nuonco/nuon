@@ -10,7 +10,6 @@ import (
 )
 
 type GenerateWorkflowStepsRequest struct {
-	SignalID   string              `json:"signal_id" validate:"required"`
 	WorkflowID string              `json:"workflow_id" validate:"required"`
 	Steps      []*app.WorkflowStep `json:"steps" validate:"required"`
 }
@@ -18,7 +17,7 @@ type GenerateWorkflowStepsRequest struct {
 // @temporal-gen workflow
 // @execution-timeout 1h
 // @task-timeout 1m
-// @id-template {{.Req.SignalID}}-execute-workflow-{{.Req.WorkflowID}}-generate-steps
+// @id-template {{.CallerID}}-generate-steps
 func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWorkflowStepsRequest) ([]*app.WorkflowStep, error) {
 	fid := req.WorkflowID
 
