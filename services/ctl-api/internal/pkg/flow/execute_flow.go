@@ -28,7 +28,7 @@ func NewContinueAsNewErr(startsFromStepIdx int) *ContinueAsNewErr {
 	}
 }
 
-func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId, signalId string, startFromStepIdx int) error {
+func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId string, startFromStepIdx int) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -77,7 +77,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			return err
 		}
 
-		flw, err = c.generateSteps(ctx, flw, signalId)
+		flw, err = c.generateSteps(ctx, flw)
 		if err != nil {
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: flowId,
@@ -158,7 +158,7 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 	return nil
 }
 
-func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, flw *app.Workflow, signalId string) (*app.Workflow, error) {
+func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, flw *app.Workflow) (*app.Workflow, error) {
 	gen, has := c.Generators[flw.Type]
 	if !has {
 		return nil, errors.Errorf("no workflow step generator registered for workflow type %s", flw.Type)
@@ -170,7 +170,6 @@ func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, fl
 	}
 
 	steps, err = workflowsflow.AwaitGenerateWorkflowSteps(ctx, &workflowsflow.GenerateWorkflowStepsRequest{
-		SignalID:   signalId,
 		WorkflowID: flw.ID,
 		Steps:      steps,
 	})
