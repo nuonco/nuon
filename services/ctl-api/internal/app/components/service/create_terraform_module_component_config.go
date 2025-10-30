@@ -18,6 +18,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateTerraformModuleComponentConfigRequest struct {
@@ -45,7 +46,7 @@ const MinTerraformVersion = "1.8.0"
 
 func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Validate, latestVersion string) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	if c.Version != "" {

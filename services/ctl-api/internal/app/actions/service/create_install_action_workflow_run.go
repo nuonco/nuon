@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 // @ID						CreateInstallActionRun
@@ -46,7 +47,7 @@ type CreateInstallActionWorkflowRunRequest struct {
 
 func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 	return nil
 }

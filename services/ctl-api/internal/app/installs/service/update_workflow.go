@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type UpdateWorkflowRequest struct {
@@ -17,7 +18,7 @@ type UpdateWorkflowRequest struct {
 
 func (c *UpdateWorkflowRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 	return nil
 }
