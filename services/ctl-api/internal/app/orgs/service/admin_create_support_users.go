@@ -20,8 +20,6 @@ var defaultSupportUsers = [][2]string{
 	{"google-oauth2|106750268626571499868", "jordan@nuon.co"},
 	// Nat Hamilton
 	{"google-oauth2|107796233904597398271", "nat@nuon.co"},
-	// Sam Boyer
-	{"google-oauth2|112612105639694013121", "sam@nuon.co"},
 	// Rob Bruce
 	{"google-oauth2|111073782439789496112", "rob@nuon.co"},
 	// Fred Diego
@@ -42,6 +40,8 @@ var defaultSupportUsers = [][2]string{
 	{"google-oauth2|113804032321437445852", "yellott@nuon.co"},
 	// Matthew Schultheiss
 	{"google-oauth2|101974311300567993819", "matt@nuon.co"},
+	// Amit Meena
+	{"google-oauth2|107018571285448341124", "amit@nuon.co"},
 }
 
 // @ID						AdminCreateSupportUsers
