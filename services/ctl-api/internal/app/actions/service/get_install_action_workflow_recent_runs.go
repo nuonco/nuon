@@ -11,6 +11,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
@@ -135,6 +136,25 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		First(&installActionWorkflow)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install action workflow")
+	}
+
+	installState, err := s.installHelpers.GetInstallState(ctx, installID, false, false)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install state: %w", err)
+	}
+
+	// interpolate the state into the readme md
+	stateMap, err := installState.AsMap()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to convert state to json")
+	}
+
+	installActionWorkflow.ActionWorkflow.Configs[0].BreakGlassRoleARN.String, _, err = render.RenderWithWarnings(
+		installActionWorkflow.ActionWorkflow.Configs[0].BreakGlassRoleARN.String,
+		stateMap,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to render")
 	}
 
 	installActionWorkflow.Runs, err = db.HandlePaginatedResponse(ctx, installActionWorkflow.Runs)
