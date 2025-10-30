@@ -17,6 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 // @ID						CreateActionConfig
@@ -119,7 +120,7 @@ const (
 
 func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	if c.Timeout > maxTimeout {
