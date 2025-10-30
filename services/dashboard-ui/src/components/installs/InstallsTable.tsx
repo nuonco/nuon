@@ -39,7 +39,7 @@ function parseInstallsToTableData(
 ): InstallRow[] {
   return installs.map((install) => ({
     actionHref: `/${orgId}/installs/${install.id}`,
-    appHref: `/${install.org_id}/apps/${install.app_id}/configs/${install.app_config_id}`,
+    appHref: `/${install.org_id}/apps/${install.app_id}`,
     appName: install?.app?.name,
     name: install.name,
     nameHref: `/${orgId}/installs/${install.id}`,

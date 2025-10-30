@@ -13,11 +13,11 @@ type TStatusVariant = 'default' | 'badge' | 'timeline'
 // Classes for variants
 const VARIANT_CLASSES: Record<TStatusVariant, string> = {
   default:
-    'text-[12px] font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white',
+    'text-[12px] font-sans font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white',
   badge:
-    'text-[12px] font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white border rounded-full px-2 py-0.5 w-fit',
+    'text-[12px] font-sans font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white border rounded-full px-2 py-0.5 w-fit',
   timeline:
-    'text-[12px] font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white',
+    'text-[12px] font-sans font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white',
 }
 
 // Classes for indicator by theme and variant
@@ -76,6 +76,7 @@ export interface IStatus
   iconSize?: number
   isWithoutText?: boolean
   status: TStatusType
+  statusText?: string
   variant?: TStatusVariant
 }
 
@@ -118,7 +119,9 @@ export const Status = ({
 
       {isWithoutText ? null : (
         <span className={statusTextClass}>
-          {children || toSentenceCase(kebabToWords(status || 'unknown'))}
+          {typeof children === 'string'
+            ? toSentenceCase(kebabToWords(children))
+            : children || toSentenceCase(kebabToWords(status || 'unknown'))}
         </span>
       )}
     </span>
