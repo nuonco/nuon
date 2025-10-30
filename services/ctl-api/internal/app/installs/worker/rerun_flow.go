@@ -9,6 +9,7 @@ import (
 
 // @temporal-gen workflow
 // @execution-timeout 720h
+// @id-template {{.Req.ID}}-execute-workflow-{{.Req.InstallWorkflowID}}-rerun-flow
 func (w *Workflows) RerunFlow(ctx workflow.Context, sreq signals.RequestSignal) error {
 	if sreq.FlowID == "" {
 		sreq.FlowID = sreq.InstallWorkflowID
