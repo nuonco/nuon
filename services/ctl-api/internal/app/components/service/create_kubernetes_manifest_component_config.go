@@ -13,6 +13,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateKubernetesManifestComponentConfigRequest struct {
@@ -29,7 +30,7 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 
 func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 	return nil
 }

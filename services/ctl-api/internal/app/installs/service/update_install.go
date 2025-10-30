@@ -15,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type PatchInstallConfigParams struct {
@@ -29,7 +30,7 @@ type UpdateInstallRequest struct {
 
 func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 	return nil
 }
