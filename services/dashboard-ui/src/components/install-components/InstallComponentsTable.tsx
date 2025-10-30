@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ComponentsGraph } from '@/components/apps/ConfigGraph'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -11,6 +10,7 @@ import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
 import { type IPagination } from '@/components/common/Pagination'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
@@ -21,9 +21,9 @@ import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstallComponent } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
+import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 
 // NOTE: old stuff
-
 import { ComponentTypeFilterDropdown } from '@/components/old/Components/NewComponentTypeFilter'
 
 type TComponentDeps = {
@@ -55,18 +55,35 @@ function parseInstallComponentSummaryToTableData(
       componentId: component.component_id,
       componentName: component.component?.name,
       componentType: (
-        <ComponentType
-          type={component?.component?.type}
-          variant="subtext"
-          displayVariant="abbr"
-        />
+        <ComponentType type={component?.component?.type} variant="subtext" />
       ),
       deployStatus: (
         <Tooltip
           position="top"
+          tipContentClassName="!p-0"
           tipContent={
-            toSentenceCase(component.status_v2?.status_human_description) ||
-            'Status unknown'
+            <div className="w-fit max-w-64">
+              {component?.status_v2?.status ? (
+                <>
+                  <Time
+                    className="!text-nowrap px-2 py-1"
+                    variant="subtext"
+                    seconds={component?.status_v2?.created_at_ts}
+                    weight="strong"
+                  />
+                  <hr className="my-1" />
+                  <Text className="!flex px-2 pb-2" variant="subtext">
+                    {toSentenceCase(
+                      component?.status_v2?.status_human_description
+                    )}
+                  </Text>
+                </>
+              ) : (
+                <Text className="!flex p-2" variant="subtext">
+                  Status unknown
+                </Text>
+              )}
+            </div>
           }
         >
           <Status variant="badge" status={component.status_v2?.status} />
@@ -180,11 +197,8 @@ export const InstallComponentsTable = ({
       )}
       filterActions={
         <div className="flex items-center gap-3">
-          <ComponentsGraph
-            appId={install?.app_id}
-            configId={install?.app_config_id}
-          />
           <ComponentTypeFilterDropdown />
+          <ManageAllDropdown />
         </div>
       }
       emptyMessage="No components found"
