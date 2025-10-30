@@ -145,7 +145,7 @@ export function TableBase<TData extends object>({
               table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="py-3 px-4 border-t align-top">
+                    <td key={cell.id} className="py-3 px-4 border-t">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

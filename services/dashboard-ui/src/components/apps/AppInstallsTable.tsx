@@ -51,7 +51,7 @@ function parseInstallsToTableData(
       />
     ),
     statuses: (
-      <SimpleInstallStatuses install={install} />
+      <SimpleInstallStatuses install={install} isLabelHidden />
     ),
     platform: (
       <CloudPlatform
