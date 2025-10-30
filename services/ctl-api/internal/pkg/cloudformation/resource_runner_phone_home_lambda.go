@@ -20,11 +20,11 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 	}
 
 	// add app input parameters from install_stack sourced inputs
-	appInputValues := make(map[string]interface{})
+	installInputValues := make(map[string]interface{})
 	for _, input := range inp.AppCfg.InputConfig.AppInputs {
 		if input.Source == "customer" {
 			// Use the original input name as the key in nested object
-			appInputValues[input.Name] = cloudformation.RefPtr(input.CloudFormationStackParamName)
+			installInputValues[input.Name] = cloudformation.RefPtr(input.CloudFormationStackParamName)
 		}
 	}
 
@@ -40,7 +40,7 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 		"runner_iam_role_arn":      cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole"),
 
 		"break_glass_role_arns": breakGlassRoleArns,
-		"app_inputs":            appInputValues,
+		"install_inputs":        installInputValues,
 
 		// from the nested VPC Cloudformation Template (we want its outputs)
 		"vpc_id":          cloudformation.GetAtt("VPC", "Outputs.VPC"),
