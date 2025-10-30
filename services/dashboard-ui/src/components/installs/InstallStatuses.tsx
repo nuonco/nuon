@@ -85,83 +85,107 @@ export const InstallStatuses = ({
   isLabelHidden = false,
   tooltipPosition = 'bottom',
   ...props
-}: IInstallStatuses) => (
-  <div className={cn('flex items-center gap-4', className)} {...props}>
-    <LabeledValue label="Runner">
-      <ContextTooltip
-        title="Install runner"
-        position="bottom"
-        items={[
-          {
-            href: `/${install.org_id}/installs/${install.id}/runner`,
-            id: install?.runner_id,
-            title: `${install.runner_type === 'aws' ? 'AWS' : toSentenceCase(install?.runner_type)} runner`,
-            subtitle: getInstallStatusTitle(
-              'runner_status',
-              install?.runner_status
-            ),
-            leftContent: (
-              <Status
-                status={install?.runner_status}
-                isWithoutText
-                variant="timeline"
-                iconSize={16}
-              />
-            ),
-          },
-        ]}
-      >
-        <Status status={install.sandbox_status} variant="badge" />
-      </ContextTooltip>
-    </LabeledValue>
+}: IInstallStatuses) => {
+  const runnerContent = (
+    <ContextTooltip
+      title="Install runner"
+      position={tooltipPosition}
+      items={[
+        {
+          href: `/${install.org_id}/installs/${install.id}/runner`,
+          id: install?.runner_id,
+          title: `${install.runner_type === 'aws' ? 'AWS' : toSentenceCase(install?.runner_type)} runner`,
+          subtitle: getInstallStatusTitle(
+            'runner_status',
+            install?.runner_status
+          ),
+          leftContent: (
+            <Status
+              status={install?.runner_status}
+              isWithoutText
+              variant="timeline"
+              iconSize={16}
+            />
+          ),
+        },
+      ]}
+    >
+      <Status status={install.runner_status} variant="badge">
+        {isLabelHidden ? 'Runner' : install.runner_status}
+      </Status>
+    </ContextTooltip>
+  )
 
-    <LabeledValue label="Sandbox">
-      <ContextTooltip
-        title="Latest sandbox run"
-        position="bottom"
-        items={[
-          {
-            href: `/${install.org_id}/installs/${install.id}/sandbox`,
-            id: install?.install_sandbox_runs?.at(0)?.id,
-            title: toSentenceCase(
-              install?.install_sandbox_runs?.at(0)?.run_type
-            ),
-            subtitle: getInstallStatusTitle(
-              'sandbox_status',
-              install?.sandbox_status
-            ),
-            leftContent: (
-              <Status
-                status={install.sandbox_status}
-                isWithoutText
-                variant="timeline"
-                iconSize={16}
-              />
-            ),
-          },
-        ]}
-      >
-        <Status status={install.sandbox_status} variant="badge" />
-      </ContextTooltip>
-    </LabeledValue>
+  const sandboxContent = (
+    <ContextTooltip
+      title="Latest sandbox run"
+      position={tooltipPosition}
+      items={[
+        {
+          href: `/${install.org_id}/installs/${install.id}/sandbox`,
+          id: install?.install_sandbox_runs?.at(0)?.id,
+          title: toSentenceCase(install?.install_sandbox_runs?.at(0)?.run_type),
+          subtitle: getInstallStatusTitle(
+            'sandbox_status',
+            install?.sandbox_status
+          ),
+          leftContent: (
+            <Status
+              status={install.sandbox_status}
+              isWithoutText
+              variant="timeline"
+              iconSize={16}
+            />
+          ),
+        },
+      ]}
+    >
+      <Status status={install.sandbox_status} variant="badge">
+        {isLabelHidden ? 'Sandbox' : install.sandbox_status}
+      </Status>
+    </ContextTooltip>
+  )
 
-    <LabeledValue label="Components">
-      <ComponentsTooltip
-        title={getInstallStatusTitle(
-          'composite_component_status',
-          install?.composite_component_status
-        )}
-        componentSummaries={getContextTooltipItemsFromInstallComponents(
-          install.install_components as TInstallComponent[],
-          `/${install.org_id}/installs/${install.id}/components`
-        )}
-        position="bottom"
-      >
-        <Status status={install.composite_component_status} variant="badge" />
-      </ComponentsTooltip>
-    </LabeledValue>
-  </div>
-)
+  const componentsContent = (
+    <ComponentsTooltip
+      title={getInstallStatusTitle(
+        'composite_component_status',
+        install?.composite_component_status
+      )}
+      componentSummaries={getContextTooltipItemsFromInstallComponents(
+        install.install_components as TInstallComponent[],
+        `/${install.org_id}/installs/${install.id}/components`
+      )}
+      position={tooltipPosition}
+    >
+      <Status status={install.composite_component_status} variant="badge">
+        {isLabelHidden ? 'Components' : install.composite_component_status}
+      </Status>
+    </ComponentsTooltip>
+  )
+
+  return (
+    <div className={cn('flex items-center gap-4', className)} {...props}>
+      {isLabelHidden ? (
+        runnerContent
+      ) : (
+        <LabeledValue label="Runner">{runnerContent}</LabeledValue>
+      )}
+
+      {isLabelHidden ? (
+        sandboxContent
+      ) : (
+        <LabeledValue label="Sandbox">{sandboxContent}</LabeledValue>
+      )}
+
+      {isLabelHidden ? (
+        componentsContent
+      ) : (
+        <LabeledValue label="Components">{componentsContent}</LabeledValue>
+      )}
+    </div>
+  )
+}
 
 export const InstallStatusesContainer = (
   props: Omit<IInstallStatuses, 'install'>
@@ -170,20 +194,48 @@ export const InstallStatusesContainer = (
   return <InstallStatuses install={install} {...props} />
 }
 
-export const SimpleInstallStatuses = ({ install }: { install: TInstall }) => {
+export const SimpleInstallStatuses = ({
+  install,
+  isLabelHidden = false,
+}: {
+  install: TInstall
+  isLabelHidden?: boolean
+}) => {
+  const RunnerStatus = (
+    <Status status={install.runner_status} variant="badge">
+      {isLabelHidden ? 'Runner' : install.runner_status}
+    </Status>
+  )
+  const SandboxStatus = (
+    <Status status={install.sandbox_status} variant="badge">
+      {isLabelHidden ? 'Sandbox' : install.sandbox_status}
+    </Status>
+  )
+  const ComponentsStatus = (
+    <Status status={install.composite_component_status} variant="badge">
+      {isLabelHidden ? 'Components' : install.composite_component_status}
+    </Status>
+  )
+
   return (
     <div className={cn('flex items-center gap-4')}>
-      <LabeledValue label="Runner">
-        <Status status={install.sandbox_status} variant="badge" />
-      </LabeledValue>
+      {isLabelHidden ? (
+        RunnerStatus
+      ) : (
+        <LabeledValue label="Runner">{RunnerStatus}</LabeledValue>
+      )}
 
-      <LabeledValue label="Sandbox">
-        <Status status={install.sandbox_status} variant="badge" />
-      </LabeledValue>
+      {isLabelHidden ? (
+        SandboxStatus
+      ) : (
+        <LabeledValue label="Sandbox">{SandboxStatus}</LabeledValue>
+      )}
 
-      <LabeledValue label="Components">
-        <Status status={install.composite_component_status} variant="badge" />
-      </LabeledValue>
+      {isLabelHidden ? (
+        ComponentsStatus
+      ) : (
+        <LabeledValue label="Components">{ComponentsStatus}</LabeledValue>
+      )}
     </div>
   )
 }
