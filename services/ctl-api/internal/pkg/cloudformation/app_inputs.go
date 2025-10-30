@@ -60,6 +60,9 @@ func (t *Templates) getInstallInputGroupParameters(inp *TemplateInput) map[strin
 			groupIDAppInputs[inputGroup.ID],
 			strcase.ToCamel(inputGroup.Name),
 		)
+		if len(installInputGroupParams) == 0 {
+			continue
+		}
 		installGroupParameters[inputGroup.Name] = installInputGroupParams
 	}
 	return installGroupParameters
@@ -80,6 +83,9 @@ func (t *Templates) getInstallInputGroupParamLable(inp *TemplateInput) map[strin
 			groupIDAppInputs[inputGroup.ID],
 			strcase.ToCamel(inputGroup.Name),
 		)
+		if len(installInputParamLabels) == 0 {
+			continue
+		}
 		installInputParamLabels[inputGroup.Name] = installInputParamLabels
 	}
 	return installGroupInputParamLables
