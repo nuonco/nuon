@@ -88,8 +88,8 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	// Validate that only user-source inputs are being updated
-	err = s.validateUserSourceInputs(ctx, pinnedAppInputConfig, req.Inputs)
+	// Validate that only vendor inputs are being updated
+	err = s.validateVendorSourceInputs(ctx, pinnedAppInputConfig, req.Inputs)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -194,7 +194,7 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 	return latestInstallInputs, &changedInputs, nil
 }
 
-func (s *service) validateUserSourceInputs(ctx context.Context, appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
+func (s *service) validateVendorSourceInputs(ctx context.Context, appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
 	appInputSources := map[string]app.AppInputSource{}
 	for _, input := range appInputConfig.AppInputs {
 		appInputSources[input.Name] = input.Source
@@ -206,7 +206,7 @@ func (s *service) validateUserSourceInputs(ctx context.Context, appInputConfig *
 			return fmt.Errorf("input %s is not defined in app input config", name)
 		}
 
-		// Reject install_stack sourced inputs
+		// Reject customer sourced inputs
 		if source == app.AppInputSourceCustomer {
 			return fmt.Errorf("%s has source install_stack, cannot be updated via api", name)
 		}
