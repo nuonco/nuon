@@ -252,8 +252,18 @@ function purge_stale() {
     return
   fi
 
+  # Remove regular files first
   for file in "${to_delete[@]}"; do
-    rm "$file"
+    if [ -f "$file" ]; then
+      rm "$file"
+    fi
+  done
+
+  # Remove directories with -rf
+  for file in "${to_delete[@]}"; do
+    if [ -d "$file" ]; then
+      rm -rf "$file"
+    fi
   done
 }
 
