@@ -94,3 +94,48 @@ display_name = "JSON Type"
 group        = "types"
 internal = true
 type = "json"
+
+[[group]]
+name = "user inputs"
+description = "Source testing user inputs"
+display_name = "testing user sources inputszz"
+
+[[input]]
+name = "string_type"
+description  = "String value"
+default      = "default"
+sensitive    = true
+display_name = "String Type"
+group        = "types"
+internal = true
+type = "string"
+
+[[input]]
+name = "number_type"
+description  = "Number value"
+default      = "0"
+sensitive    = false
+display_name = "Number Type"
+group        = "types"
+internal = true
+type = "number"
+
+[[input]]
+name = "bool_type"
+description  = "Bool Type"
+default      = false
+sensitive    = false
+display_name = "Bool Type"
+group        = "types"
+internal = true
+type = "bool"
+
+[[input]]
+name = "json_type"
+description  = "JSON Type"
+default      = "{}"
+sensitive    = false
+display_name = "JSON Type"
+group        = "types"
+internal = true
+type = "json"
