@@ -182,12 +182,12 @@ func validateRegion(install app.Install, outputs app.InstallStackOutputs) error 
 	return nil
 }
 
-// extractAppInputsFromStackOutputs extracts the app_inputs nested object from stack outputs
+// extractAppInputsFromStackOutputs extracts the install_inputs nested object from stack outputs
 func extractAppInputsFromStackOutputs(stackOutputs map[string]interface{}) map[string]string {
 	inputValues := make(map[string]string)
 
 	// Extract app_inputs from stack outputs
-	appInputsRaw, ok := stackOutputs["app_inputs"]
+	appInputsRaw, ok := stackOutputs["install_inputs"]
 	if !ok {
 		return inputValues
 	}
