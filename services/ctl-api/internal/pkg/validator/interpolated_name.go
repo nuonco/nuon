@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/go-playground/validator/v10"
@@ -17,7 +18,11 @@ func InterpolatedName(v *validator.Validate, val string) error {
 		Val: val,
 	}
 
-	return v.Struct(obj)
+	if err := v.Struct(obj); err != nil {
+		return fmt.Errorf("validation failed: value '%s' does not match the required pattern '%s'", val, interpolatedNameRegex.String())
+	}
+
+	return nil
 }
 
 func interpolatedNameValidator(fl validator.FieldLevel) bool {

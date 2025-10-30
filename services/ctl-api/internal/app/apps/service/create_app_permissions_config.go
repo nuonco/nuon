@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateAppPermissionsConfigRequest struct {
@@ -56,7 +57,7 @@ type AppAWSIAMPolicyConfig struct {
 
 func (c *CreateAppPermissionsConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return err
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	return nil

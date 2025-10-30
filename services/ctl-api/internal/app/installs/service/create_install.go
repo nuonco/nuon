@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateInstallV2Request struct {
@@ -21,7 +22,7 @@ type CreateInstallV2Request struct {
 
 func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	if c.AWSAccount == nil && c.AzureAccount == nil {
@@ -123,7 +124,7 @@ type CreateInstallRequest struct {
 
 func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	if c.AWSAccount == nil && c.AzureAccount == nil {
