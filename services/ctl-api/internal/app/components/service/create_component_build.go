@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateComponentBuildRequest struct {
@@ -17,7 +18,7 @@ type CreateComponentBuildRequest struct {
 
 func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 	return nil
 }

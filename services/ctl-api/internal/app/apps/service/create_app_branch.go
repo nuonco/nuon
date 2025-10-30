@@ -1,14 +1,15 @@
 package service
 
 import (
-	"fmt"
-	"net/http"
+"fmt"
+"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+"github.com/gin-gonic/gin"
+"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/app-branches/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+"github.com/powertoolsdev/mono/services/ctl-api/internal/app/app-branches/signals"
+"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateAppBranchRequest struct {
@@ -18,7 +19,7 @@ type CreateAppBranchRequest struct {
 
 func (c *CreateAppBranchRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	return nil

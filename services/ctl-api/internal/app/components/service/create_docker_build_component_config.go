@@ -13,6 +13,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateDockerBuildComponentConfigRequest struct {
@@ -31,7 +32,7 @@ type CreateDockerBuildComponentConfigRequest struct {
 
 func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	if err := c.basicVCSConfigRequest.Validate(); err != nil {
