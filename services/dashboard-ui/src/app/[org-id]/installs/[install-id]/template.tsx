@@ -6,7 +6,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
-import { InstallStatusesContainer } from "@/components/installs/InstallStatuses"
+import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
