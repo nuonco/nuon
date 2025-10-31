@@ -14,7 +14,7 @@ data "aws_vpc" "vpc" {
 }
 
 data "aws_route53_zone" "private" {
-  name   = local.vars.internal_root_domain
+  name   = local.vars.root_domain
   vpc_id = data.aws_vpcs.vpcs.ids[0]
 }
 
