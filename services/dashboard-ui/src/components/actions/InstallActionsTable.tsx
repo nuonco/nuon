@@ -20,6 +20,7 @@ import { useQueryParams } from '@/hooks/use-query-params'
 import type { TActionConfigTriggerType, TInstallAction } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { ActionTriggerType } from './ActionTriggerType'
+import { TriggeredByFilter } from './TriggeredByFilter'
 
 // NOTE: old stuff
 import { InstallActionTriggerFilter } from '@/components/old/InstallActionTriggerFilter'
@@ -176,7 +177,7 @@ export const InstallActionsTable = ({
         org.id,
         install.id
       )}
-      filterActions={<InstallActionTriggerFilter />}
+      filterActions={<TriggeredByFilter />}
       emptyStateProps={{
         emptyMessage:
           'Save time by configuring your actions. Check out our resources.',
