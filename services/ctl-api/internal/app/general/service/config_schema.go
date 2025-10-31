@@ -1,11 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/pkg/config/schema"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 // @ID						GetConfigSchema
@@ -24,10 +26,25 @@ import (
 // @Router					/v1/general/config-schema [GET]
 func (s *service) GetConfigSchema(ctx *gin.Context) {
 	typ := ctx.DefaultQuery("type", "")
+	if typ == "" {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("type query parameter is required"),
+			Description: "type query parameter is required",
+		})
+		return
+	}
 
 	schm, err := schema.LookupSchemaType(typ)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+
+	if schm == nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unknown schema type: %s", typ),
+			Description: "the provided type does not match any known schema types",
+		})
 		return
 	}
 
