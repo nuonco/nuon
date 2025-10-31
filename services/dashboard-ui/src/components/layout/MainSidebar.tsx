@@ -4,13 +4,16 @@ import React from 'react'
 import { useSidebar } from '@/hooks/use-sidebar'
 import { Icon } from '@/components/common/Icon'
 import { SidebarLogo } from '@/components/common/Logo/Logo'
+import { TransitionDiv } from '@/components/common/TransitionDiv'
+import { Text } from '@/components/common/Text'
 import { MainNav } from '@/components/navigation/MainNav'
 import { OrgSwitcher } from '@/components/orgs/OrgSwitcher'
 import { UserDropdown } from '@/components/users/UserDropdown'
+import type { TNuonVersion } from '@/types'
 import { cn } from '@/utils/classnames'
 import { MainSidebarButton } from './MainSidebarButton'
 
-export const MainSidebar = () => {
+export const MainSidebar = ({ versions }: { versions: TNuonVersion }) => {
   const { isSidebarOpen } = useSidebar()
   return (
     <aside
@@ -44,6 +47,19 @@ export const MainSidebar = () => {
           />
         </div>
       </div>
+      {isSidebarOpen ? (
+        <TransitionDiv
+          className="flex gap-4 items-center justify-center justify-self-end p-4 fade"
+          isVisible={isSidebarOpen}
+        >
+          <Text variant="subtext">
+            API: <b>{versions?.api?.version}</b>
+          </Text>
+          <Text variant="subtext">
+            UI: <b>{versions?.ui?.version}</b>
+          </Text>
+        </TransitionDiv>
+      ) : null}
     </aside>
   )
 }

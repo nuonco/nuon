@@ -2,14 +2,16 @@
 
 import React from 'react'
 import { useSidebar } from '@/hooks/use-sidebar'
+import type { TNuonVersion } from '@/types'
 import { cn } from '@/utils/classnames'
 import { MainSidebar } from './MainSidebar'
 
 interface IMainLayout {
   children: React.ReactNode
+  versions: TNuonVersion
 }
 
-export const MainLayout = ({ children }: IMainLayout) => {
+export const MainLayout = ({ children, versions }: IMainLayout) => {
   const { isSidebarOpen } = useSidebar()
 
   return (
@@ -22,7 +24,7 @@ export const MainLayout = ({ children }: IMainLayout) => {
           }
         )}
       >
-        <MainSidebar />
+        <MainSidebar versions={versions} />
         {children}
       </div>
     </div>

@@ -230,3 +230,14 @@ export type THelmPlan = {
 
 // cloud platform
 export type TCloudPlatform = 'aws' | 'azure' | 'gcp' | 'unknown'
+
+// nuon version
+export type TNuonVersion = {
+  api: {
+    git_ref: string
+    version: string
+  }
+  ui: {
+    version: string
+  }
+}

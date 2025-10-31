@@ -1,7 +1,11 @@
 import { notFound } from 'next/navigation'
 import { getIsSidebarOpenFromCookie } from '@/actions/layout/main-sidebar-cookie'
 import { MainLayout } from '@/components/layout/MainLayout'
-import { REFRESH_PAGE_INTERVAL, REFRESH_PAGE_WARNING } from '@/configs/app'
+import {
+  REFRESH_PAGE_INTERVAL,
+  REFRESH_PAGE_WARNING,
+  VERSION,
+} from '@/configs/app'
 import { getAPIVersion, getOrgById, getOrgs } from '@/lib'
 import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
 import { OrgProvider } from '@/providers/org-provider'
@@ -9,7 +13,6 @@ import { SidebarProvider } from '@/providers/sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import type { TLayoutProps } from '@/types'
-import { VERSION } from '@/utils'
 
 // NOTE: old layout stuff
 import { Layout as OldLayout } from '@/components/old/Layout'
@@ -48,7 +51,16 @@ export default async function OrgLayout({
           <SidebarProvider initIsSidebarOpen={isSidebarOpen}>
             <ToastProvider>
               <SurfacesProvider>
-                <MainLayout>{children}</MainLayout>
+                <MainLayout
+                  versions={{
+                    api: apiVersion,
+                    ui: {
+                      version: VERSION,
+                    },
+                  }}
+                >
+                  {children}
+                </MainLayout>
               </SurfacesProvider>
             </ToastProvider>
           </SidebarProvider>
