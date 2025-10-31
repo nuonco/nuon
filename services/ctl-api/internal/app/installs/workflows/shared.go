@@ -17,12 +17,18 @@ import (
 
 func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	if signal == nil {
-		return &app.WorkflowStep{
+		s := &app.WorkflowStep{
 			Name:          name,
 			ExecutionType: app.WorkflowStepExecutionTypeSkipped,
 			Status:        app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 			Metadata:      metadata,
-		}, nil
+		}
+
+		for _, o := range opts {
+			o(s)
+		}
+
+		return s, nil
 	}
 	byts, err := json.Marshal(signal)
 	if err != nil {
