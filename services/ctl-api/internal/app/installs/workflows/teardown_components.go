@@ -62,6 +62,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 	}
 
 	for _, compID := range componentIDs {
+		sg.nextGroup()
 		comp, has := components[compID]
 		if !has {
 			return nil, errors.Errorf("component %s not found in app config", compID)
@@ -80,7 +81,6 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 		}
 
 		if comp.Type.IsImage() {
-			sg.nextGroup()
 			deployStep, err := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
 				"reason": generics.ToPtr("skipped image teardown"),
 			}, nil, false)
@@ -97,7 +97,6 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 			app.Status(""),
 		}) {
 			reason := fmt.Sprintf("install component %s is not deployed", comp.Name)
-			sg.nextGroup()
 
 			deployStep, err := sg.installSignalStep(ctx, installID, "skipped teardown "+comp.Name, pgtype.Hstore{
 				"reason": generics.ToPtr(reason),
@@ -106,7 +105,6 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 				return nil, errors.Wrap(err, "unable to create skip step")
 			}
 			steps = append(steps, deployStep)
-
 			continue
 		}
 
@@ -115,8 +113,6 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 			return nil, err
 		}
 		steps = append(steps, preDeploySteps...)
-
-		sg.nextGroup() // plan + apply
 
 		deployStep, err := sg.installSignalStep(ctx, installID, "plan teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
