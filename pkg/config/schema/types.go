@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"fmt"
-
 	"github.com/invopop/jsonschema"
 	"github.com/pkg/errors"
 
@@ -36,7 +34,7 @@ func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 
 	fn, ok := mapping[typ]
 	if !ok {
-		return nil, fmt.Errorf("no schema found for type %s", typ)
+		return nil, nil
 	}
 
 	schema, err := fn()
