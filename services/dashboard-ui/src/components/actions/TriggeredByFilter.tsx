@@ -92,7 +92,6 @@ export const TriggeredByFilter = () => {
       }
       id="install-filter"
       variant="ghost"
-      isOpen
     >
       <Menu className="!p-0">
         <form onReset={handleClearFilter}>
