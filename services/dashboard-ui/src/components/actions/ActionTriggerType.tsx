@@ -32,7 +32,7 @@ export const ActionTriggerType = ({
     <Badge variant="code" size={size}>
       {isComponentTrigger ? (
         <span className="flex items-center gap-1">
-          <span>{triggerType}:</span>
+          <span className="text-nowrap truncate">{triggerType}</span>:
           <Link href={componentPath}>{componentName}</Link>
         </span>
       ) : (
