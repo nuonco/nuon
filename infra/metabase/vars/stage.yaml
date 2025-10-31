@@ -1,4 +1,5 @@
 ---
 pool: nuon
+root_domain: internal.nuon.co
 rds:
   db_name: metabase

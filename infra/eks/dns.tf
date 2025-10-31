@@ -4,6 +4,7 @@ locals {
   }
 }
 
+# Private hosted zone for internal services
 resource "aws_route53_zone" "internal_private" {
   name = local.dns.zone
 

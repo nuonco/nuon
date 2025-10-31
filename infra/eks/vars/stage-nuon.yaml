@@ -1,6 +1,7 @@
 ---
 cluster_version: "1.32"
 tier: beta
+root_domain: "internal.nuon.co"
 auth_map_additions:
   - name: eks-workers-executors
     account: stage

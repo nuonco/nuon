@@ -194,6 +194,11 @@ output "private_zone" {
   value       = local.dns.zone
 }
 
+output "private_zone_id" {
+  description = "The Route53 zone ID for the private zone"
+  value       = aws_route53_zone.internal_private.zone_id
+}
+
 output "github_action_role_arn" {
   description = "The ARN of the role to be assumed by Github Actions"
   value       = aws_iam_role.github_actions.arn

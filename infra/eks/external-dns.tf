@@ -1,15 +1,17 @@
 locals {
   nuon_co_domain = data.aws_route53_zone.env_root
+
+  external_dns_zone_filters = {
+    0 = "--publish-internal-services",
+    1 = "--zone-id-filter=${aws_route53_zone.internal_private.id}",
+    2 = "--zone-id-filter=${local.nuon_co_domain.zone_id}",
+  }
+
   external_dns = {
-    namespace = "external-dns"
-    extra_args = {
-      0 = "--publish-internal-services",
-      1 = "--zone-id-filter=${aws_route53_zone.internal_private.id}",
-      2 = "--zone-id-filter=${local.nuon_co_domain.zone_id}",
-    }
+    namespace     = "external-dns"
+    extra_args    = local.external_dns_zone_filters
     value_file    = "values/external-dns.yaml"
     override_file = "values/external-dns-${local.workspace_trimmed}.yaml"
-
   }
 }
 

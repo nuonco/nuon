@@ -1,4 +1,4 @@
 ---
 region: us-west-2
 cluster_name: stage-nuon
-internal_root_domain: nuon.us-west-2.stage.nuon.cloud
+root_domain: nuon.us-west-2.stage.internal.nuon.co
