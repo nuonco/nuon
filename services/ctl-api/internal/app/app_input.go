@@ -54,7 +54,7 @@ type AppInput struct {
 	Index    int            `json:"index,omitzero"`
 	Internal bool           `json:"internal,omitzero"`
 	Type     AppInputType   `json:"type,omitzero" swaggertype:"string"`
-	Source   AppInputSource `json:"source,omitzero" gorm:"not null;default:'customer'" swaggertype:"string" temporaljson:"source"`
+	Source   AppInputSource `json:"source,omitzero" gorm:"not null;default:'vendor'" swaggertype:"string" temporaljson:"source"`
 
 	// CloudFormation configuration (computed fields, not stored in DB)
 	CloudFormationStackName      string `json:"cloudformation_stack_name,omitzero" gorm:"-" temporaljson:"cloudformation_stack_name,omitzero,omitempty"`
