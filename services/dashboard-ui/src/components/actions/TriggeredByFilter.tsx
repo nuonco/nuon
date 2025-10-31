@@ -75,7 +75,7 @@ export const TriggeredByFilter = () => {
     () =>
       TRIGGER_OPTIONS.map((trigger) => ({
         value: trigger,
-        label: toSentenceCase(trigger),
+        label: trigger,
       })),
     []
   )
@@ -93,7 +93,7 @@ export const TriggeredByFilter = () => {
       id="install-filter"
       variant="ghost"
     >
-      <Menu className="!p-0">
+      <Menu className="!p-0 !w-68">
         <form onReset={handleClearFilter}>
           <div className="flex flex-col gap-0.5 max-h-[250px] overflow-y-auto w-full p-2 focus-visible:outline-1 focus-visible:outline-primary-600 rounded-md">
             {triggerOptions.map(({ value, label }) => (
@@ -102,6 +102,7 @@ export const TriggeredByFilter = () => {
                 checked={triggerType === value}
                 labelProps={{
                   labelText: label,
+                  labelTextProps: { family: 'mono' },
                 }}
                 name="triggered-by-type"
                 onChange={handleTriggerChange}
