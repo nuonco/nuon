@@ -3,7 +3,7 @@ install_templates_bucket_name: nuon-install-templates
 use_root_domain: true
 region: us-west-2
 cluster_name: prod-nuon
-internal_root_domain: nuon.us-west-2.prod.nuon.cloud
+root_domain: nuon.us-west-2.prod.nuon.cloud
 rds:
   instance_class: "db.c6gd.large"
   enable_replica: true
