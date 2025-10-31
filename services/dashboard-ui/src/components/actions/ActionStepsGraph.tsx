@@ -52,7 +52,7 @@ export const ActionStepGraph = ({
         id,
         data: {
           label: (
-            <div className="flex items-center justify-between gap-4 flex-wrap my-auto w-full px-2">
+            <div className="flex flex-col gap-2 my-auto w-full px-2">
               <div className="flex items-center gap-2">
                 <Status status={s?.status} isWithoutText variant="timeline" />
                 <Text variant="body" weight="stronger">
@@ -60,7 +60,10 @@ export const ActionStepGraph = ({
                 </Text>
               </div>
               {s?.execution_duration ? (
-                <Duration nanoseconds={s?.execution_duration} />
+                <Text className="!inline-flex items-center gap-1" variant="label">
+                  Finished in 
+                  <Duration nanoseconds={s?.execution_duration} variant="label" />
+                </Text>
               ) : null}
             </div>
           ),
