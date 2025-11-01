@@ -84,6 +84,7 @@
           "concepts/components",
           "concepts/installs",
           "concepts/actions",
+          "concepts/workflows",
           "concepts/runners",
           "concepts/app-inputs",
           "concepts/app-variables",
