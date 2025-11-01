@@ -52,7 +52,7 @@ jobs:
     if: ${{ github.event_name == 'pull_request' && (needs.changes.outputs.tfcloud == '[]' || needs.changes.outputs.tfcloud == '') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: martialonline/workflow-status@v4.1
+      - uses: martialonline/workflow-status@v4.2
         id: check
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
