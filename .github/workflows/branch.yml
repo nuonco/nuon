@@ -41,7 +41,7 @@ jobs:
     needs:
       - branch-name
     steps:
-      - uses: martialonline/workflow-status@v4.1
+      - uses: martialonline/workflow-status@v4.2
         id: check
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
