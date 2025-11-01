@@ -124,7 +124,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
           
-      - uses: martialonline/workflow-status@v4.1
+      - uses: martialonline/workflow-status@v4.2
         id: check
         
       - name: Slack Notification
