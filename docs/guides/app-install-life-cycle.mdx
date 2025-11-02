@@ -4,7 +4,7 @@ description: "Understand the life cycle of apps and installs in Nuon."
 icon: "code"
 ---
 
-Apps and installs in Nuon have a defined life cycle that includes creation,
+[Apps](../concepts/apps) and [installs](../concepts/installs) in Nuon have a defined life cycle or [workflow](../concepts/workflows) that includes creation,
 configuration, building, deployment, and management. Understanding this life
 cycle is crucial for effectively using Nuon to manage your apps and installs.
 
@@ -17,12 +17,11 @@ Builds create an OCI artifact for each component and the Nuon control plane
 stores them in the container registry like AWS ECR.
 
 <Note>
-	If you change a component after the initial `nuon apps sync`, you need to make
-	sure you to re-build the component. Otherwise, the changes will not be
+	If you change a component after the initial `nuon apps sync`, you must re-build the component. Running `nuon apps sync` again will re-build most component changes, or manually through the Dashboard UI for git repository-based source code changes referenced in the component. Otherwise, the changes will not be
 	reflected in the app in Nuon nor any deployed installs.
 </Note>{" "}
 
-If the Nuon CLI detects the change during `nuon apps sync`, e.g., a component
+If the Nuon CLI detects a change during `nuon apps sync`, e.g., a component
 `.toml` file is changed or a referenced file like a Helm values.yaml, it will
 automatically rebuild the component, with the build status visible in the CLI
 progress output.
@@ -30,12 +29,28 @@ progress output.
 ![CLI Build](../images/guides/app-install-life-cycle/cli-build.png)
 
 If a git repository referenced by the component changes, e.g., a Terraform
-module source or a Helm chart, you need to be sure to manually re-build the
+module source or a Helm chart, you must manually re-build the
 component in the Dashboard UI even after `nuon apps sync` with the Nuon CLI.
 
 ![CLI Build](../images/guides/app-install-life-cycle/component-build.png)
 
 # Install Life Cycle
+
+Installs are created from apps and inherit the components defined in the app.
+When an install is created, it uses the latest built version of each component.
+
+An install's life cycle are managed by [workflows](../concepts/workflows) that define
+the steps to deploy, update, manage, and tear down the install.
+
+![Inputs](../images/guides/app-install-life-cycle/workflow-history.png)
+
+Commencing an install involves adding any inputs defined by the app. e.g., api key, node instance type, app release version, etc.
+
+![Inputs](../images/guides/app-install-life-cycle/inputs.png)
+
+Install workflows consist of multiple steps that execute in sequence to deploy and manage the install.
+
+![Inputs](../images/guides/app-install-life-cycle/approval-step-helm.png)
 
 If there are any installs for an app where a component is rebuild, you must
 re-deploy the component in the Dashboard UI otherwise the install will not
