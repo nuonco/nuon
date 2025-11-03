@@ -1,0 +1,94 @@
+---
+title: 024 - Install Inputs via Stack, UI Redesign & Performance
+description: Introducing install inputs via install stack, comprehensive UI redesign (Stratus), and workflow improvements.
+---
+
+_Nov 3, 2024_
+
+<div className="badge badge--primary">v0.19.687</div>
+
+## Install Inputs via Install Stack
+
+We've introduced a powerful new way to manage install inputs through install stacks, providing better consistency and easier configuration management:
+
+- **Stack-Level Input Management**: Install inputs can now be defined and managed at the install stack level, allowing for better reusability and consistency across multiple installs.
+- **Vendor vs User Input Sources**: New input source type system distinguishes between vendor-provided inputs and user-configurable inputs, with vendor as the default source type.
+- **Enhanced Input Filtering**: Install forms now intelligently filter and display only vendor inputs, improving the configuration experience.
+- **Input Groups**: CLI now uses input groups instead of flat inputs in install config files for better organization.
+- **CloudFormation Integration**: Install input parameters are properly integrated into AWS stack outputs and CloudFormation templates.
+
+## Stratus UI Redesign
+
+We've rolled out a comprehensive UI redesign (codenamed "Stratus") across the dashboard with modern components and improved user experience:
+
+- **New Component Library**: Complete redesign with modern, consistent UI components moved into the new Stratus design system.
+- **Enhanced Navigation**: Cleaned up navigation structure with improved sidebar organization and right-click context menu support in the navbar.
+- **Install Management**: New install components management interface with enhanced component dependency graphs and change tracking.
+- **Version Visibility**: Added version information to the Stratus sidebar for better release tracking.
+- **Tables & Status Views**: Redesigned tables with improved install status displays and better data presentation.
+- **Action Triggers**: New install actions trigger interface with advanced filtering capabilities.
+- **Events Page**: Updated events page with improved event tracking and visualization.
+- **404 Page**: Added custom 404 page with better user experience.
+- **Halloween Theme**: Special bat swarm loading animation (seasonal feature).
+
+## Workflow & Temporal Improvements
+
+- **Consistent Workflow IDs**: Temporal workflow IDs are now consistent for install workflows, improving traceability and debugging.
+- **Workflow Name Templates**: Updated name templates for generate steps child workflows for better consistency.
+- **Temporal Link Filtering**: Enhanced temporal link filters for install workflows, making it easier to find and debug specific workflow executions.
+- **Workflow Retry**: Re-enabled continuing temporal workflows for installs with improved reliability.
+- **Component Build Retry**: Disabled retry on component build not found errors to prevent unnecessary retry loops.
+- **Endpoint Registration**: Fixed retry endpoint registration issues that were affecting workflow reliability.
+
+## Developer Experience
+
+- **Cache Control**: Fixed cache control headers to allow proper building of Helm dependencies.
+
+## Performance & Infrastructure
+
+- **Service-Level Locking**: Moved locking mechanism to service level for better performance and reduced contention.
+- **ClickHouse Optimizations**:
+  - Disabled all CH system query log tables to improve performance
+  - Set TTL to 3 days for processors_profile_log
+  - Fixed TTL configuration on profiler table
+- **Slow Query Fixes**: Resolved slow table queries and metrics event write errors.
+- **Parallel Dockerfile Operations**: Moved operations to parallel execution in Dockerfile for faster builds.
+- **Performance Monitoring**: Enhanced slow query metrics and error tracking.
+
+## Security & Access Control
+
+- **Support Role Duration**: Set maximum duration for support role access for better security.
+- **Break Glass Rendering**: Fixed rendering of break glass roles on install actions page.
+
+## API & Documentation
+
+- **Endpoint Renaming**: Second pass on endpoint renaming for better API consistency (disabled version check for renamed endpoints).
+- **Gin Groups**: Implemented Gin routing groups for better API organization.
+- **Approval Response Updates**: Updated approval response structure for better clarity.
+- **Workflow Concept Docs**: Added comprehensive workflows concept documentation.
+- **Lifecycle Documentation**: Enhanced lifecycle and reference documentation in starter guides.
+- **API Validation**: Improved validation error messages for better developer experience.
+
+## Bug Fixes
+
+- **Navigation Issues**: Fixed various navigation and routing issues in the dashboard.
+- **Input Source Methods**: Corrected method names to reflect new enum values for app input source types.
+- **Empty Input Groups**: Removed empty input groups from CloudFormation templates.
+- **Teardown Step Ordering**: Fixed issue with steps ordering during teardown processes.
+- **Workdir Handling**: Resolved workdir handling issues in runner execution.
+- **Config Schema**: Fixed config schema 5xx errors.
+- **Action Filter**: Removed problematic isOpen state from action filter.
+- **Seed App Inputs**: Added proper user inputs for seed applications.
+- **Transaction Cookie**: Removed `__txn` cookie middleware and disabled prefetch on Next.js links to prevent state issues.
+
+## Infrastructure Updates
+
+- **Deployment Configuration**: Reduced endpoint tags due to temporal requirements and updated deployment naming.
+
+## UI/UX Improvements
+
+- **Install Status Display**: Enhanced install status indicators throughout the interface.
+- **User Journey**: Clear user journey on seed to improve onboarding experience.
+- **Event Updates**: Improved event display and tracking across the platform.
+
+This release represents a major milestone with the introduction of install inputs via stack, a complete UI redesign with the Stratus component library, and significant performance improvements across the platform.
