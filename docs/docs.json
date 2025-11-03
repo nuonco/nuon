@@ -97,6 +97,7 @@
           {
             "group": "Configuration",
             "pages": [
+              "guides/app-install-life-cycle",              
               "guides/vcs",
               "guides/docker-build-components",
               "guides/container-image-components",
@@ -110,7 +111,6 @@
           {
             "group": "How To",
             "pages": [
-              "guides/app-install-life-cycle",
               "guides/install-access-permissions",
               "guides/using-variables",
               "guides/using-readmes",
