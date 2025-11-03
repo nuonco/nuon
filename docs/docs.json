@@ -46,6 +46,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/024-install-inputs-ui-redesign",
           "updates/023-drift-workflow-improvements",
           "updates/022-nuon-cli-github-actions",
           "updates/021-drift-detection",
@@ -97,7 +98,7 @@
           {
             "group": "Configuration",
             "pages": [
-              "guides/app-install-life-cycle",              
+              "guides/app-install-life-cycle",
               "guides/vcs",
               "guides/docker-build-components",
               "guides/container-image-components",
