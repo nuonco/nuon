@@ -1,7 +1,6 @@
 :root {
-  --primary: #8040bf;
+  /* Light purple for label backgrounds (used by .nuon-label) */
   --light: #c494f4;
-  --dark: #8040bf;
 }
 
 /* ensure tables are full-width */
