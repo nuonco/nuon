@@ -39,7 +39,9 @@ function parseAppsToTableData(apps: TApp[], orgId: string): TAppRow[] {
       name: app.name,
       nameHref: `/${orgId}/apps/${app.id}`,
       platform: app?.runner_config?.cloud_platform || 'unknown',
-      sandboxHref: `https://${sandbox?.repo}`,
+      sandboxHref: sandbox?.repo
+        ? `https://github.com/${sandbox?.repo}`
+        : undefined,
       sandboxName: sandbox?.repo,
     }
   })
@@ -84,14 +86,17 @@ const columns: ColumnDef<TAppRow>[] = [
   {
     accessorKey: 'sandboxName',
     header: 'Sandbox',
-    cell: (info) => (
-      <Text>
-        <Link href={info.row.original.sandboxHref} isExternal>
-          {info.getValue() as string}
-          <Icon variant="ArrowSquareOutIcon" />
-        </Link>
-      </Text>
-    ),
+    cell: (info) =>
+      info.row.original.sandboxHref ? (
+        <Text>
+          <Link href={info.row.original.sandboxHref} isExternal>
+            {info.getValue() as string}
+            <Icon variant="ArrowSquareOutIcon" />
+          </Link>
+        </Text>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
   },
   {
     accessorKey: 'platform',
