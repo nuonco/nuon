@@ -37,6 +37,11 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 	}
 	l.Info("executing actions with trigger " + string(req.TriggerType))
 
+	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install for lifecycle action workflows")
+	}
+
 	installActionWorkflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, req.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
@@ -46,6 +51,11 @@ func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *Lifecycl
 		cfg, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, installWorkflow.ActionWorkflowID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get action workflow config")
+		}
+
+		// skip if an action is not part of the install's current app config
+		if cfg.AppConfigID != install.AppConfigID {
+			continue
 		}
 
 		for _, trigger := range cfg.LifecycleTriggers {
