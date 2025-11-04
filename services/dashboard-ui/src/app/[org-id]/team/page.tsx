@@ -10,7 +10,9 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { getOrgById } from '@/lib'
+import { auth0 } from '@/lib/auth'
 import type { TAccount, TInvite } from '@/types'
+import { isNuonSession } from '@/utils/session-utils'
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -171,6 +173,7 @@ export default async function OrgTeam({ params }) {
 }
 
 const OrgMembers: FC<{ orgId: string }> = async ({ orgId }) => {
+  const session = await auth0.getSession()
   const members = await fetch(
     `${API_URL}/v1/orgs/current/accounts`,
     await getFetchOpts(orgId)
@@ -179,7 +182,13 @@ const OrgMembers: FC<{ orgId: string }> = async ({ orgId }) => {
     .catch(console.error)
 
   return members ? (
-    <TeamMembersTable members={members} />
+    <TeamMembersTable
+      members={
+        isNuonSession(session?.user)
+          ? members
+          : members.filter((member) => !member?.email?.endsWith('nuon.co'))
+      }
+    />
   ) : (
     <OldText>No team members to show</OldText>
   )
