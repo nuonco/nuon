@@ -53,7 +53,9 @@ To see all available commands, run: `nuon installs --help`.
 You can pin an Install, which will set it's ID as a default argument to all
 Install commands. This is helpful to avoid having to pass `-i` to each command.
 
-<CodeGroup>```sh nuon nuon installs select ```</CodeGroup>
+```sh
+nuon installs select
+```
 
 <Note>
 	Each example below assumes you have run `nuon installs select` first.
@@ -61,7 +63,9 @@ Install commands. This is helpful to avoid having to pass `-i` to each command.
 
 To show the currently pinned Install:
 
-<CodeGroup>```sh nuon nuon installs current ```</CodeGroup>
+```sh
+nuon installs current
+```
 
 ### Install Management Commands
 
@@ -75,22 +79,32 @@ or more Inputs.
 	API.
 </Note>
 
-<CodeGroup>
-	```sh nuon nuon installs create \ --name=install \ --region=us-east-1 \
-	--role=iam-role ```
-</CodeGroup>
+
+```sh
+nuon installs create \
+    --name=install \
+    --region=us-east-1 \
+	--role=iam-role
+```
+
 
 **List all Installs** - list an Install
 
-<CodeGroup>```sh nuon nuon installs list ```</CodeGroup>
+```sh
+nuon installs list
+```
 
 **Get an Install** - get an Install
 
-<CodeGroup>```sh nuon nuon installs get ```</CodeGroup>
+```sh
+nuon installs get
+```
 
 **Delete an Install** - Delete an Install
 
-<CodeGroup>```sh nuon nuon installs delete ```</CodeGroup>
+```sh
+nuon installs delete
+```
 
 ### Install Config Commands
 
@@ -100,34 +114,36 @@ Manage Installs with the help of
 **Sync** - syncs Installs defined in config files to Nuon. Existing installs are
 updated, otherwise a new install gets created for the app.
 
-<CodeGroup>
-```sh nuon
+
+```sh
 nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
 ```
-</CodeGroup>
+
 
 **Generate Config** - easily generate an Install config file for an existing
 Install.
 
-<CodeGroup>
-```sh nuon
+
+```sh
 nuon installs generate-config -i <install-name-or-id>
 ```
-</CodeGroup>
+
 
 The following is an an example Install Config file:
 
-<CodeGroup>
+
 ```toml
 name = "config_demo"
 approval_option = "approve-all"
 
-[aws_account] region = "us-east-1"
+[aws_account]
+region = "us-east-1"
 
-[inputs] sub_domain = "whoami" app_release = "v2.25.0"
-
+[inputs]
+sub_domain = "whoami"
+app_release = "v2.25.0"
 ````
-</CodeGroup>
+
 
 ### Install Sandbox Commands
 
@@ -135,29 +151,33 @@ Commands for working with an Install's Sandbox.
 
 **Show Sandbox updates** - show all updates to an Install's Sandbox.
 
-<CodeGroup>
-```sh nuon
+
+```sh
 nuon installs sandbox-runs
 ````
 
-</CodeGroup>
+
 
 **Show Sandbox run logs** - show logs for a specific Sandbox run.
 
-<CodeGroup>
-```sh nuon
+
+```sh
 nuon installs sandbox-run-logs -r <run-id>
 ```
-</CodeGroup>
+
 
 **Reprovision a Sandbox** - reprovision the Sandbox with the latest configured
 Sandbox version for an App.
 
-<CodeGroup>```sh nuon nuon installs reprovision ```</CodeGroup>
+```sh
+nuon installs reprovision
+```
 
 **Deprovision a Sandbox** - Deprovision a Sandbox.
 
-<CodeGroup>```sh nuon nuon installs deprovision ```</CodeGroup>
+```sh
+nuon installs deprovision
+```
 
 ### Install Components
 
@@ -173,20 +193,22 @@ The Nuon CLI provides the following commands to manage install Components:
 
 **Show Deploys** - show deploys for an Install.
 
-<CodeGroup>```sh nuon nuon installs list-deploys ```</CodeGroup>
+```sh
+nuon installs list-deploys
+```
 
 **Deploy Logs** - print logs for a deploy.
 
-<CodeGroup>
-```sh nuon
+
+```sh
 nuon installs deploy-logs -d <deploy-id>
 ```
-</CodeGroup>
+
 
 **Deploy Plan** - print a deploy plan for an install.
 
-<CodeGroup>
-```sh nuon
+
+```sh
 nuon installs print-deploy-plan -d <deploy-id>
 ```
-</CodeGroup>
+
