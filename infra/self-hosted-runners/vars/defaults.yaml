@@ -1,5 +1,5 @@
 ---
-root_domain: nuon.cloud
+root_domain: internal.nuon.co
 region: us-west-2
 pool: nuon
 

@@ -13,7 +13,7 @@ managed_node_group:
   max_size: 8
 
 region: "us-west-2"
-root_domain: "nuon.cloud"
+root_domain: "internal.nuon.co"
 vantage:
   agent:
     clusterID: ""

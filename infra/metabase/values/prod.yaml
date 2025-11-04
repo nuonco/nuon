@@ -5,4 +5,4 @@ env:
   ENVIRONMENT: prod
 
 api:
-  domain: metabase.nuon.us-west-2.prod.nuon.cloud
+  domain: metabase.nuon.us-west-2.prod.internal.nuon.co

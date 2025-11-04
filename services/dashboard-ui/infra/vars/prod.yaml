@@ -2,4 +2,4 @@
 use_root_domain: true
 region: us-west-2
 cluster_name: prod-nuon
-root_domain: nuon.us-west-2.prod.nuon.cloud
+root_domain: nuon.us-west-2.prod.internal.nuon.co

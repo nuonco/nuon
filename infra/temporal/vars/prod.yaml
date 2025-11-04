@@ -1,5 +1,6 @@
 ---
 pool: nuon
+root_domain: internal.nuon.co
 rds:
   db_name: temporal
   instance_class: "db.m5.2xlarge"
