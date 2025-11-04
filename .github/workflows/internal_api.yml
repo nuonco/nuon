@@ -62,11 +62,11 @@ jobs:
           curl -X ${{ inputs.method }} \
             -H 'X-Nuon-Admin-Email: github-actions@serviceaccount.nuon.co' \
             --data '${{ inputs.data }}' \
-            http://ctl.nuon.us-west-2.${{ inputs.env }}.nuon.cloud${{ inputs.endpoint }}
+            http://ctl.nuon.us-west-2.${{ inputs.env }}.internal.nuon.co${{ inputs.endpoint }}
 
       - name: read
         if: ${{ inputs.method == 'GET' }}
         run: |
           curl -X ${{ inputs.method }} \
             -H 'X-Nuon-Admin-Email: github-actions@serviceaccount.nuon.co' \
-            http://ctl.nuon.us-west-2.${{ inputs.env }}.nuon.cloud${{ inputs.endpoint }}
+            http://ctl.nuon.us-west-2.${{ inputs.env }}.internal.nuon.co${{ inputs.endpoint }}
