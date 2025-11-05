@@ -50,10 +50,10 @@ additional_nodepools:
 
   - name: temporal
     instance_types:
-      - t3a.large
+      - t3a.xlarge
     limits:
-      cpu: 50
-      memory: "100Gi"
+      cpu: 100
+      memory: "200Gi"
     expireAfter: "2160h"
     disruption:
       consolidationPolicy: "WhenEmptyOrUnderutilized"
