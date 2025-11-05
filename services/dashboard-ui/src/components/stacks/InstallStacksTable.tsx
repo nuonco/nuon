@@ -42,7 +42,7 @@ function parseInstallStackSummaryToTableData(
     return {
       versionId: version?.id,
       appConfigId: version?.app_config_id,
-      appStackConfigHref: `/${orgId}/apps/${appId}/configs/${version?.app_config_id}/stack`,
+      appStackConfigHref: `/${orgId}/apps/${appId}`,
       status: (
         <Status variant="badge" status={version.composite_status?.status} />
       ),

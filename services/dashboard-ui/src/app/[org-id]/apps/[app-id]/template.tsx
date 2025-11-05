@@ -47,9 +47,12 @@ export default function Template({ children }: { children: React.ReactNode }) {
             <PageHeadingGroup title={app.name} subtitle={<ID>{app.id}</ID>} />
             <div className="flex items-center gap-4">
               <TemporalLink namespace="apps" eventLoopId={app?.id} />
-              <AppCreateInstallButton
-                platform={app?.runner_config.app_runner_type}
-              />
+              {app?.runner_config ? (
+                <AppCreateInstallButton
+                  platform={app?.runner_config?.app_runner_type}
+                />
+              ) : null}
+
               {/* <Dropdown
                *   buttonText="Manage"
                *   id="app-manage"

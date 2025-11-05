@@ -218,7 +218,7 @@ const OrgsNav = ({}: IOrgsNav) => {
           <Link
             key={o?.id}
             className="!h-fit !block w-full"
-            href={`/${o?.id}`}
+            href={`/${o?.id}/apps`}
             variant="ghost"
           >
             <OrgSummary org={o} />
