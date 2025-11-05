@@ -3,9 +3,9 @@ title: 024 - Install Inputs via Stack, UI Redesign & Performance
 description: Introducing install inputs via install stack, comprehensive UI redesign (Stratus), and workflow improvements.
 ---
 
-_Nov 3, 2024_
+_Nov 5, 2024_
 
-<div className="badge badge--primary">v0.19.687</div>
+<div className="badge badge--primary">v0.19.688</div>
 
 ## Install Inputs via Install Stack
 
@@ -80,6 +80,8 @@ We've rolled out a comprehensive UI redesign (codenamed "Stratus") across the da
 - **Action Filter**: Removed problematic isOpen state from action filter.
 - **Seed App Inputs**: Added proper user inputs for seed applications.
 - **Transaction Cookie**: Removed `__txn` cookie middleware and disabled prefetch on Next.js links to prevent state issues.
+- **Install Config Sync**: Install will be put into "mangaed-by-config" mode, even if there are no changes to sync.
+- **Install Config Generation**: Install configs will generate even if inputs are empty.
 
 ## Infrastructure Updates
 
@@ -90,5 +92,9 @@ We've rolled out a comprehensive UI redesign (codenamed "Stratus") across the da
 - **Install Status Display**: Enhanced install status indicators throughout the interface.
 - **User Journey**: Clear user journey on seed to improve onboarding experience.
 - **Event Updates**: Improved event display and tracking across the platform.
+
+## Sign-Up Updates
+
+- **Trial Org Support Users**: Support users are now added to trial orgs, to provide support for new users.
 
 This release represents a major milestone with the introduction of install inputs via stack, a complete UI redesign with the Stratus component library, and significant performance improvements across the platform.
