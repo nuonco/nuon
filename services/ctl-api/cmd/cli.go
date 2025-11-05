@@ -25,6 +25,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	pkglog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
@@ -41,6 +42,7 @@ type cli struct{}
 func (c *cli) providers() []fx.Option {
 	return []fx.Option{
 		fx.Provide(internal.NewConfig),
+		fx.WithLogger(pkglog.NewFXLog),
 
 		// various dependencies
 		fx.Provide(log.New),
