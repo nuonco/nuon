@@ -8,30 +8,29 @@ description:
 ## What is a Sandbox?
 
 Sandboxes create a consistent, isolated environment that your application can be
-guaranteed to work with, across your App Installs different installs. They are
+guaranteed to work with, across your installs. They are
 responsible for defining the basic networking, permissioning, and infrastructure
-compute primitives e.g., a Kubernetes cluster - to power the App.
+compute primitives e.g., a Kubernetes cluster - to power the app.
 
 In a shared responsiblity model, a customer may provide some infrastructure in
-the Sandbox, such as an existing VPC or Kubernetes cluster. In this case,
-Sandboxes enable you to leverage this customer infrastructure to meet security
+the sandbox, such as an existing VPC or Kubernetes cluster. In this case,
+sandboxes enable you to leverage this customer infrastructure to meet security
 requirements, while also having a consistent way to deploy and manage your App
 in any account.
 
 Sandboxes can ensure isolation, reproducability and repeatability with each
 install - regardless of the account.
 
-## How is a Sandbox configured?
+## How is a sandbox configured?
 
-A Sandbox is configured in a `sandbox.toml` file inside the root of your App
-Config directory. To configure a Sandbox, specify a repo and the correct
-parameters for your Sandbox.
+A sandbox is configured in a `sandbox.toml` file inside the root of your app directory. To configure a sandbox, specify a repo and the correct
+parameters for your sandbox.
 
 Inputs and variables, are entered both inline in the `sandbox.toml` and also the
-`tfvars` file - to configure the Sandbox, and these are passed to the Terraform
-code that is run by the Sandbox.
+`tfvars` file - to configure the sandbox, and these are passed to the Terraform
+code that is run by the sandbox.
 
-You can configure Sandboxes to use either a public repo (using a `public_repo`
+You can configure sandboxes to use either a public repo (using a `public_repo`
 block) such as Nuon's public repository of AWS and Azure sandboxes - or a
 private GitHub repo (using a `connected_repo` block). Read more about VCS
 configuration [here](/guides/vcs).
@@ -67,7 +66,7 @@ desired_capacity = 2
 
 ## Nuon Managed Sandboxes
 
-We maintain managed Sandboxes for each [platform](/concepts/platforms) that we
+We maintain managed sandboxes for each [platform](/concepts/platforms) that we
 support. Each platform has a turnkey sandbox (where all resources are
 provisioned). These sandboxes are designed to be a stable, configurable starting
 point and most relevant options around the network, cluster and compute are
@@ -79,28 +78,28 @@ configurable.
 	configuration.
 </Note>
 
-We publish each Sandbox as a GitHub repository and you can find detailed
-documentation for each Sandbox there. These repositories are what you will
+We publish each sandbox as a GitHub repository and you can find detailed
+documentation for each sandbox there. These repositories are what you will
 reference in your `sandbox.toml`.
 
-[AWS EKS Sandbox](https://github.com/nuonco/aws-eks-sandbox)
+[AWS EKS sandbox](https://github.com/nuonco/aws-eks-sandbox)
 
-[AWS EKS with Karpenter Sandbox](https://github.com/nuonco/aws-eks-karpenter-sandbox)
+[AWS EKS with Karpenter sandbox](https://github.com/nuonco/aws-eks-karpenter-sandbox)
 
-[AWS Min Sandbox](https://github.com/nuonco/aws-min-sandbox)
+[AWS Min sandbox](https://github.com/nuonco/aws-min-sandbox)
 
-[Azure AKS Sandbox](https://github.com/nuonco/azure-aks-sandbox)
+[Azure AKS sandbox](https://github.com/nuonco/azure-aks-sandbox)
 
 <Note>
-	The AWS Min Sandbox does not create a Kubernetes cluster, but still provisions
+	The AWS Min sandbox does not create a Kubernetes cluster, but still provisions
 	a Route 53 Zone and IAM roles for the install. See the [Lambda function
-	example](../get-started/app-aws-lambda) that leverages the AWS Min Sandbox.
+	example](../get-started/app-aws-lambda) that leverages the AWS Min sandbox.
 </Note>
 
 ## Runner Types
 
 Update the `runner.toml` in your app to specify the type of Cloud runner to use
-for your App. The runner is responsible for executing the deployment of your App
+for your app. The runner is responsible for executing the deployment of your app
 into the customer's account.
 
 ```toml runner.toml
@@ -122,9 +121,9 @@ helm_driver = "configmap"
 Sandbox outputs are made accessible to all components
 [using variables](/guides/using-variables).
 
-You can use any output from your selected Sandbox by setting a config value on
+You can use any output from your selected sandbox by setting a config value on
 your component. In this example, we are using the `account.region` output from
-the Sandbox to configure a Helm chart component:
+the sandbox to configure a Helm chart component:
 
 ```toml components/e2e_helm.toml
 name   = "e2e_helm"
@@ -142,9 +141,9 @@ account_region = "{{.nuon.install.sandbox.outputs.account.region}}"
 
 See the
 [outputs.tf](https://github.com/nuonco/aws-eks-sandbox/blob/main/outputs.tf) for
-the AWS EKS Sandbox for a full list of available outputs or the
+the AWS EKS sandbox for a full list of available outputs or the
 [outputs.tf](https://github.com/nuonco/aws-min-sandbox/blob/main/outputs.tf) for
-the AWS Min Sandbox.
+the AWS Min sandbox.
 
 Example outputs include:
 
@@ -159,14 +158,14 @@ Example outputs include:
 - `nuon_dns.internal_domain` - The internal root domain for the install
 - `namespaces` - A list of namespaces created in the cluster
 
-## Configure Sandboxes
+## Configure sandboxes
 
-Each Sandbox has a set of variable inputs. Most variables are either supplied by
-the Nuon platform during install, via Inputs, or by setting default values.
+Each sandbox has a set of variable inputs. Most variables are either supplied by
+the Nuon platform during install, via inputs, or by setting default values.
 
 ### Use Default Values
 
-To configure a Sandbox parameter with a default value for your App, add a `vars`
+To configure a sandbox parameter with a default value for your app, add a `vars`
 block to your `sandbox.toml` file, or the mandatory `sandbox.tfvars` file in the
 same directory as your `sandbox.toml`. The values in this block will be used as
 defaults for all installs of this App.:
@@ -192,14 +191,14 @@ desired_capacity = 2
 
 ### Use Inputs
 
-Inputs allow you to collect customer input in the dashboard at App Install for
-values such as resource IDs, tokens and more. These Inputs are accesible to all
-Components and your Sandbox, [using variables](/guides/using-variables#inputs).
+Inputs allow you to collect customer input in the dashboard at install for
+values such as resource IDs, tokens and more. These inputs are accesible to all
+components and your sandbox, [using variables](/guides/using-variables#inputs).
 
-To configure a Sandbox parameter using an Input, you can define an Input in your
+To configure a sandbox parameter using an input, you can define an input in your
 `inputs.toml` file and then reference it in your `sandbox.toml` file. In this
-example, we define a root domain Input and use it to set the
-`public_root_domain` variable in the Sandbox:
+example, we define a root domain input and use it to set the
+`public_root_domain` variable in the sandbox:
 
 ```toml inputs.toml
 [[group]]
@@ -223,11 +222,11 @@ public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
 ## Create a Custom Sandbox
 
 While our [open source Sandboxes](#nuon-managed-sandboxes) are a great starting
-point, you can always fork them, or create your own Sandbox to support
+point, you can always fork them, or create your own sandbox to support
 customizing.
 
-To use a custom Sandbox, simply update your app's `sandbox.toml` to point to
-your new Sandbox code. Custom Sandboxes can also use private GitHub repos, that
+To use a custom sandbox, simply update your app's `sandbox.toml` to point to
+your new sandbox code. Custom Sandboxes can also use private GitHub repos, that
 are connected to Nuon.
 
 ```toml sandbox.toml
@@ -243,6 +242,6 @@ branch = "main"
 <br />
 
 <Note>
-If one of our managed Sandboxes does not work for you, and you are considering creating a custom Sandbox, we would love to hear about your use case. Please [get in touch](https://nuon.co/contact-us).
+If one of our managed sandboxes does not work for you, and you are considering creating a custom sandbox, we would love to hear about your use case. Please [contact us](https://nuon.co/contact-us).
 
 </Note>

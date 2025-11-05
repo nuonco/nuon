@@ -3,14 +3,14 @@ title: "Actions"
 description: "Automate operational tasks and workflows in installs."
 ---
 
-Actions allow you to create automated workflows that can be run in Installs.
+Actions allow you to create automated workflows that can be run in installs.
 Actions are useful for debugging, running scripts, and implementing health
 checks.
 
 ## What are Actions?
 
-Actions are reusable workflows that can be configured to run on your Installs.
-Each Action consists of:
+Actions are reusable workflows that can be configured to run on your installs.
+Each action consists of:
 
 - A trigger that determines when the action runs
 - One or more steps that define what the action does
@@ -25,18 +25,21 @@ Actions can be used for:
 
 ## How do you configure an Action?
 
-Create an `actions` directory at the root of the app, and create a TOML file for
+Create an `actions` directory at the root of the app, and create a `.toml` file for
 each action. e.g., `alb_healthcheck.toml` `deployment_restart.toml`
 `kubectl_logs.toml`.
 
-If Actions need to connect to a VCS, use either a public repo (using a
+Actions along with components, the sandbox and app metadata are sent to the Nuon control plane with the CLI command `nuon apps sync`. If you change and add additional actions, you need to run `nuon apps sync` again to upload the changes. But unlike components, actions do not need to be built.
+
+![Actions list](../images/concepts/actions/actions-list.png)
+
+If actions need to connect to a VCS, use either a public repo (using a
 `public_repo` block) or a private GitHub repo (using a `connected_repo` block).
 Read more about VCS configuration [here](/guides/vcs).
 
 For example, to pull logs from all Kubernetes pods in a namespace, you would
 write an action like this:
 
-<CodeGroup>
 ```toml actions/kubectl_logs.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
 name    = "kubectl_logs"
@@ -50,13 +53,11 @@ logs -n $NAMESPACE --all-containers=true -l app.kubernetes.io/name=ctl-api-api
 
 [steps.env_vars] NAMESPACE = "default"
 
-````
-</CodeGroup>
+```
 
 
 For example, if you wanted to implement a healthcheck for an AWS ALB, you would write something like this:
 
-<CodeGroup>
 ```toml actions/http_healthcheck.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=action
 
@@ -83,9 +84,7 @@ directory = "common"
 ENDPOINT             = "https://your-app.{{.nuon.install.sandbox.outputs.public_domain.name}}"
 METHOD               = "HEAD"
 EXPECTED_STATUS_CODE = "200"
-````
-
-</CodeGroup>
+```
 
 <Note>
 	We maintain a [collection of commonly-used
@@ -101,7 +100,9 @@ Actions can be triggered in several ways:
 - On a schedule
 - In response to events
 
-To run an action manually:
+![Action workflow](../images/concepts/actions/action-workflow.png)
+
+To run an action manually with the CLI:
 
 ```sh
 nuon actions create-run -w <action-workflow-id> -i <install-id>
@@ -155,6 +156,10 @@ Action Triggers are documented in the
 [Changelog 009](https://docs.nuon.co/updates/009-action-triggers-secrets-configs#action-triggers).
 
 ## Action History
+
+You can view the history of action runs using the Dashboard UI:
+
+![Action workflows & steps](../images/concepts/actions/action-workflows-steps.png)
 
 You can view the history of action runs using the CLI:
 
