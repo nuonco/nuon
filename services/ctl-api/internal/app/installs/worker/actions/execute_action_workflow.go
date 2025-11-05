@@ -29,21 +29,6 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 		return errors.Wrap(err, "unable to get install action workflow")
 	}
 
-	install, err := activities.AwaitGetByInstallID(ctx, installActionWorkflow.InstallID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install for action workflow")
-	}
-
-	actionWorkflowConfig, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, installActionWorkflow.ActionWorkflowID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get latest action workflow config")
-	}
-
-	if actionWorkflowConfig.AppConfigID != install.AppConfigID {
-		// skip if the action workflow is not part of install's current app config
-		return nil
-	}
-
 	actionWorkflowRun, err := activities.AwaitCreateActionWorkflowRun(ctx, &activities.CreateActionWorkflowRunRequest{
 		InstallActionWorkflowID: installActionWorkflow.ID,
 		ActionWorkflowID:        installActionWorkflow.ActionWorkflowID,
