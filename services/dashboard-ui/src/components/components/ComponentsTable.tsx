@@ -154,7 +154,10 @@ export const ComponentsTable = ({
           <ComponentTypeFilterDropdown />
         </div>
       }
-      emptyMessage="No components found"
+      emptyStateProps={{
+        emptyMessage: 'No components found or configured.',
+        emptyTitle: 'No components',
+      }}
       pagination={pagination}
       searchPlaceholder="Search component name..."
     />
