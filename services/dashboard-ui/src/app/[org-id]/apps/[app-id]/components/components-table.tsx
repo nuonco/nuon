@@ -5,6 +5,8 @@ import {
 } from '@/components/components/ComponentsTable'
 import { getComponents } from '@/lib'
 
+
+
 const LIMIT = 10
 
 export const ComponentsTable = async ({
@@ -26,6 +28,7 @@ export const ComponentsTable = async ({
     data: components,
     error,
     headers,
+    status,
   } = await getComponents({
     appId,
     limit,
@@ -41,10 +44,10 @@ export const ComponentsTable = async ({
     offset: Number(headers?.['x-nuon-page-offset'] ?? '0'),
   }
 
-  return error ? (
+  return error && status !== 404 ? (
     <Banner theme="error">Can&apos;t load components: {error?.error}</Banner>
   ) : (
-    <Table components={components} pagination={pagination} shouldPoll />
+    <Table components={components || []} pagination={pagination} shouldPoll />
   )
 }
 

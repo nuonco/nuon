@@ -44,7 +44,7 @@ export const Banner = ({
   return (
     <div
       className={cn(
-        'flex gap-4 w-full p-4 border rounded-lg',
+        'flex gap-4 h-fit w-full p-4 border rounded-lg',
         THEME_CLASSES[theme],
         className
       )}
