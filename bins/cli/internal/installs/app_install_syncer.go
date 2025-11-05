@@ -122,6 +122,15 @@ func (s *appInstallSyncer) syncExistingInstall(
 ) (*models.AppInstall, error) {
 	var err error
 
+	if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
+		_, err = s.api.UpdateInstall(ctx, appInstall.ID, &models.ServiceUpdateInstallRequest{
+			Name: appInstall.Name,
+			Metadata: &models.HelpersInstallMetadata{
+				ManagedBy: ManagedByNuonCLIConfig,
+			},
+		})
+	}
+
 	currInputs, err := s.api.GetInstallCurrentInputs(ctx, appInstall.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting current inputs for install %s: %w", appInstall.Name, err)
@@ -182,15 +191,6 @@ func (s *appInstallSyncer) syncExistingInstall(
 				}
 			}
 		}
-	}
-
-	if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
-		_, err = s.api.UpdateInstall(ctx, appInstall.ID, &models.ServiceUpdateInstallRequest{
-			Name: appInstall.Name,
-			Metadata: &models.HelpersInstallMetadata{
-				ManagedBy: ManagedByNuonCLIConfig,
-			},
-		})
 	}
 
 	// Use the current inputs as defaults, for missing values in the current inputs.
