@@ -1,4 +1,5 @@
 import { StatsD, ClientOptions as StatsDOptions } from 'hot-shots'
+import { matchRoutePattern } from './route-matcher'
 
 interface LoggingStatsDOptions extends StatsDOptions {
   enabled?: boolean
@@ -107,7 +108,7 @@ export async function setupMetrics() {
 
       if (req.url) {
         const start = Date.now()
-        const endpoint = extractRouteName(req.url)
+        const endpoint = matchRoutePattern(req.url)
 
         // Override res.end to capture metrics when response completes
         const originalEnd = res.end
@@ -145,33 +146,6 @@ export async function setupMetrics() {
 
   process.on('SIGTERM', shutdown)
   process.on('SIGINT', shutdown)
-}
-
-function extractRouteName(url: string): string {
-  // Remove query params and hash
-  const path = url.split('?')[0].split('#')[0]
-
-  // Just lump all these together
-  if (path.startsWith('/_next/')) {
-    return '/_next'
-  }
-
-  if (path.startsWith('/admin/temporal')) {
-    return '/admin/temporal'
-  }
-
-  // Replace IDs with :prefix_id format
-  return path
-    .split('/')
-    .map((segment) => {
-      // Check if segment looks like an ID (26 lowercase alphanumeric characters)
-      if (/^[a-z]{3}[a-z0-9]{23}$/i.test(segment)) {
-        const prefix = segment.substring(0, 3)
-        return `$${prefix}_id`
-      }
-      return segment
-    })
-    .join('/')
 }
 
 // Export statsd instance for manual tracking if needed
