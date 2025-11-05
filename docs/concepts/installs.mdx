@@ -6,9 +6,9 @@ description:
 
 ## What is an Install?
 
-When an Install is created, a [Runner](/concepts/runners) is initially created
-as a VM in the customer's cloud and is responsible for deploying the Sandbox,
-Components, and Actions in your App in the correct order defined in the App
+When an install is created, a [runner](/concepts/runners) is initially created
+as a VM in the customer's cloud and is responsible for deploying the sandbox,
+components, and actions in your app in the correct order defined in the app
 Config.
 
 ## Install Lifecycle
@@ -16,42 +16,55 @@ Config.
 When an Install is created, the following are provisioned:
 
 - [Runner](/concepts/runners) - the Nuon-managed Runner as a VM that manages the
-  Install.
+  install.
 - [Sandbox](/concepts/sandboxes) - the base infrastructure for networking and
   compute. e.g., Kubernetes cluster
-- [Components](/concepts/components) - the parts of your App. e.g., Helm charts,
+- [Components](/concepts/components) - the parts of your app. e.g., Helm charts,
   Kubernetes manifests, certificates, load balancers
 - [Actions](/concepts/actions) - any operational tasks as shell scripts that can
-  be run in the Install. e.g., health check
+  be run in the install. e.g., health check
 
-When an Install is deleted, each Component will be deleted in reverse order,
+When an install is deleted, each component will be deleted in reverse order,
 according to its [dependencies](/guides/component-dependencies), and then the
-Sandbox is destroyed. The Runner is then deleted by deleting the configuration
+sandbox is destroyed. The runner is then deleted by deleting the configuration
 that was used to create it. e.g., deleting the AWS CloudFormation stack.
 
 ## Install Management
 
-The primary and recommended way to create and manage Installs is through the
-Dashboard. The Dashboard outputs the AWS CloudFormation stack link to share with
-the customer to create the Runner VM and kick off the Install process.
+The primary and recommended way to create and manage installs is through the
+Dashboard UI. The Dashboard outputs the AWS CloudFormation stack link to share with
+the customer to create the runner VM and kick off the install process.
+
+Beginning an install involves entering one or more inputs in a modal form of the Dashboard UI.
+
+![Inputs](../images/concepts/inputs/inputs.png)
+
+Following the inputs submission, the install process begins as a [workflow](./workflows) of steps
+that can be monitored, approved, and re-tried in the Dashboard UI.
 
 ### Changing Components
 
-If you change a Component in an app that already has Installs, you need to
-re-deploy the Component to the Install in the Dashboard. A modal will prompt you
+If you change a component in an app that already has installs, you need to
+re-deploy the Component to the install in the Dashboard. A modal will prompt you
 to select the Build you want to use, which usually is the first one in the list
 sorted by build date in descending order.
 
+### Use the Dashboard UI
+
+The [Dashboard UI](../dashboard-ui) provides a full interface to create,
+view, update, de-provision and delete installs.
+
+
 ### Using the CLI
 
-The [cli](/cli) exposes many operational commands to manage an Install.
+The [cli](/cli) exposes many operational commands to manage an install.
 
 To see all available commands, run: `nuon installs --help`.
 
 ### Pinning an Install
 
-You can pin an Install, which will set it's ID as a default argument to all
-Install commands. This is helpful to avoid having to pass `-i` to each command.
+You can pin an install, which will set it's ID as a default argument to all
+install commands. This is helpful to avoid having to pass `-i` to each command.
 
 ```sh
 nuon installs select
@@ -61,7 +74,7 @@ nuon installs select
 	Each example below assumes you have run `nuon installs select` first.
 </Note>
 
-To show the currently pinned Install:
+To show the currently pinned install:
 
 ```sh
 nuon installs current
@@ -69,16 +82,10 @@ nuon installs current
 
 ### Install Management Commands
 
-Commands for creating, deleting and viewing Installs.
+Commands for creating, deleting and viewing installs.
 
-**Create an Install** - create an Install for an AWS application, passing in one
+**Create an Install** - create an install for an AWS application, passing in one
 or more Inputs.
-
-<Note>
-	Creating Azure Installs is currently only supported using an installer, or our
-	API.
-</Note>
-
 
 ```sh
 nuon installs create \
@@ -88,19 +95,19 @@ nuon installs create \
 ```
 
 
-**List all Installs** - list an Install
+**List all Installs** - list an install
 
 ```sh
 nuon installs list
 ```
 
-**Get an Install** - get an Install
+**Get an Install** - get an install
 
 ```sh
 nuon installs get
 ```
 
-**Delete an Install** - Delete an Install
+**Delete an Install** - Delete an install
 
 ```sh
 nuon installs delete
@@ -108,10 +115,10 @@ nuon installs delete
 
 ### Install Config Commands
 
-Manage Installs with the help of
+Manage installs with the help of
 [Install Config files](/configuration-files#install-config).
 
-**Sync** - syncs Installs defined in config files to Nuon. Existing installs are
+**Sync** - syncs installs defined in config files to Nuon. Existing installs are
 updated, otherwise a new install gets created for the app.
 
 
@@ -129,7 +136,7 @@ nuon installs generate-config -i <install-name-or-id>
 ```
 
 
-The following is an an example Install Config file:
+The following is an an example install config file:
 
 
 ```toml
@@ -147,9 +154,9 @@ app_release = "v2.25.0"
 
 ### Install Sandbox Commands
 
-Commands for working with an Install's Sandbox.
+Commands for working with an install's sandbox.
 
-**Show Sandbox updates** - show all updates to an Install's Sandbox.
+**Show Sandbox updates** - show all updates to an install's sandbox.
 
 
 ```sh
@@ -158,7 +165,7 @@ nuon installs sandbox-runs
 
 
 
-**Show Sandbox run logs** - show logs for a specific Sandbox run.
+**Show Sandbox run logs** - show logs for a specific sandbox run.
 
 
 ```sh
@@ -166,14 +173,14 @@ nuon installs sandbox-run-logs -r <run-id>
 ```
 
 
-**Reprovision a Sandbox** - reprovision the Sandbox with the latest configured
+**Reprovision a Sandbox** - reprovision the sandbox with the latest configured
 Sandbox version for an App.
 
 ```sh
 nuon installs reprovision
 ```
 
-**Deprovision a Sandbox** - Deprovision a Sandbox.
+**Deprovision a sandbox** - Deprovision a sandbox.
 
 ```sh
 nuon installs deprovision
@@ -181,17 +188,17 @@ nuon installs deprovision
 
 ### Install Components
 
-Each Component is deployed to an Install when it is first created. When a
-Component is created after an Install has been provisioned, it will
+Each component is deployed to an install when it is first created. When a
+component is created after an install has been provisioned, it will
 automatically be deployed to it upon the first release.
 
-The Nuon CLI provides the following commands to manage install Components:
+The Nuon CLI provides the following commands to manage install components:
 
 <Note>
 	Each example here assumes you have run `nuon installs select` first.
 </Note>
 
-**Show Deploys** - show deploys for an Install.
+**Show Deploys** - show deploys for an install.
 
 ```sh
 nuon installs list-deploys
