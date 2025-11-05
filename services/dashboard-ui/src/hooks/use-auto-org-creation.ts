@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createOrg } from '@/actions/orgs/create-org'
 import { useAccount } from '@/hooks/use-account'
 import type { TUserJourney } from '@/types'
+import { addSupportUsersToOrg } from '@/components/old/admin-actions'
 
 export const useAutoOrgCreation = () => {
   const [isCreating, setIsCreating] = useState(false)
@@ -45,6 +46,15 @@ export const useAutoOrgCreation = () => {
         setError(createError?.error || 'Failed to create organization')
         setIsCreating(false)
       } else {
+        // Add support users so we can see trial orgs.
+        try {
+          // We don't need to do anything with the response.
+          await addSupportUsersToOrg(newOrg.id)
+        } catch (err) {
+          // If this fails, just move on.
+          // We don't want to block the user.
+        }
+
         // Success - refresh account to get updated journey
         await refreshAccount()
         setIsCreating(false)
