@@ -5,12 +5,12 @@ import { getInstalls } from './get-installs'
 
 describe('getInstalls should handle response status codes from GET installs endpoint', () => {
   const orgId = 'test-id'
-  
+
   test('200 status with pagination params', async () => {
-    const { data: installs } = await getInstalls({ 
-      orgId, 
-      limit: 10, 
-      offset: 0 
+    const { data: installs } = await getInstalls({
+      orgId,
+      limit: 10,
+      offset: 0,
     })
     expect(Array.isArray(installs)).toBe(true)
   })

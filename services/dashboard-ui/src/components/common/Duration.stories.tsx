@@ -20,11 +20,15 @@ export const BasicUsage = () => (
       <div className="space-y-3 p-4 border rounded">
         <div className="flex items-center gap-3">
           <Duration nanoseconds={1000000000} />
-          <Text variant="subtext" theme="neutral">1 second (1,000,000,000 nanoseconds)</Text>
+          <Text variant="subtext" theme="neutral">
+            1 second (1,000,000,000 nanoseconds)
+          </Text>
         </div>
         <div className="flex items-center gap-3">
           <Duration nanoseconds={0} />
-          <Text variant="subtext" theme="neutral">Zero duration shows dash icon</Text>
+          <Text variant="subtext" theme="neutral">
+            Zero duration shows dash icon
+          </Text>
         </div>
       </div>
     </div>
@@ -33,12 +37,22 @@ export const BasicUsage = () => (
       <h4 className="text-sm font-medium">From ISO Timestamps</h4>
       <div className="space-y-3 p-4 border rounded">
         <div className="flex items-center gap-3">
-          <Duration beginTime="2022-01-01T00:00:00Z" endTime="2022-01-01T00:00:01Z" />
-          <Text variant="subtext" theme="neutral">1 second between timestamps</Text>
+          <Duration
+            beginTime="2022-01-01T00:00:00Z"
+            endTime="2022-01-01T00:00:01Z"
+          />
+          <Text variant="subtext" theme="neutral">
+            1 second between timestamps
+          </Text>
         </div>
         <div className="flex items-center gap-3">
-          <Duration beginTime="2022-01-01T00:00:00Z" endTime="2022-01-01T01:30:45Z" />
-          <Text variant="subtext" theme="neutral">1 hour, 30 minutes, 45 seconds</Text>
+          <Duration
+            beginTime="2022-01-01T00:00:00Z"
+            endTime="2022-01-01T01:30:45Z"
+          />
+          <Text variant="subtext" theme="neutral">
+            1 hour, 30 minutes, 45 seconds
+          </Text>
         </div>
       </div>
     </div>
@@ -74,7 +88,9 @@ export const Formats = () => (
       <h4 className="text-sm font-medium">Format Comparison</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-4 border rounded">
-          <Text weight="strong" className="mb-3">Default Format</Text>
+          <Text weight="strong" className="mb-3">
+            Default Format
+          </Text>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Duration nanoseconds={1000000000} format="default" />
@@ -90,9 +106,11 @@ export const Formats = () => (
             </div>
           </div>
         </div>
-        
+
         <div className="p-4 border rounded">
-          <Text weight="strong" className="mb-3">Timer Format</Text>
+          <Text weight="strong" className="mb-3">
+            Timer Format
+          </Text>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Duration nanoseconds={1000000000} format="timer" />
@@ -113,12 +131,12 @@ export const Formats = () => (
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
       <div>
-        <strong>default:</strong> Human-readable format like "1h 30m 45s"
-        for general use and user interfaces
+        <strong>default:</strong> Human-readable format like "1h 30m 45s" for
+        general use and user interfaces
       </div>
       <div>
-        <strong>timer:</strong> Precise timer format like "T-01:30:45:00"
-        for technical displays and monitoring
+        <strong>timer:</strong> Precise timer format like "T-01:30:45:00" for
+        technical displays and monitoring
       </div>
     </div>
   </div>
@@ -140,15 +158,21 @@ export const TimeRanges = () => (
       <div className="space-y-3 p-4 border rounded">
         <div className="flex items-center justify-between">
           <Duration nanoseconds={500000} />
-          <Text variant="subtext" theme="neutral">0.5 milliseconds</Text>
+          <Text variant="subtext" theme="neutral">
+            0.5 milliseconds
+          </Text>
         </div>
         <div className="flex items-center justify-between">
           <Duration nanoseconds={1000000} />
-          <Text variant="subtext" theme="neutral">1 millisecond</Text>
+          <Text variant="subtext" theme="neutral">
+            1 millisecond
+          </Text>
         </div>
         <div className="flex items-center justify-between">
           <Duration nanoseconds={100000000} />
-          <Text variant="subtext" theme="neutral">100 milliseconds</Text>
+          <Text variant="subtext" theme="neutral">
+            100 milliseconds
+          </Text>
         </div>
       </div>
     </div>
@@ -158,15 +182,21 @@ export const TimeRanges = () => (
       <div className="space-y-3 p-4 border rounded">
         <div className="flex items-center justify-between">
           <Duration nanoseconds={30000000000} />
-          <Text variant="subtext" theme="neutral">30 seconds</Text>
+          <Text variant="subtext" theme="neutral">
+            30 seconds
+          </Text>
         </div>
         <div className="flex items-center justify-between">
           <Duration nanoseconds={300000000000} />
-          <Text variant="subtext" theme="neutral">5 minutes</Text>
+          <Text variant="subtext" theme="neutral">
+            5 minutes
+          </Text>
         </div>
         <div className="flex items-center justify-between">
           <Duration nanoseconds={1800000000000} />
-          <Text variant="subtext" theme="neutral">30 minutes</Text>
+          <Text variant="subtext" theme="neutral">
+            30 minutes
+          </Text>
         </div>
       </div>
     </div>
@@ -176,15 +206,21 @@ export const TimeRanges = () => (
       <div className="space-y-3 p-4 border rounded">
         <div className="flex items-center justify-between">
           <Duration nanoseconds={7200000000000} />
-          <Text variant="subtext" theme="neutral">2 hours</Text>
+          <Text variant="subtext" theme="neutral">
+            2 hours
+          </Text>
         </div>
         <div className="flex items-center justify-between">
           <Duration nanoseconds={86400000000000} />
-          <Text variant="subtext" theme="neutral">24 hours (1 day)</Text>
+          <Text variant="subtext" theme="neutral">
+            24 hours (1 day)
+          </Text>
         </div>
         <div className="flex items-center justify-between">
           <Duration nanoseconds={604800000000000} />
-          <Text variant="subtext" theme="neutral">7 days (1 week)</Text>
+          <Text variant="subtext" theme="neutral">
+            7 days (1 week)
+          </Text>
         </div>
       </div>
     </div>
@@ -210,7 +246,9 @@ export const UsageExamples = () => (
             <Icon variant="CheckCircle" size="16" className="text-green-600" />
             <div>
               <Text weight="strong">Build Completed</Text>
-              <Text variant="subtext" theme="neutral">Docker image created successfully</Text>
+              <Text variant="subtext" theme="neutral">
+                Docker image created successfully
+              </Text>
             </div>
           </div>
           <Duration nanoseconds={125000000000} />
@@ -220,7 +258,9 @@ export const UsageExamples = () => (
             <Icon variant="CheckCircle" size="16" className="text-green-600" />
             <div>
               <Text weight="strong">Tests Passed</Text>
-              <Text variant="subtext" theme="neutral">All unit and integration tests</Text>
+              <Text variant="subtext" theme="neutral">
+                All unit and integration tests
+              </Text>
             </div>
           </div>
           <Duration nanoseconds={45000000000} />
@@ -230,7 +270,9 @@ export const UsageExamples = () => (
             <Icon variant="CheckCircle" size="16" className="text-green-600" />
             <div>
               <Text weight="strong">Deployment</Text>
-              <Text variant="subtext" theme="neutral">Rolling update to production</Text>
+              <Text variant="subtext" theme="neutral">
+                Rolling update to production
+              </Text>
             </div>
           </div>
           <Duration nanoseconds={180000000000} />
@@ -258,7 +300,7 @@ export const UsageExamples = () => (
             </div>
           </div>
         </div>
-        
+
         <div className="p-4 border rounded">
           <Text weight="strong">Database Queries</Text>
           <div className="mt-3 space-y-2">
@@ -284,27 +326,41 @@ export const UsageExamples = () => (
       <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between mb-4">
           <Text weight="stronger">Background Jobs</Text>
-          <Text variant="subtext" theme="neutral">Duration tracking</Text>
+          <Text variant="subtext" theme="neutral">
+            Duration tracking
+          </Text>
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <Text variant="subtext" weight="strong">Data Backup</Text>
-              <Text variant="label" theme="neutral">Completed 2 minutes ago</Text>
+              <Text variant="subtext" weight="strong">
+                Data Backup
+              </Text>
+              <Text variant="label" theme="neutral">
+                Completed 2 minutes ago
+              </Text>
             </div>
             <Duration nanoseconds={1800000000000} format="timer" />
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <Text variant="subtext" weight="strong">Log Rotation</Text>
-              <Text variant="label" theme="neutral">In progress</Text>
+              <Text variant="subtext" weight="strong">
+                Log Rotation
+              </Text>
+              <Text variant="label" theme="neutral">
+                In progress
+              </Text>
             </div>
             <Duration nanoseconds={45000000000} />
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <Text variant="subtext" weight="strong">Cache Warming</Text>
-              <Text variant="label" theme="neutral">Scheduled</Text>
+              <Text variant="subtext" weight="strong">
+                Cache Warming
+              </Text>
+              <Text variant="label" theme="neutral">
+                Scheduled
+              </Text>
             </div>
             <Duration nanoseconds={0} />
           </div>
@@ -317,8 +373,12 @@ export const UsageExamples = () => (
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Use default format for user-facing duration displays</li>
         <li>Use timer format for technical monitoring and logging</li>
-        <li>Handle zero and invalid durations gracefully with icon fallbacks</li>
-        <li>Consider the precision needed - sub-second vs. rounded durations</li>
+        <li>
+          Handle zero and invalid durations gracefully with icon fallbacks
+        </li>
+        <li>
+          Consider the precision needed - sub-second vs. rounded durations
+        </li>
         <li>Combine with appropriate text styling for different contexts</li>
       </ul>
     </div>

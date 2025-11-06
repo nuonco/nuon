@@ -1,6 +1,6 @@
-import { api } from "@/lib/api";
-import type { TInstall, TPaginationParams } from "@/types";
-import { buildQueryParams } from "@/utils/build-query-params";
+import { api } from '@/lib/api'
+import type { TInstall, TPaginationParams } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getInstalls = ({
   limit,
@@ -11,4 +11,4 @@ export const getInstalls = ({
   api<TInstall[]>({
     path: `installs${buildQueryParams({ limit, offset, q })}`,
     orgId,
-  });
+  })

@@ -1,8 +1,8 @@
 import { api } from '@/lib/api'
-import type { TInstallConfig } from "@/types"
+import type { TInstallConfig } from '@/types'
 
 export type TCreateInstallConfigBody = {
-  approval_option: "approve-all" | "prompt",  
+  approval_option: 'approve-all' | 'prompt'
 }
 
 export async function createInstallConfig({

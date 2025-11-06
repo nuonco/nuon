@@ -10,8 +10,8 @@ export const BasicUsage = () => (
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Code components display code snippets with syntax highlighting,
         monospace typography, and proper formatting. They support multiple
-        variants for different use cases: blocks, preformatted content,
-        and inline code within text.
+        variants for different use cases: blocks, preformatted content, and
+        inline code within text.
       </p>
     </div>
 
@@ -44,15 +44,14 @@ export const Variants = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           variant
         </code>{' '}
-        prop controls the rendering mode and styling of code content.
-        Each variant is optimized for different content types and contexts.
+        prop controls the rendering mode and styling of code content. Each
+        variant is optimized for different content types and contexts.
       </p>
     </div>
 
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Default Variant</h4>
-      <Code>const greeting = "Hello, World!";
-console.log(greeting);</Code>
+      <Code>const greeting = "Hello, World!"; console.log(greeting);</Code>
       <Text variant="subtext" theme="neutral">
         Standard code block with basic formatting
       </Text>
@@ -80,8 +79,8 @@ console.log(greeting);</Code>
       <Text>
         Use the <Code variant="inline">useState</Code> hook to manage component
         state, or call <Code variant="inline">API.get('/users')</Code> to fetch
-        user data. The <Code variant="inline">process.env.NODE_ENV</Code> variable
-        determines the current environment.
+        user data. The <Code variant="inline">process.env.NODE_ENV</Code>{' '}
+        variable determines the current environment.
       </Text>
       <Text variant="subtext" theme="neutral">
         Inline code snippets within text content
@@ -90,16 +89,16 @@ console.log(greeting);</Code>
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mt-6">
       <div>
-        <strong>default:</strong> Basic code block with standard styling
-        and scrollable overflow
+        <strong>default:</strong> Basic code block with standard styling and
+        scrollable overflow
       </div>
       <div>
         <strong>preformated:</strong> Preserves exact formatting, whitespace,
         and indentation using pre element
       </div>
       <div>
-        <strong>inline:</strong> Compact inline display for code within
-        text paragraphs
+        <strong>inline:</strong> Compact inline display for code within text
+        paragraphs
       </div>
     </div>
   </div>
@@ -110,9 +109,9 @@ export const ContentExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Code Content Examples</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Code components work with various types of technical content.
-        Here are examples showing different programming languages,
-        configuration files, and command-line instructions.
+        Code components work with various types of technical content. Here are
+        examples showing different programming languages, configuration files,
+        and command-line instructions.
       </p>
     </div>
 
@@ -139,7 +138,9 @@ const fetchUser = async (id: string): Promise<User> => {
       <h4 className="text-sm font-medium">Configuration Files</h4>
       <div className="space-y-3">
         <div>
-          <Text variant="label" weight="strong">package.json</Text>
+          <Text variant="label" weight="strong">
+            package.json
+          </Text>
           <ClickToCopy>
             <Code variant="preformated">
               {`{
@@ -153,7 +154,9 @@ const fetchUser = async (id: string): Promise<User> => {
           </ClickToCopy>
         </div>
         <div>
-          <Text variant="label" weight="strong">Docker Configuration</Text>
+          <Text variant="label" weight="strong">
+            Docker Configuration
+          </Text>
           <Code variant="preformated">
             {`FROM node:18-alpine
 WORKDIR /app
@@ -213,8 +216,8 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Code components are frequently used in documentation, tutorials,
-        and technical interfaces. Here are common patterns and recommended
+        Code components are frequently used in documentation, tutorials, and
+        technical interfaces. Here are common patterns and recommended
         approaches for different scenarios.
       </p>
     </div>
@@ -272,7 +275,9 @@ export const UsageExamples = () => (
         </Text>
         <div className="space-y-2">
           <ClickToCopy>
-            <Code variant="inline">const result = await api.get('/status')</Code>
+            <Code variant="inline">
+              const result = await api.get('/status')
+            </Code>
           </ClickToCopy>
           <ClickToCopy>
             <Code variant="inline">console.log('Hello from Nuon!')</Code>
@@ -287,11 +292,15 @@ export const UsageExamples = () => (
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Use preformatted variant for structured data and multi-line code</li>
+        <li>
+          Use preformatted variant for structured data and multi-line code
+        </li>
         <li>Use inline variant for short code snippets within text</li>
         <li>Combine with ClickToCopy for user-friendly copying experience</li>
         <li>Keep code blocks concise and focused on relevant examples</li>
-        <li>Ensure proper contrast and readability in both light and dark modes</li>
+        <li>
+          Ensure proper contrast and readability in both light and dark modes
+        </li>
       </ul>
     </div>
   </div>

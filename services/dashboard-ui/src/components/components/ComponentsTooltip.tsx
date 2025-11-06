@@ -26,7 +26,6 @@ export function getContextTooltipItemsFromComponents(
   }))
 }
 
-
 export function getContextTooltipItemsFromInstallComponents(
   components: TInstallComponent[],
   pathname: string

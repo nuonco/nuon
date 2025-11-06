@@ -1,58 +1,58 @@
-"use client";
+'use client'
 
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-import { cancelWorkflow } from "@/actions/workflows/cancel-workflow";
-import { Banner } from "@/components/common/Banner";
-import { Button, type IButtonAsButton } from "@/components/common/Button";
-import { Icon } from "@/components/common/Icon";
-import { Text } from "@/components/common/Text";
-import { Modal, type IModal } from "@/components/surfaces/Modal";
-import { Toast } from "@/components/surfaces/Toast";
-import { useOrg } from "@/hooks/use-org";
-import { useSurfaces } from "@/hooks/use-surfaces";
-import { useServerAction } from "@/hooks/use-server-action";
-import { useToast } from "@/hooks/use-toast";
-import type { TWorkflow } from "@/types";
+import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
+import { cancelWorkflow } from '@/actions/workflows/cancel-workflow'
+import { Banner } from '@/components/common/Banner'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { Toast } from '@/components/surfaces/Toast'
+import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import { useServerAction } from '@/hooks/use-server-action'
+import { useToast } from '@/hooks/use-toast'
+import type { TWorkflow } from '@/types'
 
 interface ICancelWorkflow {
-  workflow: TWorkflow;
+  workflow: TWorkflow
 }
 
 export const CancelWorkflowModal = ({
   workflow,
   ...props
 }: ICancelWorkflow & IModal) => {
-  const path = usePathname();
-  const { org } = useOrg();
-  const { removeModal } = useSurfaces();
-  const { addToast } = useToast();
+  const path = usePathname()
+  const { org } = useOrg()
+  const { removeModal } = useSurfaces()
+  const { addToast } = useToast()
   const { data, error, isLoading, execute } = useServerAction({
     action: cancelWorkflow,
-  });
+  })
 
   useEffect(() => {
     if (data && !error) {
       addToast(
         <Toast theme="info" heading={`${workflow.name} was cancelled.`}>
           <Text>Cancelled the {workflow.type} workflow.</Text>
-        </Toast>,
-      );
-      removeModal(props.modalId);
+        </Toast>
+      )
+      removeModal(props.modalId)
     }
 
     if (!data && error) {
       addToast(
         <Toast theme="error" heading={`${workflow.name} was not cancelled.`}>
           <Text>
-            There was an error while trying to cancel {workflow.type} workflow{" "}
+            There was an error while trying to cancel {workflow.type} workflow{' '}
             {workflow.id}.
           </Text>
-          <Text>{error?.error || "Unknow error occurred."}</Text>
-        </Toast>,
-      );
+          <Text>{error?.error || 'Unknow error occurred.'}</Text>
+        </Toast>
+      )
     }
-  }, [data, error]);
+  }, [data, error])
 
   return (
     <Modal
@@ -73,12 +73,12 @@ export const CancelWorkflowModal = ({
             <Icon variant="Loading" /> Canceling workflow
           </span>
         ) : (
-          "Cancel workflow"
+          'Cancel workflow'
         ),
         onClick: () => {
-          execute({ orgId: org.id, path, workflowId: workflow.id });
+          execute({ orgId: org.id, path, workflowId: workflow.id })
         },
-        variant: "primary",
+        variant: 'primary',
       }}
       {...props}
     >
@@ -86,7 +86,7 @@ export const CancelWorkflowModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              "An error happned, please refresh the page and try again."}
+              'An error happned, please refresh the page and try again.'}
           </Banner>
         ) : null}
         <Text variant="base" weight="strong">
@@ -98,25 +98,25 @@ export const CancelWorkflowModal = ({
         </Text>
       </div>
     </Modal>
-  );
-};
+  )
+}
 
 export const CancelWorkflowButton = ({
   workflow,
   ...props
 }: ICancelWorkflow & IButtonAsButton) => {
-  const { addModal } = useSurfaces();
-  const modal = <CancelWorkflowModal workflow={workflow} />;
+  const { addModal } = useSurfaces()
+  const modal = <CancelWorkflowModal workflow={workflow} />
 
   return (
     <Button
       variant="danger"
       onClick={() => {
-        addModal(modal);
+        addModal(modal)
       }}
       {...props}
     >
       Cancel workflow
     </Button>
-  );
-};
+  )
+}

@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import classNames from 'classnames'
@@ -179,7 +177,10 @@ export const InstallForm: FC<IInstallForm> = ({
                   className="text-green-800 dark:text-green-500"
                   size={32}
                 />
-                <Text variant="reg-14">{install ? "Inputs updated" : "Install created"}, redirecting...</Text>
+                <Text variant="reg-14">
+                  {install ? 'Inputs updated' : 'Install created'},
+                  redirecting...
+                </Text>
               </div>
             ) : null}
           </div>
@@ -325,7 +326,6 @@ const InputConfigs: FC<{
   inputConfig: TAppInputConfig
   install?: TInstall
 }> = ({ inputConfig, install }) => {
-  
   return (
     <>
       {inputConfig?.input_groups ? (
