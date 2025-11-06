@@ -11,7 +11,6 @@ func FormatValidationError(err error) error {
 	if err == nil {
 		return nil
 	}
-
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		var errMsg string
 		for _, e := range errs {
@@ -26,9 +25,8 @@ func FormatValidationError(err error) error {
 			}
 			errMsg += fieldErr + "\n"
 		}
-		return fmt.Errorf("invalid request:\n%s", errMsg)
+		return fmt.Errorf("invalid request:\n%s: %w", errMsg, err)
 	}
-
 	return err
 }
 
