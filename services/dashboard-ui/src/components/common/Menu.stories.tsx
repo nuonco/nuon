@@ -127,8 +127,8 @@ export const MenuSections = () => (
       <h3 className="text-lg font-semibold">Menu Sections and Grouping</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Use text labels and horizontal dividers to organize menu items into
-        logical groups. This improves usability and makes it easier for users
-        to find specific actions.
+        logical groups. This improves usability and makes it easier for users to
+        find specific actions.
       </p>
     </div>
 
@@ -197,9 +197,9 @@ export const MenuWithStatus = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Menus with Status Information</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Menus can display status information, metrics, and other contextual
-        data alongside actionable items. This is useful for system dashboards
-        and monitoring interfaces.
+        Menus can display status information, metrics, and other contextual data
+        alongside actionable items. This is useful for system dashboards and
+        monitoring interfaces.
       </p>
     </div>
 

@@ -1,8 +1,8 @@
 import { api } from '@/lib/api'
-import type { TWorkflow } from "@/types"
+import type { TWorkflow } from '@/types'
 
 export type TApproveAllWorkflowStepsBody = {
-  approval_option: "approve-all" | "prompt"
+  approval_option: 'approve-all' | 'prompt'
 }
 
 export async function approveAllWorkflowSteps({

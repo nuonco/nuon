@@ -60,9 +60,15 @@ export const ActionStepGraph = ({
                 </Text>
               </div>
               {s?.execution_duration ? (
-                <Text className="!inline-flex items-center gap-1" variant="label">
-                  Finished in 
-                  <Duration nanoseconds={s?.execution_duration} variant="label" />
+                <Text
+                  className="!inline-flex items-center gap-1"
+                  variant="label"
+                >
+                  Finished in
+                  <Duration
+                    nanoseconds={s?.execution_duration}
+                    variant="label"
+                  />
                 </Text>
               ) : null}
             </div>

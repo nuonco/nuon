@@ -1,17 +1,17 @@
-"use client";
+'use client'
 
-import { Card } from "@/components/common/Card";
-import { ClickToCopyButton } from "@/components/common/ClickToCopy";
-import { Code } from "@/components/common/Code";
-import { Divider } from "@/components/common/Divider";
-import { Link } from "@/components/common/Link";
-import { Skeleton } from "@/components/common/Skeleton";
-import { Text } from "@/components/common/Text";
-import { useInstall } from "@/hooks/use-install";
-import type { IStackDetails } from "./types";
+import { Card } from '@/components/common/Card'
+import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import { Code } from '@/components/common/Code'
+import { Divider } from '@/components/common/Divider'
+import { Link } from '@/components/common/Link'
+import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
+import { useInstall } from '@/hooks/use-install'
+import type { IStackDetails } from './types'
 
 export const AwaitAzureDetails = ({ stack }: IStackDetails) => {
-  const { install } = useInstall();
+  const { install } = useInstall()
 
   return (
     <>
@@ -86,8 +86,8 @@ export const AwaitAzureDetails = ({ stack }: IStackDetails) => {
         </Card>
       </div>
     </>
-  );
-};
+  )
+}
 
 export const AwaitAzureDetailsSkeleton = () => {
   return (
@@ -113,5 +113,5 @@ export const AwaitAzureDetailsSkeleton = () => {
         <Skeleton height="72px" width="100%" />
       </Card>
     </>
-  );
-};
+  )
+}

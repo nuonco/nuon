@@ -8,9 +8,9 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic Skeleton Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Skeleton components provide loading placeholders that mimic the
-        structure of content being loaded. They help reduce perceived
-        loading time and provide visual feedback during data fetching.
-        The component uses smooth animations and responsive design.
+        structure of content being loaded. They help reduce perceived loading
+        time and provide visual feedback during data fetching. The component
+        uses smooth animations and responsive design.
       </p>
     </div>
 
@@ -54,17 +54,23 @@ export const MultipleLines = () => (
       <h4 className="text-sm font-medium">Different Line Counts</h4>
       <div className="space-y-6">
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">2 Lines</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            2 Lines
+          </Text>
           <Skeleton lines={2} />
         </div>
-        
+
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">3 Lines</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            3 Lines
+          </Text>
           <Skeleton lines={3} />
         </div>
-        
+
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">5 Lines</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            5 Lines
+          </Text>
           <Skeleton lines={5} />
         </div>
       </div>
@@ -94,17 +100,23 @@ export const CustomDimensions = () => (
       <h4 className="text-sm font-medium">Variable Width Lines</h4>
       <div className="space-y-4">
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">Paragraph Style</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            Paragraph Style
+          </Text>
           <Skeleton lines={3} width={['100%', '85%', '60%']} />
         </div>
-        
+
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">Short Lines</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            Short Lines
+          </Text>
           <Skeleton lines={2} width={['50%', '75%']} height="2rem" />
         </div>
-        
+
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">Custom Heights</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            Custom Heights
+          </Text>
           <Skeleton lines={1} width="30%" height="3rem" />
         </div>
       </div>
@@ -114,17 +126,23 @@ export const CustomDimensions = () => (
       <h4 className="text-sm font-medium">Specific Use Cases</h4>
       <div className="space-y-4">
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">Button Skeleton</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            Button Skeleton
+          </Text>
           <Skeleton width="120px" height="40px" />
         </div>
-        
+
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">Title Skeleton</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            Title Skeleton
+          </Text>
           <Skeleton width="60%" height="1.5rem" />
         </div>
-        
+
         <div className="p-4 border rounded">
-          <Text variant="label" weight="strong" className="mb-3">Image Placeholder</Text>
+          <Text variant="label" weight="strong" className="mb-3">
+            Image Placeholder
+          </Text>
           <Skeleton width="200px" height="150px" />
         </div>
       </div>
@@ -178,7 +196,7 @@ export const UsageExamples = () => (
           </div>
           <Skeleton width="24px" height="24px" />
         </div>
-        
+
         <div className="flex items-center gap-3 p-3 border rounded">
           <Skeleton width="32px" height="32px" />
           <div className="flex-1">
@@ -189,7 +207,7 @@ export const UsageExamples = () => (
           </div>
           <Skeleton width="24px" height="24px" />
         </div>
-        
+
         <div className="flex items-center gap-3 p-3 border rounded">
           <Skeleton width="32px" height="32px" />
           <div className="flex-1">

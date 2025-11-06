@@ -1,7 +1,7 @@
 import { api } from '@/lib/api'
 
 export type TDeprovisionSandboxBody = {
-  error_behavior?: "continue" | "abort" 
+  error_behavior?: 'continue' | 'abort'
   plan_only: boolean
 }
 
