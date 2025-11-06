@@ -8,9 +8,9 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic Pagination Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Pagination provides navigation controls for paged data sets. It
-        automatically manages URL parameters to maintain pagination state
-        across page navigation and browser refreshes. The component includes
-        loading states and automatic URL updates.
+        automatically manages URL parameters to maintain pagination state across
+        page navigation and browser refreshes. The component includes loading
+        states and automatic URL updates.
       </p>
     </div>
 
@@ -55,7 +55,9 @@ export const PaginationStates = () => (
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">First Page (offset = 0, hasNext = true)</h4>
+      <h4 className="text-sm font-medium">
+        First Page (offset = 0, hasNext = true)
+      </h4>
       <div className="flex justify-center p-6 border rounded-lg">
         <Pagination offset={0} hasNext={true} />
       </div>
@@ -65,7 +67,9 @@ export const PaginationStates = () => (
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Middle Page (offset = 10, hasNext = true)</h4>
+      <h4 className="text-sm font-medium">
+        Middle Page (offset = 10, hasNext = true)
+      </h4>
       <div className="flex justify-center p-6 border rounded-lg">
         <Pagination offset={10} hasNext={true} />
       </div>
@@ -75,7 +79,9 @@ export const PaginationStates = () => (
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Last Page (offset = 20, hasNext = false)</h4>
+      <h4 className="text-sm font-medium">
+        Last Page (offset = 20, hasNext = false)
+      </h4>
       <div className="flex justify-center p-6 border rounded-lg">
         <Pagination offset={20} hasNext={false} />
       </div>
@@ -196,7 +202,9 @@ export const CustomConfiguration = () => (
       <h4 className="text-sm font-medium">Custom URL Parameter</h4>
       <div className="p-4 border rounded-lg">
         <div className="flex justify-between items-center mb-3">
-          <Text variant="subtext">Using 'page' parameter instead of 'offset'</Text>
+          <Text variant="subtext">
+            Using 'page' parameter instead of 'offset'
+          </Text>
           <Pagination offset={10} hasNext={true} param="page" />
         </div>
         <Text variant="label" theme="neutral">
@@ -212,8 +220,8 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Pagination is commonly used with tables, lists, and search results.
-        Here are typical implementation patterns for different scenarios.
+        Pagination is commonly used with tables, lists, and search results. Here
+        are typical implementation patterns for different scenarios.
       </p>
     </div>
 

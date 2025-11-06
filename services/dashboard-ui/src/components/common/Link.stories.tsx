@@ -41,12 +41,12 @@ export const Variants = () => (
         hover effects
       </div>
       <div>
-        <strong>ghost:</strong> Subtle button-like styling with background
-        hover effects
+        <strong>ghost:</strong> Subtle button-like styling with background hover
+        effects
       </div>
       <div>
-        <strong>nav:</strong> Navigation link styling optimized for sidebars
-        and menus
+        <strong>nav:</strong> Navigation link styling optimized for sidebars and
+        menus
       </div>
       <div>
         <strong>breadcrumb:</strong> Minimal styling for breadcrumb navigation
@@ -153,9 +153,9 @@ export const WithIcons = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Links with Icons</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Links automatically detect and properly space icon components. Icons
-        can be placed before or after the link text to enhance meaning and
-        visual appeal.
+        Links automatically detect and properly space icon components. Icons can
+        be placed before or after the link text to enhance meaning and visual
+        appeal.
       </p>
     </div>
 
@@ -283,7 +283,9 @@ export const UsagePatterns = () => (
         <li>Use ghost variant for action-oriented links</li>
         <li>Use nav variant for navigation menus and sidebars</li>
         <li>Use breadcrumb variant for navigation breadcrumbs</li>
-        <li>Always provide meaningful link text that describes the destination</li>
+        <li>
+          Always provide meaningful link text that describes the destination
+        </li>
       </ul>
     </div>
   </div>

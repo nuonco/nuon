@@ -73,7 +73,10 @@ export const Positioning = () => (
           </Tooltip>
         </div>
         <div className="text-center">
-          <Tooltip tipContent="Tooltip positioned to the right" position="right">
+          <Tooltip
+            tipContent="Tooltip positioned to the right"
+            position="right"
+          >
             <Button variant="secondary">Right</Button>
           </Tooltip>
         </div>

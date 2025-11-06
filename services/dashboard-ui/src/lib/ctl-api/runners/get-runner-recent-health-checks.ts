@@ -1,6 +1,6 @@
-import { api } from "@/lib/api";
-import type { TRunnerHealthCheck, TPaginationParams } from "@/types";
-import { buildQueryParams } from "@/utils/build-query-params";
+import { api } from '@/lib/api'
+import type { TRunnerHealthCheck, TPaginationParams } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getRunnerRecentHealthChecks = ({
   runnerId,
@@ -12,4 +12,4 @@ export const getRunnerRecentHealthChecks = ({
   api<TRunnerHealthCheck[]>({
     path: `runners/${runnerId}/recent-health-checks${buildQueryParams({ limit, offset, window })}`,
     orgId,
-  });
+  })

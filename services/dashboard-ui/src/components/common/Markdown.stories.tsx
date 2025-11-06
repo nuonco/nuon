@@ -11,8 +11,8 @@ export const BasicUsage = () => (
       <p className="text-sm text-gray-600 dark:text-gray-400">
         The Markdown component renders markdown content as HTML using the
         showdown library. It supports GitHub-flavored markdown features,
-        automatically opens external links in new tabs, and provides
-        proper styling for all standard markdown elements.
+        automatically opens external links in new tabs, and provides proper
+        styling for all standard markdown elements.
       </p>
     </div>
 
@@ -166,9 +166,9 @@ export const TypographyElements = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Typography Elements</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Markdown supports a full range of typography elements including
-        headers, text formatting, lists, and more. All elements are
-        properly styled and maintain consistency with the design system.
+        Markdown supports a full range of typography elements including headers,
+        text formatting, lists, and more. All elements are properly styled and
+        maintain consistency with the design system.
       </p>
     </div>
 
@@ -205,9 +205,9 @@ export const ListsAndTables = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Lists and Tables</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Markdown provides comprehensive support for both ordered and
-        unordered lists, as well as tables with proper alignment and
-        styling. Task lists are also supported for interactive content.
+        Markdown provides comprehensive support for both ordered and unordered
+        lists, as well as tables with proper alignment and styling. Task lists
+        are also supported for interactive content.
       </p>
     </div>
 
@@ -293,9 +293,7 @@ export const CodeBlocks = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Code Examples</h4>
       <div className="p-4 border rounded-lg">
-        <Markdown
-          content={codeExampleContent}
-        />
+        <Markdown content={codeExampleContent} />
       </div>
     </div>
   </div>
@@ -304,11 +302,13 @@ export const CodeBlocks = () => (
 export const InteractiveContent = () => (
   <div className="space-y-6">
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Interactive and Advanced Content</h3>
+      <h3 className="text-lg font-semibold">
+        Interactive and Advanced Content
+      </h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Markdown supports advanced features like collapsible sections,
-        HTML elements, and interactive content. This makes it suitable
-        for documentation, help content, and rich text displays.
+        Markdown supports advanced features like collapsible sections, HTML
+        elements, and interactive content. This makes it suitable for
+        documentation, help content, and rich text displays.
       </p>
     </div>
 
@@ -390,9 +390,9 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        The Markdown component is commonly used for documentation,
-        help content, user-generated content, and any interface where
-        rich text formatting is needed.
+        The Markdown component is commonly used for documentation, help content,
+        user-generated content, and any interface where rich text formatting is
+        needed.
       </p>
     </div>
 
@@ -400,7 +400,9 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">Documentation Panel</h4>
       <div className="p-4 border rounded-lg space-y-4">
         <div className="flex justify-between items-center">
-          <Text variant="h3" weight="stronger">API Documentation</Text>
+          <Text variant="h3" weight="stronger">
+            API Documentation
+          </Text>
           <Badge theme="info">v2.1</Badge>
         </div>
         <Markdown
@@ -438,8 +440,12 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
       <h4 className="text-sm font-medium">Help Content</h4>
       <div className="p-4 border rounded-lg space-y-4">
         <div className="flex justify-between items-center">
-          <Text variant="h3" weight="stronger">Troubleshooting Guide</Text>
-          <Button variant="ghost" size="sm">Contact Support</Button>
+          <Text variant="h3" weight="stronger">
+            Troubleshooting Guide
+          </Text>
+          <Button variant="ghost" size="sm">
+            Contact Support
+          </Button>
         </div>
         <Markdown
           content={`## Common Issues
@@ -488,7 +494,9 @@ Check the response headers for additional error information.
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Simple Content Example</h4>
       <div className="p-4 border rounded-lg">
-        <Text variant="h3" weight="stronger" className="mb-3">Welcome Message</Text>
+        <Text variant="h3" weight="stronger" className="mb-3">
+          Welcome Message
+        </Text>
         <Markdown content="Welcome to our platform! We're excited to have you here. Get started by exploring our **dashboard** or check out the [documentation](https://docs.example.com) to learn more." />
       </div>
     </div>
@@ -496,7 +504,9 @@ Check the response headers for additional error information.
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Empty State Handling</h4>
       <div className="p-4 border rounded-lg">
-        <Text variant="h3" weight="stronger" className="mb-3">No Content</Text>
+        <Text variant="h3" weight="stronger" className="mb-3">
+          No Content
+        </Text>
         <Markdown content="" />
         <Text variant="subtext" theme="neutral" className="mt-2">
           The Markdown component gracefully handles empty content
@@ -508,9 +518,13 @@ Check the response headers for additional error information.
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Use semantic markdown structure with proper heading hierarchy</li>
-        <li>Include descriptive alt text for images when using HTML img tags</li>
+        <li>
+          Include descriptive alt text for images when using HTML img tags
+        </li>
         <li>Test external links to ensure they work correctly</li>
-        <li>Use code blocks with language specification for syntax highlighting</li>
+        <li>
+          Use code blocks with language specification for syntax highlighting
+        </li>
         <li>Organize content with lists and tables for better readability</li>
         <li>Consider collapsible sections for long documentation</li>
       </ul>

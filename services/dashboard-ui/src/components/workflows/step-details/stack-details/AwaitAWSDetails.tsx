@@ -1,13 +1,13 @@
-"use client";
+'use client'
 
-import { Card } from "@/components/common/Card";
-import { ClickToCopyButton } from "@/components/common/ClickToCopy";
-import { Code } from "@/components/common/Code";
-import { Divider } from "@/components/common/Divider";
-import { Link } from "@/components/common/Link";
-import { Skeleton } from "@/components/common/Skeleton";
-import { Text } from "@/components/common/Text";
-import type { IStackDetails } from "./types";
+import { Card } from '@/components/common/Card'
+import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import { Code } from '@/components/common/Code'
+import { Divider } from '@/components/common/Divider'
+import { Link } from '@/components/common/Link'
+import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
+import type { IStackDetails } from './types'
 
 export const AwaitAWSDetails = ({ stack }: IStackDetails) => {
   return (
@@ -93,8 +93,8 @@ export const AwaitAWSDetails = ({ stack }: IStackDetails) => {
         </Card>
       </div>
     </>
-  );
-};
+  )
+}
 
 export const AwaitAWSDetailsSkeleton = () => {
   return (
@@ -127,5 +127,5 @@ export const AwaitAWSDetailsSkeleton = () => {
         <Skeleton height="92px" width="100%" />
       </Card>
     </>
-  );
-};
+  )
+}

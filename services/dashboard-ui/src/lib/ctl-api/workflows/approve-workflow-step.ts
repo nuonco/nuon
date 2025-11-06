@@ -3,7 +3,12 @@ import type { TWorkflowStepApprovalResponse } from '@/types'
 
 export type TApproveWorkflowStepBody = {
   note: string
-  response_type: 'approve' | 'deny' | 'retry' | 'deny-skip-current' | 'deny-skip-current-and-dependents'
+  response_type:
+    | 'approve'
+    | 'deny'
+    | 'retry'
+    | 'deny-skip-current'
+    | 'deny-skip-current-and-dependents'
 }
 
 export async function approveWorkflowStep({

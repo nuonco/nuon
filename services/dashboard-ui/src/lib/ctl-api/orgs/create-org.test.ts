@@ -24,5 +24,5 @@ describe('createOrg should handle response status codes from POST orgs endpoint'
       description: expect.any(String),
       user_error: expect.any(Boolean),
     })
-  })  
+  })
 })
