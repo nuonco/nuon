@@ -9,10 +9,10 @@ export const BasicUsage = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Basic TimelineEvent Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        TimelineEvent represents a single event in a chronological sequence.
-        It includes a status indicator, timestamp, title, caption, and
-        optional metadata like creator information and badges. Events
-        connect visually to form complete timelines.
+        TimelineEvent represents a single event in a chronological sequence. It
+        includes a status indicator, timestamp, title, caption, and optional
+        metadata like creator information and badges. Events connect visually to
+        form complete timelines.
       </p>
     </div>
 
@@ -210,9 +210,9 @@ export const FlexibleTitles = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Flexible Title Content</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Timeline event titles can be simple strings or complex React
-        components with formatting, links, and interactive elements.
-        This flexibility allows for rich event descriptions and context.
+        Timeline event titles can be simple strings or complex React components
+        with formatting, links, and interactive elements. This flexibility
+        allows for rich event descriptions and context.
       </p>
     </div>
 
@@ -233,11 +233,13 @@ export const FlexibleTitles = () => (
           caption="Deployment included new feature flag system"
           createdBy="devops-team"
         />
-        
+
         <TimelineEvent
           title={
             <span>
-              <Badge theme="error" size="sm">CRITICAL</Badge>{' '}
+              <Badge theme="error" size="sm">
+                CRITICAL
+              </Badge>{' '}
               Database connection failed
             </span>
           }
@@ -246,11 +248,15 @@ export const FlexibleTitles = () => (
           caption="Primary database became unresponsive"
           createdBy="monitoring-alert"
         />
-        
+
         <TimelineEvent
           title={
             <span>
-              User <Text family="mono" className="inline">john.doe</Text> updated permissions
+              User{' '}
+              <Text family="mono" className="inline">
+                john.doe
+              </Text>{' '}
+              updated permissions
             </span>
           }
           status="success"
@@ -268,9 +274,9 @@ export const MinimalConfiguration = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Minimal Configuration</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Timeline events work with minimal required props. Only title,
-        status, and createdAt are required - all other props are optional
-        and can be omitted for simpler use cases.
+        Timeline events work with minimal required props. Only title, status,
+        and createdAt are required - all other props are optional and can be
+        omitted for simpler use cases.
       </p>
     </div>
 
@@ -295,9 +301,9 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        TimelineEvent components are typically used within Timeline
-        containers to create chronological sequences. They're perfect
-        for deployment histories, audit logs, and activity feeds.
+        TimelineEvent components are typically used within Timeline containers
+        to create chronological sequences. They're perfect for deployment
+        histories, audit logs, and activity feeds.
       </p>
     </div>
 
@@ -345,7 +351,9 @@ export const UsageExamples = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Implementation Example</h4>
       <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-        <Text variant="label" theme="neutral" className="mb-2">TypeScript Example:</Text>
+        <Text variant="label" theme="neutral" className="mb-2">
+          TypeScript Example:
+        </Text>
         <div className="font-mono text-sm space-y-1">
           <div>{'<TimelineEvent'}</div>
           <div>{'  title="Event Title"'}</div>
@@ -366,7 +374,9 @@ export const UsageExamples = () => (
         <li>Use descriptive titles that clearly communicate what happened</li>
         <li>Choose appropriate status types that match the event outcome</li>
         <li>Include creator information for accountability and context</li>
-        <li>Use additional captions for version numbers, IDs, or other metadata</li>
+        <li>
+          Use additional captions for version numbers, IDs, or other metadata
+        </li>
         <li>Apply badges consistently for categorization or priority</li>
         <li>Keep descriptions concise but informative</li>
         <li>Ensure timestamps are accurate and properly formatted</li>

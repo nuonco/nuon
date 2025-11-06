@@ -6,7 +6,10 @@ export interface IGetVCSConnectionById {
   connectionId: string
 }
 
-export async function getVCSConnectionById({ orgId, connectionId }: IGetVCSConnectionById) {
+export async function getVCSConnectionById({
+  orgId,
+  connectionId,
+}: IGetVCSConnectionById) {
   return api<TVCSConnection>({
     orgId,
     path: `vcs/connections/${connectionId}`,

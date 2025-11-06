@@ -11,8 +11,8 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic Split Button</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         A Split Button combines a primary action button with a dropdown menu for
-        secondary actions. The left side performs the main action, while the right
-        side (three dots) opens a dropdown with additional options.
+        secondary actions. The left side performs the main action, while the
+        right side (three dots) opens a dropdown with additional options.
       </p>
     </div>
 
@@ -46,8 +46,8 @@ export const Variants = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           variant
         </code>{' '}
-        prop controls the visual style of both the main button and dropdown trigger.
-        Split buttons support primary and secondary variants.
+        prop controls the visual style of both the main button and dropdown
+        trigger. Split buttons support primary and secondary variants.
       </p>
     </div>
 
@@ -67,7 +67,7 @@ export const Variants = () => (
             id: 'primary-variant',
           }}
         />
-        
+
         <SplitButton
           variant="secondary"
           buttonProps={{ children: 'Secondary' }}
@@ -90,7 +90,8 @@ export const Variants = () => (
         <strong>primary:</strong> Purple filled style for main CTAs
       </div>
       <div>
-        <strong>secondary:</strong> Outlined style for secondary actions (default)
+        <strong>secondary:</strong> Outlined style for secondary actions
+        (default)
       </div>
     </div>
   </div>
@@ -218,8 +219,8 @@ export const ComplexDropdowns = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Complex Dropdown Content</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Split button dropdowns can contain complex menu structures with sections,
-        dividers, and different action types. Use{' '}
+        Split button dropdowns can contain complex menu structures with
+        sections, dividers, and different action types. Use{' '}
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           Text
         </code>{' '}
@@ -349,8 +350,8 @@ export const UsageGuidelines = () => (
             options in dropdown
           </div>
           <div>
-            <strong>Export functions:</strong> Default export with format options
-            in dropdown
+            <strong>Export functions:</strong> Default export with format
+            options in dropdown
           </div>
           <div>
             <strong>Deploy operations:</strong> Quick deploy with environment
@@ -373,7 +374,8 @@ export const UsageGuidelines = () => (
             together
           </div>
           <div>
-            <strong>Too many options:</strong> Dropdown with more than 8-10 items
+            <strong>Too many options:</strong> Dropdown with more than 8-10
+            items
           </div>
           <div>
             <strong>Critical actions:</strong> Placing destructive actions as

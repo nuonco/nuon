@@ -9,7 +9,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
-import { getOrgById } from '@/lib'
+import { getOrgById, getAccountsByOrgId } from '@/lib'
 import { auth0 } from '@/lib/auth'
 import type { TAccount, TInvite } from '@/types'
 import { isNuonSession } from '@/utils/session-utils'
@@ -25,6 +25,7 @@ import {
   Section,
   TeamMembersTable,
   OldText,
+  Pagination,
 } from '@/components'
 import { API_URL } from '@/configs/api'
 import { getFetchOpts } from '@/utils'
@@ -38,7 +39,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   }
 }
 
-export default async function OrgTeam({ params }) {
+export default async function OrgTeam({ params, searchParams }) {
+  const sp = await searchParams
   const { ['org-id']: orgId } = await params
   const { data: org } = await getOrgById({ orgId })
 
@@ -68,11 +70,11 @@ export default async function OrgTeam({ params }) {
           </HeadingGroup>
         </PageHeader>
         <PageContent>
-          <PageSection className="border-t !pt-0">
+          <PageSection className="border-t !pt-0 !pb-0 h-full">
             {/* old team component, needs updated */}
 
-            <div className="flex-auto md:grid md:grid-cols-12 divide-x">
-              <div className="divide-y flex flex-col flex-auto col-span-8">
+            <div className="flex-auto h-full md:grid md:grid-cols-12 divide-x">
+              <div className="divide-y h-full flex flex-col flex-auto col-span-8">
                 <Section heading="Members">
                   <OldErrorBoundary fallbackRender={ErrorFallback}>
                     <Suspense
@@ -83,7 +85,7 @@ export default async function OrgTeam({ params }) {
                         />
                       }
                     >
-                      <OrgMembers orgId={orgId} />
+                      <OrgMembers orgId={orgId} offset={sp['offset'] || '0'} />
                     </Suspense>
                   </OldErrorBoundary>
                 </Section>
@@ -131,8 +133,8 @@ export default async function OrgTeam({ params }) {
           </div>
         }
       >
-        <div className="flex-auto md:grid md:grid-cols-12 divide-x">
-          <div className="divide-y flex flex-col flex-auto col-span-8">
+        <div className="flex-auto h-full md:grid md:grid-cols-12 divide-x">
+          <div className="divide-y flex flex-col flex-auto h-full col-span-8">
             <Section heading="Members">
               <OldErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
@@ -172,23 +174,43 @@ export default async function OrgTeam({ params }) {
   }
 }
 
-const OrgMembers: FC<{ orgId: string }> = async ({ orgId }) => {
+const OrgMembers: FC<{
+  orgId: string
+  limit?: number
+  offset?: string
+}> = async ({ orgId, limit = 10, offset }) => {
   const session = await auth0.getSession()
-  const members = await fetch(
-    `${API_URL}/v1/orgs/current/accounts`,
-    await getFetchOpts(orgId)
-  )
-    .then((res) => res.json() as Promise<Array<TAccount>>)
-    .catch(console.error)
+  const {
+    data: members,
+    error,
+    headers,
+  } = await getAccountsByOrgId({
+    orgId,
+    limit,
+    offset,
+  })
+
+  const pageData = {
+    hasNext: headers?.['x-nuon-page-next'] || 'false',
+    offset: headers?.['x-nuon-page-offset'] || '0',
+  }
 
   return members ? (
-    <TeamMembersTable
-      members={
-        isNuonSession(session?.user)
-          ? members
-          : members.filter((member) => !member?.email?.endsWith('nuon.co'))
-      }
-    />
+    <div className="flex flex-col gap-4 w-full">
+      <TeamMembersTable
+        members={
+          isNuonSession(session?.user)
+            ? members
+            : members.filter((member) => !member?.email?.endsWith('nuon.co'))
+        }
+      />
+      <Pagination
+        param="offset"
+        pageData={pageData}
+        position="center"
+        limit={limit}
+      />
+    </div>
   ) : (
     <OldText>No team members to show</OldText>
   )
