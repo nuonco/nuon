@@ -1,0 +1,30 @@
+---
+title: 023 - Drift Scanning Improvements
+description: Enhanced drift detection capabilities.
+---
+
+_Oct 27, 2024_
+
+<div className="badge badge--primary">v0.19.678</div>
+
+## Drift Scanning Enhancements
+
+We've expanded our drift detection capabilities with new scanning features.
+
+**Component Drift Scanning**: You can now trigger drift scans directly from individual component
+pages to detect configuration drift at the component level.
+
+![Component Drift Scanning](assets/023-image-1.png)
+
+**Sandbox Drift Scanning**: Added drift scan functionality for sandbox environments, allowing you
+to identify discrepancies between expected and actual sandbox states.
+
+**Break Glass Action Info**: Added comprehensive break glass information to action pages, giving
+  you better visibility into emergency access procedures and their usage.
+
+## Bug Fixes and Improvements
+
+- **Log Streams**: Fixed issue resulting in log streams not being closed properly.
+- **Component Configuration**: Resolved issues with TOML parsing and component capability handling.
+- **Action Validation**: Resolved action run validation errors that were preventing successful action execution.
+- **Monitoring**: Added frontend endpoint timing metrics for better observability.
