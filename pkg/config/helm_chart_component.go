@@ -14,6 +14,12 @@ type HelmValue struct {
 type HelmValuesFile struct {
 	Source   string `toml:"source" mapstructure:"source,omitempty" features:"get,template"`
 	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
+	Path     string `toml:"path" mapstructure:"path,omitempty" features:"get"`
+}
+
+func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
+	markDeprecated(schema, "source", "use 'path' instead")
+	addDescription(schema, "path", "Path to the values file. Supports loading files via https://github.com/hashicorp/go-getter.")
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
@@ -57,14 +63,20 @@ func (h *HelmChartComponentConfig) Parse() error {
 	}
 
 	for idx, valuesFile := range h.ValuesFiles {
-		if valuesFile.Source == "" {
+		// Prefer Path over Source (Source is deprecated)
+		sourceToUse := valuesFile.Path
+		if sourceToUse == "" {
+			sourceToUse = valuesFile.Source
+		}
+
+		if sourceToUse == "" {
 			continue
 		}
 
-		byts, err := source.ReadSource(valuesFile.Source)
+		byts, err := source.ReadSource(sourceToUse)
 		if err != nil {
 			return ErrConfig{
-				Description: "error loading values file " + valuesFile.Source,
+				Description: "error loading values file " + sourceToUse,
 				Err:         err,
 			}
 		}
