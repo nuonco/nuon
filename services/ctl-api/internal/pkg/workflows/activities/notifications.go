@@ -12,22 +12,39 @@ type SendNotificationRequest struct {
 	OrgID string `validate:"required"`
 	AppID string `validate:"required"`
 
-	Type notifications.Type   `validate:"required"`
-	Vars map[string]string    `validate:"required"`
+	Type notifications.Type `validate:"required"`
+	Vars map[string]string  `validate:"required"`
 }
 
 // @temporal-gen activity
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 10s
-func (a *Activities) SendNotification(ctx context.Context, req SendNotificationRequest) error {
+func (a *Activities) SendEmail(ctx context.Context, req SendNotificationRequest) error {
 	cfg, err := a.getNotificationsConfig(ctx, req.OrgID, req.AppID)
 	if err != nil {
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	err = a.notifs.Send(ctx, cfg, req.Type, req.Vars)
+	err = a.notifs.SendEmail(ctx, cfg, req.Type, req.Vars)
 	if err != nil {
-		return fmt.Errorf("unable to send notification: %w", err)
+		return fmt.Errorf("unable to send email notification: %w", err)
+	}
+
+	return nil
+}
+
+// @temporal-gen activity
+// @schedule-to-close-timeout 1m
+// @start-to-close-timeout 10s
+func (a *Activities) SendSlack(ctx context.Context, req SendNotificationRequest) error {
+	cfg, err := a.getNotificationsConfig(ctx, req.OrgID, req.AppID)
+	if err != nil {
+		return fmt.Errorf("unable to get org: %w", err)
+	}
+
+	err = a.notifs.SendSlack(ctx, cfg, req.Type, req.Vars)
+	if err != nil {
+		return fmt.Errorf("unable to send slack notification: %w", err)
 	}
 
 	return nil
