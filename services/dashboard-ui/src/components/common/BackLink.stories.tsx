@@ -205,7 +205,9 @@ export const UsageExamples = () => (
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Place BackLinks at the top of pages or forms</li>
         <li>Use contextual text that describes where users will return</li>
-        <li>Consider using smaller text variants for less prominent placement</li>
+        <li>
+          Consider using smaller text variants for less prominent placement
+        </li>
         <li>Ensure BackLinks are easily discoverable and clickable</li>
         <li>Test navigation flow to ensure proper browser history behavior</li>
       </ul>

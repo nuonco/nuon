@@ -8,9 +8,9 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic ID Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         ID components display technical identifiers with monospace typography
-        and built-in click-to-copy functionality. They automatically handle
-        long IDs with proper text wrapping and provide visual feedback when
-        copied to clipboard.
+        and built-in click-to-copy functionality. They automatically handle long
+        IDs with proper text wrapping and provide visual feedback when copied to
+        clipboard.
       </p>
     </div>
 
@@ -19,15 +19,21 @@ export const BasicUsage = () => (
       <div className="space-y-3 p-4 border rounded">
         <div className="flex items-center gap-3">
           <ID>abc-123-def</ID>
-          <Text variant="subtext" theme="neutral">Basic identifier</Text>
+          <Text variant="subtext" theme="neutral">
+            Basic identifier
+          </Text>
         </div>
         <div className="flex items-center gap-3">
           <ID>user-456789</ID>
-          <Text variant="subtext" theme="neutral">User identifier</Text>
+          <Text variant="subtext" theme="neutral">
+            User identifier
+          </Text>
         </div>
         <div className="flex items-center gap-3">
           <ID>app_config_12345</ID>
-          <Text variant="subtext" theme="neutral">Config identifier</Text>
+          <Text variant="subtext" theme="neutral">
+            Config identifier
+          </Text>
         </div>
       </div>
     </div>
@@ -59,30 +65,40 @@ export const IDTypes = () => (
       <h4 className="text-sm font-medium">Common ID Formats</h4>
       <div className="space-y-3">
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">UUID</Text>
+          <Text variant="label" weight="strong">
+            UUID
+          </Text>
           <div className="mt-1">
             <ID>f47ac10b-58cc-4372-a567-0e02b2c3d479</ID>
           </div>
         </div>
-        
+
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">Short ID</Text>
+          <Text variant="label" weight="strong">
+            Short ID
+          </Text>
           <div className="mt-1">
             <ID>abc123</ID>
           </div>
         </div>
-        
+
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">Database ID</Text>
+          <Text variant="label" weight="strong">
+            Database ID
+          </Text>
           <div className="mt-1">
             <ID>1234567890</ID>
           </div>
         </div>
-        
+
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">SHA256 Hash</Text>
+          <Text variant="label" weight="strong">
+            SHA256 Hash
+          </Text>
           <div className="mt-1">
-            <ID>sha256:a3b5c2d7e9f1234567890abcdef1234567890abcdef1234567890abcdef</ID>
+            <ID>
+              sha256:a3b5c2d7e9f1234567890abcdef1234567890abcdef1234567890abcdef
+            </ID>
           </div>
         </div>
       </div>
@@ -106,15 +122,21 @@ export const TextVariants = () => (
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <ID variant="subtext">small-id-123</ID>
-          <Text variant="subtext" theme="neutral">Subtext variant</Text>
+          <Text variant="subtext" theme="neutral">
+            Subtext variant
+          </Text>
         </div>
         <div className="flex items-center gap-3">
           <ID variant="base">base-id-456</ID>
-          <Text variant="subtext" theme="neutral">Base variant (default)</Text>
+          <Text variant="subtext" theme="neutral">
+            Base variant (default)
+          </Text>
         </div>
         <div className="flex items-center gap-3">
           <ID variant="h3">large-id-789</ID>
-          <Text variant="subtext" theme="neutral">H3 variant</Text>
+          <Text variant="subtext" theme="neutral">
+            H3 variant
+          </Text>
         </div>
       </div>
     </div>
@@ -130,8 +152,8 @@ export const CustomStyling = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           clickToCopyProps
         </code>{' '}
-        allows customization of the underlying ClickToCopy component,
-        including container styling and notification appearance.
+        allows customization of the underlying ClickToCopy component, including
+        container styling and notification appearance.
       </p>
     </div>
 
@@ -139,18 +161,28 @@ export const CustomStyling = () => (
       <h4 className="text-sm font-medium">Container Styling</h4>
       <div className="space-y-3">
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">Custom Container</Text>
+          <Text variant="label" weight="strong">
+            Custom Container
+          </Text>
           <div className="mt-2">
-            <ID clickToCopyProps={{ className: 'bg-blue-50 dark:bg-blue-950 p-2 rounded border' }}>
+            <ID
+              clickToCopyProps={{
+                className: 'bg-blue-50 dark:bg-blue-950 p-2 rounded border',
+              }}
+            >
               styled-container-id
             </ID>
           </div>
         </div>
-        
+
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">Custom Notification</Text>
+          <Text variant="label" weight="strong">
+            Custom Notification
+          </Text>
           <div className="mt-2">
-            <ID clickToCopyProps={{ noticeClassName: '!bg-green-500 text-white' }}>
+            <ID
+              clickToCopyProps={{ noticeClassName: '!bg-green-500 text-white' }}
+            >
               custom-notice-id
             </ID>
           </div>
@@ -169,8 +201,8 @@ export const UsageExamples = () => (
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         ID components are commonly used in technical interfaces, resource
-        listings, and configuration displays. Here are typical patterns
-        for different contexts.
+        listings, and configuration displays. Here are typical patterns for
+        different contexts.
       </p>
     </div>
 
@@ -179,19 +211,25 @@ export const UsageExamples = () => (
       <div className="space-y-3 border rounded-lg p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Text variant="label" weight="strong">Application ID</Text>
+            <Text variant="label" weight="strong">
+              Application ID
+            </Text>
             <div className="mt-1">
               <ID>app-prod-web-frontend</ID>
             </div>
           </div>
           <div>
-            <Text variant="label" weight="strong">Deployment ID</Text>
+            <Text variant="label" weight="strong">
+              Deployment ID
+            </Text>
             <div className="mt-1">
               <ID>deploy-2024-03-15-v2-1-0</ID>
             </div>
           </div>
           <div className="md:col-span-2">
-            <Text variant="label" weight="strong">Container Image</Text>
+            <Text variant="label" weight="strong">
+              Container Image
+            </Text>
             <div className="mt-1">
               <ID>registry.example.com/my-app:sha256-a1b2c3d4e5f6</ID>
             </div>
@@ -204,23 +242,33 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">Long Cloud Identifiers</h4>
       <div className="space-y-3 max-w-2xl">
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">AWS IAM Role ARN</Text>
+          <Text variant="label" weight="strong">
+            AWS IAM Role ARN
+          </Text>
           <div className="mt-1">
             <ID>arn:aws:iam::123456789012:role/service-role/MyLambdaRole</ID>
           </div>
         </div>
-        
+
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">Google Cloud Instance</Text>
+          <Text variant="label" weight="strong">
+            Google Cloud Instance
+          </Text>
           <div className="mt-1">
-            <ID>projects/my-project/locations/us-central1/instances/my-instance</ID>
+            <ID>
+              projects/my-project/locations/us-central1/instances/my-instance
+            </ID>
           </div>
         </div>
-        
+
         <div className="p-3 border rounded">
-          <Text variant="label" weight="strong">Azure Resource ID</Text>
+          <Text variant="label" weight="strong">
+            Azure Resource ID
+          </Text>
           <div className="mt-1">
-            <ID>/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-rg/providers/Microsoft.Web/sites/my-app</ID>
+            <ID>
+              /subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-rg/providers/Microsoft.Web/sites/my-app
+            </ID>
           </div>
         </div>
       </div>
@@ -230,14 +278,18 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">API Keys and Tokens</h4>
       <div className="space-y-3 max-w-lg">
         <div className="p-3 border rounded bg-gray-50 dark:bg-gray-800">
-          <Text variant="label" weight="strong">API Key</Text>
+          <Text variant="label" weight="strong">
+            API Key
+          </Text>
           <div className="mt-1">
             <ID variant="subtext">sk_live_4eC39HqLyjWDarjtT1zdp7dc</ID>
           </div>
         </div>
-        
+
         <div className="p-3 border rounded bg-gray-50 dark:bg-gray-800">
-          <Text variant="label" weight="strong">JWT Token (truncated)</Text>
+          <Text variant="label" weight="strong">
+            JWT Token (truncated)
+          </Text>
           <div className="mt-1">
             <ID variant="subtext">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</ID>
           </div>

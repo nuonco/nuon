@@ -121,7 +121,9 @@ export const TechnicalExamples = () => (
       <div className="space-y-3">
         <div className="flex items-center justify-between p-3 border rounded">
           <div>
-            <Text variant="label" weight="strong">API Key</Text>
+            <Text variant="label" weight="strong">
+              API Key
+            </Text>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="code" size="sm" theme="neutral">
                 sk_live_4eC39HqLyjWDarjtT1zdp7dc
@@ -132,7 +134,9 @@ export const TechnicalExamples = () => (
         </div>
         <div className="flex items-center justify-between p-3 border rounded">
           <div>
-            <Text variant="label" weight="strong">Access Token</Text>
+            <Text variant="label" weight="strong">
+              Access Token
+            </Text>
             <div className="flex items-center gap-2 mt-1">
               <ClickToCopy>
                 <Badge variant="code" size="sm" theme="info">
@@ -149,7 +153,9 @@ export const TechnicalExamples = () => (
       <h4 className="text-sm font-medium">Commands and URLs</h4>
       <div className="space-y-3">
         <div className="p-3 border rounded bg-gray-50 dark:bg-gray-800">
-          <Text variant="label" weight="strong">Installation Command</Text>
+          <Text variant="label" weight="strong">
+            Installation Command
+          </Text>
           <div className="mt-2 flex items-center gap-2">
             <ClickToCopy>
               <code className="text-sm bg-black text-green-400 p-2 rounded">
@@ -159,7 +165,9 @@ export const TechnicalExamples = () => (
           </div>
         </div>
         <div className="p-3 border rounded bg-gray-50 dark:bg-gray-800">
-          <Text variant="label" weight="strong">API Endpoint</Text>
+          <Text variant="label" weight="strong">
+            API Endpoint
+          </Text>
           <div className="mt-2 flex items-center gap-2">
             <ClickToCopy>
               <Badge variant="code" theme="brand">
@@ -176,19 +184,25 @@ export const TechnicalExamples = () => (
       <div className="grid grid-cols-1 gap-3">
         <div className="p-3 border rounded">
           <div className="flex items-center justify-between">
-            <Text variant="subtext" weight="strong">Database URL</Text>
+            <Text variant="subtext" weight="strong">
+              Database URL
+            </Text>
             <ClickToCopyButton textToCopy="postgresql://user:pass@localhost:5432/db" />
           </div>
         </div>
         <div className="p-3 border rounded">
           <div className="flex items-center justify-between">
-            <Text variant="subtext" weight="strong">Redis Connection</Text>
+            <Text variant="subtext" weight="strong">
+              Redis Connection
+            </Text>
             <ClickToCopyButton textToCopy="redis://localhost:6379" />
           </div>
         </div>
         <div className="p-3 border rounded">
           <div className="flex items-center justify-between">
-            <Text variant="subtext" weight="strong">Webhook URL</Text>
+            <Text variant="subtext" weight="strong">
+              Webhook URL
+            </Text>
             <ClickToCopyButton textToCopy="https://webhook.site/123e4567-e89b-12d3-a456-426614174000" />
           </div>
         </div>
@@ -203,8 +217,8 @@ export const UsageExamples = () => (
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         ClickToCopy components integrate seamlessly with other interface
-        elements to provide copying functionality in various contexts.
-        Here are recommended patterns for different use cases.
+        elements to provide copying functionality in various contexts. Here are
+        recommended patterns for different use cases.
       </p>
     </div>
 
@@ -214,16 +228,22 @@ export const UsageExamples = () => (
         <div className="flex items-center justify-between">
           <div>
             <Text weight="strong">Organization ID</Text>
-            <Text variant="subtext" theme="neutral">Unique identifier for your organization</Text>
+            <Text variant="subtext" theme="neutral">
+              Unique identifier for your organization
+            </Text>
           </div>
           <ClickToCopy>
-            <Badge variant="code" theme="brand">org_123e4567e89b</Badge>
+            <Badge variant="code" theme="brand">
+              org_123e4567e89b
+            </Badge>
           </ClickToCopy>
         </div>
         <div className="flex items-center justify-between">
           <div>
             <Text weight="strong">Webhook Secret</Text>
-            <Text variant="subtext" theme="neutral">Use this to verify webhook signatures</Text>
+            <Text variant="subtext" theme="neutral">
+              Use this to verify webhook signatures
+            </Text>
           </div>
           <ClickToCopyButton textToCopy="whsec_1234567890abcdef" />
         </div>
@@ -234,7 +254,11 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">Documentation and Help</h4>
       <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
         <div className="flex items-start gap-3">
-          <Icon variant="Info" size="16" className="text-blue-600 dark:text-blue-400 mt-0.5" />
+          <Icon
+            variant="Info"
+            size="16"
+            className="text-blue-600 dark:text-blue-400 mt-0.5"
+          />
           <div className="flex-1">
             <Text weight="strong">Quick Start</Text>
             <Text variant="subtext" theme="neutral" className="mt-1">
@@ -256,7 +280,11 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">Error Messages and Support</h4>
       <div className="p-4 border rounded-lg bg-red-50 dark:bg-red-950/20">
         <div className="flex items-start gap-3">
-          <Icon variant="WarningCircle" size="16" className="text-red-600 dark:text-red-400 mt-0.5" />
+          <Icon
+            variant="WarningCircle"
+            size="16"
+            className="text-red-600 dark:text-red-400 mt-0.5"
+          />
           <div className="flex-1">
             <Text weight="strong">Error Details</Text>
             <Text variant="subtext" theme="neutral" className="mt-1">

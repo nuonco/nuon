@@ -224,9 +224,9 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic Table Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         The Table component provides a powerful data grid with sorting,
-        searching, and pagination capabilities. Built on TanStack Table,
-        it supports custom cell rendering, loading states, and responsive
-        layouts for displaying structured data.
+        searching, and pagination capabilities. Built on TanStack Table, it
+        supports custom cell rendering, loading states, and responsive layouts
+        for displaying structured data.
       </p>
     </div>
 
@@ -261,9 +261,9 @@ export const SearchAndFiltering = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Search and Filtering</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Tables support real-time search across all columns and custom
-        filter actions. Search automatically highlights matching text
-        and provides instant results as you type.
+        Tables support real-time search across all columns and custom filter
+        actions. Search automatically highlights matching text and provides
+        instant results as you type.
       </p>
     </div>
 
@@ -310,9 +310,9 @@ export const LoadingAndEmptyStates = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Loading and Empty States</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Tables provide skeleton loading states while data is fetching
-        and customizable empty states when no data is available.
-        Empty states can include custom messages and actions.
+        Tables provide skeleton loading states while data is fetching and
+        customizable empty states when no data is available. Empty states can
+        include custom messages and actions.
       </p>
     </div>
 
@@ -352,9 +352,9 @@ export const SortingConfiguration = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Sorting Configuration</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Table sorting can be enabled or disabled globally and per-column.
-        Sort indicators show current sort direction and allow users to
-        cycle through ascending, descending, and unsorted states.
+        Table sorting can be enabled or disabled globally and per-column. Sort
+        indicators show current sort direction and allow users to cycle through
+        ascending, descending, and unsorted states.
       </p>
     </div>
 
@@ -391,8 +391,8 @@ export const CustomCellRendering = () => (
       <h3 className="text-lg font-semibold">Custom Cell Rendering</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Table supports rich cell content including links, badges, status
-        indicators, and custom components. This example shows applications
-        with various data types and interactive elements.
+        indicators, and custom components. This example shows applications with
+        various data types and interactive elements.
       </p>
     </div>
 
@@ -445,8 +445,8 @@ export const PaginationAndLargeDatasets = () => {
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Tables handle large datasets efficiently with pagination controls.
           Page size is configurable and pagination shows current page
-          information. Search and sorting work across all data, not just
-          the current page.
+          information. Search and sorting work across all data, not just the
+          current page.
         </p>
       </div>
 
@@ -474,9 +474,9 @@ export const ResponsiveAndStyling = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Responsive Design and Styling</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Tables are responsive by default and support custom styling
-        through className props. They adapt to different screen sizes
-        while maintaining functionality and readability.
+        Tables are responsive by default and support custom styling through
+        className props. They adapt to different screen sizes while maintaining
+        functionality and readability.
       </p>
     </div>
 
@@ -515,9 +515,9 @@ export const MinimalConfiguration = () => {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Minimal Configuration</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Tables can be configured with minimal column definitions for
-          simple use cases. This example shows the bare minimum setup
-          with just data, columns, and pagination.
+          Tables can be configured with minimal column definitions for simple
+          use cases. This example shows the bare minimum setup with just data,
+          columns, and pagination.
         </p>
       </div>
 
@@ -541,9 +541,9 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Tables are commonly used for data management interfaces,
-        dashboards, admin panels, and anywhere structured data
-        needs to be displayed with interaction capabilities.
+        Tables are commonly used for data management interfaces, dashboards,
+        admin panels, and anywhere structured data needs to be displayed with
+        interaction capabilities.
       </p>
     </div>
 
@@ -578,7 +578,9 @@ export const UsageExamples = () => (
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Define column widths appropriately for content types</li>
-        <li>Use consistent cell components (Link, Badge, Status) for similar data</li>
+        <li>
+          Use consistent cell components (Link, Badge, Status) for similar data
+        </li>
         <li>Provide meaningful search placeholders and empty states</li>
         <li>Consider mobile responsiveness for wide tables</li>
         <li>Enable sorting on columns where it makes sense</li>

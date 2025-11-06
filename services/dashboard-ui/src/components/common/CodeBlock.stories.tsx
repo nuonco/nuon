@@ -80,8 +80,9 @@ export const BasicUsage = () => (
       <p className="text-sm text-gray-600 dark:text-gray-400">
         CodeBlock components provide syntax-highlighted code display with
         automatic theme switching, language detection, and advanced features
-        like line numbers and diff highlighting. Built on react-syntax-highlighter
-        with Prism.js for comprehensive language support.
+        like line numbers and diff highlighting. Built on
+        react-syntax-highlighter with Prism.js for comprehensive language
+        support.
       </p>
     </div>
 
@@ -111,8 +112,8 @@ export const LanguageSupport = () => (
       <h3 className="text-lg font-semibold">Language Support</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         CodeBlock supports major languages used in cloud infrastructure,
-        configuration management, and development workflows. Each language
-        gets appropriate syntax highlighting and formatting.
+        configuration management, and development workflows. Each language gets
+        appropriate syntax highlighting and formatting.
       </p>
     </div>
 
@@ -151,12 +152,24 @@ echo "Deployment completed successfully!"`}
     </div>
 
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-6">
-      <div><strong>json:</strong> Configuration files</div>
-      <div><strong>yaml/yml:</strong> Kubernetes, Docker Compose</div>
-      <div><strong>hcl:</strong> Terraform infrastructure</div>
-      <div><strong>sh/bash:</strong> Shell scripts and commands</div>
-      <div><strong>toml:</strong> Configuration files</div>
-      <div><strong>markdown/md:</strong> Documentation</div>
+      <div>
+        <strong>json:</strong> Configuration files
+      </div>
+      <div>
+        <strong>yaml/yml:</strong> Kubernetes, Docker Compose
+      </div>
+      <div>
+        <strong>hcl:</strong> Terraform infrastructure
+      </div>
+      <div>
+        <strong>sh/bash:</strong> Shell scripts and commands
+      </div>
+      <div>
+        <strong>toml:</strong> Configuration files
+      </div>
+      <div>
+        <strong>markdown/md:</strong> Documentation
+      </div>
     </div>
   </div>
 )
@@ -170,8 +183,8 @@ export const WithLineNumbers = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           showLineNumbers
         </code>{' '}
-        prop to display line numbers alongside code content. This is useful
-        for referencing specific lines in documentation or code reviews.
+        prop to display line numbers alongside code content. This is useful for
+        referencing specific lines in documentation or code reviews.
       </p>
     </div>
 
@@ -258,8 +271,8 @@ Plan: 1 to add, 1 to change, 0 to destroy.`}
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
       <div>
-        <strong>Green lines (+):</strong> Additions, new resources, or
-        increased values
+        <strong>Green lines (+):</strong> Additions, new resources, or increased
+        values
       </div>
       <div>
         <strong>Red lines (-):</strong> Deletions, removed resources, or
@@ -354,11 +367,17 @@ Plan: 1 to add, 0 to change, 1 to destroy.`}
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Use appropriate language identifiers for proper syntax highlighting</li>
-        <li>Enable line numbers for code that will be referenced or discussed</li>
+        <li>
+          Use appropriate language identifiers for proper syntax highlighting
+        </li>
+        <li>
+          Enable line numbers for code that will be referenced or discussed
+        </li>
         <li>Use diff mode for showing configuration changes and updates</li>
         <li>Combine with ClickToCopy for easy code snippet copying</li>
-        <li>Keep code examples focused and relevant to the documentation context</li>
+        <li>
+          Keep code examples focused and relevant to the documentation context
+        </li>
       </ul>
     </div>
   </div>

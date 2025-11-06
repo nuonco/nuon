@@ -14,9 +14,9 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic Dropdown Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Dropdowns provide a contextual menu that appears when users click or
-        focus on a trigger button. They automatically handle positioning,
-        focus management, and click-outside-to-close behavior. Content is
-        typically wrapped in a Menu component for proper styling.
+        focus on a trigger button. They automatically handle positioning, focus
+        management, and click-outside-to-close behavior. Content is typically
+        wrapped in a Menu component for proper styling.
       </p>
     </div>
 
@@ -64,9 +64,8 @@ export const Positioning = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           position
         </code>{' '}
-        prop controls where the dropdown content appears relative to the
-        trigger button. Positioning includes proper spacing and collision
-        detection.
+        prop controls where the dropdown content appears relative to the trigger
+        button. Positioning includes proper spacing and collision detection.
       </p>
     </div>
 
@@ -89,7 +88,11 @@ export const Positioning = () => (
           </Menu>
         </Dropdown>
 
-        <Dropdown id="beside-left-dropdown" buttonText="Beside" position="beside">
+        <Dropdown
+          id="beside-left-dropdown"
+          buttonText="Beside"
+          position="beside"
+        >
           <Menu className="min-w-40">
             <Button variant="ghost">Option 1</Button>
             <Button variant="ghost">Option 2</Button>
@@ -131,7 +134,11 @@ export const Alignment = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Alignment Options</h4>
       <div className="flex justify-center gap-8 p-8">
-        <Dropdown id="left-align-dropdown" buttonText="Left Aligned" alignment="left">
+        <Dropdown
+          id="left-align-dropdown"
+          buttonText="Left Aligned"
+          alignment="left"
+        >
           <Menu className="min-w-48">
             <Text variant="label" theme="neutral">
               Left Alignment
@@ -141,7 +148,11 @@ export const Alignment = () => (
           </Menu>
         </Dropdown>
 
-        <Dropdown id="right-align-dropdown" buttonText="Right Aligned" alignment="right">
+        <Dropdown
+          id="right-align-dropdown"
+          buttonText="Right Aligned"
+          alignment="right"
+        >
           <Menu className="min-w-48">
             <Text variant="label" theme="neutral">
               Right Alignment
@@ -214,7 +225,10 @@ export const CustomContent = () => (
               </Badge>
             </div>
             <hr />
-            <Button variant="ghost" className="!text-red-600 dark:!text-red-400">
+            <Button
+              variant="ghost"
+              className="!text-red-600 dark:!text-red-400"
+            >
               <Icon variant="SignOut" size="16" />
               Sign Out
             </Button>

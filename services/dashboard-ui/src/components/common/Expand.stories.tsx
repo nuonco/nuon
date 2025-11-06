@@ -27,9 +27,9 @@ export const BasicUsage = () => (
         >
           <div className="p-4">
             <Text>
-              This is the expanded content that shows when the expand component is
-              opened. The content can include any React elements and will animate
-              smoothly when toggled.
+              This is the expanded content that shows when the expand component
+              is opened. The content can include any React elements and will
+              animate smoothly when toggled.
             </Text>
           </div>
         </Expand>
@@ -60,9 +60,9 @@ export const StateControl = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           isOpen
         </code>{' '}
-        prop controls the initial state of the expand component. This allows
-        for programmatic control and default expanded states based on context
-        or user preferences.
+        prop controls the initial state of the expand component. This allows for
+        programmatic control and default expanded states based on context or
+        user preferences.
       </p>
     </div>
 
@@ -78,7 +78,7 @@ export const StateControl = () => (
             <Text>This expand component starts in a closed state.</Text>
           </div>
         </Expand>
-        
+
         <Expand
           id="open-expand"
           heading="Initially open"
@@ -86,7 +86,10 @@ export const StateControl = () => (
           className="border rounded-lg"
         >
           <div className="p-4">
-            <Text>This expand component starts in an open state, showing its content immediately.</Text>
+            <Text>
+              This expand component starts in an open state, showing its content
+              immediately.
+            </Text>
           </div>
         </Expand>
       </div>
@@ -103,9 +106,9 @@ export const IconPositioning = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           isIconBeforeHeading
         </code>{' '}
-        prop controls whether the expand/collapse caret icon appears before
-        or after the heading text. This affects the visual hierarchy and
-        scanning pattern for users.
+        prop controls whether the expand/collapse caret icon appears before or
+        after the heading text. This affects the visual hierarchy and scanning
+        pattern for users.
       </p>
     </div>
 
@@ -118,10 +121,13 @@ export const IconPositioning = () => (
           className="border rounded-lg"
         >
           <div className="p-4">
-            <Text>The expand/collapse icon appears after the heading text by default.</Text>
+            <Text>
+              The expand/collapse icon appears after the heading text by
+              default.
+            </Text>
           </div>
         </Expand>
-        
+
         <Expand
           id="icon-before-expand"
           heading="Icon before heading"
@@ -129,7 +135,10 @@ export const IconPositioning = () => (
           className="border rounded-lg"
         >
           <div className="p-4">
-            <Text>The expand/collapse icon appears before the heading text when enabled.</Text>
+            <Text>
+              The expand/collapse icon appears before the heading text when
+              enabled.
+            </Text>
           </div>
         </Expand>
       </div>
@@ -137,8 +146,8 @@ export const IconPositioning = () => (
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
       <div>
-        <strong>After (default):</strong> Standard pattern with icon on the right,
-        consistent with most expand interfaces
+        <strong>After (default):</strong> Standard pattern with icon on the
+        right, consistent with most expand interfaces
       </div>
       <div>
         <strong>Before:</strong> Alternative pattern with icon on the left,
@@ -174,10 +183,12 @@ export const StylingOptions = () => (
           className="border rounded-lg"
         >
           <div className="p-4">
-            <Text>This expand component shows hover and focus effects on the header.</Text>
+            <Text>
+              This expand component shows hover and focus effects on the header.
+            </Text>
           </div>
         </Expand>
-        
+
         <Expand
           id="no-hover-expand"
           heading="No hover effects"
@@ -185,7 +196,9 @@ export const StylingOptions = () => (
           className="border rounded-lg"
         >
           <div className="p-4">
-            <Text>This expand component has no hover or focus effects on the header.</Text>
+            <Text>
+              This expand component has no hover or focus effects on the header.
+            </Text>
           </div>
         </Expand>
       </div>
@@ -214,8 +227,8 @@ export const CustomContent = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Custom Content</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Expand headings can accept React nodes for rich content including
-        icons, badges, status indicators, and complex layouts. This enables
+        Expand headings can accept React nodes for rich content including icons,
+        badges, status indicators, and complex layouts. This enables
         sophisticated information architecture and visual hierarchy.
       </p>
     </div>
@@ -230,7 +243,9 @@ export const CustomContent = () => (
             <div className="flex items-center gap-2">
               <Status status="success" isWithoutText />
               <Text weight="strong">Server Status</Text>
-              <Badge theme="success" size="sm">Online</Badge>
+              <Badge theme="success" size="sm">
+                Online
+              </Badge>
             </div>
           }
         >
@@ -240,7 +255,7 @@ export const CustomContent = () => (
             <Text variant="subtext">Response time: 45ms</Text>
           </div>
         </Expand>
-        
+
         <Expand
           id="warning-heading-expand"
           className="border rounded-lg"
@@ -248,17 +263,23 @@ export const CustomContent = () => (
             <div className="flex items-center gap-2">
               <Icon variant="Warning" size="16" className="text-orange-600" />
               <Text weight="strong">Configuration Issues</Text>
-              <Badge theme="warn" size="sm">3 Issues</Badge>
+              <Badge theme="warn" size="sm">
+                3 Issues
+              </Badge>
             </div>
           }
         >
           <div className="p-4 space-y-2">
-            <Text variant="subtext">• Environment variable REDIS_URL is missing</Text>
-            <Text variant="subtext">• Database connection pool is undersized</Text>
+            <Text variant="subtext">
+              • Environment variable REDIS_URL is missing
+            </Text>
+            <Text variant="subtext">
+              • Database connection pool is undersized
+            </Text>
             <Text variant="subtext">• SSL certificate expires in 7 days</Text>
           </div>
         </Expand>
-        
+
         <Expand
           id="user-heading-expand"
           className="border rounded-lg"
@@ -270,10 +291,14 @@ export const CustomContent = () => (
                 </div>
                 <div>
                   <Text weight="strong">John Doe</Text>
-                  <Text variant="label" theme="neutral">Administrator</Text>
+                  <Text variant="label" theme="neutral">
+                    Administrator
+                  </Text>
                 </div>
               </div>
-              <Badge theme="brand" size="sm">Pro</Badge>
+              <Badge theme="brand" size="sm">
+                Pro
+              </Badge>
             </div>
           }
         >
@@ -304,8 +329,8 @@ export const NestedStructures = () => (
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Expand components can be nested to create hierarchical information
         structures. This is useful for configuration panels, documentation
-        trees, and complex data organization where multiple levels of detail
-        are needed.
+        trees, and complex data organization where multiple levels of detail are
+        needed.
       </p>
     </div>
 
@@ -319,7 +344,11 @@ export const NestedStructures = () => (
           isOpen={true}
         >
           <div className="p-4 space-y-2">
-            <Expand id="database-expand" heading="Database Settings" className="border rounded">
+            <Expand
+              id="database-expand"
+              heading="Database Settings"
+              className="border rounded"
+            >
               <div className="p-4 space-y-1">
                 <div className="flex justify-between">
                   <Text variant="subtext">Host:</Text>
@@ -335,8 +364,12 @@ export const NestedStructures = () => (
                 </div>
               </div>
             </Expand>
-            
-            <Expand id="api-expand" heading="API Settings" className="border rounded">
+
+            <Expand
+              id="api-expand"
+              heading="API Settings"
+              className="border rounded"
+            >
               <div className="p-4 space-y-1">
                 <div className="flex justify-between">
                   <Text variant="subtext">Base URL:</Text>
@@ -352,8 +385,12 @@ export const NestedStructures = () => (
                 </div>
               </div>
             </Expand>
-            
-            <Expand id="cache-expand" heading="Cache Settings" className="border rounded">
+
+            <Expand
+              id="cache-expand"
+              heading="Cache Settings"
+              className="border rounded"
+            >
               <div className="p-4 space-y-1">
                 <div className="flex justify-between">
                   <Text variant="subtext">Redis URL:</Text>
@@ -377,52 +414,71 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Expand components are versatile and work well in many contexts
-        including FAQs, documentation, settings panels, and data visualization.
-        Here are common patterns and recommended approaches.
+        Expand components are versatile and work well in many contexts including
+        FAQs, documentation, settings panels, and data visualization. Here are
+        common patterns and recommended approaches.
       </p>
     </div>
 
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Frequently Asked Questions</h4>
       <div className="max-w-2xl space-y-2">
-        <Expand id="faq-1" heading="What is this application?" className="border rounded">
+        <Expand
+          id="faq-1"
+          heading="What is this application?"
+          className="border rounded"
+        >
           <div className="p-4">
             <Text>
               This is a modern web application built with Next.js and React that
-              helps you manage your projects and workflows efficiently. It provides
-              comprehensive tools for deployment, monitoring, and collaboration.
+              helps you manage your projects and workflows efficiently. It
+              provides comprehensive tools for deployment, monitoring, and
+              collaboration.
             </Text>
           </div>
         </Expand>
-        
-        <Expand id="faq-2" heading="How do I get started?" className="border rounded">
+
+        <Expand
+          id="faq-2"
+          heading="How do I get started?"
+          className="border rounded"
+        >
           <div className="p-4">
             <Text>
-              To get started, create an account, set up your organization, and begin
-              by creating your first project. Our onboarding guide will walk you
-              through each step, from initial setup to your first deployment.
+              To get started, create an account, set up your organization, and
+              begin by creating your first project. Our onboarding guide will
+              walk you through each step, from initial setup to your first
+              deployment.
             </Text>
           </div>
         </Expand>
-        
-        <Expand id="faq-3" heading="Is my data secure?" className="border rounded">
+
+        <Expand
+          id="faq-3"
+          heading="Is my data secure?"
+          className="border rounded"
+        >
           <div className="p-4">
             <Text>
-              Yes, we take security seriously. All data is encrypted in transit and
-              at rest, and we follow industry best practices for data protection and
-              privacy. We also provide audit logs and compliance certifications.
+              Yes, we take security seriously. All data is encrypted in transit
+              and at rest, and we follow industry best practices for data
+              protection and privacy. We also provide audit logs and compliance
+              certifications.
             </Text>
           </div>
         </Expand>
-        
-        <Expand id="faq-4" heading="What are the pricing plans?" className="border rounded">
+
+        <Expand
+          id="faq-4"
+          heading="What are the pricing plans?"
+          className="border rounded"
+        >
           <div className="p-4">
             <Text>
-              We offer flexible pricing plans including a free tier for small projects,
-              professional plans for growing teams, and enterprise solutions for
-              large organizations. All plans include core features with different
-              usage limits and support levels.
+              We offer flexible pricing plans including a free tier for small
+              projects, professional plans for growing teams, and enterprise
+              solutions for large organizations. All plans include core features
+              with different usage limits and support levels.
             </Text>
           </div>
         </Expand>
@@ -432,35 +488,50 @@ export const UsageExamples = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Documentation Sections</h4>
       <div className="max-w-2xl space-y-2">
-        <Expand id="docs-1" heading="Getting Started" className="border rounded" isOpen={true}>
+        <Expand
+          id="docs-1"
+          heading="Getting Started"
+          className="border rounded"
+          isOpen={true}
+        >
           <div className="p-4 space-y-3">
-            <Text variant="subtext">Follow these steps to set up your first project:</Text>
+            <Text variant="subtext">
+              Follow these steps to set up your first project:
+            </Text>
             <div className="pl-4 space-y-1">
-              <Text variant="subtext">1. Create an account and verify your email</Text>
+              <Text variant="subtext">
+                1. Create an account and verify your email
+              </Text>
               <Text variant="subtext">2. Set up your organization</Text>
               <Text variant="subtext">3. Connect your code repository</Text>
-              <Text variant="subtext">4. Configure your deployment settings</Text>
+              <Text variant="subtext">
+                4. Configure your deployment settings
+              </Text>
               <Text variant="subtext">5. Deploy your first application</Text>
             </div>
           </div>
         </Expand>
-        
+
         <Expand id="docs-2" heading="API Reference" className="border rounded">
           <div className="p-4">
             <Text>
-              Comprehensive API documentation with examples, authentication methods,
-              rate limits, and response formats. Includes SDKs for popular programming
-              languages and interactive examples.
+              Comprehensive API documentation with examples, authentication
+              methods, rate limits, and response formats. Includes SDKs for
+              popular programming languages and interactive examples.
             </Text>
           </div>
         </Expand>
-        
-        <Expand id="docs-3" heading="Troubleshooting" className="border rounded">
+
+        <Expand
+          id="docs-3"
+          heading="Troubleshooting"
+          className="border rounded"
+        >
           <div className="p-4">
             <Text>
-              Common issues and their solutions, debugging techniques, error code
-              references, and support contact information. Updated regularly with
-              community-reported issues and resolutions.
+              Common issues and their solutions, debugging techniques, error
+              code references, and support contact information. Updated
+              regularly with community-reported issues and resolutions.
             </Text>
           </div>
         </Expand>
@@ -470,11 +541,17 @@ export const UsageExamples = () => (
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Use clear, descriptive headings that indicate the content within</li>
+        <li>
+          Use clear, descriptive headings that indicate the content within
+        </li>
         <li>Group related content logically and avoid excessive nesting</li>
-        <li>Consider initial open/closed states based on importance and context</li>
+        <li>
+          Consider initial open/closed states based on importance and context
+        </li>
         <li>Combine with rich content like icons and badges for better UX</li>
-        <li>Ensure adequate spacing and visual hierarchy in nested structures</li>
+        <li>
+          Ensure adequate spacing and visual hierarchy in nested structures
+        </li>
         <li>Test keyboard navigation and screen reader compatibility</li>
       </ul>
     </div>

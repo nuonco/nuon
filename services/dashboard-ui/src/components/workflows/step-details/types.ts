@@ -1,6 +1,6 @@
-import type { TWorkflowStep } from "@/types";
+import type { TWorkflowStep } from '@/types'
 
 export interface IStepDetails {
-  step?: TWorkflowStep;
-  panelId?: string;
+  step?: TWorkflowStep
+  panelId?: string
 }

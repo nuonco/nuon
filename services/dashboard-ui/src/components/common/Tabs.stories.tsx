@@ -75,9 +75,9 @@ export const TabKeyConversion = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Tab Key Conversion</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Tab labels are automatically generated from object keys using
-        camelCase to sentence case conversion. This allows you to use
-        developer-friendly key names while displaying user-friendly labels.
+        Tab labels are automatically generated from object keys using camelCase
+        to sentence case conversion. This allows you to use developer-friendly
+        key names while displaying user-friendly labels.
       </p>
     </div>
 
@@ -387,8 +387,7 @@ export const CustomStyling = () => (
           <strong>className:</strong> Styles the entire tab component wrapper
         </li>
         <li>
-          <strong>tabControlsClassName:</strong> Styles the tab button
-          container
+          <strong>tabControlsClassName:</strong> Styles the tab button container
         </li>
         <li>
           <strong>tabsClassName:</strong> Styles the tab content area

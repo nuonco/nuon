@@ -1,37 +1,40 @@
-"use client";
+'use client'
 
-import { useMemo } from "react";
-import { Card } from "@/components/common/Card";
-import { KeyValueList, KeyValueListSkeleton } from "@/components/common/KeyValueList";
-import { LabeledStatus } from "@/components/common/LabeledStatus";
-import { LabeledValue } from "@/components/common/LabeledValue";
-import { Skeleton } from "@/components/common/Skeleton";
-import { Text } from "@/components/common/Text";
-import { Time } from "@/components/common/Time";
-import { useInstall } from "@/hooks/use-install";
-import { objectToKeyValueArray } from "@/utils/data-utils";
-import { AwaitAWSDetails, AwaitAWSDetailsSkeleton } from "./AwaitAWSDetails";
+import { useMemo } from 'react'
+import { Card } from '@/components/common/Card'
+import {
+  KeyValueList,
+  KeyValueListSkeleton,
+} from '@/components/common/KeyValueList'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
+import { LabeledValue } from '@/components/common/LabeledValue'
+import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
+import { useInstall } from '@/hooks/use-install'
+import { objectToKeyValueArray } from '@/utils/data-utils'
+import { AwaitAWSDetails, AwaitAWSDetailsSkeleton } from './AwaitAWSDetails'
 import {
   AwaitAzureDetails,
   AwaitAzureDetailsSkeleton,
-} from "./AwaitAzureDetails";
-import type { IStackDetails } from "./types";
+} from './AwaitAzureDetails'
+import type { IStackDetails } from './types'
 
 export const AwaitStackDetails = ({ stack, ...props }: IStackDetails) => {
   const outputValues = useMemo(
     () => objectToKeyValueArray(stack?.install_stack_outputs?.data),
-    [stack?.install_stack_outputs],
-  );
-  const { install } = useInstall();
+    [stack?.install_stack_outputs]
+  )
+  const { install } = useInstall()
 
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <Text>
-          Install stack{" "}
-          {stack?.versions?.at(0)?.composite_status?.status === "active"
-            ? "up and running"
-            : "is waiting to run"}
+          Install stack{' '}
+          {stack?.versions?.at(0)?.composite_status?.status === 'active'
+            ? 'up and running'
+            : 'is waiting to run'}
         </Text>
 
         <div className="grid grid-cols-4">
@@ -57,7 +60,7 @@ export const AwaitStackDetails = ({ stack, ...props }: IStackDetails) => {
         </div>
       </Card>
 
-      {install?.app_runner_config?.app_runner_type?.startsWith("aws") ? (
+      {install?.app_runner_config?.app_runner_type?.startsWith('aws') ? (
         <AwaitAWSDetails stack={stack} {...props} />
       ) : (
         <AwaitAzureDetails stack={stack} {...props} />
@@ -68,11 +71,11 @@ export const AwaitStackDetails = ({ stack, ...props }: IStackDetails) => {
         <KeyValueList values={outputValues} />
       </Card>
     </div>
-  );
-};
+  )
+}
 
 export const AwaitStackDetailsSkeleton = () => {
-  const { install } = useInstall();
+  const { install } = useInstall()
 
   return (
     <div className="flex flex-col gap-6">
@@ -90,7 +93,7 @@ export const AwaitStackDetailsSkeleton = () => {
         </div>
       </Card>
 
-      {install?.app_runner_config?.app_runner_type?.startsWith("aws") ? (
+      {install?.app_runner_config?.app_runner_type?.startsWith('aws') ? (
         <AwaitAWSDetailsSkeleton />
       ) : (
         <AwaitAzureDetailsSkeleton />
@@ -101,5 +104,5 @@ export const AwaitStackDetailsSkeleton = () => {
         <KeyValueListSkeleton />
       </Card>
     </div>
-  );
-};
+  )
+}

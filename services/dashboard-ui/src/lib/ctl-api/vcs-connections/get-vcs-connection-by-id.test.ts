@@ -14,7 +14,10 @@ describe('getVCSConnectionById should handle response status codes from GET vcs/
   })
 
   test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await getVCSConnectionById({ orgId, connectionId })
+    const { error, status } = await getVCSConnectionById({
+      orgId,
+      connectionId,
+    })
     expect(status).toBe(code)
     expect(error).toMatchSnapshot({
       error: expect.any(String),

@@ -23,7 +23,9 @@ export const Variants = () => (
       <h4 className="text-sm font-medium">Size Variants</h4>
       <div className="flex items-center gap-6">
         <div className="space-y-2 text-center">
-          <div className="text-xs font-medium text-gray-500">Default (20px)</div>
+          <div className="text-xs font-medium text-gray-500">
+            Default (20px)
+          </div>
           <Loading variant="default" />
         </div>
         <div className="space-y-2 text-center">
@@ -39,8 +41,8 @@ export const Variants = () => (
         spaces
       </div>
       <div>
-        <strong>large:</strong> 40x40px spinner for prominent loading states
-        and page-level indicators
+        <strong>large:</strong> 40x40px spinner for prominent loading states and
+        page-level indicators
       </div>
     </div>
   </div>
@@ -56,8 +58,8 @@ export const StrokeWidth = () => (
           strokeWidth
         </code>{' '}
         prop controls the thickness of the spinner lines. Thicker strokes
-        provide better visibility in low contrast environments or when used
-        over complex backgrounds.
+        provide better visibility in low contrast environments or when used over
+        complex backgrounds.
       </p>
     </div>
 
@@ -208,7 +210,11 @@ export const ContextualUsage = () => (
           <Loading />
           Deploying
         </Button>
-        <Button variant="secondary" disabled className="opacity-75 justify-center w-24">
+        <Button
+          variant="secondary"
+          disabled
+          className="opacity-75 justify-center w-24"
+        >
           <Loading />
         </Button>
       </div>
@@ -254,10 +260,18 @@ export const ContextualUsage = () => (
       <strong>Usage Guidelines:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Use default variant for inline and compact loading states</li>
-        <li>Use large variant for prominent loading indicators and page-level states</li>
+        <li>
+          Use large variant for prominent loading indicators and page-level
+          states
+        </li>
         <li>Include descriptive text when the loading context isn't obvious</li>
-        <li>Consider thick stroke width for better visibility over complex backgrounds</li>
-        <li>Disable interactive elements while loading to prevent user confusion</li>
+        <li>
+          Consider thick stroke width for better visibility over complex
+          backgrounds
+        </li>
+        <li>
+          Disable interactive elements while loading to prevent user confusion
+        </li>
       </ul>
     </div>
   </div>

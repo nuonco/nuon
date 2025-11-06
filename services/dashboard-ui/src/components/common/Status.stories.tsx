@@ -36,13 +36,16 @@ export const Variants = () => (
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mt-6">
       <div>
-        <strong>default:</strong> Simple dot indicator with text, minimal styling for inline use
+        <strong>default:</strong> Simple dot indicator with text, minimal
+        styling for inline use
       </div>
       <div>
-        <strong>badge:</strong> Bordered container with indicator and text, great for tags and labels
+        <strong>badge:</strong> Bordered container with indicator and text,
+        great for tags and labels
       </div>
       <div>
-        <strong>timeline:</strong> Icon-based indicator with themed background, ideal for process steps
+        <strong>timeline:</strong> Icon-based indicator with themed background,
+        ideal for process steps
       </div>
     </div>
   </div>
@@ -101,10 +104,12 @@ export const StatusTypes = () => (
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm mt-6">
       <div>
-        <strong>default:</strong> Neutral gray color for inactive or pending states
+        <strong>default:</strong> Neutral gray color for inactive or pending
+        states
       </div>
       <div>
-        <strong>success:</strong> Green color indicating completed or successful states
+        <strong>success:</strong> Green color indicating completed or successful
+        states
       </div>
       <div>
         <strong>error:</strong> Red color for failed, error, or critical states
@@ -113,10 +118,12 @@ export const StatusTypes = () => (
         <strong>warn:</strong> Orange color for warning or cautionary states
       </div>
       <div>
-        <strong>info:</strong> Blue color for informational or in-progress states
+        <strong>info:</strong> Blue color for informational or in-progress
+        states
       </div>
       <div>
-        <strong>brand:</strong> Primary brand color for special or highlighted states
+        <strong>brand:</strong> Primary brand color for special or highlighted
+        states
       </div>
     </div>
   </div>
@@ -201,8 +208,8 @@ export const IconSizing = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           iconSize
         </code>{' '}
-        prop to control icon dimensions. Default size is 18px, and the
-        indicator container automatically adjusts to accommodate the icon.
+        prop to control icon dimensions. Default size is 18px, and the indicator
+        container automatically adjusts to accommodate the icon.
       </p>
     </div>
 
@@ -214,7 +221,9 @@ export const IconSizing = () => (
           <Status status="success" variant="timeline" iconSize={14} />
         </div>
         <div className="space-y-2">
-          <div className="text-xs font-medium text-gray-500">Default (18px)</div>
+          <div className="text-xs font-medium text-gray-500">
+            Default (18px)
+          </div>
           <Status status="success" variant="timeline" iconSize={18} />
         </div>
         <div className="space-y-2">
@@ -248,8 +257,8 @@ export const UsageExamples = () => (
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Status components are commonly used throughout the application for
-        displaying states, progress, and system feedback. Here are typical
-        usage patterns for different contexts.
+        displaying states, progress, and system feedback. Here are typical usage
+        patterns for different contexts.
       </p>
     </div>
 
@@ -264,7 +273,9 @@ export const UsageExamples = () => (
           <Status status="in-progress" variant="badge">
             Deploying
           </Status>
-          <span className="text-sm text-gray-600">Currently deploying to production</span>
+          <span className="text-sm text-gray-600">
+            Currently deploying to production
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <Status status="success" variant="badge">
@@ -276,7 +287,9 @@ export const UsageExamples = () => (
           <Status status="error" variant="badge">
             Failed
           </Status>
-          <span className="text-sm text-gray-600">Deployment failed - check logs</span>
+          <span className="text-sm text-gray-600">
+            Deployment failed - check logs
+          </span>
         </div>
       </div>
     </div>
@@ -330,10 +343,15 @@ export const UsageExamples = () => (
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Use consistent status types across similar features</li>
-        <li>Choose variants based on context: badge for labels, timeline for processes, default for inline</li>
+        <li>
+          Choose variants based on context: badge for labels, timeline for
+          processes, default for inline
+        </li>
         <li>Provide meaningful text that describes the current state</li>
         <li>Consider using isWithoutText for compact layouts</li>
-        <li>Ensure color meanings are consistent throughout your application</li>
+        <li>
+          Ensure color meanings are consistent throughout your application
+        </li>
       </ul>
     </div>
   </div>
