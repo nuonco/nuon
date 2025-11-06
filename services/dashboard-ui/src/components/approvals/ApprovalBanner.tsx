@@ -50,8 +50,8 @@ const AwaitingApprovalBanner = ({ step }: IApprovalBanner) => {
   const bannerCopy = APPROVAL_BANNER_COPY[step?.approval?.type]
 
   return (
-    <Banner theme="warn">
-      <div className="flex items-center justify-between gap-2">
+    <Banner className="@container" theme="warn">
+      <div className="flex flex-col gap-2">
         <div className="flex flex-col">
           <Text weight="strong">{bannerCopy.title}</Text>
           <Text variant="subtext" theme="neutral">
@@ -59,14 +59,14 @@ const AwaitingApprovalBanner = ({ step }: IApprovalBanner) => {
           </Text>
         </div>
 
-        <div className="flex gap-2">
-          <DenyPlanButton variant="danger" step={step} />
+        <div className="flex self-end gap-2">
           <RetryPlanButton step={step} />
-          <ApprovePlanButton variant="primary" step={step} />
+          <DenyPlanButton step={step} />
+          <ApprovePlanButton step={step} variant="primary" />
         </div>
       </div>
     </Banner>
-  )
+  )  
 }
 
 const RESPONSE_THEME: Record<

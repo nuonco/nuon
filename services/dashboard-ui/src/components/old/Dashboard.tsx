@@ -40,7 +40,6 @@ export const DashboardHeader: FC = () => {
           <Link href="https://docs.nuon.co" target="_blank" variant="ghost">
             Docs
           </Link>
-          <SignOutButton />
         </div>
       </div>
     </header>

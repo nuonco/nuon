@@ -196,24 +196,29 @@ export type THelmPlanChange = TPlanChange & {
 }
 
 export type TKubernetesPlanItem = {
-  group_version_kind: {
-    Group: string
-    Version: string
-    Kind: string
-  }
-  group_version_resource: {
-    Group: string
-    Version: string
-    Resource: string
-  }
-  namespace: string
+  _version: string
   name: string
-  before?: string
-  after?: string
+  namespace: string
+  kind: string
+  api: string
+  resource: string
   op: string
+  type: number // 1=add, 2=delete, 3=change
+  dry_run: boolean
+  entries?: Array<{
+    path: string
+    original: string
+    applied: string
+    type: number
+    payload: string
+  }>
 }
 
-export type TKubernetesPlan = TKubernetesPlanItem[]
+export type TKubernetesPlan = {
+  plan: string
+  op: string
+  k8s_content_diff: TKubernetesPlanItem[]
+}
 
 export type THelmPlan = {
   plan: string

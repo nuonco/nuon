@@ -10,12 +10,16 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const limit = searchParams.get('limit') || undefined
   const offset = searchParams.get('offset') || undefined
+  const type = searchParams.get('type') || undefined
+    const planonly = searchParams.get('planonly') || undefined
 
   const response = await getInstallWorkflows({
     orgId,
     installId,
     limit,
     offset,
+    planonly: planonly === "true",
+    type,
   })
   return NextResponse.json(response)
 }
