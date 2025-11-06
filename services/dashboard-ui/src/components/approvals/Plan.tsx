@@ -25,7 +25,7 @@ function getApprovalPlanSkeleton(planType: TApprovalType): ReactNode {
 function getApprovalPlanDiff(step: TWorkflowStep, plan: any): ReactNode {
   const diffs: TDiffViewer = {
     helm_approval: <HelmDiff plan={plan} />,
-    kubernetes_manifest_approval: <KubernetesDiff plan={plan?.plan} />,
+    kubernetes_manifest_approval: <KubernetesDiff plan={plan} />,
     terraform_plan: <TerraformDiff plan={plan} />,
   }
 

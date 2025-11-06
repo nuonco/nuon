@@ -5,15 +5,18 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
-import { WorkflowHeader } from '@/components/workflows/WorkflowHeader'
+import { WorkflowDetails } from '@/components/workflows/WorkflowDetails'
+import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
 import { OnboardingCelebrationWrapper } from './OnboardingCelebrationWrapper'
 import { getInstallById, getWorkflowById, getOrgById } from '@/lib'
 import { snakeToWords, toSentenceCase } from '@/utils/string-utils'
 import type { TPageProps } from '@/types'
-import { WorkflowSteps } from './workflow-steps'
+import { WorkflowSteps, WorkflowStepsError } from './steps'
 
 // NOTE: old layout stuff
 import { DashboardContent, Loading, Empty } from '@/components'
+import { WorkflowHeader } from '@/components/workflows/WorkflowHeader'
+import { WorkflowSteps as OldWorkflowSteps } from './workflow-steps'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id' | 'workflow-id'>
 
@@ -38,12 +41,16 @@ export async function generateMetadata({
   }
 }
 
-export default async function InstallWorkflow({ params }: TInstallPageProps) {
+export default async function InstallWorkflow({
+  params,
+  searchParams,
+}: TInstallPageProps) {
   const {
     ['org-id']: orgId,
     ['install-id']: installId,
     ['workflow-id']: workflowId,
   } = await params
+  const sp = await searchParams
 
   const [{ data: install }, { data: installWorkflow }, { data: org }] =
     await Promise.all([
@@ -55,29 +62,57 @@ export default async function InstallWorkflow({ params }: TInstallPageProps) {
   const containerId = 'workflow-page'
 
   return org?.features?.['stratus-layout'] ? (
-    <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
-      {/* old page content */}
+    <PageSection id={containerId} isScrollable className="!gap-2 !pb-24">
       <OnboardingCelebrationWrapper>
-        <WorkflowHeader initWorkflow={installWorkflow} shouldPoll />
-        <ErrorBoundary
-          fallback={
-            <Empty
-              emptyTitle="No workflow steps"
-              emptyMessage="Unable to load workflow steps"
-              variant="404"
+        {org?.features?.['stratus-workflow'] ? (
+          <>
+            <WorkflowDetails
+              initWorkflow={installWorkflow}
+              install={install}
+              shouldPoll
             />
-          }
-        >
-          <Suspense
-            fallback={
-              <Loading variant="stack" loadingText="Loading workflow steps" />
-            }
-          >
-            <WorkflowSteps workflowId={workflowId} orgId={orgId} />
-          </Suspense>
-        </ErrorBoundary>
+
+            <div className="flex flex-col gap-6 mt-6">
+              <Text variant="h3" weight="strong">
+                Workflow steps
+              </Text>
+              <ErrorBoundary fallback={<WorkflowStepsError />}>
+                <Suspense fallback={<WorkflowStepsSkeleton />}>
+                  <WorkflowSteps
+                    workflowId={workflowId}
+                    orgId={orgId}
+                    offset={sp?.['offset'] || '0'}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          </>
+        ) : (
+          <>
+            <WorkflowHeader initWorkflow={installWorkflow} shouldPoll />
+            <ErrorBoundary
+              fallback={
+                <Empty
+                  emptyTitle="No workflow steps"
+                  emptyMessage="Unable to load workflow steps"
+                  variant="404"
+                />
+              }
+            >
+              <Suspense
+                fallback={
+                  <Loading
+                    variant="stack"
+                    loadingText="Loading workflow steps"
+                  />
+                }
+              >
+                <OldWorkflowSteps workflowId={workflowId} orgId={orgId} />
+              </Suspense>
+            </ErrorBoundary>
+          </>
+        )}
       </OnboardingCelebrationWrapper>
-      {/* old page content */}
       <BackToTop containerId={containerId} />
     </PageSection>
   ) : (
@@ -116,7 +151,7 @@ export default async function InstallWorkflow({ params }: TInstallPageProps) {
               <Loading variant="stack" loadingText="Loading workflow steps" />
             }
           >
-            <WorkflowSteps workflowId={workflowId} orgId={orgId} />
+            <OldWorkflowSteps workflowId={workflowId} orgId={orgId} />
           </Suspense>
         </ErrorBoundary>
       </OnboardingCelebrationWrapper>
