@@ -5,6 +5,8 @@ import { approveWorkflowStep } from '@/actions/workflows/approve-workflow-step'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Menu } from '@/components/common/Menu'
+import { SplitButton, type ISplitButton } from '@/components/common/SplitButton'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
@@ -12,15 +14,26 @@ import { useRemovePanelByKey } from '@/hooks/use-remove-panel-by-key'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
+import type { TApproveWorkflowStepBody } from '@/lib/ctl-api/workflows/approve-workflow-step'
 import type { TWorkflowStep } from '@/types'
 import { DENY_MODAL_COPY } from '@/utils/approval-utils'
-import { IButtonAsButton } from '../common/Button'
+
+type TDenyType = Exclude<
+  TApproveWorkflowStepBody['response_type'],
+  'approve' | 'retry'
+>
 
 interface IDenyPlan {
   step: TWorkflowStep
 }
 
-export const DenyPlanModal = ({ step, ...props }: IDenyPlan & IModal) => {
+export const DenyPlanModal = ({
+  denyType,
+  step,
+  ...props
+}: IDenyPlan & {
+  denyType: TDenyType
+} & IModal) => {
   const path = usePathname()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
@@ -72,7 +85,7 @@ export const DenyPlanModal = ({ step, ...props }: IDenyPlan & IModal) => {
         ),
         onClick: () => {
           execute({
-            body: { note: 'Deny plan', response_type: 'deny' },
+            body: { note: 'Deny plan', response_type: denyType },
             orgId: org.id,
             path,
             workflowId: step.install_workflow_id,
@@ -104,26 +117,42 @@ export const DenyPlanModal = ({ step, ...props }: IDenyPlan & IModal) => {
 export const DenyPlanButton = ({
   step,
   ...props
-}: IDenyPlan & IButtonAsButton) => {
+}: IDenyPlan & Omit<ISplitButton, 'buttonProps' | 'dropdownProps'>) => {
   const { addModal } = useSurfaces()
-  const modal = <DenyPlanModal step={step} />
+
+  const openModal = (denyType: TDenyType) => {
+    addModal(<DenyPlanModal step={step} denyType={denyType} />)
+  }
 
   return (
-    <div className="min-w-[256px] rounded-md overflow-hidden p-2 flex flex-col gap-1">
-      <Button
-        onClick={() => {
-          alert('Second button clicked')
-        }}
-      >
-        Deny and continue
-      </Button>
-      <Button
-        onClick={() => {
-          alert('Third button clicked')
-        }}
-      >
-        Deny current and dependent
-      </Button>
-    </div>
+    <SplitButton
+      buttonProps={{
+        children: 'Deny plan',
+        onClick: () => {
+          openModal('deny')
+        },
+      }}
+      dropdownProps={{
+        children: (
+          <Menu>
+            <Button
+              className="!text-foreground"
+              onClick={() => {
+                openModal('deny-skip-current')
+              }}
+              size={props?.size}
+            >
+              Deny and continue
+            </Button>
+            <Button className="!text-foreground" size={props?.size} disabled>
+              Deny and skip dependents
+            </Button>
+          </Menu>
+        ),
+        id: 'deny-plan-dropdown',
+        alignment: 'right',
+      }}
+      {...props}
+    />
   )
 }

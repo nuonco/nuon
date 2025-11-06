@@ -22,8 +22,14 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
             (c as any)?.props?.isMenuButton
             ? React.cloneElement<IButtonAsButton | ILink>(c, {
                 variant: 'ghost',
-                className:
+                className: cn(
                   '!p-2 text-sm !leading-none h-8 w-full flex justify-between',
+                  c?.props.className,
+                  {
+                    '!text-red-600 dark:!text-red-400':
+                      c?.props?.variant === 'danger',
+                  }
+                ),
               })
             : c.type === Dropdown || (c as any).isMenuDropdown
               ? React.cloneElement(c as React.ReactElement<IDropdown>, {
