@@ -51,6 +51,7 @@ const (
 	OrgFeatureDevCommand              OrgFeature = "dev-command"
 	OrgFeatureAppBranches             OrgFeature = "app-branches"
   OrgFeatureStratusLayout           OrgFeature = "stratus-layout"
+  OrgFeatureStratusWorkflow         OrgFeature = "stratus-workflow"
 )
 
 type Org struct {
@@ -149,6 +150,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureOrgDashboard:      false,
 		OrgFeatureInstallBreakGlass: false,
     OrgFeatureStratusLayout:     false,
+    OrgFeatureStratusWorkflow:   false,
     
 		// Enabled by default
 		OrgFeatureAPIPagination:           true,
@@ -206,5 +208,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDevCommand,
 		OrgFeatureAppBranches,
     OrgFeatureStratusLayout,
+    OrgFeatureStratusWorkflow,
 	}
 }

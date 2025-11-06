@@ -3,12 +3,14 @@ import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Link } from '@/components/common/Link'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { WorkflowTimelineSkeleton } from '@/components/workflows/WorkflowTimeline'
+import { ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
+import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
 import type { TPageProps } from '@/types'
 import { getInstallById, getOrgById } from '@/lib'
-import { InstallWorkflows } from './install-workflows'
+import { Workflows, WorkflowsError } from './workflows'
 
 // NOTE: old layout stuff
 import {
@@ -22,6 +24,7 @@ import {
   Text as OldText,
   Time,
 } from '@/components'
+import { InstallWorkflows } from './install-workflows'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -49,21 +52,26 @@ export default async function InstallWorkflowsPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable>
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Workflows
-        </Text>
-      </HeadingGroup>
-      <ErrorBoundary fallback={<Text>Unable to load install workflows.</Text>}>
-        <Suspense
-          fallback={
-            <Loading loadingText="Loading install history..." variant="page" />
-          }
-        >
-          <InstallWorkflows
+      <div className="flex items-center gap-4 justify-between">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Workflows
+          </Text>
+        </HeadingGroup>
+
+        <div className="flex items-center gap-4">
+          <ShowDriftScan />
+          <WorkflowTypeFilter />
+        </div>
+      </div>
+      <ErrorBoundary fallback={<WorkflowsError />}>
+        <Suspense fallback={<WorkflowTimelineSkeleton />}>
+          <Workflows
             installId={installId}
             orgId={orgId}
-            offset={sp['workflows'] || '0'}
+            offset={sp['offset'] || '0'}
+            type={sp['type'] || ''}
+            showDrift={sp['drifts'] !== 'false'}
           />
         </Suspense>
       </ErrorBoundary>

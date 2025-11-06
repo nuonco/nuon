@@ -97,6 +97,7 @@ export interface IDropdown extends IButtonAsButton {
   buttonClassName?: string
   buttonText: React.ReactNode
   children: React.ReactNode
+  closeOnBlur?: boolean
   dropdownClassName?: string
   hideIcon?: boolean
   icon?: React.ReactNode
@@ -111,8 +112,9 @@ export const Dropdown = ({
   alignment = 'left',
   buttonText,
   buttonClassName,
-  className,
   children,
+  className,
+  closeOnBlur = true,
   dropdownClassName,
   hideIcon = false,
   icon = <Icon variant="CaretDown" />,
@@ -129,7 +131,7 @@ export const Dropdown = ({
     setIsOpen(false)
   }
 
-  const dropdownRef = useFocusOutside(handleClose)
+  const dropdownRef = useFocusOutside(closeOnBlur ? handleClose : () => {})
   const contentRef = useClickOutside(handleClose)
 
   return (

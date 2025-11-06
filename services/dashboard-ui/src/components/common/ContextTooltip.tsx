@@ -58,7 +58,7 @@ export const ContextTooltip = ({
             </Text>
           ) : null}
           <div className={`divide-y ${maxHeight} overflow-y-auto`}>
-            {items.map((item) => {
+            {items.map((item, idx) => {
               const itemContent = (
                 <>
                   {item.leftContent ? (
@@ -86,7 +86,7 @@ export const ContextTooltip = ({
               )
               return (
                 <div
-                  key={item.id}
+                  key={item.id || idx.toString()}
                   className={cn(
                     `last-of-type:rounded-b-lg overflow-hidden shrink-0 grow-0 ${width}`,
                     {
