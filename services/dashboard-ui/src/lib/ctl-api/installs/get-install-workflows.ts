@@ -7,8 +7,10 @@ export const getInstallWorkflows = ({
   limit,
   offset,
   orgId,
-}: { installId: string; orgId: string } & TPaginationParams) =>
+  planonly = true,
+  type = "",
+}: { installId: string; orgId: string, planonly?: boolean, type?: string } & TPaginationParams) =>
   api<TWorkflow[]>({
-    path: `installs/${installId}/workflows${buildQueryParams({ limit, offset })}`,
+    path: `installs/${installId}/workflows${buildQueryParams({ limit, offset, planonly, type })}`,
     orgId,
   });

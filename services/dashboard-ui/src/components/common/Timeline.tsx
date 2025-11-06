@@ -55,7 +55,9 @@ const TimelineBase = <T extends IHasCreatedAt>({
           </div>
         ))
       )}
-      <Pagination {...pagination} />
+      {pagination?.hasNext || pagination?.offset !== 0 ? (
+        <Pagination {...pagination} />
+      ) : null}
     </div>
   )
 }
