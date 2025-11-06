@@ -159,13 +159,9 @@ func (w *Workflows) writeCHPartStats(ctx workflow.Context) error {
 	}
 
 	for _, stat := range stats {
-		w.mw.Gauge(ctx, "levels", float64(stat.Level), metrics.ToTags(generics.MergeMap(map[string]string{
-			"part_name": stat.Name,
-		}, defaultTags))...)
+		w.mw.Gauge(ctx, "levels", float64(stat.Level), metrics.ToTags(defaultTags)...)
 
-		w.mw.Gauge(ctx, "rows", float64(stat.Rows), metrics.ToTags(generics.MergeMap(map[string]string{
-			"part_name": stat.Name,
-		}, defaultTags))...)
+		w.mw.Gauge(ctx, "rows", float64(stat.Rows), metrics.ToTags(defaultTags)...)
 	}
 
 	return nil
