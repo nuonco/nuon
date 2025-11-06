@@ -1,13 +1,13 @@
-import { ApprovalBanner } from "@/components/approvals/ApprovalBanner";
-import { Banner } from "@/components/common/Banner";
-import { Text } from "@/components/common/Text";
-import type { TWorkflowStep } from "@/types";
-import { getStepBanner } from "@/utils/workflow-utils";
-import { StepButtons } from "./StepButtons";
+import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
+import { Banner } from '@/components/common/Banner'
+import { Text } from '@/components/common/Text'
+import type { TWorkflowStep } from '@/types'
+import { getStepBanner } from '@/utils/workflow-utils'
+import { StepButtons } from './StepButtons'
 
 export const StepBanner = ({ step }: { step: TWorkflowStep }) => {
-  const hasApproval = Boolean(step?.approval);
-  const bannerCfg = getStepBanner(step);
+  const hasApproval = Boolean(step?.approval)
+  const bannerCfg = getStepBanner(step)
 
   return hasApproval ? (
     <ApprovalBanner step={step} />
@@ -22,11 +22,11 @@ export const StepBanner = ({ step }: { step: TWorkflowStep }) => {
         </div>
 
         <div className="flex gap-4">
-          {bannerCfg.theme === "error" ? (
+          {bannerCfg.theme === 'error' ? (
             <StepButtons buttonSize="md" step={step} />
           ) : null}
         </div>
       </div>
     </Banner>
-  ) : null;
-};
+  ) : null
+}

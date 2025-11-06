@@ -1,30 +1,30 @@
-"use client";
+'use client'
 
-import { Badge } from "@/components/common/Badge";
-import { Duration } from "@/components/common/Duration";
-import { Icon } from "@/components/common/Icon";
-import { LabeledValue } from "@/components/common/LabeledValue";
-import { Status } from "@/components/common/Status";
-import { LabeledStatus } from "@/components/common/LabeledStatus";
-import { Link } from "@/components/common/Link";
-import { Skeleton } from "@/components/common/Skeleton";
-import { Text } from "@/components/common/Text";
-import { useOrg } from "@/hooks/use-org";
-import { useQuery } from "@/hooks/use-query";
-import type { TInstallActionRun, TWorkflowStep } from "@/types";
-import { hydrateActionRunSteps } from "@/utils/action-utils";
-import { toSentenceCase } from "@/utils/string-utils";
+import { Badge } from '@/components/common/Badge'
+import { Duration } from '@/components/common/Duration'
+import { Icon } from '@/components/common/Icon'
+import { LabeledValue } from '@/components/common/LabeledValue'
+import { Status } from '@/components/common/Status'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
+import { Link } from '@/components/common/Link'
+import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
+import { useOrg } from '@/hooks/use-org'
+import { useQuery } from '@/hooks/use-query'
+import type { TInstallActionRun, TWorkflowStep } from '@/types'
+import { hydrateActionRunSteps } from '@/utils/action-utils'
+import { toSentenceCase } from '@/utils/string-utils'
 
 interface IActionRunStepDetails {
-  step?: TWorkflowStep;
+  step?: TWorkflowStep
 }
 
 export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
-  const { org } = useOrg();
+  const { org } = useOrg()
 
   const { data: actionRun, isLoading } = useQuery<TInstallActionRun>({
     path: `/api/orgs/${org.id}/installs/${step.owner_id}/actions/runs/${step?.step_target_id}`,
-  });
+  })
 
   return (
     <div className="flex flex-col gap-4">
@@ -60,7 +60,7 @@ export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
                   status: actionRun?.status_v2?.status,
                 }}
                 tooltipProps={{
-                  position: "top",
+                  position: 'top',
                   tipContent: actionRun?.status_v2?.status_human_description,
                 }}
               />
@@ -102,10 +102,10 @@ export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
                       variant="subtext"
                       theme="neutral"
                     >
-                      {toSentenceCase(actionStep.status)}{" "}
+                      {toSentenceCase(actionStep.status)}{' '}
                       {actionStep?.execution_duration > 1000000 ? (
                         <>
-                          in{" "}
+                          in{' '}
                           <Duration
                             variant="subtext"
                             nanoseconds={actionStep?.execution_duration}
@@ -121,8 +121,8 @@ export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
         </>
       )}
     </div>
-  );
-};
+  )
+}
 
 const ActionRunStepDetailsSkeleton = () => {
   return (
@@ -150,5 +150,5 @@ const ActionRunStepDetailsSkeleton = () => {
         ))}
       </div>
     </>
-  );
-};
+  )
+}

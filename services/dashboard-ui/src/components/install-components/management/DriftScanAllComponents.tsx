@@ -157,8 +157,8 @@ export const DriftScanAllComponentsModal = ({ ...props }: IModal) => {
           Are you sure you want to drift scan components?
         </Text>
         <Text variant="base">
-          This aciton will preform a drift scan against the latest build of each component and the component deployments on your
-          install.
+          This aciton will preform a drift scan against the latest build of each
+          component and the component deployments on your install.
         </Text>
       </div>
     </Modal>

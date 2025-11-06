@@ -22,7 +22,7 @@ import type { TInstall, TCloudPlatform } from '@/types'
 import { CreateInstallModal } from '@/components/old/Installs'
 
 export type InstallRow = {
-  actionHref: string  
+  actionHref: string
   installId: string
   name: string
   nameHref: string
@@ -37,7 +37,7 @@ function parseInstallsToTableData(
   appId?: string
 ): InstallRow[] {
   return installs.map((install) => ({
-    actionHref: `/${orgId}/installs/${install.id}`,    
+    actionHref: `/${orgId}/installs/${install.id}`,
     appName: appId ? undefined : install?.app?.name,
     name: install.name,
     nameHref: `/${orgId}/installs/${install.id}`,
@@ -50,9 +50,7 @@ function parseInstallsToTableData(
         location={install.azure_account?.location}
       />
     ),
-    statuses: (
-      <SimpleInstallStatuses install={install} isLabelHidden />
-    ),
+    statuses: <SimpleInstallStatuses install={install} isLabelHidden />,
     platform: (
       <CloudPlatform
         platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
@@ -77,7 +75,7 @@ const columns: ColumnDef<InstallRow>[] = [
       </span>
     ),
     enableSorting: true,
-  },  
+  },
   {
     enableSorting: false,
     accessorKey: 'statuses',
@@ -135,7 +133,7 @@ export const AppInstallsTable = ({
   })
   const { data: installs } = usePolling({
     initData: initInstalls,
-    path: `/api/orgs/${org.id}/apps/${appId}/installs${queryParams}`,      
+    path: `/api/orgs/${org.id}/apps/${appId}/installs${queryParams}`,
     pollInterval,
     shouldPoll,
   })
