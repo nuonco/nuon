@@ -1,0 +1,27 @@
+---
+title: 024 - Improvements to Install Inputs
+description: Install inputs via CloudFormation stacks, and user-configurable inputs.
+---
+
+_Nov 5, 2024_
+
+<div className="badge badge--primary">v0.19.688</div>
+
+## Install Inputs
+
+Install input parameters can now be integrated into your CloudFormation stack, allowing users to add them when installing
+your application. You can now also distinguish between vendor-provided inputs and user-configurable inputs, with vendor
+as the default source type.
+
+## Sign-Up Updates
+
+Support users are now added to trial orgs, to provide support for new users.
+
+## Bug Fixes
+
+- Fixed issue with steps ordering during teardown processes.
+- Removed empty input groups from CloudFormation templates.
+- Improved resilience to state issues caused by cookies.
+- Fixed rendering of break glass roles on install actions page.
+- Install will be put into "mangaed-by-config" mode, even if there are no changes to sync.
+- Install configs will generate even if inputs are empty.
