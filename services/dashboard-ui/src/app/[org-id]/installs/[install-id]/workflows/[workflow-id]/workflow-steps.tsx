@@ -1,4 +1,4 @@
-import { WorkflowSteps as Steps } from '@/components/workflows/WorkflowSteps'
+import { WorkflowSteps as Steps } from '@/components/workflows/OldWorkflowSteps'
 import { Empty } from '@/components/old/Empty'
 import { getWorkflowById } from '@/lib'
 

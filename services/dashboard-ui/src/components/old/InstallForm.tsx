@@ -325,6 +325,7 @@ const InputConfigs: FC<{
   inputConfig: TAppInputConfig
   install?: TInstall
 }> = ({ inputConfig, install }) => {
+  
   return (
     <>
       {inputConfig?.input_groups ? (
