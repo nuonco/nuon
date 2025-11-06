@@ -271,11 +271,19 @@ export const LayoutPatterns = () => (
               Quick Actions
             </Text>
             <div className="space-y-2">
-              <Button variant="ghost" size="sm" className="w-full justify-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+              >
                 <Icon variant="Plus" size="16" />
                 Create New
               </Button>
-              <Button variant="ghost" size="sm" className="w-full justify-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+              >
                 <Icon variant="Upload" size="16" />
                 Import Data
               </Button>
@@ -299,7 +307,9 @@ export const LayoutPatterns = () => (
         <li>Use consistent gap spacing between cards in grids and lists</li>
         <li>Consider responsive breakpoints for card grid layouts</li>
         <li>Group related functionality within single cards</li>
-        <li>Maintain visual hierarchy with card sizing and content structure</li>
+        <li>
+          Maintain visual hierarchy with card sizing and content structure
+        </li>
       </ul>
     </div>
   </div>

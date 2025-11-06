@@ -6,7 +6,7 @@ import { getComponents } from './get-components'
 describe('getComponents should handle response status codes from GET /apps/:appId/components?:params endpoint', () => {
   const orgId = 'test-id'
   const appId = 'test-app-id'
-  
+
   test('200 status', async () => {
     const { data: spec } = await getComponents({
       appId,

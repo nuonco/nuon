@@ -1,16 +1,16 @@
-import { api } from "@/lib/api";
-import type { TDeploy } from "@/types";
+import { api } from '@/lib/api'
+import type { TDeploy } from '@/types'
 
 export const getDeployById = ({
   installId,
   deployId,
   orgId,
 }: {
-  installId: string;
-  deployId: string;
-  orgId: string;
+  installId: string
+  deployId: string
+  orgId: string
 }) =>
   api<TDeploy>({
     path: `installs/${installId}/deploys/${deployId}`,
     orgId,
-  });
+  })

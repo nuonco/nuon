@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -43,7 +44,9 @@ export const TeamMembersTable = ({ members }: { members: TAccount[] }) => {
 }
 
 const RemoveUserModal = ({ user }: { user: TAccount }) => {
+  const path = usePathname()
   const { org } = useOrg()
+
   const [isOpen, setIsOpen] = useState(false)
   const {
     data: account,
@@ -104,6 +107,7 @@ const RemoveUserModal = ({ user }: { user: TAccount }) => {
                     execute({
                       body: { user_id: user.id },
                       orgId: org.id,
+                      path,
                     })
                   }}
                 >

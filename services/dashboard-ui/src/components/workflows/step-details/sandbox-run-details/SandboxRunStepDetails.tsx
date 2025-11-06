@@ -1,19 +1,19 @@
-"use client";
+'use client'
 
-import { Plan } from "@/components/approvals/Plan";
-import { Icon } from "@/components/common/Icon";
-import { Link } from "@/components/common/Link";
-import { Text } from "@/components/common/Text";
-import { useOrg } from "@/hooks/use-org";
-import type { TWorkflowStep } from "@/types";
-import { SandboxRunApply } from "./SandboxRunApply";
+import { Plan } from '@/components/approvals/Plan'
+import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
+import { useOrg } from '@/hooks/use-org'
+import type { TWorkflowStep } from '@/types'
+import { SandboxRunApply } from './SandboxRunApply'
 
 interface ISandboxRunStepDetails {
-  step?: TWorkflowStep;
+  step?: TWorkflowStep
 }
 
 export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
-  const { org } = useOrg();
+  const { org } = useOrg()
 
   return (
     <div className="flex flex-col gap-4">
@@ -23,9 +23,7 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
         </Text>
 
         <Text variant="subtext">
-          <Link
-            href={`/${org.id}/installs/${step.owner_id}/sandbox`}
-          >
+          <Link href={`/${org.id}/installs/${step.owner_id}/sandbox`}>
             View sandbox <Icon variant="CaretRight" />
           </Link>
         </Text>
@@ -39,11 +37,11 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
         </Text>
       </div>
 
-      {step?.execution_type === "approval" ? (
+      {step?.execution_type === 'approval' ? (
         <Plan step={step} />
       ) : (
         <SandboxRunApply step={step} />
       )}
     </div>
-  );
-};
+  )
+}

@@ -126,7 +126,11 @@ export const WithImage = () => (
       <h4 className="text-sm font-medium">Image Examples</h4>
       <div className="flex items-center gap-6">
         <div className="text-center space-y-2">
-          <Avatar src="https://github.com/nat.png" alt="Nat Friedman" size="sm" />
+          <Avatar
+            src="https://github.com/nat.png"
+            alt="Nat Friedman"
+            size="sm"
+          />
           <Text variant="label" className="text-xs">
             Small Image
           </Text>
@@ -138,7 +142,11 @@ export const WithImage = () => (
           </Text>
         </div>
         <div className="text-center space-y-2">
-          <Avatar src="https://github.com/nat.png" alt="Nat Friedman" size="lg" />
+          <Avatar
+            src="https://github.com/nat.png"
+            alt="Nat Friedman"
+            size="lg"
+          />
           <Text variant="label" className="text-xs">
             Large Image
           </Text>
