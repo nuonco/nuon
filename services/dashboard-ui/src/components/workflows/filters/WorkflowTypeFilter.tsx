@@ -9,50 +9,40 @@ import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { toSentenceCase } from '@/utils/string-utils'
 
-const TRIGGER_OPTIONS = [
-  'manual',
-  'cron',
-  'pre-deploy-component',
-  'post-deploy-component',
-  'pre-teardown-component',
-  'post-teardown-component',
-  'pre-secrets-sync',
-  'post-secrets-sync',
-  'pre-provision',
-  'post-provision',
-  'pre-reprovision',
-  'post-reprovision',
-  'pre-deprovision',
-  'post-deprovision',
-  'pre-deploy-all-components',
-  'post-deploy-all-components',
-  'pre-teardown-all-components',
-  'post-teardown-all-components',
-  'pre-deprovision-sandbox',
-  'post-deprovision-sandbox',
-  'pre-reprovision-sandbox',
-  'post-reprovision-sandbox',
-  'pre-update-inputs',
-  'post-update-inputs',
-] as const
+const WORKFLOW_TYPE_OPTIONS = [
+  'provision',
+  'deprovision',
+  'deprovision_sandbox',
+  'manual_deploy',
+  'input_update',
+  'deploy_components',
+  'teardown_component',
+  'teardown_components',
+  'reprovision_sandbox',
+  'drift_run_reprovision_sandbox',
+  'action_workflow_run',
+  'sync_secrets',
+  'drift_run',
+  'reprovision',
+]
 
-type TTriggerOption = (typeof TRIGGER_OPTIONS)[number]
+type TTypeOption = (typeof WORKFLOW_TYPE_OPTIONS)[number]
 
-const TRIGGER_PARAM = 'trigger_types'
+const WORKFLOW_TYPE_PARAM = 'type'
 
-export const TriggeredByFilter = () => {
+export const WorkflowTypeFilter = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const triggerType = searchParams.get(TRIGGER_PARAM) || ''
+  const workflowType = searchParams.get(WORKFLOW_TYPE_PARAM) || ''
 
-  const updateTriggerParam = useCallback(
+  const updateTypeParam = useCallback(
     (type: string) => {
       const params = new URLSearchParams(searchParams.toString())
 
       if (type) {
-        params.set(TRIGGER_PARAM, type)
+        params.set(WORKFLOW_TYPE_PARAM, type)
       } else {
-        params.delete(TRIGGER_PARAM)
+        params.delete(WORKFLOW_TYPE_PARAM)
       }
 
       router.replace(`?${params.toString()}`)
@@ -60,26 +50,25 @@ export const TriggeredByFilter = () => {
     [router, searchParams]
   )
 
-  const handleTriggerChange = useCallback(
+  const handleTypeChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      updateTriggerParam(e.target.value)
+      updateTypeParam(e.target.value)
     },
-    [updateTriggerParam]
+    [updateTypeParam]
   )
 
   const handleClearFilter = useCallback(() => {
-    updateTriggerParam('')
-  }, [updateTriggerParam])
+    updateTypeParam('')
+  }, [updateTypeParam])
 
-  const triggerOptions = useMemo(
+  const typeOptions = useMemo(
     () =>
-      TRIGGER_OPTIONS.map((trigger) => ({
-        value: trigger,
-        label: trigger,
+      WORKFLOW_TYPE_OPTIONS.map((type) => ({
+        value: type,
+        label: type,
       })),
     []
   )
-
   return (
     <Dropdown
       alignment="right"
@@ -87,7 +76,7 @@ export const TriggeredByFilter = () => {
       buttonText={
         <>
           <Icon variant="SlidersIcon" />
-          Trigger filter
+          Type filter
         </>
       }
       id="install-filter"
@@ -96,16 +85,16 @@ export const TriggeredByFilter = () => {
       <Menu className="!p-0 !w-68">
         <form onReset={handleClearFilter}>
           <div className="flex flex-col gap-0.5 max-h-[250px] overflow-y-auto w-full p-2 focus-visible:outline-1 focus-visible:outline-primary-600 rounded-md">
-            {triggerOptions.map(({ value, label }) => (
+            {typeOptions.map(({ value, label }) => (
               <RadioInput
                 key={value}
-                checked={triggerType === value}
+                checked={workflowType === value}
                 labelProps={{
                   labelText: label,
-                  labelTextProps: { family: 'mono' },
+                  labelTextProps: { family: 'mono', className: '!break-all' },
                 }}
-                name="triggered-by-type"
-                onChange={handleTriggerChange}
+                name="workflow-type"
+                onChange={handleTypeChange}
                 value={value}
               />
             ))}

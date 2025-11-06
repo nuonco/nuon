@@ -42,6 +42,7 @@ export const OrgSwitcher = ({}: IOrgSwitcher) => {
         <OrgSummary isButtonSummary isSidebarOpen={isSidebarOpen} org={org} />
       }
       icon={isSidebarOpen ? <Icon variant="CaretUpDown" /> : null}
+      closeOnBlur={false}
       id="org-switcher"
       position="overlay"
       variant="ghost"
@@ -234,14 +235,14 @@ const OrgsNav = ({}: IOrgsNav) => {
           </Text>
         </div>
       )}
-      {orgs?.length > enablePaginationCount &&
-      headers?.['x-nuon-page-next'] === 'true' ? (
+      {orgs?.length > enablePaginationCount ? (
         <Button
           className="w-full justify-center mt-4"
           onClick={() => {
             setLimit(limit + 10)
           }}
           variant="ghost"
+          disabled={headers?.['x-nuon-page-next'] === 'false'}
         >
           Load more
         </Button>
