@@ -1,7 +1,7 @@
 import { api } from '@/lib/api'
 
 export type TUpdateInstallConfigBody = {
-  approval_option: "approve-all" | "prompt",  
+  approval_option: 'approve-all' | 'prompt'
 }
 
 export async function updateInstallConfig({

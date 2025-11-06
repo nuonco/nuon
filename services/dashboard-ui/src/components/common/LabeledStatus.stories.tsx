@@ -41,7 +41,9 @@ export const BasicUsage = () => (
         <li>Combines descriptive labels with visual status indicators</li>
         <li>Supports tooltips for additional context and information</li>
         <li>Consistent spacing and alignment for multiple status displays</li>
-        <li>Full range of status states (success, failed, warn, queued, etc.)</li>
+        <li>
+          Full range of status states (success, failed, warn, queued, etc.)
+        </li>
       </ul>
     </div>
   </div>
@@ -69,7 +71,9 @@ export const StatusVariants = () => (
         <LabeledStatus
           label="Failed State"
           statusProps={{ status: 'failed' }}
-          tooltipProps={{ tipContent: 'Operation failed - check logs for details' }}
+          tooltipProps={{
+            tipContent: 'Operation failed - check logs for details',
+          }}
         />
         <LabeledStatus
           label="Warning State"
@@ -101,9 +105,9 @@ export const WithStatusText = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Status with Text</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Status components can include custom text alongside the visual indicator.
-        This provides additional context directly in the status display without
-        requiring tooltip interaction.
+        Status components can include custom text alongside the visual
+        indicator. This provides additional context directly in the status
+        display without requiring tooltip interaction.
       </p>
     </div>
 
@@ -149,7 +153,9 @@ export const SystemMonitoring = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Service Health Dashboard</h4>
       <div className="p-4 border rounded-lg space-y-4">
-        <Text weight="stronger" className="mb-3">Infrastructure Status</Text>
+        <Text weight="stronger" className="mb-3">
+          Infrastructure Status
+        </Text>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <LabeledStatus
             label="API Gateway"
@@ -159,7 +165,9 @@ export const SystemMonitoring = () => (
           <LabeledStatus
             label="Database"
             statusProps={{ status: 'success', statusText: 'Connected' }}
-            tooltipProps={{ tipContent: 'Connections: 12/100, Query time: 2ms avg' }}
+            tooltipProps={{
+              tipContent: 'Connections: 12/100, Query time: 2ms avg',
+            }}
           />
           <LabeledStatus
             label="Redis Cache"
@@ -174,12 +182,16 @@ export const SystemMonitoring = () => (
           <LabeledStatus
             label="File Storage"
             statusProps={{ status: 'success', statusText: 'Available' }}
-            tooltipProps={{ tipContent: 'Usage: 42GB/100GB, All regions healthy' }}
+            tooltipProps={{
+              tipContent: 'Usage: 42GB/100GB, All regions healthy',
+            }}
           />
           <LabeledStatus
             label="CDN"
             statusProps={{ status: 'failed', statusText: 'Degraded' }}
-            tooltipProps={{ tipContent: 'Some edge locations experiencing issues' }}
+            tooltipProps={{
+              tipContent: 'Some edge locations experiencing issues',
+            }}
           />
         </div>
       </div>
@@ -188,7 +200,9 @@ export const SystemMonitoring = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Deployment Pipeline</h4>
       <div className="p-4 border rounded-lg space-y-4">
-        <Text weight="stronger" className="mb-3">Release Pipeline - v2.4.1</Text>
+        <Text weight="stronger" className="mb-3">
+          Release Pipeline - v2.4.1
+        </Text>
         <div className="space-y-3">
           <LabeledStatus
             label="Code Build"
@@ -198,22 +212,30 @@ export const SystemMonitoring = () => (
           <LabeledStatus
             label="Unit Tests"
             statusProps={{ status: 'success', statusText: '156/156' }}
-            tooltipProps={{ tipContent: 'All unit tests passed, Coverage: 94%' }}
+            tooltipProps={{
+              tipContent: 'All unit tests passed, Coverage: 94%',
+            }}
           />
           <LabeledStatus
             label="Integration Tests"
             statusProps={{ status: 'processing', statusText: 'Running...' }}
-            tooltipProps={{ tipContent: 'Progress: 12/18 test suites completed' }}
+            tooltipProps={{
+              tipContent: 'Progress: 12/18 test suites completed',
+            }}
           />
           <LabeledStatus
             label="Security Scan"
             statusProps={{ status: 'queued', statusText: 'Pending' }}
-            tooltipProps={{ tipContent: 'Waiting for integration tests to complete' }}
+            tooltipProps={{
+              tipContent: 'Waiting for integration tests to complete',
+            }}
           />
           <LabeledStatus
             label="Deploy to Staging"
             statusProps={{ status: 'queued', statusText: 'Scheduled' }}
-            tooltipProps={{ tipContent: 'Deployment scheduled after security scan' }}
+            tooltipProps={{
+              tipContent: 'Deployment scheduled after security scan',
+            }}
           />
         </div>
       </div>
@@ -226,9 +248,9 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        LabeledStatus is versatile and can be used in various contexts
-        including system monitoring, workflow tracking, resource status,
-        and operational dashboards.
+        LabeledStatus is versatile and can be used in various contexts including
+        system monitoring, workflow tracking, resource status, and operational
+        dashboards.
       </p>
     </div>
 
@@ -237,7 +259,9 @@ export const UsageExamples = () => (
       <div className="p-4 border rounded-lg space-y-3">
         <div className="flex justify-between items-center mb-3">
           <Text weight="stronger">Server Resources</Text>
-          <Button variant="ghost" size="sm">Refresh</Button>
+          <Button variant="ghost" size="sm">
+            Refresh
+          </Button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <LabeledStatus
@@ -267,7 +291,9 @@ export const UsageExamples = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Feature Flags</h4>
       <div className="p-4 border rounded-lg space-y-3">
-        <Text weight="stronger" className="mb-3">Feature Toggle Status</Text>
+        <Text weight="stronger" className="mb-3">
+          Feature Toggle Status
+        </Text>
         <div className="space-y-2">
           <LabeledStatus
             label="New Dashboard UI"
@@ -282,12 +308,16 @@ export const UsageExamples = () => (
           <LabeledStatus
             label="Advanced Analytics"
             statusProps={{ status: 'queued', statusText: 'Scheduled' }}
-            tooltipProps={{ tipContent: 'Feature rollout scheduled for next week' }}
+            tooltipProps={{
+              tipContent: 'Feature rollout scheduled for next week',
+            }}
           />
           <LabeledStatus
             label="Legacy Mode"
             statusProps={{ status: 'failed', statusText: 'Disabled' }}
-            tooltipProps={{ tipContent: 'Feature has been deprecated and disabled' }}
+            tooltipProps={{
+              tipContent: 'Feature has been deprecated and disabled',
+            }}
           />
         </div>
       </div>
@@ -296,7 +326,9 @@ export const UsageExamples = () => (
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Use descriptive labels that clearly identify what's being monitored</li>
+        <li>
+          Use descriptive labels that clearly identify what's being monitored
+        </li>
         <li>Provide meaningful tooltips with actionable information</li>
         <li>Group related status indicators logically</li>
         <li>Use consistent status types for similar operational states</li>

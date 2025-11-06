@@ -1,6 +1,6 @@
 import { api } from '@/lib/api'
 import type { TInstallAuditLog } from '@/types'
-import { buildQueryParams } from "@/utils/build-query-params";
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getInstallAuditLog = ({
   installId,

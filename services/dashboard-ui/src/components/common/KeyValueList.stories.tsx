@@ -29,7 +29,8 @@ export const BasicUsage = () => (
         />
       </div>
       <Text variant="subtext" theme="neutral">
-        Keys are automatically formatted from camelCase/snake_case to readable labels
+        Keys are automatically formatted from camelCase/snake_case to readable
+        labels
       </Text>
     </div>
 
@@ -90,8 +91,8 @@ export const EmptyValues = () => (
       <h3 className="text-lg font-semibold">Empty Value Handling</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         KeyValueList automatically handles empty or undefined values with
-        appropriate fallback display. Empty strings show a dash, while
-        null or undefined values are handled gracefully.
+        appropriate fallback display. Empty strings show a dash, while null or
+        undefined values are handled gracefully.
       </p>
     </div>
 
@@ -148,8 +149,8 @@ export const EmptyStates = () => (
       <h3 className="text-lg font-semibold">Empty State Management</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         KeyValueList provides customizable empty states when no data is
-        available. Empty states can include custom messages, actions,
-        and different sizing options to match your interface needs.
+        available. Empty states can include custom messages, actions, and
+        different sizing options to match your interface needs.
       </p>
     </div>
 
@@ -212,7 +213,9 @@ export const UsageExamples = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Server Configuration</h4>
       <div className="max-w-2xl p-4 border rounded-lg">
-        <Text weight="stronger" className="mb-3">Production Server Details</Text>
+        <Text weight="stronger" className="mb-3">
+          Production Server Details
+        </Text>
         <KeyValueList
           values={[
             { key: 'hostname', value: 'api.example.com' },
@@ -231,12 +234,17 @@ export const UsageExamples = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Application Settings</h4>
       <div className="max-w-2xl p-4 border rounded-lg">
-        <Text weight="stronger" className="mb-3">Environment Variables</Text>
+        <Text weight="stronger" className="mb-3">
+          Environment Variables
+        </Text>
         <KeyValueList
           values={[
             { key: 'NODE_ENV', value: 'production' },
             { key: 'PORT', value: '3000' },
-            { key: 'DATABASE_URL', value: 'postgresql://user:pass@localhost:5432/db' },
+            {
+              key: 'DATABASE_URL',
+              value: 'postgresql://user:pass@localhost:5432/db',
+            },
             { key: 'REDIS_URL', value: 'redis://localhost:6379' },
             { key: 'JWT_SECRET', value: '••••••••••••••••' },
             { key: 'LOG_LEVEL', value: 'info' },
@@ -248,7 +256,9 @@ export const UsageExamples = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">User Account Information</h4>
       <div className="max-w-2xl p-4 border rounded-lg">
-        <Text weight="stronger" className="mb-3">Account Details</Text>
+        <Text weight="stronger" className="mb-3">
+          Account Details
+        </Text>
         <KeyValueList
           values={[
             { key: 'user_id', value: 'usr_1234567890' },

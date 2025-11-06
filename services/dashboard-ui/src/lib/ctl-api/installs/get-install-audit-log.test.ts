@@ -10,22 +10,21 @@ describe('getInstallAuditLog should handle response status codes from GET instal
   const end = '2024-01-31T23:59:59Z'
 
   test('200 status', async () => {
-    const { status
-         } = await getInstallAuditLog({ 
-      installId, 
-      orgId, 
-      start, 
-      end 
+    const { status } = await getInstallAuditLog({
+      installId,
+      orgId,
+      start,
+      end,
     })
     expect(status).toBe(200)
   })
 
   test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await getInstallAuditLog({ 
-      installId, 
-      orgId, 
-      start, 
-      end 
+    const { error, status } = await getInstallAuditLog({
+      installId,
+      orgId,
+      start,
+      end,
     })
 
     expect(status).toBe(code)

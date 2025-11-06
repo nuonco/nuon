@@ -9,9 +9,9 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic CloudPlatform Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         CloudPlatform components display cloud provider information with
-        consistent branding, icons, and typography. They support all major
-        cloud providers and include fallback handling for unknown platforms.
-        The component automatically handles icon sizing and text alignment.
+        consistent branding, icons, and typography. They support all major cloud
+        providers and include fallback handling for unknown platforms. The
+        component automatically handles icon sizing and text alignment.
       </p>
     </div>
 
@@ -20,19 +20,27 @@ export const BasicUsage = () => (
       <div className="flex items-center gap-6 flex-wrap">
         <div className="text-center space-y-2">
           <CloudPlatform platform="aws" />
-          <Text variant="label" className="text-xs">AWS</Text>
+          <Text variant="label" className="text-xs">
+            AWS
+          </Text>
         </div>
         <div className="text-center space-y-2">
           <CloudPlatform platform="azure" />
-          <Text variant="label" className="text-xs">Azure</Text>
+          <Text variant="label" className="text-xs">
+            Azure
+          </Text>
         </div>
         <div className="text-center space-y-2">
           <CloudPlatform platform="gcp" />
-          <Text variant="label" className="text-xs">GCP</Text>
+          <Text variant="label" className="text-xs">
+            GCP
+          </Text>
         </div>
         <div className="text-center space-y-2">
           <CloudPlatform platform="unknown" />
-          <Text variant="label" className="text-xs">Unknown</Text>
+          <Text variant="label" className="text-xs">
+            Unknown
+          </Text>
         </div>
       </div>
     </div>
@@ -59,8 +67,8 @@ export const DisplayVariants = () => (
           displayVariant
         </code>{' '}
         prop controls how the cloud platform is displayed. Choose between
-        abbreviations, full names, or icon-only display based on available
-        space and context requirements.
+        abbreviations, full names, or icon-only display based on available space
+        and context requirements.
       </p>
     </div>
 
@@ -113,8 +121,8 @@ export const DisplayVariants = () => (
         space
       </div>
       <div>
-        <strong>icon-only:</strong> Most compact, ideal for dense interfaces
-        and tables
+        <strong>icon-only:</strong> Most compact, ideal for dense interfaces and
+        tables
       </div>
     </div>
   </div>
@@ -217,30 +225,42 @@ export const UsageExamples = () => (
             <CloudPlatform platform="aws" />
             <div>
               <Text weight="strong">Production Environment</Text>
-              <Text variant="subtext" theme="neutral">us-east-1</Text>
+              <Text variant="subtext" theme="neutral">
+                us-east-1
+              </Text>
             </div>
           </div>
-          <Badge theme="success" size="sm">Active</Badge>
+          <Badge theme="success" size="sm">
+            Active
+          </Badge>
         </div>
         <div className="flex items-center justify-between p-3 border rounded">
           <div className="flex items-center gap-3">
             <CloudPlatform platform="gcp" />
             <div>
               <Text weight="strong">Staging Environment</Text>
-              <Text variant="subtext" theme="neutral">us-central1</Text>
+              <Text variant="subtext" theme="neutral">
+                us-central1
+              </Text>
             </div>
           </div>
-          <Badge theme="warn" size="sm">Updating</Badge>
+          <Badge theme="warn" size="sm">
+            Updating
+          </Badge>
         </div>
         <div className="flex items-center justify-between p-3 border rounded">
           <div className="flex items-center gap-3">
             <CloudPlatform platform="azure" />
             <div>
               <Text weight="strong">Development Environment</Text>
-              <Text variant="subtext" theme="neutral">East US</Text>
+              <Text variant="subtext" theme="neutral">
+                East US
+              </Text>
             </div>
           </div>
-          <Badge theme="info" size="sm">Idle</Badge>
+          <Badge theme="info" size="sm">
+            Idle
+          </Badge>
         </div>
       </div>
     </div>
@@ -262,7 +282,9 @@ export const UsageExamples = () => (
               <CloudPlatform platform="aws" displayVariant="icon-only" />
               <Text variant="subtext">us-west-2</Text>
               <Text variant="subtext">t3.medium</Text>
-              <Badge theme="success" size="sm">Running</Badge>
+              <Badge theme="success" size="sm">
+                Running
+              </Badge>
             </div>
           </div>
           <div className="px-4 py-3">
@@ -270,7 +292,9 @@ export const UsageExamples = () => (
               <CloudPlatform platform="gcp" displayVariant="icon-only" />
               <Text variant="subtext">europe-west1</Text>
               <Text variant="subtext">n1-standard-2</Text>
-              <Badge theme="error" size="sm">Stopped</Badge>
+              <Badge theme="error" size="sm">
+                Stopped
+              </Badge>
             </div>
           </div>
         </div>
@@ -283,14 +307,18 @@ export const UsageExamples = () => (
         <div className="flex items-center justify-between">
           <div>
             <Text weight="strong">Default Cloud Provider</Text>
-            <Text variant="subtext" theme="neutral">Primary platform for new deployments</Text>
+            <Text variant="subtext" theme="neutral">
+              Primary platform for new deployments
+            </Text>
           </div>
           <CloudPlatform platform="aws" displayVariant="name" />
         </div>
         <div className="flex items-center justify-between">
           <div>
             <Text weight="strong">Backup Provider</Text>
-            <Text variant="subtext" theme="neutral">Fallback for high availability</Text>
+            <Text variant="subtext" theme="neutral">
+              Fallback for high availability
+            </Text>
           </div>
           <CloudPlatform platform="gcp" displayVariant="name" />
         </div>
@@ -301,7 +329,9 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">Individual Platform Showcases</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-4 border rounded">
-          <Text weight="strong" className="mb-3">Amazon Web Services</Text>
+          <Text weight="strong" className="mb-3">
+            Amazon Web Services
+          </Text>
           <div className="flex items-center gap-4">
             <CloudPlatform platform="aws" displayVariant="icon-only" />
             <CloudPlatform platform="aws" displayVariant="abbr" />
@@ -309,7 +339,9 @@ export const UsageExamples = () => (
           </div>
         </div>
         <div className="p-4 border rounded">
-          <Text weight="strong" className="mb-3">Microsoft Azure</Text>
+          <Text weight="strong" className="mb-3">
+            Microsoft Azure
+          </Text>
           <div className="flex items-center gap-4">
             <CloudPlatform platform="azure" displayVariant="icon-only" />
             <CloudPlatform platform="azure" displayVariant="abbr" />
@@ -317,7 +349,9 @@ export const UsageExamples = () => (
           </div>
         </div>
         <div className="p-4 border rounded">
-          <Text weight="strong" className="mb-3">Google Cloud Platform</Text>
+          <Text weight="strong" className="mb-3">
+            Google Cloud Platform
+          </Text>
           <div className="flex items-center gap-4">
             <CloudPlatform platform="gcp" displayVariant="icon-only" />
             <CloudPlatform platform="gcp" displayVariant="abbr" />
@@ -325,7 +359,9 @@ export const UsageExamples = () => (
           </div>
         </div>
         <div className="p-4 border rounded">
-          <Text weight="strong" className="mb-3">Unknown Platform</Text>
+          <Text weight="strong" className="mb-3">
+            Unknown Platform
+          </Text>
           <div className="flex items-center gap-4">
             <CloudPlatform platform="unknown" displayVariant="icon-only" />
             <CloudPlatform platform="unknown" displayVariant="abbr" />
@@ -338,7 +374,9 @@ export const UsageExamples = () => (
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
       <strong>Best Practices:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Use consistent display variants within the same interface context</li>
+        <li>
+          Use consistent display variants within the same interface context
+        </li>
         <li>Choose icon-only for tables and compact layouts</li>
         <li>Use full names in settings and configuration interfaces</li>
         <li>Leverage Text component props for consistent typography</li>

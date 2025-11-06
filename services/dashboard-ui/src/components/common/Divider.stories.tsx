@@ -10,8 +10,9 @@ export const BasicUsage = () => (
       <h3 className="text-lg font-semibold">Basic Divider Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Dividers provide visual separation between content sections. They render
-        as horizontal lines with optional text labels. The component automatically
-        handles light and dark mode styling with proper contrast ratios.
+        as horizontal lines with optional text labels. The component
+        automatically handles light and dark mode styling with proper contrast
+        ratios.
       </p>
     </div>
 
@@ -48,9 +49,9 @@ export const WithLabels = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           dividerWord
         </code>{' '}
-        prop to add text labels to dividers. The text is automatically
-        converted to uppercase and styled with a background, border, and shadow
-        for better visibility against the divider line.
+        prop to add text labels to dividers. The text is automatically converted
+        to uppercase and styled with a background, border, and shadow for better
+        visibility against the divider line.
       </p>
     </div>
 
@@ -62,13 +63,13 @@ export const WithLabels = () => (
           <Divider dividerWord="OR" />
           <Text>Login with OAuth provider</Text>
         </div>
-        
+
         <div className="border p-4 rounded">
           <Text>Primary content section</Text>
           <Divider dividerWord="AND" />
           <Text>Secondary content section</Text>
         </div>
-        
+
         <div className="border p-4 rounded">
           <Text>Free tier features</Text>
           <Divider dividerWord="PLUS" />
@@ -85,7 +86,7 @@ export const WithLabels = () => (
           <Divider dividerWord="NEXT" />
           <Text>Step 2: Deployment</Text>
         </div>
-        
+
         <div className="border p-4 rounded">
           <Text>Public repositories</Text>
           <Divider dividerWord="PRIVATE" />
@@ -111,21 +112,31 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">Authentication Form</h4>
       <div className="max-w-md border rounded-lg p-6 space-y-4">
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Email</Text>
+          <Text variant="label" weight="strong">
+            Email
+          </Text>
           <div className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800">
-            <Text variant="subtext" theme="neutral">user@example.com</Text>
+            <Text variant="subtext" theme="neutral">
+              user@example.com
+            </Text>
           </div>
         </div>
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Password</Text>
+          <Text variant="label" weight="strong">
+            Password
+          </Text>
           <div className="w-full px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-800">
-            <Text variant="subtext" theme="neutral">••••••••••</Text>
+            <Text variant="subtext" theme="neutral">
+              ••••••••••
+            </Text>
           </div>
         </div>
-        <Button variant="primary" className="w-full">Sign In</Button>
-        
+        <Button variant="primary" className="w-full">
+          Sign In
+        </Button>
+
         <Divider dividerWord="OR" />
-        
+
         <Button variant="secondary" className="w-full">
           <Icon variant="Globe" size="16" />
           Continue with Google
@@ -148,9 +159,9 @@ export const UsageExamples = () => (
             <Text variant="subtext">• Community support</Text>
           </div>
         </div>
-        
+
         <Divider dividerWord="UPGRADE" />
-        
+
         <div>
           <Text weight="stronger">Pro Plan Features</Text>
           <div className="mt-2 space-y-1">
@@ -172,18 +183,18 @@ export const UsageExamples = () => (
             Configure your repository settings and choose deployment options.
           </Text>
         </div>
-        
+
         <Divider dividerWord="THEN" />
-        
+
         <div>
           <Text weight="stronger">Step 2: Environment Configuration</Text>
           <Text variant="subtext" theme="neutral" className="mt-1">
             Set up environment variables and deployment targets.
           </Text>
         </div>
-        
+
         <Divider dividerWord="FINALLY" />
-        
+
         <div>
           <Text weight="stronger">Step 3: Deploy Application</Text>
           <Text variant="subtext" theme="neutral" className="mt-1">
@@ -198,7 +209,10 @@ export const UsageExamples = () => (
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Use dividers to separate logically different content sections</li>
         <li>Keep divider words short and meaningful (OR, AND, PLUS, etc.)</li>
-        <li>Consider the visual weight - too many dividers can clutter the interface</li>
+        <li>
+          Consider the visual weight - too many dividers can clutter the
+          interface
+        </li>
         <li>Ensure adequate spacing above and below dividers</li>
         <li>Use labeled dividers for alternative actions or workflow steps</li>
       </ul>

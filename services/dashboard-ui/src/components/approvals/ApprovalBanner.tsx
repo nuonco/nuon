@@ -66,7 +66,7 @@ const AwaitingApprovalBanner = ({ step }: IApprovalBanner) => {
         </div>
       </div>
     </Banner>
-  )  
+  )
 }
 
 const RESPONSE_THEME: Record<

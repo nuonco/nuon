@@ -1,24 +1,24 @@
-"use client";
+'use client'
 
-import { CodeBlock } from "@/components/common/CodeBlock";
-import { Expand } from "@/components/common/Expand";
-import { Status } from "@/components/common/Status";
-import { Text } from "@/components/common/Text";
-import { Time } from "@/components/common/Time";
-import type { IStepDetails } from "./types";
+import { CodeBlock } from '@/components/common/CodeBlock'
+import { Expand } from '@/components/common/Expand'
+import { Status } from '@/components/common/Status'
+import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
+import type { IStepDetails } from './types'
 
 const StepHistoryStatus = ({
   status,
 }: {
-  status: IStepDetails["step"]["status"]["history"][number];
+  status: IStepDetails['step']['status']['history'][number]
 }) => {
   return (
     <span className="flex items-center gap-4 py-2">
       <Status status={status.status} variant="badge" />
       <Time seconds={status.created_at_ts} variant="subtext" theme="neutral" />
     </span>
-  );
-};
+  )
+}
 
 export const StepMetadata = ({ step }: IStepDetails) => {
   return (
@@ -61,5 +61,5 @@ export const StepMetadata = ({ step }: IStepDetails) => {
         </div>
       </Expand>
     </div>
-  );
-};
+  )
+}
