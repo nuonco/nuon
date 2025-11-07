@@ -5,12 +5,14 @@ import { getWorkflowSteps } from '@/lib'
 interface ILoadWorkflowSteps {
   offset: string
   orgId: string
+  planOnly?: boolean
   workflowId: string
 }
 
 export async function WorkflowSteps({
   orgId,
   offset,
+  planOnly = false,
   workflowId,
 }: ILoadWorkflowSteps) {
   const {
@@ -26,7 +28,12 @@ export async function WorkflowSteps({
 
   return steps && !error ? (
     <>
-      <Steps initWorkflowSteps={steps} shouldPoll workflowId={workflowId} />
+      <Steps
+        initWorkflowSteps={steps}
+        planOnly={planOnly}
+        shouldPoll
+        workflowId={workflowId}
+      />
     </>
   ) : (
     <WorkflowStepsError />

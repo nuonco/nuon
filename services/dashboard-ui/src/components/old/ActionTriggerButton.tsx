@@ -299,6 +299,7 @@ export const ActionTriggerButton: FC<IActionTriggerButton> = ({
         onClick={() => {
           setIsOpen(true)
         }}
+        disabled={isKickedOff}
         {...props}
       >
         Run workflow
