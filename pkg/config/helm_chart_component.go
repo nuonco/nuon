@@ -31,6 +31,7 @@ type HelmChartComponentConfig struct {
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	HelmRepo      *HelmRepoConfig      `mapstructure:"helm_repo,omitempty" jsonschema:"oneof_required=helm_repo"`
 
 	Namespace     string `mapstructure:"namespace" features:"template"`
 	StorageDriver string `mapstructure:"storage_driver" features:"template"`
@@ -41,6 +42,18 @@ type HelmChartComponentConfig struct {
 
 	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty"`
+}
+
+type HelmRepoConfig struct {
+	RepoURL string `mapstructure:"repo_url" jsonschema:"required"`
+	Chart   string `mapstructure:"chart" jsonschema:"required"`
+	Version string `mapstructure:"version,omitempty"`
+}
+
+func (h HelmRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	addDescription(schema, "repo_url", "URL of the helm chart repository")
+	addDescription(schema, "chart", "name of the chart in the repository")
+	addDescription(schema, "version", "version of the chart to use")
 }
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
