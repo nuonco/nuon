@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
@@ -38,6 +39,17 @@ type TerraformWorkspaceState struct {
 	RunnerJob   RunnerJob `json:"runner_job,omitzero" temporaljson:"runner_job,omitzero,omitempty"`
 
 	Revision int `json:"revision,omitzero" gorm:"->;-:migration" temporaljson:"revision,omitzero,omitempty"`
+}
+
+func (t *TerraformWorkspaceState) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &TerraformWorkspaceState{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (t *TerraformWorkspaceState) BeforeCreate(tx *gorm.DB) (err error) {

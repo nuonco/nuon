@@ -10,6 +10,8 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type OCIArtifact struct {
@@ -42,6 +44,17 @@ type OCIArtifact struct {
 	Variant      string         `json:"variant,omitzero" gorm:"type:text" temporaljson:"variant,omitzero,omitempty"`
 	OSVersion    string         `json:"os_version,omitzero" gorm:"type:text" temporaljson:"os_version,omitzero,omitempty"`
 	OSFeatures   pq.StringArray `gorm:"type:text[]" json:"os_features,omitzero" swaggertype:"array,string" temporaljson:"os_features,omitzero,omitempty"`
+}
+
+func (r *OCIArtifact) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &OCIArtifact{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *OCIArtifact) BeforeCreate(tx *gorm.DB) (err error) {

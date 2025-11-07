@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type RoleType string
@@ -39,6 +40,10 @@ type Role struct {
 	RoleType RoleType `json:"role_type,omitzero" gorm:"defaultnull;notnull" temporaljson:"role_type,omitzero,omitempty"`
 
 	Policies []Policy `json:"policies,omitzero" temporaljson:"policies,omitzero,omitempty"`
+}
+
+func (a *Role) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{}
 }
 
 func (a *Role) BeforeCreate(tx *gorm.DB) error {

@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AzureAccount struct {
@@ -29,6 +31,17 @@ type AzureAccount struct {
 	SubscriptionTenantID     string `json:"subscription_tenant_id,omitzero" gorm:"not null;default null" temporaljson:"subscription_tenant_id,omitzero,omitempty"`
 	ServicePrincipalAppID    string `json:"service_principal_app_id,omitzero" gorm:"not null;default null" temporaljson:"service_principal_app_id,omitzero,omitempty"`
 	ServicePrincipalPassword string `json:"service_principal_password,omitzero" gorm:"not null;default null" temporaljson:"service_principal_password,omitzero,omitempty"`
+}
+
+func (a *AzureAccount) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AzureAccount{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AzureAccount) BeforeCreate(tx *gorm.DB) error {

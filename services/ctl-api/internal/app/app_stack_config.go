@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type StackType string
@@ -34,6 +36,17 @@ type AppStackConfig struct {
 	Description             string    `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
 	RunnerNestedTemplateURL string    `json:"runner_nested_template_url,omitzero" temporaljson:"runner_nested_template_url,omitzero,omitempty"`
 	VPCNestedTemplateURL    string    `json:"vpc_nested_template_url,omitzero" temporaljson:"vpc_nested_template_url,omitzero,omitempty"`
+}
+
+func (a *AppStackConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppStackConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppStackConfig) BeforeCreate(tx *gorm.DB) error {

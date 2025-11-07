@@ -40,6 +40,12 @@ func (a *AppInputConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at DESC",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppInputConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }
 

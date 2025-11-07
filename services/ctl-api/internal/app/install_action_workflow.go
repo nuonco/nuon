@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallActionWorkflow struct {
@@ -31,6 +33,17 @@ type InstallActionWorkflow struct {
 
 	// after query fields filled in after querying
 	Status InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+}
+
+func (a *InstallActionWorkflow) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallActionWorkflow{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *InstallActionWorkflow) BeforeCreate(tx *gorm.DB) error {
