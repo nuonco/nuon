@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallActionWorkflowRunStepStatus string
@@ -40,6 +42,17 @@ type InstallActionWorkflowRunStep struct {
 	Step   ActionWorkflowStepConfig `json:"-" temporaljson:"step,omitzero,omitempty"`
 
 	ExecutionDuration time.Duration `json:"execution_duration,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"execution_duration,omitzero,omitempty"`
+}
+
+func (i *InstallActionWorkflowRunStep) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallActionWorkflowRunStep{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (i *InstallActionWorkflowRunStep) BeforeCreate(tx *gorm.DB) error {

@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type RunnerJobExecutionOutputs struct {
@@ -32,6 +34,17 @@ type RunnerJobExecutionOutputs struct {
 	// after query
 
 	ParsedOutputs map[string]interface{} `json:"outputs,omitzero" gorm:"-" swaggertype:"object,object" temporaljson:"parsed_outputs,omitzero,omitempty"`
+}
+
+func (r *RunnerJobExecutionOutputs) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &RunnerJobExecutionOutputs{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *RunnerJobExecutionOutputs) BeforeCreate(tx *gorm.DB) error {

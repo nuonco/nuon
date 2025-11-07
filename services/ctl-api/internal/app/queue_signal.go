@@ -8,6 +8,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal/db"
 )
@@ -35,6 +37,17 @@ type QueueSignal struct {
 	Signal signaldb.SignalData `json:"signal" temporaljson:"-"`
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
+}
+
+func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *QueueSignal) BeforeCreate(tx *gorm.DB) error {

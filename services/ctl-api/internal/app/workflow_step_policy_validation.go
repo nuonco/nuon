@@ -3,6 +3,9 @@ package app
 import (
 	"time"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
 
@@ -28,6 +31,17 @@ type WorkflowStepPolicyValidation struct {
 	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	// response is the kyverno response
 	Response string `json:"response,omitzero" gorm:"jsonb" temporaljson:"response,omitzero,omitempty"`
+}
+
+func (v *WorkflowStepPolicyValidation) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &WorkflowStepPolicyValidation{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (v *WorkflowStepPolicyValidation) TableName() string {

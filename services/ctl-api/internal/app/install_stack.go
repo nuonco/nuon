@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallStack struct {
@@ -24,6 +26,17 @@ type InstallStack struct {
 
 	InstallStackOutputs  InstallStackOutputs   `json:"install_stack_outputs,omitzero" temporaljson:"install_stack_outputs,omitzero,omitempty"`
 	InstallStackVersions []InstallStackVersion `json:"versions,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack_versions,omitzero,omitempty"`
+}
+
+func (a *InstallStack) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallStack{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *InstallStack) BeforeCreate(tx *gorm.DB) error {

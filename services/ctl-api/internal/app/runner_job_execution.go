@@ -105,5 +105,11 @@ func (i *RunnerJobExecution) Indexes(db *gorm.DB) []migrations.Index {
 				"runner_job_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &RunnerJobExecution{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }

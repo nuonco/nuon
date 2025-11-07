@@ -91,6 +91,12 @@ func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at DESC",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppRunnerConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }
 
