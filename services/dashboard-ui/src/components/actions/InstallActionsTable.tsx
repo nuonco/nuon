@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -177,7 +178,15 @@ export const InstallActionsTable = ({
         org.id,
         install.id
       )}
-      filterActions={<TriggeredByFilter />}
+      filterActions={
+        <div className="flex items-center gap-4">
+          <TemporalLink
+            namespace="installs"
+            eventLoopId={`${install?.id}-action-workflows`}
+          />
+          <TriggeredByFilter />
+        </div>
+      }
       emptyStateProps={{
         emptyMessage:
           'Save time by configuring your actions. Check out our resources.',

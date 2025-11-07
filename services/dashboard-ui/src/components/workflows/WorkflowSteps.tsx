@@ -17,11 +17,13 @@ import { getStepBadge } from '@/utils/workflow-utils'
 
 interface IWorkflowSteps extends IPollingProps {
   initWorkflowSteps: TWorkflowStep[]
+  planOnly?: boolean
   workflowId: string
 }
 
 export const WorkflowSteps = ({
   initWorkflowSteps,
+  planOnly = false,
   pollInterval = 4000,
   shouldPoll = false,
   workflowId,
@@ -69,7 +71,7 @@ export const WorkflowSteps = ({
                   {(step.execution_type === 'system' &&
                     !step.step_target_type) ||
                   step.status.status === 'pending' ? null : (
-                    <StepDetailPanelButton step={step} />
+                    <StepDetailPanelButton step={step} planOnly={planOnly} />
                   )}
 
                   {step?.finished ? (
