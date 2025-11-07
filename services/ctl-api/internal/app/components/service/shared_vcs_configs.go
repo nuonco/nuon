@@ -41,6 +41,7 @@ func (b basicVCSConfigRequest) Validate() error {
 		return stderr.ErrUser{
 			Err:         fmt.Errorf("one of public and connected github config set"),
 			Description: "one of connected github or public git configs must be set",
+			Code:        "vcs_config_required",
 		}
 	}
 
