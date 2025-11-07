@@ -9,6 +9,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type JobComponentConfig struct {
@@ -33,6 +34,17 @@ type JobComponentConfig struct {
 	Cmd      pq.StringArray `json:"cmd,omitzero" gorm:"type:text[]" temporaljson:"cmd,omitzero,omitempty"`
 	EnvVars  pgtype.Hstore  `json:"env_vars,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
 	Args     pq.StringArray `json:"args,omitzero" gorm:"type:text[]" swaggertype:"array,string" temporaljson:"args,omitzero,omitempty"`
+}
+
+func (j *JobComponentConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: "idx_job_component_config_org_id",
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (e *JobComponentConfig) BeforeCreate(tx *gorm.DB) error {

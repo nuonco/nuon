@@ -10,6 +10,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type PolicyName string
@@ -42,6 +44,18 @@ type Policy struct {
 
 	// Permissions are used to track granular permissions for each domain
 	Permissions pgtype.Hstore `json:"permissions" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"permissions,omitzero,omitempty"`
+}
+
+func (a *Policy) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Policy{}, "role_id"),
+			Columns: []string{
+				"role_id",
+			},
+			UniqueValue: generics.NewNullBool(true),
+		},
+	}
 }
 
 func (a *Policy) BeforeCreate(tx *gorm.DB) error {

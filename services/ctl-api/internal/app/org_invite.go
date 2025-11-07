@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type OrgInviteStatus string
@@ -31,6 +33,17 @@ type OrgInvite struct {
 	Email    string          `gorm:"notnull;default null;index:idx_invite_org_email,unique" json:"email,omitzero" temporaljson:"email,omitzero,omitempty"`
 	Status   OrgInviteStatus `json:"status,omitzero" gorm:"notnull;default null" temporaljson:"status,omitzero,omitempty"`
 	RoleType RoleType        `json:"role_type,omitzero" temporaljson:"role_type,omitzero,omitempty"`
+}
+
+func (o *OrgInvite) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &OrgInvite{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (o *OrgInvite) BeforeCreate(tx *gorm.DB) error {

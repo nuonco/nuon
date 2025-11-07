@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppBreakGlassConfig struct {
@@ -26,6 +28,17 @@ type AppBreakGlassConfig struct {
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
 	Roles []AppAWSIAMRoleConfig `json:"aws_iam_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;polymorphic:Owner;" temporaljson:"roles,omitzero,omitempty"`
+}
+
+func (a *AppBreakGlassConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppBreakGlassConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppBreakGlassConfig) BeforeCreate(tx *gorm.DB) error {

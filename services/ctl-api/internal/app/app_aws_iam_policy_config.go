@@ -9,6 +9,8 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppAWSIAMPolicyConfig struct {
@@ -31,6 +33,17 @@ type AppAWSIAMPolicyConfig struct {
 	Name                    string `json:"name" features:"template,omitzero" temporaljson:"name,omitzero,omitempty"`
 	Contents                []byte `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"contents,omitzero,omitempty"`
 	CloudFormationStackName string `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
+}
+
+func (a *AppAWSIAMPolicyConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppAWSIAMPolicyConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppAWSIAMPolicyConfig) AfterQuery(tx *gorm.DB) error {

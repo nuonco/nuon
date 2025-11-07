@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AWSAccount struct {
@@ -25,6 +27,17 @@ type AWSAccount struct {
 
 	Region     string `json:"region,omitzero" gorm:"notnull" temporaljson:"region,omitzero,omitempty"`
 	IAMRoleARN string `json:"iam_role_arn,omitzero" gorm:"notnull" temporaljson:"iam_role_arn,omitzero,omitempty"`
+}
+
+func (a *AWSAccount) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AWSAccount{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AWSAccount) BeforeCreate(tx *gorm.DB) error {

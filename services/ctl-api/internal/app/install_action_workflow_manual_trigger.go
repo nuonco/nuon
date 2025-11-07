@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallActionWorkflowManualTrigger struct {
@@ -22,6 +24,17 @@ type InstallActionWorkflowManualTrigger struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	InstallActionWorkflowRun InstallActionWorkflowRun `json:"install_action_workflow_run,omitzero" gorm:"polymorphic:TriggeredBy;" temporaljson:"install_action_workflow_run,omitzero,omitempty"`
+}
+
+func (i *InstallActionWorkflowManualTrigger) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallActionWorkflowManualTrigger{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (i *InstallActionWorkflowManualTrigger) BeforeCreate(tx *gorm.DB) error {
