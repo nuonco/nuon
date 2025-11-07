@@ -13,11 +13,13 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateHelmComponentConfigRequest struct {
 	basicVCSConfigRequest
+	HelmRepoConfig *HelmRepoConfigRequest `json:"helm_repo_config,omitempty"`
 
 	Values        map[string]*string `json:"values,omitempty" validate:"required"`
 	ValuesFiles   []string           `json:"values_files,omitempty"`
@@ -34,12 +36,24 @@ type CreateHelmComponentConfigRequest struct {
 	DriftSchedule *string  `json:"drift_schedule,omitempty"`
 }
 
+type HelmRepoConfigRequest struct {
+	RepoURL string `json:"repo_url" validate:"required,url"`
+	Chart   string `json:"chart" validate:"required"`
+	Version string `json:"version,omitempty"`
+}
+
 func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
 
 	if err := c.basicVCSConfigRequest.Validate(); err != nil {
+		// Allow helm components without VCS config when using helm_repo_config
+		if c.HelmRepoConfig != nil {
+			if userErr, ok := err.(stderr.ErrUser); ok && userErr.Code == "vcs_config_required" {
+				return nil
+			}
+		}
 		return err
 	}
 	return nil
@@ -145,16 +159,25 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		return nil, fmt.Errorf("invalid public vcs config: %w", err)
 	}
 
+	var hrc app.HelmRepoConfig
+	if req.HelmRepoConfig != nil {
+		hrc = app.HelmRepoConfig{
+			RepoURL: req.HelmRepoConfig.RepoURL,
+			Chart:   req.HelmRepoConfig.Chart,
+			Version: req.HelmRepoConfig.Version,
+		}
+	}
 	cfg := app.HelmComponentConfig{
 		PublicGitVCSConfig:       publicGitVCSConfig,
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		HelmConfig: &app.HelmConfig{
-			ChartName:     req.ChartName,
-			Namespace:     req.Namespace,
-			StorageDriver: req.StorageDriver,
-			Values:        req.Values,
-			ValuesFiles:   req.ValuesFiles,
-			TakeOwnership: req.TakeOwnership,
+			ChartName:      req.ChartName,
+			Namespace:      req.Namespace,
+			StorageDriver:  req.StorageDriver,
+			HelmRepoConfig: &hrc,
+			Values:         req.Values,
+			ValuesFiles:    req.ValuesFiles,
+			TakeOwnership:  req.TakeOwnership,
 		},
 	}
 	componentConfigConnection := app.ComponentConfigConnection{

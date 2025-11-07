@@ -18,8 +18,13 @@ func (s Source) AbsPath() string {
 }
 
 func (w *workspace) Source() *Source {
+	var path string
+	if w.Src != nil {
+		path = w.Src.Path
+	}
+	
 	return &Source{
-		Path:  w.Src.Path,
+		Path:  path,
 		IsGit: w.isGit(),
 		Root:  w.rootDir(),
 	}
