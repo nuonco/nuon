@@ -10,8 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iancoleman/strcase"
 	"github.com/pelletier/go-toml"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 // @ID						GenerateCLIInstallConfig
@@ -97,7 +99,19 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		if inp.Sensitive {
 			continue
 		}
-		inputGroups[inp.AppInputGroupID][inp.Name] = *installInputs.Values[inp.Name]
+
+		val, ok := installInputs.Values[inp.Name]
+		if !ok {
+			s.l.Error("input is not set when generating install config",
+				zap.String("key", inp.Name),
+			)
+
+			if inp.Required {
+				inputGroups[inp.AppInputGroupID][inp.Name] = ""
+			}
+		} else {
+			inputGroups[inp.AppInputGroupID][inp.Name] = generics.FromPtrStr(val)
+		}
 	}
 
 	keys := make([]string, 0, len(inputGroups))
