@@ -8,6 +8,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ComponentReleaseStep struct {
@@ -36,6 +38,17 @@ type ComponentReleaseStep struct {
 
 	// fields to control the delay of the individual step, as this is set based on the parent strategy
 	Delay *string `json:"delay,omitzero" temporaljson:"delay,omitzero,omitempty"`
+}
+
+func (a *ComponentReleaseStep) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &ComponentReleaseStep{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *ComponentReleaseStep) BeforeCreate(tx *gorm.DB) error {

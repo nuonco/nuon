@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppInputGroup struct {
@@ -31,6 +33,17 @@ type AppInputGroup struct {
 	AppInputs []AppInput `json:"app_inputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_inputs,omitzero,omitempty"`
 }
 
+func (a *AppInputGroup) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppInputGroup{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
+}
+
 func (a *AppInputGroup) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
 		a.ID = domains.NewAppID()
@@ -43,4 +56,3 @@ func (a *AppInputGroup) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
-

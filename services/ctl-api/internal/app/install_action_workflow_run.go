@@ -108,6 +108,12 @@ func (i *InstallActionWorkflowRun) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallActionWorkflowRun{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }
 

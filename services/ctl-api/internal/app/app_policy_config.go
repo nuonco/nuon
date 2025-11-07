@@ -5,6 +5,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
@@ -33,6 +35,17 @@ type AppPolicyConfig struct {
 
 	Type     config.AppPolicyType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	Contents string               `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
+}
+
+func (a *AppPolicyConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppPolicyConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppPolicyConfig) BeforeCreate(tx *gorm.DB) error {

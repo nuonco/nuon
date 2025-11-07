@@ -9,6 +9,8 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppSecretConfigFmt string
@@ -54,6 +56,17 @@ type AppSecretConfig struct {
 
 	CloudFormationStackName string `json:"cloudformation_stack_name,omitzero" gorm:"-" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
 	CloudFormationParamName string `json:"cloudformation_param_name,omitzero" gorm:"-" temporaljson:"cloud_formation_param_name,omitzero,omitempty"`
+}
+
+func (a *AppSecretConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppSecretConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppSecretConfig) BeforeCreate(tx *gorm.DB) error {
