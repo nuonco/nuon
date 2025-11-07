@@ -71,7 +71,7 @@ export const WorkflowDetails = ({
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
-            {workflow?.approval_option === 'prompt' && !workflow?.finished && (
+            {workflow?.approval_option === 'prompt' && !workflow?.finished && !workflow?.plan_only && (
               <ApproveAllButton workflow={workflow} />
             )}
             {!workflow?.finished && (
