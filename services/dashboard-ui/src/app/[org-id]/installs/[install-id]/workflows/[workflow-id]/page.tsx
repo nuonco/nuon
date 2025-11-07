@@ -79,9 +79,10 @@ export default async function InstallWorkflow({
               <ErrorBoundary fallback={<WorkflowStepsError />}>
                 <Suspense fallback={<WorkflowStepsSkeleton />}>
                   <WorkflowSteps
-                    workflowId={workflowId}
                     orgId={orgId}
                     offset={sp?.['offset'] || '0'}
+                    planOnly={installWorkflow?.plan_only}
+                    workflowId={workflowId}
                   />
                 </Suspense>
               </ErrorBoundary>

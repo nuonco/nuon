@@ -61,11 +61,13 @@ function getStepPanelDetails(step: TWorkflowStep): ReactNode {
 export interface IStepDetailPanel extends IPanel, IPollingProps {
   children: ReactNode
   initStep: TWorkflowStep
+  planOnly?: boolean
 }
 
 export const StepDetailPanel = ({
   children,
   initStep,
+  planOnly = false,
   pollInterval = 10000,
   shouldPoll = false,
   ...props
@@ -85,7 +87,7 @@ export const StepDetailPanel = ({
       size="half"
       {...props}
     >
-      <StepBanner step={step} />
+      <StepBanner step={step} planOnly={planOnly} />
       {React.Children.map(children, (c) =>
         React.isValidElement(c)
           ? React.cloneElement(
@@ -105,7 +107,13 @@ export const StepDetailPanel = ({
   )
 }
 
-export const StepDetailPanelButton = ({ step }: { step: TWorkflowStep }) => {
+export const StepDetailPanelButton = ({
+  step,
+  planOnly = false,
+}: {
+  step: TWorkflowStep
+  planOnly?: boolean
+}) => {
   const { addPanel } = useSurfaces()
   const searchParams = useSearchParams()
   const panel = (
@@ -114,6 +122,7 @@ export const StepDetailPanelButton = ({ step }: { step: TWorkflowStep }) => {
       initStep={step}
       size={getStepPanelSize(step)}
       shouldPoll
+      planOnly={planOnly}
     >
       {getStepPanelDetails(step)}
     </StepDetailPanel>

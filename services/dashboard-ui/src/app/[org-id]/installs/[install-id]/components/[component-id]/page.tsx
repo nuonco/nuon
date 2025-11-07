@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -103,7 +104,11 @@ export default async function InstallComponentPage({
           <ID>{component.id}</ID>
         </HeadingGroup>
 
-        <div>
+        <div className="flex items-center gap-4">
+          <TemporalLink
+            namespace="installs"
+            eventLoopId={`${installId}-component-${installComponent?.id}`}
+          />
           <InstallComponentManagementDropdown
             componentId={installComponent?.component_id}
             componentName={installComponent?.component?.name}
