@@ -19,6 +19,23 @@ import { StepMetadata } from './StepMetadata'
 import { ActionRunStepDetails } from './ActionRunStepDetails'
 import { RunnerStepDetails } from './RunnerStepDetails'
 
+type TPanelSize = IPanel['size']
+
+function getStepPanelSize(step: TWorkflowStep): TPanelSize {
+  let size: TPanelSize = 'half'
+
+  if (
+    step?.step_target_type === 'install_deploys' ||
+    step?.step_target_type === 'install_sandbox_runs'
+  ) {
+    if (step?.execution_type !== 'approval') {
+      size = 'full'
+    }
+  }
+
+  return size
+}
+
 function getStepPanelDetails(step: TWorkflowStep): ReactNode {
   if (step.step_target_type === 'install_action_workflow_runs') {
     return <ActionRunStepDetails />
@@ -95,12 +112,7 @@ export const StepDetailPanelButton = ({ step }: { step: TWorkflowStep }) => {
     <StepDetailPanel
       panelKey={step.id}
       initStep={step}
-      size={
-        step?.step_target_type === 'install_deploys' &&
-        step?.execution_type !== 'approval'
-          ? 'full'
-          : 'half'
-      }
+      size={getStepPanelSize(step)}
       shouldPoll
     >
       {getStepPanelDetails(step)}

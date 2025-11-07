@@ -1,11 +1,11 @@
 import type { TNavLink } from '@/types'
 
 export const MAIN_LINKS: TNavLink[] = [
-  {
-    iconVariant: 'House',
-    path: `/`,
-    text: 'Dashboard',
-  },
+  // {
+  //   iconVariant: 'House',
+  //   path: `/`,
+  //   text: 'Dashboard',
+  // },
   {
     iconVariant: 'AppWindow',
     path: `/apps`,
