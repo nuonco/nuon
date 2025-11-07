@@ -54,8 +54,8 @@ export default async function OrgTeam({ params, searchParams }) {
               text: org?.name,
             },
             {
-              path: `/${orgId}/installs`,
-              text: 'Installs',
+              path: `/${orgId}/team`,
+              text: 'Team',
             },
           ],
         }}

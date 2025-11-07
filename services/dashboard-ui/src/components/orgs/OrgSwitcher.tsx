@@ -48,7 +48,7 @@ export const OrgSwitcher = ({}: IOrgSwitcher) => {
       variant="ghost"
     >
       <Menu
-        className="w-[248px] h-[308px] overflow-y-scroll overflow-x-hidden focus:outline-primay-400 !p-0"
+        className="w-[248px] h-fit max-h-[500px] overflow-y-scroll overflow-x-hidden focus:outline-primay-400 !p-0"
         tabIndex={-1}
         style={{ scrollbarGutter: 'stable' }}
       >
