@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallIntermediateData struct {
@@ -35,6 +37,17 @@ type InstallIntermediateData struct {
 	// loaded via after query
 
 	IntermediateData map[string]interface{} `json:"intermediate_data,omitzero" gorm:"-" temporaljson:"intermediate_data,omitzero,omitempty"`
+}
+
+func (i *InstallIntermediateData) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallIntermediateData{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (i *InstallIntermediateData) BeforeCreate(tx *gorm.DB) error {

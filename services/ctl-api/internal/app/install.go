@@ -111,7 +111,7 @@ func (i *Install) Views(db *gorm.DB) []migrations.View {
 func (i *Install) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name: indexes.Name(db, &Install{}, "migration_test"),
+			Name: indexes.Name(db, &Install{}, "org_id"),
 			Columns: []string{
 				"org_id",
 			},

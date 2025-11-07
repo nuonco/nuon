@@ -13,6 +13,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/types/stacks"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallStackOutputs struct {
@@ -70,6 +72,17 @@ type AzureStackOutputs struct {
 
 	KeyVaultID   string `json:"key_vault_id,omitzero" mapstructure:"key_vault_id" temporaljson:"key_vault_id,omitzero,omitempty"`
 	KeyVaultName string `json:"key_vault_name,omitzero" mapstructure:"key_vault_name" temporaljson:"key_vault_name,omitzero,omitempty"`
+}
+
+func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallStackOutputs{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {

@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
@@ -31,6 +32,17 @@ type Installer struct {
 
 	Type     InstallerType     `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	Metadata InstallerMetadata `json:"metadata,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"metadata,omitzero,omitempty"`
+}
+
+func (a *Installer) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Installer{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *Installer) BeforeCreate(tx *gorm.DB) error {

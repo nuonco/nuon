@@ -8,6 +8,8 @@ import (
 
 	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type RunnerJobPlan struct {
@@ -26,6 +28,17 @@ type RunnerJobPlan struct {
 
 	PlanJSON      string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
 	CompositePlan plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
+}
+
+func (r *RunnerJobPlan) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &RunnerJobPlan{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *RunnerJobPlan) BeforeCreate(tx *gorm.DB) error {

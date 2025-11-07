@@ -10,6 +10,8 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AWSIAMRoleType string
@@ -56,6 +58,17 @@ type AppAWSIAMRoleConfig struct {
 	PermissionsBoundaryJSON      []byte                  `json:"permissions_boundary,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"permissions_boundary_json,omitzero,omitempty"`
 	CloudFormationStackName      string                  `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
 	CloudFormationStackParamName string                  `json:"cloudformation_param_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_param_name,omitzero,omitempty"`
+}
+
+func (a *AppAWSIAMRoleConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppAWSIAMRoleConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppAWSIAMRoleConfig) AfterQuery(tx *gorm.DB) error {

@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type RunnerStatus string
@@ -87,6 +89,17 @@ type Runner struct {
 	Operations []RunnerOperation `json:"operations,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operations,omitzero,omitempty"`
 
 	RunnerJob *RunnerJob `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+}
+
+func (r *Runner) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Runner{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *Runner) BeforeCreate(tx *gorm.DB) error {

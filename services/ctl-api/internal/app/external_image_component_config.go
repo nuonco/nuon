@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ExternalImageComponentConfig struct {
@@ -28,6 +30,17 @@ type ExternalImageComponentConfig struct {
 	ImageURL          string             `json:"image_url,omitzero" gorm:"notnull" temporaljson:"image_url,omitzero,omitempty"`
 	Tag               string             `json:"tag,omitzero" gorm:"notnull" temporaljson:"tag,omitzero,omitempty"`
 	AWSECRImageConfig *AWSECRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitzero,omitempty" temporaljson:"awsecr_image_config,omitzero,omitempty"`
+}
+
+func (e *ExternalImageComponentConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &ExternalImageComponentConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (e *ExternalImageComponentConfig) BeforeCreate(tx *gorm.DB) error {

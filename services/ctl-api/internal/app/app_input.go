@@ -8,6 +8,8 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppInputType string
@@ -59,6 +61,17 @@ type AppInput struct {
 	// CloudFormation configuration (computed fields, not stored in DB)
 	CloudFormationStackName      string `json:"cloudformation_stack_name,omitzero" gorm:"-" temporaljson:"cloudformation_stack_name,omitzero,omitempty"`
 	CloudFormationStackParamName string `json:"cloudformation_stack_parameter_name,omitzero" gorm:"-" temporaljson:"cloudformation_stack_parameter_name,omitzero,omitempty"`
+}
+
+func (a *AppInput) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppInput{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppInput) BeforeCreate(tx *gorm.DB) error {

@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type KubernetesManifestComponentConfig struct {
@@ -27,6 +29,17 @@ type KubernetesManifestComponentConfig struct {
 
 	Manifest  string `json:"manifest,omitzero" gorm:"not null" temporaljson:"manifest,omitzero,omitempty"`
 	Namespace string `json:"namespace,omitzero" gorm:"not null;default:default" temporaljson:"namespace,omitzero,omitempty"`
+}
+
+func (k *KubernetesManifestComponentConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &KubernetesManifestComponentConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (e *KubernetesManifestComponentConfig) BeforeCreate(tx *gorm.DB) error {

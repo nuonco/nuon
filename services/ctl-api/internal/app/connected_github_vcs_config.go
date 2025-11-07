@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ConnectedGithubVCSConfig struct {
@@ -33,6 +35,17 @@ type ConnectedGithubVCSConfig struct {
 
 	VCSConnectionID string        `json:"vcs_connection_id,omitzero" gorm:"notnull" temporaljson:"vcs_connection_id,omitzero,omitempty"`
 	VCSConnection   VCSConnection `json:"vcs_connection,omitzero,omitempty" temporaljson:"vcs_connection,omitzero,omitempty"`
+}
+
+func (c *ConnectedGithubVCSConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &ConnectedGithubVCSConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (c *ConnectedGithubVCSConfig) BeforeCreate(tx *gorm.DB) error {

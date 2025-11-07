@@ -10,6 +10,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
 
@@ -106,6 +108,16 @@ type WorkflowStep struct {
 	WorkflowID string `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_id,omitzero,omitempty"`
 }
 
+func (i *WorkflowStep) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &WorkflowStep{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
+}
 func (i *WorkflowStep) TableName() string {
 	// WorkflowStep used to be called InstallWorkflowStep
 	return "install_workflow_steps"

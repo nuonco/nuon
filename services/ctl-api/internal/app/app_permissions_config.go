@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppPermissionsConfig struct {
@@ -32,6 +34,17 @@ type AppPermissionsConfig struct {
 	MaintenanceRole AppAWSIAMRoleConfig `json:"maintenance_aws_iam_role,omitzero" gorm:"-" temporaljson:"maintenance_role,omitzero,omitempty"`
 	DeprovisionRole AppAWSIAMRoleConfig `json:"deprovision_aws_iam_role,omitzero" gorm:"-" temporaljson:"deprovision_role,omitzero,omitempty"`
 	BreakGlassRole  AppAWSIAMRoleConfig `json:"break_glass_aws_iam_role,omitzero" gorm:"-" temporaljson:"break_glass_role,omitzero,omitempty"`
+}
+
+func (a *AppPermissionsConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppPermissionsConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppPermissionsConfig) BeforeCreate(tx *gorm.DB) error {
