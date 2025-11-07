@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
 )
 
@@ -23,6 +25,17 @@ type TerraformWorkspaceStateJSON struct {
 
 	RunnerJobID *string   `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
 	RunnerJob   RunnerJob `json:"runner_job,omitzero" temporaljson:"runner_job,omitzero,omitempty"`
+}
+
+func (a *TerraformWorkspaceStateJSON) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &TerraformWorkspaceStateJSON{}, "workspace_id"),
+			Columns: []string{
+				"workspace_id",
+			},
+		},
+	}
 }
 
 func (t *TerraformWorkspaceStateJSON) BeforeCreate(tx *gorm.DB) (err error) {
