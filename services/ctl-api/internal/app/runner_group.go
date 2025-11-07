@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
@@ -36,6 +38,17 @@ type RunnerGroup struct {
 	Settings RunnerGroupSettings `json:"settings,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"settings,omitzero,omitempty"`
 	Type     RunnerGroupType     `json:"type,omitzero" gorm:"notnull;defaultnull" temporaljson:"type,omitzero,omitempty"`
 	Platform AppRunnerType       `json:"platform,omitzero" gorm:"notnull;defaultnull" temporaljson:"platform,omitzero,omitempty"`
+}
+
+func (r *RunnerGroup) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &RunnerGroup{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *RunnerGroup) BeforeCreate(tx *gorm.DB) error {

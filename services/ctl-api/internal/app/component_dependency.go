@@ -3,6 +3,8 @@ package app
 import (
 	"time"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
@@ -20,6 +22,17 @@ type ComponentDependency struct {
 
 	ComponentID  string `json:"component_id,omitzero" gorm:"primary_key" temporaljson:"component_id,omitzero,omitempty"`
 	DependencyID string `json:"dependency_id,omitzero" gorm:"primary_key" temporaljson:"dependency_id,omitzero,omitempty"`
+}
+
+func (c *ComponentDependency) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &ComponentDependency{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (c *ComponentDependency) BeforeSave(tx *gorm.DB) error {

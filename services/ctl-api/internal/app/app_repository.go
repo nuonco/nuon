@@ -58,5 +58,11 @@ func (i *AppRepository) Indexes(db *gorm.DB) []migrations.Index {
 			},
 			UniqueValue: generics.NewNullBool(true),
 		},
+		{
+			Name: indexes.Name(db, &AppRepository{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }

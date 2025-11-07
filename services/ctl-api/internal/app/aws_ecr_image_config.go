@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AWSECRImageConfig struct {
@@ -28,6 +30,17 @@ type AWSECRImageConfig struct {
 	// actual configuration
 	IAMRoleARN string `json:"iam_role_arn,omitzero" gorm:"notnull" temporaljson:"iam_role_arn,omitzero,omitempty"`
 	AWSRegion  string `json:"aws_region,omitzero" gorm:"notnull" temporaljson:"aws_region,omitzero,omitempty"`
+}
+
+func (c *AWSECRImageConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AWSECRImageConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (c *AWSECRImageConfig) BeforeCreate(tx *gorm.DB) error {

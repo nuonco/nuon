@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/types/state"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
@@ -39,6 +40,17 @@ type InstallState struct {
 	Archived bool `json:"archived" gorm:"default:false;not null" temporaljson:"archived,omitzero,omitempty"`
 
 	StaleAt generics.NullTime `json:"stale_at,omitzero" gorm:"type:timestamp;default:null" temporaljson:"stale_at,omitzero,omitempty"`
+}
+
+func (i *InstallState) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallState{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *InstallState) BeforeCreate(tx *gorm.DB) error {

@@ -82,6 +82,12 @@ func (c *InstallSandbox) Indexes(db *gorm.DB) []migrations.Index {
 			},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
+		{
+			Name: indexes.Name(db, &InstallSandbox{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }
 

@@ -8,6 +8,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type OperationStatus string
@@ -39,6 +41,17 @@ type InstallEvent struct {
 	Payload []byte `json:"payload,omitzero" gorm:"type:jsonb" swaggertype:"object,string" temporaljson:"payload,omitzero,omitempty"`
 
 	OperationName string `gorm:"-" json:"operation_name,omitzero" temporaljson:"operation_name,omitzero,omitempty"`
+}
+
+func (i *InstallEvent) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallEvent{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *InstallEvent) BeforeCreate(tx *gorm.DB) error {

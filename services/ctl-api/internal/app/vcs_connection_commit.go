@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type VCSConnectionCommit struct {
@@ -30,6 +32,17 @@ type VCSConnectionCommit struct {
 	AuthorName  string `json:"author_name,omitzero" temporaljson:"author_name,omitzero,omitempty"`
 	AuthorEmail string `json:"author_email,omitzero" temporaljson:"author_email,omitzero,omitempty"`
 	Message     string `json:"message,omitzero" temporaljson:"message,omitzero,omitempty"`
+}
+
+func (v *VCSConnectionCommit) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &VCSConnectionCommit{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (v *VCSConnectionCommit) BeforeCreate(tx *gorm.DB) error {

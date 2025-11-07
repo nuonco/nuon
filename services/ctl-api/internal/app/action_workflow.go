@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ActionWorkflowStatus string
@@ -49,4 +51,15 @@ func (a *ActionWorkflow) BeforeCreate(tx *gorm.DB) error {
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
+}
+
+func (a *ActionWorkflow) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &ActionWorkflow{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }

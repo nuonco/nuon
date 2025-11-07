@@ -8,6 +8,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ActionWorkflowTriggerType string
@@ -121,6 +123,17 @@ type ActionWorkflowTriggerConfig struct {
 	CronSchedule string              `json:"cron_schedule,omitzero,omitempty" temporaljson:"cron_schedule,omitzero,omitempty"`
 	ComponentID  generics.NullString `json:"component_id,omitzero" swaggertype:"string" temporaljson:"component_id,omitzero,omitempty"`
 	Component    *Component          `json:"component" temporaljson:"component,omitzero,omitempty"`
+}
+
+func (a *ActionWorkflowTriggerConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &ActionWorkflowTriggerConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *ActionWorkflowTriggerConfig) BeforeCreate(tx *gorm.DB) error {
