@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
@@ -150,6 +151,17 @@ type Component struct {
 	Type            ComponentType              `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	LatestConfig    *ComponentConfigConnection `gorm:"-" json:"-" temporaljson:"latest_config,omitzero,omitempty"`
 	ResolvedVarName string                     `json:"resolved_var_name,omitzero" gorm:"-" temporaljson:"resolved_var_name,omitzero,omitempty"`
+}
+
+func (c *Component) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Component{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (c *Component) AfterQuery(tx *gorm.DB) error {

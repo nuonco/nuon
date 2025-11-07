@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type RunnerJobExecutionResult struct {
@@ -41,6 +43,17 @@ type RunnerJobExecutionResult struct {
 	// columns for storage of gzipped contents and plans
 	ContentsGzip        []byte `json:"contents_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"contents_binary"`
 	ContentsDisplayGzip []byte `json:"contents_display_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"-"`
+}
+
+func (r *RunnerJobExecutionResult) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &RunnerJobExecutionResult{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *RunnerJobExecutionResult) BeforeCreate(tx *gorm.DB) error {

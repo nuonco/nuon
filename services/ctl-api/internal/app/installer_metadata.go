@@ -11,6 +11,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallerMetadata struct {
@@ -43,6 +45,17 @@ type InstallerMetadata struct {
 	FaviconURL       string `json:"favicon_url,omitzero" temporaljson:"favicon_url,omitzero,omitempty"`
 
 	FormattedDemoURL string `json:"formatted_demo_url,omitzero" gorm:"-" temporaljson:"formatted_demo_url,omitzero,omitempty"`
+}
+
+func (a *InstallerMetadata) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallerMetadata{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *InstallerMetadata) AfterQuery(tx *gorm.DB) error {

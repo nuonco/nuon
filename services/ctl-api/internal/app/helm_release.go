@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
@@ -44,6 +46,17 @@ type HelmRelease struct {
 	Owner     string `gorm:"not null"`
 
 	Labels JSONMap `json:"labels,omitempty"`
+}
+
+func (t *HelmRelease) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &HelmRelease{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (t *HelmRelease) BeforeCreate(tx *gorm.DB) (err error) {

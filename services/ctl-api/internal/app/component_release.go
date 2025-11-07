@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ComponentReleaseStrategy string
@@ -52,6 +54,17 @@ type ComponentRelease struct {
 
 	Status            ReleaseStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string        `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
+}
+
+func (a *ComponentRelease) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &ComponentRelease{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *ComponentRelease) BeforeCreate(tx *gorm.DB) error {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/links"
 )
@@ -208,6 +209,12 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"owner_id",
 				"created_at DESC",
+			},
+		},
+		{
+			Name: indexes.Name(db, &Workflow{}, "org_id"),
+			Columns: []string{
+				"org_id",
 			},
 		},
 	}

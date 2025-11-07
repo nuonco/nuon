@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type Event struct {
@@ -22,6 +24,17 @@ type Event struct {
 	InstallID   string `json:"install_id,omitzero" gorm:"type:LowCardinality(String)" temporaljson:"install_id,omitzero,omitempty"`
 	ComponentID string `json:"component_id,omitzero" gorm:"type:LowCardinality(String)" temporaljson:"component_id,omitzero,omitempty"`
 	RunnerID    string `json:"runner_id,omitzero" temporaljson:"runner_id,omitzero,omitempty"`
+}
+
+func (r *Event) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Event{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *Event) BeforeCreate(tx *gorm.DB) error {

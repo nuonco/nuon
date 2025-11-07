@@ -55,5 +55,11 @@ func (c *InstallConfig) Indexes(db *gorm.DB) []migrations.Index {
 			},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
+		{
+			Name: indexes.Name(db, &InstallConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }

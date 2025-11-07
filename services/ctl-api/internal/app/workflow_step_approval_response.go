@@ -8,6 +8,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
@@ -77,6 +78,12 @@ func (c *WorkflowStepApprovalResponse) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
+		{
+			Name: indexes.Name(db, &WorkflowStepApprovalResponse{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
 		},
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type NotificationsConfig struct {
@@ -32,6 +34,17 @@ type NotificationsConfig struct {
 
 	// generated via after query
 	SlackWebhookURLs []string `gorm:"-" json:"-" temporaljson:"slack_webhook_ur_ls,omitzero,omitempty"`
+}
+
+func (a *NotificationsConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &NotificationsConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *NotificationsConfig) BeforeCreate(tx *gorm.DB) error {

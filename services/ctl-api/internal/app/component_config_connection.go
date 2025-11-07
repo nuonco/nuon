@@ -99,6 +99,12 @@ func (a *ComponentConfigConnection) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 		},
+		{
+			Name: indexes.Name(db, &ComponentConfigConnection{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }
 
