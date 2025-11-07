@@ -49,6 +49,15 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 			Repo: generics.ToPtr(obj.ConnectedRepo.Repo),
 		}
 	}
+
+	if obj.HelmRepo != nil {
+		configRequest.HelmRepoConfig = &models.ServiceHelmRepoConfigRequest{
+			RepoURL: &obj.HelmRepo.RepoURL,
+			Chart:   &obj.HelmRepo.Chart,
+			Version: obj.HelmRepo.Version,
+		}
+	}
+
 	for _, value := range obj.Values {
 		configRequest.Values[value.Name] = value.Value
 	}
