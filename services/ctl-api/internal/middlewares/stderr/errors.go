@@ -22,6 +22,7 @@ func (e ErrAuthorization) Error() string {
 type ErrUser struct {
 	Err         error
 	Description string
+	Code        string
 }
 
 func (u ErrUser) Error() string {

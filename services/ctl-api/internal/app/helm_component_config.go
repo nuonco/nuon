@@ -79,13 +79,20 @@ func (c *HelmComponentConfig) AfterQuery(tx *gorm.DB) error {
 }
 
 type HelmConfig struct {
-	ChartName     string             `json:"chart_name"`
-	Values        map[string]*string `json:"values"`
-	ValuesFiles   []string           `json:"values_files"`
-	Namespace     string             `json:"namespace"`
-	StorageDriver string             `json:"storage_driver"`
+	ChartName      string             `json:"chart_name"`
+	Values         map[string]*string `json:"values"`
+	ValuesFiles    []string           `json:"values_files"`
+	Namespace      string             `json:"namespace"`
+	StorageDriver  string             `json:"storage_driver"`
+	HelmRepoConfig *HelmRepoConfig    `json:"helm_repo_config,omitempty"`
 	// Newer fields that we don't need to store as columns in the database
 	TakeOwnership bool `json:"take_ownership,omitempty"`
+}
+
+type HelmRepoConfig struct {
+	RepoURL string `json:"repo_url"`
+	Chart   string `json:"chart"`
+	Version string `json:"version,omitempty"`
 }
 
 // Scan implements the database/sql.Scanner interface.

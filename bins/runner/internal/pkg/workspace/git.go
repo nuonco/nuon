@@ -29,6 +29,9 @@ func IsCommitHash(s string) bool {
 
 // NOTE(jm): this is only for backward compatibility with the existing Waypoint plan functionality.
 func (w *workspace) isGit() bool {
+	if w.Src == nil {
+		return false
+	}
 	return w.Src.Url != emptyGithubRepoURL
 }
 

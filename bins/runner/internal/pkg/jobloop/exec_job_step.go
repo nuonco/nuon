@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/sourcegraph/conc/panics"
+	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
@@ -42,7 +43,7 @@ func (j *jobLoop) errToStatus(err error) models.AppRunnerJobExecutionStatus {
 	return models.AppRunnerJobExecutionStatusFailed
 }
 
-func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *log.LoggerProvider, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l = l.With(zap.String("runner_job_execution_step.name", step.name))
 	ctx = pkgctx.SetLogger(ctx, l)
 
@@ -89,6 +90,13 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, step *executeJ
 		l.Error("panic in " + step.name)
 		l.Error(recovered.String())
 		l.Error(string(debug.Stack()))
+
+		if flushErr := logProvider.ForceFlush(ctx); flushErr != nil {
+			if !errors.Is(flushErr, context.Canceled) {
+				l.Error("unable to flush logger during panic", zap.Error(flushErr))
+			}
+		}
+
 		panic(recovered)
 	}
 
