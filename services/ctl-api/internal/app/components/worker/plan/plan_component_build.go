@@ -72,7 +72,13 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
-		helmPlan, err := p.createHelmBuildPlan(ctx, build)
+
+		helmCompCfg, err := activities.AwaitGetHelmComponentConfigByComponentConfigConnectionID(ctx, build.ComponentConfigConnectionID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get helm component config")
+		}
+
+		helmPlan, err := p.createHelmBuildPlan(ctx, build, helmCompCfg)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to helm deploy plan")
 		}

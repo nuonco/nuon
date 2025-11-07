@@ -38,6 +38,15 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	l = l.With(zap.String("runner_job.type", string(job.Type)))
 	l = l.With(zap.String("log_stream.id", job.LogStreamID))
 
+	defer func() {
+		if err := jl.ForceFlush(ctx); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+			l.Error("unable to flush logger", zap.Error(err))
+		}
+	}()
+
 	// create an execution in the API
 	l.Info("creating job execution")
 	execution, err := j.apiClient.CreateJobExecution(ctx, job.ID, new(models.ServiceCreateRunnerJobExecutionRequest))
@@ -78,7 +87,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 
 	for _, step := range steps {
 		l.Info("executing job step "+step.name, zap.String("step", step.name))
-		if err := j.execJobStep(ctx, l, step, job, execution); err != nil {
+		if err := j.execJobStep(ctx, l, jl, step, job, execution); err != nil {
 			return errs.WithHandlerError(err, j.jobGroup, step.name, job.Type)
 		}
 	}
@@ -88,9 +97,6 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	}
 
 	l.Info("finished job", zap.String("name", handler.Name()))
-	if err := jl.ForceFlush(ctx); err != nil {
-		return errors.Wrap(err, "unable to flush logger")
-	}
 
 	return nil
 }

@@ -3,10 +3,13 @@ package workspace
 import (
 	"context"
 	"fmt"
+
+	"go.uber.org/zap"
 )
 
 func (w *workspace) Init(ctx context.Context) error {
 	if err := w.initRootDir(); err != nil {
+		w.L.Error("unable to initialize root dir", zap.Error(err))
 		return fmt.Errorf("unable to initialize root dir: %w", err)
 	}
 
