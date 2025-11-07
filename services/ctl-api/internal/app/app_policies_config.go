@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type AppPoliciesConfig struct {
@@ -22,6 +24,17 @@ type AppPoliciesConfig struct {
 	AppConfigID string `json:"app_config_id,omitzero" gorm:"notnull;default null" temporaljson:"app_config_id,omitzero,omitempty"`
 
 	Policies []AppPolicyConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
+}
+
+func (a *AppPoliciesConfig) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &AppPoliciesConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (a *AppPoliciesConfig) BeforeCreate(tx *gorm.DB) error {

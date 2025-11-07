@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type InstallComponentStatus string
@@ -70,6 +72,17 @@ type InstallComponentSummary struct {
 	ComponentConfig         *ComponentConfigConnection `json:"component_config"`
 	Dependencies            []Component                `json:"dependencies"`
 	DriftedStatus           bool                       `json:"drifted_status"`
+}
+
+func (c *InstallComponent) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &InstallComponent{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {

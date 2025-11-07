@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type TerraformWorkspace struct {
@@ -28,6 +30,17 @@ type TerraformWorkspace struct {
 	LockHistory []TerraformWorkspaceLock  `faker:"-" json:"lock_history" swaggerignore:"true" gorm:"foreignKey:WorkspaceID;references:ID;constraint:OnDelete:CASCADE;" temporaljson:"lock_history,omitzero,omitempty"`
 
 	StateJSON []TerraformWorkspaceStateJSON `json:"-" swaggerignore:"true" gorm:"foreignKey:WorkspaceID;references:ID;constraint:OnDelete:CASCADE;" temporaljson:"statesjson,omitzero,omitempty"`
+}
+
+func (r *TerraformWorkspace) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &TerraformWorkspace{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 func (r *TerraformWorkspace) BeforeCreate(tx *gorm.DB) (err error) {

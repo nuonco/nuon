@@ -70,6 +70,12 @@ func (c *AppSandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at DESC",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppSandboxConfig{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
 	}
 }
 
