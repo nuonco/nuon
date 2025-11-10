@@ -35,7 +35,7 @@ type TModals = {
 type TSurfacesContext = {
   panels: TPanels
   modals: TModals
-  addPanel: (content: TPanelEl, panelKey?: string) => string
+  addPanel: (content: TPanelEl, panelKey?: string, panelId?: string) => string
   clearPanels: () => void
   removePanel: (id: string, panelKey?: string) => void
   addModal: (content: TModalEl, modalKey?: string) => string
@@ -57,8 +57,8 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
   }, [pathname])
 
   const addPanel = useCallback(
-    (content: TPanelEl, panelKey?: string): string => {
-      const id = uuid()
+    (content: TPanelEl, panelKey?: string, panelId?: string): string => {
+      const id = panelId || uuid()
       setPanels((ps) => [
         ...ps,
         { id, key: panelKey, content, isVisible: true },
