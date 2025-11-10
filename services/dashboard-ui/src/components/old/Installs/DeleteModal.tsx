@@ -139,32 +139,32 @@ export const DeleteInstallModal = () => {
                     />
                   </label>
                 </div>
-                <div className="flex flex-col items-start">
-                  <Text className="!font-normal max-w-sm" variant="reg-12">
+                {/* <div className="flex flex-col items-start">
+                    <Text className="!font-normal max-w-sm" variant="reg-12">
                     Sometimes resources can be leaked and prevent deprovision.
                     Would you like to attempt to teardown all components and the
                     sandbox, regardless if a previous step fails?
-                  </Text>
-                  <CheckboxInput
+                    </Text>
+                    <CheckboxInput
                     name="ack"
                     defaultChecked={force}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setForceDelete(Boolean(e?.currentTarget?.checked))
+                    setForceDelete(Boolean(e?.currentTarget?.checked))
                     }}
                     labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
                     labelText={'Continue deprovision even if steps fail?'}
-                  />
-                  <CheckboxInput
+                    />
+                    <CheckboxInput
                     name="ack"
                     defaultChecked={planOnly}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setPlanOnly(Boolean(e?.currentTarget?.checked))
+                    setPlanOnly(Boolean(e?.currentTarget?.checked))
                     }}
                     labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
                     labelText={'Plan Only?'}
-                  />
-                </div>
-                <Notice className="max-w-md" variant="warn">
+                    />
+                    </div> */}
+                <Notice variant="warn">
                   Finally, after this has run please manually teardown the
                   CloudFormation stack in the AWS console.
                 </Notice>
