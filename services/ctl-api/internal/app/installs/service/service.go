@@ -17,6 +17,7 @@ import (
 
 	accountshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
+	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 )
 
 type Params struct {
@@ -31,6 +32,7 @@ type Params struct {
 	Helpers          *helpers.Helpers
 	AccountsHelpers  *accountshelpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
+	RunnersHelpers   *runnershelpers.Helpers
 	FeaturesClient   *features.Features
 	EvClient         eventloop.Client
 	EndpointAudit    *api.EndpointAudit
@@ -47,6 +49,7 @@ type service struct {
 	helpers          *helpers.Helpers
 	accountsHelpers  *accountshelpers.Helpers
 	appsHelpers      *appshelpers.Helpers
+	runnersHelpers   *runnershelpers.Helpers
 	featuresClient   *features.Features
 	evClient         eventloop.Client
 }
@@ -157,6 +160,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// install stacks
 		installs.GET("/stack", s.GetInstallStackByInstallID)
 		installs.GET("/stack-runs", s.GetInstallStackRuns)
+		installs.GET("/generate-terraform-installer-config", s.GenerateTerraformInstallerConfig)
 
 		// install config
 		configs := installs.Group("/configs")
@@ -266,6 +270,7 @@ func New(params Params) *service {
 		accountsHelpers:  params.AccountsHelpers,
 		evClient:         params.EvClient,
 		appsHelpers:      params.AppsHelpers,
+		runnersHelpers:   params.RunnersHelpers,
 		featuresClient:   params.FeaturesClient,
 	}
 }
