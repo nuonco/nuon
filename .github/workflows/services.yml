@@ -84,7 +84,8 @@ jobs:
     needs:
       - changes
       - tag
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && needs.changes.outputs.services != '["dashboard-ui"]' }}
+    # Only build base images if there are Go services (not just Node.js services)
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && (contains(needs.changes.outputs.services, 'ctl-api') || contains(needs.changes.outputs.services, 'runner') || contains(needs.changes.outputs.services, 'cli') || contains(needs.changes.outputs.services, 'nuonctl') || contains(needs.changes.outputs.services, 'workers-')) }}
     strategy:
       fail-fast: false
     # nb: given that we've a common base for all Go services, we can do it for just ctl-api
@@ -96,19 +97,23 @@ jobs:
     secrets: inherit
 
   go_services:
-    name: 🚢 
+    name: 🚢
     needs:
       - changes
       - check_labels
       - tag
       - build_base_images
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && needs.changes.outputs.services != '["dashboard-ui"]' }}
+    # Only run if there are Go services AND base images succeeded or were skipped
+    if: ${{ (always() && needs.build_base_images.result != 'failure') && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && (contains(needs.changes.outputs.services, 'ctl-api') || contains(needs.changes.outputs.services, 'runner') || contains(needs.changes.outputs.services, 'cli') || contains(needs.changes.outputs.services, 'nuonctl') || contains(needs.changes.outputs.services, 'workers-')) }}
     strategy:
       fail-fast: false
       matrix:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
         exclude:
           - service: dashboard-ui
+          - service: website
+          - service: wiki
+          - service: docs
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
@@ -132,12 +137,60 @@ jobs:
       tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit
 
+  website_service:
+    name: 🚢 Website
+    needs:
+      - changes
+      - check_labels
+      - tag
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && contains(needs.changes.outputs.services, 'website') }}
+    uses: ./.github/workflows/service.yml
+    with:
+      service: website
+      prod: false
+      stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
+      tag: ${{ needs.tag.outputs.git_ref }}
+    secrets: inherit
+
+  wiki_service:
+    name: 🚢 Wiki
+    needs:
+      - changes
+      - check_labels
+      - tag
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && contains(needs.changes.outputs.services, 'wiki') }}
+    uses: ./.github/workflows/service.yml
+    with:
+      service: wiki
+      prod: false
+      stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
+      tag: ${{ needs.tag.outputs.git_ref }}
+    secrets: inherit
+
+  docs_service:
+    name: 🚢 Docs
+    needs:
+      - changes
+      - check_labels
+      - tag
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && contains(needs.changes.outputs.services, 'docs') }}
+    uses: ./.github/workflows/service.yml
+    with:
+      service: docs
+      prod: false
+      stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
+      tag: ${{ needs.tag.outputs.git_ref }}
+    secrets: inherit
+
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
     needs:
       - go_services
       - dashboard_ui_service
+      - website_service
+      - wiki_service
+      - docs_service
     runs-on: ubuntu-latest
     steps:
       - uses: martialonline/workflow-status@v4.2
