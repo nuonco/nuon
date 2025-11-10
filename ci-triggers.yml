@@ -32,6 +32,12 @@ services: |
     - services/wiki/**
     - wiki/**
 
+  website:
+    - services/website/**
+
+  docs:
+    - docs/**
+
 disabled_services: |
   dashboard-ui:
     - services/dashboard-ui/**
