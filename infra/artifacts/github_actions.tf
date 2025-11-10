@@ -87,6 +87,8 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
       module.nuonctl.repository_arn,
       module.sandbox_aws_eks.repository_arn,
       module.sandbox_empty.repository_arn,
+      module.docs.repository_arn,
+      module.website.repository_arn,
     ]
   }
 }
