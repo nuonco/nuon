@@ -11,6 +11,12 @@ type HelmValue struct {
 	Value string `toml:"value" mapstructure:"value,omitempty"`
 }
 
+func (h HelmValue) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("name").Short("helm value name").
+		Field("value").Short("helm value")
+}
+
 type HelmValuesFile struct {
 	Source   string `toml:"source" mapstructure:"source,omitempty" features:"get,template"`
 	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
@@ -18,8 +24,10 @@ type HelmValuesFile struct {
 }
 
 func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
-	markDeprecated(schema, "source", "use 'path' instead")
-	addDescription(schema, "path", "Path to the values file. Supports loading files via https://github.com/hashicorp/go-getter.")
+	NewSchemaBuilder(schema).
+		Field("source").Deprecated("use 'path' instead").OneOfRequired("source").
+		Field("path").Short("Path to the values file.").OneOfRequired("path").
+		Field("contents").Short("Contents of the values file.").OneOfRequired("contents")
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
@@ -44,6 +52,25 @@ type HelmChartComponentConfig struct {
 	Values []HelmValue `mapstructure:"value,omitempty"`
 }
 
+func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("source").Short("source path or URL").
+		Long("Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.yaml, git::https://github.com/org/repo//config.yaml, file:///path/to/config.yaml, ./local/config.yaml").
+		Field("type").Short("component type").
+		Field("name").Short("release name").
+		Field("var_name").Short("variable name for component output").
+		Long("Optional name to use when storing component outputs as variables. If not specified, uses the component name").
+		Field("dependencies").Short("additional component dependencies").
+		Field("storage_driver").Short("which helm storage driver to use (defaults to secrets)").
+		Field("namespace").Short("namespace to deploy into. Defaults to {{.nuon.install.id}} and supports templating.").
+		Field("chart_name").Short("chart name").Required().
+		Field("value").Short("array of helm values (not recommended)").
+		Field("values").Short("map of helm values").
+		Field("public_repo").Short("public repo with the helm chart").OneOfRequired("public_repo").
+		Field("connected_repo").Short("connected repo with the helm chart").OneOfRequired("connected_repo").
+		Field("helm_repo").Short("helm repo config").OneOfRequired("helm_repo")
+}
+
 type HelmRepoConfig struct {
 	RepoURL string `mapstructure:"repo_url" jsonschema:"required"`
 	Chart   string `mapstructure:"chart" jsonschema:"required"`
@@ -51,21 +78,10 @@ type HelmRepoConfig struct {
 }
 
 func (h HelmRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "repo_url", "URL of the helm chart repository")
-	addDescription(schema, "chart", "name of the chart in the repository")
-	addDescription(schema, "version", "version of the chart to use")
-}
-
-func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "name", "release name")
-	addDescription(schema, "storage_driver", "which helm storage driver to use (defaults to secrets)")
-	addDescription(schema, "namespace", "namespace to deploy into. Defaults to {{.nuon.install.id}} and supports templating.")
-	addDescription(schema, "dependencies", "additional component dependencies")
-	addDescription(schema, "chart_name", "chart name")
-	addDescription(schema, "value", "array of helm values (not recommended)")
-	addDescription(schema, "values", "map of helm values")
-	addDescription(schema, "public_repo", "public repo with the helm chart")
-	addDescription(schema, "connected_repo", "connected repo with the helm chart")
+	NewSchemaBuilder(schema).
+		Field("repo_url").Short("URL of the helm chart repository").Example("https://prometheus-community.github.io/helm-charts").Required().
+		Field("chart").Short("name of the chart in the repository").Example("kube-prometheus-stack").Required().
+		Field("version").Short("version of the chart to use").Example("79.4.1")
 }
 
 func (h *HelmChartComponentConfig) Parse() error {
