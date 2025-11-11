@@ -21,7 +21,7 @@ resource "tfe_workspace" "workspace" {
     for_each = var.repo == "" ? [] : [1]
     content {
       identifier     = var.repo
-      branch         = "main"
+      branch         = var.vcs_branch
       oauth_token_id = data.tfe_oauth_client.github.oauth_token_id
     }
   }

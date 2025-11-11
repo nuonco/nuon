@@ -1,6 +1,7 @@
 locals {
-  name        = "artifacts"
-  bucket_name = "nuon-artifacts"
+  name                   = "artifacts"
+  bucket_name            = "nuon-artifacts"
+  terraform_organization = "nuonco"
 
   github = {
     organization = "powertoolsdev"

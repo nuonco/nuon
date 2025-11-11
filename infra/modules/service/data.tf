@@ -17,3 +17,8 @@ data "tfe_outputs" "infra-eks-nuon" {
   organization = local.terraform_organization
   workspace    = "infra-eks-${var.env}-nuon"
 }
+
+data "tfe_outputs" "infra-nuonctl" {
+  organization = local.terraform_organization
+  workspace    = "infra-nuonctl"
+}

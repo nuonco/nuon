@@ -15,6 +15,22 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
     resources = ["${module.bucket.s3_bucket_arn}/*", ]
   }
 
+  // allow pushing to build manifests bucket
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+    ]
+    resources = [data.tfe_outputs.infra-nuonctl.values.bucket_arn, ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:*Object",
+    ]
+    resources = ["${data.tfe_outputs.infra-nuonctl.values.bucket_arn}/*", ]
+  }
+
   // grant permissions to auth with
   statement {
     effect = "Allow"
@@ -102,12 +118,12 @@ resource "aws_iam_policy" "github_actions_policy" {
 data "aws_iam_policy_document" "github_actions_assume_role_policy" {
   # Preserve the original OIDC trust policy
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "sts:AssumeRoleWithWebIdentity",
       "sts:TagSession"
     ]
-    
+
     principals {
       type        = "Federated"
       identifiers = ["arn:aws:iam::${local.accounts[local.aws_settings.account_name]}:oidc-provider/token.actions.githubusercontent.com"]
@@ -153,9 +169,9 @@ resource "aws_iam_role" "github_actions" {
 module "github_actions" {
   source      = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
   version     = "5.59.0"
-  create_role = false  # Don't create the role, we already have it
+  create_role = false # Don't create the role, we already have it
 
-  role_name = aws_iam_role.github_actions.name  # Reference our custom role
+  role_name = aws_iam_role.github_actions.name # Reference our custom role
 
   provider_url                   = "token.actions.githubusercontent.com"
   oidc_subjects_with_wildcards   = ["repo:${local.github.organization}/${local.github.repo}:*"]

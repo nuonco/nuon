@@ -20,34 +20,34 @@ output "artifacts" {
   value = {
     // e2e
     "e2e" = {
-      bucket_prefix   = "e2e"
-      ecr             = module.e2e.all
+      bucket_prefix = "e2e"
+      ecr           = module.e2e.all
     }
 
     // binaries
     "cli" = {
-      bucket_prefix   = "cli"
-      ecr             = module.cli.all
+      bucket_prefix = "cli"
+      ecr           = module.cli.all
     }
 
     "nuonctl" = {
-      bucket_prefix  = "nuonctl"
-      ecr            = module.nuonctl.all
+      bucket_prefix = "nuonctl"
+      ecr           = module.nuonctl.all
     }
 
     "runner" = {
-      bucket_prefix   = "runner"
-      ecr             = module.runner.all
+      bucket_prefix = "runner"
+      ecr           = module.runner.all
     }
 
     "website" = {
-      bucket_prefix   = "website"
-      ecr             = module.website.all
+      bucket_prefix = "website"
+      ecr           = module.website.all
     }
 
     "docs" = {
-      bucket_prefix   = "docs"
-      ecr             = module.docs.all
+      bucket_prefix = "docs"
+      ecr           = module.docs.all
     }
   }
 }

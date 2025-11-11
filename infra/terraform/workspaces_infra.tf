@@ -20,6 +20,21 @@ module "infra-artifacts" {
 
 }
 
+module "infra-nuonctl" {
+  source = "./modules/workspace"
+
+  name          = "infra-nuonctl"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/nuonctl"
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
+
+}
+
 module "aws" {
   source = "./modules/workspace"
 

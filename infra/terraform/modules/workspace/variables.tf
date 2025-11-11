@@ -78,3 +78,9 @@ variable "trigger_prefixes" {
   description = "additional prefixes that will trigger runs"
   default     = []
 }
+
+variable "vcs_branch" {
+  type        = string
+  description = "VCS branch to track for this workspace"
+  default     = "main"
+}
