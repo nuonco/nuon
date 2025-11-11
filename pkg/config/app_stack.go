@@ -14,11 +14,23 @@ type StackConfig struct {
 }
 
 func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "type", "Stack type (must be aws-cloudformation).")
-	addDescription(schema, "name", "Name of the stack when installed in the customer account. Supports templating.")
-	addDescription(schema, "description", "Description of the stack.")
-	addDescription(schema, "vpc_nested_template_url", "Nested template used for VPC.")
-	addDescription(schema, "runner_nested_template_url", "Nested template used for runner.")
+	NewSchemaBuilder(schema).
+		Field("type").Short("stack type").
+		Long("Type of infrastructure stack. Currently only 'aws-cloudformation' is supported").
+		Example("aws-cloudformation").
+		Field("name").Short("stack name").Required().
+		Long("Name of the CloudFormation stack when deployed in the customer account. Supports Go templating").
+		Example("myapp-{{.nuon.install.id}}").
+		Example("production-stack").
+		Field("description").Short("stack description").Required().
+		Long("Description of the stack, displayed in the CloudFormation console. Supports templating").
+		Example("Infrastructure stack for MyApp application").
+		Field("vpc_nested_template_url").Short("VPC nested template URL").
+		Long("URL to the CloudFormation nested template for VPC resources").
+		Example("https://s3.amazonaws.com/bucket/vpc-template.yaml").
+		Field("runner_nested_template_url").Short("runner nested template URL").
+		Long("URL to the CloudFormation nested template for the Nuon runner infrastructure").
+		Example("https://s3.amazonaws.com/bucket/runner-template.yaml")
 }
 
 func (a *StackConfig) parse() error {

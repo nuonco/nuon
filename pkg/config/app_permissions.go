@@ -33,9 +33,15 @@ type PermissionsConfig struct {
 }
 
 func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "provision_role", "Role used during initial provisioning of the install.")
-	addDescription(schema, "maintenance_role", "Role used for day to day maintenance and updates.")
-	addDescription(schema, "deprovision_role", "Role used for tearing down the install.")
+	NewSchemaBuilder(schema).
+		Field("provision_role").Short("provisioning IAM role").
+		Long("IAM role used during initial provisioning of the install with permissions to set up resources").
+		Field("deprovision_role").Short("deprovisioning IAM role").
+		Long("IAM role used for tearing down the install and cleaning up resources").
+		Field("maintenance_role").Short("maintenance IAM role").
+		Long("IAM role used for day-to-day maintenance, updates, and operational tasks").
+		Field("roles").Short("list of permission roles").
+		Long("Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, or deprovision)")
 }
 
 func (a *PermissionsConfig) parse() error {
