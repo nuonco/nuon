@@ -139,12 +139,17 @@ export function usePolling<T = any>({
     // fetch wrapper that supports timeout via AbortController
     const fetchWithTimeout = async (input: RequestInfo, init?: RequestInit) => {
       const controller = new AbortController()
-      const timeoutId = window.setTimeout(() => controller.abort(), requestTimeout)
+      const timeoutId = window.setTimeout(
+        () => controller.abort(),
+        requestTimeout
+      )
       inFlightRef.current = controller
-      return fetch(input, { ...init, signal: controller.signal }).finally(() => {
-        clearTimeout(timeoutId)
-        inFlightRef.current = null
-      })
+      return fetch(input, { ...init, signal: controller.signal }).finally(
+        () => {
+          clearTimeout(timeoutId)
+          inFlightRef.current = null
+        }
+      )
     }
 
     const poll = async () => {
@@ -166,7 +171,7 @@ export function usePolling<T = any>({
         })) as TAPIResponse<T>
 
         if (!mountedRef.current) return
-        
+
         // success
         setIsLoading(false)
         setStatus(res?.status || response.status || 200)
@@ -238,7 +243,20 @@ export function usePolling<T = any>({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, shouldPoll, pollInterval, requestTimeout, backoff?.enabled, backoff?.initialDelay, backoff?.maxDelay, backoff?.multiplier, backoff?.jitter, backoff?.maxRetries, backoff?.resetOnSuccess, ...dependencies])
+  }, [
+    path,
+    shouldPoll,
+    pollInterval,
+    requestTimeout,
+    backoff?.enabled,
+    backoff?.initialDelay,
+    backoff?.maxDelay,
+    backoff?.multiplier,
+    backoff?.jitter,
+    backoff?.maxRetries,
+    backoff?.resetOnSuccess,
+    ...dependencies,
+  ])
 
   useEffect(() => {
     setData(initData)
@@ -249,7 +267,7 @@ export function usePolling<T = any>({
     currentDelayRef.current = backoff?.initialDelay ?? 1000
     retryCountRef.current = 0
   }, [initData, backoff?.initialDelay])
-  
+
   return {
     data,
     error,

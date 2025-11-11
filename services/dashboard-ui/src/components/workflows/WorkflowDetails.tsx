@@ -50,6 +50,9 @@ export const WorkflowDetails = ({
   })
   const workflowSteps =
     workflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
+  const hasApprovals = workflowSteps?.some(
+    (step) => step?.execution_type === 'approval'
+  )
 
   return (
     <>
@@ -71,9 +74,10 @@ export const WorkflowDetails = ({
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
-            {workflow?.approval_option === 'prompt' && !workflow?.finished && !workflow?.plan_only && (
-              <ApproveAllButton workflow={workflow} />
-            )}
+            {workflow?.approval_option === 'prompt' &&
+              !workflow?.finished &&
+              !workflow?.plan_only &&
+              hasApprovals && <ApproveAllButton workflow={workflow} />}
             {!workflow?.finished && (
               <CancelWorkflowButton workflow={workflow} />
             )}
