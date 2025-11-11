@@ -246,3 +246,5 @@ export type TNuonVersion = {
     version: string
   }
 }
+
+export type TAPIHealth = { status: 'ok' | 'degraded'; degraded: string[] }

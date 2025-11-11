@@ -7,6 +7,7 @@ import {
   VERSION,
 } from '@/configs/app'
 import { getAPIVersion, getOrgById, getOrgs } from '@/lib'
+import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
 import { OrgProvider } from '@/providers/org-provider'
 import { SidebarProvider } from '@/providers/sidebar-provider'
@@ -41,46 +42,48 @@ export default async function OrgLayout({
   }
 
   return (
-    <AutoRefreshProvider
-      refreshIntervalMs={REFRESH_PAGE_INTERVAL as number}
-      showWarning={REFRESH_PAGE_WARNING as boolean}
-      warningTimeMs={30 * 1000} // 30 second warning
-    >
-      <OrgProvider initOrg={org} shouldPoll>
-        {org?.features?.['stratus-layout'] ? (
-          <SidebarProvider initIsSidebarOpen={isSidebarOpen}>
-            <ToastProvider>
-              <SurfacesProvider>
-                <MainLayout
-                  versions={{
-                    api: apiVersion,
-                    ui: {
-                      version: VERSION,
-                    },
-                  }}
-                >
-                  {children}
-                </MainLayout>
-              </SurfacesProvider>
-            </ToastProvider>
-          </SidebarProvider>
-        ) : (
-          <OldLayout
-            isSidebarOpen={isSidebarOpen}
-            orgs={orgs}
-            versions={
-              {
-                api: apiVersion,
-                ui: {
-                  version: VERSION,
-                },
-              } as any
-            }
-          >
-            {children}
-          </OldLayout>
-        )}
-      </OrgProvider>
-    </AutoRefreshProvider>
+    <APIHealthProvider shouldPoll>
+      <AutoRefreshProvider
+        refreshIntervalMs={REFRESH_PAGE_INTERVAL as number}
+        showWarning={REFRESH_PAGE_WARNING as boolean}
+        warningTimeMs={30 * 1000} // 30 second warning
+      >
+        <OrgProvider initOrg={org} shouldPoll>
+          {org?.features?.['stratus-layout'] ? (
+            <SidebarProvider initIsSidebarOpen={isSidebarOpen}>
+              <ToastProvider>
+                <SurfacesProvider>
+                  <MainLayout
+                    versions={{
+                      api: apiVersion,
+                      ui: {
+                        version: VERSION,
+                      },
+                    }}
+                  >
+                    {children}
+                  </MainLayout>
+                </SurfacesProvider>
+              </ToastProvider>
+            </SidebarProvider>
+          ) : (
+            <OldLayout
+              isSidebarOpen={isSidebarOpen}
+              orgs={orgs}
+              versions={
+                {
+                  api: apiVersion,
+                  ui: {
+                    version: VERSION,
+                  },
+                } as any
+              }
+            >
+              {children}
+            </OldLayout>
+          )}
+        </OrgProvider>
+      </AutoRefreshProvider>
+    </APIHealthProvider>
   )
 }
