@@ -1,17 +1,12 @@
 data "aws_iam_policy_document" "bucket_policy" {
-  # Allow all GitHub Actions roles from all org accounts to access manifest bucket
-  # Covers both naming patterns: gha-* and github-actions-role-*
+  # Allow all organization accounts to access manifest bucket
+  # Individual accounts control which roles can access via IAM policies
   statement {
-    sid    = "AllowGitHubActionsRoles"
+    sid    = "AllowOrgAccountsAccess"
     effect = "Allow"
     principals {
-      type = "AWS"
-      identifiers = flatten([
-        for account_name, account_id in local.accounts : [
-          "arn:aws:iam::${account_id}:role/github/actions/gha-*",
-          "arn:aws:iam::${account_id}:role/github-actions-role-*"
-        ]
-      ])
+      type        = "AWS"
+      identifiers = [for account_name, account_id in local.accounts : "arn:aws:iam::${account_id}:root"]
     }
     actions = [
       "s3:ListBucket",
