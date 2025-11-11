@@ -13,9 +13,7 @@ import type { TInstallDeploy, TOTELLog, TWorkflowStep } from '@/types'
 
 export const DeployApply = ({
   initDeploy: deploy,
-  step,
 }: {
-  step: TWorkflowStep
   initDeploy: TInstallDeploy
 }) => {
   const { org } = useOrg()
