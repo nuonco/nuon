@@ -5,12 +5,16 @@ import (
 
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 
+	"github.com/pkg/errors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
@@ -34,6 +38,11 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req eventloop.Event
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
 		StartupHook: func(ctx workflow.Context, elr eventloop.EventLoopRequest) error {
+			l, err := log.WorkflowLogger(ctx)
+			if err != nil {
+				return err
+			}
+
 			installComponent, err := activities.AwaitGetInstallComponentByID(ctx, elr.ID)
 			if err != nil {
 				return fmt.Errorf("unable to get component build: %w", err)
@@ -51,7 +60,12 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req eventloop.Event
 			// component config connection id -> component build
 			componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, installComponent.ComponentID)
 			if err != nil {
-				return fmt.Errorf("unable to get component build: %w", err)
+				isNotFound := errors.Is(err, gorm.ErrRecordNotFound)
+				l.Error("startup-hook-error", zap.Bool("is_not_found", isNotFound), zap.Error(err))
+
+				// TODO(jm): we always return nil, in the case that a GormRecordNotFound was not emitted
+				// or found in the error stack.
+				return nil
 			}
 
 			var driftSchedule string
@@ -133,7 +147,8 @@ func (w *Workflows) DriftCheck(ctx workflow.Context, req *DriftRequest) error {
 
 	err = activities.AwaitUpdateInstallDeployWithWorkflow(ctx, activities.UpdateInstallDeployWithWorkflowRequest{
 		InstallDeployID: deploy.ID,
-		WorkflowID:      wkflw.ID})
+		WorkflowID:      wkflw.ID,
+	})
 	if err != nil {
 		return fmt.Errorf("unable to update install deploy with workflow: %w", err)
 	}
