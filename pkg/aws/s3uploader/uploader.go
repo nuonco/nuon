@@ -3,6 +3,7 @@ package s3uploader
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -21,8 +22,8 @@ import (
 
 // uploader is the interface for uploading data into output runs directory
 type Uploader interface {
-	// uploadFile writes the data in the file into the output s3 blob
-	UploadFile(context.Context, string, string) error
+	// uploadFile writes the data in the file into the output s3 blob and returns SHA256 checksum
+	UploadFile(context.Context, string, string) (string, error)
 
 	// uploadBlob writes the data in the byte slice into the output s3 blob
 	UploadBlob(context.Context, []byte, string) error
@@ -122,10 +123,10 @@ func (s *s3Uploader) loadAWSConfig(ctx context.Context) (aws.Config, error) {
 	return cfg, nil
 }
 
-func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) error {
+func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) (string, error) {
 	cfg, err := s.loadAWSConfig(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to load aws config: %w", err)
+		return "", fmt.Errorf("unable to load aws config: %w", err)
 	}
 
 	client := s3.NewFromConfig(cfg)
@@ -133,11 +134,21 @@ func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) e
 
 	f, err := os.Open(srcFp)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer f.Close()
 
-	return s.upload(ctx, uploader, f, outputName)
+	// Calculate SHA256 checksum as we read the file
+	hash := sha256.New()
+	teeReader := io.TeeReader(f, hash)
+
+	if err := s.upload(ctx, uploader, teeReader, outputName); err != nil {
+		return "", err
+	}
+
+	// Return checksum in sha256: format
+	checksum := fmt.Sprintf("sha256:%x", hash.Sum(nil))
+	return checksum, nil
 }
 
 func (s *s3Uploader) UploadBlob(ctx context.Context, byts []byte, outputName string) error {
