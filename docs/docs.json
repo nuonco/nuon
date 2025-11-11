@@ -46,6 +46,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/025-temporal-stability",
           "updates/024-install-inputs-ui-redesign",
           "updates/023-drift-workflow-improvements",
           "updates/022-nuon-cli-github-actions",
