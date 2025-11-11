@@ -1,0 +1,20 @@
+---
+title: 025 - Temporal Workflow Stability Improvements
+description: Fix issues with component workflows retrying.
+---
+
+_Nov 10, 2024_
+
+<div className="badge badge--primary">v0.19.690</div>
+
+## Temporal Workflow Stability Improvements
+
+Fixed an issue where temporal workflows were being continuously retried when an install was created
+and not deployed. This was resulting in extra memory pressure on the temporal workers and postgres
+instance.
+
+
+## Bug Fixes
+
+* Fixed a null pointer issue with missing input values.
+* Fixed validation responses now returning 400 level responses instead of 500s.

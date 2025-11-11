@@ -30,6 +30,7 @@ func (a *Activities) GetComponentLatestBuild(ctx context.Context, req GetCompone
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return nil, generics.TemporalGormError(gorm.ErrRecordNotFound, "component build not found")
 		}
+
 		return nil, fmt.Errorf("unable to load component build: %w", res.Error)
 	}
 
