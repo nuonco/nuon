@@ -7,7 +7,8 @@ approval_option = "approve-all"
   region = "us-east-1"
 
 [[inputs]]
-  license_key = "abc123"
+  license_key = "this will not sync" # sensitive inputs are skipped
   number_type = "12"
   json_type = '{"key": "value"}'
   bool_type = "true"
+  required_type = "custom_value"

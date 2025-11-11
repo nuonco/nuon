@@ -66,7 +66,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 
 		inputDefaults := make(map[string]string)
 		for _, ic := range appInputCfg.Inputs {
-			if ic.Default != "" {
+			if ic.Required == false && ic.Default != "" {
 				inputDefaults[ic.Name] = ic.Default
 			}
 		}
@@ -134,6 +134,20 @@ func (s *appInstallSyncer) syncExistingInstall(
 	currInputs, err := s.api.GetInstallCurrentInputs(ctx, appInstall.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting current inputs for install %s: %w", appInstall.Name, err)
+	}
+
+	inputCfg, err := s.api.GetAppInputConfig(ctx, appInstall.AppID, currInputs.AppInputConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting current input config: %w", err)
+	}
+
+	definedInputs := installCfg.FlattenedInputs()
+	for _, ic := range inputCfg.Inputs {
+		if ic.Required {
+			if _, ok := definedInputs[ic.Name]; !ok {
+				return nil, fmt.Errorf("missing required input %s", ic.Name)
+			}
+		}
 	}
 
 	upstreamRawConfig, err := s.api.GenerateCLIInstallConfig(ctx, appInstall.ID)

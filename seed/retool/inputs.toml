@@ -66,6 +66,15 @@ internal = true
 type = "string"
 
 [[input]]
+name = "required_type"
+description  = "Required value with default"
+default      = "default"
+display_name = "Required Type"
+group        = "types"
+type = "string"
+required = true
+
+[[input]]
 name = "number_type"
 description  = "Number value"
 default      = "0"
