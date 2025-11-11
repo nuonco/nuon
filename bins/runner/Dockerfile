@@ -224,32 +224,24 @@ COPY --from=build-linux-arm64 /out/ /
 COPY --from=build-linux-386 /out/ /
 COPY --from=build-linux-amd64 /out/ /
 
-FROM amazon/aws-cli:latest AS artifacts
+# Compress, checksum, and prepare artifacts for upload
+# Go code will handle the S3 upload part
+FROM alpine:latest AS artifacts
 
-ARG S3_BUCKET_NAME=nuon-artifacts/runner
-ARG VERSION
-ARG SERVICE=runner
 ARG BIN_NAME=runner
+
+# Install p7zip and parallel for compression
+RUN apk add --no-cache p7zip parallel
 
 COPY --from=artifacts-build / /artifacts/
 COPY install.sh /artifacts/install.sh
 
+# Create 7z compressed versions of all binaries in parallel
+RUN cd /artifacts && \
+    ls -1 ${BIN_NAME}_* | \
+    parallel -j0 --halt soon,fail=1 --ungroup \
+      'echo "Compressing {} with 7z..." && \
+       7z a -t7z -mx=9 "{}.7z" {}'
+
+# Generate checksums for both original and compressed files
 RUN cd /artifacts && sha256sum * > checksums.txt
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Verifying AWS credentials" && \
-    aws sts get-caller-identity
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    for file in $(ls /artifacts/ | grep -v "checksums.txt"); do \
-      echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/$file" && \
-      aws s3 cp "/artifacts/$file" "s3://$S3_BUCKET_NAME/$VERSION/$file"; \
-    done
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Uploading checksums to s3://$S3_BUCKET_NAME/$VERSION/checksums.txt" && \
-    aws s3 cp /artifacts/checksums.txt "s3://$S3_BUCKET_NAME/$VERSION/checksums.txt"
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Uploading install.sh to root s3://$S3_BUCKET_NAME/install.sh" && \
-    aws s3 cp /artifacts/install.sh "s3://$S3_BUCKET_NAME/install.sh"
