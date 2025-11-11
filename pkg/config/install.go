@@ -29,7 +29,16 @@ func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 }
 
 type AWSAccount struct {
-	Region string `mapstructure:"region,omitempty"`
+	Region string `mapstructure:"region,omitempty" jsonschema:"required"`
+}
+
+func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("region").Short("AWS region").
+		Long("AWS region where the infrastructure will be deployed").
+		Example("us-east-1").
+		Example("us-west-2").
+		Example("eu-west-1")
 }
 
 type InputGroup map[string]string
@@ -43,10 +52,17 @@ type Install struct {
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "name", "name of the install")
-	addDescription(schema, "approval_option", "approval option for the install, can be 'approve_all' or 'prompt'")
-	addDescription(schema, "aws_account", "AWS account related configuration")
-	addDescription(schema, "inputs", "list of inputs")
+	NewSchemaBuilder(schema).
+		Field("name").Short("name of the install").Required().
+		Long("Unique identifier for this install configuration").
+		Field("approval_option").Short("approval option for the install").
+		Long("Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation)").
+		Example("approve-all").
+		Example("prompt").
+		Field("aws_account").Short("AWS account configuration").
+		Long("AWS-specific settings for this install, including region and other account details").
+		Field("inputs").Short("input values").
+		Long("Array of input groups with key-value pairs for customer inputs provided during installation")
 }
 
 func (i *Install) Parse() error {
