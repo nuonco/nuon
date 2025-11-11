@@ -125,78 +125,41 @@ COPY --from=build-linux-arm64 /out/ /
 COPY --from=build-linux-386 /out/ /
 COPY --from=build-linux-amd64 /out/ /
 
-FROM amazon/aws-cli:latest AS artifacts
+# Compress, checksum, and prepare artifacts for upload
+# Go code will handle the S3 upload part
+FROM alpine:latest AS artifacts
 
-ARG S3_BUCKET_NAME=nuon-artifacts/cli
-ARG VERSION
-ARG SERVICE=cli
 ARG BIN_NAME=nuon
 
-# Install p7zip for compression
-RUN yum install -y p7zip p7zip-plugins && yum clean all
+# Install p7zip and parallel for compression
+RUN apk add --no-cache p7zip parallel
 
 COPY --from=artifacts-build / /artifacts/
 COPY install.sh /artifacts/install.sh
 
-# Create 7z compressed versions of all binaries (skip install.sh)
+# Create 7z compressed versions of all binaries in parallel
 RUN cd /artifacts && \
-    for file in ${BIN_NAME}_*; do \
-      echo "Compressing $file with 7z..." && \
-      7za a -t7z -mx=9 "${file}.7z" "$file"; \
-    done
+    ls -1 ${BIN_NAME}_* | \
+    parallel -j0 --halt soon,fail=1 --ungroup \
+      'echo "Compressing {} with 7z..." && \
+       7z a -t7z -mx=9 "{}.7z" {}'
 
 # Generate checksums for both original and compressed files
 RUN cd /artifacts && sha256sum * > checksums.txt
 
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Verifying AWS credentials" && \
-    aws sts get-caller-identity
-
-# Upload both original binaries and .7z compressed versions
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    for file in $(ls /artifacts/ | grep -v "checksums.txt"); do \
-    echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/$file" && \
-    aws s3 cp "/artifacts/$file" "s3://$S3_BUCKET_NAME/$VERSION/$file"; \
-    done
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Uploading checksums to s3://$S3_BUCKET_NAME/$VERSION/checksums.txt" && \
-    aws s3 cp /artifacts/checksums.txt "s3://$S3_BUCKET_NAME/$VERSION/checksums.txt"
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Uploading install.sh to root s3://$S3_BUCKET_NAME/install.sh" && \
-    aws s3 cp /artifacts/install.sh "s3://$S3_BUCKET_NAME/install.sh"
-
-FROM amazon/aws-cli:latest AS export-linux-amd64
-
-ARG S3_BUCKET_NAME=nuon-artifacts/cli
-ARG VERSION
+# Export single binary for quick builds (no multi-platform)
+FROM alpine:latest AS export-linux-amd64
 ARG BIN_NAME=nuon
 
 # Install p7zip for compression
-RUN yum install -y p7zip p7zip-plugins && yum clean all
+RUN apk add --no-cache p7zip
 
 COPY --from=build-linux-amd64 /out/${BIN_NAME}_linux_amd64 /artifacts/${BIN_NAME}_linux_amd64
 
 # Create 7z compressed version
 RUN cd /artifacts && \
     echo "Compressing ${BIN_NAME}_linux_amd64 with 7z..." && \
-    7za a -t7z -mx=9 "${BIN_NAME}_linux_amd64.7z" "${BIN_NAME}_linux_amd64"
+    7z a -t7z -mx=9 "${BIN_NAME}_linux_amd64.7z" "${BIN_NAME}_linux_amd64"
 
 # Generate checksums for both original and compressed files
 RUN sha256sum /artifacts/* > /artifacts/checksums.txt
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Verifying AWS credentials" && \
-    aws sts get-caller-identity
-
-# Upload both original and compressed binary
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64" && \
-    aws s3 cp /artifacts/${BIN_NAME}_linux_amd64 "s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64" && \
-    echo "Uploading to s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64.7z" && \
-    aws s3 cp /artifacts/${BIN_NAME}_linux_amd64.7z "s3://$S3_BUCKET_NAME/$VERSION/${BIN_NAME}_linux_amd64.7z"
-
-RUN --mount=type=secret,id=aws_config,target=/root/.aws/config \
-    echo "Uploading checksums to s3://$S3_BUCKET_NAME/$VERSION/checksums.txt" && \
-    aws s3 cp /artifacts/checksums.txt "s3://$S3_BUCKET_NAME/$VERSION/checksums.txt"
