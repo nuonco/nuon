@@ -9,7 +9,9 @@ type PoliciesConfig struct {
 }
 
 func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "policy", "List of policies to enforce.")
+	NewSchemaBuilder(schema).
+		Field("policy").Short("list of policies").
+		Long("Array of policy definitions that enforce compliance and security rules across your infrastructure")
 }
 
 func (a *PoliciesConfig) parse() error {
@@ -31,10 +33,25 @@ type AppPolicy struct {
 }
 
 func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "type", "Policy type which controls how it is enforced.")
-	addDescription(schema, "contents", "The policy contents. Supports any reference via https://github.com/hashicorp/go-getter.")
+	NewSchemaBuilder(schema).
+		Field("type").Short("policy type").
+		Long("Type of policy that determines where and how it is enforced").
+		Example("kubernetes_cluster").
+		Example("runner_job_terraform_deploy").
+		Example("runner_job_helm_deploy").
+		Example("runner_job_action_workflow").
+		Field("contents").Short("policy document").
+		Long("Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https://github.com/org/repo//policy.json), file paths (file:///path/to/policy.json), and relative paths (./policy.json)")
 }
 
-func (a *AppPolicy) parse() error {
-	return nil
+type AppPolicyList struct {
+	Policy []AppPolicy `mapstructure:"policy"`
+}
+
+func (a AppPolicyList) JSONSchemaExtend(s *jsonschema.Schema) {
+	NewSchemaBuilder(s).
+		Field("policy").
+		Short("list of policy documents").
+		Long("One or more AppPolicy objects").
+		MinItems(1)
 }
