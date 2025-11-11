@@ -1,0 +1,30 @@
+---
+title: 026 - Helm Repository Support
+description: Deploy charts directly from public Helm repositories.
+---
+
+_Nov 12, 2024_
+
+<div className="badge badge--primary">v0.19.691</div>
+
+## Helm Repository Support
+
+Helm Components now support deploying charts directly from public Helm repositories via the `helm_repo` block. This allows you to use any chart available on public repositories like the Prometheus Community charts without needing to maintain your own Git repository.
+
+To use a public Helm chart, specify the repository URL and chart name:
+
+```toml
+[helm_repo]
+repo_url = "https://prometheus-community.github.io/helm-charts"
+chart    = "kube-prometheus-stack"
+```
+
+This is equivalent to the Helm CLI workflow:
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install my-release prometheus-community/kube-prometheus-stack
+```
+
+You can discover public Helm charts on [Artifact Hub](https://artifacthub.io/), which indexes thousands of open-source Helm charts.
+
+See the [Helm Chart Components](/guides/helm-chart-components#using-public-helm-repositories) guide for more details.
