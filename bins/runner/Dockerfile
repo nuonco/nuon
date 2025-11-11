@@ -242,6 +242,3 @@ RUN cd /artifacts && \
     parallel -j0 --halt soon,fail=1 --ungroup \
       'echo "Compressing {} with 7z..." && \
        7z a -t7z -mx=9 "{}.7z" {}'
-
-# Generate checksums for both original and compressed files
-RUN cd /artifacts && sha256sum * > checksums.txt
