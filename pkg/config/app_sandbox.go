@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 
+	"github.com/invopop/jsonschema"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
@@ -22,6 +23,29 @@ type AppSandboxConfig struct {
 	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
 	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
 	References     []refs.Ref               `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
+}
+
+func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("source").Short("external configuration source").
+		Long("Path to an external file containing sandbox configuration (YAML, JSON, or TOML)").
+		Field("terraform_version").Short("Terraform version").Required().
+		Long("Version of Terraform to use for deployments").
+		Example("1.5.0").
+		Example("1.6.0").
+		Example("latest").
+		Field("connected_repo").Short("connected repository configuration").
+		Long("Configuration for a private repository connected to the Nuon platform").
+		Field("public_repo").Short("public repository configuration").
+		Long("Configuration for a public repository accessible without authentication").
+		Field("drift_schedule").Short("drift detection schedule").
+		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled").
+		Field("env_vars").Short("environment variables").
+		Long("Map of environment variables passed to Terraform as key-value pairs").
+		Field("vars").Short("Terraform variables").
+		Long("Map of Terraform input variables as key-value pairs. Supports templating").
+		Field("var_file").Short("Terraform variable files").
+		Long("Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git repositories (git::https://github.com/org/repo//path/to/vars.tfvars), file paths (file:///path/to/vars.tfvars), and relative paths (./vars.tfvars)")
 }
 
 func (a *AppSandboxConfig) parse() error {

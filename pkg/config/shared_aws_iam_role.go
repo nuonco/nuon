@@ -16,9 +16,26 @@ type AppAWSIAMRole struct {
 }
 
 func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "type", "Used when defining permissions in a directory. Must be one of provision, maintenance, deprovision")
-	addDescription(schema, "name", "Name used for the role, this can be templated using standard template variables.")
-	addDescription(schema, "description", "Human readable description which is rendered in the installer.")
-	addDescription(schema, "display_name", "Human readable name which is rendered in the installer.")
-	addDescription(schema, "policies", "Policy definitions that should be created on the role.")
+	NewSchemaBuilder(schema).
+		Field("type").Short("role type in permission directory").
+		Long("Used when defining permissions in a directory. Indicates when the role is active (provision, maintenance, or deprovision). Supports templating").
+		Example("provision").
+		Example("maintenance").
+		Example("deprovision").
+		Field("name").Short("name of the IAM role").Required().
+		Long("Name used for the role in AWS. Supports Go templating using standard template variables (e.g., {{.nuon.install.id}})").
+		Example("app-{{.nuon.install.id}}-role").
+		Example("admin-role").
+		Field("description").Short("description of the role").Required().
+		Long("Human-readable description that explains the role's purpose. Rendered in the installer to customers. Supports templating").
+		Example("Provides S3 bucket access for the application").
+		Example("Database migration role with elevated permissions").
+		Field("display_name").Short("display name of the role").
+		Long("Human-readable display name shown in the installer UI. Supports templating").
+		Example("Application S3 Access").
+		Example("Database Admin").
+		Field("policies").Short("policy definitions for the role").Required().
+		Long("List of IAM policies to attach to the role. Each policy defines specific AWS permissions").
+		Field("permissions_boundary").Short("permissions boundary policy").
+		Long("Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)")
 }
