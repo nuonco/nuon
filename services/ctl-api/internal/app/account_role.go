@@ -31,7 +31,9 @@ type AccountRole struct {
 }
 
 func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
-	c.ID = domains.NewAccountID()
+	if c.ID == "" {
+		c.ID = domains.NewAccountID()
+	}
 
 	if c.OrgID.Empty() {
 		c.OrgID = generics.NewNullString(orgIDFromContext(tx.Statement.Context))
