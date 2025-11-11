@@ -1,6 +1,7 @@
 package health
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -61,6 +62,55 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 			"status": "ok",
 		}))
 	}
+	rows, err := chDB.Query("SELECT table FROM system.replicas WHERE database = 'ctl_api' AND is_readonly = 1")
+	if err != nil {
+		degraded = append(degraded, "ch")
+		s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
+			"system": "ch",
+			"status": "unable_to_connect",
+		}))
+	} else {
+		defer rows.Close()
+
+		var tables []string
+		var tableName string // Variable to scan each row into
+
+		for rows.Next() {
+			err := rows.Scan(&tableName)
+			if err != nil {
+				// Handle scan error
+				degraded = append(degraded, "ch")
+				s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
+					"system": "ch",
+					"status": "scan_error",
+				}))
+				break
+			}
+			tables = append(tables, tableName)
+		}
+
+		// NOTE(fd): we check for iteration errors (but why?)
+		if err = rows.Err(); err != nil {
+			degraded = append(degraded, "ch")
+			s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
+				"system": "ch",
+				"status": "iteration_error",
+			}))
+		}
+
+		rowCount := len(tables)
+		if rowCount > 0 {
+			degraded = append(degraded, "ch")
+			s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
+				"system": "ch",
+				"status": "readonly_replicas_found",
+			}))
+			for i, table := range tables {
+				ctx.Header(fmt.Sprintf("x-ch-table-in-read-only-%d", i), table)
+			}
+		}
+
+	}
 
 	// ping temporal
 	_, err = s.tclient.CheckHealth(ctx, &client.CheckHealthRequest{})
@@ -83,7 +133,7 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 		statusCode = http.StatusMultiStatus
 	}
 
-	ctx.JSON(statusCode, map[string]interface{}{
+	ctx.JSON(statusCode, map[string]any{
 		"status":   status,
 		"degraded": degraded,
 	})
