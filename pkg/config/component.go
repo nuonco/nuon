@@ -3,6 +3,7 @@ package config
 import (
 	"sort"
 
+	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/errors"
 
@@ -149,6 +150,44 @@ func (a *Component) Validate() error {
 	}
 
 	return nil
+}
+
+func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("type").Short("component type").Required().
+		Long("Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job)").
+		Example("terraform_module").
+		Example("helm_chart").
+		Example("docker_build").
+		Example("container_image").
+		Example("kubernetes_manifest").
+		Field("name").Short("component name").Required().
+		Long("Unique identifier for the component within the app. Used for referencing in dependencies and templates").
+		Example("database").
+		Example("api-server").
+		Example("frontend").
+		Field("source").Short("source path or URL").
+		Long("Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.yaml, git::https://github.com/org/repo//config.yaml, file:///path/to/config.yaml, ./local/config.yaml").
+		Field("var_name").Short("variable name for component output").
+		Long("Optional name to use when storing component outputs as variables. If not specified, uses the component name").
+		Example("db_endpoint").
+		Example("api_host").
+		Field("dependencies").Short("component dependencies").
+		Long("List of other components that must be deployed before this component. Automatically extracted from template references").
+		Example("database").
+		Example("infrastructure").
+		Field("helm_chart").Short("helm chart component configuration").OneOfRequired("component_type").
+		Long("Configuration for Helm chart deployments. Required when type is 'helm_chart'").
+		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("component_type").
+		Long("Configuration for Terraform module deployments. Required when type is 'terraform_module'").
+		Field("docker_build").Short("docker build component configuration").OneOfRequired("component_type").
+		Long("Configuration for building and pushing Docker images. Required when type is 'docker_build'").
+		Field("external_image").Short("container image component configuration").OneOfRequired("component_type").
+		Long("Configuration for external container images (e.g., from Docker Hub or ECR). Required when type is 'container_image' or 'external_image'").
+		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("component_type").
+		Long("Configuration for Kubernetes manifest deployments. Required when type is 'kubernetes_manifest'").
+		Field("job").Short("job component configuration").OneOfRequired("component_type").Deprecated("").
+		Long("Configuration for job/batch components. Required when type is 'job'")
 }
 
 func (c *Component) AddDependency(val string) {

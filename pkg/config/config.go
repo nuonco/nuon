@@ -65,17 +65,49 @@ func (a *ComponentList) Validate() error {
 }
 
 func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "version", "Config file version.")
-	addDescription(schema, "display_name", "Display name which is rendered in the installer.")
-	addDescription(schema, "description", "App description which is rendered in the installer.")
-	addDescription(schema, "slack_webhook_url", "Optional notifications channel to send app notifications to.")
-
-	addDescription(schema, "branch", "Default app branch configuration object")
-	addDescription(schema, "inputs", "Inputs configuration object")
-	addDescription(schema, "sandbox", "Sandbox configuration object")
-	addDescription(schema, "installer", "Installer configuration object")
-	addDescription(schema, "components", "Component configurations")
-	addDescription(schema, "installs", "Install configurations")
+	NewSchemaBuilder(schema).
+		Field("version").Short("config file version").Required().
+		Long("Version string for the configuration format").
+		Example("1").
+		Example("2").
+		Field("display_name").Short("display name rendered in the installer").
+		Long("Display name for the app shown to customers during installation").
+		Example("My SaaS Application").
+		Example("Analytics Platform").
+		Field("description").Short("app description rendered in the installer").
+		Long("Detailed description of the app shown to customers during installation").
+		Example("A cloud-native SaaS application").
+		Example("Enterprise analytics and reporting solution").
+		Field("slack_webhook_url").Short("slack webhook url for notifications").
+		Long("Optional Slack webhook URL to send app notifications and alerts to a channel").
+		Field("readme").Short("readme file for the app").
+		Long("Markdown file with app documentation. Supports templating and external file sources: HTTP(S) URLs (https://example.com/readme.md), git repositories (git::https://github.com/org/repo//readme.md), file paths (file:///path/to/readme.md), and relative paths (./readme.md)").
+		Field("branch").Short("default app branch configuration").
+		Long("Default branch configuration for all installs. Can be overridden per install").
+		Field("inputs").Short("input configuration").
+		Long("Define inputs that customers provide during installation").
+		Field("sandbox").Short("sandbox configuration").Required().
+		Long("Sandbox/cluster configuration for the application infrastructure").
+		Field("runner").Short("runner configuration").Required().
+		Long("Runner configuration for executing deployments and workflows").
+		Field("installer").Short("installer configuration").
+		Long("Configuration for the customer-facing installer experience").
+		Field("permissions").Short("permissions configuration").
+		Long("RBAC and permission policies for install access control").
+		Field("policies").Short("policies configuration").
+		Long("Define policies for install management and automation").
+		Field("secrets").Short("secrets configuration").
+		Long("Manage secret variables shared across components").
+		Field("break_glass").Short("break-glass configuration").
+		Long("Configure break-glass roles for emergency access to installs").
+		Field("stack").Short("stack configuration").
+		Long("Stack configuration for infrastructure orchestration").
+		Field("components").Short("component configurations").
+		Long("List of components (terraform, helm, containers, etc) to deploy").
+		Field("installs").Short("install configurations").
+		Long("Install-specific overrides and configurations").
+		Field("actions").Short("action configurations").
+		Long("Custom workflows and actions that can be executed on installs")
 }
 
 type parseFn struct {

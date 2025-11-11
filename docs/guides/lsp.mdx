@@ -1,0 +1,95 @@
+---
+title: Config File Linting with Taplo LSP
+description: Using Taplo LSP for linting and validating Nuon configuration files
+---
+
+# Config File Linting with Taplo LSP
+
+Nuon configuration files can be validated and linted using [Taplo LSP](https://taplo.tamasfe.dev/), a TOML language server that provides real-time validation, autocompletion, and formatting.
+
+## Setup
+
+### Installation
+
+Install Taplo LSP for your editor:
+
+- **VS Code**: [Taplo extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
+- **Other editors**: See [Taplo documentation](https://taplo.tamasfe.dev/)
+
+### Configuration
+
+Configure Taplo to use Nuon's schema URL in your editor settings:
+
+**VS Code** (`.vscode/settings.json`):
+```json
+{
+  "taplo.linter.rules": {
+    "allowed-target-kinds": "allowed"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.formatOnSave": true
+  }
+}
+```
+
+## Using Nuon Config Schemas
+
+### Schema URL Format
+
+Nuon provides JSON schemas for all configuration file types at:
+
+```
+https://api.nuon.co/v1/general/config-schema?type=<type>
+```
+
+Replace `<type>` with one of the valid configuration types listed below.
+
+### Valid Configuration Types
+
+The following types are supported for schema validation:
+
+- `action` - Action configuration
+- `break-glass` - Break glass IAM role configuration
+- `component-root` - Component root configuration
+- `container-image` - Container image component configuration
+- `docker-build` - Docker build component configuration
+- `full` - Complete application configuration
+- `helm` - Helm chart component configuration
+- `input` - Individual input configuration
+- `input-group` - Input group configuration
+- `inputs` - Inputs configuration
+- `install` - Install configuration
+- `installer` - Installer configuration
+- `kubernetes-manifest` - Kubernetes manifest component configuration
+- `metadata` - Metadata configuration
+- `permissions` - Permissions configuration
+- `policies` - Policies configuration
+- `policy` - Individual policy configuration
+- `runner` - Runner configuration
+- `sandbox` - Sandbox configuration
+- `secret` - Individual secret configuration
+- `secrets` - Secrets configuration
+- `stack` - Stack configuration
+- `terraform` - Terraform module component configuration
+
+### Example Schemas
+
+- Full app config: `https://api.nuon.co/v1/general/config-schema?type=full`
+- Input configuration: `https://api.nuon.co/v1/general/config-schema?type=input`
+
+## BYOC Configuration
+
+If you're using a **Bring Your Own Cloud (BYOC)** deployment, the schema API URL may differ from the default. Check your deployment's documentation or contact your Nuon administrator for the correct API endpoint URL.
+
+The schema URL format remains the same, but the base domain will be specific to your BYOC instance:
+
+```
+https://<your-byoc-api-domain>/v1/general/config-schema?type=<type>
+```
+
+## Benefits
+
+- **Real-time validation**: Errors and warnings appear as you type
+- **Documentation**: Hover over fields to see descriptions
+- **Formatting**: Automatic TOML file formatting
