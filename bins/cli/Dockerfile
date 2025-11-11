@@ -144,9 +144,6 @@ RUN cd /artifacts && \
       'echo "Compressing {} with 7z..." && \
        7z a -t7z -mx=9 "{}.7z" {}'
 
-# Generate checksums for both original and compressed files
-RUN cd /artifacts && sha256sum * > checksums.txt
-
 # Export single binary for quick builds (no multi-platform)
 FROM alpine:latest AS export-linux-amd64
 ARG BIN_NAME=nuon
@@ -160,6 +157,3 @@ COPY --from=build-linux-amd64 /out/${BIN_NAME}_linux_amd64 /artifacts/${BIN_NAME
 RUN cd /artifacts && \
     echo "Compressing ${BIN_NAME}_linux_amd64 with 7z..." && \
     7z a -t7z -mx=9 "${BIN_NAME}_linux_amd64.7z" "${BIN_NAME}_linux_amd64"
-
-# Generate checksums for both original and compressed files
-RUN sha256sum /artifacts/* > /artifacts/checksums.txt
