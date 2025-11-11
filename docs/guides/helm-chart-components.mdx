@@ -32,8 +32,32 @@ image:
 source = "./values.yaml"
 ```
 
-You can configure Helm Components to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+You can configure Helm Components to use either a Helm repository (using a `helm_repo` block), a public repo (using a `public_repo` block), or a private GitHub repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+
+## Using Public Helm Repositories
+
+Helm repositories are the standard way to share and discover Helm charts across the Kubernetes ecosystem. You can deploy charts directly from public Helm repositories without needing to store them in your own Git repository.
+
+To use a public Helm chart, specify the repository URL and chart name:
+
+```toml components/prometheus.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+name       = "prometheus"
+type       = "helm_chart"
+chart_name = "prometheus"
+
+[helm_repo]
+repo_url = "https://prometheus-community.github.io/helm-charts"
+chart    = "kube-prometheus-stack"
+```
+
+This is equivalent to the Helm CLI command:
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install prometheus prometheus-community/kube-prometheus-stack
+```
+
+You can find public Helm charts on [Artifact Hub](https://artifacthub.io/), which indexes thousands of open-source Helm charts. Each chart page lists its repository URL, which you can use in the `repo_url` field.
 
 ## Open Source and Private Charts
 
