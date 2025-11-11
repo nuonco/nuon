@@ -31,17 +31,41 @@ type AppInput struct {
 }
 
 func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "name", "Input name, which is used to reference the input via variable templating.")
-	addDescription(schema, "display_name", "Human readable name of the input which is rendered in the installer.")
-	addDescription(schema, "description", "Input description rendered in the installer.")
-	addDescription(schema, "group", "The name of the group this field belongs too.")
-
-	addDescription(schema, "default", "The default value for the input.")
-	addDescription(schema, "required", "Denote whether this is a required customer input.")
-	addDescription(schema, "sensitive", "Denote whether this is a sensitive input, which will prevent the value from being displayed after the install is created.")
-	addDescription(schema, "type", "Type of input supported, can be a string, number, list, json or bool")
-	addDescription(schema, "internal", "Internal inputs are only settable via the admin panel")
-	addDescription(schema, "source", "Source of the input value. Can be 'user' (default, provided during install creation) or 'install_stack' (provided by CloudFormation/Bicep stack outputs via phone home).")
+	NewSchemaBuilder(schema).
+		Field("name").Short("input name").
+		Long("Used to reference the input via variable templating (e.g., {{.nuon.inputs.input_name}})").
+		Example("api_token").
+		Example("database_url").
+		Field("display_name").Short("display name of the input").Required().
+		Long("Human-readable name shown in the installer UI to customers").
+		Example("API Token").
+		Example("Database URL").
+		Field("description").Short("input description").Required().
+		Long("Detailed explanation of what this input is for, rendered in the installer to guide users").
+		Example("The API token for authenticating with the external service").
+		Example("Connection string for the PostgreSQL database").
+		Field("group").Short("input group name").Required().
+		Long("Name of the input group this field belongs to. Must match a defined group in the inputs section").
+		Example("database").
+		Example("integrations").
+		Field("default").Short("default value for the input").
+		Long("Default value used if customer does not provide one. Type must match the input type").
+		Example("production").
+		Example("5432").
+		Field("required").Short("whether input is required").
+		Long("If true, customer must provide a value during installation. If false, can be skipped").
+		Field("sensitive").Short("whether input is sensitive").
+		Long("If true, the value will be masked/hidden in the UI and logs after the install is created. Use for passwords, tokens, and API keys").
+		Field("type").Short("input type").
+		Long("Data type for the input. Supported types: string, number, list, json, bool").
+		Example("string").
+		Example("number").
+		Example("json").
+		Example("bool").
+		Field("internal").Short("whether input is internal-only").
+		Long("If true, input is only settable via the admin panel and not shown to regular users").
+		Field("user_configurable").Short("whether input is user configurable").
+		Long("If true, input can be modified by end users after installation")
 }
 
 type AppInputGroup struct {
@@ -65,8 +89,11 @@ type AppInputConfig struct {
 }
 
 func (a AppInputConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "inputs", "list of inputs")
-	addDescription(schema, "groups", "list of input groups")
+	NewSchemaBuilder(schema).
+		Field("input").Short("list of inputs").
+		Long("Array of input definitions that customers can configure during installation").
+		Field("group").Short("list of input groups").
+		Long("Array of input group definitions that organize related inputs in the installer UI")
 }
 
 func (a *AppInputConfig) parse() error {

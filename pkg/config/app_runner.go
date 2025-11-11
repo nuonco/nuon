@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 
+	"github.com/invopop/jsonschema"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/powertoolsdev/mono/pkg/config/source"
@@ -21,6 +22,27 @@ type AppRunnerConfig struct {
 
 	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
+}
+
+func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("source").Short("external configuration source").
+		Long("Path to an external file containing runner configuration (YAML, JSON, or TOML)").
+		Field("runner_type").Short("type of runner").Required().
+		Long("Specifies how the runner executes deployments").
+		Example("kubernetes").
+		Example("docker").
+		Example("vm").
+		Field("env_vars").Short("environment variables").
+		Long("Map of environment variables to pass to the runner as key-value pairs").
+		Example("DEBUG=true").
+		Example("LOG_LEVEL=info").
+		Field("helm_driver").Short("Helm driver configuration").
+		Long("Specifies the backend driver for Helm operations (e.g., 'configmap', 'secret')").
+		Example("configmap").
+		Example("secret").
+		Field("init_script_url").Short("initialization script URL").
+		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh")
 }
 
 func (a *AppRunnerConfig) parse() error {
