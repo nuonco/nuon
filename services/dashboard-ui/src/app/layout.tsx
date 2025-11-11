@@ -60,6 +60,7 @@ export default function RootLayout({
             env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
             githubAppName={process.env.GITHUB_APP_NAME}
           />
+
           <AccountProvider shouldPoll>
             <UserJourneyProvider>{children}</UserJourneyProvider>
           </AccountProvider>
