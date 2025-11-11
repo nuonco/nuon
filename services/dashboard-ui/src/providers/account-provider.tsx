@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useState } from 'react'
+import { useQuery, } from '@/hooks/use-query'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useJourneyPollingInterval } from '@/hooks/use-journey-polling-interval'
 import type { TAccount } from '@/types'
@@ -39,12 +40,10 @@ export function AccountProvider({
     data: account,
     error,
     isLoading,
-  } = usePolling<TAccount>({
+  } = useQuery<TAccount>({
     dependencies: [initAccount, refresh],
     initData: initAccount,
     path: `/api/account`,
-    pollInterval: 5000, // Start with fast polling to get initial data quickly
-    shouldPoll,
   })
 
   // Calculate dynamic polling interval based on current account data
