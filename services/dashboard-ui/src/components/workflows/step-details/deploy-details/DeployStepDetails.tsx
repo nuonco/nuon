@@ -14,6 +14,7 @@ import { DeployApply } from './DeployApply'
 export const DeployStepDetails = ({ step }: IStepDetails) => {
   const { org } = useOrg()
   const { data: deploy, isLoading } = useQuery<TDeploy>({
+    dependencies: [step],
     path: `/api/orgs/${org.id}/installs/${step?.owner_id}/deploys/${step.step_target_id}`,
   })
 
@@ -37,7 +38,7 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
 
             <Text variant="subtext">
               <Link
-                href={`/${org.id}/installs/${step.owner_id}/components/${deploy?.component_id}/${deploy?.id}`}
+                href={`/${org.id}/installs/${step.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
               >
                 View deploy <Icon variant="CaretRight" />
               </Link>
@@ -48,7 +49,7 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
       {step?.execution_type === 'approval' ? (
         <Plan step={step} />
       ) : (
-        <DeployApply initDeploy={deploy} step={step} />
+        <DeployApply initDeploy={deploy} />
       )}
     </div>
   )
