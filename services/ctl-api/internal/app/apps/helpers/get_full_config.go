@@ -8,6 +8,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -41,7 +42,10 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		return nil, errors.Wrap(res.Error, "unable to get app config")
 	}
 	if appCfg.Status == app.AppConfigStatusError {
-		return nil, fmt.Errorf("app config %s is in an error state", appCfg.ID)
+		return nil, stderr.ErrUser{
+			Description: fmt.Sprintf("app config %s is in an error state", appCfg.ID),
+			Err:         fmt.Errorf("app config %s is in an error state", appCfg.ID),
+		}
 	}
 
 	if !skipVersionCheck {
@@ -113,7 +117,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 	}
 
 	if len(appCfg.ComponentConfigConnections) != len(appCfg.ComponentIDs) {
-		return nil, errors.New("an app config references a component-id which has a config that could not be found")
+		return nil, errors.New("app config references a component-id which has a config that could not be found")
 	}
 
 	return &appCfg, nil
