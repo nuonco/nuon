@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/components"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/components"
 )
 
 func (c *cli) componentsCmd() *cobra.Command {
