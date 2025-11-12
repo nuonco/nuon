@@ -19,17 +19,17 @@ export type TJobGroup =
   | 'operations'
 
 export function getJobHref(job: TRunnerJob): string {
-  const { group, metadata } = job ?? {}
+  const { group, metadata, org_id } = job ?? {}
   switch (group) {
     case 'build':
-      return `apps/${metadata?.app_id}/components/${metadata?.component_id}/builds/${metadata?.component_build_id}`
+      return `/${org_id}/apps/${metadata?.app_id}/components/${metadata?.component_id}/builds/${metadata?.component_build_id}`
     case 'sandbox':
-      return `installs/${metadata?.install_id}/sandbox/${metadata?.sandbox_run_id}`
+      return `/${org_id}/installs/${metadata?.install_id}/sandbox/${metadata?.sandbox_run_id}`
     case 'sync':
     case 'deploy':
-      return `installs/${metadata?.install_id}/components/${metadata?.component_id}/deploys/${metadata?.deploy_id}`
+      return `/${org_id}/installs/${metadata?.install_id}/components/${metadata?.component_id}/deploys/${metadata?.deploy_id}`
     case 'actions':
-      return `installs/${metadata?.install_id}/actions/${metadata?.action_workflow_id}/${metadata?.action_workflow_run_id}`
+      return `/${org_id}/installs/${metadata?.install_id}/actions/${metadata?.action_workflow_id}/${metadata?.action_workflow_run_id}`
     default:
       return ''
   }
