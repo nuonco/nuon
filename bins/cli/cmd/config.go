@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
-	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
-	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/installs"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/orgs"
 )
 
 func (c *cli) configCmd() *cobra.Command {

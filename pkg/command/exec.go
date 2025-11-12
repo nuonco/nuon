@@ -82,6 +82,10 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
 		stdout = lineprefix.New(opts...)
 		stderr = lineprefix.New(opts...)
 	}
+	if quietMode {
+		stderr = io.Discard
+		stdout = io.Discard
+	}
 
 	// if file output path is set, we also write to that.
 	if c.FileOutputPath != "" {
@@ -100,5 +104,6 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
 	cmd.Stderr = stderr
 	cmd.Stdout = stdout
 	cmd.Dir = c.Cwd
+
 	return cmd, nil
 }

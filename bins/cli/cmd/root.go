@@ -68,7 +68,6 @@ nuon sync
 		// Additional commands
 		c.actionsCmd(),
 		c.componentsCmd(),
-		c.installersCmd(),
 		c.orgsCmd(),
 		c.secretsCmd(),
 		c.buildsCmd(),
