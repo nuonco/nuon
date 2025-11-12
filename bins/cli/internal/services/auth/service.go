@@ -1,7 +1,8 @@
-package releases
+package auth
 
 import (
 	"github.com/nuonco/nuon-go"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 )
 

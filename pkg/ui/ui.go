@@ -6,8 +6,9 @@ import (
 	"os"
 
 	"github.com/kyokomi/emoji"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/pkg/cli/styles"
 )
 
 const (
@@ -16,6 +17,12 @@ const (
 	ColorYellow = "\033[33m"
 	ColorReset  = "\033[0m"
 )
+
+var quietMode bool
+
+func SetQuietMode(val bool) {
+	quietMode = val
+}
 
 func GetStatusColor(status string) string {
 	var statusColor string
@@ -57,10 +64,14 @@ func (l *logger) Step(msg string, args ...any) {
 		return
 	}
 	message := fmt.Sprintf("%s %s\n", styles.TextSuccess.Render("✔"), msg)
-	fmt.Fprintf(os.Stderr, message, args...)
+
+	if !quietMode {
+		fmt.Fprintf(os.Stderr, message, args...)
+	}
+
+	writeToLogFile(message, args...)
 }
 
-// Error records an error that happened, with a "x"
 func Error(ctx context.Context, userErr error) {
 	log, err := FromContext(ctx)
 	if err != nil {
@@ -76,5 +87,7 @@ func (l *logger) Error(err error) {
 		return
 	}
 
-	emoji.Fprintf(os.Stderr, ":siren: %s\n", err.Error())
+	msg := emoji.Sprintf(":siren: %s\n", err.Error())
+	emoji.Fprintf(os.Stderr, msg)
+	writeToLogFile(msg)
 }

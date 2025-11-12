@@ -81,6 +81,11 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 		} else {
 			s += vp
 		}
-		fmt.Fprint(os.Stderr, s+"\n")
+
+		if !quietMode {
+			fmt.Fprint(os.Stderr, s+"\n")
+		}
+
+		writeToLogFile(s + "\n")
 	}
 }
