@@ -83,10 +83,14 @@ func (a *AppSecretConfig) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *AppSecretConfig) AfterQuery(tx *gorm.DB) error {
+	a.UpdateCloudformationStackInfo()
+	return nil
+}
+
+func (a *AppSecretConfig) UpdateCloudformationStackInfo() {
 	cfnName := strcase.ToCamel(a.Name)
 	a.CloudFormationStackName = cfnName
 
 	a.CloudFormationParamName = cfnName + "Param"
 	a.KubernetesSecretKey = "value"
-	return nil
 }
