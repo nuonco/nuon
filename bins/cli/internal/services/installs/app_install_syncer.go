@@ -57,23 +57,42 @@ func (s *appInstallSyncer) syncInstall(
 }
 
 func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, autoApprove, wait bool) (*models.AppInstall, error) {
+	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+	}
+
 	// Use defaults for any missing inputs.
 	{
-		appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
-		if err != nil {
-			return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
-		}
-
 		inputDefaults := make(map[string]string)
 		for _, ic := range appInputCfg.Inputs {
-			if ic.Required == false && ic.Default != "" {
+			if ic.Required == false && ic.Sensitive == false && ic.Default != "" {
 				inputDefaults[ic.Name] = ic.Default
 			}
 		}
 		installCfg.InputGroups = append([]config.InputGroup{inputDefaults}, installCfg.InputGroups...)
 	}
 
+	sensitiveInputs := make(map[string]struct{})
+	for _, ic := range appInputCfg.Inputs {
+		if ic.Sensitive {
+			sensitiveInputs[ic.Name] = struct{}{}
+		}
+	}
+
+	finalInputs := installCfg.FlattenedInputs()
+
+	for inputName := range finalInputs {
+		if _, ok := sensitiveInputs[inputName]; ok {
+			delete(finalInputs, inputName)
+		}
+	}
+	installCfg.InputGroups = []config.InputGroup{finalInputs}
+
 	diff, _, err := installCfg.Diff(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error generating diff for new install %s: %w", installCfg.Name, err)
+	}
 	fmt.Println(diff)
 
 	if !autoApprove {
@@ -213,7 +232,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 	installCfgInputs := installCfg.FlattenedInputs()
 
 	hasInputChanged := false
-	if len(installCfg.InputGroups) != len(currInputs.Values) {
+	if len(installCfgInputs) != len(currInputs.Values) {
 		hasInputChanged = true
 	} else {
 		// length is same, go through each input to see if any have changed.
