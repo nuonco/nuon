@@ -138,10 +138,30 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get current app config")
+	}
+
+	awcMap := make(map[string]app.ActionWorkflowConfig, len(appCfg.ActionWorkflowConfigs))
+	for _, awc := range appCfg.ActionWorkflowConfigs {
+		awcMap[awc.ActionWorkflowID] = awc
+	}
+
 	// this should be in same step gorup as component
 	// sg.nextGroup() // lifecycleSteps
 
 	for _, installAction := range installActions {
+		if _, ok := awcMap[installAction.ActionWorkflowID]; !ok {
+			// skip actions that are not part of current app config
+			continue
+		}
+
 		sig := &signals.Signal{
 			Type: signals.OperationExecuteActionWorkflow,
 			InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
@@ -266,9 +286,29 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get current app config")
+	}
+
+	awcMap := make(map[string]app.ActionWorkflowConfig, len(appCfg.ActionWorkflowConfigs))
+	for _, awc := range appCfg.ActionWorkflowConfigs {
+		awcMap[awc.ActionWorkflowID] = awc
+	}
+
 	sg.nextGroup() // lifecycleSteps
 
 	for _, installAction := range installActions {
+		if _, ok := awcMap[installAction.ActionWorkflowID]; !ok {
+			// skip actions that are not part of current app config
+			continue
+		}
+
 		sig := &signals.Signal{
 			Type: signals.OperationExecuteActionWorkflow,
 			InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{

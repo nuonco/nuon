@@ -31,15 +31,31 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 		return nil
 	}
 
+	install, err := activities.AwaitGetByInstallID(ctx, sreq.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install")
+	}
+
+	fullAppConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get app config")
+	}
+
+	awcMap := make(map[string]app.ActionWorkflowConfig, len(fullAppConfig.ActionWorkflowConfigs))
+	for _, awc := range fullAppConfig.ActionWorkflowConfigs {
+		awcMap[awc.ActionWorkflowID] = awc
+	}
+
 	workflows, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, sreq.ID)
 	if err != nil {
-		return errors.Wrap(err, "unable to get action workflow run")
+		return errors.Wrap(err, "unable to get install action workflows")
 	}
 
 	for _, workflow := range workflows {
-		cfg, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, workflow.ActionWorkflowID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get action workflow config")
+		cfg, ok := awcMap[workflow.ActionWorkflowID]
+		if !ok {
+			// skip action workflows that are not part of current app config
+			continue
 		}
 
 		// sync the workflow cron
@@ -47,7 +63,7 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 			continue
 		}
 
-		if err := w.startActionWorkflowCronTrigger(ctx, sreq, workflow, cfg.CronTrigger); err != nil {
+		if err := w.startActionWorkflowCronTrigger(ctx, sreq, workflow.ID, cfg.CronTrigger); err != nil {
 			return errors.Wrap(err, "unable to sync action workflow trigger")
 		}
 	}
@@ -65,9 +81,9 @@ func (w *Workflows) ActionWorkflowTriggers(ctx workflow.Context, sreq signals.Re
 	return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, sreq)
 }
 
-func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq signals.RequestSignal, iw *app.InstallActionWorkflow, trigger *app.ActionWorkflowTriggerConfig) error {
+func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq signals.RequestSignal, iawID string, trigger *app.ActionWorkflowTriggerConfig) error {
 	cwo := workflow.ChildWorkflowOptions{
-		WorkflowID:            actionWorkflowTriggerWorkflowID(sreq.ID, iw.ID),
+		WorkflowID:            actionWorkflowTriggerWorkflowID(sreq.ID, iawID),
 		CronSchedule:          trigger.CronSchedule,
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
@@ -76,7 +92,7 @@ func (w *Workflows) startActionWorkflowCronTrigger(ctx workflow.Context, sreq si
 	req := signals.NewRequestSignal(sreq.EventLoopRequest, &signals.Signal{
 		Type: signals.OperationExecuteActionWorkflow,
 		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
-			InstallActionWorkflowID: iw.ID,
+			InstallActionWorkflowID: iawID,
 			TriggerType:             app.ActionWorkflowTriggerTypeCron,
 			TriggeredByType:         "cron",
 			RunEnvVars: map[string]string{
