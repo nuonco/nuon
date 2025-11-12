@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -19,7 +20,7 @@ var (
 	AuthAudience string
 )
 
-func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
+func (a *Service) Login(ctx context.Context) error {
 	view := ui.NewGetView()
 
 	// Ask user about deployment type and hostname
@@ -29,11 +30,11 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 	}
 
 	// Set the API URL in the config
-	cliCfg.Set("api_url", apiURL)
-	cliCfg.APIURL = apiURL
+	a.cfg.Set("api_url", apiURL)
+	a.cfg.APIURL = apiURL
 
 	// Recreate the API client with the selected URL
-	if err := a.updateAPIClient(apiURL, cliCfg); err != nil {
+	if err := a.updateAPIClient(apiURL, a.cfg); err != nil {
 		return view.Error(fmt.Errorf("couldn't update API client: %w", err))
 	}
 
@@ -58,8 +59,8 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 	}
 
 	// add access token to config and write to the file
-	cliCfg.Set("api_token", tokens.AccessToken)
-	err = cliCfg.WriteConfig()
+	a.cfg.Set("api_token", tokens.AccessToken)
+	err = a.cfg.WriteConfig()
 	if err != nil {
 		return view.Error(err)
 	}
@@ -72,7 +73,7 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 	api, err := nuon.New(
 		nuon.WithValidator(validator.New()),
 		nuon.WithAuthToken(tokens.AccessToken),
-		nuon.WithURL(cliCfg.APIURL),
+		nuon.WithURL(a.cfg.APIURL),
 	)
 	if err != nil {
 		return view.Error(fmt.Errorf("unable to init API client: %w", err))
@@ -95,8 +96,8 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 
 	case 1:
 		org := orgs[0]
-		cliCfg.Set("org_id", org.ID)
-		err = cliCfg.WriteConfig()
+		a.cfg.Set("org_id", org.ID)
+		err = a.cfg.WriteConfig()
 		if err != nil {
 			return view.Error(err)
 		}

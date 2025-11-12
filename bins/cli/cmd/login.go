@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/auth"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/auth"
 )
 
 func (c *cli) loginCmd() *cobra.Command {
@@ -12,9 +12,10 @@ func (c *cli) loginCmd() *cobra.Command {
 		Use:               "login",
 		Short:             "Login to Nuon (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
+		Annotations:       skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			svc := auth.New(c.apiClient)
-			return svc.Login(cmd.Context(), c.cfg)
+			svc := auth.New(c.apiClient, c.cfg)
+			return svc.Login(cmd.Context())
 		}),
 		GroupID: AdditionalGroup.ID,
 	}
