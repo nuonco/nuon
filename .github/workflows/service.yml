@@ -19,6 +19,10 @@ name: service
         type: boolean
         required: false
         default: true
+      is_promotion:
+        type: boolean
+        required: false
+        default: false
     outputs: {}
 
 defaults:
@@ -61,6 +65,9 @@ jobs:
             ${{inputs.service}} \
             --tag=${{inputs.tag}}
         # --write-cache=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          BUILD_PROMOTION: ${{ inputs.is_promotion }}
+          GITHUB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
 
       - name: 🚪 Dry-Run Deploy Stage
         if: ${{ inputs.stage }}
