@@ -63,6 +63,9 @@ func init() {
 	config.RegisterDefault("temporal_workflow_failure_panic", false)
 
 	config.RegisterDefault("action_crons_enabled", false)
+
+	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
+	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
 }
 
 type Config struct {
@@ -210,6 +213,9 @@ type Config struct {
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
 
 	MinCLIVersion string `config:"min_cli_version"`
+
+	EventLoopGeneralPurgeStaleDataCron        string        `config:"event_loop_general_purge_stale_data_cron"`
+	EventLoopGeneralPurgeStaleDataDurationAgo time.Duration `config:"event_loop_general_purge_stale_data_duration_ago" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {
