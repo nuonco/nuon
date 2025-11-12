@@ -9,7 +9,7 @@ export async function GET(
   const { orgId, runnerId } = await params
   const { searchParams } = new URL(request.url)
   const limit = searchParams.get('limit') || undefined
-  const offset = searchParams.get('past-jobs') || undefined
+  const offset = searchParams.get('past-jobs') || searchParams.get('offset') || undefined
   const groups =
     (searchParams.get('groups') as unknown as TRunnerJob['group'][]) ||
     undefined
