@@ -27,10 +27,10 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			return true, nil
 		},
 		StartupHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+			w.startPurgeStaleDataWorkflow(ctx)
 			w.startMetricsWorkflow(ctx)
 			w.startRestartOrgRunnersWorkflow(ctx)
 			w.startRestartOrgEventLoopsWorkflow(ctx)
-
 			return nil
 		},
 	}
