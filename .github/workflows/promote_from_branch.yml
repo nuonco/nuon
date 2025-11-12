@@ -93,6 +93,7 @@ jobs:
       tag: ${{ needs.tag.outputs.semver }}
       prod: true
       stage: true
+      is_promotion: true
     secrets: inherit
 
   bump_tag:
