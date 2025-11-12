@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/version"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/version"
 	"github.com/powertoolsdev/mono/pkg/analytics/events"
 	"github.com/powertoolsdev/mono/pkg/errs"
 )

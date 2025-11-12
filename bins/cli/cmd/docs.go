@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/docs"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/docs"
 )
 
 func (c *cli) docsCmd() *cobra.Command {
@@ -16,9 +16,10 @@ func (c *cli) docsCmd() *cobra.Command {
 	}
 
 	browseCmd := &cobra.Command{
-		Use:   "browse",
-		Short: "Browse documentation",
-		Long:  "Open up documentation at https://docs.nuon.co",
+		Use:         "browse",
+		Short:       "Browse documentation",
+		Long:        "Open up documentation at https://docs.nuon.co",
+		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := docs.New(c.cfg)
 			return svc.Browse(cmd.Context(), PrintJSON)

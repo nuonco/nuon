@@ -16,7 +16,7 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/powertoolsdev/mono/bins/cli/internal/version"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/version"
 	"github.com/powertoolsdev/mono/pkg/analytics"
 	"github.com/powertoolsdev/mono/pkg/errs"
 )

@@ -52,7 +52,7 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// Skip user initialization for auth commands (login, logout)
-	if cmd.Use != "login" && cmd.Use != "auth" && (cmd.Parent() == nil || cmd.Parent().Use != "auth") {
+	if !hasSkipAuthAnnotation(cmd) {
 		if err := c.initUser(); err != nil {
 			return errors.Wrap(err, "unable to initialize user")
 		}
