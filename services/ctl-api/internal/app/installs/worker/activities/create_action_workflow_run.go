@@ -54,7 +54,7 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 
 	cfg, err := a.actionHelpers.GetActionWorkflowConfig(ctx, actionWorkflowID, install.AppConfigID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get latest action workflow config")
+		return nil, errors.Wrap(err, "unable to get action workflow config for install's current app config")
 	}
 
 	steps := make([]app.InstallActionWorkflowRunStep, 0)
