@@ -48,34 +48,37 @@ type HealthCheckRequest struct {
 
 func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) error {
 	startTS := workflow.Now(ctx)
-	runnerStatus := "active"
-	healthCheckStatus := "ok"
-	changed := false
+	healthCheckStatus := "error"
+	healthCheckErrorType := ""
 	runnerType := "unknown"
+	runnerStatus := "unknown"
+	changed := false
 
 	defer func() {
 		tags := metrics.ToTags(map[string]string{
-			"health_check_status":   healthCheckStatus,
-			"runner_status":         runnerStatus,
-			"runner_status_changed": strconv.FormatBool(changed),
-			"runner_type":           runnerType,
-			"runner_id":             req.RunnerID,
+			"health_check_status":     healthCheckStatus,
+			"health_check_error_type": healthCheckErrorType,
+			"runner_status":           runnerStatus,
+			"runner_status_changed":   strconv.FormatBool(changed),
+			"runner_type":             runnerType,
+			"runner_id":               req.RunnerID,
 		})
-		// write metrics now
-		w.mw.Incr(ctx, "runner.health_check", tags...)
+		w.mw.Incr(ctx, "runner.health_check", tags...) // TODO: This counter is redundant with runner.health_check.latency.count
 		w.mw.Timing(ctx, "runner.health_check.latency", time.Now().Sub(startTS), tags...)
 	}()
 
 	runner, err := activities.AwaitGetByRunnerID(ctx, req.RunnerID)
 	if err != nil {
-		healthCheckStatus = "unable_to_get_runner"
+		healthCheckStatus = "error"
+		healthCheckErrorType = "unable_to_get_runner"
 		return errors.Wrap(err, "unable to get runner by id")
 	}
 	runnerType = string(runner.RunnerGroup.Type)
 
 	noopHealthCheck, err := w.isNoopHealthCheck(ctx, req.RunnerID)
 	if err != nil {
-		healthCheckStatus = "unable_to_check_noop"
+		healthCheckStatus = "error"
+		healthCheckErrorType = "unable_to_check_noop"
 		return errors.Wrap(err, "unable to check if a noop health check")
 	}
 	if noopHealthCheck {
@@ -86,9 +89,11 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 
 	newStatus, statusChanged, err := w.executeHealthCheck(ctx, req.RunnerID)
 	if err != nil {
-		healthCheckStatus = "unable_to_execute"
+		healthCheckStatus = "error"
+		healthCheckErrorType = "unable_to_execute"
 		return errors.Wrap(err, "unable to execute health check")
 	}
+	healthCheckStatus = "ok"
 	runnerStatus = string(newStatus)
 	changed = statusChanged
 
