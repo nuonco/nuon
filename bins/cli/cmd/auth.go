@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/auth"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/auth"
 )
 
 func (c *cli) authCmd() *cobra.Command {
@@ -18,20 +16,23 @@ func (c *cli) authCmd() *cobra.Command {
 
 	// Add login subcommand
 	loginCmd := &cobra.Command{
-		Use:   "login",
-		Short: "Login to Nuon",
+		Use:         "login",
+		Short:       "Login to Nuon",
+		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := auth.New(c.apiClient)
-			return svc.Login(cmd.Context(), c.cfg)
+			svc := auth.New(c.apiClient, c.cfg)
+			return svc.Login(cmd.Context())
 		}),
 	}
 
 	// Add logout subcommand
 	logoutCmd := &cobra.Command{
-		Use:   "logout",
-		Short: "Logout from Nuon",
+		Use:         "logout",
+		Short:       "Logout from Nuon",
+		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			return c.logout(cmd.Context())
+			svc := auth.New(c.apiClient, c.cfg)
+			return svc.Logout(cmd.Context())
 		}),
 	}
 
@@ -40,22 +41,3 @@ func (c *cli) authCmd() *cobra.Command {
 
 	return authCmd
 }
-
-// logout handles the logout functionality by clearing the API token and URL
-func (c *cli) logout(ctx context.Context) error {
-	// Clear the API token and URL from config
-	c.cfg.Set("api_token", "")
-	c.cfg.Set("api_url", "")
-
-	// Write the updated config to file
-	if err := c.cfg.WriteConfig(); err != nil {
-		return err
-	}
-
-	// Print success message
-	cmd := &cobra.Command{}
-	cmd.Printf("✅ Successfully logged out.\n")
-
-	return nil
-}
-

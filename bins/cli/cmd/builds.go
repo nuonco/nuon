@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/builds"
+	"github.com/powertoolsdev/mono/bins/cli/internal/services/builds"
 )
 
 // newBuildsCmd constructs a new builds command
