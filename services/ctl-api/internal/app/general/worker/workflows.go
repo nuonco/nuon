@@ -27,6 +27,7 @@ type Workflows struct {
 func (w Workflows) All() []any {
 	wkflows := []any{
 		w.EventLoop,
+		w.PurgeStaleData,
 		w.Metrics,
 		w.Promotion,
 		w.TerminateEventLoops,
