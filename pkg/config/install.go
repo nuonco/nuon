@@ -102,7 +102,8 @@ func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, erro
 
 	if upstreamInstall == nil {
 		upstreamInstall = &Install{
-			AWSAccount: &AWSAccount{},
+			AWSAccount:  &AWSAccount{},
+			InputGroups: make([]InputGroup, 0),
 		}
 	}
 
@@ -133,9 +134,14 @@ func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, erro
 	for key, val := range installInputs {
 		current, ok := upstreamInputs[key]
 		if !ok {
-			// we skip inputs not present in the upstream state
-			// as this only happens for sensetive inputs.
-			continue
+			if len(upstreamInputs) != 0 {
+				// we skip inputs not present in the upstream state
+				// as this only happens for sensetive inputs.
+				continue
+			}
+			// for new installs, upstreamInputs will be empty,
+			// this handles the case separately.
+			current = ""
 		}
 		inputDiffs = append(inputDiffs, diff.NewDiff(
 			diff.WithKey(key),
