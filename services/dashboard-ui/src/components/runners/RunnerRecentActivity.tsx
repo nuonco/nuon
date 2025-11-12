@@ -45,6 +45,7 @@ export const RunnerRecentActivity = ({
     limit: 10,
   })
   const { data: jobs } = usePolling<TRunnerJob[]>({
+    dependencies: [queryParams],
     path: `/api/orgs/${org?.id}/runners/${runnerId}/jobs${queryParams}`,
     shouldPoll,
     initData: initJobs,
@@ -56,7 +57,7 @@ export const RunnerRecentActivity = ({
       events={jobs}
       pagination={pagination}
       renderEvent={(job) => {
-        const jobHref = getJobHref(job)
+        const jobHref = getJobHref(job)        
         const jobTitle =
           jobHref === '' ? (
             <>
