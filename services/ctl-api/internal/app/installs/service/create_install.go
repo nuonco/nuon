@@ -89,7 +89,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeProvision,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
 		false,
 	)
 	if err != nil {
@@ -195,7 +194,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeProvision,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
 		false,
 	)
 	if err != nil {

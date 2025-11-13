@@ -50,7 +50,6 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 		installID,
 		app.WorkflowTypeSyncSecrets,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
 		req.PlanOnly,
 	)
 	if err != nil {

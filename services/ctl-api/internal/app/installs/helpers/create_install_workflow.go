@@ -13,7 +13,6 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 	installID string,
 	workflowType app.WorkflowType,
 	metadata map[string]string,
-	errBehavior app.StepErrorBehavior,
 	planOnly bool,
 ) (*app.Workflow, error) {
 	approvalOption := app.InstallApprovalOptionPrompt
@@ -28,12 +27,13 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 
 	metadata["install_id"] = installID
 	installWorkflow := app.Workflow{
-		Type:              workflowType,
-		OwnerID:           installID,
-		OwnerType:         "installs",
-		Metadata:          generics.ToHstore(metadata),
-		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
-		StepErrorBehavior: errBehavior,
+		Type:      workflowType,
+		OwnerID:   installID,
+		OwnerType: "installs",
+		Metadata:  generics.ToHstore(metadata),
+		Status:    app.NewCompositeStatus(ctx, app.StatusPending),
+		// DEPRECATED: for now we always abort on step errors
+		StepErrorBehavior: app.StepErrorBehaviorAbort,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
 	}
