@@ -15,8 +15,7 @@ import (
 )
 
 type TeardownInstallComponentRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
-	PlanOnly      bool                  `json:"plan_only"`
+	PlanOnly bool `json:"plan_only"`
 }
 
 func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -86,7 +85,6 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		map[string]string{
 			"component_id": component.ID,
 		},
-		req.ErrorBehavior,
 		req.PlanOnly,
 	)
 	if err != nil {

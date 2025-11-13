@@ -82,7 +82,6 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 		},
-		app.StepErrorBehaviorAbort,
 		req.PlanOnly,
 	)
 	if err != nil {
@@ -166,7 +165,6 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 		},
-		app.StepErrorBehaviorAbort,
 		req.PlanOnly,
 	)
 	if err != nil {

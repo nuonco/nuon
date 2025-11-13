@@ -63,10 +63,6 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 			return err
 		}
 
-		if flw.StepErrorBehavior == app.StepErrorBehaviorContinue {
-			continue
-		}
-
 		// if the workflow was configured to abort, then go ahead and abort and do not attempt future steps
 		if err := c.cancelFutureSteps(ctx, flw, i, "workflow step failed"); err != nil {
 			return errors.Wrap(err, "unable to cancel future steps "+err.Error())

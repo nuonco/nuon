@@ -133,7 +133,6 @@ func (w *Workflows) DriftCheck(ctx workflow.Context, req *DriftRequest) error {
 	wkflw, err := activities.AwaitCreateWorkflow(ctx, activities.CreateWorkflowRequest{
 		InstallID:    req.InstallID,
 		WorkflowType: app.WorkflowTypeDriftRun,
-		ErrBehavior:  app.StepErrorBehaviorAbort,
 		PlanOnly:     true,
 		Metadata: map[string]string{
 			app.WorkflowMetadataKeyWorkflowNameSuffix: req.ComponentName,
