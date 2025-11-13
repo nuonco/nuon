@@ -19,6 +19,7 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
   const isGenerateStack = step.name === 'generate install stack'
   const { org } = useOrg()
   const { data: stack, isLoading } = useQuery<TInstallStack>({
+    dependencies: [step],
     initData: {},
     path: `/api/orgs/${org.id}/installs/${step.owner_id}/stack`,
   })
