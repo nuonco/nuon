@@ -3,6 +3,7 @@ import { WorkflowSteps as Steps } from '@/components/workflows/WorkflowSteps'
 import { getWorkflowSteps } from '@/lib'
 
 interface ILoadWorkflowSteps {
+  approvalPrompt?: boolean
   offset: string
   orgId: string
   planOnly?: boolean
@@ -10,6 +11,7 @@ interface ILoadWorkflowSteps {
 }
 
 export async function WorkflowSteps({
+  approvalPrompt = false,
   orgId,
   offset,
   planOnly = false,
@@ -29,6 +31,7 @@ export async function WorkflowSteps({
   return steps && !error ? (
     <>
       <Steps
+        approvalPrompt={approvalPrompt}
         initWorkflowSteps={steps}
         planOnly={planOnly}
         shouldPoll
@@ -42,6 +45,6 @@ export async function WorkflowSteps({
 
 export const WorkflowStepsError = () => (
   <div className="w-full">
-    <Text>Error fetching recenty workflows activity </Text>
+    <Text>Error fetching recent workflows activity </Text>
   </div>
 )

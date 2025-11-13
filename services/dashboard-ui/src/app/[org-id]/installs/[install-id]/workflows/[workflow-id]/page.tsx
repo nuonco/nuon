@@ -79,6 +79,9 @@ export default async function InstallWorkflow({
               <ErrorBoundary fallback={<WorkflowStepsError />}>
                 <Suspense fallback={<WorkflowStepsSkeleton />}>
                   <WorkflowSteps
+                    approvalPrompt={
+                      installWorkflow?.approval_option === 'prompt'
+                    }
                     orgId={orgId}
                     offset={sp?.['offset'] || '0'}
                     planOnly={installWorkflow?.plan_only}
