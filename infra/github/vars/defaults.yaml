@@ -40,3 +40,6 @@ members:
     role: admin
   - username: matt-zach-s
     role: admin
+  # Sophia
+  - username: grapefruitgurl
+    role: member
