@@ -50,7 +50,6 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeReprovisionSandbox,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
 		req.PlanOnly,
 	)
 	if err != nil {
