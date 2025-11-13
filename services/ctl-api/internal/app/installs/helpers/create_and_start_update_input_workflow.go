@@ -14,7 +14,7 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(ctx context.Context, install
 		// rendering things in the UI and other such things, which is why we are just using a string slice here,
 		// maybe that will change at some point, but this metadata should not be abused.
 		"inputs": strings.Join(changedInputs, ","),
-	}, app.StepErrorBehaviorAbort,
+	},
 		false,
 	)
 	if err != nil {
