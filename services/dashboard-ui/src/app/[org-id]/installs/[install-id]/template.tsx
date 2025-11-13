@@ -18,12 +18,15 @@ import { useOrg } from '@/hooks/use-org'
 
 // NOTE: old install components
 import { InstallManagementDropdown } from '@/components/old/Installs/ManagementDropdown'
+import { FileCodeIcon } from '@phosphor-icons/react'
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathName = usePathname()
   const { org } = useOrg()
   const { install } = useInstall()
   const isThirdLevel = pathName.split('/').length > 5
+  const isManagedByConfig =
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   return org?.features?.['stratus-layout'] ? (
     <PageLayout
@@ -62,6 +65,15 @@ export default function Template({ children }: { children: React.ReactNode }) {
 
             <div className="flex flex-wrap gap-4 md:gap-8">
               <TemporalLink namespace="installs" eventLoopId={install?.id} />
+              {isManagedByConfig && (
+                <LabeledValue label="Managed By">
+                  <Text variant="subtext">
+                    <span className="flex items-center gap-1">
+                      <FileCodeIcon /> Install Config
+                    </span>
+                  </Text>
+                </LabeledValue>
+              )}
               <LabeledValue label="App">
                 <Text variant="subtext">
                   <Link href={`/${org.id}/apps/${install.app_id}`}>
