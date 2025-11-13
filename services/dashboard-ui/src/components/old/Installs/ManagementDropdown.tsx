@@ -2,6 +2,7 @@
 
 import { SlidersHorizontalIcon } from '@phosphor-icons/react/dist/ssr'
 import { AutoApproveModal } from './AutoApproveModal'
+import { MarkAsManagedModal } from './MarkAsManagedModal'
 import { DeleteInstallModal } from './DeleteModal'
 import { DeprovisionStackModal } from './DeprovisionStackModal'
 import { EditModal } from './EditModal'
@@ -42,6 +43,7 @@ export const InstallManagementDropdown = () => {
         <InstallAuditHistoryModal />
         <InstallStateModal />
         <AutoApproveModal />
+        <MarkAsManagedModal />
         <GenerateInstallConfigModal />
 
         <hr className="my-2" />

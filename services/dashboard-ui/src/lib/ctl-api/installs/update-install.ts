@@ -6,7 +6,7 @@ export type TUpdateInstallBody = {
     approval_option: 'prompt' | 'approve-all'
   }
   metadata?: {
-    managed_by: 'nuon/dashboard' // 'nuon/cli/install-config'
+    managed_by: 'nuon/dashboard' | 'nuon/cli/install-config'
   }
 }
 
