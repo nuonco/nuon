@@ -13,7 +13,11 @@ import { DeployApply } from './DeployApply'
 
 export const DeployStepDetails = ({ step }: IStepDetails) => {
   const { org } = useOrg()
-  const { data: deploy, isLoading } = useQuery<TDeploy>({
+  const {
+    data: deploy,
+    error,
+    isLoading,
+  } = useQuery<TDeploy>({
     dependencies: [step],
     path: `/api/orgs/${org.id}/installs/${step?.owner_id}/deploys/${step.step_target_id}`,
   })
@@ -21,8 +25,12 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
-        {isLoading || !deploy ? (
+        {isLoading && !deploy ? (
           <DeployStepDetailsSkeleton />
+        ) : error ? (
+          <Text variant="base" weight="strong" theme="error">
+            Unable to load deploy details
+          </Text>
         ) : (
           <>
             <Text variant="base" weight="strong">
