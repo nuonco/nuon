@@ -20,6 +20,7 @@ import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TApp, TInstall, TWorkflow } from '@/types'
 import { getStatusTheme } from '@/utils/status-utils'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { StepBanner } from './step-details/StepBanner'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
 import { Button } from '@/components/common/Button'
@@ -52,6 +53,9 @@ export const WorkflowDetails = ({
     workflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
   const hasApprovals = workflowSteps?.some(
     (step) => step?.execution_type === 'approval'
+  )
+  const failedSteps = workflowSteps?.filter(
+    (step) => step?.status?.status === 'error'
   )
 
   return (
@@ -211,6 +215,14 @@ export const WorkflowDetails = ({
           ) : null}
         </div>
       </Expand>
+
+      {failedSteps?.length
+        ? failedSteps?.map((failedStep) => (
+            <div key={failedStep?.id} className="mt-2">
+              <StepBanner step={failedStep} planOnly />
+            </div>
+          ))
+        : null}
     </>
   )
 }

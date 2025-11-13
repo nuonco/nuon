@@ -21,6 +21,7 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
   const { org } = useOrg()
 
   const { data: sandboxRun, isLoading } = useQuery<TSandboxRun>({
+    dependencies: [step],
     path: `/api/orgs/${org.id}/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`,
   })
 
