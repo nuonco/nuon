@@ -50,7 +50,6 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		installID,
 		app.WorkflowTypeDeployComponents,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
 		req.PlanOnly,
 	)
 	if err != nil {

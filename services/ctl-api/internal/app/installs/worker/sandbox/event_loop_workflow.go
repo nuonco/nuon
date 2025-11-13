@@ -89,7 +89,6 @@ func (w *Workflows) DriftCheckSandbox(ctx workflow.Context, req *DriftRequest) e
 	wkflw, err := activities.AwaitCreateWorkflow(ctx, activities.CreateWorkflowRequest{
 		InstallID:    req.InstallID,
 		WorkflowType: app.WorkflowTypeDriftRunReprovisionSandbox,
-		ErrBehavior:  app.StepErrorBehaviorAbort,
 		Metadata:     map[string]string{},
 		PlanOnly:     true,
 	})
