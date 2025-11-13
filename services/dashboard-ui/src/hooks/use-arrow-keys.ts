@@ -29,10 +29,12 @@ export const useArrowKeys = ({
 
       switch (event.key) {
         case 'ArrowUp':
+        case 'k':
           event.preventDefault() // Prevent default scroll behavior
           onUpArrow()
           break
         case 'ArrowDown':
+        case 'j':
           event.preventDefault() // Prevent default scroll behavior
           onDownArrow()
           break
