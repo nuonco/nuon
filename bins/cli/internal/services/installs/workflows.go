@@ -14,7 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow/selector"
 )
 
-func (s *Service) Workflows(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
+func (s *Service) Workflows(ctx context.Context, installID string, offset, limit int, asJSON bool, workflowID string) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -23,13 +23,15 @@ func (s *Service) Workflows(ctx context.Context, installID string, offset, limit
 	view := ui.NewListView()
 
 	if s.cfg.Preview {
-		// Show workflow selector
-		selectedWorkflowID, err := selector.WorkflowSelectorApp(ctx, s.cfg, s.api, installID)
-		if err != nil {
-			return view.Error(err)
+		if workflowID == "" {
+			// Show workflow selector
+			workflowID, err = selector.WorkflowSelectorApp(ctx, s.cfg, s.api, installID)
+			if err != nil {
+				return view.Error(err)
+			}
 		}
 
-		workflowui.WorkflowApp(ctx, s.cfg, s.api, installID, selectedWorkflowID)
+		workflowui.WorkflowApp(ctx, s.cfg, s.api, installID, workflowID)
 		return nil
 	}
 
