@@ -395,13 +395,14 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "View workflows by install ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Workflows(cmd.Context(), id, offset, limit, PrintJSON)
+			return svc.Workflows(cmd.Context(), id, offset, limit, PrintJSON, workflowID)
 		}),
 	}
 	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	workflowsCmd.MarkFlagRequired("install-id")
 	workflowsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	workflowsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
+	workflowsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID install workflow you want to view")
 	installsCmds.AddCommand(workflowsCmd)
 
 	// workflows get
