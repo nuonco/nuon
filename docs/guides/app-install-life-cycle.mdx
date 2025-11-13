@@ -53,8 +53,15 @@ progress output.
 ![CLI Build](../images/guides/app-install-life-cycle/cli-build.png)
 
 If a git repository referenced by the component changes, e.g., a Terraform
-module source or a Helm chart, you must manually re-build the component in the
-Dashboard UI even after `nuon apps sync` with the Nuon CLI.
+module source or a Helm chart, you must manually re-build the component in the Dashboard UI.
+
+If you include Helm or Terraform source code inside of your app repository and make a change to that source, you must first push your branch to your remote repo and then manually re-build the component in the Dashboard UI.
+
+<Note>
+A common overlook is to have an incorrect branch name in the component `.toml` file if the src is included in the app repo.
+</Note>
+
+Again, if anything referenced in the `.toml` files change, you must run `nuon apps sync` with the Nuon CLI.
 
 ![Rebuild components](../images/guides/app-install-life-cycle/component-build.png)
 
