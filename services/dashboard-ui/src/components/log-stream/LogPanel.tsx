@@ -78,6 +78,18 @@ export const LogPanel = ({ className, log, ...props }: ILogPanel) => {
             <Badge variant="code" size="sm">
               <Icon variant="ArrowDown" />
             </Badge>
+            or
+            <Badge variant="code" size="sm">
+              <Text family="mono" variant="subtext">
+                k
+              </Text>
+            </Badge>
+            /
+            <Badge variant="code" size="sm">
+              <Text family="mono" variant="subtext">
+                j
+              </Text>
+            </Badge>
           </span>
           to navigate between logs.
         </Text>
