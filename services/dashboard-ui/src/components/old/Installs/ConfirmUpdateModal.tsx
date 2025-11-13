@@ -1,6 +1,6 @@
 'use client'
 
-import React, { type FC, use, useEffect, useState } from 'react'
+import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { WarningIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/old/Button'
@@ -67,13 +67,11 @@ export const ConfirmUpdateModal: FC<IConfirmUpdateModal> = ({
                     You are about update an Install managed by a Config file.
                   </Text>
                   <Text variant="reg-14">
-                    If you proceed, the config file and install state will no
-                    longer be in sync. Are you sure you want to continue?
+                    If you proceed, the config file syncing will be disabled. Are you sure you want to continue?
                   </Text>
                 </span>
-                <Text variant="med-14">
-                  Tip: To revert this override later, please sync the install
-                  config file again with the CLI.
+                <Text variant="reg-14">
+                  Tip: Use the management menu to enable Install Config syncing again.
                 </Text>
               </div>
               <div className="flex gap-3 justify-between">
