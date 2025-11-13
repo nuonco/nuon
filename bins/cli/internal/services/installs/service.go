@@ -27,6 +27,11 @@ func (s *Service) setInstallID(ctx context.Context, installID string) error {
 	return s.cfg.WriteConfig()
 }
 
+func (s *Service) setAppID(ctx context.Context, appID string) error {
+	s.cfg.Set("app_id", appID)
+	return s.cfg.WriteConfig()
+}
+
 func (s *Service) GetInstallID() string {
 	installID := s.cfg.GetString("install_id")
 	if installID == "" {
@@ -39,6 +44,10 @@ func (s *Service) unsetInstallID(ctx context.Context) error {
 	s.cfg.Set("install_id", "")
 	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current install is now unset"))
 	return s.cfg.WriteConfig()
+}
+
+func (s *Service) printAppSetMsg(id string) {
+	fmt.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current app is now %s", id)))
 }
 
 func (s *Service) printInstallSetMsg(name, id string) {
