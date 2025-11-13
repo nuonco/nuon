@@ -17,7 +17,7 @@ type CreateWorkflowRequest struct {
 
 // @temporal-gen activity
 func (a *Activities) CreateWorkflow(ctx context.Context, req CreateWorkflowRequest) (*app.Workflow, error) {
-	workflow, err := a.helpers.CreateWorkflow(ctx, req.InstallID, req.WorkflowType, req.Metadata, req.ErrBehavior, req.PlanOnly)
+	workflow, err := a.helpers.CreateWorkflow(ctx, req.InstallID, req.WorkflowType, req.Metadata, req.PlanOnly)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workflow: %w", err)
 	}

@@ -131,7 +131,6 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		installActionWorkflow.InstallID,
 		app.WorkflowTypeActionWorkflowRun,
 		prependRunEnvVars,
-		app.StepErrorBehaviorAbort,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -161,14 +160,14 @@ func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 	return result
 }
 
-func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string, errBehavior app.StepErrorBehavior) (*app.Workflow, error) {
+func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string) (*app.Workflow, error) {
 	installWorkflow := app.Workflow{
 		Type:              workflowType,
 		OwnerID:           installID,
 		OwnerType:         "installs",
 		Metadata:          generics.ToHstore(metadata),
 		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
-		StepErrorBehavior: errBehavior,
+		StepErrorBehavior: app.StepErrorBehaviorAbort,
 	}
 
 	res := s.db.WithContext(ctx).Create(&installWorkflow)

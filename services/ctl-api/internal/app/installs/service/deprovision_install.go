@@ -13,8 +13,6 @@ import (
 )
 
 type DeprovisionInstallRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
-
 	PlanOnly bool `json:"plan_only"`
 }
 
@@ -61,7 +59,6 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeDeprovision,
 		map[string]string{},
-		req.ErrorBehavior,
 		req.PlanOnly,
 	)
 	if err != nil {

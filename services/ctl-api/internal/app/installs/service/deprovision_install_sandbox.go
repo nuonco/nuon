@@ -13,8 +13,7 @@ import (
 )
 
 type DeprovisionInstallSandboxRequest struct {
-	ErrorBehavior app.StepErrorBehavior `json:"error_behavior" swaggertype:"string"`
-	PlanOnly      bool                  `json:"plan_only"`
+	PlanOnly bool `json:"plan_only"`
 }
 
 func (c *DeprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
@@ -60,7 +59,6 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeDeprovisionSandbox,
 		map[string]string{},
-		req.ErrorBehavior,
 		req.PlanOnly,
 	)
 	if err != nil {

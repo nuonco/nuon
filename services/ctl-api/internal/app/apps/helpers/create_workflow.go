@@ -13,7 +13,6 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 	appBranchID string,
 	workflowType app.WorkflowType,
 	metadata map[string]string,
-	errBehavior app.StepErrorBehavior,
 	planOnly bool,
 ) (*app.Workflow, error) {
 	approvalOption := app.InstallApprovalOptionPrompt
@@ -25,7 +24,7 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 		OwnerType:         "app_branches",
 		Metadata:          generics.ToHstore(metadata),
 		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
-		StepErrorBehavior: errBehavior,
+		StepErrorBehavior: app.StepErrorBehaviorAbort,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
 	}
