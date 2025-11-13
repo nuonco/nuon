@@ -69,8 +69,19 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 			}
 		}
 
-		if selectedInstall != nil {
-			s.printInstallSetMsg(selectedInstall.Name, selectedInstall.ID)
+		if selectedInstall == nil {
+			return nil
+		}
+
+		s.printInstallSetMsg(selectedInstall.Name, selectedInstall.ID)
+		// if the app is not set, go ahead and set it as well
+		selectedAppID := selectedInstall.AppID
+		if s.cfg.AppID != selectedAppID {
+			err := s.setAppID(ctx, selectedAppID)
+			if err != nil {
+				return view.Error(err)
+			}
+			s.printAppSetMsg(selectedAppID)
 		}
 	}
 
