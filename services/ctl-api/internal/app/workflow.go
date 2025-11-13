@@ -127,6 +127,7 @@ func (i WorkflowType) Description() string {
 	return "unknown"
 }
 
+// DEPRECATED: this is no longer used, but kept for historical data integrity
 type StepErrorBehavior string
 
 const (
@@ -134,7 +135,8 @@ const (
 	StepErrorBehaviorAbort StepErrorBehavior = "abort"
 
 	// continue on error
-	StepErrorBehaviorContinue StepErrorBehavior = "continue"
+	// DEPRECATED: this is no longer used, but kept for historical data integrity
+	// StepErrorBehaviorContinue StepErrorBehavior = "continue"
 )
 
 // TODO(jm): make install workflows a top level concept called a "workflow", and they belong to either an app or an
@@ -156,9 +158,11 @@ type Workflow struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Type              WorkflowType      `json:"type,omitzero" gorm:"not null;default null" temporaljson:"type,omitzero,omitempty"`
-	Metadata          pgtype.Hstore     `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
-	Status            CompositeStatus   `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+	Type     WorkflowType    `json:"type,omitzero" gorm:"not null;default null" temporaljson:"type,omitzero,omitempty"`
+	Metadata pgtype.Hstore   `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	Status   CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+
+	// DEPRECATED: for now we always abort on step errors
 	StepErrorBehavior StepErrorBehavior `json:"step_error_behavior,omitzero" temporaljson:"step_error_behavior,omitzero,omitempty"`
 
 	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"default 'auto'" temporaljson:"approval_option,omitzero,omitempty"`

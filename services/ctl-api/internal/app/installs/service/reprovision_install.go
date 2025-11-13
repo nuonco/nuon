@@ -50,7 +50,6 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeReprovision,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
 		req.PlanOnly,
 	)
 	if err != nil {

@@ -51,7 +51,6 @@ func (s *service) AdminTestAppBranchWorkflow(ctx *gin.Context) {
 		ab.ID,
 		req.WorkflowType,
 		map[string]string{},
-		app.StepErrorBehaviorAbort,
 		false,
 	)
 	if err != nil {
