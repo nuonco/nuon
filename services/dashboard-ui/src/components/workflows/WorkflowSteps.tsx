@@ -16,12 +16,14 @@ import type { TWorkflowStep } from '@/types'
 import { getStepBadge } from '@/utils/workflow-utils'
 
 interface IWorkflowSteps extends IPollingProps {
+  approvalPrompt?: boolean
   initWorkflowSteps: TWorkflowStep[]
   planOnly?: boolean
   workflowId: string
 }
 
 export const WorkflowSteps = ({
+  approvalPrompt = false,
   initWorkflowSteps,
   planOnly = false,
   pollInterval = 4000,
@@ -41,7 +43,11 @@ export const WorkflowSteps = ({
     ? workflowSteps
         .filter((step) => step.execution_type !== 'hidden')
         .filter((step) => step.name.includes(searchName))
-        .sort((a, b) => a.idx - b.idx)
+        .sort((a, b) => {
+          const aIsError = a.status?.status === 'error' ? 0 : 1
+          const bIsError = b.status?.status === 'error' ? 0 : 1
+          return aIsError - bIsError || a.idx - b.idx
+        })
     : []
 
   return (
@@ -71,7 +77,11 @@ export const WorkflowSteps = ({
                   {(step.execution_type === 'system' &&
                     !step.step_target_type) ||
                   step.status.status === 'pending' ? null : (
-                    <StepDetailPanelButton step={step} planOnly={planOnly} />
+                    <StepDetailPanelButton
+                      approvalPrompt={approvalPrompt}
+                      step={step}
+                      planOnly={planOnly}
+                    />
                   )}
 
                   {step?.finished ? (

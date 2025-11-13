@@ -22,14 +22,23 @@ interface IActionRunStepDetails {
 export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
   const { org } = useOrg()
 
-  const { data: actionRun, isLoading } = useQuery<TInstallActionRun>({
+  const {
+    data: actionRun,
+    error,
+    isLoading,
+  } = useQuery<TInstallActionRun>({
+    dependencies: [step],
     path: `/api/orgs/${org.id}/installs/${step.owner_id}/actions/runs/${step?.step_target_id}`,
   })
 
   return (
     <div className="flex flex-col gap-4">
-      {isLoading || !actionRun ? (
+      {isLoading && !actionRun ? (
         <ActionRunStepDetailsSkeleton />
+      ) : error ? (
+        <Text variant="base" weight="strong" theme="error">
+          Unable to load action run details
+        </Text>
       ) : (
         <>
           <div className="flex items-center gap-4">
@@ -80,7 +89,7 @@ export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Text weight="strong">Aciton steps</Text>
+              <Text weight="strong">Action steps</Text>
               {hydrateActionRunSteps({
                 steps: actionRun.steps,
                 stepConfigs: actionRun?.config?.steps,
