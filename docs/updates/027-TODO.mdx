@@ -1,0 +1,21 @@
+---
+title: 027 - TBD
+description: TBD.
+---
+
+_Nov 14, 2024_
+
+<div className="badge badge--primary">v0.19.695</div>
+
+## Install Config file improvements
+
+**Toggle Install Config file syncing from UI** We have added an Install Config sync toggle in the management menu. 
+Users can now enable/disable Install Config syncing from the dashboard UI itself.
+
+**Required Inputs** Install Config files now need to have the required inputs defined explicitly. Now it is not 
+possible to set thier value from UI, or utilising the default value implicitly.
+
+## Bug Fixes
+
+- UI: Fixed missing badge for Install managed by config file in the header.
+- CLI: Fix empty diff when syncing a new install using a config file.
