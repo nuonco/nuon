@@ -16,13 +16,16 @@ interface IRunnerStepDetails extends IStepDetails {}
 export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
   const { org } = useOrg()
   const { data: runner, isLoading: isRunnerLoading } = useQuery({
+    dependencies: [step],
     path: `/api/orgs/${org.id}/runners/${step.step_target_id}`,
   })
   const { data: runnerHeartbeat, isLoading: isHeartbeatLoading } = useQuery({
+    dependencies: [step],
     path: `/api/orgs/${org.id}/runners/${step.step_target_id}/heartbeat`,
   })
   const { data: runnerHealthCheck, isLoading: isHealthCheckLoading } = useQuery(
     {
+      dependencies: [step],
       path: `/api/orgs/${org.id}/runners/${step.step_target_id}/health-checks`,
     }
   )
