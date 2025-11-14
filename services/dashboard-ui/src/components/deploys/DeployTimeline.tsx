@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { Badge } from '@/components/common/Badge'
+import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
-import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { Text } from '@/components/common/Text'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
@@ -16,59 +17,65 @@ interface IDeployTimeline
     IPollingProps {
   componentName: string
   componentId: string
+  initDeploys: TDeploy[]
 }
 
 export const DeployTimeline = ({
   componentName,
   componentId,
-  shouldPoll = false,
+  initDeploys,
+  pagination,
   pollInterval = 20000,
+  shouldPoll = false,
 }: IDeployTimeline) => {
   const { install } = useInstall()
   const { org } = useOrg()
-  const [pagination, setPagination] = useState({
-    offset: 0,
-    limit: 10,
-  })
 
   const queryParams = useQueryParams({
     offset: pagination.offset,
-    limit: pagination.limit,
+    limit: 10,
   })
-  const { data: deploys, error } = usePolling<TDeploy[]>({
+  const { data: deploys } = usePolling<TDeploy[]>({
+    dependencies: [queryParams],
+    initData: initDeploys,
     path: `/api/orgs/${org?.id}/installs/${install.id}/components/${componentId}/deploys${queryParams}`,
     shouldPoll,
     pollInterval,
   })
 
-  return deploys ? (
+  return (
     <Timeline<TDeploy>
       events={deploys}
       pagination={pagination}
-      renderEvent={(deploy, idx) => {
+      renderEvent={(deploy) => {
         return (
           <TimelineEvent
             key={deploy.id}
-            badge={
-              idx === 0 ? { theme: 'info', children: 'Latest' } : undefined
-            }
-            caption={deploy?.id}
+            caption={<ID>{deploy?.id}</ID>}
             createdAt={deploy?.created_at}
             status={deploy?.status}
             title={
-              <Link
-                href={`/${org.id}/installs/${install.id}/components/${componentId}/deploys/${deploy.id}`}
-              >
-                {componentName} deploy
-              </Link>
+              <span className="flex items-center gap-2">
+                <Link
+                  href={`/${org.id}/installs/${install.id}/components/${componentId}/deploys/${deploy.id}`}
+                >
+                  {componentName} deploy
+                </Link>
+                {deploy?.status_v2?.status === 'drifted' ? (
+                  <Badge variant="code" size="sm">
+                    drift scan
+                  </Badge>
+                ) : null}
+              </span>
+            }
+            underline={
+              <Text variant="label" theme="neutral">
+                Deployed by: {deploy?.created_by?.email}
+              </Text>
             }
           />
         )
       }}
     />
-  ) : (
-    <>
-      <TimelineSkeleton eventCount={10} />
-    </>
   )
 }
