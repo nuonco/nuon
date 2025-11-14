@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -51,7 +52,10 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 			zap.String("workflow_id", wf.ID),
 			zap.String("status", string(wf.Status.Status)),
 		)
-		ctx.Error(fmt.Errorf("workflow is not cancelable"))
+		ctx.Error(stderr.ErrUser{
+			Description: "workflow is not cancelable",
+			Err:         fmt.Errorf("workflow is not cancelable"),
+		})
 		return
 	}
 
@@ -117,7 +121,10 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 			zap.String("workflow_id", wf.ID),
 			zap.String("status", string(wf.Status.Status)),
 		)
-		ctx.Error(fmt.Errorf("install workflow is not cancelable"))
+		ctx.Error(stderr.ErrUser{
+			Description: "workflow is not cancelable",
+			Err:         fmt.Errorf("workflow is not cancelable"),
+		})
 		return
 	}
 
