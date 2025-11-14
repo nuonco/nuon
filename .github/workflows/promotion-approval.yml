@@ -1,0 +1,58 @@
+---
+name: Promotion Approval
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, unlabeled, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+jobs:
+  check-requirements:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check promotion label and approvals
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request || context.payload.pull_request_review?.pull_request;
+
+            if (!pr) {
+              core.setFailed('❌ Pull request not found in event payload');
+              return;
+            }
+
+            const labels = pr.labels.map(l => l.name);
+            const hasPromoteLabel = labels.some(l => l.startsWith('promote'));
+
+            if (!hasPromoteLabel) {
+              console.log('✅ No promotion labels found. No approval required.');
+              return;
+            }
+
+            console.log('🏷️  Promotion labels found:', labels.filter(l => l.startsWith('promote')));
+
+            const reviews = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+            });
+
+            const reviewsByUser = {};
+            for (const review of reviews.data) {
+              reviewsByUser[review.user.login] = review.state;
+            }
+
+            const approvals = Object.values(reviewsByUser).filter(s => s === 'APPROVED').length;
+            console.log(`📊 Approvals: ${approvals}`);
+
+            if (approvals < 1) {
+              const promoteLabels = labels.filter(l => l.startsWith('promote')).join(', ');
+              core.setFailed(`❌ This PR has promotion labels (${promoteLabels}) and requires at least 1 approval. Currently: ${approvals}`);
+            } else {
+              console.log(`✅ Approval requirement met (${approvals} approval${approvals > 1 ? 's' : ''})`);
+            }
