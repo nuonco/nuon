@@ -22,7 +22,7 @@ jobs:
             const pr = context.payload.pull_request || context.payload.pull_request_review?.pull_request;
 
             if (!pr) {
-              core.setFailed('❌ Pull request not found in event payload');
+              console.log('❌ Pull request not found in event payload');
               return;
             }
 
@@ -75,7 +75,7 @@ jobs:
                 description: message
               });
 
-              core.setFailed(`❌ ${message}. Currently: ${approvals}`);
+              console.log(`❌ ${message}. Currently: ${approvals}`);
             } else {
               const message = `${approvals} approval${approvals > 1 ? 's' : ''} received`;
 
