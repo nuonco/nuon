@@ -130,7 +130,10 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
 	}
 
-	s.handleWorkflow(ctx, installWorkflowID, appInstall.ID, autoApprove, wait)
+	err = s.handleWorkflow(ctx, installWorkflowID, appInstall.ID, autoApprove, wait)
+	if err != nil {
+		return nil, fmt.Errorf("error handling workflow for install %s: %w", installCfg.Name, err)
+	}
 
 	ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
 	return appInstall, nil
@@ -253,17 +256,20 @@ func (s *appInstallSyncer) syncExistingInstall(
 			return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)
 		}
 
-		s.handleWorkflow(ctx, workflowID, appInstall.ID, autoApprove, wait)
+		err = s.handleWorkflow(ctx, workflowID, appInstall.ID, autoApprove, wait)
+		if err != nil {
+			return nil, fmt.Errorf("error handling workflow for install %s: %w", appInstall.Name, err)
+		}
 	}
 
 	ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	return appInstall, nil
 }
 
-func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, autoApprove, wait bool) {
+func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, autoApprove, wait bool) error {
 	workflow, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil {
-		return
+		return nil
 	}
 
 	if workflow.ApprovalOption == models.AppInstallApprovalOptionPrompt {
@@ -285,13 +291,14 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 	view.Render(formatWorkflows([]*models.AppWorkflow{workflow}))
 
 	if wait == false {
-		return
+		return nil
 	}
 
 	spinner := ui.NewSpinnerView(false)
 	spinner.Start("waiting for the workflow to complete")
 
-	for !workflow.Finished {
+	for !workflow.Finished && workflow.Status.Status != models.AppStatusCancelled {
+		fmt.Println("finished:", workflow.Finished, "status:", workflow.Status.Status)
 		spinner.Update(fmt.Sprintf("waiting for the workflow to complete (status: %s)", workflow.Status.Status))
 
 		time.Sleep(defaultPollDuration)
@@ -314,7 +321,12 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 				"%s/%s/installs/%s/workflows/%s", cfg.DashboardURL, s.orgID, installID, workflowID)
 			browser.OpenURL(url)
 		}
+	case models.AppStatusCancelled:
+		spinner.Fail(fmt.Errorf("workflow was cancelled"))
+		return fmt.Errorf("workflow was cancelled")
 	default:
 		spinner.Fail(fmt.Errorf("unknown workflow status: %s", workflow.Status.Status))
 	}
+
+	return nil
 }
