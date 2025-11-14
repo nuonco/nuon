@@ -11,7 +11,7 @@ export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig =
   components['schemas']['app.ComponentConfigConnection']
-export type TComponentType = components["schemas"]["app.ComponentType"];
+export type TComponentType = components['schemas']['app.ComponentType']
 
 // build
 export type TComponentBuild = components['schemas']['app.ComponentBuild']
@@ -160,7 +160,7 @@ export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
 export type TRunnerMngHeartbeat = {
   build: TRunnerHeartbeat
   install: TRunnerHeartbeat
-  mng: TRunnerHeartbeat   
+  mng: TRunnerHeartbeat
   org: TRunnerHeartbeat
 }
 export type TRunnerSettings = components['schemas']['app.RunnerGroupSettings']

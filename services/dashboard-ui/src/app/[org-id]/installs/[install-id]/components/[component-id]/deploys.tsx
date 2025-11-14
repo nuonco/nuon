@@ -1,52 +1,75 @@
-import { InstallComponentDeploys, Pagination, Empty } from '@/components'
+import { EmptyState } from '@/components/common/EmptyState'
+import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { getDeploysByComponentId } from '@/lib'
 import type { TComponent } from '@/types'
 
 export const Deploys = async ({
   component,
   installId,
-  orgId,
-  limit = 6,
+  limit = 10,
   offset,
+  orgId,
 }: {
   component: TComponent
   installId: string
-  orgId: string
   limit?: number
-  offset?: string
+  offset: string
+  orgId: string
 }) => {
-  const { data: deploys, headers } = await getDeploysByComponentId({
-    componentId: component.id,
+  const {
+    data: deploys,
+    error,
+    headers,
+  } = await getDeploysByComponentId({
+    componentId: component?.id,
     installId,
-    orgId,
-    offset,
     limit,
+    offset,
+    orgId,
   })
 
-  const pageData = {
-    hasNext: headers?.['x-nuon-page-next'] || 'false',
-    offset: headers?.['x-nuon-page-offset'] || '0',
+  const pagination = {
+    hasNext: headers?.['x-nuon-page-next'] === 'true',
+    offset: Number(headers?.['x-nuon-page-offset'] ?? '0'),
   }
 
-  return deploys ? (
-    <div className="flex flex-col gap-4 w-full">
-      <InstallComponentDeploys
-        component={component}
+  return error ? (
+    <DeploysError />
+  ) : deploys?.length ? (
+    <>
+      <DeployTimeline
         initDeploys={deploys}
+        componentId={component?.id}
+        componentName={component?.name}
+        pagination={pagination}
         shouldPoll
       />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={limit}
-      />
-    </div>
+    </>
   ) : (
-    <Empty
-      emptyMessage="Waiting on deployments"
-      emptyTitle="No deploys"
-      variant="history"
+    <DeploysError
+      title="No deploys yet"
+      message="Once the install is provisioned youre component deploys will appear here."
     />
+  )
+}
+
+export const DeploysSkeleton = () => {
+  return (
+    <>
+      <TimelineSkeleton eventCount={10} />
+    </>
+  )
+}
+
+export const DeploysError = ({
+  message = 'We encountered an issue loading your component deploys. Please try refreshing the page.',
+  title = 'Unable to load deploys',
+}: {
+  message?: string
+  title?: string
+}) => {
+  return (
+    <EmptyState variant="history" emptyMessage={message} emptyTitle={title} />
   )
 }
