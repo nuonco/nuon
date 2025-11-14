@@ -9,6 +9,8 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
@@ -20,7 +22,7 @@ type AdminUpdateRunnerSettingsRequest struct {
 	K8sServiceAccountName string `json:"k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
 
-	AWSMaxInstanceLifetime int `json:"aws_max_instance_lifetime" default:"604800" validate:"min=86400,max=31536000"`
+	AWSMaxInstanceLifetime *int `json:"aws_max_instance_lifetime" validate:"omitnil,min=86400,max=31536000"`
 }
 
 func (c *AdminUpdateRunnerSettingsRequest) Validate(v *validator.Validate) error {
@@ -76,13 +78,18 @@ func (s *service) adminUpdateRunnerSettings(ctx context.Context, runnerID string
 		RunnerAPIURL:             req.RunnerAPIURL,
 		OrgK8sServiceAccountName: req.K8sServiceAccountName,
 		OrgAWSIAMRoleARN:         req.AWSIAMRoleARN,
-		AWSMaxInstanceLifetime:   req.AWSMaxInstanceLifetime,
 	}
+
+	if req.AWSMaxInstanceLifetime != nil {
+		updates.AWSMaxInstanceLifetime = *req.AWSMaxInstanceLifetime
+	}
+
 	obj := app.RunnerGroupSettings{
 		RunnerGroupID: runner.RunnerGroupID,
 	}
 
 	if res := s.db.WithContext(ctx).
+		Scopes(scopes.WithPatcher(patcher.PatcherOptions{})).
 		Where(obj).
 		Updates(updates); res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner settings: %w", res.Error)
