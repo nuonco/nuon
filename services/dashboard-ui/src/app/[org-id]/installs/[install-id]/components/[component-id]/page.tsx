@@ -9,13 +9,10 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
 import { PageSection } from '@/components/layout/PageSection'
-
 import { getInstallById, getInstallComponentById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { ComponentConfig } from './config'
-import { ComponentDependencies } from './dependencies'
-import { Deploys } from './deploys'
-import { LatestOutputs } from './outputs'
+import { Deploys } from "./deploys"
+
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -31,6 +28,10 @@ import {
 } from '@/components'
 import { DriftedBanner } from '@/components/old/DriftedBanner'
 import { TerraformWorkspace } from '@/components/old/InstallSandbox'
+import { OldDeploys } from './old-deploys'
+import { ComponentConfig } from './config'
+import { ComponentDependencies } from './dependencies'
+import { LatestOutputs } from './outputs'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id' | 'component-id'>
 
@@ -384,7 +385,7 @@ export default async function InstallComponentPage({
                   />
                 }
               >
-                <Deploys
+                <OldDeploys
                   component={component}
                   installId={installId}
                   orgId={orgId}
