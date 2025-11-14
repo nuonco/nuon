@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { CaretRightIcon, FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { getInstallById, getInstallDriftedObjects, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { SandboxConfig } from './config'
-import { SandboxRuns } from './sandbox-runs'
+import { Runs, RunsError, RunsSkeleton } from './runs'
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -27,6 +27,8 @@ import {
 import { DriftedBanner } from '@/components/old/DriftedBanner'
 import { TerraformWorkspace } from '@/components/old/InstallSandbox'
 import { SandboxManagementDropdown } from '@/components/old/InstallSandbox/ManagementDropdown'
+import { SandboxRuns } from './sandbox-runs'
+import { SandboxConfig } from './config'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -134,22 +136,15 @@ export default async function InstallSandboxPage({
             </div>
           </Section>
           <Section heading="Sandbox history">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    loadingText="Loading sandbox history..."
-                    variant="stack"
-                  />
-                }
-              >
-                <SandboxRuns
+            <ErrorBoundary fallback={<RunsError />}>
+              <Suspense fallback={<RunsSkeleton />}>
+                <Runs
                   installId={installId}
                   orgId={orgId}
                   offset={sp['offset'] || '0'}
                 />
               </Suspense>
-            </OldErrorBoundary>
+            </ErrorBoundary>
           </Section>
         </div>
       </div>

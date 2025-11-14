@@ -10,11 +10,12 @@ export interface ITimelineEvent
   actions?: React.ReactNode
   additionalCaption?: React.ReactNode | string
   badge?: IBadge
-  caption?: string
+  caption?: React.ReactNode | string
   createdAt: string
   createdBy?: string
   status: TStatusType
   title: React.ReactNode | string
+  underline?: React.ReactNode | string
 }
 
 export const TimelineEvent = ({
@@ -27,6 +28,7 @@ export const TimelineEvent = ({
   createdBy,
   status,
   title,
+  underline,
   ...props
 }: ITimelineEvent) => {
   return (
@@ -73,6 +75,11 @@ export const TimelineEvent = ({
           ) : null}
           {badge?.children ? <Badge size="sm" {...badge} /> : null}
         </span>
+        {underline ? (
+          <Text variant="label" theme="neutral">
+            {underline}
+          </Text>
+        ) : null}
       </div>
     </div>
   )

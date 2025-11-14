@@ -4,7 +4,6 @@ import { useSearchParams } from 'next/navigation'
 import React, {
   useCallback,
   useEffect,
-  useState,
   type ReactElement,
   type ReactNode,
 } from 'react'
@@ -114,7 +113,6 @@ export const StepDetailPanel = ({
 }
 
 export const StepDetailPanelButton = ({
-  approvalPrompt = false,
   step,
   planOnly = false,
 }: {
@@ -122,7 +120,6 @@ export const StepDetailPanelButton = ({
   step: TWorkflowStep
   planOnly?: boolean
 }) => {
-  const [autoOpen, setAutoOpen] = useState(false)
   const { addPanel } = useSurfaces()
   const searchParams = useSearchParams()
   const panel = (
@@ -145,21 +142,7 @@ export const StepDetailPanelButton = ({
     if (step.id && step.id === searchParams?.get('panel')) {
       handleAddPanel()
     }
-  }, [])
-
-  useEffect(() => {
-    if (
-      step?.id &&
-      step?.step_target_id &&
-      step?.approval &&
-      step?.status?.status === 'approval-awaiting'
-    ) {
-      if (!autoOpen && !planOnly && approvalPrompt) {
-        setAutoOpen(true)
-        handleAddPanel()
-      }
-    }
-  }, [step])
+  }, []) 
 
   return (
     <Button

@@ -29,6 +29,7 @@ export const DeployTimelinePanel = ({
       <DeployTimeline
         componentName={componentName}
         componentId={componentId}
+        initDeploys={[]}
         pagination={{}}
         shouldPoll
       />

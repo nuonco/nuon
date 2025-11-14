@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -14,10 +15,10 @@ import {
   getOrgById,
 } from '@/lib'
 import type { TPageProps } from '@/types'
-import { ActionRuns } from './action-runs'
+import { Runs, RunsError, RunsSkeleton } from './runs'
 
 // NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   ActionTriggerButton,
   ActionTriggerType,
@@ -36,6 +37,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
+import { ActionRuns } from './action-runs'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id' | 'action-id'>
 
@@ -158,16 +160,9 @@ export default async function InstallActionPage({
 
       <div className="flex flex-col md:flex-row flex-auto md:divide-x">
         <Section heading="Recent executions">
-          <ErrorBoundary fallbackRender={ErrorFallback}>
-            <Suspense
-              fallback={
-                <Loading
-                  loadingText="Loading action run history..."
-                  variant="stack"
-                />
-              }
-            >
-              <ActionRuns
+          <ErrorBoundary fallback={<RunsError />}>
+            <Suspense fallback={<RunsSkeleton />}>
+              <Runs
                 actionId={actionId}
                 installId={installId}
                 orgId={orgId}
@@ -377,7 +372,7 @@ export default async function InstallActionPage({
     >
       <div className="flex flex-col md:flex-row flex-auto">
         <Section className="border-r" heading="Recent executions">
-          <ErrorBoundary fallbackRender={ErrorFallback}>
+          <OldErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense
               fallback={
                 <Loading
@@ -393,7 +388,7 @@ export default async function InstallActionPage({
                 offset={sp['offset'] || '0'}
               />
             </Suspense>
-          </ErrorBoundary>
+          </OldErrorBoundary>
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
