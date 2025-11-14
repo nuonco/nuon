@@ -1,44 +1,72 @@
-import { ComponentBuildHistory, Pagination } from '@/components'
+import { EmptyState } from '@/components/common/EmptyState'
+import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { BuildTimeline } from '@/components/builds/BuildTimeline'
 import { getComponentBuilds } from '@/lib'
+import type { TComponent } from '@/types'
 
 export const Builds = async ({
-  componentId,
-  orgId,
-  limit = 6,
+  component,
+  limit = 10,
   offset,
+  orgId,
 }: {
-  componentId: string
-  orgId: string
+  component: TComponent
   limit?: number
-  offset?: string
+  offset: string
+  orgId: string
 }) => {
-  const { data: builds, headers } = await getComponentBuilds({
-    orgId,
-    componentId,
-    offset,
+  const {
+    data: builds,
+    error,
+    headers,
+  } = await getComponentBuilds({
+    componentId: component?.id,
     limit,
+    offset,
+    orgId,
   })
 
-  const pageData = {
-    hasNext: headers?.['x-nuon-page-next'] || 'false',
-    offset: headers?.['x-nuon-page-offset'] || '0',
+  const pagination = {
+    hasNext: headers?.['x-nuon-page-next'] === 'true',
+    offset: Number(headers?.['x-nuon-page-offset'] ?? '0'),
   }
 
-  return (
-    <div className="flex flex-col gap-4 w-full">
-      <ComponentBuildHistory
-        componentId={componentId}
-        initBuilds={builds || []}
-        offset={pageData?.offset}
-        limit={limit}
+  return error ? (
+    <BuildsError />
+  ) : builds?.length ? (
+    <>
+      <BuildTimeline
+        initBuilds={builds}
+        componentId={component?.id}
+        componentName={component?.name}
+        pagination={pagination}
         shouldPoll
       />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={limit}
-      />
-    </div>
+    </>
+  ) : (
+    <BuildsError
+      title="No builds yet"
+      message="Once youre component has builds they will appear here."
+    />
+  )
+}
+
+export const BuildsSkeleton = () => {
+  return (
+    <>
+      <TimelineSkeleton eventCount={10} />
+    </>
+  )
+}
+
+export const BuildsError = ({
+  message = 'We encountered an issue loading your component builds. Please try refreshing the page.',
+  title = 'Unable to load builds',
+}: {
+  message?: string
+  title?: string
+}) => {
+  return (
+    <EmptyState variant="history" emptyMessage={message} emptyTitle={title} />
   )
 }
