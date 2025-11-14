@@ -3,19 +3,17 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
-import { ComponentType } from "@/components/components/ComponentType"
+import { ComponentType } from '@/components/components/ComponentType'
 import { PageSection } from '@/components/layout/PageSection'
-
 import { getAppById, getComponentById, getOrgById } from '@/lib'
-import { Builds } from './builds'
-import { Config } from './config'
-import { Dependencies } from './dependencies'
+import { Builds, BuildsSkeleton, BuildsError } from './builds'
 
 // NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
+import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   BuildComponentButton,
   DashboardContent,
@@ -23,6 +21,9 @@ import {
   Loading,
   Section,
 } from '@/components'
+import { OldBuilds } from './old-builds'
+import { Config } from './config'
+import { Dependencies } from './dependencies'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -72,8 +73,8 @@ export default async function AppComponent({ params, searchParams }) {
           <span className="flex items-center gap-2">
             <ComponentType type={component?.type} displayVariant="icon-only" />
             <Text variant="base" weight="strong">
-            {component?.name}
-          </Text>
+              {component?.name}
+            </Text>
           </span>
           <ID>{component.id}</ID>
         </HeadingGroup>
@@ -87,7 +88,7 @@ export default async function AppComponent({ params, searchParams }) {
         <div className="divide-y flex flex-col md:col-span-8">
           {component?.dependencies && (
             <Section className="flex-initial" heading="Dependencies">
-              <ErrorBoundary fallbackRender={ErrorFallback}>
+              <OldErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
                   fallback={
                     <Loading
@@ -98,12 +99,12 @@ export default async function AppComponent({ params, searchParams }) {
                 >
                   <Dependencies component={component} orgId={orgId} />
                 </Suspense>
-              </ErrorBoundary>
+              </OldErrorBoundary>
             </Section>
           )}
 
           <Section heading="Latest config">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
+            <OldErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
                   <Loading
@@ -114,19 +115,15 @@ export default async function AppComponent({ params, searchParams }) {
               >
                 <Config componentId={componentId} orgId={orgId} />
               </Suspense>
-            </ErrorBoundary>
+            </OldErrorBoundary>
           </Section>
         </div>
         <div className="divide-y flex flex-col md:col-span-4">
           <Section heading="Build history">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading variant="stack" loadingText="Loading builds..." />
-                }
-              >
+            <ErrorBoundary fallback={<BuildsError />}>
+              <Suspense fallback={<BuildsSkeleton />}>
                 <Builds
-                  componentId={componentId}
+                  component={component}
                   orgId={orgId}
                   offset={sp['offset'] || '0'}
                 />
@@ -157,7 +154,7 @@ export default async function AppComponent({ params, searchParams }) {
         <div className="divide-y flex flex-col md:col-span-8">
           {component?.dependencies && (
             <Section className="flex-initial" heading="Dependencies">
-              <ErrorBoundary fallbackRender={ErrorFallback}>
+              <OldErrorBoundary fallbackRender={ErrorFallback}>
                 <Suspense
                   fallback={
                     <Loading
@@ -168,12 +165,12 @@ export default async function AppComponent({ params, searchParams }) {
                 >
                   <Dependencies component={component} orgId={orgId} />
                 </Suspense>
-              </ErrorBoundary>
+              </OldErrorBoundary>
             </Section>
           )}
 
           <Section heading="Latest config">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
+            <OldErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
                   <Loading
@@ -184,24 +181,24 @@ export default async function AppComponent({ params, searchParams }) {
               >
                 <Config componentId={componentId} orgId={orgId} />
               </Suspense>
-            </ErrorBoundary>
+            </OldErrorBoundary>
           </Section>
         </div>
         <div className="divide-y flex flex-col md:col-span-4">
           <Section heading="Build history">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
+            <OldErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
                   <Loading variant="stack" loadingText="Loading builds..." />
                 }
               >
-                <Builds
+                <OldBuilds
                   componentId={componentId}
                   orgId={orgId}
                   offset={sp['offset'] || '0'}
                 />
               </Suspense>
-            </ErrorBoundary>
+            </OldErrorBoundary>
           </Section>
         </div>
       </div>
