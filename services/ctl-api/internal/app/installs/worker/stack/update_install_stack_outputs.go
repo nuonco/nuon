@@ -117,6 +117,14 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to update install stack outputs")
 	}
 
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   run.ID,
+		StepTargetType: plugins.TableName(w.db, outputs),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update stack step target")
+	}
+
 	// update the runner settings group
 	runnerIAMRoleARN := ""
 	if outputs.AWSStackOutputs != nil {
