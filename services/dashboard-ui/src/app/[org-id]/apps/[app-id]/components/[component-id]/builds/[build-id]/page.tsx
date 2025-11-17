@@ -5,8 +5,9 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
   getAppById,
@@ -72,6 +73,34 @@ export default async function AppComponentBuildPage({ params }) {
   const containerId = 'component-build-page'
   return org?.features?.['stratus-layout'] ? (
     <PageSection className="!p-0 !gap-0" id={containerId} isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/apps`,
+            text: 'Apps',
+          },
+          {
+            path: `/${orgId}/apps/${appId}`,
+            text: app?.name,
+          },
+          {
+            path: `/${orgId}/apps/${appId}/components`,
+            text: 'Components',
+          },
+          {
+            path: `/${orgId}/apps/${appId}/components/${componentId}`,
+            text: component?.name,
+          },
+          {
+            path: `/${orgId}/apps/${appId}/components/${componentId}/builds/${buildId}`,
+            text: 'Build',
+          },
+        ]}
+      />
       {/* old page layout */}
       <div className="p-6 border-b flex justify-between">
         <HeadingGroup>

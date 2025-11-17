@@ -4,15 +4,15 @@ import { Suspense } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
-import { InstallsTableSkeleton } from "@/components/installs/InstallsTable";
+import { InstallsTableSkeleton } from '@/components/installs/InstallsTable'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InstallsTable } from './installs-table'
-
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -41,9 +41,9 @@ export default async function InstallsPage({
   const { data: org } = await getOrgById({ orgId })
 
   return org?.features?.['stratus-layout'] ? (
-    <PageLayout
-      breadcrumb={{
-        baseCrumbs: [
+    <PageLayout isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
           {
             path: `/${orgId}`,
             text: org?.name,
@@ -52,10 +52,8 @@ export default async function InstallsPage({
             path: `/${orgId}/installs`,
             text: 'Installs',
           },
-        ],
-      }}
-      isScrollable
-    >
+        ]}
+      />
       <PageHeader>
         <HeadingGroup>
           <Text variant="h3" weight="stronger" level={1}>
@@ -76,11 +74,7 @@ export default async function InstallsPage({
               </Text>
             }
           >
-            <Suspense
-              fallback={
-                <InstallsTableSkeleton />
-              }
-            >
+            <Suspense fallback={<InstallsTableSkeleton />}>
               <InstallsTable
                 orgId={orgId}
                 offset={sp['offset'] || '0'}
