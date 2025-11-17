@@ -16,6 +16,7 @@ import (
 )
 
 const ManagedByNuonCLIConfig = "nuon/cli/install-config"
+const ManagedByNuonDashboard = "nuon/dashboard"
 
 const defaultPollDuration = time.Second * 10
 
@@ -143,15 +144,6 @@ func (s *appInstallSyncer) syncExistingInstall(
 	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove, wait bool,
 ) (*models.AppInstall, error) {
 	var err error
-
-	if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
-		_, err = s.api.UpdateInstall(ctx, appInstall.ID, &models.ServiceUpdateInstallRequest{
-			Name: appInstall.Name,
-			Metadata: &models.HelpersInstallMetadata{
-				ManagedBy: ManagedByNuonCLIConfig,
-			},
-		})
-	}
 
 	currInputs, err := s.api.GetInstallCurrentInputs(ctx, appInstall.ID)
 	if err != nil {
