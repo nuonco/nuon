@@ -26,6 +26,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		fileOrDir     string
 		confirm       bool
 		wait          bool
+		enable        bool
+		disable       bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -149,6 +151,22 @@ func (c *cli) installsCmd() *cobra.Command {
 	syncCmd.MarkFlagRequired("file")
 	syncCmd.MarkFlagRequired("app-id")
 	installsCmds.AddCommand(syncCmd)
+
+	toggleSyncCmd := &cobra.Command{
+		Use:   "toggle-sync",
+		Short: "Enable/disable install config sync",
+		Long:  "Toggle syncing of install using a config file",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ToggleSync(cmd.Context(), id, enable, disable)
+		}),
+	}
+	toggleSyncCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to toggle config file syncing for")
+	toggleSyncCmd.Flags().BoolVar(&enable, "enable", false, "Set to explicitly enable config file syncing for an install")
+	toggleSyncCmd.Flags().BoolVar(&disable, "disable", false, "Set to explicitly disable config file syncing for an install")
+	toggleSyncCmd.MarkFlagRequired("install-id")
+	toggleSyncCmd.MarkFlagsMutuallyExclusive("enable", "disable")
+	installsCmds.AddCommand(toggleSyncCmd)
 
 	componentsCmd := &cobra.Command{
 		Use:   "components",
