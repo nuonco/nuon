@@ -48,15 +48,21 @@ export const Plan = ({ step }: { step: TWorkflowStep }) => {
 
   return (
     <>
-      {isLoading ? (
+      {isLoading && !plan && !error ? (
         getApprovalPlanSkeleton(
           (step?.approval?.type as TApprovalType) || 'helm_approval'
         )
-      ) : !plan || error ? (
+      ) : !plan && !error ? (
         <EmptyState
           variant="table"
-          emptyMessage="Unable to load the approval plan changes."
-          emptyTitle="No approval plan"
+          emptyMessage="The approval plan hasn't been generated yet. Run the workflow to create an approval plan."
+          emptyTitle="No plan generated"
+        />
+      ) : !plan && error ? (
+        <EmptyState
+          variant="table"
+          emptyMessage="We encountered an issue loading the approval plan. Please try refreshing the page."
+          emptyTitle="Failed to load plan"
         />
       ) : (
         getApprovalPlanDiff(step, plan)
