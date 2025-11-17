@@ -9,7 +9,7 @@ import {
 import { ActionStepGraph } from '@/components/actions/ActionStepsGraph'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Text } from '@/components/common/Text'
-
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import {
   getInstallActionById,
   getInstallActionRunById,
@@ -115,6 +115,34 @@ export default async function InstallActionRunPage({ params }) {
     >
       {org?.features?.['stratus-layout'] ? (
         <div className="flex flex-col gap-6">
+          <Breadcrumbs
+            breadcrumbs={[
+              {
+                path: `/${orgId}`,
+                text: org?.name,
+              },
+              {
+                path: `/${orgId}/installs`,
+                text: 'Installs',
+              },
+              {
+                path: `/${orgId}/installs/${installId}`,
+                text: install?.name,
+              },
+              {
+                path: `/${orgId}/installs/${installId}/actions`,
+                text: 'Actions',
+              },
+              {
+                path: `/${orgId}/installs/${installId}/actions/${actionId}`,
+                text: installAction?.action_workflow?.name,
+              },
+              {
+                path: `/${orgId}/installs/${installId}/actions/${actionId}/${runId}`,
+                text: `${installActionRun?.trigger_type} run`,
+              },
+            ]}
+          />
           <ActionStepGraph
             steps={hydrateActionRunSteps({
               steps: installActionRun?.steps,

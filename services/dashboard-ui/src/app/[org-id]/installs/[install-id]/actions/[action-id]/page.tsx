@@ -6,8 +6,9 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Code } from '@/components/common/Code'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import {
   getInstallActionById,
   getInstallById,
@@ -85,6 +86,30 @@ export default async function InstallActionPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/actions`,
+            text: 'Actions',
+          },
+          {
+            path: `/${orgId}/installs/${installId}/actions/${actionId}`,
+            text: installAction?.action_workflow?.name,
+          },
+        ]}
+      />
       {/* old page layout */}
 
       <div className="p-6 border-b flex justify-between">

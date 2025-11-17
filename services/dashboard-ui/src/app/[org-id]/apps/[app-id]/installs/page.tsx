@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getAppById, getOrgById } from '@/lib'
 import { InstallsTable, InstallsTableSkeleton } from './installs-table'
 
@@ -43,6 +44,26 @@ export default async function AppInstallsPage({ params, searchParams }) {
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/apps`,
+            text: 'Apps',
+          },
+          {
+            path: `/${orgId}/apps/${appId}`,
+            text: app?.name,
+          },
+          {
+            path: `/${orgId}/apps/${appId}/installs`,
+            text: 'Installs',
+          },
+        ]}
+      />
       <HeadingGroup>
         <Text variant="base" weight="strong">
           App installs

@@ -6,8 +6,9 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
   getInstallById,
@@ -15,7 +16,6 @@ import {
   getWorkflowById,
   getOrgById,
 } from '@/lib'
-import { CANCEL_RUNNER_JOBS, sizeToMbOrGB } from '@/utils'
 import { Build } from './build'
 import { ComponentConfig } from './config'
 import { Logs, LogsError, LogsSkeleton } from './logs'
@@ -49,6 +49,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
+import { CANCEL_RUNNER_JOBS, sizeToMbOrGB } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -115,6 +116,34 @@ export default async function InstallComponentDeploy({ params }) {
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection className="!p-0 !gap-0" id={containerId} isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/components`,
+            text: 'Components',
+          },
+          {
+            path: `/${orgId}/installs/${installId}/components/${componentId}`,
+            text: deploy?.component_name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/components/${componentId}/deploys/${deployId}`,
+            text: 'Deploy',
+          },
+        ]}
+      />
       {/* old page layout */}
       <div className="p-6 border-b flex justify-between">
         <HeadingGroup>

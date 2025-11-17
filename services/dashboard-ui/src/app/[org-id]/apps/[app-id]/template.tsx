@@ -25,20 +25,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
   const isThirdLevel = pathName.split('/').length > 5
 
   return org?.features?.['stratus-layout'] ? (
-    <PageLayout
-      breadcrumb={{
-        baseCrumbs: [
-          {
-            path: `/${org?.id}/apps`,
-            text: 'Apps',
-          },
-          {
-            path: `/${org?.id}/apps/${app?.id}`,
-            text: app?.name || 'App',
-          },
-        ],
-      }}
-    >
+    <PageLayout>
       {isThirdLevel ? (
         children
       ) : (

@@ -1,7 +1,13 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
-import { getInstallActionById, getInstallActionRunById } from '@/lib'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import {
+  getInstallActionById,
+  getInstallActionRunById,
+  getInstallById,
+  getOrgById,
+} from '@/lib'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import type { TPageProps } from '@/types'
 import { Logs, LogsError, LogsSkeleton } from './logs'
@@ -47,16 +53,60 @@ export default async function InstallAcitonRunLogsPage({
     ['action-id']: actionId,
     ['run-id']: runId,
   } = await params
-  const [{ data: installActionRun }] = await Promise.all([
+  const [
+    { data: installActionRun },
+    { data: installAction },
+    { data: install },
+    { data: org },
+  ] = await Promise.all([
     getInstallActionRunById({
       installId,
       orgId,
       runId,
     }),
+    getInstallActionById({
+      actionId,
+      installId,
+      orgId,
+    }),
+    getInstallById({ installId, orgId }),
+    getOrgById({ orgId }),
   ])
 
   return (
     <>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/actions`,
+            text: 'Actions',
+          },
+          {
+            path: `/${orgId}/installs/${installId}/actions/${actionId}`,
+            text: installAction?.action_workflow?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/actions/${actionId}/${runId}`,
+            text: `${installActionRun?.trigger_type} run`,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/actions/${actionId}/${runId}/logs`,
+            text: `Logs`,
+          },
+        ]}
+      />
       <LogStreamProvider
         initLogStream={installActionRun?.log_stream}
         shouldPoll={installActionRun?.log_stream?.open}

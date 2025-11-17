@@ -9,6 +9,7 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getAppById, getComponentById, getOrgById } from '@/lib'
 import { Builds, BuildsSkeleton, BuildsError } from './builds'
 
@@ -66,6 +67,30 @@ export default async function AppComponent({ params, searchParams }) {
   const containerId = 'app-component-page'
   return org?.features?.['stratus-layout'] ? (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/apps`,
+            text: 'Apps',
+          },
+          {
+            path: `/${orgId}/apps/${appId}`,
+            text: app?.name,
+          },
+          {
+            path: `/${orgId}/apps/${appId}/components`,
+            text: 'Components',
+          },
+          {
+            path: `/${orgId}/apps/${appId}/components/${componentId}`,
+            text: component?.name,
+          },
+        ]}
+      />
       {/* old page layout */}
       <div className="p-6 border-b flex justify-between">
         <HeadingGroup>

@@ -29,20 +29,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   return org?.features?.['stratus-layout'] ? (
-    <PageLayout
-      breadcrumb={{
-        baseCrumbs: [
-          {
-            path: `/${org?.id}/installs`,
-            text: 'Installs',
-          },
-          {
-            path: `/${org?.id}/installs/${install?.id}`,
-            text: install?.name || 'Install',
-          },
-        ],
-      }}
-    >
+    <PageLayout>
       {isThirdLevel ? (
         children
       ) : (

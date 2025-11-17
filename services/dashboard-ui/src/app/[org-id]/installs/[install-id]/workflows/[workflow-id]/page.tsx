@@ -3,8 +3,9 @@ import { Suspense } from 'react'
 import { BackToTop } from '@/components/common/BackToTop'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Link } from '@/components/common/Link'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { WorkflowDetails } from '@/components/workflows/WorkflowDetails'
 import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
 import { OnboardingCelebrationWrapper } from './OnboardingCelebrationWrapper'
@@ -66,6 +67,32 @@ export default async function InstallWorkflow({
       <OnboardingCelebrationWrapper>
         {org?.features?.['stratus-workflow'] ? (
           <>
+            <Breadcrumbs
+              breadcrumbs={[
+                {
+                  path: `/${orgId}`,
+                  text: org?.name,
+                },
+                {
+                  path: `/${orgId}/installs`,
+                  text: 'Installs',
+                },
+                {
+                  path: `/${orgId}/installs/${installId}`,
+                  text: install?.name,
+                },
+                {
+                  path: `/${orgId}/installs/${installId}/workflows`,
+                  text: 'Workflows',
+                },
+                {
+                  path: `/${orgId}/installs/${install.id}/workflows/${workflowId}`,
+                  text:
+                    installWorkflow?.name ||
+                    snakeToWords(toSentenceCase(installWorkflow?.type)),
+                },
+              ]}
+            />
             <WorkflowDetails
               initWorkflow={installWorkflow}
               install={install}
