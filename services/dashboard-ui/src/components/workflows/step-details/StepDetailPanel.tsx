@@ -34,7 +34,7 @@ function getStepPanelSize(step: TWorkflowStep): TPanelSize {
     step?.step_target_type === 'install_sandbox_runs'
   ) {
     if (step?.execution_type !== 'approval') {
-      size = 'full'
+      size = '3/4'
     }
   }
 
@@ -134,9 +134,9 @@ export const StepDetailPanelButton = ({
     </StepDetailPanel>
   )
 
-  const handleAddPanel = useCallback(() => {
+  const handleAddPanel = () => {
     addPanel(panel, step.id)
-  }, [addPanel, panel, step?.id])
+  }
 
   useEffect(() => {
     if (step.id && step.id === searchParams?.get('panel')) {
