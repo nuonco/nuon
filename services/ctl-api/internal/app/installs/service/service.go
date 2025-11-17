@@ -124,7 +124,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		components := installs.Group("/components")
 		{
 			components.GET("", s.GetInstallComponents)
-			components.GET("/summary", s.GetInstallComponentSummary)
 			components.POST("/teardown-all", s.TeardownInstallComponents)
 			components.POST("/deploy-all", s.DeployInstallComponents)
 
