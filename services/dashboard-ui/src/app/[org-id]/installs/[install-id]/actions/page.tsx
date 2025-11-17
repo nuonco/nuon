@@ -1,16 +1,16 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
-import { InstallActionsTableSkeleton  } from "@/components/actions/InstallActionsTable";
+import { InstallActionsTableSkeleton } from '@/components/actions/InstallActionsTable'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstallById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InstallActionsTable } from './actions-table'
-
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -54,6 +54,26 @@ export default async function InstallActionsPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/actions`,
+            text: 'Actions',
+          },
+        ]}
+      />
       <HeadingGroup>
         <Text variant="base" weight="strong">
           Actions
@@ -70,9 +90,7 @@ export default async function InstallActionsPage({
           </Text>
         }
       >
-        <Suspense
-          fallback={<InstallActionsTableSkeleton />}
-        >
+        <Suspense fallback={<InstallActionsTableSkeleton />}>
           <InstallActionsTable
             installId={installId}
             orgId={orgId}

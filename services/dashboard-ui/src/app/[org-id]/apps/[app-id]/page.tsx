@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getAppById, getAppConfigs, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InputsConfig } from './inputs-config'
@@ -45,6 +46,22 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection className="!pt-0" isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/apps`,
+            text: 'Apps',
+          },
+          {
+            path: `/${orgId}/apps/${appId}`,
+            text: app?.name,
+          },
+        ]}
+      />
       {/* old page stuff */}
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto">
         <div className="divide-y flex flex-col md:col-span-7">

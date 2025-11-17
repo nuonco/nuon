@@ -41,8 +41,6 @@ export type TInstallEvent = Omit<
 }
 export type TInstallInputs = components['schemas']['app.InstallInputs']
 export type TInstallComponentOutputs = Record<string, string>
-export type TInstallComponentSummary =
-  components['schemas']['app.InstallComponentSummary']
 export type TInstallConfig = components['schemas']['app.InstallConfig']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']

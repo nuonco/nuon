@@ -4,8 +4,9 @@ import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstallById, getOrgById } from '@/lib'
 import { CurrentInputs } from './inputs'
 import { Readme } from './readme'
@@ -51,6 +52,22 @@ export default async function Install({ params }) {
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection className="!pt-0" isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+        ]}
+      />
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <Section
           heading="README"

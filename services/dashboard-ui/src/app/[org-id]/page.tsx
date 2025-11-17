@@ -1,15 +1,15 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr'
-
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageGrid } from '@/components/layout/PageGrid'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
-import { Text } from '@/components/common/Text'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getOrgById } from '@/lib'
 import { auth0 } from '@/lib/auth'
 import type { TPageProps } from '@/types'
@@ -51,18 +51,15 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
 
   if (org?.features?.['org-dashboard']) {
     return org?.features?.['stratus-layout'] ? (
-      <PageLayout
-        breadcrumb={{
-          baseCrumbs: [
+      <PageLayout className="divide-y" isScrollable>
+        <Breadcrumbs
+          breadcrumbs={[
             {
               path: `/${orgId}`,
               text: org?.name,
             },
-          ],
-        }}
-        className="divide-y"
-        isScrollable
-      >
+          ]}
+        />
         <PageHeader>
           <HeadingGroup>
             <Text variant="h3" weight="stronger" level={1} role="heading">
