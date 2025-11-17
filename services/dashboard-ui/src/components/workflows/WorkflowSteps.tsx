@@ -43,11 +43,7 @@ export const WorkflowSteps = ({
     ? workflowSteps
         .filter((step) => step.execution_type !== 'hidden')
         .filter((step) => step.name.includes(searchName))
-        .sort((a, b) => {
-          const aIsError = a.status?.status === 'error' ? 0 : 1
-          const bIsError = b.status?.status === 'error' ? 0 : 1
-          return aIsError - bIsError || a.idx - b.idx
-        })
+        .sort((a, b) => a.idx - b.idx)
     : []
 
   return (

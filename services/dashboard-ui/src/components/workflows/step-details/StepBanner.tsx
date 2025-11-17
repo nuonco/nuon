@@ -5,7 +5,13 @@ import type { TWorkflowStep } from '@/types'
 import { getStepBanner } from '@/utils/workflow-utils'
 import { StepButtons } from './StepButtons'
 
-export const StepBanner = ({ step, planOnly = false }: { step: TWorkflowStep, planOnly?: boolean }) => {
+export const StepBanner = ({
+  step,
+  planOnly = false,
+}: {
+  step: TWorkflowStep
+  planOnly?: boolean
+}) => {
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
 
