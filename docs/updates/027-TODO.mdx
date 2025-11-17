@@ -19,3 +19,4 @@ possible to set thier value from UI, or utilising the default value implicitly.
 
 - UI: Fixed missing badge for Install managed by config file in the header.
 - CLI: Fix empty diff when syncing a new install using a config file.
+- CLI: Syncing an Install without having Install Config syncing enabled now results in an error. These only produced a warning before, going unnoticed in CI workflows. 
