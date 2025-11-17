@@ -16,6 +16,9 @@ type TerraformWorkspaceLock struct {
 	CreatedAt time.Time `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 
+	OrgID string `json:"org_id,omitzero" gorm:"null;default:null" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
+
 	// Foreign key to TerraformWorkspace with unique constraint to prevent multiple active locks
 	WorkspaceID string             `json:"workspace_id,omitzero" gorm:"type:text;not null;foreignKey:WorkspaceID;references:ID;uniqueIndex:idx_workspace_active_lock" temporaljson:"workspace_id,omitzero,omitempty"`
 	Workspace   TerraformWorkspace `json:"-" temporaljson:"workspace,omitzero,omitempty"`
@@ -32,6 +35,10 @@ func (r *TerraformWorkspaceLock) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	if r.CreatedByID == "" {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+
+	if r.OrgID == "" {
+		r.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 
 	return nil
