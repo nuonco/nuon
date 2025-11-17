@@ -70,7 +70,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     return {
       copy: `Step encountered an error: ${status_human_description}`,
       theme: 'error',
-      title: 'Step failed',
+      title: `Step ${step?.name} failed`,
     }
   }
 
@@ -78,7 +78,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     return {
       copy: `Step was cancelled: ${status_human_description}`,
       theme: 'warn',
-      title: 'Step cancelled',
+      title: `Step ${step?.name} cancelled`,
     }
   }
 
@@ -86,7 +86,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     return {
       copy: `Step was discarded: ${status_human_description}`,
       theme: 'default',
-      title: 'Step discarded',
+      title: `Step ${step?.name} discarded`,
     }
   }
 
@@ -94,7 +94,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     return {
       copy: `Step was skipped by ${email}: ${status_human_description}`,
       theme: 'default',
-      title: 'Step skipped',
+      title: `Step ${step?.name} skipped`,
     }
   }
 
@@ -102,7 +102,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     return {
       copy: `Step was skipped due to being a plan only workflow`,
       theme: 'default',
-      title: 'Step skipped',
+      title: `Step ${step?.name} skipped`,
     }
   }
 
@@ -110,7 +110,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     return {
       copy: `Step was retried by ${email}: ${status_human_description}`,
       theme: 'info',
-      title: 'Step retried',
+      title: `Step ${step?.name} retried`,
     }
   }
 
