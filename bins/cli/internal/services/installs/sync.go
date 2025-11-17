@@ -15,7 +15,6 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 	"github.com/powertoolsdev/mono/pkg/config"
 )
 
@@ -54,20 +53,9 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 			}
 
 			// Check if the install is managed by Nuon CLI config.
-			// If so, confirm with the user before updating.
+			// If so, return an error to prevent overwriting.
 			if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
-				ui.PrintWarning(fmt.Sprintf(
-					"install \"%s\" is not managed by an Install Config file, syncing can overwrite existing config",
-					appInstall.Name,
-				))
-				ok, _ := bubbles.ShowConfirmDialog(fmt.Sprintf(
-					"Do you want to continue syncing install \"%s\"?",
-					appInstall.Name,
-				))
-				if !ok {
-					ui.PrintWarning(fmt.Sprintf("skipping install %s", appInstall.Name))
-					continue
-				}
+				return ui.PrintError(fmt.Errorf("install %s is not managed by an install config file, aborting sync to prevent overwriting", installCfg.Name))
 			}
 		}
 
