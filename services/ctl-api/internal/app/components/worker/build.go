@@ -37,18 +37,21 @@ func (w *Workflows) Build(ctx workflow.Context, sreq signals.RequestSignal) erro
 	l.Info("executing build")
 	currentApp, err := activities.AwaitGetComponentAppByComponentID(ctx, sreq.ID)
 	if err != nil {
+		w.updateStatus(ctx, sreq.ID, app.ComponentStatusError, "unable to get component app")
 		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "unable to get component app")
 		return fmt.Errorf("unable to get component app: %w", err)
 	}
 
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, sreq.ID)
 	if err != nil {
+		w.updateStatus(ctx, sreq.ID, app.ComponentStatusError, "unable to get component")
 		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
 	build, err := activities.AwaitGetComponentBuildByID(ctx, sreq.BuildID)
 	if err != nil {
+		w.updateStatus(ctx, sreq.ID, app.ComponentStatusError, "unable to get component build")
 		w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusError, "unable to get component build")
 		return fmt.Errorf("unable to get component build: %w", err)
 	}
