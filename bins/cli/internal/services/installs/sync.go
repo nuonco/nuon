@@ -53,7 +53,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 			}
 
 			// Check if the install is managed by Nuon CLI config.
-			// If so, return an error to prevent overwriting.
+			// If not, return an error to prevent overwriting.
 			if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
 				return ui.PrintError(fmt.Errorf("install %s is not managed by an install config file, aborting sync to prevent overwriting", installCfg.Name))
 			}
