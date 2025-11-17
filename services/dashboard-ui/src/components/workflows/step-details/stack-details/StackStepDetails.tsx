@@ -20,19 +20,18 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
   const { org } = useOrg()
   const { data: stack, isLoading } = useQuery<TInstallStack>({
     dependencies: [step],
-    initData: {},
     path: `/api/orgs/${org.id}/installs/${step.owner_id}/stack`,
   })
 
   return (
     <div>
       {isGenerateStack ? (
-        isLoading ? (
+        isLoading && !stack ? (
           <GenerateStackDetailsSkeleton />
         ) : (
           <GenerateStackDetails />
         )
-      ) : isLoading ? (
+      ) : isLoading && !stack ? (
         <AwaitStackDetailsSkeleton />
       ) : (
         <AwaitStackDetails stack={stack} step={step} />
