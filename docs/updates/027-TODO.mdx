@@ -9,11 +9,20 @@ _Nov 14, 2024_
 
 ## Install Config file improvements
 
-**Toggle Install Config file syncing from UI** We have added an Install Config sync toggle in the management menu. 
-Users can now enable/disable Install Config syncing from the dashboard UI itself.
+### Toggle Install Config file syncing
 
-**Required Inputs** Install Config files now need to have the required inputs defined explicitly. Now it is not 
-possible to set thier value from UI, or utilising the default value implicitly.
+Users can now enable or disable syncing an Install from a config file, from dashboard UI as well as CLI.
+
+**Dashboard UI** You can find the toggle to enable/disable config file syncing in the management menu of an Install.
+
+**CLI** The CLI features a new command to toggle config file syncing for an Install. Run `nuon installs toggle-sync` to toggle the config file syncing, or use `--enable` or `--disable` to explicitly set the syncing status.
+
+![New CLI command installs toggle-sync](assets/027_cli_installs_toggle_sync.png)
+
+### Required Inputs
+
+Install Config files now need to have the required inputs defined explicitly. Now it is not 
+possible to set their value from UI, or utilising the default value implicitly.
 
 ## Bug Fixes
 
