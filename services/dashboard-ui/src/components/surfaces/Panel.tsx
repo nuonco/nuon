@@ -13,7 +13,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
 import './Panel.css'
 
-type TPanelSize = 'default' | 'half' | 'full'
+type TPanelSize = 'default' | 'half' | '3/4' | 'full'
 
 export interface IPanel extends React.HTMLAttributes<HTMLDivElement> {
   childrenClassName?: string
@@ -67,6 +67,7 @@ const PanelBase = ({
             {
               'w-screen md:w-104': size === 'default',
               'w-screen md:w-1/2': size === 'half',
+              'w-screen md:w-3/4': size === '3/4',
               'w-screen': size === 'full',
             },
             className

@@ -81,10 +81,12 @@ export const WorkflowDetails = ({
             {workflow?.approval_option === 'prompt' &&
               !workflow?.finished &&
               !workflow?.plan_only &&
+              workflow?.status?.status !== 'cancelled' &&
               hasApprovals && <ApproveAllButton workflow={workflow} />}
-            {!workflow?.finished && (
-              <CancelWorkflowButton workflow={workflow} />
-            )}
+            {!workflow?.finished &&
+              workflow?.status?.status !== 'cancelled' && (
+                <CancelWorkflowButton workflow={workflow} />
+              )}
             {!isLoading && user?.email?.endsWith('@nuon.co') ? (
               <Button
                 href={`/admin/temporal/namespaces/installs/workflows${temporalLinkParams}`}

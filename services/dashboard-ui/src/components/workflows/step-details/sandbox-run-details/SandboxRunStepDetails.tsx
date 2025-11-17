@@ -49,7 +49,7 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
 
       {step?.execution_type === 'approval' ? (
         <Plan step={step} />
-      ) : isLoading ? (
+      ) : isLoading && !sandboxRun ? (
         <div className="flex flex-col gap-4">
           <SandboxRunApplySkeleton />
           <SandboxRunLogsSkeleton />

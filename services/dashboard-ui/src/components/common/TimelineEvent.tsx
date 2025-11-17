@@ -46,7 +46,7 @@ export const TimelineEvent = ({
         status={status}
         variant="timeline"
         isWithoutText
-        className="relative z-10"
+        className="relative z-1"
       />
       <div className="w-full">
         <hgroup className="w-full flex items-center justify-between">
