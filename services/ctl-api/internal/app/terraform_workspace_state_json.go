@@ -19,6 +19,9 @@ type TerraformWorkspaceStateJSON struct {
 
 	Contents []byte `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
 
+	OrgID string `json:"org_id,omitzero" gorm:"default:null" temporaljson:"org_id,omitzero,omitempty"`
+	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
+
 	// Foreign key to TerraformWorkspace with unique constraint to prevent conflicting states for a workspace
 	WorkspaceID string             `json:"workspace_id,omitzero" gorm:"type:text;not null;uniqueIndex:idx_workspace_active_lock" temporaljson:"workspace_id,omitzero,omitempty"`
 	Workspace   TerraformWorkspace `json:"-" temporaljson:"workspace,omitzero,omitempty"`
@@ -45,6 +48,10 @@ func (t *TerraformWorkspaceStateJSON) BeforeCreate(tx *gorm.DB) (err error) {
 
 	if t.CreatedByID == "" {
 		t.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+
+	if t.OrgID == "" {
+		t.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 
 	return nil
