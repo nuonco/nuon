@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
 import { InstallComponentsTableSkeleton } from "@/components/install-components/InstallComponentsTable";
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstallById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InstallComponentsTable } from "./components-table";
@@ -51,6 +52,26 @@ export default async function InstallComponentsPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/components`,
+            text: 'Components',
+          },
+        ]}
+      />
       <HeadingGroup>
         <Text variant="base" weight="strong">
           Install components

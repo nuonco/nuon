@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { RunnerRecentActivitySkeleton } from '@/components/runners/RunnerRecentActivitySkeleton'
 import { RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCardSkeleton'
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
-import { Text } from '@/components/common/Text'
 import {
   getInstallById,
   getRunnerById,
@@ -79,6 +80,26 @@ export default async function Runner({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection className="@container" isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/runner`,
+            text: 'Runner',
+          },
+        ]}
+      />
       <div className="flex gap-4 justify-between">
         <hgroup>
           <Text variant="base" weight="strong">

@@ -9,6 +9,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCardSkeleton'
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
 import { RunnerRecentActivitySkeleton } from '@/components/runners/RunnerRecentActivitySkeleton'
@@ -64,9 +65,9 @@ export default async function OrgRunner({ params, searchParams }) {
   }
 
   return org?.features?.['stratus-layout'] ? (
-    <PageLayout
-      breadcrumb={{
-        baseCrumbs: [
+    <PageLayout isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
           {
             path: `/${orgId}`,
             text: org?.name,
@@ -75,10 +76,8 @@ export default async function OrgRunner({ params, searchParams }) {
             path: `/${orgId}/runner`,
             text: 'Runner',
           },
-        ],
-      }}
-      isScrollable
-    >
+        ]}
+      />
       <PageHeader>
         <HeadingGroup>
           <Text variant="h3" weight="strong" level={1}>
