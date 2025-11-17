@@ -50,7 +50,7 @@ func (s *service) UpdateTerraformWorkspaceStateJSON(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.helpers.UpdateStateJSON(ctx, workspaceID, sJobID, body); err != nil {
+	if err := s.helpers.CreateStateJSON(ctx, workspaceID, sJobID, body); err != nil {
 		ctx.Error(fmt.Errorf("unable to update state json: %w", err))
 		return
 	}
