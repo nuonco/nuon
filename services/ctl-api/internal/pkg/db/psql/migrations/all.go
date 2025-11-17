@@ -40,5 +40,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "091-delete-orphaned-action-triggers",
 			Fn:   m.Migration091DeleteOrphanedActionTriggers,
 		},
+		{
+			Name: "092-backfill-org-id",
+			Fn:   m.Migration092BackfillOrgID,
+		},
 	}
 }

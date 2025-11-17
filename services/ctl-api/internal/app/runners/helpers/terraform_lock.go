@@ -30,6 +30,15 @@ func (s *Helpers) LockWorkspace(ctx context.Context, workspaceID string, jobID *
 		RunnerJobID: jobID,
 	}
 
+	workspace := &app.TerraformWorkspace{}
+	resCheck := s.db.WithContext(ctx).
+		First(workspace, "id = ?", workspaceID)
+	if resCheck.Error != nil {
+		return nil, resCheck.Error
+	}
+
+	tfs.OrgID = workspace.OrgID
+
 	res := s.db.WithContext(ctx).Create(tfs)
 	if res.Error != nil {
 		return nil, res.Error
