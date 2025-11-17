@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react/dist/ssr'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageSection } from '@/components/layout/PageSection'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
@@ -16,7 +17,7 @@ import {
   getWorkflowById,
   getOrgById,
 } from '@/lib'
-import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
+import { toSentenceCase } from "@/utils/string-utils"
 import { Logs, LogsError, LogsSkeleton } from './logs'
 
 // NOTE: old layout stuff
@@ -41,6 +42,7 @@ import {
   Time,
   ToolTip,
 } from '@/components'
+import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -87,6 +89,30 @@ export default async function SandboxRuns({ params }) {
   const containerId = 'sandbox-run-page'
   return org?.features?.['stratus-layout'] ? (
     <PageSection className="!p-0" id={containerId} isScrollable>
+       <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/sandbox`,
+            text: 'Sandbox',
+          },
+          {
+            path: `/${orgId}/installs/${installId}/sandbox/${runId}`,
+            text: toSentenceCase(sandboxRun?.run_type) || "Run",
+          },
+        ]}
+      />
       {/* old page content */}
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="md:col-span-8">

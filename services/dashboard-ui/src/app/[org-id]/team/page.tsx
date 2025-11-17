@@ -4,11 +4,12 @@ import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
-import { Text } from '@/components/common/Text'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getOrgById, getAccountsByOrgId } from '@/lib'
 import { auth0 } from '@/lib/auth'
 import type { TAccount, TInvite } from '@/types'
@@ -46,9 +47,9 @@ export default async function OrgTeam({ params, searchParams }) {
 
   if (org?.features?.['org-settings']) {
     return org?.features?.['stratus-layout'] ? (
-      <PageLayout
-        breadcrumb={{
-          baseCrumbs: [
+      <PageLayout isScrollable>
+        <Breadcrumbs
+          breadcrumbs={[
             {
               path: `/${orgId}`,
               text: org?.name,
@@ -57,10 +58,8 @@ export default async function OrgTeam({ params, searchParams }) {
               path: `/${orgId}/team`,
               text: 'Team',
             },
-          ],
-        }}
-        isScrollable
-      >
+          ]}
+        />
         <PageHeader>
           <HeadingGroup>
             <Text variant="h3" weight="stronger" level={1}>

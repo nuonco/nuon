@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getAppById, getAppConfigs, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { ComponentsTable, ComponentsTableSkeleton } from './components-table'
@@ -47,6 +48,26 @@ export default async function AppComponentsPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/apps`,
+            text: 'Apps',
+          },
+          {
+            path: `/${orgId}/apps/${appId}`,
+            text: app?.name,
+          },
+          {
+            path: `/${orgId}/apps/${appId}/components`,
+            text: 'Components',
+          },
+        ]}
+      />
       <HeadingGroup>
         <Text variant="base" weight="strong">
           App components
