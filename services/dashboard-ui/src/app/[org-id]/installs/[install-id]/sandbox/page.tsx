@@ -4,6 +4,7 @@ import { CaretRightIcon, FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstallById, getInstallDriftedObjects, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
@@ -12,14 +13,12 @@ import { Runs, RunsError, RunsSkeleton } from './runs'
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   DashboardContent,
-  DeprovisionSandboxModal,
   ErrorFallback,
   InstallStatuses,
   InstallPageSubNav,
   InstallManagementDropdown,
   Link as OldLink,
   Loading,
-  ReprovisionSandboxModal,
   Section,
   Text as OldText,
   Time,
@@ -65,6 +64,26 @@ export default async function InstallSandboxPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable className="!p-0">
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/sandbox`,
+            text: 'Sandbox',
+          },
+        ]}
+      />
       {/* old layout stuff*/}
 
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y md:divide-x">

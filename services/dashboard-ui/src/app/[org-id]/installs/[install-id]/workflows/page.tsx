@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { WorkflowTimelineSkeleton } from '@/components/workflows/WorkflowTimeline'
 import { ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
 import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
@@ -52,6 +53,26 @@ export default async function InstallWorkflowsPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/workflows`,
+            text: 'Workflows',
+          },
+        ]}
+      />
       <div className="flex items-center gap-4 justify-between">
         <HeadingGroup>
           <Text variant="base" weight="strong">
