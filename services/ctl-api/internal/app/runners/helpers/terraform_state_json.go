@@ -23,12 +23,21 @@ func (s *Helpers) GetTerraformStateJSON(ctx context.Context, workspaceID string)
 	return tfs.Contents, nil
 }
 
-func (s *Helpers) UpdateStateJSON(ctx context.Context, workspaceID string, jobID *string, contents []byte) error {
+func (s *Helpers) CreateStateJSON(ctx context.Context, workspaceID string, jobID *string, contents []byte) error {
 	tfs := &app.TerraformWorkspaceStateJSON{
 		WorkspaceID: workspaceID,
 		RunnerJobID: jobID,
 		Contents:    contents,
 	}
+
+	workspace := &app.TerraformWorkspace{}
+	resCheck := s.db.WithContext(ctx).
+		First(workspace, "id = ?", workspaceID)
+	if resCheck.Error != nil {
+		return resCheck.Error
+	}
+
+	tfs.OrgID = workspace.OrgID
 
 	res := s.db.WithContext(ctx).Create(tfs)
 	if res.Error != nil {
