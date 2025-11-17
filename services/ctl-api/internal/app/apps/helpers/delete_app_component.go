@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
@@ -32,7 +33,11 @@ func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 
 	// Check if the component is part of the current app config, if so, do not allow deletion.
 	if slices.Contains(appCfg.ComponentIDs, compID) {
-		return fmt.Errorf("unable to delete component %s as it's a part of current app config", compID)
+		msg := fmt.Sprintf("unable to delete component %s as it's a part of current app config", compID)
+		return stderr.ErrUser{
+			Description: msg,
+			Err:         errors.New(msg),
+		}
 	}
 
 	// Check if any active installs are using this component, if so, do not allow deletion.
@@ -66,7 +71,11 @@ func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 		}
 
 		if len(activeInstalls) > 0 {
-			return fmt.Errorf("unable to delete component %s, active installs using this component exists: %s", compID, activeInstalls)
+			msg := fmt.Sprintf("unable to delete component %s, active installs using this component exists: %s", compID, activeInstalls)
+			return stderr.ErrUser{
+				Description: msg,
+				Err:         errors.New(msg),
+			}
 		}
 	}
 
