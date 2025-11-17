@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { objectToKeyValueArray } from './data-utils'
+import { objectToKeyValueArray, decodeAsString } from './data-utils'
 
 describe('data-utils', () => {
   describe('objectToKeyValueArray', () => {
@@ -21,6 +21,16 @@ describe('data-utils', () => {
 
     test('should handle empty object', () => {
       const result = objectToKeyValueArray({})
+      expect(result).toEqual([])
+    })
+
+    test('should handle null object', () => {
+      const result = objectToKeyValueArray(null)
+      expect(result).toEqual([])
+    })
+
+    test('should handle undefined object', () => {
+      const result = objectToKeyValueArray(undefined)
       expect(result).toEqual([])
     })
 
@@ -179,6 +189,104 @@ describe('data-utils', () => {
         value: '[{\n  "id": 1\n}, {\n  "id": 2\n}]',
         type: 'array',
       })
+    })
+  })
+
+  describe('decodeAsString', () => {
+    test('should decode base64 and format JSON object', () => {
+      const obj = { name: 'John', age: 30 }
+      const base64String = btoa(JSON.stringify(obj))
+      
+      const result = decodeAsString(base64String)
+      
+      expect(result).toBe(JSON.stringify(obj, null, 2))
+    })
+
+    test('should handle nested objects', () => {
+      const obj = {
+        user: {
+          name: 'Jane',
+          preferences: {
+            theme: 'dark',
+            notifications: true
+          }
+        }
+      }
+      const base64String = btoa(JSON.stringify(obj))
+      
+      const result = decodeAsString(base64String)
+      
+      expect(result).toBe(JSON.stringify(obj, null, 2))
+    })
+
+    test('should handle arrays in JSON', () => {
+      const obj = {
+        items: ['apple', 'banana', 'cherry'],
+        numbers: [1, 2, 3]
+      }
+      const base64String = btoa(JSON.stringify(obj))
+      
+      const result = decodeAsString(base64String)
+      
+      expect(result).toBe(JSON.stringify(obj, null, 2))
+    })
+
+    test('should handle empty object', () => {
+      const obj = {}
+      const base64String = btoa(JSON.stringify(obj))
+      
+      const result = decodeAsString(base64String)
+      
+      expect(result).toBe('{}')
+    })
+
+    test('should handle null values in object', () => {
+      const obj = { name: 'test', value: null }
+      const base64String = btoa(JSON.stringify(obj))
+      
+      const result = decodeAsString(base64String)
+      
+      expect(result).toBe(JSON.stringify(obj, null, 2))
+    })
+
+    test('should throw error for invalid base64', () => {
+      const invalidBase64 = 'invalid-base64-string!'
+      
+      expect(() => decodeAsString(invalidBase64)).toThrow()
+    })
+
+    test('should throw error for invalid JSON', () => {
+      const invalidJson = 'not-valid-json'
+      const base64String = btoa(invalidJson)
+      
+      expect(() => decodeAsString(base64String)).toThrow()
+    })
+
+    test('should handle complex policy-like object', () => {
+      const policyObj = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Action: ['s3:GetObject', 's3:PutObject'],
+            Resource: 'arn:aws:s3:::my-bucket/*'
+          },
+          {
+            Effect: 'Deny',
+            Action: 's3:DeleteObject',
+            Resource: '*'
+          }
+        ]
+      }
+      const base64String = btoa(JSON.stringify(policyObj))
+      
+      const result = decodeAsString(base64String)
+      
+      expect(result).toBe(JSON.stringify(policyObj, null, 2))
+      expect(result).toContain('Version')
+      expect(result).toContain('Statement')
+      expect(result).toContain('Allow')
+      expect(result).toContain('Deny')
     })
   })
 })
