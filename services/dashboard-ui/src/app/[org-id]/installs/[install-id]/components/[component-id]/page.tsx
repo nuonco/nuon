@@ -9,10 +9,10 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstallById, getInstallComponentById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
-import { Deploys } from "./deploys"
-
+import { Deploys } from './deploys'
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -91,6 +91,30 @@ export default async function InstallComponentPage({
   const containerId = 'install-component-page'
   return org?.features?.['stratus-layout'] ? (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/installs`,
+            text: 'Installs',
+          },
+          {
+            path: `/${orgId}/installs/${installId}`,
+            text: install?.name,
+          },
+          {
+            path: `/${orgId}/installs/${installId}/components`,
+            text: 'Components',
+          },
+          {
+            path: `/${orgId}/installs/${installId}/components/${componentId}`,
+            text: component?.name,
+          },
+        ]}
+      />
       {/* old page layout */}
 
       <div className="p-6 border-b flex justify-between">

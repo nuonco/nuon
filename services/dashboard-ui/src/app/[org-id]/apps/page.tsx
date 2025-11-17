@@ -3,11 +3,12 @@ import { Suspense } from 'react'
 import { AppsTableSkeleton } from '@/components/apps/AppsTable'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
-import { Text } from '@/components/common/Text'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getOrgById } from '@/lib'
 import { AppsTable } from './apps-table'
 // TODO(nnnat): move segment init script to org dashboard
@@ -36,9 +37,9 @@ export default async function AppsPage({ params, searchParams }) {
     <>
       {process.env.SEGMENT_WRITE_KEY && <SegmentAnalyticsSetOrg org={org} />}
       {org?.features?.['stratus-layout'] ? (
-        <PageLayout
-          breadcrumb={{
-            baseCrumbs: [
+        <PageLayout isScrollable>
+          <Breadcrumbs
+            breadcrumbs={[
               {
                 path: `/${orgId}`,
                 text: org?.name,
@@ -47,10 +48,8 @@ export default async function AppsPage({ params, searchParams }) {
                 path: `/${orgId}/apps`,
                 text: 'Apps',
               },
-            ],
-          }}
-          isScrollable
-        >
+            ]}
+          />
           <PageHeader>
             <HeadingGroup>
               <Text variant="h3" weight="stronger" level={1}>

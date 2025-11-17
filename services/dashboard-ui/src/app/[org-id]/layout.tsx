@@ -9,6 +9,7 @@ import {
 import { getAPIVersion, getOrgById, getOrgs } from '@/lib'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
+import { BreadcrumbProvider } from '@/providers/breadcrumb-provider'
 import { OrgProvider } from '@/providers/org-provider'
 import { SidebarProvider } from '@/providers/sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
@@ -50,22 +51,24 @@ export default async function OrgLayout({
       >
         <OrgProvider initOrg={org} shouldPoll>
           {org?.features?.['stratus-layout'] ? (
-            <SidebarProvider initIsSidebarOpen={isSidebarOpen}>
-              <ToastProvider>
-                <SurfacesProvider>
-                  <MainLayout
-                    versions={{
-                      api: apiVersion,
-                      ui: {
-                        version: VERSION,
-                      },
-                    }}
-                  >
-                    {children}
-                  </MainLayout>
-                </SurfacesProvider>
-              </ToastProvider>
-            </SidebarProvider>
+            <BreadcrumbProvider>
+              <SidebarProvider initIsSidebarOpen={isSidebarOpen}>
+                <ToastProvider>
+                  <SurfacesProvider>
+                    <MainLayout
+                      versions={{
+                        api: apiVersion,
+                        ui: {
+                          version: VERSION,
+                        },
+                      }}
+                    >
+                      {children}
+                    </MainLayout>
+                  </SurfacesProvider>
+                </ToastProvider>
+              </SidebarProvider>
+            </BreadcrumbProvider>
           ) : (
             <OldLayout
               isSidebarOpen={isSidebarOpen}

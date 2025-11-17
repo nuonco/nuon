@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { PageSection } from '@/components/layout/PageSection'
 import { Text } from '@/components/common/Text'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getAppById, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { ActionsTable, ActionsTableSkeleton } from './actions-table'
@@ -46,6 +47,26 @@ export default async function AppActionsPage({
 
   return org?.features?.['stratus-layout'] ? (
     <PageSection isScrollable>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/apps`,
+            text: 'Apps',
+          },
+          {
+            path: `/${orgId}/apps/${appId}`,
+            text: app?.name,
+          },
+          {
+            path: `/${orgId}/apps/${appId}/actions`,
+            text: 'Actions',
+          },
+        ]}
+      />
       <HeadingGroup>
         <Text variant="base" weight="strong">
           App actions
@@ -54,9 +75,7 @@ export default async function AppActionsPage({
 
       {/* old layout stuff */}
       <ErrorBoundary fallback={<>Error loading app actions</>}>
-        <Suspense
-          fallback={<ActionsTableSkeleton />}
-        >
+        <Suspense fallback={<ActionsTableSkeleton />}>
           <ActionsTable
             appId={appId}
             orgId={orgId}

@@ -7,6 +7,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getAppById, getActionById, getOrgById } from '@/lib'
 
 // NOTE: old layout stuff
@@ -53,6 +54,30 @@ export default async function AppActionPage({ params }) {
   const containerId = 'app-action-page'
   return org?.features?.['stratus-layout'] ? (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            path: `/${orgId}`,
+            text: org?.name,
+          },
+          {
+            path: `/${orgId}/apps`,
+            text: 'Apps',
+          },
+          {
+            path: `/${orgId}/apps/${appId}`,
+            text: app?.name,
+          },
+          {
+            path: `/${orgId}/apps/${appId}/actions`,
+            text: 'Actions',
+          },
+          {
+            path: `/${orgId}/apps/${appId}/actions/${actionId}`,
+            text: action?.name,
+          },
+        ]}
+      />
       {/* old page layout */}
       <div className="p-6 border-b flex justify-between">
         <HeadingGroup>
