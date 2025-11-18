@@ -98,7 +98,7 @@ export const InstallActionRunHeader = ({
 
       {workflow ? (
         <Button
-          href={`/${org.id}/installs/${install.id}/workflows/${workflow.id}?target=${step?.id}`}
+          href={`/${org.id}/installs/${install.id}/workflows/${workflow.id}?panel=${step?.id}`}
         >
           View workflow
           <Icon variant="CaretRightIcon" />
