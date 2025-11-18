@@ -1,0 +1,7 @@
+# Ignore test output
+test-output/
+*.test
+
+# Ignore temporary files
+*.tmp
+*.swp

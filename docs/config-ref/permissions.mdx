@@ -1,0 +1,16 @@
+---
+description: 'JSON Schema reference for permissions configuration'
+title: 'Permissions'
+---
+
+# Permissions
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `provision_role` | `AppAWSIAMRole` | No | provisioning IAM role IAM role used during initial provisioning of the install with permissions to set up resources | - | - |
+| `deprovision_role` | `AppAWSIAMRole` | No | deprovisioning IAM role IAM role used for tearing down the install and cleaning up resources | - | - |
+| `maintenance_role` | `AppAWSIAMRole` | No | maintenance IAM role IAM role used for day-to-day maintenance, updates, and operational tasks | - | - |
+| `roles` | `array` | No | list of permission roles Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, or deprovision) | - | - |
+
