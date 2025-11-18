@@ -2,6 +2,9 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Nuon documentation",
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude", "mcp", "cursor"]
+  },
   "colors": {
     "primary": "#8040BF",
     "light": "#C494F4",
