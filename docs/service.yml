@@ -6,7 +6,7 @@ env_secrets: {}
 disable_watch: true
 local_startup_cmds: []
 local_cmds:
-  - npx --yes mintlify dev --no-open --port 3333
+  - npx --yes mint dev --no-open --port 3333
 disable_config_map: true
 docker_cmds:
   - cmd: mint
@@ -14,4 +14,4 @@ docker_cmds:
       - dev
       - --port=3333
     ports:
-     - 3333
+      - 3333
