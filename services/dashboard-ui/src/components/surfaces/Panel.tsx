@@ -57,7 +57,7 @@ const PanelBase = ({
         isVisible={isVisible}
       >
         <div
-          className="panel-overlay bg-black/2 dark:bg-black/10 absolute top-0 left-0 w-screen h-screen flex"
+          className="panel-overlay backdrop-blur-xs bg-black/2 dark:bg-black/10 absolute top-0 left-0 w-screen h-screen flex"
           onClick={handleClose}
         />
         <section

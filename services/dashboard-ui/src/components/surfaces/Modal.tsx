@@ -62,7 +62,7 @@ export const ModalBase = ({
         isVisible={isVisible}
       >
         <div
-          className="modal-overlay bg-black/50 dark:bg-black/75 absolute top-0 left-0 w-screen h-screen flex"
+          className="modal-overlay backdrop-blur-xs bg-black/2 dark:bg-black/10 absolute top-0 left-0 w-screen h-screen flex"
           onClick={handleClose}
         />
         <div
