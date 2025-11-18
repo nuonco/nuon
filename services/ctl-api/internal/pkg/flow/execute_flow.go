@@ -60,57 +60,50 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		}
 	}()
 
-	// Generate steps only for the first execution of the workflow.
 	if startFromStepIdx == 0 {
 		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, flowId); err != nil {
 			return err
 		}
+	}
 
-		l.Debug("generating steps for workflow")
+	l.Debug("generating steps for workflow")
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flowId,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: "generating steps for workflow",
+		},
+	}); err != nil {
+		return err
+	}
+
+	// Generate steps works only for the first execution of the workflow,
+	// if steps already exists, it skips generating steps.
+	flw, err = c.generateSteps(ctx, flw)
+	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: flowId,
 			Status: app.CompositeStatus{
-				Status:                 app.StatusInProgress,
-				StatusHumanDescription: "generating steps for workflow",
-			},
-		}); err != nil {
-			return err
-		}
-
-		flw, err = c.generateSteps(ctx, flw)
-		if err != nil {
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: flowId,
-				Status: app.CompositeStatus{
-					Status:                 app.StatusError,
-					StatusHumanDescription: "error while generating steps",
-					Metadata: map[string]any{
-						"error_message": err.Error(),
-					},
+				Status:                 app.StatusError,
+				StatusHumanDescription: "error while generating steps",
+				Metadata: map[string]any{
+					"error_message": err.Error(),
 				},
-			}); err != nil {
-				return err
-			}
-
-			return errors.Wrap(err, "unable to generate workflow steps")
-		}
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: flowId,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusInProgress,
-				StatusHumanDescription: "successfully generated all steps",
 			},
 		}); err != nil {
 			return err
 		}
-	} else {
-		steps, err := activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
-			FlowID: flw.ID,
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to get steps for workflow")
-		}
-		flw.Steps = steps
+
+		return errors.Wrap(err, "unable to generate workflow steps")
+	}
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flowId,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: "successfully generated all steps",
+		},
+	}); err != nil {
+		return err
 	}
 
 	l.Debug("executing steps for workflow")
