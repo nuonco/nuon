@@ -257,6 +257,29 @@ func (m *middleware) RecoverFromPanic(c *gin.Context) {
 	}
 }
 
+// helper func to add headers to zap fields
+func headerToZapField(header string) zap.Field {
+	parts := strings.SplitN(header, ": ", 2)
+	if len(parts) != 2 {
+		return zap.String("header", header)
+	}
+	key := parts[0]
+	value := parts[1]
+
+	// Mask sensitive headers
+	sensitiveHeaders := map[string]struct{}{
+		"Authorization": {},
+		"Cookie":        {},
+		"Set-Cookie":    {},
+	}
+
+	if _, ok := sensitiveHeaders[key]; ok {
+		value = "*"
+	}
+
+	return zap.String(fmt.Sprintf("header_%s", strings.ToLower(strings.ReplaceAll(key, "-", "_"))), value)
+}
+
 func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string) {
 	cl := cctx.GetLogger(c, m.l)
 	// Log errors for status >= 500
@@ -271,6 +294,12 @@ func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string)
 			zap.String("ip", c.ClientIP()),
 			zap.String("request_body", requestBody),
 			zap.String("response_body", responseBody),
+		}
+
+		for key, values := range c.Request.Header {
+			for _, value := range values {
+				fields = append(fields, headerToZapField(fmt.Sprintf("%s: %s", key, value)))
+			}
 		}
 
 		var msg string
