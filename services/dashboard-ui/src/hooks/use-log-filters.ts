@@ -6,12 +6,12 @@ import type { TOTELLog } from '@/types'
 type SortDirection = 'asc' | 'desc'
 
 const DEFAULT_SELECTED_SEVERITIES = new Set([
-  'Trace',
-  'Debug',
+  // 'Trace',
+  // 'Debug',
   'Info',
   'Warn',
   'Error',
-  'Fatal',
+  // 'Fatal',
 ])
 
 const DEFAULT_SELECTED_SERVICES = new Set(['api', 'runner'])
