@@ -25,6 +25,10 @@ name: service
         default: false
     outputs: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
