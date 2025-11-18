@@ -117,6 +117,7 @@ export const Button = forwardRef<
         // Next.js 13+ Link: no legacyBehavior, no <a> inside
         return (
           <Link
+            prefetch={false}
             href={href}
             className={classes}
             ref={ref as React.Ref<HTMLAnchorElement>}
@@ -132,6 +133,8 @@ export const Button = forwardRef<
           ref={ref as React.Ref<HTMLAnchorElement>}
           className={classes}
           href={href}
+          target="_blank"
+          rel="noopener noreferrer"
           {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
         >
           {children}
