@@ -1,0 +1,37 @@
+---
+description: 'JSON Schema reference for policy configuration'
+title: 'Policy'
+---
+
+# Policy
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `type` | `string` | No | policy type Type of policy that determines where and how it is enforced | - | `"kubernetes_cluster"` |
+| `contents` | `string` | No | policy document Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (g... | - | - |
+
+### Property Details
+
+#### `type`
+
+**Examples:**
+
+
+```yaml
+"kubernetes_cluster"
+```
+
+```yaml
+"runner_job_terraform_deploy"
+```
+
+```yaml
+"runner_job_helm_deploy"
+```
+
+```yaml
+"runner_job_action_workflow"
+```
+

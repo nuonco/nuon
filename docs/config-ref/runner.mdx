@@ -1,0 +1,63 @@
+---
+description: 'JSON Schema reference for runner configuration'
+title: 'Runner'
+---
+
+# Runner
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `source` | `string` | No | external configuration source Path to an external file containing runner configuration (YAML, JSON, or TOML) | - | - |
+| `runner_type` | `string` | ✅ Yes | type of runner Specifies how the runner executes deployments | - | `"kubernetes"` |
+| `env_vars` | `object` | No | environment variables Map of environment variables to pass to the runner as key-value pairs | - | `"DEBUG=true"` |
+| `helm_driver` | `string` | No | Helm driver configuration Specifies the backend driver for Helm operations (e.g., 'configmap', 'secret') | - | `"configmap"` |
+| `init_script_url` | `string` | No | initialization script URL URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, g... | - | - |
+| `env_var` | `array` | No | - | - | - |
+
+### Property Details
+
+#### `runner_type`
+
+**Examples:**
+
+
+```yaml
+"kubernetes"
+```
+
+```yaml
+"docker"
+```
+
+```yaml
+"vm"
+```
+
+#### `env_vars`
+
+**Examples:**
+
+
+```yaml
+"DEBUG=true"
+```
+
+```yaml
+"LOG_LEVEL=info"
+```
+
+#### `helm_driver`
+
+**Examples:**
+
+
+```yaml
+"configmap"
+```
+
+```yaml
+"secret"
+```
+
