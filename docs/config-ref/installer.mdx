@@ -1,0 +1,43 @@
+---
+description: 'JSON Schema reference for installer configuration'
+title: 'Installer'
+---
+
+# Installer
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `source` | `string` | No | external configuration source Path to an external file containing installer configuration (YAML, JSON, or TOML) | - | - |
+| `name` | `string` | No | installer name Human-readable name for the installer | - | `"My SaaS Installer"` |
+| `description` | `string` | No | installer description Detailed description of what this installer does | - | `"Complete installer for My SaaS application"` |
+| `slug` | `string` | No | URL-safe slug URL-friendly identifier for the installer | - | `"my-saas-installer"` |
+| `apps` | `array` | No | list of app names Array of app names to include in this installer | - | `"api"` |
+| `documentation_url` | `string` | No | documentation URL Link to the application documentation | - | `"https://docs.example.com"` |
+| `community_url` | `string` | No | community URL Link to community resources or forum | - | `"https://community.example.com"` |
+| `homepage_url` | `string` | No | homepage URL Link to the application homepage | - | `"https://example.com"` |
+| `github_url` | `string` | No | GitHub repository URL Link to the GitHub repository | - | `"https://github.com/example/repo"` |
+| `logo_url` | `string` | No | logo URL URL to the application logo image | - | `"https://example.com/logo.png"` |
+| `favicon_url` | `string` | No | favicon URL URL to the favicon image | - | `"https://example.com/favicon.ico"` |
+| `og_image_url` | `string` | No | OpenGraph image URL URL to the image displayed when sharing the installer on social media | - | `"https://example.com/og-image.png"` |
+| `demo_url` | `string` | No | demo URL Link to a live demo of the application | - | `"https://demo.example.com"` |
+| `post_install_markdown` | `string` | No | post-install markdown Markdown content displayed to users after successful installation | - | - |
+| `copyright_markdown` | `string` | No | copyright markdown Markdown content for copyright information | - | - |
+| `footer_markdown` | `string` | No | footer markdown Markdown content displayed in the installer footer | - | - |
+
+### Property Details
+
+#### `apps`
+
+**Examples:**
+
+
+```yaml
+"api"
+```
+
+```yaml
+"web-ui"
+```
+
