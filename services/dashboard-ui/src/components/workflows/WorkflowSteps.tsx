@@ -43,7 +43,6 @@ export const WorkflowSteps = ({
     ? workflowSteps
         .filter((step) => step.execution_type !== 'hidden')
         .filter((step) => step.name.includes(searchName))
-        .sort((a, b) => a.idx - b.idx)
     : []
 
   return (
