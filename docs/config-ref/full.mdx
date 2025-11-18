@@ -1,0 +1,71 @@
+---
+description: 'JSON Schema reference for full configuration'
+title: 'Full'
+---
+
+# Full
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `version` | `string` | ✅ Yes | config file version Version string for the configuration format | - | `"1"` |
+| `description` | `string` | No | app description rendered in the installer Detailed description of the app shown to customers during installation | - | `"A cloud-native SaaS application"` |
+| `display_name` | `string` | No | display name rendered in the installer Display name for the app shown to customers during installation | - | `"My SaaS Application"` |
+| `slack_webhook_url` | `string` | No | slack webhook url for notifications Optional Slack webhook URL to send app notifications and alerts to a channel | - | - |
+| `readme` | `string` | No | readme file for the app Markdown file with app documentation. Supports templating and external file sources: HTTP(S) URLs (https://example.com/readme.md), git repositories (git::https://github.com/... | - | - |
+| `branch` | `AppBranchConfig` | No | default app branch configuration Default branch configuration for all installs. Can be overridden per install | - | - |
+| `inputs` | `AppInputConfig` | No | input configuration Define inputs that customers provide during installation | - | - |
+| `sandbox` | `AppSandboxConfig` | ✅ Yes | sandbox configuration Sandbox/cluster configuration for the application infrastructure | - | - |
+| `runner` | `AppRunnerConfig` | ✅ Yes | runner configuration Runner configuration for executing deployments and workflows | - | - |
+| `installer` | `InstallerConfig` | No | installer configuration Configuration for the customer-facing installer experience | - | - |
+| `permissions` | `PermissionsConfig` | No | permissions configuration RBAC and permission policies for install access control | - | - |
+| `policies` | `PoliciesConfig` | No | policies configuration Define policies for install management and automation | - | - |
+| `secrets` | `SecretsConfig` | No | secrets configuration Manage secret variables shared across components | - | - |
+| `break_glass` | `BreakGlass` | No | break-glass configuration Configure break-glass roles for emergency access to installs | - | - |
+| `stack` | `StackConfig` | No | stack configuration Stack configuration for infrastructure orchestration | - | - |
+| `components` | `ComponentList` | No | component configurations List of components (terraform, helm, containers, etc) to deploy | - | - |
+| `installs` | `array` | No | install configurations Install-specific overrides and configurations | - | - |
+| `actions` | `array` | No | action configurations Custom workflows and actions that can be executed on installs | - | - |
+
+### Property Details
+
+#### `version`
+
+**Examples:**
+
+
+```yaml
+"1"
+```
+
+```yaml
+"2"
+```
+
+#### `description`
+
+**Examples:**
+
+
+```yaml
+"A cloud-native SaaS application"
+```
+
+```yaml
+"Enterprise analytics and reporting solution"
+```
+
+#### `display_name`
+
+**Examples:**
+
+
+```yaml
+"My SaaS Application"
+```
+
+```yaml
+"Analytics Platform"
+```
+
