@@ -5,10 +5,12 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -117,7 +119,17 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 	}
 
 	if len(appCfg.ComponentConfigConnections) != len(appCfg.ComponentIDs) {
-		return nil, errors.New("app config references a component-id which has a config that could not be found")
+		if appCfg.Status == app.AppConfigStatusActive {
+			return nil, errors.New("app config references a component-id which has a config that could not be found")
+		}
+
+		ctxLogger := cctx.GetLogger(ctx, h.l)
+		ctxLogger.Warn("app config is missing component configs",
+			zap.String("app_config.status", string(appCfg.Status)),
+			zap.String("app_config_id", appCfg.ID),
+			zap.Int("expected_component_configs", len(appCfg.ComponentIDs)),
+			zap.Int("found_component_configs", len(appCfg.ComponentConfigConnections)),
+		)
 	}
 
 	return &appCfg, nil
