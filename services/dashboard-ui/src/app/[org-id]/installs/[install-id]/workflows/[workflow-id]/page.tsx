@@ -65,34 +65,34 @@ export default async function InstallWorkflow({
   return org?.features?.['stratus-layout'] ? (
     <PageSection id={containerId} isScrollable className="!gap-2 !pb-24">
       <OnboardingCelebrationWrapper>
+        <Breadcrumbs
+          breadcrumbs={[
+            {
+              path: `/${orgId}`,
+              text: org?.name,
+            },
+            {
+              path: `/${orgId}/installs`,
+              text: 'Installs',
+            },
+            {
+              path: `/${orgId}/installs/${installId}`,
+              text: install?.name,
+            },
+            {
+              path: `/${orgId}/installs/${installId}/workflows`,
+              text: 'Workflows',
+            },
+            {
+              path: `/${orgId}/installs/${install.id}/workflows/${workflowId}`,
+              text:
+                installWorkflow?.name ||
+                snakeToWords(toSentenceCase(installWorkflow?.type)),
+            },
+          ]}
+        />
         {org?.features?.['stratus-workflow'] ? (
           <>
-            <Breadcrumbs
-              breadcrumbs={[
-                {
-                  path: `/${orgId}`,
-                  text: org?.name,
-                },
-                {
-                  path: `/${orgId}/installs`,
-                  text: 'Installs',
-                },
-                {
-                  path: `/${orgId}/installs/${installId}`,
-                  text: install?.name,
-                },
-                {
-                  path: `/${orgId}/installs/${installId}/workflows`,
-                  text: 'Workflows',
-                },
-                {
-                  path: `/${orgId}/installs/${install.id}/workflows/${workflowId}`,
-                  text:
-                    installWorkflow?.name ||
-                    snakeToWords(toSentenceCase(installWorkflow?.type)),
-                },
-              ]}
-            />
             <WorkflowDetails
               initWorkflow={installWorkflow}
               install={install}

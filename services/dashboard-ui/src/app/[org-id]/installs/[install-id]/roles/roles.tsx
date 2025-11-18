@@ -1,36 +1,30 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { IAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
-import { getAppConfigs, getAppConfigById } from '@/lib'
+import { getAppConfigById } from '@/lib'
 
-export const AppRoles = async ({
+export const InstallRoles = async ({
+  appConfigId,
   appId,
   orgId,
 }: {
+  appConfigId: string
   appId: string
   orgId: string
 }) => {
-  const { data: configs, error: configsError } = await getAppConfigs({
-    appId,
-    orgId,
-  })
-
-  if (configsError) {
-    return <AppRolesError />
-  }
 
   const { data: config, error } = await getAppConfigById({
-    appConfigId: configs?.at(0)?.id,
+    appConfigId,
     appId,
     orgId,
     recurse: true,
   })
 
   return error ? (
-    <AppRolesError />
+    <InstallRolesError />
   ) : config?.permissions?.aws_iam_roles?.length ? (
     <IAMRoles appConfig={config} />
   ) : (
-    <AppRolesError
+    <InstallRolesError
       {...{
         title: 'No roles found',
         message:
@@ -40,9 +34,9 @@ export const AppRoles = async ({
   )
 }
 
-export const AppRolesSkeleton = IAMRolesSkeleton
+export const InstallRolesSkeleton = IAMRolesSkeleton
 
-export const AppRolesError = ({
+export const InstallRolesError = ({
   title = 'Unable to load roles',
   message = 'We encountered an issue loading your roles. Please try refreshing the page or contact support if the problem persists.',
 }: {
