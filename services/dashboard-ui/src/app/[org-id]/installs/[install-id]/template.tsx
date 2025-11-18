@@ -107,6 +107,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   text: 'Actions',
                 },
                 {
+                  path: `/roles`,
+                  iconVariant: 'FileLock',
+                  text: 'Roles',
+                },
+                {
                   path: `/workflows`,
                   iconVariant: 'TreeStructure',
                   text: 'Workflows',
