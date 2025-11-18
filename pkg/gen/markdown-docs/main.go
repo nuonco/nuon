@@ -1,0 +1,402 @@
+package main
+
+import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/invopop/jsonschema"
+	"github.com/powertoolsdev/mono/pkg/config/schema"
+	"github.com/powertoolsdev/mono/pkg/gen/markdown-docs/mdast"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+)
+
+// Command-line flags
+var (
+	outputDir = flag.String("output", "docs/config-ref", "Output directory for generated markdown files")
+	format    = flag.String("format", "mintlify", "Output format: mintlify, github, or plain")
+	verbose   = flag.Bool("verbose", false, "Enable verbose logging")
+)
+
+func main() {
+	flag.Parse()
+
+	startTime := time.Now()
+	log.Printf("Generating config reference documentation to %s (format: %s)", *outputDir, *format)
+
+	// Create output directory
+	if err := os.MkdirAll(*outputDir, 0755); err != nil {
+		log.Fatalf("Failed to create output directory: %v", err)
+	}
+
+	// Get sorted schema names
+	var schemaNames []string
+	for name := range schema.SchemaMapping {
+		schemaNames = append(schemaNames, name)
+	}
+	sort.Strings(schemaNames)
+	log.Printf("Found %d schemas to document", len(schemaNames))
+
+	// Generate documentation for each schema
+	for _, name := range schemaNames {
+		if err := generateSchemaDoc(name, *outputDir, *format); err != nil {
+			log.Fatalf("Failed to generate docs for %s: %v", name, err)
+		}
+	}
+
+	// Generate index page
+	if err := generateIndexPage(schemaNames, *outputDir, *format); err != nil {
+		log.Fatalf("Failed to generate index page: %v", err)
+	}
+
+	duration := time.Since(startTime)
+	log.Printf("✓ Successfully generated config reference documentation in %s (took %s)", *outputDir, duration)
+}
+
+func generateSchemaDoc(schemaName, outputDir, format string) error {
+	log.Printf("[%s] Generating documentation...", schemaName)
+
+	// Lookup the schema using the same method as the API endpoint
+	s, err := schema.LookupSchemaType(schemaName)
+	if err != nil {
+		return fmt.Errorf("failed to lookup schema: %w", err)
+	}
+	if s == nil {
+		return fmt.Errorf("schema not found")
+	}
+
+	// Create markdown AST document
+	doc := mdast.NewDocument()
+
+	// Add frontmatter for Mintlify
+	if format == "mintlify" {
+		doc.AddFrontmatter(map[string]string{
+			"title":       formatTitle(schemaName),
+			"description": fmt.Sprintf("JSON Schema reference for %s configuration", schemaName),
+		})
+	}
+
+	// Add title
+	doc.AddHeading(1, formatTitle(schemaName))
+
+	// Find the target schema (handle $ref schemas like the API does)
+	targetSchema := resolveSchemaRef(s)
+
+	// Add properties table if schema has properties
+	if targetSchema.Properties != nil && targetSchema.Properties.Len() > 0 {
+		doc.AddHeading(2, "Properties")
+
+		// Build properties table
+		table := mdast.NewTable([]string{
+			"Property",
+			"Type",
+			"Required",
+			"Description",
+			"Default",
+			"Example",
+		})
+
+		// Iterate through properties in order (same as OrderedMap iteration)
+		for pair := targetSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
+			propName := pair.Key
+			prop := pair.Value
+
+			// Check if required
+			isRequired := isPropertyRequired(targetSchema.Required, propName)
+
+			// Build table row
+			row := []string{
+				mdast.Code(propName),
+				mdast.Code(getTypeString(prop)),
+				formatRequired(isRequired),
+				formatDescription(prop.Description),
+				formatDefault(prop.Default),
+				formatExample(prop),
+			}
+
+			table.AddRow(row)
+		}
+
+		doc.AddTable(table)
+
+		// Add property details section for properties with enums or multiple examples
+		detailsSection := buildPropertyDetails(targetSchema)
+		if detailsSection != nil {
+			doc.AddNode(detailsSection)
+		}
+	}
+
+	// Render markdown
+	markdown := doc.Render()
+
+	// Write to file
+	filename := filepath.Join(outputDir, schemaName+".mdx")
+	if err := os.WriteFile(filename, []byte(markdown), 0644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	log.Printf("[%s] ✓ Written to %s", schemaName, filename)
+	return nil
+}
+
+func generateIndexPage(schemaNames []string, outputDir, format string) error {
+	log.Printf("Generating index page...")
+	doc := mdast.NewDocument()
+
+	// Add frontmatter
+	if format == "mintlify" {
+		doc.AddFrontmatter(map[string]string{
+			"title":       "Configuration Reference",
+			"description": "Complete reference for Nuon configuration file schemas",
+		})
+	}
+
+	doc.AddHeading(1, "Configuration Reference")
+	doc.AddParagraph("This section provides detailed JSON Schema references for all Nuon configuration types.")
+	doc.AddHeading(2, "Available Configurations")
+
+	// Categorize schemas
+	categories := categorizeSchemas(schemaNames)
+
+	// Add category sections
+	for _, category := range []string{"Component Types", "Configuration Types", "Other Types"} {
+		schemas, ok := categories[category]
+		if !ok || len(schemas) == 0 {
+			continue
+		}
+
+		doc.AddHeading(3, category)
+
+		if format == "mintlify" {
+			// Use Mintlify CardGroup
+			doc.AddRaw("<CardGroup cols={2}>\n")
+			for _, name := range schemas {
+				icon := categoryIcon(category)
+				doc.AddRaw(fmt.Sprintf("  <Card title=\"%s\" icon=\"%s\" href=\"/config-ref/%s\"></Card>\n",
+					formatTitle(name), icon, name))
+			}
+			doc.AddRaw("</CardGroup>\n\n")
+		} else {
+			// Use markdown list
+			for _, name := range schemas {
+				doc.AddListItem(fmt.Sprintf("[%s](%s.mdx)", formatTitle(name), name))
+			}
+		}
+	}
+
+	// Write index file
+	filename := filepath.Join(outputDir, "index.mdx")
+	if err := os.WriteFile(filename, []byte(doc.Render()), 0644); err != nil {
+		return fmt.Errorf("failed to write index file: %w", err)
+	}
+
+	log.Printf("✓ Index page written to %s", filename)
+	return nil
+}
+
+// resolveSchemaRef handles $ref schemas like the API endpoint does
+func resolveSchemaRef(s *jsonschema.Schema) *jsonschema.Schema {
+	if s.Ref != "" && s.Definitions != nil {
+		refParts := strings.Split(s.Ref, "/")
+		if len(refParts) > 0 {
+			defName := refParts[len(refParts)-1]
+			if def, ok := s.Definitions[defName]; ok {
+				return def
+			}
+		}
+	}
+	return s
+}
+
+func isPropertyRequired(required []string, propName string) bool {
+	for _, req := range required {
+		if req == propName {
+			return true
+		}
+	}
+	return false
+}
+
+func getTypeString(prop *jsonschema.Schema) string {
+	if prop.Type != "" {
+		return prop.Type
+	}
+
+	// Handle array types
+	if prop.Items != nil {
+		itemType := getTypeString(prop.Items)
+		return "array<" + itemType + ">"
+	}
+
+	// Handle refs
+	if prop.Ref != "" {
+		parts := strings.Split(prop.Ref, "/")
+		if len(parts) > 0 {
+			return parts[len(parts)-1]
+		}
+	}
+
+	return "object"
+}
+
+func formatRequired(required bool) string {
+	if required {
+		return "✅ Yes"
+	}
+	return "No"
+}
+
+func formatDescription(desc string) string {
+	if desc == "" {
+		return "-"
+	}
+
+	// Replace newlines with spaces for table format
+	desc = strings.ReplaceAll(desc, "\n", " ")
+
+	// Escape special MDX characters
+	desc = mdast.EscapeMDX(desc)
+
+	// Limit length if too long
+	if len(desc) > 200 {
+		runes := []rune(desc)
+		if len(runes) > 197 {
+			desc = string(runes[:197]) + "..."
+		}
+	}
+	return desc
+}
+
+func formatDefault(defaultVal any) string {
+	if defaultVal == nil {
+		return "-"
+	}
+
+	bytes, _ := json.Marshal(defaultVal)
+	return mdast.Code(string(bytes))
+}
+
+func formatExample(prop *jsonschema.Schema) string {
+	if len(prop.Examples) > 0 {
+		bytes, _ := json.Marshal(prop.Examples[0])
+		exampleStr := string(bytes)
+		if len(exampleStr) > 100 {
+			runes := []rune(exampleStr)
+			if len(runes) > 97 {
+				exampleStr = string(runes[:97]) + "..."
+			}
+		}
+		return mdast.Code(exampleStr)
+	}
+
+	if len(prop.Enum) > 0 {
+		bytes, _ := json.Marshal(prop.Enum[0])
+		return mdast.Code(string(bytes))
+	}
+
+	return "-"
+}
+
+func buildPropertyDetails(targetSchema *jsonschema.Schema) *mdast.Section {
+	// Check if any properties have detailed info
+	hasDetails := false
+	for pair := targetSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
+		prop := pair.Value
+		if len(prop.Enum) > 0 || len(prop.Examples) > 1 {
+			hasDetails = true
+			break
+		}
+	}
+
+	if !hasDetails {
+		return nil
+	}
+
+	section := mdast.NewSection()
+	section.AddHeading(3, "Property Details")
+
+	for pair := targetSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
+		propName := pair.Key
+		prop := pair.Value
+
+		needsDetail := len(prop.Enum) > 0 || len(prop.Examples) > 1
+		if !needsDetail {
+			continue
+		}
+
+		section.AddHeading(4, mdast.Code(propName))
+
+		// Add enum values
+		if len(prop.Enum) > 0 {
+			section.AddParagraph("**Allowed values:**\n")
+			for _, val := range prop.Enum {
+				valStr, _ := json.Marshal(val)
+				section.AddListItem(mdast.Code(string(valStr)))
+			}
+			section.AddParagraph("")
+		}
+
+		// Add multiple examples
+		if len(prop.Examples) > 1 {
+			section.AddParagraph("**Examples:**\n")
+			for i, example := range prop.Examples {
+				if i >= 5 {
+					break
+				}
+				exampleBytes, _ := json.MarshalIndent(example, "", "  ")
+				section.AddCodeBlock("yaml", string(exampleBytes))
+			}
+		}
+	}
+
+	return section
+}
+
+func categorizeSchemas(schemaNames []string) map[string][]string {
+	categories := map[string][]string{
+		"Component Types":     {},
+		"Configuration Types": {},
+		"Other Types":         {},
+	}
+
+	for _, name := range schemaNames {
+		if strings.Contains(name, "component") || name == "helm" || name == "docker-build" ||
+			name == "container-image" || name == "terraform" || name == "kubernetes-manifest" {
+			categories["Component Types"] = append(categories["Component Types"], name)
+		} else if strings.Contains(name, "config") || name == "inputs" || name == "secrets" ||
+			name == "policies" || name == "metadata" || name == "permissions" {
+			categories["Configuration Types"] = append(categories["Configuration Types"], name)
+		} else {
+			categories["Other Types"] = append(categories["Other Types"], name)
+		}
+	}
+
+	return categories
+}
+
+func categoryIcon(category string) string {
+	switch category {
+	case "Component Types":
+		return "cube"
+	case "Configuration Types":
+		return "gear"
+	default:
+		return "file"
+	}
+}
+
+func formatTitle(schemaName string) string {
+	words := strings.Split(schemaName, "-")
+	caser := cases.Title(language.English)
+	for i, word := range words {
+		words[i] = caser.String(word)
+	}
+	return strings.Join(words, " ")
+}

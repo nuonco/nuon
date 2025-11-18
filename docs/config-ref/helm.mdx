@@ -1,0 +1,28 @@
+---
+description: 'JSON Schema reference for helm configuration'
+title: 'Helm'
+---
+
+# Helm
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `chart_name` | `string` | ✅ Yes | chart name | - | - |
+| `values` | `object` | No | map of helm values | - | - |
+| `values_file` | `array` | No | - | - | - |
+| `public_repo` | `PublicRepoConfig` | No | public repo with the helm chart | - | - |
+| `connected_repo` | `ConnectedRepoConfig` | No | connected repo with the helm chart | - | - |
+| `helm_repo` | `HelmRepoConfig` | No | helm repo config | - | - |
+| `namespace` | `string` | No | namespace to deploy into. Defaults to \{\{.nuon.install.id\}\} and supports templating. | - | - |
+| `storage_driver` | `string` | No | which helm storage driver to use (defaults to secrets) | - | - |
+| `take_ownership` | `boolean` | No | - | - | - |
+| `drift_schedule` | `string` | No | - | - | - |
+| `value` | `array` | No | array of helm values (not recommended) | - | - |
+| `source` | `object` | No | source path or URL Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.ya... | - | - |
+| `type` | `object` | No | component type | - | - |
+| `name` | `object` | No | release name | - | - |
+| `var_name` | `object` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | - |
+| `dependencies` | `object` | No | additional component dependencies | - | - |
+

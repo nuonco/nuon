@@ -1,0 +1,19 @@
+---
+description: 'JSON Schema reference for container-image configuration'
+title: 'Container Image'
+---
+
+# Container Image
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `aws_ecr` | `AWSECRConfig` | No | AWS ECR image configuration Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories | - | - |
+| `public` | `PublicImageConfig` | No | public registry image configuration Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc) | - | - |
+| `source` | `object` | No | source path or URL Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.ya... | - | - |
+| `type` | `object` | No | component type | - | - |
+| `name` | `object` | No | component name | - | - |
+| `var_name` | `object` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | - |
+| `dependencies` | `object` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | - |
+
