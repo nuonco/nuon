@@ -1,0 +1,39 @@
+---
+description: 'JSON Schema reference for sandbox configuration'
+title: 'Sandbox'
+---
+
+# Sandbox
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `source` | `string` | No | external configuration source Path to an external file containing sandbox configuration (YAML, JSON, or TOML) | - | - |
+| `terraform_version` | `string` | ✅ Yes | Terraform version Version of Terraform to use for deployments | - | `"1.5.0"` |
+| `connected_repo` | `ConnectedRepoConfig` | No | connected repository configuration Configuration for a private repository connected to the Nuon platform | - | - |
+| `public_repo` | `PublicRepoConfig` | No | public repository configuration Configuration for a public repository accessible without authentication | - | - |
+| `drift_schedule` | `string` | No | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled | - | - |
+| `env_vars` | `object` | No | environment variables Map of environment variables passed to Terraform as key-value pairs | - | - |
+| `vars` | `object` | No | Terraform variables Map of Terraform input variables as key-value pairs. Supports templating | - | - |
+| `var_file` | `array` | No | Terraform variable files Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git rep... | - | - |
+
+### Property Details
+
+#### `terraform_version`
+
+**Examples:**
+
+
+```yaml
+"1.5.0"
+```
+
+```yaml
+"1.6.0"
+```
+
+```yaml
+"latest"
+```
+

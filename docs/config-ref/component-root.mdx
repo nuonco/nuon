@@ -1,0 +1,93 @@
+---
+description: 'JSON Schema reference for component-root configuration'
+title: 'Component Root'
+---
+
+# Component Root
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `source` | `string` | No | source path or URL Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.ya... | - | - |
+| `type` | `string` | ✅ Yes | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | - | `"terraform_module"` |
+| `name` | `string` | ✅ Yes | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | - | `"database"` |
+| `var_name` | `string` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | `"db_endpoint"` |
+| `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
+| `helm_chart` | `HelmChartComponentConfig` | No | helm chart component configuration Configuration for Helm chart deployments. Required when type is 'helm_chart' | - | - |
+| `terraform_module` | `TerraformModuleComponentConfig` | No | terraform module component configuration Configuration for Terraform module deployments. Required when type is 'terraform_module' | - | - |
+| `docker_build` | `DockerBuildComponentConfig` | No | docker build component configuration Configuration for building and pushing Docker images. Required when type is 'docker_build' | - | - |
+| `job` | `JobComponentConfig` | No | job component configuration Configuration for job/batch components. Required when type is 'job' | - | - |
+| `external_image` | `ExternalImageComponentConfig` | No | container image component configuration Configuration for external container images (e.g., from Docker Hub or ECR). Required when type is 'container_image' or 'external_image' | - | - |
+| `kubernetes_manifest` | `KubernetesManifestComponentConfig` | No | kubernetes manifest component configuration Configuration for Kubernetes manifest deployments. Required when type is 'kubernetes_manifest' | - | - |
+
+### Property Details
+
+#### `type`
+
+**Examples:**
+
+
+```yaml
+"terraform_module"
+```
+
+```yaml
+"helm_chart"
+```
+
+```yaml
+"docker_build"
+```
+
+```yaml
+"container_image"
+```
+
+```yaml
+"kubernetes_manifest"
+```
+
+#### `name`
+
+**Examples:**
+
+
+```yaml
+"database"
+```
+
+```yaml
+"api-server"
+```
+
+```yaml
+"frontend"
+```
+
+#### `var_name`
+
+**Examples:**
+
+
+```yaml
+"db_endpoint"
+```
+
+```yaml
+"api_host"
+```
+
+#### `dependencies`
+
+**Examples:**
+
+
+```yaml
+"database"
+```
+
+```yaml
+"infrastructure"
+```
+

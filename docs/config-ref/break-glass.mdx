@@ -1,0 +1,76 @@
+---
+description: 'JSON Schema reference for break-glass configuration'
+title: 'Break Glass'
+---
+
+# Break Glass
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `type` | `string` | No | role type in permission directory Used when defining permissions in a directory. Indicates when the role is active (provision, maintenance, or deprovision). Supports templating | - | `"provision"` |
+| `name` | `string` | ✅ Yes | name of the IAM role Name used for the role in AWS. Supports Go templating using standard template variables (e.g., \{\{.nuon.install.id\}\}) | - | `"app-{{.nuon.install.id}}-role"` |
+| `description` | `string` | ✅ Yes | description of the role Human-readable description that explains the role's purpose. Rendered in the installer to customers. Supports templating | - | `"Provides S3 bucket access for the application"` |
+| `display_name` | `string` | No | display name of the role Human-readable display name shown in the installer UI. Supports templating | - | `"Application S3 Access"` |
+| `policies` | `array` | ✅ Yes | policy definitions for the role List of IAM policies to attach to the role. Each policy defines specific AWS permissions | - | - |
+| `permissions_boundary` | `string` | No | permissions boundary policy Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://exa... | - | - |
+
+### Property Details
+
+#### `type`
+
+**Examples:**
+
+
+```yaml
+"provision"
+```
+
+```yaml
+"maintenance"
+```
+
+```yaml
+"deprovision"
+```
+
+#### `name`
+
+**Examples:**
+
+
+```yaml
+"app-{{.nuon.install.id}}-role"
+```
+
+```yaml
+"admin-role"
+```
+
+#### `description`
+
+**Examples:**
+
+
+```yaml
+"Provides S3 bucket access for the application"
+```
+
+```yaml
+"Database migration role with elevated permissions"
+```
+
+#### `display_name`
+
+**Examples:**
+
+
+```yaml
+"Application S3 Access"
+```
+
+```yaml
+"Database Admin"
+```
+

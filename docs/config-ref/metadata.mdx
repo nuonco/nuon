@@ -1,0 +1,45 @@
+---
+description: 'JSON Schema reference for metadata configuration'
+title: 'Metadata'
+---
+
+# Metadata
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `version` | `string` | ✅ Yes | config file version Version of the configuration file format | - | `"1.0.0"` |
+| `description` | `string` | No | app description Detailed description of the application, displayed in the installer UI | - | `"A powerful SaaS platform for managing deployments"` |
+| `display_name` | `string` | No | app display name Human-readable name for the application, shown in the installer | - | `"My SaaS App"` |
+| `slack_webhook_url` | `string` | No | Slack webhook URL Slack webhook URL to receive deployment notifications and updates | - | `"https://hooks.slack.com/services/YOUR/WEBHOOK/URL"` |
+| `readme` | `string` | No | README content Markdown content displayed as README documentation for the application | - | - |
+
+### Property Details
+
+#### `version`
+
+**Examples:**
+
+
+```yaml
+"1.0.0"
+```
+
+```yaml
+"2.0.0"
+```
+
+#### `display_name`
+
+**Examples:**
+
+
+```yaml
+"My SaaS App"
+```
+
+```yaml
+"Enterprise Platform"
+```
+

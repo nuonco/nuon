@@ -1,0 +1,63 @@
+---
+description: 'JSON Schema reference for action configuration'
+title: 'Action'
+---
+
+# Action
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `name` | `string` | ✅ Yes | name of the action The action name is displayed in the Actions tab of the Nuon dashboard | - | `"http_healthcheck"` |
+| `timeout` | `string` | ✅ Yes | timeout for action execution Maximum time the action can run. Maximum allowed is 30 minutes. Must be a valid Go duration string (e.g., 30s, 5m, 30m) | - | `"15s"` |
+| `triggers` | `array` | ✅ Yes | triggers that execute this action Actions can be triggered manually, on a cron schedule, or by install lifecycle events (provision, deploy, teardown, etc). Define multiple triggers if needed | - | - |
+| `steps` | `array` | ✅ Yes | steps to execute in this action Ordered list of steps to execute. Each step requires a command and can optionally load scripts from repositories | - | - |
+| `dependencies` | `array` | No | component dependencies referenced in this action Automatically extracted from template references in steps (e.g., \{\{.component.component_name\}\}) | - | - |
+| `break_glass_role` | `string` | No | IAM role for break-glass access to this action When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudForma... | - | `"bucket-operations-break-glass"` |
+
+### Property Details
+
+#### `name`
+
+**Examples:**
+
+
+```yaml
+"http_healthcheck"
+```
+
+```yaml
+"database_migration"
+```
+
+#### `timeout`
+
+**Examples:**
+
+
+```yaml
+"15s"
+```
+
+```yaml
+"5m"
+```
+
+```yaml
+"30m"
+```
+
+#### `break_glass_role`
+
+**Examples:**
+
+
+```yaml
+"bucket-operations-break-glass"
+```
+
+```yaml
+"database-migration-break-glass"
+```
+
