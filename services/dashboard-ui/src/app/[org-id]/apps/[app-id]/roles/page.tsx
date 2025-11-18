@@ -53,10 +53,10 @@ export default async function AppRolesPage({ params }) {
       />
       <HeadingGroup>
         <Text variant="base" weight="strong">
-          App roles
+          IAM roles
         </Text>
         <Text variant="subtext" theme="neutral">
-          View the AWS roles for your app
+          View the IAM roles that your app uses to access customer AWS resources.
         </Text>
       </HeadingGroup>
 

@@ -98,6 +98,14 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     }
   }
 
+  if (status === 'not-attempted') {
+    return {
+      copy: `Step was not attempted ${status_human_description ? `: ${status_human_description}` : ''}`,
+      theme: 'default',
+      title: `Step ${step?.name} not attempted`,
+    }
+  }
+
   if (step.execution_type === 'skipped') {
     return {
       copy: `Step was skipped due to being a plan only workflow`,
