@@ -90,7 +90,7 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
               heading={
                 <>
                   <ArrowsCounterClockwiseIcon />
-                  Update runner
+                  Update runner version
                 </>
               }
               isOpen={isOpen}
@@ -161,7 +161,7 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
                     ) : (
                       <ArrowsCounterClockwiseIcon size="18" />
                     )}{' '}
-                    Update runner
+                    Update runner version
                   </Button>
                 </div>
               </form>
@@ -177,7 +177,7 @@ export const UpdateRunnerModal: FC<IUpdateRunnerModal> = ({
         }}
       >
         <ArrowsCounterClockwiseIcon size="16" />
-        Update runner
+        Update runner version
       </Button>
     </>
   )

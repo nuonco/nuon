@@ -168,7 +168,7 @@ export default async function InstallComponentDeploy({ params }) {
           {deploy?.install_workflow_id ? (
             <Link
               className="text-xs mt-2"
-              href={`/${orgId}/installs/${installId}/workflows/${deploy?.install_workflow_id}?target=${step?.id}`}
+              href={`/${orgId}/installs/${installId}/workflows/${deploy?.install_workflow_id}?panel=${step?.id}`}
             >
               <CaretLeftIcon />
               View workflow
