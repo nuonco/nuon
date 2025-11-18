@@ -1,0 +1,32 @@
+---
+description: 'JSON Schema reference for stack configuration'
+title: 'Stack'
+---
+
+# Stack
+
+## Properties
+
+| Property | Type | Required | Description | Default | Example |
+|----------|----------|----------|----------|----------|----------|
+| `type` | `string` | No | stack type Type of infrastructure stack. Currently only 'aws-cloudformation' is supported | - | `"aws-cloudformation"` |
+| `name` | `string` | ✅ Yes | stack name Name of the CloudFormation stack when deployed in the customer account. Supports Go templating | - | `"myapp-{{.nuon.install.id}}"` |
+| `description` | `string` | ✅ Yes | stack description Description of the stack, displayed in the CloudFormation console. Supports templating | - | `"Infrastructure stack for MyApp application"` |
+| `vpc_nested_template_url` | `string` | No | VPC nested template URL URL to the CloudFormation nested template for VPC resources | - | `"https://s3.amazonaws.com/bucket/vpc-template.yaml"` |
+| `runner_nested_template_url` | `string` | No | runner nested template URL URL to the CloudFormation nested template for the Nuon runner infrastructure | - | `"https://s3.amazonaws.com/bucket/runner-template.yaml"` |
+
+### Property Details
+
+#### `name`
+
+**Examples:**
+
+
+```yaml
+"myapp-{{.nuon.install.id}}"
+```
+
+```yaml
+"production-stack"
+```
+
