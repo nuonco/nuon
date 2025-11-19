@@ -23,7 +23,6 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
       action = 'destroyed'
       summary.destroy += 1
     } else if (item.op === 'apply') {
-      // type: 1 = add, 2 = delete, 3 = change
       if (item.type === 1) {
         action = 'added'
         summary.add += 1
@@ -42,9 +41,8 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
       action = item.op as THelmK8sChangeAction
     }
 
-    // Extract before/after from entries if available
-    const before = item.entries?.[0]?.original || null
-    const after = item.entries?.[0]?.applied || null
+    // Extract before/after from entries by building a formatted string
+    const { before, after } = buildBeforeAfterStrings(item.entries || [])
 
     changes.push({
       namespace: item.namespace,
@@ -58,4 +56,42 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
   })
 
   return { changes, summary }
+}
+
+function buildBeforeAfterStrings(entries: any[]): { before: string | null, after: string | null } {
+  const beforeLines: string[] = []
+  const afterLines: string[] = []
+  
+  // Group entries by path to handle before/after pairs
+  const pathGroups = new Map<string, { before?: string, after?: string }>()
+  
+  entries.forEach(entry => {
+    const path = entry.path
+    const existing = pathGroups.get(path) || {}
+    
+    if (entry.type === 1) {
+      // Before value (removal)
+      existing.before = entry.payload || null
+    } else if (entry.type === 2) {
+      // After value (addition)
+      existing.after = entry.payload || null
+    }
+    
+    pathGroups.set(path, existing)
+  })
+  
+  // Build the formatted strings
+  pathGroups.forEach((values, path) => {
+    if (values.before !== undefined) {
+      beforeLines.push(`${path}: ${values.before || ''}`)
+    }
+    if (values.after !== undefined) {
+      afterLines.push(`${path}: ${values.after || ''}`)
+    }
+  })
+  
+  return {
+    before: beforeLines.length > 0 ? beforeLines.join('\n') : null,
+    after: afterLines.length > 0 ? afterLines.join('\n') : null
+  }
 }

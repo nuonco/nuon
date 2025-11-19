@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
+import { Plan } from '@/components/approvals/Plan'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -302,11 +304,8 @@ export default async function InstallComponentDeploy({ params }) {
               childrenClassName="flex flex-col gap-6"
               heading="Approve change"
             >
-              <ApprovalStep
-                step={step}
-                approval={step.approval}
-                workflowId={workflow?.id}
-              />
+              <ApprovalBanner step={step} />
+              <Plan step={step} />
             </Section>
           ) : null}
 
@@ -333,11 +332,8 @@ export default async function InstallComponentDeploy({ params }) {
               childrenClassName="flex flex-col gap-6"
               heading="Approve change"
             >
-              <ApprovalStep
-                step={step}
-                approval={step.approval}
-                workflowId={workflow?.id}
-              />
+              <ApprovalBanner step={step} />
+              <Plan step={step} />
             </Section>
           ) : null}
         </div>

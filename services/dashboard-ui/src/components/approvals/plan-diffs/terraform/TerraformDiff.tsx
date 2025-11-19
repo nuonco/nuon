@@ -25,15 +25,16 @@ const EMPTY_PARSED_PLAN = {
     replace: 0,
     read: 0,
     update: 0,
-    noop: 0,
+    'no-op': 0,
   },
   changes: [],
 }
 
 export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
-  const { resources, outputs } = useMemo(() => {
+  const { drift, resources, outputs } = useMemo(() => {
     if (!plan) {
       return {
+        drift: EMPTY_PARSED_PLAN,
         resources: EMPTY_PARSED_PLAN,
         outputs: EMPTY_PARSED_PLAN,
       }
@@ -41,6 +42,9 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
     return parseTerraformPlan(plan)
   }, [plan])
 
+  const driftFilter = useTerraformResourceFilter<TTerraformResourceChange>(
+    drift.changes
+  )
   const resourceFilter = useTerraformResourceFilter<TTerraformResourceChange>(
     resources.changes
   )
@@ -65,6 +69,31 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+        <div className="px-4 sm:px-6 py-4 border-b">
+          <Text variant="base" weight="strong">
+            Resource drift
+          </Text>
+        </div>
+
+        <TerraformSummary summary={drift.summary} />
+
+        <DiffFilter
+          title="drift"
+          selectedActions={driftFilter.selectedActions}
+          onInputToggle={driftFilter.handleInputToggle}
+          onButtonClick={driftFilter.handleButtonClick}
+          onReset={driftFilter.handleReset}
+          selectedCount={driftFilter.filterStats.selectedCount}
+          totalCount={driftFilter.filterStats.totalCount}
+          searchValue={driftFilter.searchQuery}
+          onSearchChange={driftFilter.handleSearchChange}
+          searchPlaceholder="Search by address, resource, or name"
+        />
+
+        <ResourceChangesList changes={driftFilter.filteredItems} />
+      </Card>
+
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
         <div className="px-4 sm:px-6 py-4 border-b">
           <Text variant="base" weight="strong">
