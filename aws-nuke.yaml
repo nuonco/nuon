@@ -57,7 +57,7 @@ accounts:
   "543968496418":
     presets:
       - common
-  # sandbox-ey:
+  # sandbox-ey
   "642375199587":
     presets:
       - common
@@ -93,10 +93,6 @@ accounts:
   "145023109787":
     presets:
       - common
-  # sandbox-sb
-  "390844782764":
-    presets:
-      - common
   # sandbox-sk
   "011547835899":
     presets:
@@ -127,6 +123,14 @@ accounts:
       - common
   # sandbox-se
   "622185967174":
+    presets:
+      - common
+  # sandbox-am
+  "929871258425":
+    presets:
+      - common
+  # sandbox-ms
+  "084347627053":
     presets:
       - common
 
