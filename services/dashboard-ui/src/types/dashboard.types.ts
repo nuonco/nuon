@@ -112,7 +112,7 @@ export type TTerraformChangeAction =
   | 'create'
   | 'update'
   | 'delete'
-  | 'noop'
+  | 'no-op'
   | 'replace'
   | 'read'
 
@@ -137,6 +137,18 @@ export type TTerraformOutputChange = {
 }
 
 export type TTerraformPlan = {
+  resource_drift?: Array<{
+    address: string
+    module_address?: string | null
+    type: string
+    name: string
+    change: {
+      actions: TTerraformChangeAction[]
+      before?: any
+      after?: any
+      after_unknown?: any
+    }
+  }>
   resource_changes: Array<{
     address: string
     module_address?: string | null
@@ -230,6 +242,13 @@ export type THelmPlan = {
     namespace: string
     before: string
     after: string
+    entries?: Array<{
+      path: string
+      original: string
+      applied: string
+      type: number
+      payload: string
+    }>
   }[]
 }
 

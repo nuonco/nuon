@@ -36,7 +36,7 @@ export const LogsViewer = ({
   return (
     <div className="flex flex-col flex-auto">
       <div
-        className={cn('sticky bg-background border-b z-100', {
+        className={cn('sticky bg-background border-b z-10', {
           '-top-6': stratusPage,
           '-top-2': !stratusPage,
         })}
