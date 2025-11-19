@@ -1,6 +1,7 @@
 ---
 type: artifact
 color: red
+health_check_url: http://localhost:3333
 env: {}
 env_secrets: {}
 disable_watch: true

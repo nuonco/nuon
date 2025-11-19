@@ -46,6 +46,7 @@ tests:
   #- workers-infra-tests
 
 color: cyan
+health_check_url: http://localhost:8081/livez
 env:
   # psql db configuration
   DB_HOST: localhost
