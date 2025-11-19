@@ -21,7 +21,6 @@ import { DiffFilter } from '../DiffFilter'
 
 export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
   const { changes, summary } = useMemo(() => parseHelmPlan(plan), [plan])
-
   const {
     selectedActions,
     searchQuery,
