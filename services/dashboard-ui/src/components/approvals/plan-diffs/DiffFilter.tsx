@@ -23,7 +23,7 @@ const TERRAFORM_ACTIONS: {
   { value: 'delete', label: 'Delete' },
   { value: 'replace', label: 'Replace' },
   { value: 'read', label: 'Read' },
-  { value: 'noop', label: 'No-op' },
+  { value: 'no-op', label: 'No-op' },
 ]
 
 // Other helm/k8s actions

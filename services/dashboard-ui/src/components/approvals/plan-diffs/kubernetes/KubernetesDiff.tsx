@@ -19,7 +19,7 @@ import {
 import { KubernetesDiffSummary } from './KubernetesDiffSummary'
 import { DiffFilter } from '../DiffFilter'
 
-export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
+export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {  
   const { changes, summary } = useMemo(() => parseKubernetesPlan(plan), [plan])
   const {
     selectedActions,
