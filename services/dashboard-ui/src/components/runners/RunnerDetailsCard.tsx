@@ -34,10 +34,10 @@ export const RunnerDetailsCard = ({
   })
 
   const runnerHeartbeat =
-    heartbeats.install ??
+    heartbeats?.install ??
     heartbeats?.org ??
     heartbeats?.build ??
-    heartbeats[''] ??
+    heartbeats?.[''] ??
     undefined
 
   return (
