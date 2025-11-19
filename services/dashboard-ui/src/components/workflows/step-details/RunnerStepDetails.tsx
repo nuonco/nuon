@@ -44,7 +44,7 @@ export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
         </Text>
       </div>
       <div className="flex flex-col @min-4xl:flex-row gap-6">
-        {isRunnerLoading || isHeartbeatLoading || !runner ? (
+        {(isRunnerLoading || isHeartbeatLoading) && !runner ? (
           <RunnerDetailsCardSkeleton />
         ) : (
           <RunnerDetailsCard
@@ -55,7 +55,7 @@ export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
           />
         )}
 
-        {isHealthCheckLoading || !runnerHealthCheck || !runner ? (
+        {(isHealthCheckLoading || !runnerHealthCheck) && !runner ? (
           <RunnerHealthCardSkeleton />
         ) : (
           <RunnerHealthCard
