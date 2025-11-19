@@ -40,6 +40,21 @@ module "nuon-aws-eks-karpenter-sandbox-m1" {
   }
 }
 
+
+module "nuon-aws-eks-auto-sandbox" {
+  source           = "./modules/repository"
+  name             = "aws-eks-auto-sandbox"
+  description      = "AWS EKS + Auto mode sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-azure-aks-sandbox-m1" {
   source           = "./modules/repository"
   name             = "azure-aks-sandbox"
