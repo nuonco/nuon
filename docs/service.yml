@@ -1,7 +1,7 @@
 ---
 type: artifact
 color: red
-health_check_url: http://localhost:3333
+health_check_url: http://localhost:3333/get-started/introduction
 env: {}
 env_secrets: {}
 disable_watch: true
