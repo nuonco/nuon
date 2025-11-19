@@ -51,7 +51,7 @@ services:
       - default
 
   temporal-proxy:
-    image: temporalio/ui:latest
+    image: temporalio/ui:2.34.0
     ports:
       - 8234:8080
     volumes:
