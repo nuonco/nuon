@@ -11,7 +11,7 @@ export const TERRAFORM_ACTION_BADGE_THEME: Record<
   create: 'success',
   delete: 'error',
   update: 'warn',
-  noop: 'neutral',
+  'no-op': 'neutral',
 } as const
 
 export function getTerraformActionBgColor(
