@@ -21,7 +21,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		ComponentID: compID,
 	})
 	if err != nil {
-		w.updateStatus(ctx, compID, app.ComponentStatusError, "unable to get component")
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
 	}
@@ -55,7 +54,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		WorkflowID:       fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		w.updateStatus(ctx, comp.ID, app.ComponentStatusError, "component is in error state due to build failure")
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
 		return errors.Wrap(err, "unable to create plan")
 	}
@@ -65,7 +63,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return errors.Wrap(err, "unable to create json")
 	}
 	if err != nil {
-		w.updateStatus(ctx, comp.ID, app.ComponentStatusError, "component is in error state due to build failure")
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get convert build plan to JSON")
 		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
@@ -77,7 +74,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 			BuildPlan: runPlan,
 		},
 	}); err != nil {
-		w.updateStatus(ctx, comp.ID, app.ComponentStatusError, "component is in error state due to build failure")
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to save job plan")
 		return fmt.Errorf("unable to save runner job plan: %w", err)
 	}
@@ -90,12 +86,10 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
 	if err != nil {
-		w.updateStatus(ctx, comp.ID, app.ComponentStatusError, "component is in error state due to build failure")
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
 		return fmt.Errorf("build job failed: %w", err)
 	}
 
-	w.updateStatus(ctx, comp.ID, app.ComponentStatusActive, "component is active after successful build")
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusActive, "build is active and ready to be deployed")
 	return nil
 }
