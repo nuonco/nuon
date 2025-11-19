@@ -2,6 +2,7 @@
 port: 4321
 type: service
 local_only: true
+health_check_url: http://localhost:4321
 env:
 env_secrets:
 disable_watch: true
