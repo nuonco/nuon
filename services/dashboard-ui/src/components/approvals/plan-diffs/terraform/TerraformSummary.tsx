@@ -55,7 +55,7 @@ export const TerraformSummary = ({
 
         <div className="flex items-center gap-1.5">
           <Text variant="base" theme="neutral" weight="strong">
-            {summary?.noop || summary['no-op']}
+            {summary?.['no-op'] || summary['no-op']}
           </Text>
           <Text variant="subtext" theme="neutral">
             noop

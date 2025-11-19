@@ -176,6 +176,7 @@ const OPERATION_TYPES = [
   'replace',
   'read',
   'no-op',
+  'drift', // Add drift to operation types
 ]
 
 export function isOutputAfterUnknown(afterUnknown: any): boolean {
@@ -227,9 +228,14 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     summary: Record<TTerraformChangeAction, number>
     changes: TTerraformOutputChange[]
   }
+  drift: {
+    summary: Record<TTerraformChangeAction, number>
+    changes: TTerraformResourceChange[]
+  }
 } {
   const resourceChanges: TTerraformResourceChange[] = []
   const outputChanges: TTerraformOutputChange[] = []
+  const driftChanges: TTerraformResourceChange[] = []
 
   const resourceSummary: Record<string, number> = Object.fromEntries(
     OPERATION_TYPES.map((op) => [op, 0])
@@ -237,8 +243,38 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
   const outputSummary: Record<string, number> = Object.fromEntries(
     OPERATION_TYPES.map((op) => [op, 0])
   )
+  const driftSummary: Record<string, number> = Object.fromEntries(
+    OPERATION_TYPES.map((op) => [op, 0])
+  )
 
-  // Resource Changes
+  // Resource Drift (new section)
+  if (plan.resource_drift) {
+    for (const rd of plan.resource_drift) {
+      const mergedAfter = mergeAfterUnknown(
+        rd.change.after,
+        rd.change.after_unknown
+      )
+
+      for (const action of rd.change.actions) {
+        incrementSummary(driftSummary, action)
+        if (action === 'replace') {
+          incrementSummary(driftSummary, 'delete')
+          incrementSummary(driftSummary, 'create')
+        }
+        driftChanges.push({
+          address: rd.address,
+          module: rd.module_address ?? null,
+          resource: rd.type,
+          name: rd.name,
+          action,
+          before: rd.change.before,
+          after: mergedAfter,
+        })
+      }
+    }
+  }
+
+  // Resource Changes (existing logic)
   for (const rc of plan.resource_changes) {
     const mergedAfter = mergeAfterUnknown(
       rc.change.after,
@@ -277,7 +313,7 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     }
   }
 
-  // Output Changes
+  // Output Changes (existing logic)
   if (plan.output_changes) {
     for (const [output, oc] of Object.entries(plan.output_changes)) {
       const mergedAfter = mergeAfterUnknown(oc.after, oc.after_unknown)
@@ -315,9 +351,11 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     }
   }
 
+  // Ensure all operation types are represented
   OPERATION_TYPES.forEach((op) => {
     resourceSummary[op] = resourceSummary[op] || 0
     outputSummary[op] = outputSummary[op] || 0
+    driftSummary[op] = driftSummary[op] || 0
   })
 
   return {
@@ -328,6 +366,10 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     outputs: {
       summary: outputSummary,
       changes: outputChanges,
+    },
+    drift: {
+      summary: driftSummary,
+      changes: driftChanges,
     },
   }
 }

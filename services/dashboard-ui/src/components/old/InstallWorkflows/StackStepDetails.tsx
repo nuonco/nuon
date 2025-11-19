@@ -116,7 +116,7 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
   const { install } = useInstall()
   return (
     <>
-      <div className="border rounded-md shadow flex flex-col">
+      <div className="border rounded-md shadow flex flex-col w-fit">
         <div className="flex justify-between items-center p-3 border-b">
           <Text variant="med-14">
             Install stack{' '}
@@ -125,7 +125,7 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
               : 'is waiting to run'}
           </Text>
         </div>
-        <div className="p-6 grid grid-cols-4">
+        <div className="p-6 grid grid-cols-4 gap-8">
           <StatusBadge
             status={stack?.versions?.at(0)?.composite_status?.status}
             description={
@@ -147,7 +147,7 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
 
       <div className="flex flex-col gap-2">
         <Text variant="med-14">Setup your install stack</Text>
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
           <span className="flex justify-between items-center">
             <Text variant="med-12">Install quick link</Text>
             <ClickToCopyButton
@@ -163,7 +163,7 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
           </Link>
         </div>
 
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3 w-fit">
           <span className="flex justify-between items-center">
             <Text variant="med-12">Install template link</Text>
             <ClickToCopyButton
@@ -189,7 +189,7 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
 
       <div className="flex flex-col gap-2">
         <Text variant="med-14">Setup your install stack using CLI command</Text>
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
           <ClickToCopyButton
             className="w-fit self-end"
             textToCopy={` aws cloudformation create-stack --stack-name [YOUR_STACK_NAME]
@@ -206,7 +206,7 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
         <Text variant="med-14">
           Update an existing install stack using CLI command
         </Text>
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
           <ClickToCopyButton
             className="w-fit self-end"
             textToCopy={` aws cloudformation update-stack --stack-name [YOUR_STACK_NAME]
@@ -221,7 +221,7 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
 
       <div className="flex flex-col gap-4">
         <Text variant="med-14">Install with Terraform.</Text>
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
           <span className="flex justify-between items-center">
             <Text>Terraform module tfvars</Text>
 
@@ -303,7 +303,7 @@ const AwaitAzureStack = ({ stack }: { stack: TInstallStack }) => {
           Provision the install stack using the Azure CLI
         </Text>
 
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
           <span className="flex justify-between items-center">
             <Text variant="med-12">
               Ensure you are logged into the Azure subscription you want to
@@ -317,7 +317,7 @@ const AwaitAzureStack = ({ stack }: { stack: TInstallStack }) => {
           <Code>az login</Code>
         </div>
 
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
           <span className="flex justify-between items-center">
             <Text variant="med-12">Create a resource group to deploy into</Text>
             <ClickToCopyButton
@@ -332,7 +332,7 @@ const AwaitAzureStack = ({ stack }: { stack: TInstallStack }) => {
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
           <span className="flex justify-between items-center">
             <Text variant="med-12">Deploy the stack to the resource group</Text>
             <ClickToCopyButton
@@ -355,7 +355,7 @@ const AwaitAzureStack = ({ stack }: { stack: TInstallStack }) => {
 
       <div className="flex flex-col gap-2">
         <Text variant="med-14">Download the install stack template</Text>
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3">
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3 w-fit">
           <span className="flex justify-between items-center">
             <Text variant="med-12">Install template link</Text>
             <ClickToCopyButton
