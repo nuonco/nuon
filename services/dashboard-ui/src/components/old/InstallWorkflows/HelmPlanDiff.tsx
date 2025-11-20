@@ -104,7 +104,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
 
   return (
-    <div className="bg-cool-grey-50 dark:bg-dark-grey-200 rounded-lg border">
+    <div className="bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
       {/* Header */}
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
         <Text variant="med-18">
@@ -114,7 +114,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
       </div>
 
       {/* Summary */}
-      <div className="px-4 py-3 border-b bg-cool-grey-100 dark:bg-dark-grey-300">
+      <div className="px-4 py-3 border-b bg-cool-grey-100 dark:bg-dark-grey-700">
         <div className="flex space-x-4">
           <div className="flex items-center gap-1.5">
             <Text
@@ -200,7 +200,7 @@ export const HelmChangesViewer: React.FC<HelmChangesViewerProps> = ({
               {isExpanded && (
                 <div className="mt-4">
                   {diff ? (
-                    <div className="flex flex-col md:flex-row gap-4 px-2 py-2 bg-white dark:bg-dark-grey-100 rounded border">
+                    <div className="flex flex-col md:flex-row gap-4 px-2 py-2 bg-white dark:bg-dark-grey-900 rounded border">
                       <CodeBlock className="w-full" language="yaml" isDiff>
                         {diff?._version == '2'
                           ? diffEntries(diff?.entries)
