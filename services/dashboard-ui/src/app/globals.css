@@ -131,6 +131,7 @@
 
 :root {
   --background: var(--color-white);
+  --background-neutral: var(--color-cool-grey-100);
   --foreground: var(--color-dark-grey-900);
   --border-color: var(--border-color-light);
   --text-gradient: var(--text-gradient-light);
@@ -142,6 +143,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: var(--color-dark-grey-900);
+    --background-neutral: var(--color-dark-grey-950);
     --foreground: var(--color-white);
     --border-color: var(--border-color-dark);
     --text-gradient: var(--text-gradient-dark);
