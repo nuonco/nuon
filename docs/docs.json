@@ -93,6 +93,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/027-install-config-toggle",
           "updates/026-helm-repository-support",
           "updates/025-temporal-stability",
           "updates/024-install-inputs-ui-redesign",
