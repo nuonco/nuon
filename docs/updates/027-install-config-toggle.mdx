@@ -1,11 +1,11 @@
 ---
-title: 027 - TBD
-description: TBD.
+title: 027 - Install config toggle
+description: Clearer install config mode switching.
 ---
 
 _Nov 14, 2024_
 
-<div className="badge badge--primary">v0.19.696</div>
+<div className="badge badge--primary">v0.19.697</div>
 
 ## Install Config file improvements
 
@@ -14,6 +14,10 @@ _Nov 14, 2024_
 Users can now enable or disable syncing an Install from a config file, from dashboard UI as well as CLI.
 
 **Dashboard UI** You can find the toggle to enable/disable config file syncing in the management menu of an Install.
+
+![New install config toggle button](assets/027_install_config_toggle_button.png)
+
+![New install config toggle button](assets/027_install_config_toggle_modal.png)
 
 **CLI** The CLI features a new command to toggle config file syncing for an Install. Run `nuon installs toggle-sync` to toggle the config file syncing, or use `--enable` or `--disable` to explicitly set the syncing status.
 
