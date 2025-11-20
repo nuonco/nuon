@@ -1,4 +1,5 @@
-import { Notice, Text, Markdown } from '@/components'
+import { Markdown } from '@/components/common/Markdown'
+import { Notice, Text } from '@/components'
 import { getInstallReadme } from '@/lib'
 
 export const Readme = async ({
