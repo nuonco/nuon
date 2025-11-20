@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
+	"github.com/powertoolsdev/mono/bins/runner/internal/version"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
 	"github.com/powertoolsdev/mono/pkg/retry"
@@ -50,6 +51,7 @@ func New(params Params) (nuonrunner.Client, error) {
 		nuonrunner.WithAuthToken(params.Cfg.RunnerAPIToken),
 		nuonrunner.WithRetryer(retryer),
 	)
+	api.SetClientVersion(version.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize runner: %w", err)
 	}

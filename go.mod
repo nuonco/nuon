@@ -98,7 +98,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/moby/buildkit v0.23.2
 	github.com/nuonco/gin-swagger v1.6.2
-	github.com/nuonco/nuon-runner-go v0.19.0
+	github.com/nuonco/nuon-runner-go v0.20.0
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/opencontainers/image-spec v1.1.1
@@ -397,7 +397,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/nuonco/nuon-go v0.91.2
+	github.com/nuonco/nuon-go v0.92.0
 	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
 	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
