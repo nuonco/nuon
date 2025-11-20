@@ -34,7 +34,7 @@ export const KubernetesManifestDiffViewer: React.FC<
           return (
             <div
               key={index}
-              className="flex flex-col gap-4 p-4 border rounded-md bg-cool-grey-50 dark:bg-dark-grey-200"
+              className="flex flex-col gap-4 p-4 border rounded-md bg-cool-grey-50 dark:bg-dark-grey-800"
             >
               <div className="flex flex-col gap-1">
                 <Text variant="med-14" className="font-bold text-blue-500">
