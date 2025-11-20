@@ -531,3 +531,37 @@ Check the response headers for additional error information.
     </div>
   </div>
 )
+
+export const MermaidExample = () => {
+  return (
+    <div>
+      <Markdown
+        content={`
+## Components
+
+\`\`\`mermaid
+graph TD
+  cluster[cluster<br/>0-tf-cluster]
+  repository[repository<br/>1-tf-repository]
+  certificate[certificate<br/>1-tf-certificate]
+  img[img_inbox_zero<br/>0-img-ingress-zero]
+  builder[builder<br/>2-tf-builder]
+
+  cluster --> builder
+  repository --> builder
+
+  style builder fill:#D6B0FC,stroke:#8040BF,color:#000
+  style cluster fill:#D6B0FC,stroke:#8040BF,color:#000
+  style repository fill:#D6B0FC,stroke:#8040BF,color:#000
+  style certificate fill:#D6B0FC,stroke:#8040BF,color:#000
+  style img fill:#FCA04A,stroke:#FCA04A,color:#000
+\`\`\`
+
+## Full State
+
+Click "Manage > State"
+        `}
+      />
+    </div>
+  )
+}
