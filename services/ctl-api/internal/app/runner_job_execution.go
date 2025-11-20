@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -72,6 +73,9 @@ type RunnerJobExecution struct {
 
 	Result  *RunnerJobExecutionResult  `json:"result,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"result,omitzero,omitempty"`
 	Outputs *RunnerJobExecutionOutputs `json:"outputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"outputs,omitzero,omitempty"`
+
+	// Metadata is used to store additional information about the execution {e.g., client version.}
+	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 }
 
 func (r *RunnerJobExecution) BeforeCreate(tx *gorm.DB) error {
