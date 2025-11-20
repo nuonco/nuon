@@ -3,7 +3,7 @@ title: 027 - Install config toggle
 description: Clearer install config mode switching.
 ---
 
-_Nov 14, 2024_
+_Nov 20, 2025_
 
 <div className="badge badge--primary">v0.19.697</div>
 
@@ -17,6 +17,8 @@ Users can now enable or disable syncing an Install from a config file, from dash
 
 ![New install config toggle button](assets/027_install_config_toggle_button.png)
 
+<br />
+
 ![New install config toggle button](assets/027_install_config_toggle_modal.png)
 
 **CLI** The CLI features a new command to toggle config file syncing for an Install. Run `nuon installs toggle-sync` to toggle the config file syncing, or use `--enable` or `--disable` to explicitly set the syncing status.
@@ -28,7 +30,21 @@ Users can now enable or disable syncing an Install from a config file, from dash
 Install Config files now need to have the required inputs defined explicitly. Now it is not 
 possible to set their value from UI, or utilising the default value implicitly.
 
-## Bug Fixes
+### UI Refresh
+
+We've been rolling out our new design system to users, bringing a more modern and polished look to the dashboard. This update includes refreshed UI components, improved visual hierarchy, and a cleaner overall aesthetic for developer workflows.
+
+If you would like to use the updated UI, reach out to our team so we can enable it for your organization. We would love to hear your feedback!
+
+![Stratus screenshot](assets/027/Stratus_screenshot.png)
+
+### Mermaid Diagrams in READMEs
+
+READMEs now support [Mermaid](https://mermaid.js.org/) daigram rendering.
+
+![Mermaid diagram screenshot](assets/027/mermaid_diagram_screenshot.png)
+
+## Bug Fixes 
 
 - UI: Fixed missing badge for Install managed by config file in the header.
 - CLI: Fix empty diff when syncing a new install using a config file.
