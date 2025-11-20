@@ -148,20 +148,20 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 				offset = 0
 			}
 		} else {
-			// Subsequent pages - count records after cursor
-			var countAfterCursor int64
+			// Subsequent pages - count records before cursor (timestamp < cursor)
+			var countBeforeCursor int64
 			countRes := s.chDB.WithContext(ctx).
 				Model(&app.OtelLogRecord{}).
 				Where("org_id = ?", orgID).
 				Where("log_stream_id = ?", logStreamID).
 				Where("toUnixTimestamp64Nano(timestamp) < ?", cursor).
-				Count(&countAfterCursor)
+				Count(&countBeforeCursor)
 			if countRes.Error != nil {
 				return nil, headers, errors.Wrap(countRes.Error, "unable to count remaining logs")
 			}
 
-			// Calculate offset from beginning
-			offset = totalCount - countAfterCursor - int64(PageSize)
+			// Get the last PageSize records from what remains
+			offset = countBeforeCursor - int64(PageSize)
 			if offset < 0 {
 				offset = 0
 			}
@@ -184,14 +184,15 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 			otelLogRecords[i], otelLogRecords[j] = otelLogRecords[j], otelLogRecords[i]
 		}
 
-		// Determine next cursor (first element since we reversed)
+		// Determine next cursor (last element after reversal = oldest timestamp)
 		if len(otelLogRecords) == 0 || offset == 0 {
 			headers["X-Nuon-API-Next"] = ""
 		} else {
-			first := otelLogRecords[len(otelLogRecords)-1]
-			headers["X-Nuon-API-Next"] = fmt.Sprintf("%d", first.Timestamp.UnixNano())
+			last := otelLogRecords[len(otelLogRecords)-1]
+			headers["X-Nuon-API-Next"] = fmt.Sprintf("%d", last.Timestamp.UnixNano())
 		}
 	}
 
 	return otelLogRecords, headers, nil
 }
+
