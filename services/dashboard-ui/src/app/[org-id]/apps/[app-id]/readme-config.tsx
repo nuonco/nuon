@@ -1,4 +1,5 @@
-import { EmptyStateGraphic, Section, Text, Markdown } from '@/components'
+import { EmptyStateGraphic, Section, Text } from '@/components'
+import { Markdown } from "@/components/common/Markdown"
 import { getAppConfigById } from '@/lib'
 
 export const ReadmeConfig = async ({
