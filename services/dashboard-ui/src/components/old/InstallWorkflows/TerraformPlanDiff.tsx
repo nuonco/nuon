@@ -73,51 +73,92 @@ function diffFields(
   const allKeys = Array.from(
     new Set([...Object.keys(before), ...Object.keys(after)])
   )
-  return allKeys.map((key) => {
-    if (before[key] !== after[key]) {
-      return (
-        <div
-          className="flex gap-2 items-start my-1 overflow-x-scroll"
-          key={key}
-        >
-          <span className="font-mono text-sm text-gray-400 dark:text-cool-grey-200 w-fit">
-            {key}:
-          </span>
-          <span className="text-sm line-through text-red-600 bg-red-50 dark:text-red-50 dark:bg-red-600/10 px-1 rounded">
-            <TruncateValue title={key}>
-              {before[key] !== undefined
-                ? JSON.stringify(before[key], null, 2)
-                : ''}
-            </TruncateValue>
-          </span>
-          <span className="text-sm text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 px-1 rounded">
-            <TruncateValue title={key}>
-              {after[key] !== undefined
-                ? JSON.stringify(after[key], null, 2)
-                : ''}
-            </TruncateValue>
-          </span>
-        </div>
-      )
-    } else {
-      return (
-        <div className="flex gap-2 items-start my-1" key={key}>
-          <span className="font-mono text-sm text-cool-grey-400 dark:text-cool-grey-200 w-fit">
-            {key}:
-          </span>
-          <span className="text-sm text-cool-grey-700 dark:text-cool-grey-100 break-all">
-            {before[key] === undefined || before[key] === 'undefined' ? (
-              <i>Known after apply</i>
-            ) : (
-              <TruncateValue title={key}>
-                {JSON.stringify(before[key])}
-              </TruncateValue>
-            )}
-          </span>
-        </div>
+
+  // Deep equality function to properly compare arrays and objects
+  const deepEqual = (a: any, b: any): boolean => {
+    if (a === b) return true
+    
+    if (a == null || b == null) return a === b
+    
+    if (typeof a !== typeof b) return false
+    
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return false
+      return a.every((item, index) => deepEqual(item, b[index]))
+    }
+    
+    if (typeof a === 'object') {
+      const keysA = Object.keys(a)
+      const keysB = Object.keys(b)
+      
+      if (keysA.length !== keysB.length) return false
+      
+      return keysA.every(key => 
+        keysB.includes(key) && deepEqual(a[key], b[key])
       )
     }
-  })
+    
+    return false
+  }
+
+  // Format values with better handling for empty strings, null, etc.
+  const formatValue = (val: any): string => {
+    if (val === null) return 'null'
+    if (val === undefined) return 'undefined'
+    if (val === '') return '""'
+    if (typeof val === 'string') return val
+    return JSON.stringify(val, null, 2)
+  }
+
+  return allKeys
+    .map((key) => {
+      const beforeValue = before[key]
+      const afterValue = after[key]
+      
+      // Use deep equality instead of reference equality
+      const hasChanged = !deepEqual(beforeValue, afterValue)
+      
+      if (hasChanged) {
+        return (
+          <div
+            className="flex gap-2 items-start my-1 overflow-x-scroll"
+            key={key}
+          >
+            <span className="font-mono text-sm text-gray-400 dark:text-cool-grey-200 w-fit">
+              {key}:
+            </span>
+            <span className="text-sm line-through text-red-600 bg-red-50 dark:text-red-50 dark:bg-red-600/10 px-1 rounded">
+              <TruncateValue title={key}>
+                {beforeValue !== undefined ? formatValue(beforeValue) : ''}
+              </TruncateValue>
+            </span>
+            <span className="text-sm text-green-700 bg-green-50 dark:text-green-50 dark:bg-green-600/10 px-1 rounded">
+              <TruncateValue title={key}>
+                {afterValue !== undefined ? formatValue(afterValue) : ''}
+              </TruncateValue>
+            </span>
+          </div>
+        )
+      } else {
+        return (
+          <div className="flex gap-2 items-start my-1" key={key}>
+            <span className="font-mono text-sm text-cool-grey-400 dark:text-cool-grey-200 w-fit">
+              {key}:
+            </span>
+            <span className="text-sm text-cool-grey-700 dark:text-cool-grey-100 break-all">
+              {beforeValue === undefined || beforeValue === 'undefined' ? (
+                <i>Known after apply</i>
+              ) : (
+                <TruncateValue title={key}>
+                  {formatValue(beforeValue)}
+                </TruncateValue>
+              )}
+            </span>
+          </div>
+        )
+      }
+    })
+    .filter(Boolean) // Remove any null/undefined elements
 }
 
 function OutputChangesViewer({
@@ -179,7 +220,7 @@ function OutputChangesViewer({
                   </span>
                 </button>
                 {isOpen && (
-                  <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
+                  <div className="bg-cool-grey-50 dark:bg-dark-grey-800 px-6 py-4 border-t overflow-hidden">
                     <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
                       <b>Output:</b> {key}
                     </div>
@@ -270,7 +311,7 @@ function ResourceDriftViewer({
                 </div>
               </button>
               {isOpen && (
-                <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
+                <div className="bg-cool-grey-50 dark:bg-dark-grey-800 px-6 py-4 border-t overflow-hidden">
                   <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
                     <b>Type:</b> {res.type} &nbsp;
                     <b>Name:</b> {res.name}
@@ -386,7 +427,7 @@ function ResourceChangesViewer({
                   </span>
                 </button>
                 {isOpen && (
-                  <div className="bg-cool-grey-50 dark:bg-dark-grey-200 px-6 py-4 border-t">
+                  <div className="bg-cool-grey-50 dark:bg-dark-grey-800 px-6 py-4 border-t overflow-hidden">
                     <div className="mb-4 text-sm text-cool-grey-600 dark:text-cool-grey-300">
                       <b>Type:</b> {res.type} &nbsp;
                       <b>Name:</b> {res.name}
