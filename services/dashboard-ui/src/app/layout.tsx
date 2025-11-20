@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
+import { API_URL } from "@/configs/api"
 import { InitDatadogLogs } from '@/lib/datadog-logs'
 import { InitDatadogRUM } from '@/lib/datadog-rum'
 import {
@@ -59,6 +60,7 @@ export default function RootLayout({
           <EnvScript
             env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
             githubAppName={process.env.GITHUB_APP_NAME}
+            tfBackendUrl={API_URL}
           />
 
           <AccountProvider shouldPoll>
@@ -76,13 +78,14 @@ export default function RootLayout({
   )
 }
 
-const EnvScript = ({ env, githubAppName }) => {
+const EnvScript = ({ env, githubAppName, tfBackendUrl }) => {
   return (
     <div
       dangerouslySetInnerHTML={{
         __html: `<script id="client-env">
           window.env = "${env}";
           window.GITHUB_APP_NAME = "${githubAppName}";
+          window.TF_BACKEND_URL = "${tfBackendUrl}"
         </script>`,
       }}
     />
