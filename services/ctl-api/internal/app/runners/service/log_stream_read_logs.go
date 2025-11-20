@@ -23,7 +23,9 @@ const (
 // @Summary				read a log stream's logs
 // @Description.markdown	log_stream_read_logs.md
 // @Param					log_stream_id		path	string	true	"log stream ID"
-// @Param					X-Nuon-API-Offset	header	string	true	"log stream offset"
+// @Param					X-Nuon-API-Offset	header	string	false	"log stream offset"
+// query param for order
+// @Param					order query	string	false	"resource attribute filters"	default(asc)
 // @Tags					runners
 // @Accept					json
 // @Produce				json
@@ -37,10 +39,6 @@ const (
 // @Success				200	{object}	[]app.OtelLogRecord
 // @Router					/v1/log-streams/{log_stream_id}/logs [GET]
 func (s *service) LogStreamReadLogs(ctx *gin.Context) {
-	// get the otel logs in order of their timstamp (desc)
-	// returns pagination details in the header
-	// X-Nuon-API-Next   returns a value, a unix time in nanoseconds rn
-	// X-Nuon-API-Offset accepts a value, a unix time in nanoseconds rn
 	logStreamID := ctx.Param("log_stream_id")
 
 	_, err := s.getLogStream(ctx, logStreamID)
@@ -52,10 +50,20 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	// Pagination Facts
 	// parse the offset
 	var after int64
+	order := ctx.DefaultQuery("order", "asc")
+	if order != "asc" && order != "desc" {
+		ctx.Error(errors.New("invalid order query parameter, must be 'asc' or 'desc'"))
+		return
+	}
+
 	afterStr := ctx.GetHeader("X-Nuon-API-Offset")
 	if afterStr == "" {
-		// set default value
-		after = 0
+		// set default value based on order
+		if order == "asc" {
+			after = 0 // start from beginning of time
+		} else {
+			after = time.Now().UnixNano() // start from current time
+		}
 	} else {
 		afterVal, err := strconv.ParseInt(afterStr, 10, 64)
 		if err != nil {
@@ -65,33 +73,14 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 		after = afterVal
 	}
 
-	// grab any and all attribute query params
-	// queryParams := ctx.Request.URL.Query()
-	// resourceAttrQueryParams := map[string]string{}
-	// logAttrQueryParams := map[string]string{}
-	// for key, value := range queryParams {
-	// 	if strings.HasPrefix(key, "resource.") {
-	// 		newKey := strings.Replace(key, "resource.", "", 1)
-	// 		match, _ := regexp.MatchString(nestedAttributeRegex, newKey)
-	// 		if match {
-	// 			resourceAttrQueryParams[newKey] = value[0]
-	// 		}
-	// 	} else if strings.HasPrefix(key, "log.") {
-	// 		newKey := strings.Replace(key, "log.", "", 1)
-	// 		match, _ := regexp.MatchString(nestedAttributeRegex, newKey)
-	// 		if match {
-	// 			logAttrQueryParams[newKey] = value[0]
-	// 		}
-	// 	}
-	// }
-
 	// read logs from chDB
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
 		return
 	}
-	logs, headers, readErr := s.getLogStreamLogs(ctx, logStreamID, orgID, after)
+
+	logs, headers, readErr := s.getLogStreamLogs(ctx, logStreamID, orgID, after, order)
 	if readErr != nil {
 		ctx.Error(errors.Wrap(readErr, "unable to read runner logs"))
 		return
@@ -105,7 +94,7 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, logs)
 }
 
-func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgID string, after int64) ([]app.OtelLogRecord, map[string]string, error) {
+func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgID string, after int64, order string) ([]app.OtelLogRecord, map[string]string, error) {
 	// NOTE(jm): this is a temporary mechanism, while we test log reading. Ultimately, this should be done in a
 	// middleware.
 	ctx, cancelFn := context.WithTimeout(ctx, time.Second*5)
@@ -121,12 +110,16 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 		Where("org_id = ?", orgID).
 		Where("log_stream_id = ?", logStreamID)
 
-	if after != 0 {
-		res.Where("toUnixTimestamp64Nano(timestamp) > ?", after)
+	// For ascending order, get records >= cursor (inclusive)
+	// For descending order, get records <= cursor (inclusive)
+	if order == "asc" {
+		res.Where("toUnixTimestamp64Nano(timestamp) >= ?", after)
+	} else {
+		res.Where("toUnixTimestamp64Nano(timestamp) <= ?", after)
 	}
 
 	res.
-		Order("timestamp asc").
+		Order(fmt.Sprintf("timestamp %s", order)).
 		Limit(PageSize).
 		Find(&otelLogRecords)
 	if res.Error != nil {
@@ -134,14 +127,13 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 	}
 
 	// Query: get total record count
-	// get count
 	var count int64
 	countres := s.chDB.WithContext(ctx).
+		Model(&app.OtelLogRecord{}).
 		Where("log_stream_id = ?", logStreamID).
-		Find(&[]app.OtelLogRecord{}).
 		Count(&count)
 	if countres.Error != nil {
-		return nil, headers, errors.Wrap(countres.Error, "unable to retrieve logs: %w")
+		return nil, headers, errors.Wrap(countres.Error, "unable to retrieve logs count")
 	}
 
 	// determine next
