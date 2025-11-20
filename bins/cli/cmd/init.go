@@ -29,6 +29,7 @@ func (c *cli) initAPIClient() error {
 		nuon.WithOrgID(c.cfg.OrgID),
 		nuon.WithURL(c.cfg.APIURL),
 	)
+	api.SetClientVersion(version.Version)
 	if err != nil {
 		return fmt.Errorf("unable to init API client: %w", err)
 	}
