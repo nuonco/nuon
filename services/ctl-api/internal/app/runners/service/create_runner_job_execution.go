@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -19,6 +20,7 @@ type CreateRunnerJobExecutionRequest struct{}
 // @Description.markdown	create_runner_job_execution.md
 // @Param					req				body	CreateRunnerJobExecutionRequest	true	"Input"
 // @Param					runner_job_id	path	string							true	"runner job ID"
+// @Param					X-Nuon-Client-Version	header	string		false	"Nuon Client Version"
 // @Tags					runners/runner
 // @Accept					json
 // @Produce				json
@@ -33,6 +35,7 @@ type CreateRunnerJobExecutionRequest struct{}
 // @Router					/v1/runner-jobs/{runner_job_id}/executions [POST]
 func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 	runnerJobID := ctx.Param("runner_job_id")
+	clientVersion := ctx.GetHeader("X-Nuon-Client-Version")
 
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
@@ -51,7 +54,7 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 		return
 	}
 
-	execution, err := s.createRunnerJobExecution(ctx, runnerJobID)
+	execution, err := s.createRunnerJobExecution(ctx, runnerJobID, clientVersion)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create runner job execution: %w", err))
 		return
@@ -65,12 +68,16 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, execution)
 }
 
-func (s *service) createRunnerJobExecution(ctx context.Context, runnerJobID string) (*app.RunnerJobExecution, error) {
+func (s *service) createRunnerJobExecution(ctx context.Context, runnerJobID, clientVersion string) (*app.RunnerJobExecution, error) {
 	runnerJobExecution := app.RunnerJobExecution{
 		RunnerJobID: runnerJobID,
 		Status:      app.RunnerJobExecutionStatusPending,
 	}
-
+	if clientVersion != "" {
+		runnerJobExecution.Metadata = pgtype.Hstore(map[string]*string{
+			"client.version": &clientVersion,
+		})
+	}
 	res := s.db.WithContext(ctx).
 		Create(&runnerJobExecution)
 	if res.Error != nil {
