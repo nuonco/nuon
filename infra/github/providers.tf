@@ -63,6 +63,19 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  region = "us-east-2"
+  alias  = "us-east-2"
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts.infra-shared-prod.id}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
+  }
+}
+
 data "aws_organizations_organization" "orgs" {
   provider = aws.mgmt
 }
