@@ -27,9 +27,9 @@ terraform {
   backend "http" {
     lock_method    = "POST"
     unlock_method  = "POST"
-    address = "${process.env.NEXT_PUBLIC_API_URL}/v1/terraform-backend?workspace_id=${workspace.id}&org_id=${orgId}&token=${token}"
-    lock_address = "${process.env.NEXT_PUBLIC_API_URL}/v1/terraform-workspaces/${workspace.id}/lock?org_id=${orgId}&token=${token}"
-    unlock_address = "${process.env.NEXT_PUBLIC_API_URL}/v1/terraform-workspaces/${workspace.id}/unlock?org_id=${orgId}&token=${token}"
+    address = "${window?.['TF_BACKEND_URL']}/v1/terraform-backend?workspace_id=${workspace.id}&org_id=${orgId}&token=${token}"
+    lock_address = "${window?.['TF_BACKEND_URL']}/v1/terraform-workspaces/${workspace.id}/lock?org_id=${orgId}&token=${token}"
+    unlock_address = "${window?.['TF_BACKEND_URL']}/v1/terraform-workspaces/${workspace.id}/unlock?org_id=${orgId}&token=${token}"
   }
 }
 `
