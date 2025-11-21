@@ -217,6 +217,7 @@ export type TKubernetesPlanItem = {
   op: string
   type: number // 1=add, 2=delete, 3=change
   dry_run: boolean
+  error?: string
   entries?: Array<{
     path: string
     original: string
@@ -230,6 +231,14 @@ export type TKubernetesPlan = {
   plan: string
   op: string
   k8s_content_diff: TKubernetesPlanItem[]
+}
+
+export type TKubernetesPlanError = {
+  namespace: string
+  name: string
+  resource: string
+  resourceType: string
+  error: string
 }
 
 export type THelmPlan = {

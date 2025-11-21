@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -156,6 +157,7 @@ func (h *handler) resourceDiffWithLive(desired []*kubernetesResource, live []*ku
 	ignoreFields := []string{
 		"metadata.creationTimestamp",
 		"metadata.resourceVersion",
+		"metadata.generation",
 		"metadata.namespace",
 		"metadata.uid",
 		"metadata.managedFields",
@@ -280,6 +282,10 @@ func (h *handler) handleCreateApplyPlan(
 	if err != nil {
 		return fmt.Errorf("failed to marshal k8s plan contents to JSON: %w", err)
 	}
+
+	l.Debug("Marshalled Kubernetes plan contents to JSON",
+		zap.Int("diff_entries", len(manifestPlan.ContentDiff)),
+		zap.String("operation", string(manifestPlan.Op)))
 
 	// Encode and submit results
 	encodedPlan, err := plans.CompressPlan(planJ)
@@ -473,6 +479,7 @@ func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resou
 	ignoreFields := []string{
 		"metadata.creationTimestamp",
 		"metadata.resourceVersion",
+		"metadata.generation",
 		"metadata.namespace",
 		"metadata.uid",
 		"metadata.managedFields",
@@ -530,14 +537,20 @@ func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resou
 		var currentObj *unstructured.Unstructured
 		resourceExists := true
 		if err != nil {
-			// Resource might not exist yet
-			l.Debug("Resource doesn't exist in cluster yet or can't be accessed",
-				zap.String("kind", resource.groupVersionKind.Kind),
-				zap.String("name", resource.name),
-				zap.Error(err))
-			resourceExists = false
-			// We'll create a placeholder for comparison
-			currentObj = &unstructured.Unstructured{}
+			if k8serrors.IsNotFound(err) {
+				l.Debug("Resource doesn't exist in cluster yet",
+					zap.String("kind", resource.groupVersionKind.Kind),
+					zap.String("name", resource.name))
+				resourceExists = false
+				currentObj = &unstructured.Unstructured{}
+			} else {
+				l.Warn("Failed to retrieve resource state from cluster, treating as new resource",
+					zap.String("kind", resource.groupVersionKind.Kind),
+					zap.String("name", resource.name),
+					zap.Error(err))
+				resourceExists = false
+				currentObj = &unstructured.Unstructured{}
+			}
 		} else {
 			currentObj = liveObj
 			l.Debug("Retrieved current resource state from cluster",
@@ -589,7 +602,7 @@ func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resou
 		if dryRun {
 			// Get detailed diff entries between current state and desired state
 			// This is the key change - we use the diff package's DetectChanges function
-			changeEntries, hasChanges := diff.DetectChanges(currentObj.Object, originalObj.Object, ignoreFields)
+			changeEntries, hasChanges := diff.DetectChanges(currentObj.Object, appliedObj.Object, ignoreFields)
 
 			// Add these detailed diff entries to our ResourceDiff
 			op.Entries = changeEntries
@@ -624,6 +637,9 @@ func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resou
 		output = append(output, op)
 	}
 
+	l.Debug("execApply finished",
+		zap.Int("output_entries", len(output)),
+		zap.Int("resource_count", len(resources)))
 	return &output, nil
 }
 
