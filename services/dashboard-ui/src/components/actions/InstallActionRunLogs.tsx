@@ -63,7 +63,7 @@ export const InstallActionRunLogs = () => {
               setActiveStep(key)
             }}
           >
-            {key}
+            <span className="truncate">{key}</span>
           </Button>
         ))}
         <Button
