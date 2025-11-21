@@ -55,6 +55,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/:runner_id/latest-heart-beat", s.GetRunnerLatestHeartBeat)
 	api.GET("/v1/runners/:runner_id/heart-beats/latest", s.GetLatestRunnerHeartBeatFromView)
 
+	api.GET("/v1/runners/:runner_id/card-details", s.GetRunnerCardDetails)
+
 	// trigger specific jobs
 	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.GracefulShutDown)
 	api.POST("/v1/runners/:runner_id/force-shutdown", s.ForceShutDown)
