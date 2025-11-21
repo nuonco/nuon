@@ -56,7 +56,7 @@ export const ActionStepGraph = ({
               <div className="flex items-center gap-2">
                 <Status status={s?.status} isWithoutText variant="timeline" />
                 <Text variant="body" weight="stronger">
-                  {s.name || ''}
+                  {s.name || `Step ${i + 1}`}
                 </Text>
               </div>
               {s?.execution_duration ? (
