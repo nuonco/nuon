@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/diff"
 	"github.com/powertoolsdev/mono/pkg/types/components/plan"
 )
 
@@ -28,5 +29,11 @@ func (k *KubernetesApprovalPlan) IsNoop() (bool, error) {
 		return true, nil
 	}
 
-	return false, nil
+	for _, d := range kplan.ContentDiff {
+		if d.Type != diff.EntryUnchanged {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
