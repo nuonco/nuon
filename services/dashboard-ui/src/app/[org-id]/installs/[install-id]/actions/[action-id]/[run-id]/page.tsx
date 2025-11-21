@@ -135,7 +135,7 @@ export default async function InstallActionRunPage({ params }) {
               },
               {
                 path: `/${orgId}/installs/${installId}/actions/${actionId}`,
-                text: installAction?.action_workflow?.name,
+                text: installAction?.action_workflow?.name || 'Action',
               },
               {
                 path: `/${orgId}/installs/${installId}/actions/${actionId}/${runId}`,
