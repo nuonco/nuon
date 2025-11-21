@@ -19,8 +19,11 @@ import {
 import { KubernetesDiffSummary } from './KubernetesDiffSummary'
 import { DiffFilter } from '../DiffFilter'
 
-export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {  
-  const { changes, summary } = useMemo(() => parseKubernetesPlan(plan), [plan])
+export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
+  const { changes, errors, summary } = useMemo(
+    () => parseKubernetesPlan(plan),
+    [plan]
+  )
   const {
     selectedActions,
     searchQuery,
@@ -55,6 +58,42 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
         onSearchChange={handleSearchChange}
         searchPlaceholder="Search by name, resource, type, or namespace"
       />
+
+      {errors.length > 0 && (
+        <div className="divide-y">
+          {errors.map((error, idx) => (
+            <div
+              key={`error-${idx}`}
+              className="border-l-4 border-red-500 px-4 py-4 sm:px-6 bg-red-50 dark:bg-red-900/20"
+            >
+              <div className="flex items-start justify-between w-full">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Text weight="strong">{error.name}</Text>
+                    <Badge size="sm" theme="error">
+                      error
+                    </Badge>
+                  </div>
+                  <Text variant="subtext" theme="neutral">
+                    {error.resource} ({error.resourceType})
+                  </Text>
+                  <Text variant="subtext" theme="neutral">
+                    Namespace: {error.namespace}
+                  </Text>
+                  <div className="mt-2">
+                    <Text
+                      variant="subtext"
+                      className="text-red-600 dark:text-red-400"
+                    >
+                      Error: {error.error}
+                    </Text>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {filteredChanges.length > 0 ? (
         <div className="divide-y">
