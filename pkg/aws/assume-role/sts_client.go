@@ -10,12 +10,12 @@ import (
 )
 
 func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx,
+	baseCfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(a.Region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default config: %w", err)
 	}
-	stsClient := sts.NewFromConfig(cfg)
+	stsClient := sts.NewFromConfig(baseCfg)
 
 	// if now two step config is set, we use the default config
 	if a.TwoStepConfig == nil || *(a.TwoStepConfig) == (TwoStepConfig{}) {
@@ -33,13 +33,8 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 			a.TwoStepConfig.SrcStaticCredentials.SecretAccessKey,
 			a.TwoStepConfig.SrcStaticCredentials.SessionToken)
 
-		cfg, err = config.LoadDefaultConfig(ctx,
-			config.WithCredentialsProvider(credsProvider),
-			config.WithRegion(a.Region))
-		if err != nil {
-			return nil, fmt.Errorf("failed to get config with STS creds: %w", err)
-		}
-
+		cfg := baseCfg.Copy()
+		cfg.Credentials = credsProvider
 		stsClient = sts.NewFromConfig(cfg)
 	}
 
@@ -52,11 +47,9 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 		credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId,
 			*creds.SecretAccessKey,
 			*creds.SessionToken)
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider))
-		if err != nil {
-			return nil, fmt.Errorf("unable to create provider: %w", err)
-		}
 
+		cfg := baseCfg.Copy()
+		cfg.Credentials = credsProvider
 		stsClient = sts.NewFromConfig(cfg)
 	}
 
@@ -69,13 +62,9 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId,
 		*creds.SecretAccessKey,
 		*creds.SessionToken)
-	cfg, err = config.LoadDefaultConfig(ctx,
-		config.WithCredentialsProvider(credsProvider),
-		config.WithRegion(a.Region))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create provider: %w", err)
-	}
 
+	cfg := baseCfg.Copy()
+	cfg.Credentials = credsProvider
 	stsClient = sts.NewFromConfig(cfg)
 	return stsClient, nil
 }
