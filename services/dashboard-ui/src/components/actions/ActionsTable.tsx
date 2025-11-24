@@ -69,7 +69,7 @@ function parseActionsToTableData(
 const columns: ColumnDef<TActionRow>[] = [
   {
     accessorKey: 'actionName',
-    header: 'Action name',
+    header: 'Action',
     cell: (info) => (
       <span>
         <Text variant="body">

@@ -5,6 +5,7 @@ interface ISkeleton {
   lines?: number
   width?: string | string[]
   height?: string
+  maxWidth?: string
 }
 
 export const Skeleton = ({
@@ -12,6 +13,7 @@ export const Skeleton = ({
   lines = 1,
   width = '100%',
   height = '1rem',
+  maxWidth
 }: ISkeleton) => {
   const widths = Array.isArray(width) ? width : Array(lines).fill(width)
 
@@ -24,6 +26,7 @@ export const Skeleton = ({
           style={{
             width: widths[index] || '100%',
             height: height,
+            maxWidth: maxWidth,
           }}
         ></div>
       ))}
