@@ -532,12 +532,23 @@ Check the response headers for additional error information.
   </div>
 )
 
-export const MermaidExample = () => {
-  return (
-    <div>
-      <Markdown
-        content={`
-## Components
+export const MermaidDiagrams = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Mermaid Diagrams</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        The Markdown component supports Mermaid diagram rendering for creating
+        flowcharts, sequence diagrams, and other visual representations directly
+        from markdown. Diagrams are automatically rendered as interactive SVGs
+        with proper styling and responsive behavior.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Flowchart Example</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`## Application Components
 
 \`\`\`mermaid
 graph TD
@@ -557,11 +568,53 @@ graph TD
   style img fill:#FCA04A,stroke:#FCA04A,color:#000
 \`\`\`
 
-## Full State
-
-Click "Manage > State"
-        `}
-      />
+Use **Manage > State** to view the full application state.`}
+        />
+      </div>
+      <Text variant="subtext" theme="neutral">
+        Mermaid diagrams support custom styling, multi-line labels with
+        &lt;br/&gt; tags, and various diagram types
+      </Text>
     </div>
-  )
-}
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Sequence Diagram Example</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`## API Authentication Flow
+
+\`\`\`mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Auth API
+    participant Backend API
+
+    User->>Frontend: Login Request
+    Frontend->>Auth API: Authenticate
+    Auth API-->>Frontend: JWT Token
+    Frontend->>Backend API: API Request + Token
+    Backend API-->>Frontend: Protected Data
+    Frontend-->>User: Display Content
+\`\`\`
+
+This diagram shows the typical authentication flow in our application.`}
+        />
+      </div>
+    </div>
+
+    <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
+      <strong>Mermaid Features:</strong>
+      <ul className="mt-2 space-y-1 list-disc list-inside">
+        <li>
+          Supports flowcharts, sequence diagrams, class diagrams, and more
+        </li>
+        <li>Multi-line node labels using HTML &lt;br/&gt; tags</li>
+        <li>Custom styling with fill colors, stroke colors, and CSS classes</li>
+        <li>Responsive SVG output that scales with container</li>
+        <li>Interactive elements with hover states and clickable nodes</li>
+        <li>Automatic error handling with descriptive error messages</li>
+      </ul>
+    </div>
+  </div>
+)

@@ -48,14 +48,14 @@ export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
 
             <Text variant="subtext">
               <Link
-                href={`/${org.id}/installs/${step.owner_id}/actions/${actionRun?.install_action_workflow_id}`}
+                href={`/${org.id}/installs/${step.owner_id}/actions/${actionRun?.config?.action_workflow_id}`}
               >
                 View action <Icon variant="CaretRight" />
               </Link>
             </Text>
             <Text variant="subtext">
               <Link
-                href={`/${org.id}/installs/${step.owner_id}/actions/${actionRun?.install_action_workflow_id}/${actionRun?.id}`}
+                href={`/${org.id}/installs/${step.owner_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
               >
                 View run <Icon variant="CaretRight" />
               </Link>
