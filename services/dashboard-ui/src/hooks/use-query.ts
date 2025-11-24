@@ -8,6 +8,7 @@ interface IUseQuery<T> {
   headers?: Record<string, string>
   dependencies?: Array<any> // dependencies for re-fetching
   initData?: T | null
+  initIsLoading?: boolean
   enabled?: boolean // If false, don't fetch
 }
 
@@ -16,11 +17,12 @@ export function useQuery<T = any>({
   headers,
   dependencies = [],
   initData = null,
+  initIsLoading = true,
   enabled = true,
 }: IUseQuery<T>) {
   const [data, setData] = useState<T | null>(initData)
   const [error, setError] = useState<TAPIError | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isLoading, setIsLoading] = useState<boolean>(initIsLoading)
   const [responseHeaders, setResponseHeaders] = useState<Record<
     string,
     string

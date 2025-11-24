@@ -316,7 +316,7 @@ export default async function InstallComponentDeploy({ params }) {
             >
               <ErrorBoundary fallback={<LogsError />}>
                 <Suspense fallback={<LogsSkeleton />}>
-                  <Logs logStreamId={deploy?.log_stream?.id} orgId={orgId} />
+                  <Logs logStreamId={deploy?.log_stream?.id} orgId={orgId} logStreamOpen={deploy?.log_stream?.open} />
                 </Suspense>
               </ErrorBoundary>
             </LogStreamProvider>

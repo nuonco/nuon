@@ -13,7 +13,7 @@ export const BreadcrumbNav = () => {
   const Separator = () => <Icon variant="CaretRight" className="muted" />
 
   return (
-    <nav aria-label="Breadcrumb">
+    <nav aria-label="Breadcrumb" className="max-w-[1000px] truncate">
       <ol className="flex gap-2">
         {breadcrumbLinks.map((crumb, idx) => (
           <li key={`${crumb.path}-${idx}`} className="flex items-center gap-2">
@@ -23,6 +23,7 @@ export const BreadcrumbNav = () => {
                 <Skeleton
                   height="17px"
                   width={`${crumb?.text?.length * 16 * 0.6}px`}
+                  maxWidth="200px"
                 />
               ) : (
                 <Link
