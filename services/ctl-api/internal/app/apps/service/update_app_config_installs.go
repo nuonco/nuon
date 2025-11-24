@@ -33,7 +33,7 @@ func (c *UpdateAppConfigInstallsRequest) Validate(v *validator.Validate) error {
 // @Param					req	body	UpdateAppConfigInstallsRequest	true	"Input"
 // @Produce				json
 // @Param					app_id			path	string	true	"app ID"
-// @Param					app_config_id	path	string	true	"app config ID"
+// @Param					config_id	path	string	true	"app config ID"
 // @Security				APIKey
 // @Security				OrgID
 // @Failure				400	{object}	stderr.ErrResponse
@@ -42,9 +42,28 @@ func (c *UpdateAppConfigInstallsRequest) Validate(v *validator.Validate) error {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{string}	ok
-// @Router					/v1/apps/{app_id}/config/{app_config_id}/update-installs [POST]
+// @Router					/v1/apps/{app_id}/config/{config_id}/update-installs [POST]
 func (s *service) UpdateAppConfigInstallsV2(ctx *gin.Context) {
-	s.UpdateAppConfigInstalls(ctx)
+	appID := ctx.Param("app_id")
+	appConfigID := ctx.Param("config_id")
+
+	var req UpdateAppConfigInstallsRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	err := s.updateAppConfigInstalls(ctx, appID, appConfigID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to update app config installs: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, "ok")
 }
 
 // @ID						UpdateAppConfigInstalls
