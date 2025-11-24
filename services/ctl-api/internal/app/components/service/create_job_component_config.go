@@ -38,6 +38,7 @@ func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error 
 // @Summary				create a job component config
 // @Description.markdown	create_job_component_config.md
 // @Param					req				body	CreateJobComponentConfigRequest	true	"Input"
+// @Param					app_id			path	string										true	"app ID"
 // @Param					component_id	path	string							true	"component ID"
 // @Tags					components
 // @Accept					json
@@ -50,7 +51,7 @@ func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error 
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.JobComponentConfig
-// @Router					/v1/components/{component_id}/configs/job [POST]
+// @Router					/v1/apps/{app_id}/components/{component_id}/configs/job [POST]
 func (s *service) CreateAppJobComponentConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	cmpID := ctx.Param("component_id")
