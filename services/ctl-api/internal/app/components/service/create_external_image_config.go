@@ -55,6 +55,7 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 // @Summary				create an external image component config
 // @Description.markdown	create_external_image_component_config.md
 // @Param					req				body	CreateExternalImageComponentConfigRequest	true	"Input"
+// @Param					app_id			path	string										true	"app ID"
 // @Param					component_id	path	string										true	"component ID"
 // @Tags					components
 // @Accept					json
@@ -67,7 +68,7 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.ExternalImageComponentConfig
-// @Router					/v1/components/{component_id}/configs/external-image [POST]
+// @Router					/v1/apps/{app_id}/components/{component_id}/configs/external-image [POST]
 func (s *service) CreateAppExternalImageComponentConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	cmpID := ctx.Param("component_id")
