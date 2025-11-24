@@ -14,7 +14,7 @@ import (
 // @Summary				get a runner by id
 // @Description.markdown	get_runner.md
 // @Param					runner_id	path	string	true	"runner ID"
-// @Tags					runners/runner,runners
+// @Tags					runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
