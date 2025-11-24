@@ -15,7 +15,7 @@ import (
 // @Summary				get an app config
 // @Description.markdown	get_app_config.md
 // @Param					app_id			path	string	true	"app ID"
-// @Param					app_config_id	path	string	true	"app config ID"
+// @Param					config_id	path	string	true	"app config ID"
 // @Param recurse query bool false "load all children configs" Default(false)
 // @Tags					apps
 // @Accept					json
@@ -30,7 +30,30 @@ import (
 // @Success				200	{object}	app.AppConfig
 // @Router					/v1/apps/{app_id}/configs/{app_config_id} [get]
 func (s *service) GetAppConfigV2(ctx *gin.Context) {
-	s.GetAppConfig(ctx)
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	appID := ctx.Param("app_id")
+	appConfigID := ctx.Param("config_id")
+
+	recurse := ctx.DefaultQuery("recurse", "false") == "true"
+
+	var appConfig *app.AppConfig
+	if recurse {
+		appConfig, err = s.helpers.GetFullAppConfig(ctx, appConfigID, true)
+	} else {
+		appConfig, err = s.getAppConfig(ctx, org.ID, appID, appConfigID)
+	}
+
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, appConfig)
 }
 
 // @ID						GetAppConfig

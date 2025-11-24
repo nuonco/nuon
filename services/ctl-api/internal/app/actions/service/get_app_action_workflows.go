@@ -33,7 +33,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.ActionWorkflow
-// @Router					/v1/apps/{app_id}/action-workflows [get]
+// @Router					/v1/apps/{app_id}/actions [get]
 func (s *service) GetAppActions(ctx *gin.Context) {
 	s.GetAppActionWorkflows(ctx)
 }

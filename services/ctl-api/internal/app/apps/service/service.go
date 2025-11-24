@@ -75,10 +75,10 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		{
 			appConfigs.GET("", s.GetAppConfigs)
 			appConfigs.POST("", s.CreateAppConfigV2)
-			appConfigs.PATCH("/:app_config_id", s.UpdateAppConfigV2)
-			appConfigs.GET("/:app_config_id", s.GetAppConfigV2)
-			appConfigs.POST("/:app_config_id/update-installs", s.UpdateAppConfigInstallsV2)
-			appConfigs.GET("/:app_config_id/graph", s.GetAppConfigGraphV2)
+			appConfigs.PATCH("/:config_id", s.UpdateAppConfigV2)
+			appConfigs.GET("/:config_id", s.GetAppConfigV2)
+			appConfigs.POST("/:config_id/update-installs", s.UpdateAppConfigInstallsV2)
+			appConfigs.GET("/:config_id/graph", s.GetAppConfigGraphV2)
 		}
 
 		// app sandbox management
