@@ -1,9 +1,11 @@
 'use client'
 
+import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { useLogs } from '@/hooks/use-logs'
+import { useLogStream } from '@/hooks/use-log-stream'
 import type { TOTELLog } from '@/types'
 import { cn } from '@/utils/classnames'
 import { LogLine, LogLineSkeleton } from './LogLine'
@@ -15,10 +17,9 @@ interface ILogs {
 }
 
 export const Logs = ({ stratusPage = false }: ILogs) => {
-  const { error, isLoading, logs } = useLogs()
-
+  const { isLoading, logs } = useLogs()
   return (
-    <LogsViewer stratusPage={stratusPage} isLoading={isLoading} logs={logs} />
+    <LogsViewer stratusPage={stratusPage} logs={logs} isLoading={isLoading} />
   )
 }
 
@@ -29,10 +30,18 @@ export const LogsSkeleton = () => {
 }
 
 export const LogsViewer = ({
-  stratusPage = false,
   isLoading,
   logs,
-}: ILogs & { isLoading?: boolean; logs: TOTELLog[] }) => {
+  stratusPage = false,
+}: {
+  stratusPage?: boolean
+  logs?: TOTELLog[]
+  isLoading?: boolean
+}) => {
+  const { logStream } = useLogStream()
+  const { loadNextLogs, offset } = useLogs()
+  const isPolling = logStream?.open
+
   return (
     <div className="flex flex-col flex-auto">
       <div
@@ -60,7 +69,7 @@ export const LogsViewer = ({
 
       {logs?.length ? (
         <div className="flex flex-col divide-y">
-          {isLoading ? (
+          {isLoading && isPolling ? (
             <TransitionDiv className="fade" isVisible={isLoading}>
               <LogLineSkeleton />
             </TransitionDiv>
@@ -68,6 +77,21 @@ export const LogsViewer = ({
           {logs.map((log) => (
             <LogLine key={log.id} log={log} />
           ))}
+          {isLoading && !isPolling ? (
+            <TransitionDiv className="fade" isVisible={isLoading}>
+              <LogLineSkeleton />
+            </TransitionDiv>
+          ) : null}
+
+          {!isPolling && !isLoading && offset ? (
+            <Button
+              className="mt-4 mx-auto !flex !justify-center"
+              onClick={loadNextLogs}
+              variant="ghost"
+            >
+              Load more logs
+            </Button>
+          ) : null}
         </div>
       ) : isLoading ? (
         <LogsSkeleton />

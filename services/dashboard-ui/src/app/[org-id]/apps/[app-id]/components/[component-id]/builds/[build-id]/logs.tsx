@@ -1,31 +1,35 @@
-import { EmptyState } from "@/components/common/EmptyState";
-import { Skeleton } from "@/components/common/Skeleton";
+import { EmptyState } from '@/components/common/EmptyState'
+import { Skeleton } from '@/components/common/Skeleton'
 import {
   Logs as LogsViewer,
   LogsSkeleton as LogsViewerSkeleton,
-} from "@/components/log-stream/Logs";
-import { LogsProvider } from "@/providers/logs-provider";
-import { getLogsByLogStreamId } from "@/lib";
+} from '@/components/log-stream/Logs'
+import { LogsProvider } from '@/providers/logs-provider'
+import { getLogsByLogStreamId } from '@/lib'
 
 export async function Logs({
   logStreamId,
   orgId,
 }: {
-  logStreamId: string;
-  orgId: string;
+  logStreamId: string
+  orgId: string
 }) {
-  const { data: logs, error } = await getLogsByLogStreamId({
+  const {
+    data: logs,
+    error,
+    headers,
+  } = await getLogsByLogStreamId({
     logStreamId,
     orgId,
-  });
+  })
 
   return error ? (
     <LogsError />
   ) : (
-    <LogsProvider initLogs={logs}>
+    <LogsProvider initLogs={logs} initOffset={headers?.['x-nuon-api-next']}>
       <LogsViewer />
     </LogsProvider>
-  );
+  )
 }
 
 export const LogsSkeleton = () => {
@@ -47,8 +51,8 @@ export const LogsSkeleton = () => {
         <LogsViewerSkeleton />
       </div>
     </div>
-  );
-};
+  )
+}
 
 export const LogsError = () => {
   return (
@@ -57,5 +61,5 @@ export const LogsError = () => {
       emptyMessage="Unable to load logs for this deploy."
       variant="table"
     />
-  );
-};
+  )
+}

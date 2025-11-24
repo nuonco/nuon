@@ -14,7 +14,7 @@ export async function Logs({
   logStreamId: string;
   orgId: string;
 }) {
-  const { data: logs, error } = await getLogsByLogStreamId({
+  const { data: logs, error, headers } = await getLogsByLogStreamId({
     logStreamId,
     orgId,
   });
@@ -22,7 +22,7 @@ export async function Logs({
   return error ? (
     <LogsError />
   ) : (
-    <LogsProvider initLogs={logs}>
+    <LogsProvider initLogs={logs} initOffset={headers?.['x-nuon-api-next']}>
       <LogsViewer />
     </LogsProvider>
   );

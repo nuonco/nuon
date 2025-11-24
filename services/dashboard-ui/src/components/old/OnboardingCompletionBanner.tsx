@@ -44,8 +44,7 @@ export const OnboardingCompletionBanner: FC<
               variant="semi-14"
               className="text-green-800 dark:text-green-200"
             >
-              Congratulations! You have successfully created your first app
-              config.
+              Congratulations! You have successfully created your first app.              
             </Text>
             <Text
               variant="reg-14"

@@ -7,11 +7,14 @@ export async function GET(
   { params }: TRouteProps<'orgId' | 'logStreamId'>
 ) {
   const { logStreamId, orgId } = await params
+  const { searchParams } = new URL(request.url)
+  const order = searchParams.get('order') as "asc" || "asc"
   const offset = request.headers.get('X-Nuon-API-Offset') || undefined
   const response = await getLogsByLogStreamId({
     logStreamId,
     orgId,
     offset,
+    order,
   })
   return NextResponse.json(response)
 }

@@ -20,6 +20,7 @@ const WORKFLOW_BADGE_MAP: Record<
   'approval-retry': { children: 'Plan retried', theme: 'info' },
   error: { children: 'Failed', theme: 'error' },
   'not-attempted': { children: 'Not attempted' },
+  noop: { children: 'NOOP' },
   cancelled: { children: 'Cancelled', theme: 'warn' },
 }
 
