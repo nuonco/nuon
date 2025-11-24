@@ -57,7 +57,7 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
                 updateOrgFeature(org?.id, formData, featuresList)
                   .then(() => {
                     setIsSubmitting(false)
-                    router.refresh()
+                    window.location?.reload()
                   })
                   .catch((err) => {
                     setIsSubmitting(false)
@@ -65,7 +65,7 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
                   })
               }}
               className="flex flex-col gap-2"
-            >             
+            >
               <div className="grid grid-cols-4">
                 {featuresList.map((feature) => (
                   <CheckboxInput

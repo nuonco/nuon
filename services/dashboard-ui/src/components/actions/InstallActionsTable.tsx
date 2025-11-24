@@ -98,7 +98,7 @@ function parseInstallActionsLatestRunsToTableData(
 const columns: ColumnDef<InstallActionRow>[] = [
   {
     accessorKey: 'actionName',
-    header: 'Action name',
+    header: 'Action',
     cell: (info) => (
       <span>
         <Text variant="body">
@@ -111,13 +111,13 @@ const columns: ColumnDef<InstallActionRow>[] = [
   },
   {
     accessorKey: 'actionRunDatetime',
-    header: 'Time since last run',
+    header: 'Last run',
     cell: (info) => info.getValue() as ReactNode,
   },
   {
     enableSorting: false,
     accessorKey: 'actionRunDuration',
-    header: 'Run duration',
+    header: 'Duration',
     cell: (info) => info.getValue() as ReactNode,
   },
   {
@@ -127,7 +127,7 @@ const columns: ColumnDef<InstallActionRow>[] = [
   },
   {
     accessorKey: 'actionStatus',
-    header: 'Run status',
+    header: 'Status',
     cell: (info) => info.getValue() as ReactNode,
   },
   {
