@@ -13,7 +13,8 @@ tests:
     docker_target: test
 
 color: magenta
-health_check_url: http://localhost:4000
+health_checks:
+  - http://localhost:4000
 env:
   # use this to write out debug logs locally
   # LOG_LEVEL: DEBUG
