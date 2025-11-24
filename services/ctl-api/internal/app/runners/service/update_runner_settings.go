@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
@@ -109,6 +110,12 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 		Where(obj).
 		UpdateColumns(updates); res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner settings: %w", res.Error)
+	}
+
+	if req.ContainerImageTag != "" {
+		s.evClient.Send(ctx, runnerID, &signals.Signal{
+			Type: signals.OperationRestart,
+		})
 	}
 
 	return &obj, nil
