@@ -7,16 +7,33 @@ import { useLogFilters, type TLogFiltersProps } from '@/hooks/use-log-filters'
 import { useLogStream } from '@/hooks/use-log-stream'
 import { useLogs } from '@/hooks/use-logs'
 import { useOrg } from '@/hooks/use-org'
+import { useQueryParams } from '@/hooks/use-query-params'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQuery } from '@/hooks/use-query'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TOTELLog, TAPIError } from '@/types'
 
-const useLoadLogs = ({ initLogs }: { initLogs: TOTELLog[] | null }) => {
+const useLoadLogs = ({
+  initLogs,
+  initOffset,
+}: {
+  initLogs: TOTELLog[] | null
+  initOffset?: string
+}) => {
   const { org } = useOrg()
   const { logStream } = useLogStream()
   const shouldPoll = logStream?.open || false
-  const [offset, setOffset] = useState<string>()
+  const params = useQueryParams({ order: shouldPoll ? 'asc' : 'desc' })
+  const [offset, setOffset] = useState<string>(initOffset)
+  const [staticEnabled, setStaticEnabled] = useState(false)
+  const [staticTrigger, setStaticTrigger] = useState(0)
+
+  const loadNextLogs = () => {
+    if (!staticEnabled) {
+      setStaticEnabled(true)
+    }
+    setStaticTrigger(prev => prev + 1)
+  }
 
   const pollingResults = usePolling<TOTELLog[]>({
     path: `/api/orgs/${org.id}/log-streams/${logStream.id}/logs`,
@@ -32,14 +49,16 @@ const useLoadLogs = ({ initLogs }: { initLogs: TOTELLog[] | null }) => {
   })
 
   const staticResults = useQuery<TOTELLog[]>({
-    dependencies: [offset],
-    path: `/api/orgs/${org.id}/log-streams/${logStream.id}/logs`,
+    dependencies: [staticTrigger],
+    path: `/api/orgs/${org.id}/log-streams/${logStream.id}/logs${params}`,
     headers: offset
       ? {
           'X-Nuon-API-Offset': offset,
         }
       : {},
     initData: initLogs,
+    initIsLoading: false,
+    enabled: staticEnabled,
   })
 
   const results = shouldPoll ? pollingResults : staticResults
@@ -53,13 +72,19 @@ const useLoadLogs = ({ initLogs }: { initLogs: TOTELLog[] | null }) => {
       return Array.from(logMap.values())
     })
 
-    const logOffset = results?.headers?.['x-nuon-api-next']
-    if (logOffset) {
+    if (results?.headers) {
+      const logOffset = results?.headers?.['x-nuon-api-next']
       setOffset(logOffset)
     }
   }, [results?.data, results?.headers])
 
-  return { logs, isLoading: results?.isLoading, error: results?.error }
+  return {
+    logs,
+    isLoading: results?.isLoading,
+    error: results?.error,
+    loadNextLogs,
+    offset,
+  }
 }
 
 type LogsContextValue = {
@@ -69,7 +94,8 @@ type LogsContextValue = {
   handleActiveLog: (id: string) => void
   isLoading: boolean
   logs: TOTELLog[] | null
-  refresh: () => void
+  loadNextLogs: () => void
+  offset?: string
 }
 
 export const LogsContext = createContext<LogsContextValue | undefined>(
@@ -79,13 +105,17 @@ export const LogsContext = createContext<LogsContextValue | undefined>(
 export function LogsProvider({
   children,
   initLogs,
-  pollInterval = 2000,
+  initOffset,
 }: {
   children: ReactNode
   initLogs: TOTELLog[]
+  initOffset?: string
 } & Omit<IPollingProps, 'shouldPoll'>) {
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
-  const { logs, isLoading, error } = useLoadLogs({ initLogs })
+  const { logs, isLoading, error, loadNextLogs, offset } = useLoadLogs({
+    initLogs,
+    initOffset,
+  })
   const { filteredLogs, ...filters } = useLogFilters(logs)
 
   function handleActiveLog(id?: string) {
@@ -101,9 +131,8 @@ export function LogsProvider({
         handleActiveLog,
         isLoading,
         logs: filteredLogs,
-        refresh: () => {
-          console.warn('logs refresh is not implemented')
-        },
+        loadNextLogs,
+        offset,
       }}
     >
       <LogViewer>{children}</LogViewer>

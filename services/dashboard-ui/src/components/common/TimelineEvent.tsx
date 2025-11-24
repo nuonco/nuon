@@ -1,9 +1,11 @@
 import React from 'react'
 import { cn } from '@/utils/classnames'
+import { toSentenceCase } from '@/utils/string-utils'
 import { Badge, type IBadge } from './Badge'
 import { Status, type TStatusType } from './Status'
 import { Text } from './Text'
 import { Time } from './Time'
+import { Tooltip } from './Tooltip'
 
 export interface ITimelineEvent
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children' | 'title'> {
@@ -42,12 +44,22 @@ export const TimelineEvent = ({
       )}
       {...props}
     >
-      <Status
-        status={status}
-        variant="timeline"
-        isWithoutText
-        className="relative z-1"
-      />
+      <Tooltip
+        tipContentClassName="flex"
+        tipContent={
+          <Text variant="subtext" family="mono">
+            {toSentenceCase(status)}
+          </Text>
+        }
+        position="right"
+      >
+        <Status
+          status={status}
+          variant="timeline"
+          isWithoutText
+          className="relative z-1"
+        />
+      </Tooltip>
       <div className="w-full">
         <hgroup className="w-full flex items-center justify-between">
           <Text variant="body" weight="strong">
