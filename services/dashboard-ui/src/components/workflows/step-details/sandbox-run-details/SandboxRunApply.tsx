@@ -8,6 +8,7 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogsProvider } from '@/providers/logs-provider'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
+import { useQueryParams } from '@/hooks/use-query-params'
 import type { TOTELLog, TWorkflowStep, TSandboxRun } from '@/types'
 
 export const SandboxRunApply = ({
@@ -18,10 +19,17 @@ export const SandboxRunApply = ({
   sandboxRun: TSandboxRun
 }) => {
   const { org } = useOrg()
+  const params = useQueryParams({
+    order: sandboxRun?.log_stream?.open ? 'asc' : 'desc',
+  })
 
-  const { data: logs, isLoading: isLoadingLogs } = useQuery<TOTELLog[]>({
+  const {
+    data: logs,
+    isLoading: isLoadingLogs,
+    headers,
+  } = useQuery<TOTELLog[]>({
     initData: [],
-    path: `/api/orgs/${org.id}/log-streams/${sandboxRun?.log_stream?.id}/logs`,
+    path: `/api/orgs/${org.id}/log-streams/${sandboxRun?.log_stream?.id}/logs${params}`,
   })
 
   return (
@@ -54,7 +62,10 @@ export const SandboxRunApply = ({
               {isLoadingLogs ? (
                 <SandboxRunLogsSkeleton />
               ) : (
-                <LogsProvider initLogs={logs}>
+                <LogsProvider
+                  initLogs={logs}
+                  initOffset={headers?.['x-nuon-api-next']}
+                >
                   <Logs />
                 </LogsProvider>
               )}
