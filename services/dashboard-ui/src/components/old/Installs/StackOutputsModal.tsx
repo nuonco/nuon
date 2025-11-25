@@ -16,6 +16,7 @@ interface IStackOutputsModal {
 
 export const StackOutputsModal: FC<IStackOutputsModal> = ({ runs }) => {
   const [isOpen, setIsOpen] = useState(false)
+
   return (
     <>
       {isOpen
@@ -40,13 +41,13 @@ export const StackOutputsModal: FC<IStackOutputsModal> = ({ runs }) => {
                       <Text variant="med-14">Run {i + 1}</Text>
                       <ClickToCopyButton
                         className="w-fit self-end"
-                        textToCopy={JSON.stringify(run.data_contents)}
+                        textToCopy={JSON.stringify(run?.data_contents || run?.data || {})}
                       />
                     </Text>
                     <div className="overflow-auto max-h-[600px]">
                       <ConfigVariables
                         keys={Object.keys(run?.data)}
-                        variables={run?.data_contents as Record<string, string>}
+                        variables={(run?.data_contents || run?.data || {}) as Record<string, string>}
                         isNotTruncated
                       />
                     </div>
