@@ -82,7 +82,7 @@ export const ApproveAllModal = ({
             workflowId: workflow.id,
           })
         },
-
+        disabled: isLoading,
         variant: 'primary',
       }}
       {...props}
