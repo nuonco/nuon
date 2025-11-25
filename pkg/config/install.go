@@ -134,11 +134,6 @@ func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, erro
 	for key, val := range installInputs {
 		current, ok := upstreamInputs[key]
 		if !ok {
-			if len(upstreamInputs) != 0 {
-				// we skip inputs not present in the upstream state
-				// as this only happens for sensetive inputs.
-				continue
-			}
 			// for new installs, upstreamInputs will be empty,
 			// this handles the case separately.
 			current = ""
