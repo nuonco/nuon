@@ -17,7 +17,7 @@ import {
   getWorkflowById,
   getOrgById,
 } from '@/lib'
-import { toSentenceCase } from "@/utils/string-utils"
+import { toSentenceCase } from '@/utils/string-utils'
 import { Logs, LogsError, LogsSkeleton } from './logs'
 
 // NOTE: old layout stuff
@@ -89,7 +89,7 @@ export default async function SandboxRuns({ params }) {
   const containerId = 'sandbox-run-page'
   return org?.features?.['stratus-layout'] ? (
     <PageSection className="!p-0" id={containerId} isScrollable>
-       <Breadcrumbs
+      <Breadcrumbs
         breadcrumbs={[
           {
             path: `/${orgId}`,
@@ -109,7 +109,7 @@ export default async function SandboxRuns({ params }) {
           },
           {
             path: `/${orgId}/installs/${installId}/sandbox/${runId}`,
-            text: toSentenceCase(sandboxRun?.run_type) || "Run",
+            text: toSentenceCase(sandboxRun?.run_type) || 'Run',
           },
         ]}
       />
@@ -145,6 +145,7 @@ export default async function SandboxRuns({ params }) {
                 <Suspense fallback={<LogsSkeleton />}>
                   <Logs
                     logStreamId={sandboxRun?.log_stream?.id}
+                    logStreamOpen={sandboxRun?.log_stream?.open}
                     orgId={orgId}
                   />
                 </Suspense>
