@@ -46,7 +46,7 @@ func (c *UpdateAppConfigRequest) Validate(v *validator.Validate) error {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.AppConfig
-// @Router					/v1/apps/{app_id}/config/{config_id} [PATCH]
+// @Router					/v1/apps/{app_id}/configs/{config_id} [PATCH]
 func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 	appConfigID := ctx.Param("config_id")
 
