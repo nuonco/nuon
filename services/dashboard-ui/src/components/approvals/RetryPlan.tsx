@@ -82,7 +82,7 @@ export const RetryPlanModal = ({ step, ...props }: IRetryPlan & IModal) => {
             approvalId: step?.approval?.id,
           })
         },
-
+        disabled: isLoading,
         variant: 'primary',
       }}
       {...props}
