@@ -30,12 +30,18 @@ export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
 
-export function getStepBadge(step: TWorkflowStep): TBadgeCfg {
+export function getStepBadge(
+  step: TWorkflowStep,
+  isApprovalPrompt?: boolean
+): TBadgeCfg {
   if (step?.retried) {
     return { children: 'Retried', theme: 'info' }
   }
   if (step?.execution_type === 'skipped') {
     return { children: 'Skipped' }
+  }
+  if (step?.execution_type === 'approval' && !isApprovalPrompt) {
+    return WORKFLOW_BADGE_MAP['approved']
   }
   const status = step?.status?.status
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}

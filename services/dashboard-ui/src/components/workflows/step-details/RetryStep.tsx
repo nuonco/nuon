@@ -78,7 +78,7 @@ export const RetryStepModal = ({ step, ...props }: IRetryStep & IModal) => {
             path,
           })
         },
-
+        disabled: isLoading,
         variant: 'primary',
       }}
       {...props}
