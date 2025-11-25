@@ -104,10 +104,6 @@ export default async function InstallActionRunPage({ params }) {
         ?.at(-1)
     : null
 
-  const actionConfig = installAction?.action_workflow?.configs?.find(
-    (cfg) => cfg?.id === installActionRun?.action_workflow_config_id
-  )
-
   return (
     <InstallActionRunProvider
       initInstallActionRun={installActionRun}
@@ -146,7 +142,7 @@ export default async function InstallActionRunPage({ params }) {
           <ActionStepGraph
             steps={hydrateActionRunSteps({
               steps: installActionRun?.steps,
-              stepConfigs: actionConfig?.steps,
+              stepConfigs: installActionRun?.config?.steps,
             })}
           />
 

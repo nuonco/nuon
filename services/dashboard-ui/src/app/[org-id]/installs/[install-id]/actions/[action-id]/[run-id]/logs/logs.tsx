@@ -4,12 +4,17 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { LogsSkeleton as LogsViewerSkeleton } from '@/components/log-stream/Logs'
 import { LogsProvider } from '@/providers/logs-provider'
 import { getLogsByLogStreamId } from '@/lib'
+import type { TActionConfig } from '@/types'
 
 export async function Logs({
+  actionConfig,
   logStreamId,
+  logStreamOpen,
   orgId,
 }: {
+  actionConfig: TActionConfig
   logStreamId: string
+  logStreamOpen: boolean
   orgId: string
 }) {
   const {
@@ -18,6 +23,7 @@ export async function Logs({
     headers,
   } = await getLogsByLogStreamId({
     logStreamId,
+    order: logStreamOpen ? 'asc' : 'desc',
     orgId,
   })
 
@@ -25,7 +31,7 @@ export async function Logs({
     <LogsError />
   ) : (
     <LogsProvider initLogs={logs} initOffset={headers?.['x-nuon-api-next']}>
-      <InstallActionRunLogs />
+      <InstallActionRunLogs actionConfig={actionConfig} />
     </LogsProvider>
   )
 }

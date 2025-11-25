@@ -9,9 +9,11 @@ import { getLogsByLogStreamId } from '@/lib'
 
 export async function Logs({
   logStreamId,
+  logStreamOpen,
   orgId,
 }: {
   logStreamId: string
+  logStreamOpen: boolean
   orgId: string
 }) {
   const {
@@ -20,6 +22,7 @@ export async function Logs({
     headers,
   } = await getLogsByLogStreamId({
     logStreamId,
+    order: logStreamOpen ? 'asc' : 'desc',
     orgId,
   })
 
