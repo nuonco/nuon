@@ -42,7 +42,7 @@ func (c *UpdateAppConfigInstallsRequest) Validate(v *validator.Validate) error {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{string}	ok
-// @Router					/v1/apps/{app_id}/config/{config_id}/update-installs [POST]
+// @Router					/v1/apps/{app_id}/configs/{config_id}/update-installs [POST]
 func (s *service) UpdateAppConfigInstallsV2(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	appConfigID := ctx.Param("config_id")
