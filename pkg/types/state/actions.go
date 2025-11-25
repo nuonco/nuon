@@ -13,7 +13,9 @@ type ActionsState struct {
 }
 
 func NewActionWorkflowState() *ActionWorkflowState {
-	return &ActionWorkflowState{}
+	return &ActionWorkflowState{
+		Outputs: make(map[string]any),
+	}
 }
 
 type ActionWorkflowState struct {
