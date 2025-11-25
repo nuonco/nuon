@@ -140,7 +140,11 @@ export default async function AppComponentBuildPage({ params }) {
               >
                 <ErrorBoundary fallback={<LogsError />}>
                   <Suspense fallback={<LogsSkeleton />}>
-                    <Logs logStreamId={build?.log_stream?.id} orgId={orgId} />
+                    <Logs
+                      logStreamId={build?.log_stream?.id}
+                      logStreamOpen={build?.log_stream?.open}
+                      orgId={orgId}
+                    />
                   </Suspense>
                 </ErrorBoundary>
               </LogStreamProvider>

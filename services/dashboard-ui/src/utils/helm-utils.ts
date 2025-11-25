@@ -28,10 +28,9 @@ export function parseHelmPlan(plan: THelmPlan): {
           d.namespace === match[1].trim()
       )
 
-      // Extract before/after from the diff entries if available
-      const { before, after } = diff
-        ? buildBeforeAfterStrings(diff.entries || [])
-        : { before: null, after: null }
+      // Use the direct before/after properties from the diff
+      const before = diff?.before || null
+      const after = diff?.after || null
 
       changes.push({
         workspace: match[1].trim(),
@@ -55,33 +54,6 @@ export function parseHelmPlan(plan: THelmPlan): {
     }
   })
   return { changes, summary }
-}
-
-function buildBeforeAfterStrings(entries: any[]): {
-  before: string | null
-  after: string | null
-} {
-  const beforeLines: string[] = []
-  const afterLines: string[] = []
-
-  entries.forEach((entry) => {
-    if (entry.type === 1) {
-      // Before value (removal) - lines that existed before
-      if (entry.payload) {
-        beforeLines.push(`${entry.payload}`)
-      }
-    } else if (entry.type === 2) {
-      // After value (addition) - lines that will exist after
-      if (entry.payload) {
-        afterLines.push(`${entry.payload}`)
-      }
-    }
-  })
-
-  return {
-    before: beforeLines.length > 0 ? beforeLines.join('\n') : null,
-    after: afterLines.length > 0 ? afterLines.join('\n') : null,
-  }
 }
 
 export function getHelmOutputStatus(deployments: Record<string, any>): string {
