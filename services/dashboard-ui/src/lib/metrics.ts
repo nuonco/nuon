@@ -137,11 +137,8 @@ export async function setupMetrics() {
     return originalCreateServer.apply(this, [event, ...args])
   }
 
-  // Graceful shutdown
   const shutdown = () => {
-    statsd.close(() => {
-      process.exit(0) // Do we need this here? Someone else's responsibility?
-    })
+    statsd.close()
   }
 
   process.on('SIGTERM', shutdown)
