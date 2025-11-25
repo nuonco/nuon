@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 const ManagedByNuonCLIConfig = "nuon/cli/install-config"
@@ -145,18 +146,22 @@ func (s *appInstallSyncer) syncExistingInstall(
 ) (*models.AppInstall, error) {
 	var err error
 
+	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, appInstall.AppConfigID, generics.ToPtr(true))
+	if err != nil {
+		return nil, fmt.Errorf("error getting app config for install %s: %w", appInstall.Name, err)
+	}
+
+	if appConfig == nil || appConfig.Input == nil {
+		return nil, fmt.Errorf("app config %s has no input configuration", appInstall.AppConfigID)
+	}
+
 	currInputs, err := s.api.GetInstallCurrentInputs(ctx, appInstall.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting current inputs for install %s: %w", appInstall.Name, err)
 	}
 
-	inputCfg, err := s.api.GetAppInputConfig(ctx, appInstall.AppID, currInputs.AppInputConfigID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting current input config: %w", err)
-	}
-
 	definedInputs := installCfg.FlattenedInputs()
-	for _, ic := range inputCfg.Inputs {
+	for _, ic := range appConfig.Input.Inputs {
 		if ic.Required {
 			if _, ok := definedInputs[ic.Name]; !ok {
 				return nil, fmt.Errorf("missing required input %s", ic.Name)
