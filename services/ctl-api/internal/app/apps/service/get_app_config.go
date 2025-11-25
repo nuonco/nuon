@@ -28,7 +28,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.AppConfig
-// @Router					/v1/apps/{app_id}/configs/{app_config_id} [get]
+// @Router					/v1/apps/{app_id}/configs/{config_id} [get]
 func (s *service) GetAppConfigV2(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
