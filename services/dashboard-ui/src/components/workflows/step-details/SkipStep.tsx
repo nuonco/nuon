@@ -83,7 +83,7 @@ export const SkipStepModal = ({ step, ...props }: ISkipStep & IModal) => {
             path,
           })
         },
-
+        disabled: isLoading,
         variant: 'primary',
       }}
       {...props}
