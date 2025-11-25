@@ -28,9 +28,22 @@ export function parseHelmPlan(plan: THelmPlan): {
           d.namespace === match[1].trim()
       )
 
-      // Use the direct before/after properties from the diff
-      const before = diff?.before || null
-      const after = diff?.after || null
+      let before: string | null = null
+      let after: string | null = null
+
+      if (diff) {
+        // Check if this diff has direct before/after properties (old format)
+        if (diff.before !== undefined && diff.after !== undefined) {
+          before = diff.before
+          after = diff.after
+        }
+        // Or if it has entries array (new format)
+        else if (diff.entries && Array.isArray(diff.entries)) {
+          const result = buildBeforeAfterStrings(diff.entries)
+          before = result.before
+          after = result.after
+        }
+      }
 
       changes.push({
         workspace: match[1].trim(),
@@ -54,6 +67,39 @@ export function parseHelmPlan(plan: THelmPlan): {
     }
   })
   return { changes, summary }
+}
+
+function buildBeforeAfterStrings(entries: any[]): {
+  before: string | null
+  after: string | null
+} {
+  const beforeLines: string[] = []
+  const afterLines: string[] = []
+
+  entries.forEach((entry) => {
+    if (entry.type === 0) {
+      // Unchanged lines - add to both before and after
+      if (entry.payload) {
+        beforeLines.push(entry.payload)
+        afterLines.push(entry.payload)
+      }
+    } else if (entry.type === 1) {
+      // Before value (removal) - lines that existed before
+      if (entry.payload) {
+        beforeLines.push(entry.payload)
+      }
+    } else if (entry.type === 2) {
+      // After value (addition) - lines that will exist after
+      if (entry.payload) {
+        afterLines.push(entry.payload)
+      }
+    }
+  })
+
+  return {
+    before: beforeLines.length > 0 ? beforeLines.join('\n') : null,
+    after: afterLines.length > 0 ? afterLines.join('\n') : null,
+  }
 }
 
 export function getHelmOutputStatus(deployments: Record<string, any>): string {
