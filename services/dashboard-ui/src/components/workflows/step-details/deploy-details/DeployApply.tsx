@@ -29,6 +29,7 @@ export const DeployApply = ({
   } = useQuery<TOTELLog[]>({
     initData: [],
     path: `/api/orgs/${org.id}/log-streams/${deploy?.log_stream?.id}/logs${params}`,
+    enabled: !deploy?.log_stream?.open,
   })
 
   return (

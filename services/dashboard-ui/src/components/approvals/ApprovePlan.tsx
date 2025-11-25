@@ -79,7 +79,7 @@ export const ApprovePlanModal = ({ step, ...props }: IApprovePlan & IModal) => {
             approvalId: step?.approval?.id,
           })
         },
-
+        disabled: isLoading,
         variant: 'primary',
       }}
       {...props}
