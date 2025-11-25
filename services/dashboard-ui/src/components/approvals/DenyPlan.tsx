@@ -93,7 +93,7 @@ export const DenyPlanModal = ({
             approvalId: step?.approval?.id,
           })
         },
-
+        disabled: isLoading,
         variant: 'primary',
       }}
       {...props}
