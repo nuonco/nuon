@@ -4,11 +4,17 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { LogsViewer } from '@/components/log-stream/Logs'
 import { useLogs } from '@/hooks/use-logs'
-import type { TOTELLog } from '@/types'
+import type { TOTELLog, TActionConfig } from '@/types'
 import { cn } from '@/utils/classnames'
 
-export const InstallActionRunLogs = () => {
+export const InstallActionRunLogs = ({
+  actionConfig,
+}: {
+  actionConfig: TActionConfig
+}) => {
   const { isLoading, logs } = useLogs()
+
+  const steps = actionConfig?.steps || []
 
   const logSteps = useMemo(() => {
     return (logs as unknown as TOTELLog[]).reduce(
@@ -50,22 +56,31 @@ export const InstallActionRunLogs = () => {
   return (
     <div className="flex items-start flex-auto divide-x">
       <div className="flex flex-col gap-2 w-fit md:min-w-64 pr-2 h-full">
-        {stepKeys.map((key) => (
-          <Button
-            className={cn('w-full', {
-              '!bg-primary-600/10 dark:!bg-primary-400/10':
-                activeStep === key && !showAllLogs,
-            })}
-            variant="ghost"
-            key={key}
-            onClick={() => {
-              if (showAllLogs) setShowAllLogs(false)
-              setActiveStep(key)
-            }}
-          >
-            <span className="truncate">{key}</span>
-          </Button>
-        ))}
+        {steps
+          .sort((a, b) => {
+            if (a.idx === undefined && b.idx === undefined) return 0
+            if (a.idx === undefined) return -1
+            if (b.idx === undefined) return 1
+
+            return a.idx - b.idx
+          })
+          .map((step) => (
+            <Button
+              className={cn('w-full', {
+                '!bg-primary-600/10 dark:!bg-primary-400/10':
+                  activeStep === step?.name && !showAllLogs,
+              })}
+              variant="ghost"
+              key={step?.id}
+              disabled={!stepKeys.includes(step?.name)}
+              onClick={() => {
+                if (showAllLogs) setShowAllLogs(false)
+                setActiveStep(step?.name)
+              }}
+            >
+              <span className="truncate">{step?.name}</span>
+            </Button>
+          ))}
         <Button
           className={cn('w-full', {
             '!bg-primary-600/10 dark:!bg-primary-400/10': showAllLogs,

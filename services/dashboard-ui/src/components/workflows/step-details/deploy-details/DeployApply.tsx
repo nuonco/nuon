@@ -9,7 +9,8 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogsProvider } from '@/providers/logs-provider'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
-import type { TInstallDeploy, TOTELLog, TWorkflowStep } from '@/types'
+import { useQueryParams } from '@/hooks/use-query-params'
+import type { TInstallDeploy, TOTELLog } from '@/types'
 
 export const DeployApply = ({
   initDeploy: deploy,
@@ -17,10 +18,17 @@ export const DeployApply = ({
   initDeploy: TInstallDeploy
 }) => {
   const { org } = useOrg()
+  const params = useQueryParams({
+    order: deploy?.log_stream?.open ? 'asc' : 'desc',
+  })
 
-  const { data: logs, isLoading: isLoadingLogs } = useQuery<TOTELLog[]>({
+  const {
+    data: logs,
+    isLoading: isLoadingLogs,
+    headers,
+  } = useQuery<TOTELLog[]>({
     initData: [],
-    path: `/api/orgs/${org.id}/log-streams/${deploy?.log_stream?.id}/logs`,
+    path: `/api/orgs/${org.id}/log-streams/${deploy?.log_stream?.id}/logs${params}`,
   })
 
   return (
@@ -53,7 +61,10 @@ export const DeployApply = ({
               {isLoadingLogs ? (
                 <DeployLogsSkeleton />
               ) : (
-                <LogsProvider initLogs={logs}>
+                <LogsProvider
+                  initLogs={logs}
+                  initOffset={headers?.['x-nuon-api-next']}
+                >
                   <Logs />
                 </LogsProvider>
               )}
