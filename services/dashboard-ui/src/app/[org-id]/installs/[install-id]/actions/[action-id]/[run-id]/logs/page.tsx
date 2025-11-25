@@ -114,7 +114,9 @@ export default async function InstallAcitonRunLogsPage({
         <ErrorBoundary fallback={<LogsError />}>
           <Suspense fallback={<LogsSkeleton />}>
             <Logs
+              actionConfig={installActionRun?.config}
               logStreamId={installActionRun?.log_stream?.id}
+              logStreamOpen={installActionRun?.log_stream?.open}
               orgId={orgId}
             />
           </Suspense>
