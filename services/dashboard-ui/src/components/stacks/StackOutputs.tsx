@@ -13,11 +13,11 @@ export const StackOutputs = ({ runs }: { runs: TInstallStackVersionRun[] }) => {
         </Text>
         <ClickToCopyButton
           className="w-fit self-end"
-          textToCopy={JSON.stringify(run.data_contents)}
+          textToCopy={JSON.stringify(run?.data_contents || run?.data || {})}
         />
       </Text>
       <div className="overflow-auto max-h-[600px]">
-        <KeyValueList values={objectToKeyValueArray(run?.data)} />
+        <KeyValueList values={objectToKeyValueArray(run?.data || {})} />
       </div>
     </div>
   ))
