@@ -118,6 +118,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   deprovisioned: 'ClockCountdown',
 
   // skipped
+  'auto-skipped': 'MinusCircle',
   'user-skipped': 'MinusCircle',
   retried: 'Repeat',
 
