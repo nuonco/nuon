@@ -23,6 +23,7 @@ func (w *Workflows) AllWorkflows() []interface{} {
 	return []interface{}{
 		w.jobWorkflows.ExecuteJob,
 		w.workflowWorkflows.GenerateWorkflowSteps,
+		w.workflowWorkflows.WaitForApprovalResponse,
 	}
 }
 

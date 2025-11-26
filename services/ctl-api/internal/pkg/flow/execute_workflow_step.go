@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -205,7 +206,14 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, errors.Wrap(err, "unable to update step to success status")
 	}
 
-	resp, err := c.waitForApprovalResponse(ctx, flw, step, idx)
+	approvalFunc := c.waitForApprovalResponse
+	// Use the v2 approval flow (with continue as new) for workflows created after Nov 26, 2025.
+	cutoffDate := time.Date(2025, time.November, 26, 0, 0, 0, 0, time.UTC)
+	if flw.CreatedAt.After(cutoffDate) {
+		approvalFunc = c.waitForApprovalResponseV2
+	}
+
+	resp, err := approvalFunc(ctx, flw, step, idx)
 	if err != nil {
 		return false, err
 	}

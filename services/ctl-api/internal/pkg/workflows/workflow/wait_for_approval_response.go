@@ -1,13 +1,10 @@
-package flow
+package workflow
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -17,39 +14,47 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/poll"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
-	workflowsflow "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponseV2(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep, stepIdx int) (*app.WorkflowStepApprovalResponse, error) {
-	resp, err := workflowsflow.AwaitWaitForApprovalResponse(ctx, &workflowsflow.WaitForApprovalResponseRequest{
-		WorkflowID: flw.ID,
-		StepID:     step.ID,
-	})
+type WaitForApprovalResponseRequest struct {
+	WorkflowID string `json:"workflow_id" validate:"required"`
+	StepID     string `json:"step_id" validate:"required"`
+	MaxTS      *time.Time
+}
+
+// @temporal-gen workflow
+// @execution-timeout 720h
+// @task-timeout 1m
+// @id-template {{.CallerID}}-{{.Req.StepID}}-wait-for-approval-response
+func (w *Workflows) WaitForApprovalResponse(ctx workflow.Context, req *WaitForApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
+	maxTS := workflow.Now(ctx).Add(time.Hour * 24 * 30)
+	if req.MaxTS != nil {
+		maxTS = *req.MaxTS
+	}
+
+	resp, err := w.waitForApprovalResponse(ctx, req.WorkflowID, req.StepID, maxTS)
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) || temporal.IsTimeoutError(err) {
-			statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: step.ID,
-				Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalExpired, map[string]any{
-					"err_message": "approval was not accepted",
-				}),
-			})
+		if errors.Is(err, poll.ContinueAsNewErr) {
+			if req.MaxTS == nil {
+				req.MaxTS = &maxTS
+			}
 
-			return nil, c.handleCancellation(ctx, err, step.ID, stepIdx, flw)
+			return nil, workflow.NewContinueAsNewError(ctx, w.WaitForApprovalResponse, req)
 		}
-
-		return nil, fmt.Errorf("error waiting for approval response: %w", err)
+		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep, stepIdx int) (*app.WorkflowStepApprovalResponse, error) {
-	if err := poll.Poll(ctx, c.V, poll.PollOpts{
-		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24 * 30),
-		InitialInterval: time.Second * 15,
-		MaxInterval:     time.Minute * 15,
-		BackoffFactor:   1,
+func (w *Workflows) waitForApprovalResponse(ctx workflow.Context, workflowID, stepID string, maxTS time.Time) (*app.WorkflowStepApprovalResponse, error) {
+	if err := poll.Poll(ctx, w.v, poll.PollOpts{
+		MaxTS:                      maxTS,
+		InitialInterval:            time.Second * 15,
+		MaxInterval:                time.Minute * 15,
+		BackoffFactor:              1,
+		ContinueAsNewAfterAttempts: 60,
 		PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
 			l, err := log.WorkflowLogger(ctx)
 			if err != nil {
@@ -60,7 +65,7 @@ func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.C
 			return nil
 		},
 		Fn: func(ctx workflow.Context) error {
-			stp, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+			stp, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, stepID)
 			if err != nil {
 				return pkgErrors.Wrap(err, "unable to get flow step")
 			}
@@ -70,7 +75,7 @@ func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.C
 			}
 
 			// get latest workflow to ensure we have the latest state since approval options can change
-			latestFlw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, flw.ID)
+			latestFlw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, workflowID)
 			if err != nil {
 				return errors.Join(pkgErrors.Wrap(err, "unable to get latest flow"), poll.NonRetryableError)
 			}
@@ -82,7 +87,7 @@ func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.C
 						Status:                 app.WorkflowStepApprovalStatusApproved,
 						StatusHumanDescription: "auto approved for step " + strconv.Itoa(stp.Idx+1),
 						Metadata: map[string]any{
-							"step_idx": step.Idx,
+							"step_idx": stp.Idx,
 							"status":   "auto-approved",
 						},
 					},
@@ -109,21 +114,17 @@ func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.C
 			return nil
 		},
 	}); err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: step.ID,
-				Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalExpired, map[string]any{
-					"err_message": "approval was not accepted",
-				}),
-			})
-
-			return nil, c.handleCancellation(ctx, err, step.ID, stepIdx, flw)
-		}
+		return nil, err
 	}
 
-	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, stepID)
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "unable to get approval step")
+	}
+
+	// should never happen due to polling above, but for sanity.
+	if step.Approval.Response == nil {
+		return nil, pkgErrors.New("approval response is still nil after polling")
 	}
 
 	if step.Approval.Response.Type == app.WorkflowStepApprovalResponseTypeDeny {
