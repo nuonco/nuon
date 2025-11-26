@@ -148,7 +148,6 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		Secrets:     secrets,
 		Branch:      c.Branch,
 		Inputs:      inputs,
-		Installer:   c.Installer,
 		Sandbox:     c.Sandbox,
 		Runner:      c.Runner,
 		Permissions: permissions,
