@@ -6,13 +6,8 @@ import (
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
-	helmkube "helm.sh/helm/v4/pkg/kube"
+	kube "helm.sh/helm/v4/pkg/kube"
 	release "helm.sh/helm/v4/pkg/release/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 
 	"github.com/pkg/errors"
@@ -48,7 +43,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client.DryRun = true
 	client.DisableHooks = false
 	client.WaitForJobs = false
-	client.WaitStrategy = helmkube.StatusWatcherStrategy
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
@@ -100,42 +95,6 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	return string(diffH), &contentDiff, nil
 }
 
-func applyCRDs(ctx context.Context, l *zap.Logger, kubeCfg *rest.Config, crdYAMLs [][]byte) error {
-	dynClient, err := dynamic.NewForConfig(kubeCfg)
-	if err != nil {
-		return errors.Wrap(err, "unable to create dynamic client for CRDs")
-	}
-
-	crdGVR := schema.GroupVersionResource{
-		Group:    "apiextensions.k8s.io",
-		Version:  "v1",
-		Resource: "customresourcedefinitions",
-	}
-
-	for i, crdYAML := range crdYAMLs {
-		var obj unstructured.Unstructured
-		if err := yaml.Unmarshal(crdYAML, &obj); err != nil {
-			l.Warn("unable to parse CRD YAML", zap.Int("index", i), zap.Error(err))
-			continue
-		}
-
-		l.Debug("Applying CRD", zap.Int("index", i), zap.String("name", obj.GetName()))
-
-		// Apply to cluster
-		applyOptions := metav1.ApplyOptions{
-			FieldManager: "helm-crd-installer",
-			Force:        true,
-		}
-
-		_, err := dynClient.Resource(crdGVR).Apply(ctx, obj.GetName(), &obj, applyOptions)
-		if err != nil {
-			return errors.Wrapf(err, "unable to apply CRD at index %d", i)
-		}
-	}
-
-	return nil
-}
-
 func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, error) {
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
@@ -158,7 +117,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	client.DisableHooks = false
 
 	client.WaitForJobs = false
-	client.WaitStrategy = helmkube.StatusWatcherStrategy
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Devel = true
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
@@ -174,38 +133,12 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	client.Description = ""
 	client.CreateNamespace = h.state.plan.HelmDeployPlan.CreateNamespace
 
-	crds := chart.CRDObjects()
-	if len(crds) > 0 {
-		crdZapFieldList := []zap.Field{}
-		crdYAMLs := make([][]byte, 0, len(crds))
-
-		for i, crd := range crds {
-			field := zap.String(fmt.Sprintf("crd.%d", i), crd.Name)
-			crdZapFieldList = append(crdZapFieldList, field)
-			if crd.File != nil {
-				crdYAMLs = append(crdYAMLs, crd.File.Data)
-			}
-		}
-
-		l.Info("chart contains CRDs - installing them for dry-run", crdZapFieldList...)
-
-		// Apply CRDs to the cluster so dry-run can validate against the CRD types
-		if err := applyCRDs(ctx, l, kubeCfg, crdYAMLs); err != nil {
-			l.Warn("failed to apply CRDs for dry-run, continuing anyway", zap.Error(err))
-		}
-
-		client.SkipCRDs = true
-	}
-
 	l.Info("calculating helm diff", zap.String("operation", "diff"), zap.String("exec", "install"))
 	rel, err := client.RunWithContext(ctx, chart, values)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
 	}
 	diffH, diffReport, err := h.getDiff(l, kubeCfg, nil, rel, h.state.plan.HelmDeployPlan.Namespace)
-	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
-	}
 
 	h.state.outputs = map[string]interface{}{"diff": diffH}
 
@@ -254,7 +187,7 @@ func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *a
 	client := action.NewUninstall(actionCfg)
 	client.DryRun = true
 	client.DisableHooks = false
-	client.WaitStrategy = helmkube.StatusWatcherStrategy
+	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Timeout = h.state.timeout
 
 	l.Info("calculating helm diff", zap.String("operation", "diff"), zap.String("exec", "uninstall"))
