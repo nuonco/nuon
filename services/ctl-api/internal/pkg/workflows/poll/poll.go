@@ -12,12 +12,14 @@ import (
 var (
 	NonRetryableError = errors.New("non-retryable")
 	ExhaustedError    = errors.New("exhausted attempts new")
+	ContinueAsNewErr  = errors.New("continue as new")
 )
 
 // NOTE(jm): we use this pattern in many workflows, and while we do want to move to using signals to make it easier to
 // control flow, this approach is still common.
 //
-// Eventually, this should also allow us to do continue-as-new polling as well.
+// Setting ContinueAsNewAfterAttempts to >0 will return ContinueAsNewErr after the given number of attempts.
+// Use this to return workflow.ContinueAsNewErr to temporal for doing continue-as-new polling.
 type PollerFn func(context workflow.Context) error
 
 type PollOpts struct {
@@ -25,7 +27,9 @@ type PollOpts struct {
 	InitialInterval time.Duration `validate:"required"`
 	MaxInterval     time.Duration `validate:"required"`
 	BackoffFactor   float64       `validate:"required"`
-	Fn              PollerFn      `validate:"required"`
+	// If set to > 0, Poll with return the ContinueAsNewErr after every N attempts.
+	ContinueAsNewAfterAttempts int      `validate:"min=0"`
+	Fn                         PollerFn `validate:"required"`
 
 	PostAttemptHook func(workflow.Context, time.Duration) error
 }
@@ -35,8 +39,11 @@ func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
 		return err
 	}
 
+	currentIteration := 0
 	currentInterval := opts.InitialInterval
 	for {
+		currentIteration++
+
 		err := opts.Fn(ctx)
 		if err == nil {
 			return nil
@@ -57,6 +64,11 @@ func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
 		ts := workflow.Now(ctx)
 		if ts.After(opts.MaxTS) {
 			return context.DeadlineExceeded
+		}
+
+		if opts.ContinueAsNewAfterAttempts > 0 &&
+			currentIteration%opts.ContinueAsNewAfterAttempts == 0 {
+			return ContinueAsNewErr
 		}
 
 		// Increase interval with backoff, but don't exceed MaxInterval
