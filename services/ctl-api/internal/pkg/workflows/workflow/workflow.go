@@ -14,6 +14,7 @@ import (
 type Workflows struct {
 	evClient teventloop.Client
 	mw       tmetrics.Writer
+	v        *validator.Validate
 }
 
 type Params struct {
@@ -37,5 +38,6 @@ func New(params Params) (*Workflows, error) {
 	return &Workflows{
 		evClient: params.EVClient,
 		mw:       tmw,
+		v:        params.V,
 	}, nil
 }
