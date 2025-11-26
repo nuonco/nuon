@@ -27,8 +27,6 @@ type AppConfig struct {
 	Sandbox *AppSandboxConfig `mapstructure:"sandbox" jsonschema:"required"`
 	// Runner configuration
 	Runner *AppRunnerConfig `mapstructure:"runner" jsonschema:"required"`
-	// Installer configuration
-	Installer *InstallerConfig `mapstructure:"installer,omitempty"`
 	// Permissions config
 	Permissions *PermissionsConfig `mapstructure:"permissions,omitempty"`
 	// Policies config
@@ -131,12 +129,6 @@ func (a *AppConfig) Parse() error {
 		parseFns = append(parseFns, parseFn{
 			"branch",
 			a.Branch.parse,
-		})
-	}
-	if a.Installer != nil {
-		parseFns = append(parseFns, parseFn{
-			"installer",
-			a.Installer.parse,
 		})
 	}
 	if a.Inputs != nil {
