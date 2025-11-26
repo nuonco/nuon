@@ -19,7 +19,7 @@ import { GITHUB_APP_NAME } from '@/configs/github-app'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
 
-export const ConnectGithubModal = () => {
+export const ConnectGithubModal = ({}) => {
   const path = usePathname()
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
@@ -209,13 +209,13 @@ export const ConnectGithubModal = () => {
         : null}
 
       <Button
-        className="text-sm !font-medium !py-2 !pr-2 !pl-1 h-[32px] flex items-center gap-2 w-fit !text-primary-600 dark:!text-primary-400"
+        className="text-sm !font-medium !p-1 flex items-center gap-2 w-fit !text-primary-600 dark:!text-primary-400"
         variant="ghost"
         onClick={() => {
           setIsOpen(true)
         }}
       >
-        <PlusIcon className="text-lg" />
+        <PlusIcon className="" />
         Add
       </Button>
     </>
