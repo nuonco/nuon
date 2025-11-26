@@ -7,8 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
@@ -75,25 +77,42 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 
 	_, err = s.getWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.Error(stderr.ErrNotFound{
+				Err:         err,
+				Description: "workflow step not found",
+			})
+			return
+		}
 		ctx.Error(errors.Wrap(err, "unable to get workflow step"))
 		return
 	}
 
 	approval, err := s.getWorkflowStepApproval(ctx, org.ID, approvalID)
 	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get workflow step"))
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.Error(stderr.ErrNotFound{
+				Err:         err,
+				Description: "workflow step approval not found",
+			})
+			return
+		}
+		ctx.Error(errors.Wrap(err, "unable to get workflow step approval"))
 		return
 	}
 
 	if approval.Response != nil {
-		ctx.Error(fmt.Errorf("workflow step approval already has a response"))
+		ctx.Error(stderr.ErrUser{
+			Description: "workflow step approval already has a response",
+			Err:         errors.New("workflow step approval already has a response"),
+		})
 		return
 	}
 
 	// create the response
 	wfsaResponse, err := s.createWorkflowStepApprovalResponse(ctx, approval.ID, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create install: %w", err))
+		ctx.Error(fmt.Errorf("unable to create workflow step approval response: %w", err))
 		return
 	}
 
@@ -115,7 +134,7 @@ func (s *service) createWorkflowStepApprovalResponse(ctx *gin.Context, approvalI
 
 	res := s.db.WithContext(ctx).Create(&response)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
+		return nil, fmt.Errorf("unable to create workflow step approval response: %w", res.Error)
 	}
 
 	return &response, nil
