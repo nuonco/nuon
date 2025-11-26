@@ -39,12 +39,6 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 			},
 		},
 		{
-			Resource: "installer",
-			Method: func(ctx context.Context) error {
-				return s.syncAppInstaller(ctx, "installer")
-			},
-		},
-		{
 			Resource: "app-permissions",
 			Method: func(ctx context.Context) error {
 				return s.syncAppPermissions(ctx, "permissions")
