@@ -20,29 +20,6 @@ module "shared-paradedb" {
   }
 }
 
-module "shared-parededb-installer" {
-  source = "./modules/repository"
-
-  name                     = "paradedb-installer"
-  description              = "Installer for paradedb."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
-
-  collaborators = {
-    philippemnoel = "push"
-    sardination   = "push"
-    rebasedming   = "push"
-    neilyio       = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
 module "shared-warpstream" {
   source = "./modules/repository"
 
@@ -52,27 +29,6 @@ module "shared-warpstream" {
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
   enable_branch_protection = false
-
-  collaborators = {
-    "richardartoul" = "push"
-    "ryanworl"      = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-warpstream-installer" {
-  source = "./modules/repository"
-
-  name                     = "warpstream-installer"
-  description              = "Installer for Warpstream."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
 
   collaborators = {
     "richardartoul" = "push"
@@ -96,28 +52,6 @@ module "shared-okteto" {
 
   collaborators = {
     rberrelleza = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-weaviate-installer" {
-  source = "./modules/repository"
-
-  name                     = "weaviate-installer"
-  description              = "Nuon installer Weaviate."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
-
-  collaborators = {
-    aduis          = "push"
-    scottalex1987  = "push"
-    hoppe-weaviate = "push"
   }
 
   providers = {
@@ -223,27 +157,6 @@ module "shared-streamkap" {
   }
 }
 
-module "shared-streamkap-installer" {
-  source = "./modules/repository"
-
-  name                     = "streamkap-installer"
-  description              = "Custom installer for streamkap."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
-
-  collaborators = {
-    thomasr888      = "push"
-    quang-streamkap = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
 module "shared-100xdev" {
   source = "./modules/repository"
 
@@ -253,29 +166,6 @@ module "shared-100xdev" {
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
   enable_branch_protection = false
-
-  collaborators = {
-    anandsainath     = "push"
-    shaumik100x      = "push"
-    sraibagiwith100x = "push"
-    gyx119           = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-100xdev-installer" {
-  source = "./modules/repository"
-
-  name                     = "100xdev-installer"
-  description              = "Custom installer for 100xdev."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
 
   collaborators = {
     anandsainath     = "push"
@@ -326,27 +216,6 @@ module "shared-stardog" {
   }
 }
 
-module "shared-stardog-installer" {
-  source = "./modules/repository"
-
-  name                     = "stardog-installer"
-  description              = "Custom installer for stardog."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
-
-  collaborators = {
-    paulplace = "push",
-    scardena  = "push"
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
 module "shared-berri-ai" {
   source = "./modules/repository"
 
@@ -377,25 +246,6 @@ module "shared-percona" {
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
   enable_branch_protection = false
-
-  collaborators = {
-  }
-
-  providers = {
-    github = github.nuonco-shared
-  }
-}
-
-module "shared-percona-installer" {
-  source = "./modules/repository"
-
-  name                     = "percona-installer"
-  description              = "Custom installer for percona."
-  required_checks          = []
-  owning_team_id           = github_team.nuonco-shared.id
-  is_private               = true
-  enable_branch_protection = false
-  is_fork                  = true
 
   collaborators = {
   }
