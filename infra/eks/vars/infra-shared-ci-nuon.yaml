@@ -45,4 +45,4 @@ additional_nodepools:
     expireAfter: "Never"
     disruption:
       consolidationPolicy: "WhenEmpty"
-      consolidateAfter: "15m"
+      consolidateAfter: "5m"

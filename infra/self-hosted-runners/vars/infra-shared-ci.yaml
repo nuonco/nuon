@@ -3,8 +3,8 @@ scale_sets:
   build-only:
     github_config_url: https://github.com/powertoolsdev
     runner_group: nuon-self-hosted
-    max_runners: 20
-    min_runners: 1
+    max_runners: 30
+    min_runners: 0
     container_mode:
       type: kubernetes
       kubernetesModeWorkVolumeClaim:
@@ -46,12 +46,12 @@ scale_sets:
           - name: RUNNER_ALLOW_RUNASROOT
             value: 'true'
           resources:
-            limits:
-              cpu: 16000m
-              memory: 60Gi
             requests:
-              cpu: 13000m
-              memory: 60Gi
+              cpu: "7000m"
+              memory: "10Gi"
+            limits:
+              cpu: "16000m"
+              memory: "28Gi"
           volumeMounts:
           - name: work
             mountPath: /home/runner/_work
@@ -83,7 +83,7 @@ scale_sets:
     github_config_url: https://github.com/powertoolsdev
     runner_group: nuon-self-hosted
     max_runners: 40
-    min_runners: 1
+    min_runners: 0
     container_mode:
       type: kubernetes
       kubernetesModeWorkVolumeClaim:
