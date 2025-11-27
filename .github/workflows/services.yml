@@ -104,7 +104,7 @@ jobs:
       - tag
       - build_base_images
     # Run if there are service changes AND base images succeeded or were skipped
-    if: ${{ (always() && needs.build_base_images.result != 'failure') && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ !cancelled() && (needs.build_base_images.result == 'success' || needs.build_base_images.result == 'skipped') && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       fail-fast: false
       matrix:
