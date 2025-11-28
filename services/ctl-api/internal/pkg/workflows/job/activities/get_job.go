@@ -17,7 +17,7 @@ type GetJobRequest struct {
 func (a *Activities) PkgWorkflowsJobGetJob(ctx context.Context, req *GetJobRequest) (*app.RunnerJob, error) {
 	job := app.RunnerJob{}
 	res := a.db.WithContext(ctx).
-	Scopes(scopes.WithDisableViews).
+		Scopes(scopes.WithDisableViews).
 		First(&job, "id = ?", req.ID)
 
 	if res.Error != nil {

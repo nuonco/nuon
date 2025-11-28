@@ -1,8 +1,7 @@
 package stacks
 
 type ParseOpts struct {
-        Obj any
-
+	Obj any
 }
 
 func Parse(v any, data map[string]any, obj any) error {

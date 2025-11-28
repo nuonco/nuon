@@ -28,4 +28,3 @@ func (c *client) CreateIntegrationUser(ctx context.Context) (*CreateIntegrationU
 
 	return &resp, nil
 }
-

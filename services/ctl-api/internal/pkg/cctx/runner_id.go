@@ -8,7 +8,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
 )
 
-
 func RunnerIDFromContext(ctx ValueContext) (string, error) {
 	runner, err := RunnerFromContext(ctx)
 	if err != nil {

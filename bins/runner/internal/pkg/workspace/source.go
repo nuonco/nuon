@@ -22,7 +22,7 @@ func (w *workspace) Source() *Source {
 	if w.Src != nil {
 		path = w.Src.Path
 	}
-	
+
 	return &Source{
 		Path:  path,
 		IsGit: w.isGit(),
