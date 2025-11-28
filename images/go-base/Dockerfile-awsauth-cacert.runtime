@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS aws-iam-authenticator
+FROM golang:1.25-alpine AS aws-iam-authenticator
 
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
@@ -8,14 +8,14 @@ RUN curl \
         "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
     && chmod +x aws-iam-authenticator
 
-FROM golang:1.24-alpine AS certs
+FROM golang:1.25-alpine AS certs
 
 RUN wget \
         https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
     && cat global-bundle.pem >> /global-bundle.pem
 
 # Create the final runtime image with all necessary components
-FROM golang:1.24-alpine AS final
+FROM golang:1.25-alpine AS final
 
 WORKDIR /app
 
