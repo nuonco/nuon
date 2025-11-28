@@ -8,8 +8,8 @@ import (
 type OCIRegistryType string
 
 const (
-	OCIRegistryTypeECR  OCIRegistryType = "ecr"
-	OCIRegistryTypeACR  OCIRegistryType = "acr"
+	OCIRegistryTypeECR        OCIRegistryType = "ecr"
+	OCIRegistryTypeACR        OCIRegistryType = "acr"
 	OCIRegistryTypePrivateOCI OCIRegistryType = "private_oci"
 	OCIRegistryTypePublicOCI  OCIRegistryType = "public_oci"
 )

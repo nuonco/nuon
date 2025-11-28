@@ -62,7 +62,7 @@ func walkFields(obj any, data map[string]any) error {
 				continue
 			}
 
-      // Pass a pointer to the map if it's not already a pointer
+			// Pass a pointer to the map if it's not already a pointer
 			if field.Kind() == reflect.Map {
 				if err := RenderMap(field.Addr().Interface(), data); err != nil {
 					return errors.Wrap(err, "unable to render map")

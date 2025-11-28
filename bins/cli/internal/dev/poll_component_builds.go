@@ -28,12 +28,12 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 	defer cancel()
 
 	multiSpinner := bubbles.NewMultiSpinnerView()
-	
+
 	// Add all spinners first
 	for _, cmp := range comps {
 		multiSpinner.AddSpinner(cmp.ID, fmt.Sprintf("building component %s %s", cmp.ID, cmp.Name))
 	}
-	
+
 	// Then start the display
 	multiSpinner.Start()
 
@@ -57,7 +57,7 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 
 		var groupError error = nil
 		completedComponents := make([]string, 0)
-		
+
 		for cmpID := range cmpByID {
 			cmp := cmpByID[cmpID]
 			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmp.ID)

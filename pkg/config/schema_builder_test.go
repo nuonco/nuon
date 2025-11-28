@@ -681,19 +681,19 @@ func TestFieldBuilder_NestedObjectWithChaining(t *testing.T) {
 
 	NewSchemaBuilder(schema).
 		Field("server").
-			Short("Server configuration").
-			Object(func(sb *SchemaBuilder) {
-				sb.Field("host").Short("Server host").Format("hostname").Required()
-				sb.Field("port").Short("Server port").Type("integer").Minimum(1).Maximum(65535).Required()
-				sb.Field("ssl").Short("Enable SSL").Type("boolean").Default(false)
-			}).
-			ObjectRequired("host", "port").
+		Short("Server configuration").
+		Object(func(sb *SchemaBuilder) {
+			sb.Field("host").Short("Server host").Format("hostname").Required()
+			sb.Field("port").Short("Server port").Type("integer").Minimum(1).Maximum(65535).Required()
+			sb.Field("ssl").Short("Enable SSL").Type("boolean").Default(false)
+		}).
+		ObjectRequired("host", "port").
 		Field("logging").
-			Short("Logging configuration").
-			Object(func(sb *SchemaBuilder) {
-				sb.Field("level").Short("Log level").Enum("debug", "info", "warn", "error").Default("info")
-				sb.Field("format").Short("Log format").Enum("json", "text").Default("json")
-			})
+		Short("Logging configuration").
+		Object(func(sb *SchemaBuilder) {
+			sb.Field("level").Short("Log level").Enum("debug", "info", "warn", "error").Default("info")
+			sb.Field("format").Short("Log format").Enum("json", "text").Default("json")
+		})
 
 	server, _ := schema.Properties.Get("server")
 	logging, _ := schema.Properties.Get("logging")
@@ -762,43 +762,43 @@ func TestFieldBuilder_ComplexNestedStructure(t *testing.T) {
 	// Simulate a real-world structure like HelmChartComponentConfig
 	NewSchemaBuilder(schema).
 		Field("chart_name").
-			Short("Chart name").
-			Type("string").
-			Required().
+		Short("Chart name").
+		Type("string").
+		Required().
 		Field("helm_repo").
-			Short("Helm repository configuration").
-			Object(func(sb *SchemaBuilder) {
-				sb.Field("repo_url").
-					Short("Repository URL").
-					Type("string").
-					Format("uri").
-					Example("https://charts.bitnami.com/bitnami")
-				sb.Field("chart").
-					Short("Chart name in repository").
-					Type("string").
-					Example("nginx")
-				sb.Field("version").
-					Short("Chart version").
-					Type("string").
-					Pattern(`^\d+\.\d+\.\d+$`)
-			}).
-			ObjectRequired("repo_url", "chart").
+		Short("Helm repository configuration").
+		Object(func(sb *SchemaBuilder) {
+			sb.Field("repo_url").
+				Short("Repository URL").
+				Type("string").
+				Format("uri").
+				Example("https://charts.bitnami.com/bitnami")
+			sb.Field("chart").
+				Short("Chart name in repository").
+				Type("string").
+				Example("nginx")
+			sb.Field("version").
+				Short("Chart version").
+				Type("string").
+				Pattern(`^\d+\.\d+\.\d+$`)
+		}).
+		ObjectRequired("repo_url", "chart").
 		Field("values").
-			Short("Helm values").
-			Object(func(sb *SchemaBuilder) {
-				sb.Field("replicaCount").Type("integer").Default(1)
-				sb.Field("image").
-					Short("Container image config").
-					Object(func(innerSb *SchemaBuilder) {
-						innerSb.Field("repository").Short("Image repository")
-						innerSb.Field("tag").Short("Image tag")
-						innerSb.Field("pullPolicy").Short("Image pull policy").Enum("Always", "IfNotPresent", "Never")
-					})
-			}).
+		Short("Helm values").
+		Object(func(sb *SchemaBuilder) {
+			sb.Field("replicaCount").Type("integer").Default(1)
+			sb.Field("image").
+				Short("Container image config").
+				Object(func(innerSb *SchemaBuilder) {
+					innerSb.Field("repository").Short("Image repository")
+					innerSb.Field("tag").Short("Image tag")
+					innerSb.Field("pullPolicy").Short("Image pull policy").Enum("Always", "IfNotPresent", "Never")
+				})
+		}).
 		Field("namespace").
-			Short("Kubernetes namespace").
-			Type("string").
-			Default("default")
+		Short("Kubernetes namespace").
+		Type("string").
+		Default("default")
 
 	// Verify top-level structure
 	chartName, _ := schema.Properties.Get("chart_name")

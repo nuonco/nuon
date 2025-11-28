@@ -11,8 +11,8 @@ import (
 	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"gorm.io/gorm/clause"
 	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+	"gorm.io/gorm/clause"
 )
 
 type CreateConnectionRequest struct {

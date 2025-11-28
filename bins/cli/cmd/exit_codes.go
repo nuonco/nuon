@@ -20,4 +20,3 @@ func (c *cli) exitCodesCmd() *cobra.Command {
 
 	return exitCodesCmd
 }
-

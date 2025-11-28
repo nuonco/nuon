@@ -308,7 +308,6 @@ func extractWorkflowFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pack
 		}
 	}
 
-
 	if ret.IDCallback != "" && ret.IDTemplate != "" {
 		return nil, withPos(fset, fn.Pos(), errors.New("@id-callback and @id-template may not be specified together"))
 	}
