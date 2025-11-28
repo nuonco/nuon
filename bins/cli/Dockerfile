@@ -34,7 +34,7 @@ COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-cli \
     golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
-FROM golang:1.24-alpine AS final
+FROM golang:1.25-alpine AS final
 
 ARG BIN_NAME=nuon
 ARG SERVICE=cli

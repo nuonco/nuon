@@ -41,14 +41,14 @@ COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
     golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
-FROM golang:1.24-alpine AS nuon-cli
+FROM golang:1.25-alpine AS nuon-cli
 
 RUN apk add --update --no-cache curl ca-certificates
 RUN curl https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.602/nuon_linux_amd64 -o /bin/nuon && chmod +x /bin/nuon
 
 FROM public.ecr.aws/p7e3r5y0/kaniko-project/executor:latest  AS kaniko
 
-FROM golang:1.24-alpine AS aws-iam-authenticator
+FROM golang:1.25-alpine AS aws-iam-authenticator
 
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
@@ -59,7 +59,7 @@ RUN curl \
     "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
     && chmod +x aws-iam-authenticator
 
-FROM golang:1.24-alpine AS kubelogin
+FROM golang:1.25-alpine AS kubelogin
 
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
@@ -72,7 +72,7 @@ RUN curl -LO \
     && rm -r bin \
     && chmod +x kubelogin
 
-FROM golang:1.24-alpine AS certs
+FROM golang:1.25-alpine AS certs
 
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
 # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
@@ -158,7 +158,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
 
 # END
 
-FROM golang:1.24-alpine AS final
+FROM golang:1.25-alpine AS final
 
 ARG tag
 
