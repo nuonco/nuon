@@ -2441,8 +2441,6 @@ github.com/nexus-rpc/sdk-go v0.3.0/go.mod h1:TpfkM2Cw0Rlk9drGkoiSMpFqflKTiQLWUNy
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nuonco/gin-swagger v1.6.2 h1:MafFLwTzIoCSmjo9dTu7KMI4XY/RSQSd/GKpyIh9/do=
 github.com/nuonco/gin-swagger v1.6.2/go.mod h1:uTjtvuQS7lK4f8KLmB376B/kb8ypjwV2/zAk6RKV0/k=
-github.com/nuonco/nuon-go v0.92.0 h1:TvHNw68t8C2Du95N6QwBji0fk2iZ2LFYFwCGgVsltFM=
-github.com/nuonco/nuon-go v0.92.0/go.mod h1:lmSoyjpbnQjs9/RrYoP+3xYdlfb2s+HYzTp9880X9kc=
 github.com/nuonco/nuon-go v0.92.1 h1:5WCh7mh1Hb2xz6vF4+eJFcc9nWVmJGCgueRvJAW8YOs=
 github.com/nuonco/nuon-go v0.92.1/go.mod h1:lmSoyjpbnQjs9/RrYoP+3xYdlfb2s+HYzTp9880X9kc=
 github.com/nuonco/nuon-runner-go v0.20.0 h1:Znpacu86j6vGexKwpDLQLw0k1pPWXaKLISYB70KMWU4=

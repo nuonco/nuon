@@ -79,7 +79,7 @@ Team documentation, processes, and company information
 
 ## Key Technologies
 
-- **Backend**: Go 1.24+
+- **Backend**: Go 1.25+
 - **Frontend**: Next.js (React), Astro
 - **Infrastructure**: Terraform, Kubernetes, Helm
 - **Cloud Platforms**: AWS (primary), Azure, GCP
@@ -248,7 +248,7 @@ Infrastructure:
 ### Prerequisites for Full Stack
 
 1. **Docker/Podman** - For infrastructure services
-2. **Go 1.24+** - For Go services
+2. **Go 1.25+** - For Go services
 3. **Node.js** - For frontend services
 4. **AWS Credentials** - Services assume support role for real AWS access
 5. **Auth0 Configuration** - For dashboard authentication
@@ -273,7 +273,7 @@ Infrastructure:
 
 ## Getting Started
 
-1. **Prerequisites**: Go 1.24+, Node.js, Docker, Terraform, kubectl
+1. **Prerequisites**: Go 1.25+, Node.js, Docker, Terraform, kubectl
 2. **Authentication**: Set up cloud credentials (AWS/Azure)
 3. **Local Development**: Start with running the complete stack above
 4. **Documentation**: Visit the `/docs/` directory or internal wiki
