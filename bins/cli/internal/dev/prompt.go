@@ -17,7 +17,7 @@ func prompt(autoApprove bool, msg string, vars ...any) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if !yes {
 		return errors.New("Stopping now")
 	}

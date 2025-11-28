@@ -23,4 +23,3 @@ func (w *handler) readyHandler(ctx workflow.Context, req *ReadyRequest) (*ReadyR
 
 	return &ReadyResponse{}, nil
 }
-

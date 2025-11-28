@@ -4,8 +4,8 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
 	workflow "github.com/powertoolsdev/mono/bins/runner/internal/jobs/actions/workflow"
+	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
 )
 
 func GetJobs() []fx.Option {

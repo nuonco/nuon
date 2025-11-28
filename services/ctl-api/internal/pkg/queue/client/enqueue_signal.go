@@ -18,8 +18,8 @@ func (c *Client) EnqueueSignal(ctx context.Context, queueID string, sig signal.S
 	}
 
 	rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID: q.Workflow.ID,
-		UpdateName: queue.EnqueueUpdateName,
+		WorkflowID:   q.Workflow.ID,
+		UpdateName:   queue.EnqueueUpdateName,
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		Args: []any{
 			sig,
