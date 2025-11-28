@@ -22,4 +22,3 @@ func (c *cli) syncCmd() *cobra.Command {
 
 	return syncCmd
 }
-

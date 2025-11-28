@@ -40,4 +40,3 @@ func (r *RouteRegister) PATCH(router gin.IRouter, relativePath string, handler g
 		r.EndpointAudit.Add("PATCH", string(context), relativePath)
 	}
 }
-

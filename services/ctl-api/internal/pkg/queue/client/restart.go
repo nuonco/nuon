@@ -16,8 +16,8 @@ func (c *Client) Restart(ctx context.Context, queueID string) error {
 	}
 
 	update, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID: q.Workflow.ID,
-		UpdateName: queue.RestartUpdateName,
+		WorkflowID:   q.Workflow.ID,
+		UpdateName:   queue.RestartUpdateName,
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		Args: []any{
 			queue.RestartRequest{},

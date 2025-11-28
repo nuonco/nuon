@@ -27,7 +27,6 @@ func (m *Client) CreateAccount(ctx context.Context, email, subject string, userJ
 	return &acct, nil
 }
 
-
 // DefaultEvaluationJourney returns the evaluation journey for self-signup users without auto-org creation
 func DefaultEvaluationJourney() app.UserJourneys {
 	now := time.Now().UTC()

@@ -4,7 +4,6 @@ import (
 	"go.uber.org/fx"
 )
 
-
 func AsAPI(f any) any {
 	return fx.Annotate(
 		f,

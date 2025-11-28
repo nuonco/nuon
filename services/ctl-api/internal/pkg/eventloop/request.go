@@ -5,7 +5,7 @@ type EventLoopRequest struct {
 	SandboxMode bool
 
 	// state managed between different signals
-	Version                        string
+	Version            string
 	RestartCount       int
 	VersionChangeCount int
 }
