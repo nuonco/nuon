@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/version"
 	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+	"github.com/powertoolsdev/mono/bins/runner/internal/version"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 )
 

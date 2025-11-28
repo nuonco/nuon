@@ -55,5 +55,5 @@ func (p *Planner) getOverrideEnvVars(ctx workflow.Context, run *app.InstallActio
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-        return generics.ToStringMap(run.RunEnvVars), nil
+	return generics.ToStringMap(run.RunEnvVars), nil
 }

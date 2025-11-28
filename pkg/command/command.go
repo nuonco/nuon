@@ -51,7 +51,6 @@ func New(v *validator.Validate, opts ...commandOption) (*command, error) {
 		return nil, fmt.Errorf("unable to validate command: %w", err)
 	}
 
-
 	return l, nil
 }
 

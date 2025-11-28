@@ -64,10 +64,10 @@ type EnqueueTestSuite struct {
 }
 
 func TestSuite(t *testing.T) {
-        if os.Getenv("INTEGRATION") != "true" {
-                t.Skip("INTEGRATION is not set, skipping")
-                return
-        }
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
 
 	suite.Run(t, new(EnqueueTestSuite))
 }

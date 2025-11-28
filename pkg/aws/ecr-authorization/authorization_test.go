@@ -73,8 +73,7 @@ func Test_ecrAuthorizer_getAuthorizationData(t *testing.T) {
 
 			client := test.clientFn(mockCtl)
 
-			authorizer := &ecrAuthorizer{
-			}
+			authorizer := &ecrAuthorizer{}
 			resp, err := authorizer.getAuthorizationData(ctx, client)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
