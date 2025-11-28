@@ -50,9 +50,9 @@ const (
 	OrgFeatureTerraformWorkspace      OrgFeature = "terraform-workspace"
 	OrgFeatureDevCommand              OrgFeature = "dev-command"
 	OrgFeatureAppBranches             OrgFeature = "app-branches"
-  OrgFeatureStratusLayout           OrgFeature = "stratus-layout"
-  OrgFeatureStratusWorkflow         OrgFeature = "stratus-workflow"
-  OrgFeatureTerraformInstaller      OrgFeature = "terraform-installer"
+	OrgFeatureStratusLayout           OrgFeature = "stratus-layout"
+	OrgFeatureStratusWorkflow         OrgFeature = "stratus-workflow"
+	OrgFeatureTerraformInstaller      OrgFeature = "terraform-installer"
 )
 
 type Org struct {
@@ -148,12 +148,12 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	// except org-dashboard and install-break-glass which remain disabled
 	defaultFeatures := map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureOrgDashboard:      false,
-		OrgFeatureInstallBreakGlass: false,
-    OrgFeatureStratusLayout:     false,
-    OrgFeatureStratusWorkflow:   false,
-    OrgFeatureTerraformInstaller: false,
-    
+		OrgFeatureOrgDashboard:       false,
+		OrgFeatureInstallBreakGlass:  false,
+		OrgFeatureStratusLayout:      false,
+		OrgFeatureStratusWorkflow:    false,
+		OrgFeatureTerraformInstaller: false,
+
 		// Enabled by default
 		OrgFeatureAPIPagination:           true,
 		OrgFeatureOrgRunner:               true,
@@ -209,8 +209,8 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureTerraformWorkspace,
 		OrgFeatureDevCommand,
 		OrgFeatureAppBranches,
-    OrgFeatureStratusLayout,
-    OrgFeatureStratusWorkflow,
-    OrgFeatureTerraformInstaller,
+		OrgFeatureStratusLayout,
+		OrgFeatureStratusWorkflow,
+		OrgFeatureTerraformInstaller,
 	}
 }

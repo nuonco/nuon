@@ -15,11 +15,11 @@ type ProvisionRunnerRequestImage struct {
 }
 
 type ProvisionRunnerRequest struct {
-	RunnerID                            string                      `validate:"required"`
-	APIURL                              string                      `validate:"required"`
-	APIToken                            string                      `validate:"required"`
-	Image                               ProvisionRunnerRequestImage `validate:"required"`
-	RunnerIAMRole                       string                      `validate:"required"`
+	RunnerID                 string                      `validate:"required"`
+	APIURL                   string                      `validate:"required"`
+	APIToken                 string                      `validate:"required"`
+	Image                    ProvisionRunnerRequestImage `validate:"required"`
+	RunnerIAMRole            string                      `validate:"required"`
 	RunnerServiceAccountName string                      `validate:"required"`
 }
 

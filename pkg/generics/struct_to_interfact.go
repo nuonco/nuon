@@ -1,6 +1,5 @@
 package generics
 
-
 import (
 	"encoding/json"
 	"fmt"

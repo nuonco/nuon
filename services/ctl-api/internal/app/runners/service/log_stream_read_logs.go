@@ -195,4 +195,3 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 
 	return otelLogRecords, headers, nil
 }
-

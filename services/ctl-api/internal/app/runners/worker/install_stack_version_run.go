@@ -19,9 +19,9 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 	}
 
 	if !generics.SliceContains(runner.Status, []app.RunnerStatus{
-	        app.RunnerStatusAwaitingInstallStackRun, 
-	        app.RunnerStatusPending, 
-        }){
+		app.RunnerStatusAwaitingInstallStackRun,
+		app.RunnerStatusPending,
+	}) {
 		return nil
 	}
 
