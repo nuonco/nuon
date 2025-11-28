@@ -78,4 +78,4 @@ formatters:
     generated: lax
 run:
   timeout: 5m
-  go: "1.24"
+  go: "1.25"
