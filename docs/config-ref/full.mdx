@@ -20,7 +20,6 @@ title: 'Full'
 | `inputs` | `AppInputConfig` | No | input configuration Define inputs that customers provide during installation | - | - |
 | `sandbox` | `AppSandboxConfig` | ✅ Yes | sandbox configuration Sandbox/cluster configuration for the application infrastructure | - | - |
 | `runner` | `AppRunnerConfig` | ✅ Yes | runner configuration Runner configuration for executing deployments and workflows | - | - |
-| `installer` | `InstallerConfig` | No | installer configuration Configuration for the customer-facing installer experience | - | - |
 | `permissions` | `PermissionsConfig` | No | permissions configuration RBAC and permission policies for install access control | - | - |
 | `policies` | `PoliciesConfig` | No | policies configuration Define policies for install management and automation | - | - |
 | `secrets` | `SecretsConfig` | No | secrets configuration Manage secret variables shared across components | - | - |
@@ -29,6 +28,7 @@ title: 'Full'
 | `components` | `ComponentList` | No | component configurations List of components (terraform, helm, containers, etc) to deploy | - | - |
 | `installs` | `array` | No | install configurations Install-specific overrides and configurations | - | - |
 | `actions` | `array` | No | action configurations Custom workflows and actions that can be executed on installs | - | - |
+| `installer` | `object` | No | installer configuration Configuration for the customer-facing installer experience | - | - |
 
 ### Property Details
 

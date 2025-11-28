@@ -60,10 +60,10 @@ export default defineConfig({
           },
         },
         {
-          label: "Sales",
+          label: "Revenue",
           collapsed: true,
           autogenerate: {
-            directory: "sales",
+            directory: "revenue",
           },
         },
         {
