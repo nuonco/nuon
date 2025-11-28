@@ -22,7 +22,7 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	if err != nil {
 		return nil, err
 	}
-	
+
 	steps = append(steps, step)
 
 	sg.nextGroup() // runner health

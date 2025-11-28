@@ -49,8 +49,8 @@ func NewWorkflows(params Params) (*Workflows, error) {
 	tmw, err := tmetrics.New(params.V,
 		tmetrics.WithMetricsWriter(params.MW),
 		tmetrics.WithTags(map[string]string{
-			"namespace": defaultNamespace,
-			"context":   "worker",
+			"namespace":    defaultNamespace,
+			"context":      "worker",
 			"actor-object": "install-action-workflow",
 		}))
 	if err != nil {

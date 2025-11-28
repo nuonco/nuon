@@ -57,7 +57,7 @@ func (a *actInterceptor) ExecuteActivity(
 				zap.String("workflow_type", info.WorkflowType.Name),
 				zap.Any("request_object", in.Args[0]),
 			)
-			
+
 			//NOTE(sk): we dont want to break with errors now, uncomment only after metrics is clear
 			// return nil, temporal.NewNonRetryableApplicationError(
 			// 	"invalid activity request",

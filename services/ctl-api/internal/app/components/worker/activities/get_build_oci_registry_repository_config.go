@@ -32,8 +32,8 @@ func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req 
 		Repository:   compApp.Repository.RepositoryURI,
 		Region:       compApp.Repository.Region,
 		ECRAuth: &credentials.Config{
-			Region: compApp.Repository.Region,
-                        UseDefault: true,
+			Region:     compApp.Repository.Region,
+			UseDefault: true,
 		},
 	}, nil
 }

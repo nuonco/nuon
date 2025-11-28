@@ -17,12 +17,12 @@ func (h *Helpers) CreateActionsWorkflowRunJob(ctx context.Context,
 	metadata map[string]string,
 ) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
-		RunnerID:          runnerID,
-		QueueTimeout:      DefaultQueueTimeout,
-                // NOTE(jm): we create a buffer to allow the runner to finish cleaning up, when a job times out. If this 
-                // is set to the exact timeout, the workflow can not actually cleanup. Thus, this is an arbitrary buffer 
-                // that should never be hit because the runner job would timeout mid-job and mark itself as timed out 
-                // first.
+		RunnerID:     runnerID,
+		QueueTimeout: DefaultQueueTimeout,
+		// NOTE(jm): we create a buffer to allow the runner to finish cleaning up, when a job times out. If this
+		// is set to the exact timeout, the workflow can not actually cleanup. Thus, this is an arbitrary buffer
+		// that should never be hit because the runner job would timeout mid-job and mark itself as timed out
+		// first.
 		ExecutionTimeout:  cfg.Timeout + time.Minute,
 		AvailableTimeout:  DefaultAvailableTimeout,
 		MaxExecutions:     DefaultMaxExecutions,

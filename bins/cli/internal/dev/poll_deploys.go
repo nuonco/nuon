@@ -27,12 +27,12 @@ func (s *Service) pollDeploys(ctx context.Context, installID string, deploys []*
 	defer cancel()
 
 	multiSpinner := bubbles.NewMultiSpinnerView()
-	
+
 	// Add all spinners first
 	for _, dep := range deploys {
 		multiSpinner.AddSpinner(dep.ID, fmt.Sprintf("deploying %s", dep.ComponentName))
 	}
-	
+
 	// Then start the display
 	multiSpinner.Start()
 
@@ -54,7 +54,7 @@ func (s *Service) pollDeploys(ctx context.Context, installID string, deploys []*
 		}
 
 		completedDeploys := make([]string, 0)
-		
+
 		for depID := range depByID {
 			dep := depByID[depID]
 			installDeploy, err := s.api.GetInstallDeploy(ctx, installID, dep.ID)

@@ -38,4 +38,3 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 	})
 	ctx.JSON(http.StatusOK, true)
 }
-

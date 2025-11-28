@@ -34,6 +34,6 @@ func New(params Params) *Helpers {
 		cfg:      params.Cfg,
 		ghClient: params.GhClient,
 		db:       params.DB,
-    l: params.L,
+		l:        params.L,
 	}
 }

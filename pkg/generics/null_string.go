@@ -47,4 +47,3 @@ func NewNullString(val string) NullString {
 		Valid:  val != "",
 	}}
 }
-
