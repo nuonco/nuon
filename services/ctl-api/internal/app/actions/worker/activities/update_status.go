@@ -10,9 +10,9 @@ import (
 )
 
 type UpdateStatusRequest struct {
-	WorkflowID        string        `validate:"required"`
+	WorkflowID        string                   `validate:"required"`
 	Status            app.ActionWorkflowStatus `validate:"required"`
-	StatusDescription string        `validate:"required"`
+	StatusDescription string                   `validate:"required"`
 }
 
 // @temporal-gen activity

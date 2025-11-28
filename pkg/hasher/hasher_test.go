@@ -211,4 +211,3 @@ func TestHashStructMapConsistency(t *testing.T) {
 		t.Logf("✅ Different map data produces different hashes")
 	})
 }
-

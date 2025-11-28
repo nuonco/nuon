@@ -14,7 +14,7 @@ type RunnerTerraform struct {
 	TerraformVersion string `hcl:"terraform_version"`
 
 	// auth for the run itself
-	AWSAuth     *awscredentials.Config   `hcl:"aws_auth,block"`
+	AWSAuth   *awscredentials.Config   `hcl:"aws_auth,block"`
 	AzureAuth *azurecredentials.Config `hcl:"azure_auth,block"`
 
 	// Backend is used to configure where/how the backend is run

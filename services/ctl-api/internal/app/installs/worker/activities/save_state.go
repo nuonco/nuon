@@ -23,7 +23,7 @@ func (a *Activities) SaveState(ctx context.Context, req *SaveStateRequest) (*app
 		InstallID:       req.InstallID,
 		TriggeredByID:   req.TriggeredByID,
 		TriggeredByType: req.TriggeredByType,
-                State: req.State,
+		State:           req.State,
 	}
 
 	res := a.db.WithContext(ctx).
