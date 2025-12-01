@@ -91,3 +91,36 @@ func (l *logger) Error(err error) {
 	emoji.Fprintf(os.Stderr, msg)
 	writeToLogFile(msg)
 }
+
+func EnvVars(envVars map[string]any) {
+	if len(envVars) == 0 {
+		return
+	}
+
+	maxKeyLen := 0
+	for k := range envVars {
+		if len(k) > maxKeyLen {
+			maxKeyLen = len(k)
+		}
+	}
+
+	dollarStyle := styles.TextDim
+	keyStyle := styles.TextSuccess
+	eqStyle := styles.TextDim
+	valStyle := styles.TextSubtle
+
+	for k, v := range envVars {
+		valStr := fmt.Sprintf("%v", v)
+		if len(valStr) > 16 {
+			valStr = valStr[:6] + "..." + valStr[len(valStr)-7:]
+		}
+
+		paddedKey := fmt.Sprintf("%-*s", maxKeyLen, k)
+		fmt.Fprintf(os.Stderr, "  %s %s %s %s\n",
+			dollarStyle.Render("$"),
+			keyStyle.Render(paddedKey),
+			eqStyle.Render("="),
+			valStyle.Render(valStr),
+		)
+	}
+}
