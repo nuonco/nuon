@@ -78,7 +78,7 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		return nil, errors.Wrap(err, "unable to render namespace")
 	}
 
-	driver := cfg.StorageDriver.ValueOrDefault("secrets")
+	driver := cfg.StorageDriver.ValueOrDefault("configmap")
 	renderedDriver, err := render.RenderV2(driver, stateData)
 	if err != nil {
 		l.Error("error rendering driver",

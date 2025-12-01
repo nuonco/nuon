@@ -1,0 +1,46 @@
+{
+    "name": "nuon-lsp",
+    "displayName": "Nuon LSP",
+    "description": "A simple example VSCode client for your local nuon-lsp server",
+    "version": "0.0.1",
+    "publisher": "nuon",
+    "engines": {
+        "vscode": "^1.70.0"
+    },
+    "activationEvents": [
+        "onLanguage:toml"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "toml",
+                "aliases": [
+                    "TOML"
+                ],
+                "extensions": [
+                    ".toml"
+                ]
+            }
+        ],
+        "configuration": {
+            "title": "Nuon LSP",
+            "properties": {
+                "nuonLsp.serverPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to the Nuon LSP server binary. Leave empty to use the bundled binary."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npx vsce package"
+    },
+    "devDependencies": {
+        "vscode-languageclient": "^9.0.1"
+    },
+    "dependencies": {
+        "vscode": "^1.1.37"
+    }
+}
