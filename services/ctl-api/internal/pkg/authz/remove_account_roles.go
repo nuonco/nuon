@@ -21,5 +21,24 @@ func (h *Client) RemoveAccountOrgRoles(ctx context.Context, orgID, accountID str
 		return errors.Wrap(res.Error, "unable to remove roles for account")
 	}
 
+	// This allows re-inviting the same email address after removal
+	var account app.Account
+	if err := h.db.WithContext(ctx).Select("email").Where("id = ?", accountID).First(&account).Error; err != nil {
+		return errors.Wrap(err, "unable to find account for invite cleanup")
+	}
+
+	// Hard delete the invite records using Unscoped()
+	inviteRes := h.db.WithContext(ctx).
+		Unscoped().
+		Where(&app.OrgInvite{
+			OrgID: orgID,
+			Email: account.Email,
+		}).
+		Delete(&app.OrgInvite{})
+
+	if inviteRes.Error != nil {
+		return errors.Wrap(inviteRes.Error, "unable to remove invites for account")
+	}
+
 	return nil
 }
