@@ -38,7 +38,7 @@ export const BuildTimeline = ({
   const { data: builds } = usePolling<TBuild[]>({
     dependencies: [queryParams],
     initData: initBuilds,
-    path: `/api/orgs/${org?.id}/app/${app.id}/components/${componentId}/builds${queryParams}`,
+    path: `/api/orgs/${org?.id}/components/${componentId}/builds${queryParams}`,
     shouldPoll,
     pollInterval,
   })
