@@ -17,7 +17,7 @@ jobs:
     name: default
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Run lints
         uses: powertoolsdev/mono/actions/pr-checks@main
