@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFormatToLineByLine(t *testing.T) {
+func TestFormatToLineByLine(t *testing.T) { //nolint:funlen
 	tests := []struct {
 		name          string
 		input         ResourceDiff

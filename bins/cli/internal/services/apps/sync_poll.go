@@ -13,7 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config/sync"
 )
 
-func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.ComponentState) error {
+func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.ComponentState) error { //nolint:gocyclo
 	// Early return if no components to build
 	if len(comps) == 0 {
 		return nil

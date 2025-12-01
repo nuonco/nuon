@@ -6,7 +6,6 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
@@ -34,7 +33,7 @@ type Activities struct {
 	runnersHelpers  *runnershelpers.Helpers
 	installsHelpers *installshelpers.Helpers
 	vcsHelpers      *vcshelpers.Helpers
-	helpers         *helpers.Helpers
+	helpers         *installshelpers.Helpers
 	evClient        eventloop.Client
 	acctClient      *account.Client
 }

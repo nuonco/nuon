@@ -126,7 +126,6 @@ const (
 
 func (r RunnerJobType) Group() RunnerJobGroup {
 	switch r {
-
 	// builds
 	case RunnerJobTypeDockerBuild,
 		RunnerJobTypeContainerImageBuild,

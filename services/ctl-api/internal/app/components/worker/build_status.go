@@ -34,5 +34,4 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 			zap.Error(err))
 		return
 	}
-
 }

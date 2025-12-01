@@ -45,9 +45,9 @@ func (w *Workflows) ProvisionSandboxApplyPlan(ctx workflow.Context, sreq signals
 	}()
 
 	l.Info("executing plan")
-	if err := w.executeApplyPlan(ctx, install, sandboxRun, sreq.FlowStepID, sreq.SandboxMode); err != nil {
+	if execErr := w.executeApplyPlan(ctx, install, sandboxRun, sreq.FlowStepID, sreq.SandboxMode); execErr != nil {
 		w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusError, "job did not succeed")
-		return errors.Wrap(err, "unable to execute deploy")
+		return errors.Wrap(execErr, "unable to execute deploy")
 	}
 
 	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")

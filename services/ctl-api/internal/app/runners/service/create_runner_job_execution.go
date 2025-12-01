@@ -45,8 +45,8 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 	cctx.SetOrgIDGinContext(ctx, runnerJob.OrgID)
 
 	if runnerJob.ExecutionCount >= runnerJob.MaxExecutions {
-		if _, err := s.cancelRunnerJob(ctx, runnerJobID); err != nil {
-			ctx.Error(errors.Wrap(err, "unable to cancel runner job"))
+		if _, cancelErr := s.cancelRunnerJob(ctx, runnerJobID); cancelErr != nil {
+			ctx.Error(errors.Wrap(cancelErr, "unable to cancel runner job"))
 			return
 		}
 

@@ -8,7 +8,11 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, asJSON bool) error {
+func (s *Service) CreateRun(
+	ctx context.Context,
+	installID, actionWorkflowID string,
+	asJSON bool,
+) error {
 	awc, err := s.api.GetActionWorkflowLatestConfig(ctx, actionWorkflowID)
 	if err != nil {
 		ui.PrintError(fmt.Errorf("error getting action workflow config: %w", err))

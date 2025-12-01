@@ -88,12 +88,12 @@ func (m model) approveAllCmd() tea.Msg {
 		}
 		resp, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, step.ID, step.Approval.ID, req)
 		if err != nil {
-			m.error = err
 			return approveAllMsg{err: err}
 		}
 		m.selectedStepApprovalResponse = resp
+		m.error = nil
 		approved += 1
-		m.fetchWorkflowCmd()
+		m.fetchWorkflowCmd() //nolint:errcheck
 	}
 
 	return approveAllMsg{approved: approved, err: nil}

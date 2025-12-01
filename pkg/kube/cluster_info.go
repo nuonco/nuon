@@ -14,7 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
 )
@@ -90,7 +89,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 	}
 
 	if cInfo.Inline {
-		env, err := credentials.FetchEnv(ctx, cInfo.AWSAuth)
+		env, err := awscredentials.FetchEnv(ctx, cInfo.AWSAuth)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to fetch env")
 		}

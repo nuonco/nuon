@@ -15,7 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) { //nolint:gocyclo,funlen
 	if signal == nil {
 		s := &app.WorkflowStep{
 			Name:          name,
@@ -188,6 +188,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 	return steps, nil
 }
 
+//nolint:gocyclo
 func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Workflow, componentIDs []string, sg *stepGroup) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -218,7 +219,6 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				return nil, err
 			}
 			steps = append(steps, preDeploySteps...)
-
 		}
 		// sync image
 		if comp.Type.IsImage() && !flw.PlanOnly {
@@ -365,9 +365,10 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 
 	var lifecycleSteps []*app.WorkflowStep
 	if !flw.PlanOnly {
-		lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg)
-		if err != nil {
-			return nil, err
+		var lcErr error
+		lifecycleSteps, lcErr = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg)
+		if lcErr != nil {
+			return nil, lcErr
 		}
 		steps = append(steps, lifecycleSteps...)
 	}
@@ -377,6 +378,7 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 	}
 	steps = append(steps, deploySteps...)
 	if !flw.PlanOnly {
+		var err error
 		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg)
 		if err != nil {
 			return nil, err

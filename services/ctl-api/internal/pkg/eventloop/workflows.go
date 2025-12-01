@@ -38,7 +38,11 @@ func (e *evClient) GetWorkflowStatus(ctx context.Context, namespace string, work
 }
 
 func (e evClient) GetWorkflowCount(ctx context.Context, namespace string, workflowId string) (int64, error) {
-	nsClient, err := e.client.GetNamespaceClient(namespace)
+	nsClient, nsErr := e.client.GetNamespaceClient(namespace)
+	if nsErr != nil {
+		e.l.Error(fmt.Sprintf("[evClient.GetWorkflowCount] %v", nsErr))
+		return 0, nsErr
+	}
 	// get total count of executions: use value in metrics
 	wfcRequest := workflowservice.CountWorkflowExecutionsRequest{
 		Namespace: namespace,

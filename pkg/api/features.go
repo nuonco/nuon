@@ -7,7 +7,7 @@ import (
 )
 
 func (c *client) GetFeatures(ctx context.Context) ([]string, error) {
-	endpoint := fmt.Sprintf("/v1/orgs/admin-features")
+	endpoint := "/v1/orgs/admin-features"
 	byts, err := c.execGetRequest(ctx, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute get request: %w", err)

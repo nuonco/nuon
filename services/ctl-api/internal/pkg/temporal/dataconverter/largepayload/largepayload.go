@@ -58,7 +58,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 		if res := d.db.WithContext(ctx).Create(&dbPayload); res.Error != nil {
 			d.l.Error("error encoding using large payload codec", zap.Error(res.Error))
 			panic("error encoding" + res.Error.Error())
-			return nil, errors.Wrap(res.Error, "unable to write temporal payload")
 		}
 
 		// Create new payload with compressed data

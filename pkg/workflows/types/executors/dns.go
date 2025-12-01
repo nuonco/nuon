@@ -25,6 +25,7 @@ func ProvisionDNSIDCallback(req *ProvisionDNSDelegationRequest) string {
 // @id-callback ProvisionDNSIDCallback
 func ProvisionDNSDelegation(workflow.Context, *ProvisionDNSDelegationRequest) (*ProvisionDNSDelegationResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
+	//nolint:govet
 	return nil, nil
 }
 
@@ -46,5 +47,6 @@ func DeprovisionDNSIDCallback(req *DeprovisionDNSDelegationRequest) string {
 // @id-callback DeprovisionDNSIDCallback
 func DeprovisionDNSDelegation(workflow.Context, *DeprovisionDNSDelegationRequest) (*DeprovisionDNSDelegationResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
+	//nolint:govet
 	return nil, nil
 }

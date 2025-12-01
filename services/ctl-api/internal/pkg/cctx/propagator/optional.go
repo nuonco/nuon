@@ -22,7 +22,10 @@ func (s *optionalPropagator) Inject(ctx context.Context, writer workflow.HeaderW
 	return nil
 }
 
-func (s *optionalPropagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.HeaderWriter) error {
+func (s *optionalPropagator) InjectFromWorkflow(
+	ctx workflow.Context,
+	writer workflow.HeaderWriter,
+) error {
 	if err := s.propagator.InjectFromWorkflow(ctx, writer); err != nil {
 		s.l.Debug("propagator inject from workflow failed", zap.Error(err))
 	}

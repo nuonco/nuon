@@ -116,7 +116,12 @@ func loadWorkflows(ctx context.Context, api nuon.Client, installID string, offse
 	}
 }
 
-func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, installID string) model {
+func initialModel(
+	ctx context.Context,
+	cfg *config.Config,
+	api nuon.Client,
+	installID string,
+) model {
 	columns := []table.Column{
 		{Title: "ID", Width: 28},
 		{Title: "NAME", Width: 20},
@@ -170,6 +175,7 @@ func (m model) Init() tea.Cmd {
 	)
 }
 
+//nolint:gocyclo,funlen
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 

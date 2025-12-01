@@ -54,19 +54,19 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 
 	if acct.AccountType == app.AccountTypeService {
 		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("This email is not allowed to create new orgs."),
+			Err:         fmt.Errorf("this email is not allowed to create new orgs"),
 			Description: "Please reach out to team@nuon.co for access.",
 		})
 		return
 	}
 
 	req := CreateOrgRequest{}
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err2 := ctx.BindJSON(&req); err2 != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err2))
 		return
 	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if err3 := req.Validate(s.v); err3 != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err3))
 		return
 	}
 

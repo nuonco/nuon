@@ -1,11 +1,11 @@
 package flow
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"golang.org/x/net/context"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -33,7 +33,6 @@ func (c *WorkflowConductor[DomainSignal]) checkStepCancellation(ctx workflow.Con
 		}); err != nil {
 			return err
 		}
-
 	}
 
 	return nil
@@ -61,7 +60,7 @@ func (c *WorkflowConductor[DomainSignal]) handleCancellation(ctx workflow.Contex
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
 				ID: cancelStep.ID,
 				Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
-					"reason": fmt.Sprintf("%s and workflow was configured with abort-on-error.", FlowCancellationErr.Error()),
+					"reason": fmt.Sprintf("%s and workflow was configured with abort-on-error.", ErrFlowCancellation.Error()),
 				}),
 			}); err != nil {
 				return errors.Wrap(err, "unable to cancel step after cancelled workflow")
@@ -73,7 +72,7 @@ func (c *WorkflowConductor[DomainSignal]) handleCancellation(ctx workflow.Contex
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
 		ID: stepID,
 		Status: app.NewCompositeTemporalStatus(ctx, app.StatusCancelled, map[string]any{
-			"reason": FlowCancellationErr.Error(),
+			"reason": ErrFlowCancellation.Error(),
 		}),
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install workflow step as cancelled")

@@ -35,7 +35,10 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.New("component id is not set on the install workflow for a manual deploy")
 	}
 
-	steps := make([]*app.WorkflowStep, 0)
+	steps := make([]*app.WorkflowStep, 0, 10)
+	if step != nil {
+		steps = append(steps, step)
+	}
 	sg.nextGroup() // await runner health
 	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
@@ -58,33 +61,33 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 	sg.nextGroup() // teardown sync + plan + apply
 	if !comp.Type.IsImage() {
-		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		deployStep, teardownErr := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: generics.FromPtrStr(componentID),
 			},
 		}, flw.PlanOnly, WithSkippable(false))
-		if err != nil {
-			return nil, err
+		if teardownErr != nil {
+			return nil, teardownErr
 		}
 		steps = append(steps, deployStep)
 
-		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
+		applyStep, applyErr := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteTeardownComponentApplyPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: generics.FromPtrStr(componentID),
 			},
 		}, flw.PlanOnly)
-		if err != nil {
-			return nil, err
+		if applyErr != nil {
+			return nil, applyErr
 		}
 		steps = append(steps, applyStep)
 	} else {
-		deployStep, err := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
+		deployStep, deployErr := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
 			"reason": generics.ToPtr("skipped image teardown"),
 		}, nil, false)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create skip step")
+		if deployErr != nil {
+			return nil, errors.Wrap(deployErr, "unable to create skip step")
 		}
 		steps = append(steps, deployStep)
 	}

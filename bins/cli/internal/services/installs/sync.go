@@ -69,10 +69,10 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 
 func (s *Service) listAllAppInstalls(ctx context.Context, appID string) (map[string]*models.AppInstall, error) {
 	var (
-		hasMore bool = true
+		hasMore = true
 		offset  int
-		limit   int = 50
-		result      = make(map[string]*models.AppInstall)
+		limit   = 50
+		result  = make(map[string]*models.AppInstall)
 	)
 	for hasMore {
 		installs, more, err := s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{
@@ -95,9 +95,9 @@ func readInstallConfigs(fileOrDir string) ([]*config.Install, error) {
 	fileInfo, err := os.Stat(fileOrDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("path '%s' does not exist.\n", fileOrDir)
+			return nil, fmt.Errorf("path '%s' does not exist", fileOrDir)
 		} else {
-			return nil, fmt.Errorf("error accessing path '%s': %v\n", fileOrDir, err)
+			return nil, fmt.Errorf("error accessing path '%s': %v", fileOrDir, err)
 		}
 	}
 
@@ -117,7 +117,7 @@ func readInstallConfigs(fileOrDir string) ([]*config.Install, error) {
 		return []*config.Install{install}, nil
 	}
 
-	return nil, fmt.Errorf("Path '%s' is neither a regular file nor a directory (e.g., a symbolic link, device file).\n", fileOrDir)
+	return nil, fmt.Errorf("path '%s' is neither a regular file nor a directory (e.g., a symbolic link, device file)", fileOrDir)
 }
 
 func readInstallConfigsFromDir(fileOrDir string) ([]*config.Install, error) {

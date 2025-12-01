@@ -51,7 +51,6 @@ func (s *svc) getKubeHandler(ctx context.Context) (*kubeResponse, error) {
 			Name:   ns.Name,
 			Status: ns.Status,
 		})
-
 	}
 	return resp, nil
 }

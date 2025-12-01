@@ -156,7 +156,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	if i.AppRunnerConfig.ID != "" {
 		i.CloudPlatform = i.AppRunnerConfig.CloudPlatform
 		i.RunnerType = i.AppRunnerConfig.Type
-
 	} else {
 		i.CloudPlatform = CloudPlatformUnknown
 		i.RunnerType = AppRunnerTypeUnknown

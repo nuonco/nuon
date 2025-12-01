@@ -13,7 +13,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.DeployPlan, error) {
+//nolint:gocyclo
+func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.DeployPlan, error) { //nolint:funlen
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -66,26 +67,26 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.NoopDeployPlan = p.createNoopDeployPlan()
 	case app.ComponentTypeTerraformModule:
 		l.Info("generating terraform plan")
-		tfPlan, err := p.createTerraformDeployPlan(ctx, req)
-		if err != nil {
-			l.Info("error generating terraform plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to create terraform deploy plan")
+		tfPlan, tfErr := p.createTerraformDeployPlan(ctx, req)
+		if tfErr != nil {
+			l.Info("error generating terraform plan", zap.Error(tfErr))
+			return nil, errors.Wrap(tfErr, "unable to create terraform deploy plan")
 		}
 		plan.TerraformDeployPlan = tfPlan
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
-		helmPlan, err := p.createHelmDeployPlan(ctx, req)
-		if err != nil {
-			l.Error("error generating helm plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to helm deploy plan")
+		helmPlan, helmErr := p.createHelmDeployPlan(ctx, req)
+		if helmErr != nil {
+			l.Error("error generating helm plan", zap.Error(helmErr))
+			return nil, errors.Wrap(helmErr, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
 	case app.ComponentTypeKubernetesManifest:
 		l.Info("generating kubernetes manifest plan")
-		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req)
-		if err != nil {
-			l.Error("error generating kubernetes manifest plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
+		kubernetesManifestPlan, k8sErr := p.createKubernetesManifestDeployPlan(ctx, req)
+		if k8sErr != nil {
+			l.Error("error generating kubernetes manifest plan", zap.Error(k8sErr))
+			return nil, errors.Wrap(k8sErr, "unable to kubernets manifest deploy plan")
 		}
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 	}

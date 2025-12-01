@@ -67,5 +67,4 @@ func (s *service) deleteHelmRelease(ctx *gin.Context, installID, namespace, key 
 		return res.Error
 	}
 	return nil
-
 }
