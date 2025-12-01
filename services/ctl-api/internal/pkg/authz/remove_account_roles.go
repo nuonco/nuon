@@ -9,8 +9,9 @@ import (
 )
 
 func (h *Client) RemoveAccountOrgRoles(ctx context.Context, orgID, accountID string) error {
-	// Delete all roles for the account in the specified organization
+	// Hard delete all roles for the account in the specified organization
 	res := h.db.WithContext(ctx).
+		Unscoped().
 		Where(app.AccountRole{
 			OrgID:     generics.NewNullString(orgID),
 			AccountID: accountID,
