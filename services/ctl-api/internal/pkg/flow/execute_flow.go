@@ -28,7 +28,7 @@ func NewContinueAsNewErr(startsFromStepIdx int) *ContinueAsNewErr {
 	}
 }
 
-func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId string, startFromStepIdx int) error {
+func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId string, startFromStepIdx int) error { //nolint:gocyclo,funlen
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -49,39 +49,39 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer cancelCtxCancel()
 
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+			if cancelStatusErr := statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
 				ID: flowId,
 				Status: app.CompositeStatus{
 					Status: app.StatusCancelled,
 				},
-			}); err != nil {
-				l.Error("unable to update status on cancellation", zap.Error(err))
+			}); cancelStatusErr != nil {
+				l.Error("unable to update status on cancellation", zap.Error(cancelStatusErr))
 			}
 		}
 	}()
 
 	if startFromStepIdx == 0 {
-		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, flowId); err != nil {
-			return err
+		if flowStartErr := activities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, flowId); flowStartErr != nil {
+			return flowStartErr
 		}
 	}
 
 	l.Debug("generating steps for workflow")
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+	if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flowId,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
 			StatusHumanDescription: "generating steps for workflow",
 		},
-	}); err != nil {
-		return err
+	}); statusErr != nil {
+		return statusErr
 	}
 
 	// Generate steps works only for the first execution of the workflow,
 	// if steps already exists, it skips generating steps.
 	flw, err = c.generateSteps(ctx, flw)
 	if err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: flowId,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusError,
@@ -90,20 +90,20 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 					"error_message": err.Error(),
 				},
 			},
-		}); err != nil {
-			return err
+		}); statusErr != nil {
+			return statusErr
 		}
 
 		return errors.Wrap(err, "unable to generate workflow steps")
 	}
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+	if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flowId,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
 			StatusHumanDescription: "successfully generated all steps",
 		},
-	}); err != nil {
-		return err
+	}); statusErr != nil {
+		return statusErr
 	}
 
 	l.Debug("executing steps for workflow")
@@ -115,8 +115,8 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 		}
 	}
 
-	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, flowId); err != nil {
-		l.Error("unable to update finished at", zap.Error(err))
+	if finishedErr := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, flowId); finishedErr != nil {
+		l.Error("unable to update finished at", zap.Error(finishedErr))
 	}
 
 	if err != nil {
@@ -128,11 +128,11 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 			},
 		}
 
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID:     flowId,
 			Status: status,
-		}); err != nil {
-			return err
+		}); statusErr != nil {
+			return statusErr
 		}
 
 		return errors.Wrap(err, "unable to execute workflow steps")

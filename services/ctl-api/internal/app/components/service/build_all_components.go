@@ -51,7 +51,6 @@ func (s *service) BuildAllComponents(ctx *gin.Context) {
 		return
 
 	}
-
 	var comp []*app.Component
 	limit := 10
 	offset := 0

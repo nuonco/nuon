@@ -14,7 +14,6 @@ func (s *Service) PrintConfig(asJSON bool) error {
 		fmt.Println("No config set")
 		return nil
 	} else {
-
 		if asJSON {
 			ui.PrintJSON(settings)
 			return nil

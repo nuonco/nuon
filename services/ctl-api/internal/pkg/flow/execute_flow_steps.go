@@ -16,7 +16,7 @@ const (
 	workflowStepBatchSize = 5
 )
 
-var FlowCancellationErr = fmt.Errorf("workflow cancelled")
+var ErrFlowCancellation = fmt.Errorf("workflow cancelled")
 
 func (c *WorkflowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Workflow) error {
 	return c.executeFlowSteps(ctx, req, flw, 0)
@@ -24,7 +24,7 @@ func (c *WorkflowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req
 
 func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Workflow, startingStepNumber int) error {
 	if flw.Status.Status == app.StatusCancelled {
-		return FlowCancellationErr
+		return ErrFlowCancellation
 	}
 
 	steps := flw.Steps
@@ -57,15 +57,15 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 		}
 
 		if errors.Is(err, ErrNotApproved) {
-			if err := c.cancelFutureSteps(ctx, flw, i, "workflow step was not approved"); err != nil {
-				return errors.Wrap(err, "unable to cancel future steps "+err.Error())
+			if cancelErr := c.cancelFutureSteps(ctx, flw, i, "workflow step was not approved"); cancelErr != nil {
+				return errors.Wrap(cancelErr, "unable to cancel future steps "+cancelErr.Error())
 			}
 			return err
 		}
 
 		// if the workflow was configured to abort, then go ahead and abort and do not attempt future steps
-		if err := c.cancelFutureSteps(ctx, flw, i, "workflow step failed"); err != nil {
-			return errors.Wrap(err, "unable to cancel future steps "+err.Error())
+		if cancelErr := c.cancelFutureSteps(ctx, flw, i, "workflow step failed"); cancelErr != nil {
+			return errors.Wrap(cancelErr, "unable to cancel future steps "+cancelErr.Error())
 		}
 		return err
 	}

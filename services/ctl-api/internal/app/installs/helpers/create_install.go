@@ -34,7 +34,7 @@ type CreateInstallParams struct {
 	Metadata InstallMetadata `json:"metadata,omitempty"`
 }
 
-func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
+func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) { //nolint:gocyclo,funlen
 	parentApp := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Components").
@@ -60,8 +60,8 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
 	}
-	if err := s.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); err != nil {
-		return nil, err
+	if validateErr := s.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); validateErr != nil {
+		return nil, validateErr
 	}
 
 	install := app.Install{
@@ -121,17 +121,17 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	if req.InstallConfig != nil {
-		_, err := s.CreateInstallConfig(ctx, install.ID, req.InstallConfig)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create install config: %w", err)
+		_, configErr := s.CreateInstallConfig(ctx, install.ID, req.InstallConfig)
+		if configErr != nil {
+			return nil, fmt.Errorf("unable to create install config: %w", configErr)
 		}
 	}
 
-	if err := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); err != nil {
-		return nil, fmt.Errorf("unable to ensure install components: %w", err)
+	if componentErr := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); componentErr != nil {
+		return nil, fmt.Errorf("unable to ensure install components: %w", componentErr)
 	}
-	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, []string{install.ID}); err != nil {
-		return nil, fmt.Errorf("unable to ensure install components: %w", err)
+	if actionErr := s.actionsHelpers.EnsureInstallAction(ctx, appID, []string{install.ID}); actionErr != nil {
+		return nil, fmt.Errorf("unable to ensure install components: %w", actionErr)
 	}
 
 	//if err := s.EnsureInstallSandbox(ctx, appID, []string{install.ID}); err != nil {

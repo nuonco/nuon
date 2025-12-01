@@ -23,5 +23,5 @@ func SetIsEmployeeWorkflowContext(ctx workflow.Context, isEmployee bool) workflo
 }
 
 func SetIsEmployeeContext(ctx context.Context, isEmployee bool) context.Context {
-	return context.WithValue(ctx, keys.IsEmployeeCtxKey, isEmployee)
+	return context.WithValue(ctx, keys.IsEmployeeCtxKey, isEmployee) //nolint:staticcheck
 }

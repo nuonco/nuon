@@ -57,15 +57,14 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 		)
 	} else {
 		l.Info("calculating helm diff", zap.String("operation", "install"), zap.String("exec", "install"))
-		rel, err := client.RunWithContext(ctx, chart, values)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		dryRel, dryErr := client.RunWithContext(ctx, chart, values)
+		if dryErr != nil {
+			return nil, errors.Wrap(dryErr, "unable to execute with dry-run")
 		}
-		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
-		if err := h.logDiff(l, map[string]*manifest.MappingResult{}, newMapping); err != nil {
-			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		newMapping := manifest.Parse(dryRel.Manifest, dryRel.Namespace, true)
+		if logErr := h.logDiff(l, map[string]*manifest.MappingResult{}, newMapping); logErr != nil {
+			return nil, errors.Wrap(logErr, "unable to execute with dry-run")
 		}
-
 	}
 
 	l.Info("running helm install")

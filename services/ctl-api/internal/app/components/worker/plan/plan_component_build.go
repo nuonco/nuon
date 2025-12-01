@@ -10,7 +10,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPlanRequest) (*plantypes.BuildPlan, error) {
+//nolint:gocyclo
+func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPlanRequest) (*plantypes.BuildPlan, error) { //nolint:funlen
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -48,39 +49,39 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 	switch build.ComponentConfigConnection.Type {
 	case app.ComponentTypeDockerBuild:
 		l.Info("generating docker build plan")
-		subPlan, err := p.createDockerBuildPlan(ctx, build)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create docker build plan")
+		subPlan, dockerErr := p.createDockerBuildPlan(ctx, build)
+		if dockerErr != nil {
+			return nil, errors.Wrap(dockerErr, "unable to create docker build plan")
 		}
 		plan.DockerBuildPlan = subPlan
 
 	case app.ComponentTypeExternalImage:
 		l.Info("generating container image build plan")
-		subPlan, err := p.createContainerImageBuildPlan(ctx, build)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create docker build plan")
+		subPlan, containerErr := p.createContainerImageBuildPlan(ctx, build)
+		if containerErr != nil {
+			return nil, errors.Wrap(containerErr, "unable to create docker build plan")
 		}
 		plan.ContainerImagePullPlan = subPlan
 
 	case app.ComponentTypeTerraformModule:
 		l.Info("generating terraform build plan")
-		tfPlan, err := p.createTerraformBuildPlan(ctx, build)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create terraform deploy plan")
+		tfPlan, tfErr := p.createTerraformBuildPlan(ctx, build)
+		if tfErr != nil {
+			return nil, errors.Wrap(tfErr, "unable to create terraform deploy plan")
 		}
 		plan.TerraformBuildPlan = tfPlan
 
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
 
-		helmCompCfg, err := activities.AwaitGetHelmComponentConfigByComponentConfigConnectionID(ctx, build.ComponentConfigConnectionID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get helm component config")
+		helmCompCfg, helmCfgErr := activities.AwaitGetHelmComponentConfigByComponentConfigConnectionID(ctx, build.ComponentConfigConnectionID)
+		if helmCfgErr != nil {
+			return nil, errors.Wrap(helmCfgErr, "unable to get helm component config")
 		}
 
-		helmPlan, err := p.createHelmBuildPlan(ctx, build, helmCompCfg)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to helm deploy plan")
+		helmPlan, helmErr := p.createHelmBuildPlan(ctx, build, helmCompCfg)
+		if helmErr != nil {
+			return nil, errors.Wrap(helmErr, "unable to helm deploy plan")
 		}
 		plan.HelmBuildPlan = helmPlan
 	}

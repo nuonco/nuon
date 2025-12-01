@@ -21,13 +21,13 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	}
 
 	l.Info("initializing archive...")
-	if err := h.state.arch.Initialize(ctx); err != nil {
-		return fmt.Errorf("unable to initialize archive: %w", err)
+	if initErr := h.state.arch.Initialize(ctx); initErr != nil {
+		return fmt.Errorf("unable to initialize archive: %w", initErr)
 	}
 
 	l.Info("unpacking archive...")
-	if err := h.state.arch.Unpack(ctx, h.state.srcCfg, h.state.srcTag); err != nil {
-		return fmt.Errorf("unable to unpack archive: %w", err)
+	if unpackErr := h.state.arch.Unpack(ctx, h.state.srcCfg, h.state.srcTag); unpackErr != nil {
+		return fmt.Errorf("unable to unpack archive: %w", unpackErr)
 	}
 
 	h.state.chartPath = filepath.Join(h.state.arch.BasePath(), defaultChartPackageFilename)

@@ -33,7 +33,6 @@ func (r RunnerStatus) String() string {
 
 func (r RunnerStatus) Code() int {
 	switch r {
-
 	// 2xx are for unknown
 	case RunnerStatusPending:
 		return 200

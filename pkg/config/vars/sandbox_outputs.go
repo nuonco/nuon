@@ -7,7 +7,6 @@ import (
 	sandboxes "github.com/nuonco/sandboxes/pkg/sandboxes"
 	awsecs "github.com/nuonco/sandboxes/pkg/sandboxes/aws-ecs"
 	awseks "github.com/nuonco/sandboxes/pkg/sandboxes/aws-eks"
-	azureaks "github.com/nuonco/sandboxes/pkg/sandboxes/azure-aks"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -105,13 +104,4 @@ func (v *varsValidator) awsEKSSandboxOutputs() (map[string]interface{}, error) {
 
 func (v *varsValidator) azureAKSSandboxOutputs() (map[string]interface{}, error) {
 	return map[string]interface{}{}, nil
-
-	// TODO(jm): this panics
-	obj := generics.GetFakeObj[azureaks.TerraformOutputs]()
-	data := make(map[string]interface{})
-	if err := mapstructure.Decode(obj, &data); err != nil {
-		return nil, errors.Wrap(err, "unable to convert to mapstructure")
-	}
-
-	return data, nil
 }

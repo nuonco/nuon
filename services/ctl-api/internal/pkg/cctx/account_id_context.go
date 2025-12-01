@@ -24,7 +24,7 @@ func SetAccountIDWorkflowContext(ctx workflow.Context, acctID string) workflow.C
 }
 
 func SetAccountIDContext(ctx context.Context, acctID string) context.Context {
-	return context.WithValue(ctx, keys.AccountIDCtxKey, acctID)
+	return context.WithValue(ctx, keys.AccountIDCtxKey, acctID) //nolint:staticcheck
 }
 
 func SetAccountIDGinContext(ctx *gin.Context, acctID string) {

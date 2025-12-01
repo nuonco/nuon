@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_s3_extract(t *testing.T) {
+func Test_s3_extract(t *testing.T) { //nolint:funlen
 	ctx := context.Background()
 
 	tests := map[string]struct {

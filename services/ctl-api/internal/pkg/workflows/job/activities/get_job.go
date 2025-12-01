@@ -14,7 +14,10 @@ type GetJobRequest struct {
 
 // @temporal-gen activity
 // @by-id ID
-func (a *Activities) PkgWorkflowsJobGetJob(ctx context.Context, req *GetJobRequest) (*app.RunnerJob, error) {
+func (a *Activities) PkgWorkflowsJobGetJob(
+	ctx context.Context,
+	req *GetJobRequest,
+) (*app.RunnerJob, error) {
 	job := app.RunnerJob{}
 	res := a.db.WithContext(ctx).
 		Scopes(scopes.WithDisableViews).

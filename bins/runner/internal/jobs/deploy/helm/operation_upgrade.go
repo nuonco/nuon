@@ -16,6 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
+//nolint:funlen
 func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (*release.Release, error) {
 	l.Info("fetching previous release")
 	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
@@ -69,16 +70,15 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 			crdZapFieldList...,
 		)
 	} else {
-
 		l.Info("calculating helm diff")
-		rel, err := client.RunWithContext(ctx, prevRel.Name, chart, values)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		rel, runErr := client.RunWithContext(ctx, prevRel.Name, chart, values)
+		if runErr != nil {
+			return nil, errors.Wrap(runErr, "unable to execute with dry-run")
 		}
 		prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
 		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
-		if err := h.logDiff(l, prevMapping, newMapping); err != nil {
-			return nil, errors.Wrap(err, "unable to execute with dry-run")
+		if logErr := h.logDiff(l, prevMapping, newMapping); logErr != nil {
+			return nil, errors.Wrap(logErr, "unable to execute with dry-run")
 		}
 	}
 

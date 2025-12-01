@@ -145,7 +145,6 @@ func (c *Config) BindCobraFlags(cmd *cobra.Command) {
 		if !f.Changed && c.IsSet(name) {
 			val := c.Get(name)
 
-			//nolint:all
 			cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val))
 		}
 	})

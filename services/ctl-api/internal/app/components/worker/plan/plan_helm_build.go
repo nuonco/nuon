@@ -9,7 +9,6 @@ import (
 )
 
 func (p *Planner) createHelmBuildPlan(ctx workflow.Context, bld *app.ComponentBuild, helmCompCfg *app.HelmComponentConfig) (*plantypes.HelmBuildPlan, error) {
-
 	var helmCfg *config.HelmRepoConfig
 	if helmCompCfg.HelmConfig.HelmRepoConfig != nil {
 		helmCfg = &config.HelmRepoConfig{

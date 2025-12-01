@@ -26,9 +26,9 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 
 	// 1. YAML validation
 	var yamlData interface{}
-	if err := yaml.Unmarshal([]byte(manifestContent), &yamlData); err != nil {
-		l.Error("failed to parse YAML manifest", zap.Error(err))
-		return fmt.Errorf("invalid YAML format: %w", err)
+	if yamlErr := yaml.Unmarshal([]byte(manifestContent), &yamlData); yamlErr != nil {
+		l.Error("failed to parse YAML manifest", zap.Error(yamlErr))
+		return fmt.Errorf("invalid YAML format: %w", yamlErr)
 	}
 	l.Debug("YAML validation passed")
 

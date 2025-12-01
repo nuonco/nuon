@@ -95,7 +95,7 @@ func (m MultiSpinnerModel) Init() tea.Cmd {
 }
 
 // Update handles messages for all spinners
-func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:gocyclo
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.Type == tea.KeyCtrlC || msg.Type == tea.KeyEsc {
@@ -265,7 +265,7 @@ func (v *MultiSpinnerView) Start() {
 	go func() {
 		defer close(v.done)
 		if _, err := v.program.Run(); err != nil {
-			// Handle error if needed
+			_ = err // Error is intentionally ignored for background program
 		}
 	}()
 

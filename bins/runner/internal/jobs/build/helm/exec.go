@@ -35,8 +35,8 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("packing chart into archive")
-	if err := h.state.arch.Pack(ctx, l, srcFiles); err != nil {
-		return fmt.Errorf("unable to pack archive with helm archive: %w", err)
+	if err2 := h.state.arch.Pack(ctx, l, srcFiles); err2 != nil {
+		return fmt.Errorf("unable to pack archive with helm archive: %w", err2)
 	}
 
 	l.Info("copying archive to destination")

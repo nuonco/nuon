@@ -21,10 +21,10 @@ func (s *Service) Delete(ctx context.Context, appID string, asJSON bool) error {
 			return err
 		}
 
-		res, err := s.api.DeleteApp(ctx, appID)
-		if err != nil {
-			ui.PrintJSONError(err)
-			return err
+		res, deleteErr := s.api.DeleteApp(ctx, appID)
+		if deleteErr != nil {
+			ui.PrintJSONError(deleteErr)
+			return deleteErr
 		}
 		type response struct {
 			ID      string `json:"id"`

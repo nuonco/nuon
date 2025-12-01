@@ -77,15 +77,15 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	}
 
 	// Deprecated: for now we dual write both the plan json and the composite plan
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if savePlanErr := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			SyncOCIPlan: runPlan,
 		},
-	}); err != nil {
+	}); savePlanErr != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to get install: %w", savePlanErr)
 	}
 
 	// queue job

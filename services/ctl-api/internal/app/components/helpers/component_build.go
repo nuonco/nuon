@@ -9,7 +9,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
+func (s *Helpers) CreateComponentBuild(
+	ctx context.Context,
+	cmpID string,
+	useLatest bool,
+	gitRef *string,
+) (*app.ComponentBuild, error) {
 	cmp, err := s.GetComponent(ctx, cmpID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component: %w", err)

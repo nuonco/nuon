@@ -30,7 +30,7 @@ func (m middleware) Name() string {
 }
 
 func (m middleware) Handler() gin.HandlerFunc {
-	return gin.CustomRecovery(func(ctx *gin.Context, err any) {
+	return gin.CustomRecovery(func(ctx *gin.Context, _ any) {
 		attrs := []zap.Field{
 			zap.String("path", ctx.FullPath()),
 			zap.String("method", ctx.Request.Method),

@@ -44,14 +44,14 @@ func (s *service) CreateRunnerJobExecutionOutputs(ctx *gin.Context) {
 		return
 	}
 
-	if err := authz.CanCreate(ctx, jobExecution.OrgID); err != nil {
-		ctx.Error(err)
+	if authzErr := authz.CanCreate(ctx, jobExecution.OrgID); authzErr != nil {
+		ctx.Error(authzErr)
 		return
 	}
 
 	var req CreateRunnerJobExecutionOutputsRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to parse request"))
+	if bindErr := ctx.BindJSON(&req); bindErr != nil {
+		ctx.Error(errors.Wrap(bindErr, "unable to parse request"))
 		return
 	}
 

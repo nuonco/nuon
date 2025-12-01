@@ -24,7 +24,12 @@ type MapTestStruct struct {
 func TestHashStructBasic(t *testing.T) {
 	t.Run("ignored_fields_dont_affect_hash", func(t *testing.T) {
 		s1 := TestStruct{ID: 1, Name: "test", Password: "secret1", Age: 25}
-		s2 := TestStruct{ID: 1, Name: "test", Password: "secret2", Age: 25} // Different ignored field
+		s2 := TestStruct{
+			ID:       1,
+			Name:     "test",
+			Password: "secret2",
+			Age:      25,
+		} // Different ignored field
 
 		hash1, err1 := HashStruct(s1, StructHasherOptions{})
 		if err1 != nil {
@@ -47,7 +52,13 @@ func TestHashStructBasic(t *testing.T) {
 
 	t.Run("included_fields_affect_hash", func(t *testing.T) {
 		s1 := TestStruct{ID: 1, Name: "test", Password: "secret", Age: 25, Phonenumber: nil}
-		s2 := TestStruct{ID: 1, Name: "different", Password: "secret", Age: 25, Phonenumber: nil} // Different included field
+		s2 := TestStruct{
+			ID:          1,
+			Name:        "different",
+			Password:    "secret",
+			Age:         25,
+			Phonenumber: nil,
+		} // Different included field
 
 		hash1, err1 := HashStruct(s1, StructHasherOptions{EnableOmitEmpty: false})
 		if err1 != nil {
@@ -69,7 +80,7 @@ func TestHashStructBasic(t *testing.T) {
 	})
 }
 
-func TestHashStructMapConsistency(t *testing.T) {
+func TestHashStructMapConsistency(t *testing.T) { //nolint:funlen
 	t.Run("map_same_data_different_insertion_order", func(t *testing.T) {
 		m1 := MapTestStruct{
 			Name: "test",

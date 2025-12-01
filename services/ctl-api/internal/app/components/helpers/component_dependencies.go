@@ -20,9 +20,13 @@ func (h *Helpers) ClearComponentDependencies(ctx context.Context, compID string)
 	return nil
 }
 
-// NOTE: GORM does not support callbacks when using a custom join table on many2many relationships + associations mode,
-// so this is a helper used to create component dependencies
-func (h *Helpers) CreateComponentDependencies(ctx context.Context, compID string, dependencyIDs []string) error {
+// NOTE: GORM does not support callbacks when using a custom join table on many2many
+// relationships + associations mode, so this is a helper used to create component dependencies
+func (h *Helpers) CreateComponentDependencies(
+	ctx context.Context,
+	compID string,
+	dependencyIDs []string,
+) error {
 	if len(dependencyIDs) < 1 {
 		return nil
 	}

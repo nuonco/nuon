@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestKubernetesApprovalPlan_IsNoop(t *testing.T) {
+func TestKubernetesApprovalPlan_IsNoop(t *testing.T) { //nolint:funlen
 	tests := []struct {
 		name     string
 		planJSON string

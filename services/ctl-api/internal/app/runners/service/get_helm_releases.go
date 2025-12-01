@@ -72,5 +72,4 @@ func (s *service) listHelmReleases(ctx *gin.Context, helmChartID, namespace stri
 	}
 
 	return releases, nil
-
 }

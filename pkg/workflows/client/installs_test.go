@@ -7,7 +7,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/temporal/client"
+	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/stretchr/testify/assert"
 	tmock "go.temporal.io/sdk/mocks"

@@ -61,13 +61,13 @@ func (s *service) UpdateRunnerSettings(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	var req UpdateRunnerSettingsRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if bindErr := ctx.BindJSON(&req); bindErr != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
 		return
 	}
 
-	if err := req.Validate(validator.New()); err != nil {
-		ctx.Error(err)
+	if validateErr := req.Validate(validator.New()); validateErr != nil {
+		ctx.Error(validateErr)
 		return
 	}
 

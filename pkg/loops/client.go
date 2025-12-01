@@ -21,7 +21,6 @@ var _ Client = (*client)(nil)
 
 // New returns a default client, which emits metrics to statsd by default
 func New(v *validator.Validate, opts ...clientOption) (*client, error) {
-
 	r := &client{
 		v: v,
 	}

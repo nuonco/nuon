@@ -39,11 +39,11 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	l = l.With(zap.String("log_stream.id", job.LogStreamID))
 
 	defer func() {
-		if err := jl.ForceFlush(ctx); err != nil {
-			if errors.Is(err, context.Canceled) {
+		if flushErr := jl.ForceFlush(ctx); flushErr != nil {
+			if errors.Is(flushErr, context.Canceled) {
 				return
 			}
-			l.Error("unable to flush logger", zap.Error(err))
+			l.Error("unable to flush logger", zap.Error(flushErr))
 		}
 	}()
 
@@ -62,8 +62,8 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 			zap.String("type", string(job.Type)),
 			zap.Error(err),
 		)
-		if err := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFailed); err != nil {
-			j.errRecorder.Record("no handler found", err)
+		if statusErr := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFailed); statusErr != nil {
+			j.errRecorder.Record("no handler found", statusErr)
 		}
 
 		return err

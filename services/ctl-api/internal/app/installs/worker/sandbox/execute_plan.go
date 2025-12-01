@@ -61,15 +61,15 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return errors.Wrap(err, "unable to create json")
 	}
 
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if err2 := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			SandboxRunPlan: runPlan,
 		},
-	}); err != nil {
+	}); err2 != nil {
 		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
-		return fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to save plan: %w", err2)
 	}
 
 	// queue job
