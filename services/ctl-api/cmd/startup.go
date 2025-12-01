@@ -64,7 +64,7 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	// though so we calculate it's runtime so we only sleep for as long as necessary to reach the 60s threshold.
 	if os.Getenv("ENV") == "prod" || os.Getenv("ENV") == "stage" {
 		minRunLen := time.Duration(time.Second * 60)
-		runTime := time.Now().Sub(start)
+		runTime := time.Since(start)
 		if runTime < minRunLen {
 			sleepFor := minRunLen - runTime
 			l.Info(fmt.Sprintf("sleeping for %d seconds to ensure data dog metrics are flushed", sleepFor))

@@ -84,21 +84,6 @@ func (s *appsTestSuite) TestCreateApp() {
 
 	s.T().Run("allows creating with duplicate name after deleting", func(t *testing.T) {
 		t.Skip("can not test for success after deleting duplicated name because objects are deleted by workers")
-
-		return
-		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
-		app, err := s.apiClient.CreateApp(s.ctx, appReq)
-		require.Nil(t, err)
-		require.NotNil(t, app)
-
-		deleted, err := s.apiClient.DeleteApp(s.ctx, app.ID)
-		require.NoError(t, err)
-		require.True(t, deleted)
-
-		dupeApp, err := s.apiClient.CreateApp(s.ctx, appReq)
-		require.NoError(t, err)
-		require.NotNil(t, dupeApp)
 	})
 
 	s.T().Run("errors on invalid parameters", func(t *testing.T) {

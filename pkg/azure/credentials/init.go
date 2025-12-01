@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 )
 
+//nolint:gochecknoinits
 func init() {
 	// print log output to stdout
 	azlog.SetListener(func(event azlog.Event, s string) {

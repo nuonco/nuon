@@ -15,13 +15,13 @@ import (
 func copyFile(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
-		return
+		return err
 	}
 	defer in.Close()
 
 	out, err := os.Create(dst)
 	if err != nil {
-		return
+		return err
 	}
 	defer func() {
 		if e := out.Close(); e != nil {
@@ -31,22 +31,22 @@ func copyFile(src, dst string) (err error) {
 
 	_, err = io.Copy(out, in)
 	if err != nil {
-		return
+		return err
 	}
 
 	err = out.Sync()
 	if err != nil {
-		return
+		return err
 	}
 
 	si, err := os.Stat(src)
 	if err != nil {
-		return
+		return err
 	}
 	err = os.Chmod(dst, si.Mode())
 	if err != nil {
-		return
+		return err
 	}
 
-	return
+	return nil
 }

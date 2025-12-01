@@ -15,20 +15,18 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 	if installID != "" {
 		s.SetCurrent(ctx, installID, asJSON)
 	} else {
-
 		var (
 			installs []*models.AppInstall
 			err      error
 		)
 
 		if appID != "" {
-			appID, err := lookup.AppID(ctx, s.api, appID)
-			if err != nil {
-				installs, _, err = s.listInstalls(ctx, 0, 50)
+			resolvedAppID, lookupErr := lookup.AppID(ctx, s.api, appID)
+			if lookupErr != nil {
+				installs, _, _ = s.listInstalls(ctx, 0, 50)
 			} else {
-				installs, _, err = s.listAppInstalls(ctx, appID, 0, 50)
+				installs, _, err = s.listAppInstalls(ctx, resolvedAppID, 0, 50)
 			}
-
 		} else {
 			installs, _, err = s.listInstalls(ctx, 0, 50)
 		}

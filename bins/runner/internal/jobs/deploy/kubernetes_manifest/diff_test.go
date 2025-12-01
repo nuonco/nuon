@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func TestResourceDiff(t *testing.T) {
+func TestResourceDiff(t *testing.T) { //nolint:funlen
 	h, _ := New(HandlerParams{})
 
 	tests := []struct {

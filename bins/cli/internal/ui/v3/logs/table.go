@@ -56,7 +56,7 @@ func rowFromLog(i int, log *models.AppOtelLogRecord) []string {
 func (m *model) prepareRows() []table.Row {
 	// this method is hella overloaded, break it up
 	m.loading = true
-	logs := map[string]*models.AppOtelLogRecord{}
+	var logs map[string]*models.AppOtelLogRecord
 	// NOTE(fd): this is a naive approach
 	if m.searchTerm != "" {
 		m.setMessage(fmt.Sprintf("applying search term: %s", m.searchTerm), "info")
@@ -68,7 +68,6 @@ func (m *model) prepareRows() []table.Row {
 			}
 		}
 		logs = filteredLogs
-
 	} else {
 		logs = m.logs
 	}

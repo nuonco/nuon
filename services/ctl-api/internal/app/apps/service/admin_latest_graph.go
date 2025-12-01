@@ -36,16 +36,16 @@ func (s *service) AdminConfigGraph(ctx *gin.Context) {
 	}
 
 	var req AdminAppConfigGraphRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if bindErr := ctx.BindJSON(&req); bindErr != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
 		return
 	}
 
 	cfgID := req.ConfigID
 	if cfgID == "" || cfgID == "string" {
-		cfgs, err := s.getAppConfigs(ctx, orgID, appID)
-		if err != nil {
-			ctx.Error(err)
+		cfgs, getConfigErr := s.getAppConfigs(ctx, orgID, appID)
+		if getConfigErr != nil {
+			ctx.Error(getConfigErr)
 			return
 		}
 		cfgID = cfgs[0].ID

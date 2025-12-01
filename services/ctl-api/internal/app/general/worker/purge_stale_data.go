@@ -23,7 +23,6 @@ func (w *Workflows) startPurgeStaleDataWorkflow(ctx workflow.Context) {
 }
 
 func (w *Workflows) PurgeStaleData(ctx workflow.Context) error {
-
 	err := activities.AwaitPurgeStaleTemporalPayloads(ctx, activities.PurgeStaleTemporalPayloadsRequest{
 		DurationAgo: w.cfg.EventLoopGeneralPurgeStaleDataDurationAgo,
 	})

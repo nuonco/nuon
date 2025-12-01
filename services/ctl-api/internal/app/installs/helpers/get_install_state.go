@@ -17,7 +17,7 @@ import (
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
-func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) {
+func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) { //nolint:gocyclo,funlen
 	es, err := h.getInstallStateFromDB(ctx, installID)
 	if err == nil {
 		return es, nil
@@ -53,12 +53,12 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	})
 	p.Go(func() error {
 		var err error
-		install, err := h.getStateInstall(ctx, installID)
+		installLocal, err := h.getStateInstall(ctx, installID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get install")
 		}
 
-		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, skipVersionCheck)
+		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, installLocal.AppConfigID, skipVersionCheck)
 		if err != nil {
 			return errors.Wrap(err, "unable to get app config")
 		}
@@ -103,12 +103,12 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	})
 	p.Go(func() error {
 		var err error
-		install, err := h.getStateInstall(ctx, installID)
+		installLocal, err := h.getStateInstall(ctx, installID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get install")
 		}
 
-		secrets, err = h.getSecrets(ctx, installID, install.RunnerID)
+		secrets, err = h.getSecrets(ctx, installID, installLocal.RunnerID)
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.Wrap(err, "unable to get secrets")

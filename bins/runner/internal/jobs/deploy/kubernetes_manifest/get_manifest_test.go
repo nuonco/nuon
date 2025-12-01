@@ -143,7 +143,7 @@ import (
 // 	}
 // }
 
-func TestGetKubernetesResourcesFromManifest(t *testing.T) {
+func TestGetKubernetesResourcesFromManifest(t *testing.T) { //nolint:funlen
 	// Define test cases
 	testCases := []struct {
 		name             string

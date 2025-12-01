@@ -11,7 +11,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal"
 )
 
-func (c *Client) EnqueueSignal(ctx context.Context, queueID string, sig signal.Signal) (*queue.EnqueueResponse, error) {
+func (c *Client) EnqueueSignal(
+	ctx context.Context,
+	queueID string,
+	sig signal.Signal,
+) (*queue.EnqueueResponse, error) {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue")

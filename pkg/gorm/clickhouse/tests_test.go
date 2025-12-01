@@ -14,6 +14,7 @@ var DB *gorm.DB
 
 const dbDSN = "clickhouse://ctl-api:ctl-api@localhost:9000/test?dial_timeout=10s&read_timeout=20s"
 
+//nolint:gochecknoinits
 func init() {
 	integration := os.Getenv("GORM_INTEGRATION")
 	if integration == "" {

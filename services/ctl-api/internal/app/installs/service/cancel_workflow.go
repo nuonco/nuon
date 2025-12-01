@@ -59,8 +59,8 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to cancel workflow"))
+	if cancelErr := s.cancelWorkflow(ctx, wf.ID); cancelErr != nil {
+		ctx.Error(errors.Wrap(cancelErr, "unable to cancel workflow"))
 		return
 	}
 	if wf.Status.Status == app.StatusPending {
@@ -128,8 +128,8 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to cancel workflow"))
+	if cancelErr := s.cancelWorkflow(ctx, wf.ID); cancelErr != nil {
+		ctx.Error(errors.Wrap(cancelErr, "unable to cancel workflow"))
 		return
 	}
 	if wf.Status.Status == app.StatusPending {

@@ -54,8 +54,8 @@ func (c *cli) checkCLIVersion() error {
 		return errors.Wrap(err, "unable to Nuon API version response response body")
 	}
 	body := make(map[string]string)
-	if err := json.Unmarshal(byt, &body); err != nil {
-		return errors.Wrap(err, "unable to unmarshal Nuon API version response body")
+	if unmarshalErr := json.Unmarshal(byt, &body); unmarshalErr != nil {
+		return errors.Wrap(unmarshalErr, "unable to unmarshal Nuon API version response body")
 	}
 	vstr, has := body["version"]
 	if !has {

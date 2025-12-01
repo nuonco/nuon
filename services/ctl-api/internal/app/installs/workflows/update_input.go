@@ -22,7 +22,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	sg.nextGroup()
 	steps := make([]*app.WorkflowStep, 0)
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
+	step, _ := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateState,
 	}, flw.PlanOnly, WithSkippable(false))
 	steps = append(steps, step)
@@ -65,12 +65,12 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs) {
 		componentIDs = append(componentIDs, comp.ID)
 
-		dependentCompIDs, err := activities.AwaitGetComponentDependents(ctx, &activities.GetComponentDependentsRequest{
+		dependentCompIDs, depErr := activities.AwaitGetComponentDependents(ctx, &activities.GetComponentDependentsRequest{
 			AppConfigID: appConfig.ID,
 			ComponentID: comp.ID,
 		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get component dependents for %s", comp.ID)
+		if depErr != nil {
+			return nil, errors.Wrapf(depErr, "unable to get component dependents for %s", comp.ID)
 		}
 
 		componentIDs = append(componentIDs, dependentCompIDs...)
@@ -85,15 +85,15 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
 	if sandboxNeedsReprovision {
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get sandbox reprovision steps")
+		sandboxSteps, sandboxErr := getSandboxReprovisionSteps(ctx, installID, flw, sg)
+		if sandboxErr != nil {
+			return nil, errors.Wrap(sandboxErr, "unable to get sandbox reprovision steps")
 		}
 		steps = append(steps, sandboxSteps...)
 	} else {
-		deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get component deploy steps")
+		deploySteps, deployErr := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
+		if deployErr != nil {
+			return nil, errors.Wrap(deployErr, "unable to get component deploy steps")
 		}
 		steps = append(steps, deploySteps...)
 	}

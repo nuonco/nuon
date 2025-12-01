@@ -24,7 +24,7 @@ var ErrNotApproved error = fmt.Errorf("not approved")
 
 // executeFlowStep executes a single step in the flow. It handles the execution of the step, updates the status, and waits for approval if necessary.
 // It returns true if the step needs to be refetched (in case of approval steps), false otherwise.
-func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
+func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) { //nolint:gocyclo,funlen
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return false, nil
@@ -38,26 +38,26 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	defer func() {
-		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
-			l.Error("unable to update finished at", zap.Error(err))
+		if finishErr := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); finishErr != nil {
+			l.Error("unable to update finished at", zap.Error(finishErr))
 		}
 	}()
 
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+	if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
 			StatusHumanDescription: "executing step " + strconv.Itoa(step.Idx+1),
 			Metadata:               map[string]any{},
 		},
-	}); err != nil {
-		return false, errors.Wrap(err, "unable to update step")
+	}); statusErr != nil {
+		return false, errors.Wrap(statusErr, "unable to update step")
 	}
 
 	// handle the ok status, and just mark success + continue
 	stepErr := c.executeStep(ctx, req, step)
 	if stepErr != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
 				Status: app.StatusError,
@@ -66,33 +66,33 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				},
 				StatusHumanDescription: "Step failed",
 			},
-		}); err != nil {
-			return false, errors.Wrap(err, "unable to mark step as error")
+		}); updateErr != nil {
+			return false, errors.Wrap(updateErr, "unable to mark step as error")
 		}
 
 		return false, stepErr
 	}
 
 	// fetch the step after the signal was executed, to gather any new state such as the step target id on it.
-	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
-	if err != nil {
-		return false, errors.Wrap(err, "unable to get step")
+	step, fetchErr := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+	if fetchErr != nil {
+		return false, errors.Wrap(fetchErr, "unable to get step")
 	}
 
 	if step.ExecutionType != app.WorkflowStepExecutionTypeApproval {
 		l.Debug("step type non approval, step successfull",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		if stepStatusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
 				Status: app.StatusSuccess,
 			},
-		}); err != nil {
-			return false, errors.Wrap(err, "unable to mark step as success")
+		}); stepStatusErr != nil {
+			return false, errors.Wrap(stepStatusErr, "unable to mark step as success")
 		}
 
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		if flowStatusErr := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: flw.ID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusSuccess,
@@ -102,8 +102,8 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 					"status":   "ok",
 				},
 			},
-		}); err != nil {
-			return false, errors.Wrap(err, "unable to update step to success status")
+		}); flowStatusErr != nil {
+			return false, errors.Wrap(flowStatusErr, "unable to update step to success status")
 		}
 
 		return false, nil
@@ -112,7 +112,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	l.Debug("looking up approval contents",
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+	if checkStatusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusCheckPlan,
@@ -121,15 +121,15 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				"status": "checking plan for changes",
 			},
 		},
-	}); err != nil {
-		return false, errors.Wrap(err, "unable to mark step as success")
+	}); checkStatusErr != nil {
+		return false, errors.Wrap(checkStatusErr, "unable to mark step as success")
 	}
 
 	noopPlan, err := activities.AwaitCheckNoopPlan(ctx, &activities.CheckNoopPlanRequest{
 		StepTargetID: step.StepTargetID,
 	})
 	if err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
 				Status: app.StatusError,
@@ -138,8 +138,8 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				},
 				StatusHumanDescription: "Step failed",
 			},
-		}); err != nil {
-			return false, errors.Wrap(err, "unable to mark step as error")
+		}); updateErr != nil {
+			return false, errors.Wrap(updateErr, "unable to mark step as error")
 		}
 
 		return false, errors.Wrap(err, "failed to check for noop plan")
@@ -149,8 +149,8 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		l.Debug("approval plan contents empty",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
-		if err := c.handleNoopDeployPlan(ctx, step, flw); err != nil {
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		if noopErr := c.handleNoopDeployPlan(ctx, step, flw); noopErr != nil {
+			if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status: app.StatusError,
@@ -159,11 +159,11 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 					},
 					StatusHumanDescription: "Step failed",
 				},
-			}); err != nil {
-				return false, errors.Wrap(err, "unable to mark step as error")
+			}); updateErr != nil {
+				return false, errors.Wrap(updateErr, "unable to mark step as error")
 			}
 
-			return false, errors.Wrap(err, "failed to handle noop plan")
+			return false, errors.Wrap(noopErr, "failed to handle noop plan")
 		}
 
 		if !flw.PlanOnly {
@@ -173,8 +173,8 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 
 	// Auto approve if plan-only mode is enabled
 	if flw.PlanOnly {
-		if err := c.handlePlanOnlyApproval(ctx, step, noopPlan); err != nil {
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		if planErr := c.handlePlanOnlyApproval(ctx, step, noopPlan); planErr != nil {
+			if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status: app.StatusError,
@@ -183,16 +183,16 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 					},
 					StatusHumanDescription: "Step failed",
 				},
-			}); err != nil {
-				return false, errors.Wrap(err, "unable to mark step as error")
+			}); updateErr != nil {
+				return false, errors.Wrap(updateErr, "unable to mark step as error")
 			}
-			return false, errors.Wrap(err, "failed to handle plan-only auto-approval")
+			return false, errors.Wrap(planErr, "failed to handle plan-only auto-approval")
 		}
 		return false, nil
 	}
 
 	// update the status to awaiting
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+	if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.AwaitingApproval,
@@ -202,8 +202,8 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				"status":   "ok",
 			},
 		},
-	}); err != nil {
-		return false, errors.Wrap(err, "unable to update step to success status")
+	}); updateErr != nil {
+		return false, errors.Wrap(updateErr, "unable to update step to success status")
 	}
 
 	approvalFunc := c.waitForApprovalResponse
@@ -313,7 +313,6 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 
 		// find all dependent step groups and mark
 		return true, nil
-
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -523,7 +522,6 @@ func (c *WorkflowConductor[DomainSignal]) markWorkflowApprovalPlanDenied(ctx wor
 		}); err != nil {
 			return errors.Wrap(err, "unable to update step to success status")
 		}
-
 	}
 
 	return nil
@@ -605,8 +603,8 @@ func (c *WorkflowConductor[DomainSignal]) getStepIndex(stepID string, steps []ap
 }
 
 func (c *WorkflowConductor[DomainSignal]) handlePlanOnlyApproval(ctx workflow.Context, step *app.WorkflowStep, noopPlan bool) error {
-	statusDescription := "Auto-approved in plan-only mode."
-	targetStatus := app.WorkflowStepApprovalStatusApproved
+	var statusDescription string
+	var targetStatus app.Status
 
 	if noopPlan {
 		statusDescription = "No drift detected "

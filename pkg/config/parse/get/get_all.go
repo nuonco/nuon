@@ -17,6 +17,7 @@ func (g *get) GetAll(ctx context.Context) error {
 	return g.walkFields(ctx, g.dst, "")
 }
 
+//nolint:gocyclo,funlen
 func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) error {
 	val := reflect.ValueOf(v)
 
@@ -146,9 +147,9 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 		if field.Kind() == reflect.String {
 			strValue := field.String()
 
-			val, err := g.processField(ctx, strValue, subdir)
-			if err != nil {
-				return errors.Wrap(err, "unable to fetch field value")
+			val, procErr := g.processField(ctx, strValue, subdir)
+			if procErr != nil {
+				return errors.Wrap(procErr, "unable to fetch field value")
 			}
 
 			if !field.CanSet() {
@@ -165,7 +166,6 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 			} else {
 				field.SetString(val)
 			}
-
 		} else {
 			return errors.New("get feature enabled on a non-string field " + fieldType.Name)
 		}
@@ -224,8 +224,8 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		Mode: getter.ClientModeFile,
 	}
 
-	if err := client.Get(); err != nil {
-		return "", errors.Wrap(err, "failed to fetch file")
+	if fetchErr := client.Get(); fetchErr != nil {
+		return "", errors.Wrap(fetchErr, "failed to fetch file")
 	}
 
 	content, err := os.ReadFile(tmpFP)

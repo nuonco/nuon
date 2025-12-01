@@ -113,8 +113,8 @@ func New(v *validator.Validate,
 	}
 
 	// register plugins
-	if err := database.registerPlugins(db); err != nil {
-		return nil, fmt.Errorf("unable to register plugins: %w", err)
+	if err2 := database.registerPlugins(db); err2 != nil {
+		return nil, fmt.Errorf("unable to register plugins: %w", err2)
 	}
 
 	lc.Append(fx.Hook{

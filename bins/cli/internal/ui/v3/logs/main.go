@@ -186,11 +186,11 @@ func (m *model) resetSelected() {
 	m.resizeTableColumns()
 }
 
+//nolint:gocyclo
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	// var cmds []tea.Cmd
 	switch msg := msg.(type) {
-
 	// handle tick: fetch data
 	case tickMsg:
 		m.setLoading(true)
@@ -305,7 +305,6 @@ func (m model) footerView() string {
 func (m model) View() string {
 	if m.width == 0 {
 		return ""
-
 	} else if m.width < minRequiredWidth || m.height < minRequiredHeight {
 		// TODO: make this message full screen
 		content := common.FullPageDialog(common.FullPageDialogRequest{
@@ -320,7 +319,6 @@ func (m model) View() string {
 			),
 		})
 		return content
-
 	}
 	// easy sections
 	header := m.headerView()
@@ -328,7 +326,7 @@ func (m model) View() string {
 
 	// Main Content
 	main := ""
-	tableStyle := appStyle
+	var tableStyle lipgloss.Style
 	if m.table.Focused() && m.selectedLog == nil {
 		tableStyle = appStyle.BorderForeground(styles.BorderActiveColor)
 	} else {
