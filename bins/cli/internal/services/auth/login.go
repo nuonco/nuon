@@ -34,8 +34,8 @@ func (a *Service) Login(ctx context.Context) error {
 	a.cfg.APIURL = apiURL
 
 	// Recreate the API client with the selected URL
-	if err := a.updateAPIClient(apiURL, a.cfg); err != nil {
-		return view.Error(fmt.Errorf("couldn't update API client: %w", err))
+	if updateErr := a.updateAPIClient(apiURL, a.cfg); updateErr != nil {
+		return view.Error(fmt.Errorf("couldn't update API client: %w", updateErr))
 	}
 
 	cfg, err := a.api.GetCLIConfig(ctx)
@@ -92,7 +92,7 @@ func (a *Service) Login(ctx context.Context) error {
 	switch len(orgs) {
 	case 0:
 		// prompt user to create an org
-		view.Print(fmt.Sprintf("You are not a member of any orgs. You must create an org, or request an invite to one to continue."))
+		view.Print("You are not a member of any orgs. You must create an org, or request an invite to one to continue.")
 
 	case 1:
 		org := orgs[0]
@@ -104,7 +104,7 @@ func (a *Service) Login(ctx context.Context) error {
 		view.Print(fmt.Sprintf("Using org %s", org.Name))
 
 	default:
-		view.Print(fmt.Sprintf("You are a member of multiple orgs. Select one to continue."))
+		view.Print("You are a member of multiple orgs. Select one to continue.")
 	}
 
 	return nil

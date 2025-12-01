@@ -33,9 +33,8 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 
 		// NOTE(fd): this shuts down so quickly we do lose the tail end of the logs.
 		// executes an os shutdown ↴ via dbus w/ a shell fallback w/ a sudo shell fallback
-		err = pkgshutdown.Shutdown(ctx, l, h.v)
-		if err != nil {
-		}
+		_ = pkgshutdown.Shutdown(ctx, l, h.v)
+		// error intentionally ignored - shutdown will complete regardless
 	}
 
 	return nil

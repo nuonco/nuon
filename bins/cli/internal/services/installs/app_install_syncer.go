@@ -37,12 +37,11 @@ func newAppInstallSyncer(api nuon.Client, appID, orgID string) *appInstallSyncer
 func (s *appInstallSyncer) syncInstall(
 	ctx context.Context, installCfg *config.Install, installID string, autoApprove, wait bool,
 ) (*models.AppInstall, error) {
-	var err error
-	ui.PrintLn(fmt.Sprintf("syncing install %s", installCfg.Name))
-
 	if installCfg == nil {
 		return nil, fmt.Errorf("install config cannot be nil")
 	}
+
+	ui.PrintLn(fmt.Sprintf("syncing install %s", installCfg.Name))
 
 	if installID == "" {
 		appInstall, err := s.syncNewInstall(ctx, installCfg, autoApprove, wait)
@@ -58,38 +57,17 @@ func (s *appInstallSyncer) syncInstall(
 	return appInstall, err
 }
 
-func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, autoApprove, wait bool) (*models.AppInstall, error) {
+func (s *appInstallSyncer) syncNewInstall(
+	ctx context.Context,
+	installCfg *config.Install,
+	autoApprove, wait bool,
+) (*models.AppInstall, error) {
 	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
 	}
 
-	// Use defaults for any missing inputs.
-	{
-		inputDefaults := make(map[string]string)
-		for _, ic := range appInputCfg.Inputs {
-			if ic.Required == false && ic.Sensitive == false && ic.Default != "" {
-				inputDefaults[ic.Name] = ic.Default
-			}
-		}
-		installCfg.InputGroups = append([]config.InputGroup{inputDefaults}, installCfg.InputGroups...)
-	}
-
-	sensitiveInputs := make(map[string]struct{})
-	for _, ic := range appInputCfg.Inputs {
-		if ic.Sensitive {
-			sensitiveInputs[ic.Name] = struct{}{}
-		}
-	}
-
-	finalInputs := installCfg.FlattenedInputs()
-
-	for inputName := range finalInputs {
-		if _, ok := sensitiveInputs[inputName]; ok {
-			delete(finalInputs, inputName)
-		}
-	}
-	installCfg.InputGroups = []config.InputGroup{finalInputs}
+	s.prepareInstallInputs(appInputCfg, installCfg)
 
 	diff, _, err := installCfg.Diff(nil)
 	if err != nil {
@@ -98,17 +76,86 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	fmt.Println(diff)
 
 	if !autoApprove {
-		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with creating this install?")
-		if err != nil {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
-			return nil, nil
-		}
-		if !ok {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
-			return nil, nil
+		shouldProceed, approvalErr := s.getInstallApproval("Do you want to proceed with creating this install?", installCfg.Name)
+		if approvalErr != nil || !shouldProceed {
+			return nil, approvalErr
 		}
 	}
 
+	req := s.buildCreateInstallRequest(installCfg)
+
+	appInstall, installWorkflowID, err := s.api.CreateInstall(ctx, s.appID, &req)
+	if err != nil {
+		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
+	}
+
+	err = s.handleWorkflow(ctx, installWorkflowID, appInstall.ID, autoApprove, wait)
+	if err != nil {
+		return nil, fmt.Errorf("error handling workflow for install %s: %w", installCfg.Name, err)
+	}
+
+	ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
+	return appInstall, nil
+}
+
+func (s *appInstallSyncer) prepareInstallInputs(appInputCfg interface{}, installCfg *config.Install) {
+	// Use defaults for any missing inputs.
+	inputDefaults := make(map[string]string)
+	if cfg, ok := appInputCfg.(map[string]interface{}); ok {
+		if inputs, ok := cfg["Inputs"].([]interface{}); ok {
+			for _, item := range inputs {
+				if ic, ok := item.(map[string]interface{}); ok {
+					required, _ := ic["Required"].(bool)
+					sensitive, _ := ic["Sensitive"].(bool)
+					defaultVal, _ := ic["Default"].(string)
+					name, _ := ic["Name"].(string)
+					if !required && !sensitive && defaultVal != "" {
+						inputDefaults[name] = defaultVal
+					}
+				}
+			}
+		}
+	}
+	installCfg.InputGroups = append([]config.InputGroup{inputDefaults}, installCfg.InputGroups...)
+
+	sensitiveInputs := make(map[string]struct{})
+	if cfg, ok := appInputCfg.(map[string]interface{}); ok {
+		if inputs, ok := cfg["Inputs"].([]interface{}); ok {
+			for _, item := range inputs {
+				if ic, ok := item.(map[string]interface{}); ok {
+					sensitive, _ := ic["Sensitive"].(bool)
+					name, _ := ic["Name"].(string)
+					if sensitive {
+						sensitiveInputs[name] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+
+	finalInputs := installCfg.FlattenedInputs()
+	for inputName := range finalInputs {
+		if _, ok := sensitiveInputs[inputName]; ok {
+			delete(finalInputs, inputName)
+		}
+	}
+	installCfg.InputGroups = []config.InputGroup{finalInputs}
+}
+
+func (s *appInstallSyncer) getInstallApproval(message, installName string) (bool, error) {
+	ok, confirmErr := bubbles.ShowConfirmDialog(message)
+	if confirmErr != nil {
+		ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installName))
+		return false, nil
+	}
+	if !ok {
+		ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installName))
+		return false, nil
+	}
+	return true, nil
+}
+
+func (s *appInstallSyncer) buildCreateInstallRequest(installCfg *config.Install) models.ServiceCreateInstallRequest {
 	req := models.ServiceCreateInstallRequest{
 		Name:   &installCfg.Name,
 		Inputs: installCfg.FlattenedInputs(),
@@ -126,22 +173,10 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			ApprovalOption: installCfg.ApprovalOption.APIType(),
 		}
 	}
-
-	appInstall, installWorkflowID, err := s.api.CreateInstall(ctx, s.appID, &req)
-	if err != nil {
-		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
-	}
-
-	err = s.handleWorkflow(ctx, installWorkflowID, appInstall.ID, autoApprove, wait)
-	if err != nil {
-		return nil, fmt.Errorf("error handling workflow for install %s: %w", installCfg.Name, err)
-	}
-
-	ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
-	return appInstall, nil
+	return req
 }
 
-func (s *appInstallSyncer) syncExistingInstall(
+func (s *appInstallSyncer) syncExistingInstall( //nolint:gocyclo,funlen
 	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove, wait bool,
 ) (*models.AppInstall, error) {
 	var err error
@@ -194,8 +229,8 @@ func (s *appInstallSyncer) syncExistingInstall(
 `, diff, diffRes.Added, diffRes.Removed, diffRes.Changed)
 
 	if !autoApprove {
-		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?")
-		if err != nil {
+		ok, updateConfirmErr := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?")
+		if updateConfirmErr != nil {
 			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
 			return nil, nil
 		}
@@ -287,7 +322,7 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 	view := ui.NewGetView()
 	view.Render(formatWorkflows([]*models.AppWorkflow{workflow}))
 
-	if wait == false {
+	if !wait {
 		return nil
 	}
 

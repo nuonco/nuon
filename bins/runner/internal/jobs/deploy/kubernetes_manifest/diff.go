@@ -16,7 +16,13 @@ const (
 )
 
 func resourceName(r *kubernetesResource) string {
-	return fmt.Sprintf("%s-%s-%s-%s", r.groupVersionResource, r.groupVersionKind, r.namespace, r.name)
+	return fmt.Sprintf(
+		"%s-%s-%s-%s",
+		r.groupVersionResource,
+		r.groupVersionKind,
+		r.namespace,
+		r.name,
+	)
 }
 
 func resourcesToMap(in []*kubernetesResource) map[string]*kubernetesResource {

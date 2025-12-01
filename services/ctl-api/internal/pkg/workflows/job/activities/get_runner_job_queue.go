@@ -22,7 +22,10 @@ type GetRunnerJobQueueRequest struct {
 
 // @temporal-gen activity
 // @by-id JobID
-func (a *Activities) PkgWorkflowsJobGetRunnerJobQueue(ctx context.Context, req *GetRunnerJobQueueRequest) ([]*app.RunnerJob, error) {
+func (a *Activities) PkgWorkflowsJobGetRunnerJobQueue(
+	ctx context.Context,
+	req *GetRunnerJobQueueRequest,
+) ([]*app.RunnerJob, error) {
 	job, err := a.PkgWorkflowsJobGetJob(ctx, &GetJobRequest{
 		ID: req.JobID,
 	})

@@ -21,8 +21,8 @@ func NewOTELProvider(cfg *internal.Config, set *settings.Settings, logStreamID s
 		return log.NewLoggerProvider(), nil
 	}
 
-	ctx := context.Background()
-	ctx, cancelFn := context.WithCancel(ctx)
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
 
 	url := fmt.Sprintf(defaultOTLPLogsEndpointTmpl, cfg.RunnerAPIURL, logStreamID)
 	logExporter, err := otlploghttp.New(ctx,
@@ -32,7 +32,6 @@ func NewOTELProvider(cfg *internal.Config, set *settings.Settings, logStreamID s
 		}),
 	)
 	if err != nil {
-		cancelFn()
 		return nil, fmt.Errorf("unable to initialize otlp log exporter: %w", err)
 	}
 

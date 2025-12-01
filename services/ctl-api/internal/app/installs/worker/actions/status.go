@@ -82,9 +82,7 @@ func (w *Workflows) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
-
 }
-
 func (w *Workflows) updateInstallSandboxStatus(ctx workflow.Context, runID string, status app.InstallSandboxStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)
 	if err := activities.AwaitUpdateInstallSandboxStatus(ctx, activities.UpdateInstallSandboxStatusRequest{

@@ -49,8 +49,6 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
-
-	return nil
 }
 
 // @temporal-gen workflow

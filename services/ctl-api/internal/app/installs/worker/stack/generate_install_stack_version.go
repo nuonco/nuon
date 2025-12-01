@@ -24,6 +24,8 @@ const (
 // @temporal-gen workflow
 // @execution-timeout 5m
 // @task-timeout 1m
+//
+//nolint:gocyclo,funlen
 func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetInstallForStackByStackID(ctx, sreq.ID)
 	if err != nil {
@@ -60,15 +62,15 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	if err != nil {
 		return errors.Wrap(err, "unable to generate install map data")
 	}
-	if err := render.RenderStruct(&cfg.PermissionsConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render permissions config")
+	if permErr := render.RenderStruct(&cfg.PermissionsConfig, stateData); permErr != nil {
+		return errors.Wrap(permErr, "unable to render permissions config")
 	}
-	if err := render.RenderStruct(&cfg.BreakGlassConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render break glass permissions config")
+	if glassErr := render.RenderStruct(&cfg.BreakGlassConfig, stateData); glassErr != nil {
+		return errors.Wrap(glassErr, "unable to render break glass permissions config")
 	}
 
-	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render secrets config")
+	if secretErr := render.RenderStruct(&cfg.SecretsConfig, stateData); secretErr != nil {
+		return errors.Wrap(secretErr, "unable to render secrets config")
 	}
 	// update cf stack param name post rendering variables
 	for i := range cfg.SecretsConfig.Secrets {
@@ -76,8 +78,8 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		secret.UpdateCloudformationStackInfo()
 	}
 
-	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render cloudformation stack config")
+	if stackErr := render.RenderStruct(&cfg.StackConfig, stateData); stackErr != nil {
+		return errors.Wrap(stackErr, "unable to render cloudformation stack config")
 	}
 
 	runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
@@ -104,12 +106,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to create cloudformation stack version")
 	}
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   stackVersion.ID,
 		StepTargetType: plugins.TableName(w.db, stackVersion),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update stack version")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update stack version")
 	}
 
 	token, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
@@ -150,9 +152,9 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		}
 
 		// render the template
-		tmpl, awsChecksum, err := w.templates.Template(inp)
-		if err != nil {
-			return errors.Wrap(err, "unable to create cloudformation template")
+		tmpl, awsChecksum, tmplErr := w.templates.Template(inp)
+		if tmplErr != nil {
+			return errors.Wrap(tmplErr, "unable to create cloudformation template")
 		}
 		checksum = awsChecksum
 

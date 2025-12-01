@@ -24,6 +24,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	return steps, nil
 }
 
+//nolint:funlen
 func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 

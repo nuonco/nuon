@@ -56,6 +56,7 @@ type service struct {
 
 var _ api.Service = (*service)(nil)
 
+//nolint:funlen
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// get all installs across orgs
 	ge.GET("/v1/installs", s.GetOrgInstalls)

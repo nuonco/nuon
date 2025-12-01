@@ -25,7 +25,6 @@ func (m model) stepIsApprovable() bool {
 		return true
 	}
 	return false
-
 }
 
 func (m model) StepDetailApprovalRequiredBanner() string {
@@ -208,55 +207,46 @@ func (m model) stepDetailViewInstallStack() string {
 }
 
 func (m *model) populateStepDetailView(goToTop bool) {
-	// loading states: exit early
-	if len(m.steps) == 0 {
-		s := "\n\n\tLoading ...\n"
-		m.stepDetail.SetContent(s)
+	if m.handleSpecialViewStates() {
 		return
 	}
+	m.renderNormalStepDetailView(goToTop)
+}
 
-	// case: workflow cancellation confirmation prompt
+func (m *model) handleSpecialViewStates() bool {
+	if len(m.steps) == 0 {
+		m.stepDetail.SetContent("\n\n\tLoading ...\n")
+		return true
+	}
+
 	if m.workflowCancelationConf {
-		// in this case, we hijack the view to show a big red confirmation
 		content := lipgloss.NewStyle().
 			Padding(1, 3).
 			Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to cancel this workflow?", "", "Press [C] to confirm."))
-		dialog := common.FullPageDialog(common.FullPageDialogRequest{
-			Width:   m.stepDetail.Width,
-			Height:  m.stepDetail.Height,
-			Padding: 2,
-			Content: content,
-			Level:   "error",
-		})
-		m.stepDetail.SetContent(dialog)
-		return
+		m.stepDetail.SetContent(common.FullPageDialog(common.FullPageDialogRequest{
+			Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "error",
+		}))
+		return true
 	}
 
-	// case: workflow approve all confirmation prompt
 	if m.workflowApprovalConf {
-		// in this case, we hijack the view to show a big confirmation
 		content := lipgloss.NewStyle().Padding(1, 3).
-			Render(
-				lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to approve all?", "", "Press [A] to confirm."),
-			)
-		dialog := common.FullPageDialog(common.FullPageDialogRequest{
-			Width: m.stepDetail.Width, Height: m.stepDetail.Height,
-			Padding: 2,
-			Content: content,
-			Level:   "warning",
-		})
-		m.stepDetail.SetContent(dialog)
-		return
+			Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to approve all?", "", "Press [A] to confirm."))
+		m.stepDetail.SetContent(common.FullPageDialog(common.FullPageDialogRequest{
+			Width: m.stepDetail.Width, Height: m.stepDetail.Height, Padding: 2, Content: content, Level: "warning",
+		}))
+		return true
 	}
 
-	// case: no selected step or a step w/ no status
 	if m.selectedStep == nil || m.selectedStep.Status == nil {
 		m.stepDetail.SetContent(styles.TextSubtle.Padding(3).Render("Select a workflow to get started"))
-		return
+		return true
 	}
+	return false
+}
 
+func (m *model) renderNormalStepDetailView(goToTop bool) {
 	sections := []string{}
-	// normal case
 	step := m.selectedStep
 
 	// full-width banners

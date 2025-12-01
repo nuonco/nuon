@@ -48,12 +48,12 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 	}
 
 	var req UpdateOrgRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if err2 := ctx.BindJSON(&req); err2 != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err2))
 		return
 	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if err3 := req.Validate(s.v); err3 != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err3))
 		return
 	}
 

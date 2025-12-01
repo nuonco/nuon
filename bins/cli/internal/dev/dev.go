@@ -29,6 +29,8 @@ const (
 
 // Dev syncs, buids, and deploys app changes to a dev install.
 // It does a few pre-flight checks to make sure we're ready to deploy, then executes the sync, builds, and deploys.
+//
+//nolint:gocyclo,funlen
 func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bool) error {
 	var err error
 	defer func() {
@@ -84,7 +86,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 
 				cmpBranch := contents[repoType].(map[string]any)["branch"]
 				if cmpBranch != branchName {
-					if err := prompt(s.autoApprove, "component %s is on branch %s. Override with %s?", cmpName, cmpBranch, branchName); err == nil {
+					if promptErr := prompt(s.autoApprove, "component %s is on branch %s. Override with %s?", cmpName, cmpBranch, branchName); promptErr == nil {
 						contents[repoType].(map[string]any)["branch"] = branchName
 					}
 				}
@@ -126,8 +128,8 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	// Create new app version
 	//
 
-	if err := prompt(autoApprove, "You are ready to create a new version of your app. Continue?"); err != nil {
-		return ui.PrintError(err)
+	if promptErr := prompt(autoApprove, "You are ready to create a new version of your app. Continue?"); promptErr != nil {
+		return ui.PrintError(promptErr)
 	}
 
 	ui.PrintLn("syncing config to api...")
@@ -157,8 +159,8 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	if installID == "" {
 		return ui.PrintError(errors.New("No install is selected. Please select an install to deploy to."))
 	}
-	if err := prompt(autoApprove, "Ready to deploy the new app config version. Deploy to %s?", installID); err != nil {
-		return ui.PrintError(err)
+	if deployPromptErr := prompt(autoApprove, "Ready to deploy the new app config version. Deploy to %s?", installID); deployPromptErr != nil {
+		return ui.PrintError(deployPromptErr)
 	}
 
 	ui.PrintLn("updating install to use new app config version...")
@@ -174,16 +176,16 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	ui.PrintLn("deploying changes...")
 	deploys := []*models.AppInstallDeploy{}
 	for _, comp := range cmpsScheduled {
-		build, err := s.api.GetComponentLatestBuild(ctx, comp.ID)
-		if err != nil {
-			return ui.PrintJSONError(err)
+		buildLatest, buildErr := s.api.GetComponentLatestBuild(ctx, comp.ID)
+		if buildErr != nil {
+			return ui.PrintJSONError(buildErr)
 		}
 
-		deploy, err := s.api.CreateInstallDeploy(ctx, installID, &models.ServiceCreateInstallDeployRequest{
-			BuildID: build.ID,
+		deploy, deployErr := s.api.CreateInstallDeploy(ctx, installID, &models.ServiceCreateInstallDeployRequest{
+			BuildID: buildLatest.ID,
 		})
-		if err != nil {
-			return ui.PrintJSONError(err)
+		if deployErr != nil {
+			return ui.PrintJSONError(deployErr)
 		}
 		deploy.ComponentName = comp.Name
 		deploys = append(deploys, deploy)

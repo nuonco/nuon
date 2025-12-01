@@ -17,7 +17,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
-func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, stepID string, sandboxMode bool) error {
+//nolint:gocyclo
+func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, stepID string, sandboxMode bool) error { //nolint:funlen
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -84,19 +85,19 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if savePlanErr := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			DeployPlan: plan,
 		},
-	}); err != nil {
+	}); savePlanErr != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to get install: %w", savePlanErr)
 	}
 
-	planJSON = nil
-	plan = nil
+	_ = planJSON
+	_ = plan
 
 	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{

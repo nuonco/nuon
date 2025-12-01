@@ -203,12 +203,11 @@ func testableZapLogger(w io.Writer) *zap.Logger {
 }
 
 func testKeyvals(t *testing.T, vals []interface{}, out map[string]interface{}) {
-	var fields []zap.Field
 	var other []any
 	for _, v := range vals {
 		switch x := v.(type) {
 		case zap.Field:
-			fields = append(fields, x)
+			_ = x
 		default:
 			other = append(other, x)
 		}

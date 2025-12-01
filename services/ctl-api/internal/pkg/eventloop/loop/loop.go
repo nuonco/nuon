@@ -105,7 +105,7 @@ func (l *Loop[SignalType, ReqSig]) RunWithConcurrency(ctx workflow.Context, req 
 	//    (within their conc group) into pendingSignals. The workflow will restart with ContinueAsNew, and pending signals processed in their respective conc groups.
 	// 	  The Restart() signal itself is processed as part of pendingSignals on the refreshed loop.
 	//  - The maxSignals limit is exceeded. Behavior is identical to the Restart() case, but slightly different telemetry is emitted.
-	for !(l.stop || l.notexist) {
+	for !l.stop && !l.notexist {
 		// fmt.Println(l.stop, l.notexist, l.restart, l.countExceeded)
 		selector.Select(ctx)
 
@@ -177,7 +177,8 @@ func (l *Loop[SignalType, ReqSig]) logger(ctx workflow.Context) *zap.Logger {
 
 // TODO(sdboyer) delete everything below here once we're ready to fully adopt concurrent event loops
 
-func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []SignalType) error {
+//nolint:gocyclo
+func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []SignalType) error { //nolint:funlen
 	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -198,8 +199,8 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 	w.MW.Gauge(ctx, "event_loop.version_change_count", float64(req.VersionChangeCount), metrics.ToTags(defaultTags)...)
 
 	if w.StartupHook != nil && !isWorkflowELoop(wkflowInfo.WorkflowExecution.ID) {
-		if err := w.StartupHook(ctx, req); err != nil {
-			l.Error("startup hook failed, restarting", zap.Error(err))
+		if startupErr := w.StartupHook(ctx, req); startupErr != nil {
+			l.Error("startup hook failed, restarting", zap.Error(startupErr))
 			w.MW.Incr(ctx, "event_loop.restart", metrics.ToTags(defaultTags, "op", "restarted", "reason", "startup_hook_failure")...)
 			req.RestartCount += 1
 			return workflow.NewContinueAsNewError(ctx, workflow.GetInfo(ctx).WorkflowType.Name, req, pendingSignals)
@@ -209,9 +210,9 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 	// handle any pending signals
 	w.MW.Gauge(ctx, "event_loop.pending_signals", float64(len(pendingSignals)), metrics.ToTags(defaultTags)...)
 	for _, pendingSignal := range pendingSignals {
-		err := w.handleSignal(ctx, req, pendingSignal, defaultTags)
-		if err != nil {
-			l.Error("error handling signal", zap.Error(err))
+		signalErr := w.handleSignal(ctx, req, pendingSignal, defaultTags)
+		if signalErr != nil {
+			l.Error("error handling signal", zap.Error(signalErr))
 			continue
 		}
 
@@ -231,12 +232,12 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 	restart := false
 	checkExists := func() {
 		exists := true
-		var err error
+		var existsErr error
 		if w.ExistsHook != nil {
-			exists, err = w.ExistsHook(ctx, req)
-			if err != nil {
+			exists, existsErr = w.ExistsHook(ctx, req)
+			if existsErr != nil {
 				// This should only be reachable in the event of an underlying temporal error.
-				l.Error("error checking for existence of underlying object", zap.Error(err))
+				l.Error("error checking for existence of underlying object", zap.Error(existsErr))
 			}
 		}
 		stop = !exists
@@ -264,8 +265,8 @@ func (w *Loop[SignalType, ReqSig]) Run(ctx workflow.Context, req eventloop.Event
 				return
 			}
 
-			if err := signal.Validate(w.V); err != nil {
-				l.Error("invalid signal", zap.Error(err))
+			if validateErr := signal.Validate(w.V); validateErr != nil {
+				l.Error("invalid signal", zap.Error(validateErr))
 			}
 
 			signalCount += 1

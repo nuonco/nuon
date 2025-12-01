@@ -30,7 +30,8 @@ func (s *Service) Create(ctx context.Context, appName string, asJSON, noSelect b
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicated key") {
-			err = errs.WithUserFacing(err, "%s", fmt.Sprintf("An application already exists with the name %q", appName))
+			msg := fmt.Sprintf("An application already exists with the name %q", appName)
+			err = errs.WithUserFacing(err, "%s", msg)
 		}
 		return view.Fail(err)
 	}

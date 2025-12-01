@@ -27,11 +27,5 @@ func entityNameValidator(fl validator.FieldLevel) bool {
 		return false
 	}
 
-	matched := entityNameRegex.MatchString(fl.Field().String())
-
-	if !matched {
-		return false
-	}
-
-	return true
+	return entityNameRegex.MatchString(fl.Field().String())
 }

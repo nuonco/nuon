@@ -206,7 +206,7 @@ func (m model) Init() tea.Cmd {
 	)
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:gocyclo,funlen
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {

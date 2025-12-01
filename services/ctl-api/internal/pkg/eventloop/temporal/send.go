@@ -114,10 +114,8 @@ func (e *evClient) bootstrap(ctx workflow.Context, objectID string, signal event
 		mungeid = objectID[idx+1:]
 	}
 
-	if signal.Start() || signal.Restart() {
+	if signal.Start() || signal.Restart() { //nolint:staticcheck // SA9003: empty branch intentional - TODO(sdboyer) commented until we get this restored
 		// For start and restart signals, ensure the target event loop is running
-
-		// TODO(sdboyer) commented until we get this restored
 		// if err := signalsactivities.AwaitStartEventLoop(ctx, &signalsactivities.StartEventLoopRequest{
 		// 	WorkflowID:   "event-loop-" + objectID,
 		// 	ObjectID:     mungeid,
@@ -168,10 +166,10 @@ func (e *evClient) SendAsync(ctx workflow.Context, objectID string, signal event
 	}
 
 	var listenerID string
-	if err := workflow.SideEffect(ctx, func(ctx workflow.Context) interface{} {
+	if idErr := workflow.SideEffect(ctx, func(ctx workflow.Context) interface{} {
 		return shortid.NewNanoID("listen")
-	}).Get(&listenerID); err != nil {
-		return nil, errors.Wrap(err, "unable to generate listener id")
+	}).Get(&listenerID); idErr != nil {
+		return nil, errors.Wrap(idErr, "unable to generate listener id")
 	}
 	if listenerID == "" {
 		return nil, errors.New("generated listener id was empty")
@@ -184,10 +182,10 @@ func (e *evClient) SendAsync(ctx workflow.Context, objectID string, signal event
 		SignalName: listenerID,
 	}
 
-	if err := eventloop.AppendListenerIDs(signal, listener); err != nil {
+	if listenerErr := eventloop.AppendListenerIDs(signal, listener); listenerErr != nil {
 		e.mw.Incr("event_loop.signal", metrics.ToStatusTag("unable to add listeners"))
-		l.Error("unable to register signal listeners", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to add listeners")
+		l.Error("unable to register signal listeners", zap.Error(listenerErr))
+		return nil, errors.Wrap(listenerErr, "unable to add listeners")
 	}
 
 	fut, set := workflow.NewFuture(ctx)
@@ -217,13 +215,11 @@ func (e *evClient) SendAsync(ctx workflow.Context, objectID string, signal event
 		selector.AddReceive(workflow.GetSignalChannel(ctx, listener.SignalName), func(schan workflow.ReceiveChannel, closed bool) {
 			val := new(eventloop.SignalDoneMessage)
 			schan.Receive(ctx, val)
-			if val != nil {
-				set.Set(val.Result, val.Error)
-			} else if closed {
+			if closed {
 				err := errors.New("notification signal channel was closed")
 				set.Set(nil, err)
 			} else {
-				set.Set(nil, errors.New("should be unreachable - signal channel returned nothing without being closed"))
+				set.Set(val.Result, val.Error)
 			}
 		})
 

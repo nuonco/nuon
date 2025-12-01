@@ -11,8 +11,10 @@ import (
 	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
 )
 
+//nolint:gochecknoinits
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	// Note: As of Go 1.20, rand.Seed is deprecated and not needed
+	// _ = rand.Seed(time.Now().UnixNano())
 }
 
 const (
@@ -58,7 +60,7 @@ BREAK:
 	)
 
 	if shouldFault && j.cfg.SandboxModeFaultsEnabled {
-		return errors.New("Sandbox Mode Fault Injected")
+		return errors.New("sandbox mode fault injected")
 	}
 
 	return nil

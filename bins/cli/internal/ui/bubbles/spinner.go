@@ -139,7 +139,6 @@ func (m SpinnerModel) formatText(text string) string {
 		text += " "
 	}
 
-	m.prevText = text
 	return text
 }
 
@@ -188,7 +187,7 @@ func (v *SpinnerView) Start(text string) {
 	// Run in background
 	go func() {
 		if _, err := v.program.Run(); err != nil {
-			// Handle error if needed
+			_ = err // Error is intentionally ignored for background program
 		}
 	}()
 }

@@ -35,7 +35,6 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get content display")
 		}
-
 	}
 
 	sa := app.WorkflowStepApproval{
