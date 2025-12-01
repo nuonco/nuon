@@ -221,14 +221,14 @@ const OrgsNav = ({}: IOrgsNav) => {
           </Text>
         </div>
       )}
-      {orgs?.length > enablePaginationCount ? (
+      {orgs?.length > enablePaginationCount &&
+      headers?.['x-nuon-page-next'] !== 'false' ? (
         <Button
           className="w-full justify-center mt-4"
           onClick={() => {
             setLimit(limit + 10)
           }}
           variant="ghost"
-          disabled={headers?.['x-nuon-page-next'] === 'false'}
         >
           Load more
         </Button>

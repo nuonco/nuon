@@ -45,6 +45,25 @@ export default async function OrgTeam({ params, searchParams }) {
   const { ['org-id']: orgId } = await params
   const { data: org } = await getOrgById({ orgId })
 
+  const currentOffset = parseInt(sp['offset'] || '0', 10)
+  if (currentOffset > 0) {
+    const { data: members } = await getAccountsByOrgId({
+      orgId,
+      limit: 10,
+      offset: sp['offset'],
+    })
+    // If no members at this offset, redirect to previous page
+    if (!members || members.length === 0) {
+      const previousOffset = Math.max(0, currentOffset - 10)
+      const params = new URLSearchParams()
+      if (previousOffset > 0) {
+        params.set('offset', previousOffset.toString())
+      }
+      const redirectUrl = `/${orgId}/team${params.toString() ? `?${params.toString()}` : ''}`
+      redirect(redirectUrl)
+    }
+  }
+
   if (org?.features?.['org-settings']) {
     return org?.features?.['stratus-layout'] ? (
       <PageLayout isScrollable>
@@ -144,7 +163,7 @@ export default async function OrgTeam({ params, searchParams }) {
                     />
                   }
                 >
-                  <OrgMembers orgId={orgId} />
+                  <OrgMembers orgId={orgId} offset={sp['offset'] || '0'} />
                 </Suspense>
               </OldErrorBoundary>
             </Section>
@@ -194,7 +213,7 @@ const OrgMembers: FC<{
     offset: headers?.['x-nuon-page-offset'] || '0',
   }
 
-  return members ? (
+  return members && members.length > 0 ? (
     <div className="flex flex-col gap-4 w-full">
       <TeamMembersTable
         members={
@@ -202,6 +221,7 @@ const OrgMembers: FC<{
             ? members
             : members.filter((member) => !member?.email?.endsWith('nuon.co'))
         }
+        limit={limit}
       />
       <Pagination
         param="offset"
