@@ -13,7 +13,10 @@ import (
 )
 
 // NOTE(jm): signal.Signal is not compatible with temporal-gen
-func AwaitGetQueueSignalSignal(ctx workflow.Context, req *GetQueueSignalSignalRequest) (signal.Signal, error) {
+func AwaitGetQueueSignalSignal(
+	ctx workflow.Context,
+	req *GetQueueSignalSignalRequest,
+) (signal.Signal, error) {
 	_ = (&Activities{}).GetQueueSignalSignal
 
 	ao := workflow.ActivityOptions{
@@ -32,15 +35,24 @@ func AwaitGetQueueSignalSignal(ctx workflow.Context, req *GetQueueSignalSignalRe
 	return sig, nil
 }
 
-func AwaitGetQueueSignalSignalByQueueSignalID(ctx workflow.Context, queueSignalID string) (signal.Signal, error) {
-	return AwaitGetQueueSignalSignal(ctx, &GetQueueSignalSignalRequest{QueueSignalID: queueSignalID})
+func AwaitGetQueueSignalSignalByQueueSignalID(
+	ctx workflow.Context,
+	queueSignalID string,
+) (signal.Signal, error) {
+	return AwaitGetQueueSignalSignal(
+		ctx,
+		&GetQueueSignalSignalRequest{QueueSignalID: queueSignalID},
+	)
 }
 
 type GetQueueSignalSignalRequest struct {
 	QueueSignalID string `validate:"required"`
 }
 
-func (a *Activities) GetQueueSignalSignal(ctx context.Context, req *GetQueueSignalSignalRequest) (signal.Signal, error) {
+func (a *Activities) GetQueueSignalSignal(
+	ctx context.Context,
+	req *GetQueueSignalSignalRequest,
+) (signal.Signal, error) {
 	queueSignal, err := a.getQueueSignal(ctx, req.QueueSignalID)
 	if err != nil {
 		return nil, generics.TemporalGormError(err, "unable to get queue signal")

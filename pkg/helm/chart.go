@@ -19,7 +19,7 @@ func ResolveChartName(repository, name string) (string, string, error) {
 		return repository, name, nil
 	}
 
-	if strings.Index(name, "/") == -1 && repository != "" {
+	if !strings.Contains(name, "/") && repository != "" {
 		name = fmt.Sprintf("%s/%s", repository, name)
 	}
 

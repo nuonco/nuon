@@ -12,7 +12,6 @@ import (
 )
 
 func (s *Service) DeployLogs(ctx context.Context, installID, deployID, installComponentID string, asJSON bool) error {
-
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)

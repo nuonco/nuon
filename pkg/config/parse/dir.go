@@ -45,8 +45,8 @@ func (c *ConfigDir) getPolicies() (*config.PoliciesConfig, error) {
 	}
 	if c.Policies != nil && len(c.PoliciesDir) > 0 {
 		return nil, ParseErr{
-			Description: "Can not provide policies both with a policies.toml and policies/ directory",
-			Err:         errors.New("Can not provide policies both with a policies.toml and policies/ directory"),
+			Description: "can not provide policies both with a policies.toml and policies/ directory",
+			Err:         errors.New("can not provide policies both with a policies.toml and policies/ directory"),
 		}
 	}
 
@@ -65,8 +65,8 @@ func (c *ConfigDir) getSecrets() (*config.SecretsConfig, error) {
 	}
 	if c.Secrets != nil && c.SecretsDir != nil {
 		return nil, ParseErr{
-			Description: "Can not provide secrets both with a secrets.toml and secrets/ directory",
-			Err:         errors.New("Can not provide secrets both with a secrets.toml and secrets/ directory"),
+			Description: "can not provide secrets both with a secrets.toml and secrets/ directory",
+			Err:         errors.New("can not provide secrets both with a secrets.toml and secrets/ directory"),
 		}
 	}
 
@@ -85,8 +85,8 @@ func (c *ConfigDir) getInputs() (*config.AppInputConfig, error) {
 	}
 	if c.Inputs != nil && (len(c.InputsDir) > 0 || len(c.InputGroupsDir) > 0) {
 		return nil, ParseErr{
-			Description: "Can not provide inputs both with a inputs.toml and inputs/ directory",
-			Err:         errors.New("Can not provide inputs both with a inputs.toml and inputs/ directory"),
+			Description: "can not provide inputs both with a inputs.toml and inputs/ directory",
+			Err:         errors.New("can not provide inputs both with a inputs.toml and inputs/ directory"),
 		}
 	}
 
@@ -107,8 +107,8 @@ func (c *ConfigDir) getPermissions() (*config.PermissionsConfig, error) {
 
 	if c.Permissions != nil && len(c.PermissionsDir) > 0 {
 		return nil, ParseErr{
-			Description: "Can not provide permissions both with a permissions.toml and permissions/ directory",
-			Err:         errors.New("Can not provide permissions both with a permissions.toml and permissions/ directory"),
+			Description: "cannot provide permissions both with a permissions.toml and permissions/ directory",
+			Err:         errors.New("cannot provide permissions both with a permissions.toml and permissions/ directory"),
 		}
 	}
 

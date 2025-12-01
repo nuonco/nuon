@@ -14,10 +14,10 @@ func (w *Workflows) errorResponse(ctx workflow.Context, sreq signals.RequestSign
 	if sreq.ForceDelete {
 		w.updateDeployStatusWithoutStatusSync(ctx, deployID, app.InstallDeployStatusInactive, message)
 		w.updateInstallComponentStatus(ctx, installComponentID, app.InstallComponentStatusDeleteFailed, message)
-		if err := activities.AwaitDeleteInstallComponent(ctx, activities.DeleteInstallComponentRequest{
+		if deleteErr := activities.AwaitDeleteInstallComponent(ctx, activities.DeleteInstallComponentRequest{
 			InstallComponentID: installComponentID,
-		}); err != nil {
-			return errors.Wrap(err, "unable to delete install component")
+		}); deleteErr != nil {
+			return errors.Wrap(deleteErr, "unable to delete install component")
 		}
 		return nil
 	}

@@ -21,7 +21,8 @@ var FakeHelmPlanJSON string
 //go:embed fake_helm_plan_display.json
 var FakeHelmPlanDisplayJSON string
 
-func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.HelmDeployPlan, error) {
+//nolint:gocyclo
+func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.HelmDeployPlan, error) { //nolint:funlen
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -61,38 +62,38 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 
 	// parse out various config fields
 	cfg := compBuild.ComponentConfigConnection.HelmComponentConfig
-	if err := render.RenderStruct(cfg, stateData); err != nil {
+	if cfgErr := render.RenderStruct(cfg, stateData); cfgErr != nil {
 		l.Error("error rendering helm config",
-			zap.Error(err),
+			zap.Error(cfgErr),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render config")
+		return nil, errors.Wrap(cfgErr, "unable to render config")
 	}
 
 	namespace := cfg.Namespace.ValueOrDefault("{{.nuon.install.id}}")
-	renderedNamespace, err := render.RenderV2(namespace, stateData)
-	if err != nil {
+	renderedNamespace, nsErr := render.RenderV2(namespace, stateData)
+	if nsErr != nil {
 		l.Error("error rendering namespace",
 			zap.String("namespace", namespace),
-			zap.Error(err))
-		return nil, errors.Wrap(err, "unable to render namespace")
+			zap.Error(nsErr))
+		return nil, errors.Wrap(nsErr, "unable to render namespace")
 	}
 
-	driver := cfg.StorageDriver.ValueOrDefault("configmap")
-	renderedDriver, err := render.RenderV2(driver, stateData)
-	if err != nil {
+	driver := cfg.StorageDriver.ValueOrDefault("secrets")
+	renderedDriver, driverErr := render.RenderV2(driver, stateData)
+	if driverErr != nil {
 		l.Error("error rendering driver",
 			zap.String("driver", driver),
-			zap.Error(err))
+			zap.Error(driverErr))
 
-		return nil, errors.Wrap(err, "unable to render driver")
+		return nil, errors.Wrap(driverErr, "unable to render driver")
 	}
 
 	var helmChartID string
 	if driver == "nuon" {
-		hc, err := activities.AwaitGetHelmChartByOwnerID(ctx, installDeploy.InstallComponent.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get helm chart")
+		hc, hcErr := activities.AwaitGetHelmChartByOwnerID(ctx, installDeploy.InstallComponent.ID)
+		if hcErr != nil {
+			return nil, errors.Wrap(hcErr, "unable to get helm chart")
 		}
 		helmChartID = hc.ID
 	}

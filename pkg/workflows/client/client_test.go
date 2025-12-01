@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/stretchr/testify/assert"
+
+	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 )
 
 func TestNewClient(t *testing.T) {

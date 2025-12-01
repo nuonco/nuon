@@ -24,7 +24,15 @@ type Params struct {
 }
 
 func New(params Params) (metrics.Writer, error) {
-	tags := metrics.ToTags(params.Settings.Metadata, "version", version.Version, "git_ref", params.Cfg.GitRef, "service", "runner")
+	tags := metrics.ToTags(
+		params.Settings.Metadata,
+		"version",
+		version.Version,
+		"git_ref",
+		params.Cfg.GitRef,
+		"service",
+		"runner",
+	)
 
 	disableMetrics := !params.Settings.EnableMetrics
 	if os.Getenv("ENV") == "development" {

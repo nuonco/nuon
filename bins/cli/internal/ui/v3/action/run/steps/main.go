@@ -253,7 +253,7 @@ func (m Model) View() string {
 		// Build fixed header: [status] name ... duration
 		statusStyle := styles.GetStatusStyle(models.AppStatus(status))
 		statusText := statusStyle.Render(fmt.Sprintf("[%s] ", status))
-		durationString := fmt.Sprintf("%s", styles.TextSubtle.Render(duration))
+		durationString := styles.TextSubtle.Render(duration)
 		spacer := strings.Repeat(" ", (m.width-6)-(lipgloss.Width(statusText)+lipgloss.Width(name)+lipgloss.Width(durationString)))
 		header := lipgloss.NewStyle().Padding(1).Render(
 			lipgloss.JoinHorizontal(lipgloss.Left,
@@ -314,7 +314,7 @@ func (m Model) renderStepItem(index int, item stepItem, selected bool) string {
 	statusStyle := styles.GetStatusStyle(models.AppStatus(status))
 	statusText := statusStyle.Render(fmt.Sprintf("[%s] ", status))
 
-	durationString := fmt.Sprintf("%s", styles.TextSubtle.Render(duration))
+	durationString := styles.TextSubtle.Render(duration)
 	spacer := strings.Repeat(" ", (m.width-6)-(lipgloss.Width(statusText)+lipgloss.Width(name)+lipgloss.Width(durationString)))
 	// First line: [status] name ... duration
 	content := lipgloss.JoinHorizontal(lipgloss.Left,
@@ -347,7 +347,6 @@ func (m *Model) setContent() {
 
 		// Set logs content in logsViewport (no header here)
 		m.logsViewport.SetContent(logsContent)
-
 	} else {
 		// Branch 2: No step expanded - show list of all steps in stepsViewport
 		var content string

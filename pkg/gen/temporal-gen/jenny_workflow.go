@@ -74,7 +74,7 @@ func (j WorkflowJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 		}
 
 		bfname := bfn.Fn.Name.String()
-		tvars.FnName = fmt.Sprintf("Await%s", strings.Title(bfname))
+		tvars.FnName = fmt.Sprintf("Await%s", bfname)
 
 		tvars.ReqType = astfmt.Sprint(bfn.Fn.Type.Params.List[1].Type)
 		// _, tvars.ReqIsPtr = bfn.Fn.Type.Params.List[1].Type.(*ast.StarExpr)

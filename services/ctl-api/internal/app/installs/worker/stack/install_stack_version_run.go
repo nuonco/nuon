@@ -27,6 +27,8 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 720h
 // @task-timeout 30s
+//
+//nolint:gocyclo,funlen
 func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetInstallForStackByStackID(ctx, sreq.ID)
 	if err != nil {
@@ -50,12 +52,12 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return errors.Wrap(err, "unable to get app config")
 	}
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   version.ID,
 		StepTargetType: plugins.TableName(w.db, version),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update stack version")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update stack version")
 	}
 
 	l, err := log.WorkflowLogger(ctx)
@@ -88,49 +90,49 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		}
 		data = generics.MergeMap(refs.GetFakeRefs(stackRefs), data)
 
-		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
+		run, runErr := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,
 			Data:           generics.ToStringMap(data),
 		})
-		if err != nil {
-			return errors.Wrap(err, "unable to create sandbox version run")
+		if runErr != nil {
+			return errors.Wrap(runErr, "unable to create sandbox version run")
 		}
 		w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
 			Type:                     runnersignals.OperationInstallStackVersionRun,
 			InstallStackVersionRunID: run.ID,
 		})
 
-		if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+		if statusErr := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID:     version.ID,
 			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
-		}); err != nil {
-			return errors.Wrap(err, "unable to update status")
+		}); statusErr != nil {
+			return errors.Wrap(statusErr, "unable to update status")
 		}
 
 		return nil
 	}
 
 	var run *app.InstallStackVersionRun
-	if err := poll.Poll(ctx, w.v, poll.PollOpts{
+	if pollErr := poll.Poll(ctx, w.v, poll.PollOpts{
 		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 15,
 		BackoffFactor:   1.15,
 		PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
-			l, err := log.WorkflowLogger(ctx)
-			if err != nil {
-				return errors.Wrap(err, "unable to get workflow logger")
+			loggerL, logErr := log.WorkflowLogger(ctx)
+			if logErr != nil {
+				return errors.Wrap(logErr, "unable to get workflow logger")
 			}
 
-			l.Debug("checking install stack status again in "+dur.String(), zap.Duration("duration", dur))
+			loggerL.Debug("checking install stack status again in "+dur.String(), zap.Duration("duration", dur))
 			return nil
 		},
 		Fn: func(ctx workflow.Context) error {
 			run, err = activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
 			return err
 		},
-	}); err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
+	}); pollErr != nil {
+		if errors.Is(pollErr, context.DeadlineExceeded) {
 			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: version.ID,
 				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusExpired, map[string]any{
@@ -147,13 +149,13 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 					},
 				},
 			}); statusErr != nil {
-				return status.WrapStatusErr(err, statusErr)
+				return status.WrapStatusErr(pollErr, statusErr)
 			}
 
-			return errors.Wrap(err, "stack was not applied before expiring")
+			return errors.Wrap(pollErr, "stack was not applied before expiring")
 		}
 
-		return errors.Wrap(err, "unable to get install stack run in time")
+		return errors.Wrap(pollErr, "unable to get install stack run in time")
 	}
 
 	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
@@ -163,11 +165,11 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 
 	// successfully got a run
 	l.Debug("successfully got run", zap.Any("data", run.Data))
-	if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+	if statusErr := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID:     version.ID,
 		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update status")
+	}); statusErr != nil {
+		return errors.Wrap(statusErr, "unable to update status")
 	}
 
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{

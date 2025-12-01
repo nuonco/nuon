@@ -42,12 +42,12 @@ func (w *Workflows) ReprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 		}
 	}()
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   installRun.ID,
 		StepTargetType: plugins.TableName(w.db, installRun),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install action workflow")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update install action workflow")
 	}
 
 	defer func() {

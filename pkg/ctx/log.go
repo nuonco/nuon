@@ -7,14 +7,14 @@ import (
 	"go.uber.org/zap"
 )
 
-var loggerNotFoundErr error = fmt.Errorf("logger not found in context")
+var errLoggerNotFound error = fmt.Errorf("logger not found in context")
 
 type logCtxKey struct{}
 
 func Logger(ctx context.Context) (*zap.Logger, error) {
 	val := ctx.Value(logCtxKey{})
 	if val == nil {
-		return nil, loggerNotFoundErr
+		return nil, errLoggerNotFound
 	}
 
 	return val.(*zap.Logger), nil

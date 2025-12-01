@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_oci_pull(t *testing.T) {
+func Test_oci_pull(t *testing.T) { //nolint:funlen
 	tests := map[string]struct {
 		filesFn     func(*testing.T) map[string][]testFile
 		tag         string

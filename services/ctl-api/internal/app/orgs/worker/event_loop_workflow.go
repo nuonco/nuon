@@ -4,7 +4,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
@@ -21,19 +20,19 @@ type OrgEventLoopRequest struct {
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		sigs.OperationCreated:            AwaitCreated,
-		sigs.OperationProvision:          AwaitProvision,
-		sigs.OperationReprovision:        AwaitReprovision,
-		sigs.OperationDeprovision:        AwaitDeprovision,
-		sigs.OperationForceDeprovision:   AwaitForceDeprovision,
-		sigs.OperationRestart:            AwaitRestart,
-		sigs.OperationRestartRunners:     AwaitRestartRunners,
-		sigs.OperationInviteCreated:      AwaitInviteUser,
-		sigs.OperationInviteAccepted:     AwaitInviteAccepted,
-		sigs.OperationForceDelete:        AwaitForceDelete,
-		sigs.OperationDelete:             AwaitDelete,
-		sigs.OperationForceSandboxMode:   AwaitForceSandboxMode,
-		sigs.OperationEnableFeatureFlags: AwaitEnableFeatureFlags,
+		signals.OperationCreated:            AwaitCreated,
+		signals.OperationProvision:          AwaitProvision,
+		signals.OperationReprovision:        AwaitReprovision,
+		signals.OperationDeprovision:        AwaitDeprovision,
+		signals.OperationForceDeprovision:   AwaitForceDeprovision,
+		signals.OperationRestart:            AwaitRestart,
+		signals.OperationRestartRunners:     AwaitRestartRunners,
+		signals.OperationInviteCreated:      AwaitInviteUser,
+		signals.OperationInviteAccepted:     AwaitInviteAccepted,
+		signals.OperationForceDelete:        AwaitForceDelete,
+		signals.OperationDelete:             AwaitDelete,
+		signals.OperationForceSandboxMode:   AwaitForceSandboxMode,
+		signals.OperationEnableFeatureFlags: AwaitEnableFeatureFlags,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

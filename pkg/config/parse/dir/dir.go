@@ -27,7 +27,7 @@ func Parse(ctx context.Context, fs afero.Fs, obj any, opts *ParseOptions) error 
 	}
 
 	parser := &parser{
-		fs:   afero.Afero{fs},
+		fs:   afero.Afero{Fs: fs},
 		opts: opts,
 		dst:  obj,
 	}

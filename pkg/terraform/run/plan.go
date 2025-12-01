@@ -100,7 +100,7 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
-	planCb, err := r.localFileCallback("plan.json", true)
+	planCb, _ := r.localFileCallback("plan.json", true)
 	pipe.AddStep(&pipeline.Step{
 		Name:       "show plan",
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),

@@ -25,7 +25,6 @@ type User struct {
 }
 
 func initDB() *gorm.DB {
-
 	// borrowed from https://github.com/go-gorm/hints/blob/master/hints_test.go
 	dummyDB, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		DryRun: true,

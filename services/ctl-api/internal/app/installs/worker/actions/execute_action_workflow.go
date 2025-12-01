@@ -82,6 +82,7 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 	return nil
 }
 
+//nolint:funlen
 func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, actionWorkflowRunID string) error {
 	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, actionWorkflowRunID)
 	if err != nil {
@@ -157,17 +158,17 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if savePlanErr := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:         runnerJob.ID,
 		PlanJSON:      string(planJSON),
 		CompositePlan: plantypes.CompositePlan{ActionWorkflowRunPlan: runPlan},
-	}); err != nil {
+	}); savePlanErr != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
-		return errors.Wrap(err, "unable to save runner job plan")
+		return errors.Wrap(savePlanErr, "unable to save runner job plan")
 	}
 
-	planJSON = nil
-	runPlan = nil
+	_ = planJSON
+	_ = runPlan
 
 	// now queue and execute the job
 	l.Info("executing runner job")

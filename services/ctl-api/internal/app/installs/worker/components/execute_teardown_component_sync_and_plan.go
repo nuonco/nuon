@@ -20,6 +20,8 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 60m
 // @task-timeout 30m
+//
+//nolint:gocyclo
 func (w *Workflows) ExecuteTeardownComponentSyncAndPlan(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, sreq.ID)
 	if err != nil {
@@ -68,12 +70,12 @@ func (w *Workflows) ExecuteTeardownComponentSyncAndPlan(ctx workflow.Context, sr
 		}
 	}()
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: plugins.TableName(w.db, installDeploy),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install workflow")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update install workflow")
 	}
 
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{

@@ -77,7 +77,9 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 		s := shellSymbol
 		s += k + strings.Repeat(" ", maxKLen-len(k)) + " = "
 		if redact {
-			s += lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#969B86", Dark: "#696969"}).Render(vp)
+			s += lipgloss.NewStyle().
+				Foreground(lipgloss.AdaptiveColor{Light: "#969B86", Dark: "#696969"}).
+				Render(vp)
 		} else {
 			s += vp
 		}
@@ -86,6 +88,6 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 			fmt.Fprint(os.Stderr, s+"\n")
 		}
 
-		writeToLogFile(s + "\n")
+		writeToLogFile("%s", s+"\n")
 	}
 }

@@ -33,7 +33,7 @@ func HealthcheckJobRunnerWorkflowsID(req *HealthcheckJobRunnerRequest) string {
 // @task-timeout 5m
 // @id-callback HealthcheckJobRunnerWorkflowsID
 func (w *Workflows) HealthcheckJobRunner(ctx workflow.Context, req *HealthcheckJobRunnerRequest) (*HealthcheckJobRunnerResponse, error) {
-	l, err := log.WorkflowLogger(ctx)
+	l, _ := log.WorkflowLogger(ctx)
 	logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, req.HealthCheckID)
 	if err != nil {
 		return &HealthcheckJobRunnerResponse{ShouldRestart: false}, errors.Wrap(err, "unable to create logstream")
@@ -81,8 +81,11 @@ func (w *Workflows) HealthcheckJobRunner(ctx workflow.Context, req *HealthcheckJ
 	outputs := job.ParsedOutputs
 	fmt.Println(outputs)
 	hc := &configs.HealthcheckOutputs{}
-	b, err := json.Marshal(outputs)
-	json.Unmarshal(b, hc)
+	b, marshalErr := json.Marshal(outputs)
+	if marshalErr != nil {
+		return &HealthcheckJobRunnerResponse{ShouldRestart: false}, errors.Wrap(marshalErr, "unable to marshal outputs")
+	}
+	_ = json.Unmarshal(b, hc)
 
 	// check the job loops Healthcheck ouptuts if we have missed one of these runner-side healthchecks,
 	// the values in the payload will be larger than  the interval at which this job is run. if that's

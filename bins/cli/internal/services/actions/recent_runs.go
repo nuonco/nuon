@@ -8,7 +8,12 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int, asJSON bool) error {
+func (s *Service) GetRecentRuns(
+	ctx context.Context,
+	installID, actionWorkflowID string,
+	offset, limit int,
+	asJSON bool,
+) error {
 	view := ui.NewListView()
 
 	response, hasMore, err := s.getRecentRuns(ctx, installID, actionWorkflowID, offset, limit)
@@ -45,11 +50,20 @@ func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID
 }
 
 // GetRecentRuns fetches recent runs for an action workflow
-func (s *Service) getRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int) (*models.AppInstallActionWorkflow, bool, error) {
-	iaw, hasMore, err := s.api.GetInstallActionWorkflowRecentRuns(ctx, installID, actionWorkflowID, &models.GetPaginatedQuery{
-		Offset: offset,
-		Limit:  limit,
-	})
+func (s *Service) getRecentRuns(
+	ctx context.Context,
+	installID, actionWorkflowID string,
+	offset, limit int,
+) (*models.AppInstallActionWorkflow, bool, error) {
+	iaw, hasMore, err := s.api.GetInstallActionWorkflowRecentRuns(
+		ctx,
+		installID,
+		actionWorkflowID,
+		&models.GetPaginatedQuery{
+			Offset: offset,
+			Limit:  limit,
+		},
+	)
 	if err != nil {
 		return nil, hasMore, err
 	}

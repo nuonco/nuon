@@ -32,7 +32,6 @@ func Test_fakeEnvVars(t *testing.T) {
 		err = envVar.Validate()
 		assert.NoError(t, err)
 	}
-
 }
 
 func Test_fakeWaypointVariables(t *testing.T) {

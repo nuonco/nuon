@@ -17,6 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
 
+//nolint:gocyclo,funlen
 func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
@@ -25,18 +26,19 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	hlog := log.NewHClog(l)
 
-	if err := p.writePolicies(ctx); err != nil {
-		return errors.Wrap(err, "unable to write policies")
+	if policiesErr := p.writePolicies(ctx); policiesErr != nil {
+		return errors.Wrap(policiesErr, "unable to write policies")
 	}
 
 	// Load Plan Bytes
 	var planBytes []byte
 	if len(p.state.plan.ApplyPlanContents) > 0 {
 		b64EncodedContent := p.state.plan.ApplyPlanContents
-		planBytes, err = base64.StdEncoding.DecodeString(b64EncodedContent)
-		if err != nil {
-			return errors.Wrap(err, "unable to decode base64 Plan.Contents into bytes.")
+		decodedBytes, decodeErr := base64.StdEncoding.DecodeString(b64EncodedContent)
+		if decodeErr != nil {
+			return errors.Wrap(decodeErr, "unable to decode base64 Plan.Contents into bytes.")
 		}
+		planBytes = decodedBytes
 	} else {
 		planBytes = []byte{}
 	}
@@ -45,16 +47,20 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	var wkspace workspace.Workspace
 	if len(planBytes) > 0 {
 		l.Info("the plan has ApplyPlanContents, intializing workspace with plan", zap.Int("plan.bytes.count", len(planBytes)))
-		wkspace, err = p.getWorkspaceWithPlan(planBytes)
+		wkspaceFromPlan, wkErr := p.getWorkspaceWithPlan(planBytes)
 		l.Debug("create workspace with plan bytes", zap.Int("plan.bytes.count", len(planBytes)))
+		wkspace = wkspaceFromPlan
+		err = wkErr
 	} else {
 		l.Info("the plan has no ApplyPlanContents, intializing workspace without plan", zap.Int("plan.bytes.count", len(planBytes)))
-		wkspace, err = p.getWorkspace()
+		wkspaceDefault, wkErr := p.getWorkspace()
+		wkspace = wkspaceDefault
+		err = wkErr
 	}
 
 	// initialize
-	if err := wkspace.InitRoot(ctx); err != nil {
-		return errors.Wrap(err, "unable to initialize root")
+	if initErr := wkspace.InitRoot(ctx); initErr != nil {
+		return errors.Wrap(initErr, "unable to initialize root")
 	}
 	if err != nil {
 		p.writeErrorResult(ctx, "load terraform workspace", err)

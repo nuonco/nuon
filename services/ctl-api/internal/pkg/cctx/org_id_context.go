@@ -24,7 +24,7 @@ func SetOrgIDGinContext(ctx *gin.Context, orgID string) {
 }
 
 func SetOrgIDContext(ctx context.Context, orgID string) context.Context {
-	return context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
+	return context.WithValue(ctx, keys.OrgIDCtxKey, orgID) //nolint:staticcheck
 }
 
 func SetOrgIDWorkflowContext(ctx workflow.Context, orgID string) workflow.Context {

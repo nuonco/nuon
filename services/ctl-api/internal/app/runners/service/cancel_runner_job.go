@@ -73,7 +73,6 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app
 		if res.Error != nil {
 			return nil, fmt.Errorf("unable to cancel job execution: %w", res.Error)
 		}
-
 	}
 
 	return &runnerJob, nil

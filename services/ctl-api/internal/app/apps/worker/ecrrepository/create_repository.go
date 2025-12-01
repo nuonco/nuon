@@ -32,7 +32,10 @@ type CreateRepositoryResponse struct {
 
 // @temporal-gen activity
 // @schedule-to-close-timeout 1m
-func (a *Activities) CreateRepository(ctx context.Context, req *CreateRepositoryRequest) (*CreateRepositoryResponse, error) {
+func (a *Activities) CreateRepository(
+	ctx context.Context,
+	req *CreateRepositoryRequest,
+) (*CreateRepositoryResponse, error) {
 	var resp CreateRepositoryResponse
 	if err := req.validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate request: %w", err)
@@ -85,7 +88,11 @@ type awsClientECR interface {
 		...func(*ecr.Options)) (*ecr.DescribeRepositoriesOutput, error)
 }
 
-func (r *Activities) getECRRepo(ctx context.Context, req *CreateRepositoryRequest, client awsClientECR) (*ecr_types.Repository, error) {
+func (r *Activities) getECRRepo(
+	ctx context.Context,
+	req *CreateRepositoryRequest,
+	client awsClientECR,
+) (*ecr_types.Repository, error) {
 	params := &ecr.DescribeRepositoriesInput{
 		RepositoryNames: []string{
 			req.OrgID + "/" + req.AppID,
@@ -102,7 +109,11 @@ func (r *Activities) getECRRepo(ctx context.Context, req *CreateRepositoryReques
 	return &resp.Repositories[0], nil
 }
 
-func (r *Activities) createECRRepo(ctx context.Context, req *CreateRepositoryRequest, client awsClientECR) (*ecr_types.Repository, error) {
+func (r *Activities) createECRRepo(
+	ctx context.Context,
+	req *CreateRepositoryRequest,
+	client awsClientECR,
+) (*ecr_types.Repository, error) {
 	params := &ecr.CreateRepositoryInput{
 		RepositoryName:     generics.ToPtr(req.OrgID + "/" + req.AppID),
 		ImageTagMutability: ecr_types.ImageTagMutabilityImmutable,
