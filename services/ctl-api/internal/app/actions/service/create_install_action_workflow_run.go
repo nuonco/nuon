@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -14,43 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
-	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
-
-// @ID						CreateInstallActionRun
-// @Summary					create an action workflow run for an install
-// @Description.markdown	create_install_action_workflow_run.md
-// @Tags					actions
-// @Accept					json
-// @Param					install_id	path	string									true	"install ID"
-// @Param					req			body	CreateInstallActionWorkflowRunRequest	true	"Input"
-// @Produce					json
-// @Security				APIKey
-// @Security				OrgID
-// @Deprecated 				true
-// @Failure					400	{object}	stderr.ErrResponse
-// @Failure					401	{object}	stderr.ErrResponse
-// @Failure					403	{object}	stderr.ErrResponse
-// @Failure					404	{object}	stderr.ErrResponse
-// @Failure					500	{object}	stderr.ErrResponse
-// @Success					201	{string}	ok
-// @Router					/v1/installs/{install_id}/actions/runs [post]
-func (s *service) CreateInstallActionRun(ctx *gin.Context) {
-	s.CreateInstallActionWorkflowRun(ctx)
-}
-
-type CreateInstallActionWorkflowRunRequest struct {
-	ActionWorkFlowConfigID string `json:"action_workflow_config_id"`
-
-	RunEnvVars map[string]string `json:"run_env_vars"`
-}
-
-func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return validatorPkg.FormatValidationError(err)
-	}
-	return nil
-}
 
 // @ID						CreateInstallActionWorkflowRun
 // @Summary					create an action workflow run for an install
