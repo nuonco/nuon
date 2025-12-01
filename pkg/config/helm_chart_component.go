@@ -42,7 +42,7 @@ type HelmChartComponentConfig struct {
 	HelmRepo      *HelmRepoConfig      `mapstructure:"helm_repo,omitempty" jsonschema:"oneof_required=helm_repo"`
 
 	Namespace     string `mapstructure:"namespace" features:"template"`
-	StorageDriver string `mapstructure:"storage_driver" features:"template"`
+	StorageDriver string `mapstructure:"storage_driver,omitempty" features:"template"`
 
 	TakeOwnership bool `mapstructure:"take_ownership" features:"template"`
 
@@ -61,7 +61,7 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("var_name").Short("variable name for component output").
 		Long("Optional name to use when storing component outputs as variables. If not specified, uses the component name").
 		Field("dependencies").Short("additional component dependencies").
-		Field("storage_driver").Short("which helm storage driver to use (defaults to secrets)").
+		Field("storage_driver").Short("which helm storage driver to use (defaults to configmap)").Enum("configmap", "secret").
 		Field("namespace").Short("namespace to deploy into. Defaults to {{.nuon.install.id}} and supports templating.").
 		Field("chart_name").Short("chart name").Required().
 		Field("value").Short("array of helm values (not recommended)").

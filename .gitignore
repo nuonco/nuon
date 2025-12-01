@@ -75,3 +75,6 @@ bins/nuonctl/nuonctl
 
 # IntelliJ IDEA
 .idea/
+
+# LSP binary
+bins/lsp/lsp
