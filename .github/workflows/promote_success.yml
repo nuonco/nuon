@@ -26,7 +26,7 @@ jobs:
     name: Update SDKs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Elixir
         uses: peter-evans/repository-dispatch@v4
         with:
