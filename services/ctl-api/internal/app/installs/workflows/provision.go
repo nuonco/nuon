@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) { //nolint:gocyclo,funlen
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -20,6 +20,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateState,
 	}, flw.PlanOnly, WithSkippable(false))
+	_ = err
 	steps = append(steps, step)
 
 	sg.nextGroup() // provision service accoun

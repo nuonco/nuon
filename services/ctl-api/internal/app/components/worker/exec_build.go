@@ -67,15 +67,15 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
 
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if saveErr := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			BuildPlan: runPlan,
 		},
-	}); err != nil {
+	}); saveErr != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to save job plan")
-		return fmt.Errorf("unable to save runner job plan: %w", err)
+		return fmt.Errorf("unable to save runner job plan: %w", saveErr)
 	}
 
 	// wait for the job

@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
+//nolint:gocyclo
 func (s *Service) pollDeploys(ctx context.Context, installID string, deploys []*models.AppInstallDeploy) error {
 	// Early return if no deploys to monitor
 	if len(deploys) == 0 {

@@ -59,12 +59,12 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 
 	// parse out various config fields
 	cfg := compBuild.ComponentConfigConnection.KubernetesManifestComponentConfig
-	if err := render.RenderStruct(cfg, stateData); err != nil {
+	if cfgErr := render.RenderStruct(cfg, stateData); cfgErr != nil {
 		l.Error("error rendering helm config",
-			zap.Error(err),
+			zap.Error(cfgErr),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render config")
+		return nil, errors.Wrap(cfgErr, "unable to render config")
 	}
 
 	manifest := cfg.Manifest

@@ -24,15 +24,15 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 	}
 
 	if asJSON {
-		newBuild, err := s.api.CreateComponentBuild(
+		newBuild, buildErr := s.api.CreateComponentBuild(
 			ctx,
 			compID,
 			&models.ServiceCreateComponentBuildRequest{
 				UseLatest: true,
 			},
 		)
-		if err != nil {
-			ui.PrintJSONError(err)
+		if buildErr != nil {
+			ui.PrintJSONError(buildErr)
 		} else {
 			ui.PrintJSON(newBuild)
 		}

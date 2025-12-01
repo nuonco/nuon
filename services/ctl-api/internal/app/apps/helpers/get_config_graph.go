@@ -46,13 +46,13 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 			continue
 		}
 
-		if err := g.AddVertex(&comp,
+		if addVertexErr := g.AddVertex(&comp,
 			graph.VertexAttribute("name", comp.Name),
 			graph.VertexAttribute("label", comp.Name),
 			graph.VertexAttribute("type", string(comp.Type)),
 			graph.VertexAttribute("color", "red"),
-		); err != nil {
-			return nil, err
+		); addVertexErr != nil {
+			return nil, addVertexErr
 		}
 
 		if len(comp.ComponentConfigs) < 1 {
@@ -66,11 +66,11 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 	allCfgs := append(cfg.ComponentConfigConnections, missingComps...)
 	for _, ccc := range allCfgs {
 		for _, dep := range ccc.ComponentDependencyIDs {
-			if err := g.AddEdge(dep, ccc.ComponentID,
+			if addEdgeErr := g.AddEdge(dep, ccc.ComponentID,
 				graph.EdgeWeight(25),
 				graph.EdgeAttribute("color", "red"),
-			); err != nil {
-				return nil, err
+			); addEdgeErr != nil {
+				return nil, addEdgeErr
 			}
 		}
 	}

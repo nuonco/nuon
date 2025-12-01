@@ -116,7 +116,6 @@ func (w *CancelFlows) Root(ctx workflow.Context, _ string) error {
 	// })
 	// wg.Wait()
 	// ccancel()
-	return nil
 }
 
 func boop(ctx workflow.Context, msg string) error {

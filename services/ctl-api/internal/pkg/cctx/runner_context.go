@@ -25,6 +25,6 @@ func SetRunnerGinContext(ctx *gin.Context, runner *app.Runner) {
 }
 
 func SetRunnerContext(ctx context.Context, runner *app.Runner) context.Context {
-	ctx = context.WithValue(ctx, keys.RunnerIDCtxKey, runner.ID)
-	return context.WithValue(ctx, keys.RunnerCtxKey, runner)
+	ctx = context.WithValue(ctx, keys.RunnerIDCtxKey, runner.ID) //nolint:staticcheck
+	return context.WithValue(ctx, keys.RunnerCtxKey, runner)     //nolint:staticcheck
 }

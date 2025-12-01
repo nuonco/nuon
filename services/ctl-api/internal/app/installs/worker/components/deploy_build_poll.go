@@ -46,10 +46,11 @@ func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId
 		attempt++
 
 		// Get the latest build
-		bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, bld.ID)
-		if err != nil {
-			return fmt.Errorf("unable to get component build: %w", err)
+		bldLatest, bldErr := activities.AwaitGetComponentBuildByComponentBuildID(ctx, bld.ID)
+		if bldErr != nil {
+			return fmt.Errorf("unable to get component build: %w", bldErr)
 		}
+		bld = bldLatest
 
 		// Check if the build is deployable
 		if w.isBuildDeployable(bld) {

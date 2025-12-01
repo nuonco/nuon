@@ -8,14 +8,14 @@ import (
 )
 
 func GetDetectors() []getter.Detector {
-	return append([]getter.Detector{
+	return []getter.Detector{
 		detector{},
 		new(getter.GitHubDetector),
 		new(getter.GitDetector),
 		new(getter.S3Detector),
 		new(getter.GCSDetector),
 		new(getter.FileDetector),
-	})
+	}
 }
 
 type detector struct{}

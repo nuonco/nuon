@@ -14,6 +14,8 @@ import (
 // Returns:
 // - changedFiles: slice of all changed files (with absolute paths). Empty if no changes.
 // - error: if the git commands fail
+//
+//nolint:gocyclo
 func checkUnpushedChanges() (changedFiles []string, err error) {
 	// Get the git repository root directory
 	repoRoot, err := getGitRepoRoot()
@@ -32,8 +34,8 @@ func checkUnpushedChanges() (changedFiles []string, err error) {
 	defer os.Chdir(currentDir) // Ensure we return to the original directory
 
 	// Change to the repository root for consistent git operations
-	if err := os.Chdir(repoRoot); err != nil {
-		return nil, fmt.Errorf("failed to change to repository root: %w", err)
+	if chdirErr := os.Chdir(repoRoot); chdirErr != nil {
+		return nil, fmt.Errorf("failed to change to repository root: %w", chdirErr)
 	}
 
 	// Check for unpushed commits
@@ -124,8 +126,8 @@ func getUnpushedCommitFiles() (bool, []string, error) {
 
 	if !hasRemote {
 		// If there's no tracking branch, we consider all commits as "unpushed"
-		files, err := getAllFiles()
-		return true, files, err
+		files, getAllErr := getAllFiles()
+		return true, files, getAllErr
 	}
 
 	// Compare local branch with its remote tracking branch

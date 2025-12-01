@@ -129,8 +129,8 @@ func initialModel(
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(styles.AccentColor) // .Padding(0, 0, 0, 1)
 	stepsList := initialStepsList()
-	progress := progress.New()
-	approvalContents := approvalContents{error: nil, loading: false, raw: []int64{}}
+	progressBar := progress.New()
+	appContents := approvalContents{error: nil, loading: false, raw: []int64{}}
 
 	m := model{
 		ctx:        ctx,
@@ -140,7 +140,7 @@ func initialModel(
 		workflowID: workflowID,
 
 		// data
-		approvalContents: approvalContents,
+		approvalContents: appContents,
 
 		header:     viewport.New(minRequiredWidth, 2),
 		stepsList:  stepsList,
@@ -150,7 +150,7 @@ func initialModel(
 
 		help:     help.New(),
 		spinner:  s,
-		progress: progress,
+		progress: progressBar,
 		status:   common.StatusBarRequest{Message: ""},
 
 		keys: keys,
@@ -251,7 +251,6 @@ func (m *model) setSelected() []tea.Cmd {
 			m.approvalContents.loading = true
 			cmds = append(cmds, m.getWorkflowStepApprovalContentsCmd)
 		}
-
 	}
 
 	m.focus = "detail"
@@ -362,12 +361,11 @@ func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:gocyclo,funlen
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-
 	// handle tick: data refresh and ticks
 	case tickMsg:
 		return m, tea.Batch(
@@ -434,11 +432,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// nav
 		case key.Matches(msg, m.keys.Up):
-			m, cmd := m.handleNav(msg)
-			return m, cmd
+			m, upCmd := m.handleNav(msg)
+			return m, upCmd
 		case key.Matches(msg, m.keys.Down):
-			m, cmd := m.handleNav(msg)
-			return m, cmd
+			m, downCmd := m.handleNav(msg)
+			return m, downCmd
 		case key.Matches(msg, m.keys.Left):
 			m.toggleFocus()
 		case key.Matches(msg, m.keys.Right):
@@ -494,7 +492,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Slash):
 			m.enableSearch()
 			m.stepsList.Update(msg)
-
 		}
 
 	default:
@@ -511,7 +508,6 @@ func (m model) View() string {
 	}
 	if m.width == 0 {
 		return ""
-
 	} else if m.width < minRequiredWidth || m.height < minRequiredHeight {
 		content := common.FullPageDialog(common.FullPageDialogRequest{
 			Width:   m.width,
@@ -525,7 +521,6 @@ func (m model) View() string {
 			),
 		})
 		return content
-
 	}
 
 	// this is the actual bulk of the work
@@ -537,13 +532,12 @@ func (m model) View() string {
 				Width:   m.width,
 				Height:  m.stepDetail.Height,
 				Padding: 1,
-				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(fmt.Sprintf("%s", m.error.Error())),
+				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(m.error.Error()),
 				Level:   "error",
 			})
 		} else {
 			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.stepDetail.Height, Padding: 1, Content: "  Loading  ", Level: "info"})
 		}
-
 	} else {
 		stepsList := ""
 		if m.focus == "list" {

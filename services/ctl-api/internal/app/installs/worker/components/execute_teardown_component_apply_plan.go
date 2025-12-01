@@ -47,12 +47,12 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 		}
 	}()
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: plugins.TableName(w.db, installDeploy),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install workflow")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update install workflow")
 	}
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installDeploy.LogStream)
@@ -67,9 +67,9 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 	}
 
 	l.Info("executing plan")
-	if err := w.execApplyPlan(ctx, install, installDeploy, sreq.FlowStepID, sreq.SandboxMode); err != nil {
+	if execErr := w.execApplyPlan(ctx, install, installDeploy, sreq.FlowStepID, sreq.SandboxMode); execErr != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
-		return errors.Wrap(err, "unable to execute deploy")
+		return errors.Wrap(execErr, "unable to execute deploy")
 	}
 	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 	w.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")

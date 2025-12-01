@@ -27,16 +27,16 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
 
-	if err := h.validateSourceFiles(ctx, srcFiles); err != nil {
-		l.Warn("unable to validate terraform build", zap.Error(err))
+	if err2 := h.validateSourceFiles(ctx, srcFiles); err2 != nil {
+		l.Warn("unable to validate terraform build", zap.Error(err2))
 		// TODO(jm): fail when a validation error happens
 	}
 
 	l.Info("packing terraform files into archive")
-	if err := h.state.arch.Pack(ctx, l, srcFiles); err != nil {
-		l.Error("failed to pack files", zap.Error(err))
-		h.writeErrorResult(ctx, "packing files", err)
-		return err
+	if err3 := h.state.arch.Pack(ctx, l, srcFiles); err3 != nil {
+		l.Error("failed to pack files", zap.Error(err3))
+		h.writeErrorResult(ctx, "packing files", err3)
+		return err3
 	}
 
 	l.Info("copying archive to destination", zap.String("dst", h.state.resultTag), zap.Any("cfg", h.state.regCfg))

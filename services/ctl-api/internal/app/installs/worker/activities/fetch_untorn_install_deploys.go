@@ -32,7 +32,6 @@ func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUnt
 	}
 
 	for _, installCmp := range install.InstallComponents {
-
 		latestDeploy, err := a.getLatestDeploy(ctx, req.InstallID, installCmp.ComponentID)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			continue
@@ -46,7 +45,6 @@ func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUnt
 			continue
 		} else if !latestDeploy.IsTornDown() {
 			untornInstallDeploys = append(untornInstallDeploys, latestDeploy)
-
 		}
 	}
 

@@ -87,11 +87,15 @@ func (h *handler) getDiff(l *zap.Logger, kubeCfg *rest.Config, release, target *
 		targetManifest = []byte(target.Manifest)
 	}
 
-	releaseResources, targetResources, err := manifest.Generate(
+	var releaseResources, targetResources []byte
+	releaseResources, targetResources, diffErr := manifest.Generate(
 		actionConfig,
 		releaseManifest,
 		targetManifest,
 	)
+	if diffErr != nil {
+		return nil, nil, errors.Wrap(diffErr, "unable to generate resources")
+	}
 
 	currentSpecs := make(map[string]*manifest.MappingResult)
 	if releaseResources != nil && release != nil {

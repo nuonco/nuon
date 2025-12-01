@@ -104,8 +104,8 @@ func New(
 		actionWorkflowID: actionWorkflowID,
 		runID:            runID,
 	}
-
 }
+
 func initialModel(
 	ctx context.Context,
 	cfg *config.Config,
@@ -218,7 +218,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-
 	// handle tick: data refresh
 	case tickMsg:
 		return m, tea.Batch(
@@ -277,6 +276,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	default:
 		m.spinner, cmd = m.spinner.Update(msg)
+		cmds = append(cmds, cmd)
 		m.stepsView, cmd = m.stepsView.Update(msg)
 		cmds = append(cmds, cmd)
 	}
@@ -319,7 +319,7 @@ func (m Model) View() string {
 				Width:   m.width,
 				Height:  m.stepsHeight,
 				Padding: 1,
-				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(fmt.Sprintf("%s", m.error.Error())),
+				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(m.error.Error()),
 				Level:   "error",
 			})
 		} else {

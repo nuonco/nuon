@@ -80,7 +80,6 @@ func (s *localCallback) callback(ctx context.Context,
 		}
 		log.Debug("wrote compressed file", zap.String("path", filename), zap.Int("file.bytes", len(zipBytes.Bytes())), zap.Int("bytes-written", n))
 		cfd.Sync()
-
 	}
 
 	return nil

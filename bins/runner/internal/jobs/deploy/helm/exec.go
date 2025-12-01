@@ -26,7 +26,7 @@ type HelmPlanContents struct {
 }
 
 // Modify Exec function to use the common diff package
-func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error { //nolint:gocyclo,funlen
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
@@ -67,13 +67,13 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if len(h.state.plan.ApplyPlanContents) > 0 {
 		// Use the new plans utility to decompress and decode the plan
 		l.Debug("extracting apply plan contents", zap.Int("contents.compressed.length", len(h.state.plan.ApplyPlanContents)))
-		decompressedPlan, err := plans.DecompressPlan(h.state.plan.ApplyPlanContents)
-		if err != nil {
-			return errors.Wrap(err, "unable to decompress apply plan contents")
+		decompressedPlan, decompErr := plans.DecompressPlan(h.state.plan.ApplyPlanContents)
+		if decompErr != nil {
+			return errors.Wrap(decompErr, "unable to decompress apply plan contents")
 		}
 
-		if err := json.Unmarshal(decompressedPlan, &helmPlan); err != nil {
-			return errors.Wrap(err, "unable to unmarshal apply plan contents")
+		if unmarshalErr := json.Unmarshal(decompressedPlan, &helmPlan); unmarshalErr != nil {
+			return errors.Wrap(unmarshalErr, "unable to unmarshal apply plan contents")
 		}
 
 		l.Debug("extracting apply plan contents", zap.String("plan.op", helmPlan.Op))
@@ -82,17 +82,17 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		var contentDiff *[]diff.ResourceDiff
-		var err error
+		var diffErr error
 		// in this case, the diff is generated so it is available to the createAPIResult method
 		if prevRel == nil {
-			diffStr, contentDiff, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
+			diffStr, contentDiff, diffErr = h.installDiff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "install"
 		} else {
-			diffStr, contentDiff, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
+			diffStr, contentDiff, diffErr = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "upgrade"
 		}
-		if err != nil {
-			return err
+		if diffErr != nil {
+			return diffErr
 		}
 
 		if diffStr == "" {
@@ -107,9 +107,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		// TODO(fd): figure out the best way to get a plan for this
 		l.Info("executing helm uninstall plan")
 
-		diffStr, contentDiff, err := h.uninstallDiff(ctx, l, actionCfg, kubeCfg, prevRel)
-		if err != nil {
-			return err
+		diffStr, contentDiff, uninstallErr := h.uninstallDiff(ctx, l, actionCfg, kubeCfg, prevRel)
+		if uninstallErr != nil {
+			return uninstallErr
 		}
 
 		helmPlan.Op = "uninstall"

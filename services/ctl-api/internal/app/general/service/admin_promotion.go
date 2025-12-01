@@ -80,6 +80,5 @@ func (s *service) initializeInstallStates(ctx *gin.Context) {
 			})
 		}
 		offset += batchSize
-
 	}
 }

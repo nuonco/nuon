@@ -7,17 +7,6 @@ import (
 )
 
 func (c *cli) orgsCmd() *cobra.Command {
-	var (
-		id           string
-		name         string
-		sandbox      bool
-		offset       int
-		limit        int
-		email        string
-		noSelect     bool
-		connectionID string
-	)
-
 	orgsCmd := &cobra.Command{
 		Use:               "orgs",
 		Short:             "Manage your organizations",
@@ -25,6 +14,17 @@ func (c *cli) orgsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		GroupID:           AdditionalGroup.ID,
 	}
+
+	c.addOrgsInfoCommands(orgsCmd)
+	c.addOrgsVCSCommands(orgsCmd)
+	c.addOrgsCRUDCommands(orgsCmd)
+	c.addOrgsInviteCommands(orgsCmd)
+
+	return orgsCmd
+}
+
+func (c *cli) addOrgsInfoCommands(orgsCmd *cobra.Command) {
+	var offset, limit int
 
 	currentCmd := &cobra.Command{
 		Use:   "current",
@@ -35,7 +35,6 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.Current(cmd.Context(), PrintJSON)
 		}),
 	}
-	// TODO(sdboyer) remove this eventually, obviated by marking current in the list cmd
 	currentCmd.Hidden = true
 	orgsCmd.AddCommand(currentCmd)
 
@@ -75,6 +74,21 @@ func (c *cli) orgsCmd() *cobra.Command {
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	orgsCmd.AddCommand(listCmd)
 
+	orgsCmd.AddCommand(&cobra.Command{
+		Use:   "print-config",
+		Short: "Print the current cli config",
+		Long:  "Print the current cli config being used",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.PrintConfig(PrintJSON)
+		}),
+	})
+}
+
+func (c *cli) addOrgsVCSCommands(orgsCmd *cobra.Command) {
+	var connectionID string
+	var offset, limit int
+
 	listVCSConnections := &cobra.Command{
 		Use:   "list-vcs-connections",
 		Short: "List VCS connections",
@@ -113,6 +127,11 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	connectGithubCmd.MarkFlagRequired("org-id")
 	orgsCmd.AddCommand(connectGithubCmd)
+}
+
+func (c *cli) addOrgsCRUDCommands(orgsCmd *cobra.Command) {
+	var id, name string
+	var sandbox, noSelect bool
 
 	createCmd := &cobra.Command{
 		Use:   "create",
@@ -151,16 +170,11 @@ func (c *cli) orgsCmd() *cobra.Command {
 		}),
 	}
 	orgsCmd.AddCommand(deselectOrgCmd)
+}
 
-	orgsCmd.AddCommand(&cobra.Command{
-		Use:   "print-config",
-		Short: "Print the current cli config",
-		Long:  "Print the current cli config being used",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.PrintConfig(PrintJSON)
-		}),
-	})
+func (c *cli) addOrgsInviteCommands(orgsCmd *cobra.Command) {
+	var email string
+	var offset, limit int
 
 	createInviteCmd := &cobra.Command{
 		Use:   "invite",
@@ -186,6 +200,4 @@ func (c *cli) orgsCmd() *cobra.Command {
 	listInvitesCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	listInvitesCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum invites to return")
 	orgsCmd.AddCommand(listInvitesCmd)
-
-	return orgsCmd
 }

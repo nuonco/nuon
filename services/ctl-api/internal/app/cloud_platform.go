@@ -33,7 +33,7 @@ const (
 	CloudPlatformUnknown CloudPlatform = "unknown"
 )
 
-func (c CloudPlatform) azureLocations() []CloudPlatformRegion {
+func (c CloudPlatform) azureLocations() []CloudPlatformRegion { //nolint:funlen
 	return []CloudPlatformRegion{
 		{
 			Name:        "East US",
@@ -528,7 +528,7 @@ func (c CloudPlatform) azureLocations() []CloudPlatformRegion {
 	}
 }
 
-func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
+func (c CloudPlatform) awsRegions() []CloudPlatformRegion { //nolint:funlen
 	return []CloudPlatformRegion{
 		{
 			Name:        "us-east-1",

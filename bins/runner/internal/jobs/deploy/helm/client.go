@@ -63,7 +63,6 @@ func (h *handler) getHelmReleaseStore(ctx context.Context, kubeCfg *rest.Config)
 
 	default:
 		return nil, errors.New("unsupported driver type " + h.state.plan.HelmDeployPlan.StorageDriver)
-
 	}
 	return store, nil
 }

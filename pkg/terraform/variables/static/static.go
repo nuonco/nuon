@@ -61,9 +61,7 @@ func WithFileVars(fileVars map[string]interface{}) varsOption {
 
 func WithFiles(files []string) varsOption {
 	return func(v *vars) error {
-		for _, f := range files {
-			v.Files = append(v.Files, f)
-		}
+		v.Files = append(v.Files, files...)
 		return nil
 	}
 }

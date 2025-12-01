@@ -18,7 +18,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
-func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) error {
+//nolint:gocyclo
+func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) error { //nolint:funlen
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -92,12 +93,12 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         installWorkflowStepID,
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: plugins.TableName(w.db, installDeploy),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install workflow")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update install workflow")
 	}
 
 	// Add Plan contents from the result to the plan
@@ -110,14 +111,14 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
 	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
 		l.Info("using the compressed contents from the runner job execution result")
-		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
-		if err != nil {
-			return errors.Wrap(err, "unable to get contents string")
+		applyPlanContents, contentsErr := planJob.Execution.Result.GetContentsB64String()
+		if contentsErr != nil {
+			return errors.Wrap(contentsErr, "unable to get contents string")
 		}
 		plan.ApplyPlanContents = applyPlanContents
-		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayString()
-		if err != nil {
-			return errors.Wrap(err, "unable to get contents display string")
+		applyPlanContentsDisplay, displayErr := planJob.Execution.Result.GetContentsDisplayString()
+		if displayErr != nil {
+			return errors.Wrap(displayErr, "unable to get contents display string")
 		}
 		plan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
@@ -128,19 +129,19 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if saveErr := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			DeployPlan: plan,
 		},
-	}); err != nil {
+	}); saveErr != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to get install: %w", saveErr)
 	}
 
-	planJSON = nil
-	plan = nil
+	_ = planJSON
+	_ = plan
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
