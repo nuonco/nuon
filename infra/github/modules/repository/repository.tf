@@ -16,6 +16,9 @@ resource "github_repository" "main" {
   has_wiki     = false # we use notion
   auto_init    = !var.is_fork
 
+  # homepage url: used very rarely
+  homepage_url = var.homepage_url
+
   # never allow merge commits, to prevent poorly formatted commits on main
   allow_merge_commit = false
 

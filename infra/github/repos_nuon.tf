@@ -476,3 +476,18 @@ module "byoc" {
     github = github.nuon
   }
 }
+
+module "acme-ch" {
+  source           = "./modules/repository"
+  name             = "acme-ch"
+  description      = "Demo of a vendor integration of the nuon api into a product for self-serve BYOC. This 'vendor' offers BYOC ClickHouse clusters."
+  homepage_url     = "https://acme-ch.demo.nuon.fun"
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}

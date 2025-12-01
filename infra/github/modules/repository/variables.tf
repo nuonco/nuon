@@ -97,3 +97,8 @@ variable "collaborators" {
   type    = map(string)
   default = {}
 }
+variable "homepage_url" {
+  type    = string
+  default = ""
+}
+
