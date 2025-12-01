@@ -1,7 +1,9 @@
 package audit
 
 import (
+	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,12 +21,15 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
+const auditCacheTTL = 6 * time.Hour
+
 type baseMiddleware struct {
 	l             *zap.Logger
 	db            *gorm.DB
 	context       string
 	cfg           *internal.Config
 	endpointAudit *api.EndpointAudit
+	cache         *sync.Map // stores last write time for each endpoint key
 }
 
 func (m baseMiddleware) Name() string {
@@ -38,9 +43,25 @@ var skipRoutes = map[string]struct{}{
 	"/docs/":   {},
 }
 
+func (m *baseMiddleware) cacheKey(name, method, route string) string {
+	return fmt.Sprintf("%s:%s:%s", name, method, route)
+}
+
+func (m *baseMiddleware) shouldWrite(key string) bool {
+	now := time.Now()
+	if lastWrite, ok := m.cache.Load(key); ok {
+		if now.Sub(lastWrite.(time.Time)) < auditCacheTTL {
+			return false
+		}
+	}
+	m.cache.Store(key, now)
+	return true
+}
+
 func (m *baseMiddleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if !m.cfg.EnableEndpointAuditing {
+			ctx.Next()
 			return
 		}
 
@@ -61,32 +82,38 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			m.context,
 			ctx.FullPath(),
 		)
-		ea := app.EndpointAudit{
-			Method:     ctx.Request.Method,
-			Name:       m.context,
-			Route:      ctx.FullPath(),
-			LastUsedAt: generics.NewNullTime(time.Now()),
-			Deprecated: deprecated,
+
+		key := m.cacheKey(m.context, ctx.Request.Method, ctx.FullPath())
+		if m.shouldWrite(key) {
+			ea := app.EndpointAudit{
+				Method:     ctx.Request.Method,
+				Name:       m.context,
+				Route:      ctx.FullPath(),
+				LastUsedAt: generics.NewNullTime(time.Now()),
+				Deprecated: deprecated,
+			}
+
+			if res := m.db.WithContext(ctx).
+				Clauses(clause.OnConflict{
+					Columns: []clause.Column{
+						{Name: "deleted_at"},
+						{Name: "method"},
+						{Name: "name"},
+						{Name: "route"},
+					},
+					DoUpdates: clause.AssignmentColumns([]string{
+						"last_used_at",
+						"deprecated",
+					}),
+				}).
+				Create(&ea); res.Error != nil {
+				ctx.Error(stderr.ErrSystem{
+					Err:         errors.Wrap(res.Error, "unable to emit api endpoint audit"),
+					Description: "unable to emit api endpoint auditing",
+				})
+			}
 		}
-		if res := m.db.WithContext(ctx).
-			Clauses(clause.OnConflict{
-				Columns: []clause.Column{
-					{Name: "deleted_at"},
-					{Name: "method"},
-					{Name: "name"},
-					{Name: "route"},
-				},
-				DoUpdates: clause.AssignmentColumns([]string{
-					"last_used_at",
-					"deprecated",
-				}),
-			}).
-			Create(&ea); res.Error != nil {
-			ctx.Error(stderr.ErrSystem{
-				Err:         errors.Wrap(res.Error, "unable to emit api endpoint audit"),
-				Description: "unable to emit api endpoint auditing",
-			})
-		}
+
 		if deprecated {
 			metricsCtx, err := cctx.MetricsContextFromGinContext(ctx)
 			if err != nil {
@@ -106,6 +133,8 @@ type Params struct {
 	EndpointAudit *api.EndpointAudit
 }
 
+var sharedCache = &sync.Map{}
+
 func newBaseMiddleware(params Params, context string) *baseMiddleware {
 	return &baseMiddleware{
 		l:             params.L,
@@ -113,5 +142,6 @@ func newBaseMiddleware(params Params, context string) *baseMiddleware {
 		context:       context,
 		cfg:           params.Cfg,
 		endpointAudit: params.EndpointAudit,
+		cache:         sharedCache,
 	}
 }
