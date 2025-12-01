@@ -99,7 +99,7 @@ func (m ConfirmDialogModel) View() string {
 		Padding(0, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.SubtleColor)
-	noStyle := yesStyle.Copy()
+	noStyle := yesStyle
 
 	if m.cursor == 0 {
 		// Yes is selected

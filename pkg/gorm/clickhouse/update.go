@@ -40,6 +40,7 @@ func (t UpdateLocalTable) ModifySQL(sql string) string {
 	return sql
 }
 
+//nolint:gocyclo
 func (dialector *Dialector) Update(db *gorm.DB) {
 	if db.Error != nil {
 		return
@@ -74,11 +75,12 @@ func (dialector *Dialector) Update(db *gorm.DB) {
 	if updateLocalTableClause, ok := db.Statement.Settings.Load(updateLocalTableName); ok && len(dialector.options.Addr) >= 1 {
 		if updateLocalTable, ok := updateLocalTableClause.(UpdateLocalTable); ok {
 			var (
-				err       error
-				opts      = dialector.options
-				addrs     = opts.Addr
-				updateSQL = updateLocalTable.ModifySQL(updateSQL)
+				err        error
+				opts       = dialector.options
+				addrs      = opts.Addr
+				updateSQL2 = updateLocalTable.ModifySQL(updateSQL)
 			)
+			updateSQL = updateSQL2
 
 			db.Statement.SQL.Reset()
 			db.Statement.SQL.WriteString(updateSQL)

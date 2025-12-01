@@ -24,7 +24,6 @@ import (
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/github"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	pkglog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/metrics"
@@ -45,7 +44,7 @@ func (c *cli) providers() []fx.Option {
 		fx.WithLogger(pkglog.NewFXLog),
 
 		// various dependencies
-		fx.Provide(log.New),
+		fx.Provide(pkglog.New),
 		fx.Provide(dblog.New),
 		fx.Provide(loops.New),
 		fx.Provide(github.New),

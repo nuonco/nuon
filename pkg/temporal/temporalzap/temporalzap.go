@@ -22,7 +22,6 @@ func NewLogger(zapLogger *zap.Logger) *Logger {
 }
 
 func (log *Logger) fields(keyvals []interface{}) []zap.Field {
-
 	var fields []zap.Field
 	var other []any
 	for _, v := range keyvals {

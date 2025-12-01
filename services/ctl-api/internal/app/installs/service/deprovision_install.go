@@ -50,8 +50,8 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 	}
 
 	var req DeprovisionInstallRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if bindErr := ctx.BindJSON(&req); bindErr != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
 		return
 	}
 

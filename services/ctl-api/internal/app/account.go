@@ -47,7 +47,6 @@ type Account struct {
 }
 
 func (a *Account) Indexes(db *gorm.DB) []migrations.Index {
-
 	return []migrations.Index{
 		{
 			Name: indexes.Name(db, &Account{}, "email"),

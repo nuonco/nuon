@@ -38,10 +38,12 @@ func (a *Service) getDeviceCode() (string, error) {
 
 	// error handling
 	if res.StatusCode >= 300 {
-		bodyBytes, err := io.ReadAll(res.Body)
-		if err != nil {
+		bodyBytes, readErr := io.ReadAll(res.Body)
+		bodyString := ""
+		if readErr == nil {
+			bodyString = string(bodyBytes)
 		}
-		bodyString := string(bodyBytes)
+		// error intentionally ignored - we continue with empty bodyBytes
 		fmt.Println("We have encoutered an unexpected error.")
 		return "", fmt.Errorf("%s", bodyString)
 	}

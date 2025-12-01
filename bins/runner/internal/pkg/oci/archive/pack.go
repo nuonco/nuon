@@ -44,6 +44,7 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 		log.Info("packed file", zap.String("path", f.RelPath), zap.String("abspath", f.AbsPath))
 	}
 
+	//nolint:staticcheck // SA1019: using deprecated oras.Pack until PackManifest is available
 	descriptor, err := oras.Pack(ctx, r.store, defaultArtifactType, fileDescriptors, oras.PackOptions{
 		PackImageManifest: true,
 	})
@@ -51,8 +52,8 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 		return fmt.Errorf("unable to pack: %w", err)
 	}
 
-	if err := r.store.Tag(ctx, descriptor, defaultLocalTag); err != nil {
-		return fmt.Errorf("unable to tag manifest: %w", err)
+	if err2 := r.store.Tag(ctx, descriptor, defaultLocalTag); err2 != nil {
+		return fmt.Errorf("unable to tag manifest: %w", err2)
 	}
 
 	_, err = r.store.Resolve(ctx, defaultLocalTag)

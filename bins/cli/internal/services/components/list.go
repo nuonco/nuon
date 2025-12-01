@@ -19,11 +19,11 @@ func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit in
 		hasMore    bool
 	)
 	if appNameOrID != "" {
-		appID, err := lookup.AppID(ctx, s.api, appNameOrID)
-		if err != nil {
-			return view.Error(err)
+		appID, lookupErr := lookup.AppID(ctx, s.api, appNameOrID)
+		if lookupErr != nil {
+			return view.Error(lookupErr)
 		}
-		components, hasMore, err = s.listAppComponents(ctx, appID, offset, limit)
+		components, hasMore, _ = s.listAppComponents(ctx, appID, offset, limit)
 	} else {
 		components, hasMore, err = s.listComponents(ctx, offset, limit)
 	}

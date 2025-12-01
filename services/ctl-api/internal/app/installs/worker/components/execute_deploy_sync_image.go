@@ -35,9 +35,9 @@ func (w *Workflows) ExecuteDeployComponentSyncImage(ctx workflow.Context, sreq s
 
 		sreq.DeployID = installDeploy.ID
 	} else {
-		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteDeployComponentSubSignal.ComponentID)
-		if err != nil {
-			return fmt.Errorf("unable to get component build: %w", err)
+		componentBuild, buildErr := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteDeployComponentSubSignal.ComponentID)
+		if buildErr != nil {
+			return fmt.Errorf("unable to get component build: %w", buildErr)
 		}
 
 		typ := app.InstallDeployTypeSync
@@ -54,12 +54,12 @@ func (w *Workflows) ExecuteDeployComponentSyncImage(ctx workflow.Context, sreq s
 		sreq.DeployID = installDeploy.ID
 	}
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: plugins.TableName(w.db, installDeploy),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install workflow")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update install workflow")
 	}
 
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
@@ -79,17 +79,17 @@ func (w *Workflows) ExecuteDeployComponentSyncImage(ctx workflow.Context, sreq s
 	}
 
 	l.Info("syncing oci artifact")
-	if err := w.execSync(ctx, install, installDeploy, sreq.SandboxMode); err != nil {
+	if syncErr := w.execSync(ctx, install, installDeploy, sreq.SandboxMode); syncErr != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
-		return errors.Wrap(err, "unable to execute sync")
+		return errors.Wrap(syncErr, "unable to execute sync")
 	}
 
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: plugins.TableName(w.db, installDeploy),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install workflow")
+	}); updateErr != nil {
+		return errors.Wrap(updateErr, "unable to update install workflow")
 	}
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")

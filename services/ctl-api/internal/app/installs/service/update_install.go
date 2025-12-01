@@ -94,7 +94,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 			InstallID:      installID,
 			ApprovalOption: req.InstallConfig.ApprovalOption,
 		}
-		res := s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		configRes := s.db.WithContext(ctx).Clauses(clause.OnConflict{
 			Columns: []clause.Column{
 				{Name: "deleted_at"},
 				{Name: "install_id"},
@@ -105,8 +105,8 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		}).
 			Create(&installConfig)
 
-		if res.Error != nil {
-			return nil, fmt.Errorf("unable to write routes: %w", res.Error)
+		if configRes.Error != nil {
+			return nil, fmt.Errorf("unable to write routes: %w", configRes.Error)
 		}
 	}
 

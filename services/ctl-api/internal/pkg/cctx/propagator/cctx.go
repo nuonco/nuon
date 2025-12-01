@@ -85,7 +85,10 @@ func (s *propagator) getPayload(reader workflow.HeaderReader) (*Payload, error) 
 }
 
 // Extract extracts values from headers and puts them into context
-func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) (context.Context, error) {
+func (s *propagator) Extract(
+	ctx context.Context,
+	reader workflow.HeaderReader,
+) (context.Context, error) {
 	payload, err := s.getPayload(reader)
 	if err != nil {
 		return nil, err

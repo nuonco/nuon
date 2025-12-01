@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDetectChanges(t *testing.T) {
+func TestDetectChanges(t *testing.T) { //nolint:funlen
 	tests := []struct {
 		name         string
 		original     map[string]interface{}

@@ -53,5 +53,4 @@ func (h *HelmChart) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 
 	return nil
-
 }

@@ -42,5 +42,4 @@ func StatusBar(req StatusBarRequest) string {
 		lipgloss.Left,
 		status, message,
 	)
-
 }

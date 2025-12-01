@@ -60,12 +60,12 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	}
 
 	var req CreateAppRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if bindErr := ctx.BindJSON(&req); bindErr != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
 		return
 	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if validateErr := req.Validate(s.v); validateErr != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", validateErr))
 		return
 	}
 

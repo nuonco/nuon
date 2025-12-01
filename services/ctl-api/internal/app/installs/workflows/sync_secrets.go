@@ -22,7 +22,10 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 		return nil, err
 	}
 
-	steps := make([]*app.WorkflowStep, 0)
+	steps := make([]*app.WorkflowStep, 0, 10)
+	if step != nil {
+		steps = append(steps, step)
+	}
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg)
 	if err != nil {
 		return nil, err

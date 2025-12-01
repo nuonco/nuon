@@ -8,7 +8,9 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) ListConfigs(ctx context.Context, appID string, offset, limit int, asJSON bool) error {
+func (s *Service) ListConfigs(
+	ctx context.Context, appID string, offset, limit int, asJSON bool,
+) error {
 	view := ui.NewListView()
 
 	cfgs, hasMore, err := s.listConfigs(ctx, appID, offset, limit)

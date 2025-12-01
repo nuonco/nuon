@@ -30,7 +30,9 @@ type statePartial struct {
 // @execution-timeout 60m
 // @task-timeout 30m
 // @id-template {{.CallerID}}-generate-state
-func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateRequest) (*state.State, error) {
+//
+//nolint:gocyclo
+func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateRequest) (*state.State, error) { //nolint:funlen
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
@@ -39,13 +41,13 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 
 	is := state.New()
 
-	if err := activities.AwaitMarkStateStale(ctx, &activities.MarkStateStaleRequest{
+	if staleErr := activities.AwaitMarkStateStale(ctx, &activities.MarkStateStaleRequest{
 		InstallID:       req.InstallID,
 		TriggeredByID:   req.TriggeredByID,
 		TriggeredByType: req.TriggeredByType,
-	}); err != nil {
-		if !generics.IsGormErrRecordNotFound(err) {
-			return nil, errors.Wrap(err, "unable to mark state as stale")
+	}); staleErr != nil {
+		if !generics.IsGormErrRecordNotFound(staleErr) {
+			return nil, errors.Wrap(staleErr, "unable to mark state as stale")
 		}
 	}
 

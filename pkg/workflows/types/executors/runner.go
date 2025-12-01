@@ -34,7 +34,6 @@ func ProvisionRunnerIDCallback(req *ProvisionRunnerRequest) string {
 // @id-callback ProvisionRunnerIDCallback
 func ProvisionRunner(workflow.Context, *ProvisionRunnerRequest) (*ProvisionRunnerResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
-	return nil, nil
 }
 
 type ProvisionRunnerResponse struct{}
@@ -56,5 +55,4 @@ func DeprovisionRunnerIDCallback(req *DeprovisionRunnerRequest) string {
 // @id-callback DeprovisionRunnerIDCallback
 func DeprovisionRunner(workflow.Context, *DeprovisionRunnerRequest) (*DeprovisionRunnerResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
-	return nil, nil
 }
