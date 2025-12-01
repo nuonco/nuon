@@ -156,10 +156,10 @@ require (
 	gorm.io/plugin/soft_delete v1.2.1
 	helm.sh/helm/v3 v3.18.6
 	helm.sh/helm/v4 v4.0.0-alpha.1
-	k8s.io/api v0.34.0
-	k8s.io/apimachinery v0.34.0
+	k8s.io/api v0.34.2
+	k8s.io/apimachinery v0.34.2
 	k8s.io/cli-runtime v0.34.0
-	k8s.io/client-go v0.34.0
+	k8s.io/client-go v0.34.2
 	moul.io/zapgorm2 v1.3.0
 	oras.land/oras-go/v2 v2.6.0
 	sigs.k8s.io/aws-iam-authenticator v0.6.8
