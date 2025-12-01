@@ -59,8 +59,8 @@ func (s *service) AdminCreateRunnerServiceAccountToken(ctx *gin.Context) {
 	email := account.ServiceAccountEmail(runnerID)
 
 	if req.Invalidate {
-		if err := s.acctClient.InvalidateTokens(ctx, email); err != nil {
-			ctx.Error(err)
+		if invalidateErr := s.acctClient.InvalidateTokens(ctx, email); invalidateErr != nil {
+			ctx.Error(invalidateErr)
 			return
 		}
 	}

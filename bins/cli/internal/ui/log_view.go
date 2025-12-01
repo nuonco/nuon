@@ -47,7 +47,7 @@ type Logs struct {
 	Complete Complete
 }
 
-func PrintBuildLogs(logs []models.ServiceBuildLog) {
+func PrintBuildLogs(logs []models.ServiceBuildLog) { //nolint:gocyclo
 	var lgs Logs
 
 	for _, l := range logs {
@@ -56,7 +56,6 @@ func PrintBuildLogs(logs []models.ServiceBuildLog) {
 			PrintError(err)
 			return
 		}
-
 	}
 
 	if len(lgs.Terminal.Events) != 0 {
@@ -110,7 +109,7 @@ func PrintBuildLogs(logs []models.ServiceBuildLog) {
 	fmt.Printf("\nstatus: %v\n", lgs.State.Current)
 }
 
-func PrintDeployLogs(log []models.ServiceDeployLog) {
+func PrintDeployLogs(log []models.ServiceDeployLog) { //nolint:gocyclo
 	var lgs Logs
 
 	for _, l := range log {
@@ -119,7 +118,6 @@ func PrintDeployLogs(log []models.ServiceDeployLog) {
 			PrintError(err)
 			return
 		}
-
 	}
 
 	if len(lgs.Terminal.Events) != 0 {
@@ -173,7 +171,7 @@ func PrintDeployLogs(log []models.ServiceDeployLog) {
 	fmt.Printf("\nstatus: %v\n", lgs.State.Current)
 }
 
-func PrintLogsFromInterface(log []interface{}) {
+func PrintLogsFromInterface(log []interface{}) { //nolint:gocyclo
 	var lgs Logs
 
 	for _, l := range log {
@@ -182,7 +180,6 @@ func PrintLogsFromInterface(log []interface{}) {
 			PrintError(err)
 			return
 		}
-
 	}
 
 	if len(lgs.Terminal.Events) != 0 {

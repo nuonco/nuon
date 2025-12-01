@@ -17,7 +17,7 @@ type Log struct {
 	TraceID   string
 }
 
-func TestAutoMigrateNested(t *testing.T) {
+func TestAutoMigrateNested(t *testing.T) { //nolint:gocyclo,funlen
 	integration := os.Getenv("GORM_INTEGRATION")
 	if integration == "" {
 		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")

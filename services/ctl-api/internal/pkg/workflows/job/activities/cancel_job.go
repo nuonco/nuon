@@ -51,7 +51,6 @@ func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJo
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to cancel job execution")
 		}
-
 	}
 
 	return nil

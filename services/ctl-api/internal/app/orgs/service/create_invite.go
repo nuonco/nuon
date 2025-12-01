@@ -43,8 +43,8 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 	}
 
 	var req CreateOrgInviteRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err2 := ctx.BindJSON(&req); err2 != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err2))
 		return
 	}
 
@@ -56,7 +56,7 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		return
 	}
 
-	if helpers.IsEmail(req.Email) == false {
+	if !helpers.IsEmail(req.Email) {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("invalid email"),
 			Description: "invalid email",

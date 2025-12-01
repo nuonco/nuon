@@ -37,7 +37,6 @@ func (s *service) AdminWorkflowStepApprove(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, approvalResponse)
-
 }
 
 func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.WorkflowStepApprovalResponse, error) {
@@ -50,7 +49,6 @@ func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.Wor
 		First(&installWorkflowStep)
 	if res.Error != nil {
 		return nil, errors.Wrapf(res.Error, "unable to find install workflow step with ID: %s", stepID)
-
 	}
 
 	if installWorkflowStep.Approval == nil {

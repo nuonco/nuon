@@ -7,17 +7,17 @@ import (
 )
 
 type TerraformApprovalPlan struct {
-	planJSON []byte `json:"plan_json"`
+	PlanJSON []byte `json:"plan_json"`
 }
 
 func NewTerraformApprovalPlan(planJSON []byte) *TerraformApprovalPlan {
 	return &TerraformApprovalPlan{
-		planJSON: planJSON,
+		PlanJSON: planJSON,
 	}
 }
 
 // NoopPlan imeplementation for terraform is based on https://github.com/hashicorp/terraform/blob/eee744c8874f15c131651d8b34bd4860fdebcaed/internal/command/jsonformat/plan.go#L58
-func terraformPlanNoop(planJSON []byte) (bool, error) {
+func terraformPlanNoop(planJSON []byte) (bool, error) { //nolint:gocyclo
 	if len(planJSON) == 0 {
 		return false, nil
 	}
@@ -42,7 +42,8 @@ func terraformPlanNoop(planJSON []byte) (bool, error) {
 
 	// Check each resource change for no-op actions
 	for _, rc := range plan.ResourceChanges {
-		if rc.Change != nil && len(rc.Change.Actions) == 1 && rc.Change.Actions[0] != tfjson.ActionNoop {
+		if rc.Change != nil && len(rc.Change.Actions) == 1 &&
+			rc.Change.Actions[0] != tfjson.ActionNoop {
 			return false, nil
 		}
 	}
@@ -65,5 +66,5 @@ func terraformPlanNoop(planJSON []byte) (bool, error) {
 }
 
 func (t *TerraformApprovalPlan) IsNoop() (bool, error) {
-	return terraformPlanNoop(t.planJSON)
+	return terraformPlanNoop(t.PlanJSON)
 }

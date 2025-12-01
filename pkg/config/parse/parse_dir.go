@@ -54,12 +54,12 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 
 	// parse the directory
 	var obj ConfigDir
-	if err := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
+	if parseErr := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
 		Root:     fp,
 		Ext:      ".toml",
 		ParserFn: func(rc io.ReadCloser, s string, a any) error { return parseTomlFile(rc, s, a, parseCfg.FileProcessor) },
-	}); err != nil {
-		return nil, errors.Wrap(err, "unable to parse directory")
+	}); parseErr != nil {
+		return nil, errors.Wrap(parseErr, "unable to parse directory")
 	}
 
 	hasConfigs, err := hasTomlFiles(cfgFS)
@@ -84,13 +84,13 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	}
 
 	// parse all get functions
-	if err := get.Parse(ctx, appCfg, &get.Options{
+	if getErr := get.Parse(ctx, appCfg, &get.Options{
 		FieldTimeout: defaultFieldGetTimeout,
 		RootDir:      fp,
-	}); err != nil {
+	}); getErr != nil {
 		return nil, ParseErr{
 			Description: "unable to get fields",
-			Err:         err,
+			Err:         getErr,
 		}
 	}
 

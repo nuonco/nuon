@@ -69,7 +69,7 @@ func (s *service) getOrgAccounts(ctx *gin.Context, orgID string) ([]app.Account,
 		tx = tx.Where("accounts.email NOT LIKE ?", "%nuon.co")
 	}
 
-	tx = tx.
+	tx.
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Account").
 		Where("role_id = ?", role.ID).

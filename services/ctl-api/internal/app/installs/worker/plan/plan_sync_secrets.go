@@ -17,6 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
+//nolint:gocyclo
 func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSecretsPlanRequest) (*plantypes.SyncSecretsPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -49,8 +50,8 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
-	if err := render.RenderStruct(&appCfg.SecretsConfig, stateData); err != nil {
-		return nil, errors.Wrap(err, "unable to render secrets config")
+	if cfgErr := render.RenderStruct(&appCfg.SecretsConfig, stateData); cfgErr != nil {
+		return nil, errors.Wrap(cfgErr, "unable to render secrets config")
 	}
 
 	secrets := make([]plantypes.KubernetesSecretSync, 0)
@@ -59,14 +60,11 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 			continue
 		}
 
-		secret, err := p.getKubernetesSecret(stack.InstallStackOutputs, cfg)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get kubernetes secret")
+		secret, secretErr := p.getKubernetesSecret(stack.InstallStackOutputs, cfg)
+		if secretErr != nil {
+			return nil, errors.Wrap(secretErr, "unable to get kubernetes secret")
 		}
 		secrets = append(secrets, secret)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get kubernetes secret")
-		}
 	}
 
 	if len(secrets) < 1 {

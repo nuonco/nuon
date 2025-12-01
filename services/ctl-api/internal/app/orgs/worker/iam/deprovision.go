@@ -24,7 +24,6 @@ func (w Wkflow) DeprovisionIAM(ctx workflow.Context, req *DeprovisionIAMRequest)
 		if err := w.execDeprovisionRole(ctx,
 			req,
 			nameFn); err != nil {
-
 			status[step] = fmt.Errorf("unable to delete IAM role: %w", err).Error()
 			continue
 		}

@@ -28,7 +28,10 @@ func (k *kubernetesClient) resourcesforGroupVersion(gv string) (*metav1.APIResou
 }
 
 func (h *handler) getClient(ctx context.Context) (*kubernetesClient, error) {
-	kubeCfg, err := kube.ConfigForCluster(ctx, h.state.plan.KubernetesManifestDeployPlan.ClusterInfo)
+	kubeCfg, err := kube.ConfigForCluster(
+		ctx,
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get kube config")
 	}

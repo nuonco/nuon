@@ -18,15 +18,15 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 	}
 
 	l.Info("cleaning up terraform workspace", zap.String("path", h.state.tfWorkspace.Root()))
-	if err := h.state.tfWorkspace.Cleanup(ctx); err != nil {
-		h.errRecorder.Record("unable to cleanup", err)
-		l.Info("error cleaning up terraform workspace", zap.Error(err))
+	if tfCleanupErr := h.state.tfWorkspace.Cleanup(ctx); tfCleanupErr != nil {
+		h.errRecorder.Record("unable to cleanup", tfCleanupErr)
+		l.Info("error cleaning up terraform workspace", zap.Error(tfCleanupErr))
 	}
 
 	l.Info("cleaning up workspace", zap.String("path", h.state.workspace.Root()))
-	if err := h.state.workspace.Cleanup(ctx); err != nil {
-		h.errRecorder.Record("unable to cleanup", err)
-		l.Info("error cleaning up workspace", zap.Error(err))
+	if wsCleanupErr := h.state.workspace.Cleanup(ctx); wsCleanupErr != nil {
+		h.errRecorder.Record("unable to cleanup", wsCleanupErr)
+		l.Info("error cleaning up workspace", zap.Error(wsCleanupErr))
 	}
 
 	policyDir := filepath.Join("/tmp", h.state.plan.InstallID)

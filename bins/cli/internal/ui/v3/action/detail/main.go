@@ -396,12 +396,12 @@ func (m *Model) resetForm() {
 	m.formError = nil
 }
 
+//nolint:gocyclo,funlen
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-
 	case executeFormSubmittedMsg:
 		m.formSubmitting = false
 		if msg.err != nil {
@@ -515,11 +515,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		// nav
 		case key.Matches(msg, m.keys.Up):
-			_, cmd := m.handleNav(msg)
-			return m, cmd
+			_, upCmd := m.handleNav(msg)
+			return m, upCmd
 		case key.Matches(msg, m.keys.Down):
-			_, cmd := m.handleNav(msg)
-			return m, cmd
+			_, downCmd := m.handleNav(msg)
+			return m, downCmd
 		case key.Matches(msg, m.keys.Left):
 			m.toggleFocus()
 		case key.Matches(msg, m.keys.Right):
@@ -575,7 +575,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		// search
 		case key.Matches(msg, m.keys.Slash):
 			m.runsList.Update(msg)
-
 		}
 
 	default:
@@ -598,7 +597,6 @@ func (m Model) View() string {
 	}
 	if m.width == 0 {
 		return ""
-
 	} else if m.width < minRequiredWidth || m.height < minRequiredHeight {
 		content := common.FullPageDialog(common.FullPageDialogRequest{
 			Width:   m.width,
@@ -612,7 +610,6 @@ func (m Model) View() string {
 			),
 		})
 		return content
-
 	}
 
 	// this is the actual bulk of the work
@@ -624,13 +621,12 @@ func (m Model) View() string {
 				Width:   m.width,
 				Height:  m.actionConfig.Height,
 				Padding: 1,
-				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(fmt.Sprintf("%s", m.error.Error())),
+				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(m.error.Error()),
 				Level:   "error",
 			})
 		} else {
 			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.actionConfig.Height, Padding: 1, Content: "  Loading  ", Level: "info"})
 		}
-
 	} else {
 		leftPanel := ""
 		if m.viewMode == ExecuteView {

@@ -57,9 +57,9 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 	// if no log stream exists, create one
 	_, err = cctx.GetLogStreamWorkflow(ctx)
 	if err != nil {
-		logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, op.ID)
-		if err != nil {
-			return errors.Wrap(err, "unable to create log stream")
+		logStream, logStreamErr := activities.AwaitCreateLogStreamByOperationID(ctx, op.ID)
+		if logStreamErr != nil {
+			return errors.Wrap(logStreamErr, "unable to create log stream")
 		}
 		defer func() {
 			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)

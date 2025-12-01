@@ -35,6 +35,7 @@ func (w *workspace) isGit() bool {
 	return w.Src.Url != emptyGithubRepoURL
 }
 
+//nolint:funlen
 func (w *workspace) clone(ctx context.Context) error {
 	pWriter := zapwriter.New(w.L, zapcore.DebugLevel, "")
 
@@ -64,8 +65,7 @@ func (w *workspace) clone(ctx context.Context) error {
 		}
 	}
 
-	// hoist this var, like a savage
-	coOpts := &git.CheckoutOptions{}
+	var coOpts *git.CheckoutOptions
 
 	// first, if it looks like a 40 char regex, attempt to check out as a reference w/ the hash
 	if IsCommitHash(w.Src.Ref) {

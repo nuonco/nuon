@@ -150,7 +150,6 @@ func (s *service) createKubernetesManifestComponentConfig(
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule
 
 	}
-
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create kubernetes component config connection: %w", res.Error)
 	}

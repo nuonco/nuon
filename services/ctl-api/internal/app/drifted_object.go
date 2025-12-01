@@ -46,7 +46,6 @@ func (d *DriftedObject) Indexes(db *gorm.DB) []migrations.Index {
 }
 
 func (d *DriftedObject) BeforeCreate(tx *gorm.DB) error {
-
 	return nil
 }
 

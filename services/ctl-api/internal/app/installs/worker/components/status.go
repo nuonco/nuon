@@ -31,7 +31,6 @@ func (w *Workflows) updateStatus(ctx workflow.Context, runID string, status app.
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
-
 }
 
 // TODO(sdboyer) refactor this to return an error; processing should abort if status updates fail
@@ -58,7 +57,6 @@ func (w *Workflows) updateRunStatus(ctx workflow.Context, runID string, status a
 			zap.String("run-id", runID),
 			zap.Error(err))
 	}
-
 }
 
 func (w *Workflows) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID string, status app.SandboxRunStatus, statusDescription string) {

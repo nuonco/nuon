@@ -9,7 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Helpers) GetComponentLatestBuilds(ctx context.Context, cmpIDs ...string) ([]app.ComponentBuild, error) {
+func (s *Helpers) GetComponentLatestBuilds(
+	ctx context.Context,
+	cmpIDs ...string,
+) ([]app.ComponentBuild, error) {
 	if len(cmpIDs) == 0 {
 		return []app.ComponentBuild{}, nil
 	}
@@ -33,7 +36,10 @@ func (s *Helpers) GetComponentLatestBuilds(ctx context.Context, cmpIDs ...string
 	return builds, nil
 }
 
-func (s *Helpers) getComponentLatestBuild(ctx context.Context, cmpID string) (*app.ComponentBuild, error) {
+func (s *Helpers) getComponentLatestBuild(
+	ctx context.Context,
+	cmpID string,
+) (*app.ComponentBuild, error) {
 	var build app.ComponentBuild
 
 	res := s.db.WithContext(ctx).

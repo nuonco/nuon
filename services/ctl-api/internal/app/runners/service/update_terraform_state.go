@@ -73,9 +73,9 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 	}
 	var data app.TerraformStateData
 
-	if err := json.Unmarshal(contents, &data); err != nil {
-		s.l.Error("unable to parse request body", zap.Error(err))
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if unmarshalErr := json.Unmarshal(contents, &data); unmarshalErr != nil {
+		s.l.Error("unable to parse request body", zap.Error(unmarshalErr))
+		ctx.Error(fmt.Errorf("unable to parse request: %w", unmarshalErr))
 		return
 	}
 

@@ -1,7 +1,6 @@
 package plantypes
 
 import (
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
 	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
 	"github.com/powertoolsdev/mono/pkg/types/state"
@@ -55,7 +54,7 @@ type SandboxRunPlan struct {
 }
 
 type TerraformDeployHooks struct {
-	Enabled bool               `hcl:"enabled"`
-	EnvVars map[string]string  `hcl:"env_vars"`
-	RunAuth credentials.Config `hcl:"run_auth,block"`
+	Enabled bool                  `hcl:"enabled"`
+	EnvVars map[string]string     `hcl:"env_vars"`
+	RunAuth awscredentials.Config `hcl:"run_auth,block"`
 }

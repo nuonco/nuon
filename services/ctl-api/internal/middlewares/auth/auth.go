@@ -85,9 +85,9 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 		if acctToken != nil {
-			acct, err := m.acctClient.FetchAccount(ctx, acctToken.AccountID)
-			if err != nil {
-				ctx.Error(err)
+			acct, fetchErr := m.acctClient.FetchAccount(ctx, acctToken.AccountID)
+			if fetchErr != nil {
+				ctx.Error(fetchErr)
 				ctx.Abort()
 				return
 			}
