@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -17,7 +17,13 @@ import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
 import type { TAccount } from '@/types'
 
-export const TeamMembersTable = ({ members }: { members: TAccount[] }) => {
+export const TeamMembersTable = ({
+  members,
+  limit = 10,
+}: {
+  members: TAccount[]
+  limit?: number
+}) => {
   const columns: Array<ColumnDef<TAccount>> = useMemo(
     () => [
       {
@@ -34,17 +40,33 @@ export const TeamMembersTable = ({ members }: { members: TAccount[] }) => {
 
       {
         id: 'remove',
-        cell: (props) => <RemoveUserModal user={props?.row.original} />,
+        cell: (props) => (
+          <RemoveUserModal
+            user={props?.row.original}
+            currentMemberCount={members.length}
+            limit={limit}
+          />
+        ),
       },
     ],
-    []
+    [members.length, limit]
   )
 
   return <Table columns={columns} data={members} />
 }
 
-const RemoveUserModal = ({ user }: { user: TAccount }) => {
+const RemoveUserModal = ({
+  user,
+  currentMemberCount,
+  limit,
+}: {
+  user: TAccount
+  currentMemberCount: number
+  limit: number
+}) => {
   const path = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { org } = useOrg()
 
   const [isOpen, setIsOpen] = useState(false)
@@ -63,8 +85,24 @@ const RemoveUserModal = ({ user }: { user: TAccount }) => {
 
     if (account) {
       setIsOpen(false)
+
+      const currentOffset = parseInt(searchParams.get('offset') || '0', 10)
+
+      if (currentMemberCount === 1 && currentOffset > 0) {
+        const previousOffset = Math.max(0, currentOffset - limit)
+
+        const params = new URLSearchParams(searchParams.toString())
+        if (previousOffset === 0) {
+          params.delete('offset')
+        } else {
+          params.set('offset', previousOffset.toString())
+        }
+
+        const newUrl = `${path}?${params.toString()}`
+        router.push(newUrl)
+      }
     }
-  }, [account, error])
+  }, [account, error, currentMemberCount, searchParams, path, router, limit])
 
   return (
     <>
