@@ -1,3 +1,5 @@
+export const maxDuration = 10
+
 import { Dashboard, EmptyStateGraphic, Link, Text } from '@/components'
 
 export default function NotFound() {
@@ -12,13 +14,13 @@ export default function NotFound() {
             Nuon data not found
           </Text>
           <div>
-          <Text className="!text-lg !leading-relaxed">
-            There was an issue loading this data.
-          </Text>
-          <Text className="!text-lg !leading-relaxed">
-            If this issue persist please contact Nuon{' '}
-            <Link href="mailto:team@nuon.co">support@nuon.co</Link>
-          </Text>
+            <Text className="!text-lg !leading-relaxed">
+              There was an issue loading this data.
+            </Text>
+            <Text className="!text-lg !leading-relaxed">
+              If this issue persist please contact Nuon{' '}
+              <Link href="mailto:team@nuon.co">support@nuon.co</Link>
+            </Text>
           </div>
           <Link className="text-base" href="/">
             Return to homepage
