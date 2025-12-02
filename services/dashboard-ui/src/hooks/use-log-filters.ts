@@ -39,13 +39,19 @@ export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
     return services
   }, [logs])
 
-  // Sort logs by timestamp
+  // Sort logs by timestamp using full nanosecond precision
   const sortLogsByTimestamp = (logs: T[], direction: SortDirection): T[] => {
     return [...logs].sort((a, b) => {
-      const aTime = new Date(a.timestamp).getTime()
-      const bTime = new Date(b.timestamp).getTime()
+      // Use string comparison for full nanosecond precision
+      // ISO 8601 timestamps are lexicographically sortable
+      const aTimestamp = a.timestamp
+      const bTimestamp = b.timestamp
 
-      return direction === 'desc' ? bTime - aTime : aTime - bTime
+      if (direction === 'desc') {
+        return bTimestamp > aTimestamp ? 1 : bTimestamp < aTimestamp ? -1 : 0
+      } else {
+        return aTimestamp > bTimestamp ? 1 : aTimestamp < bTimestamp ? -1 : 0
+      }
     })
   }
 
