@@ -1,7 +1,7 @@
 // gh.nuon.co configs for github pages
 resource "aws_route53_record" "gh_txt" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = " _github-pages-challenge-nuonco.gh"
+  name    = "_github-pages-challenge-nuonco.gh"
   type    = "TXT"
   ttl     = 300
   records = [
