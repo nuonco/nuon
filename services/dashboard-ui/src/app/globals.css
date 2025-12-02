@@ -247,3 +247,18 @@ body {
     opacity: 0; 
   }
 }
+
+.slide-in {
+  animation: enter-slide-in var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+@keyframes enter-slide-in {
+  from {
+    transform: translateX(-0.15rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

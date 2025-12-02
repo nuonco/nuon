@@ -83,7 +83,10 @@ export const BuildComponentButton = ({
         },
       })
       if (build?.id) {
-        router.push(`${path}/builds/${build?.id}`)
+        const buildPath = `${path}/builds/${build?.id}`
+        router.push(
+          org?.features?.['dashboard-sse'] ? `${buildPath}/sse` : buildPath
+        )
       }
 
       setIsOpen(false)
@@ -117,6 +120,7 @@ export const BuildComponentButton = ({
                 </Button>
                 <Button
                   className="text-sm flex items-center gap-1"
+                  disabled={isLoading}
                   onClick={() => {
                     setIsKickedOff(true)
                     execute({

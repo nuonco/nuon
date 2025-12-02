@@ -4,7 +4,7 @@ import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
-import { useLogs } from '@/hooks/use-logs'
+import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 
 type TLogServiceText = 'api' | 'runner'
 const LOG_ACTIONS: {
@@ -17,17 +17,21 @@ const LOG_ACTIONS: {
 
 interface ILogServiceFilter {
   title: string
+  filters: {
+    selectedServices: TLogFiltersProps['selectedServices']
+    handleServiceInputToggle: TLogFiltersProps['handleServiceInputToggle']
+    handleServiceButtonClick: TLogFiltersProps['handleServiceButtonClick']
+    handleServiceReset: TLogFiltersProps['handleServiceReset']
+  }
 }
 
-export const LogServiceFilter = ({ title }: ILogServiceFilter) => {
+export const LogServiceFilter = ({ title, filters }: ILogServiceFilter) => {
   const {
-    filters: {
-      selectedServices,
-      handleServiceInputToggle,
-      handleServiceButtonClick,
-      handleServiceReset,
-    },
-  } = useLogs()
+    selectedServices,
+    handleServiceInputToggle,
+    handleServiceButtonClick,
+    handleServiceReset,
+  } = filters
 
   const getButtonText = (action: string) => {
     if (selectedServices.size === 1 && selectedServices.has(action)) {
