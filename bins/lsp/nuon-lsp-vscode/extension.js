@@ -1,10 +1,21 @@
 const path = require("path");
 const vscode = require("vscode");
 const fs = require("fs");
+const { execSync } = require("child_process");
 const { LanguageClient, TransportKind } =
   require("vscode-languageclient/node");
 
 let client;
+
+function findInPath(binaryName) {
+  try {
+    const command = process.platform === "win32" ? "where" : "which";
+    const result = execSync(`${command} ${binaryName}`, { encoding: "utf8" });
+    return result.trim().split("\n")[0];
+  } catch {
+    return null;
+  }
+}
 
 function activate(context) {
   console.log("🚀 Nuon-LSP extension activated");
@@ -14,7 +25,13 @@ function activate(context) {
   let serverCommand = config.get("serverPath");
 
   if (!serverCommand || serverCommand === "") {
-    serverCommand = path.join(context.extensionPath, "..", "lsp");
+    const pathBinary = findInPath("nuon-lsp");
+    if (pathBinary) {
+      serverCommand = pathBinary;
+      console.log(`📍 Found nuon-lsp in PATH: ${serverCommand}`);
+    } else {
+      serverCommand = path.join(context.extensionPath, "..", "lsp");
+    }
   }
 
   // Validate that the server binary exists
