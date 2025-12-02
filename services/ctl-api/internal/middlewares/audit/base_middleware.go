@@ -65,6 +65,12 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		// Skip unmatched routes
+		if ctx.FullPath() == "" {
+			ctx.Next()
+			return
+		}
+
 		if _, ok := skipRoutes[ctx.FullPath()]; ok {
 			ctx.Next()
 			return
