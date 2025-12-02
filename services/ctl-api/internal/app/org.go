@@ -53,6 +53,7 @@ const (
 	OrgFeatureStratusLayout           OrgFeature = "stratus-layout"
 	OrgFeatureStratusWorkflow         OrgFeature = "stratus-workflow"
 	OrgFeatureTerraformInstaller      OrgFeature = "terraform-installer"
+	OrgFeatureDashboardSSE            OrgFeature = "dashboard-sse"
 )
 
 type Org struct {
@@ -153,6 +154,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureStratusLayout:      false,
 		OrgFeatureStratusWorkflow:    false,
 		OrgFeatureTerraformInstaller: false,
+		OrgFeatureDashboardSSE:       false,
 
 		// Enabled by default
 		OrgFeatureAPIPagination:           true,
@@ -212,5 +214,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureStratusLayout,
 		OrgFeatureStratusWorkflow,
 		OrgFeatureTerraformInstaller,
+		OrgFeatureDashboardSSE,
 	}
 }

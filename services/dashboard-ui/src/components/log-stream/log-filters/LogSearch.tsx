@@ -1,11 +1,17 @@
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
-import { useLogs } from '@/hooks/use-logs'
+import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 
-export const LogSearch = () => {
-  const {
-    filters: { filterStats, handleSearchChange, searchQuery },
-  } = useLogs()
+interface LogSearchProps {
+  filters: {
+    filterStats: TLogFiltersProps['filterStats']
+    handleSearchChange: TLogFiltersProps['handleSearchChange'] 
+    searchQuery: TLogFiltersProps['searchQuery']
+  }
+}
+
+export const LogSearch = ({ filters }: LogSearchProps) => {
+  const { filterStats, handleSearchChange, searchQuery } = filters
 
   return (
     <div className="flex items-center gap-3">
