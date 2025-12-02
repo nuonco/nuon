@@ -42,6 +42,27 @@ module "bucket" {
   policy        = data.aws_iam_policy_document.bucket_policy.json
 }
 
+data "aws_iam_policy_document" "account_locks_bucket_policy" {
+  statement {
+    sid    = "AllowOrgAccountsAccess"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [for account_name, account_id in local.accounts : "arn:aws:iam::${account_id}:root"]
+    }
+    actions = [
+      "s3:ListBucket",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+    ]
+    resources = [
+      "arn:aws:s3:::${local.account_locks_bucket}",
+      "arn:aws:s3:::${local.account_locks_bucket}/*",
+    ]
+  }
+}
+
 module "account_locks_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = ">= v3.2.4"
@@ -60,4 +81,7 @@ module "account_locks_bucket" {
 
   control_object_ownership = true
   object_ownership         = "BucketOwnerEnforced"
+
+  attach_policy = true
+  policy        = data.aws_iam_policy_document.account_locks_bucket_policy.json
 }
