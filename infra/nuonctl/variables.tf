@@ -1,6 +1,7 @@
 locals {
-  name        = "nuonctl"
-  bucket_name = "nuon-build-manifests"
+  name                 = "nuonctl"
+  bucket_name          = "nuon-build-manifests"
+  account_locks_bucket = "nuon-account-locks"
 
   github = {
     organization = "powertoolsdev"

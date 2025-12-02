@@ -1,6 +1,4 @@
 data "aws_iam_policy_document" "bucket_policy" {
-  # Allow all organization accounts to access manifest bucket
-  # Individual accounts control which roles can access via IAM policies
   statement {
     sid    = "AllowOrgAccountsAccess"
     effect = "Allow"
@@ -40,7 +38,26 @@ module "bucket" {
   control_object_ownership = true
   object_ownership         = "BucketOwnerEnforced"
 
-  # Attach bucket policy for cross-account access
   attach_policy = true
   policy        = data.aws_iam_policy_document.bucket_policy.json
+}
+
+module "account_locks_bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = ">= v3.2.4"
+
+  bucket = local.account_locks_bucket
+  versioning = {
+    enabled = true
+  }
+
+  attach_deny_insecure_transport_policy = true
+  attach_require_latest_tls_policy      = true
+
+  attach_public_policy = false
+  block_public_acls    = true
+  block_public_policy  = true
+
+  control_object_ownership = true
+  object_ownership         = "BucketOwnerEnforced"
 }
