@@ -4,9 +4,9 @@ import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
-import { useLogs } from '@/hooks/use-logs'
 import { cn } from '@/utils/classnames'
 import { getSeverityBorderClasses } from '@/utils/log-stream-utils'
+import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 
 type TLogSeverityText = 'Trace' | 'Debug' | 'Info' | 'Warn' | 'Error' | 'Fatal'
 const LOG_ACTIONS: {
@@ -23,17 +23,21 @@ const LOG_ACTIONS: {
 
 interface ILogSeverityFilter {
   title: string
+  filters: {
+    selectedSeverities: TLogFiltersProps['selectedSeverities']
+    handleSeverityInputToggle: TLogFiltersProps['handleSeverityInputToggle']
+    handleSeverityButtonClick: TLogFiltersProps['handleSeverityButtonClick']
+    handleSeverityReset: TLogFiltersProps['handleSeverityReset']
+  }
 }
 
-export const LogSeverityFilter = ({ title }: ILogSeverityFilter) => {
+export const LogSeverityFilter = ({ title, filters }: ILogSeverityFilter) => {
   const {
-    filters: {
-      selectedSeverities,
-      handleSeverityInputToggle,
-      handleSeverityButtonClick,
-      handleSeverityReset,
-    },
-  } = useLogs()
+    selectedSeverities,
+    handleSeverityInputToggle,
+    handleSeverityButtonClick,
+    handleSeverityReset,
+  } = filters
   const getButtonText = (action: string) => {
     if (selectedSeverities.size === 1 && selectedSeverities.has(action)) {
       return 'Reset'
