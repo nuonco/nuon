@@ -35,12 +35,12 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npx vsce package"
+        "build": "vsce package -o ./bin/extension.vsix",
+        "vscode:prepublish": "echo 'Prepublish complete'"
     },
     "devDependencies": {
-        "vscode-languageclient": "^9.0.1"
-    },
-    "dependencies": {
-        "vscode": "^1.1.37"
+        "vscode": "^1.1.37",
+        "vscode-languageclient": "^9.0.1",
+        "@vscode/vsce": "^2.0.0"
     }
 }

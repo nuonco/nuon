@@ -12,10 +12,17 @@ A Language Server Protocol implementation for Nuon configuration files, providin
 
 ```bash
 cd bins/lsp
-go build -o lsp ./
+go build -o nuon-lsp ./
 ```
 
 This creates the `lsp` binary that serves as the language server.
+
+For VSCode extension, also copy the binary to the extension's `bin` directory:
+
+```bash
+mkdir -p nuon-lsp-vscode/bin
+cp lsp nuon-lsp-vscode/bin/
+```
 
 ## Development Setup
 
@@ -41,7 +48,7 @@ Replace `/path/to/mono` with your actual repository path.
 
 1. **Rebuild the binary** after changes:
    ```bash
-   cd bins/lsp && go build -o lsp ./
+   cd bins/lsp && go build -o nuon-lsp ./
    ```
 
 2. **Restart Neovim** or reload your config to pick up the new binary:
@@ -88,7 +95,29 @@ const clientOptions = {
 };
 ```
 
-#### Installation & Development
+#### Installation
+
+1. **Build and prepare the extension**:
+   ```bash
+   cd bins/lsp
+   go build -o nuon-lsp ./
+   mkdir -p nuon-lsp-vscode/bin
+   cp lsp nuon-lsp-vscode/bin/
+   cd nuon-lsp-vscode && npm install
+   ```
+
+2. **Install the extension in VSCode**:
+   - Copy the extension folder to your VSCode extensions directory:
+     ```bash
+     cp -r nuon-lsp-vscode ~/.vscode/extensions/nuon.nuon-lsp-0.0.1
+     ```
+   - Install dependencies in the installed extension:
+     ```bash
+     cd ~/.vscode/extensions/nuon.nuon-lsp-0.0.1 && npm install
+     ```
+   - Reload VSCode
+
+#### Development
 
 > **Important**: You must open the `nuon-lsp-vscode` folder as your workspace root in VSCode. Opening a parent folder will prevent debugging from working correctly.
 
@@ -137,6 +166,13 @@ npm run vscode:prepublish
 ## Supported File Types
 
 - `.toml` - Nuon application manifests
+
+> **Note**: For the LSP to provide completions, your TOML file must declare a schema type at the top (before any `[table]` headers):
+> ```toml
+>  # helm
+> ```
+> Supported types include: `helm`, `docker_build`, `terraform_module`, `job`, and others defined in the Nuon JSON schema.
+
 ## Adding New Features
 
 ### Adding a New Handler
@@ -148,7 +184,7 @@ npm run vscode:prepublish
      TextDocumentNewFeature: handlers.TextDocumentNewFeature,
    }
    ```
-3. Rebuild: `go build -o lsp ./`
+3. Rebuild: `go build -o nuon-lsp ./`
 
 ### Modifying Language Support
 
