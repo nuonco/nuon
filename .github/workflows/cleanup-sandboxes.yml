@@ -1,0 +1,33 @@
+name: Cleanup Sandbox Accounts
+
+on:
+  schedule:
+    # Run every Friday at 8pm PT / Saturday 4am UTC
+    # Note: 8pm PST (winter) = 4am UTC, 8pm PDT (summer) = 3am UTC
+    - cron: "0 4 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  cleanup:
+    name: 🧹 Cleanup Sandboxes
+    runs-on: mono
+    env:
+      NUON_ROOT: ${{ github.workspace }}
+      DISABLE_GITHUB_OIDC: true
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup nuonctl
+        uses: ./actions/setup-nuonctl
+
+      - name: Execute sandbox cleanup
+        run: |
+          CI=true nuonctl general exec-cleanup --prefix sandbox-
