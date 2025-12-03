@@ -3,12 +3,26 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { AuditHistoryButton } from './AuditHistory'
+import { DeprovisionButton } from './Deprovision'
+import { DeprovisionStackButton } from './DeprovisionStack'
+import { EnableAutoApproveButton } from './EnableAutoApprove'
+import { EnableConfigSyncButton } from './EnableConfigSync'
+import { ForgetButton } from './Forget'
+import { GenerateInstallConfigButton } from './GenerateInstallConfig'
 import { ReprovisionButton } from './Reprovision'
+import { SyncSecretsButton } from './SyncSecrets'
+import { ViewStateButton } from './ViewState'
 
 export const InstallManagementDropdown = () => {
   return (
     <Dropdown
-      buttonText="Manage"
+      buttonText={
+        <>
+          <Icon variant="SlidersHorizontalIcon" />
+          Manage
+        </>
+      }
       id="install-mgmt"
       variant="primary"
       alignment="right"
@@ -20,38 +34,25 @@ export const InstallManagementDropdown = () => {
         <Button>
           Edit inputs <Icon variant="PencilSimpleLine" />
         </Button>
-        <Button>
-          Auto approve changes <Icon variant="ListChecks" />
-        </Button>
-        <Button>
-          View state <Icon variant="CodeBlock" />
-        </Button>
+        <AuditHistoryButton isMenuButton />
+        <ViewStateButton isMenuButton />
+        <EnableAutoApproveButton isMenuButton />
+        <EnableConfigSyncButton isMenuButton />
+        <GenerateInstallConfigButton isMenuButton />
         <hr />
         <Text variant="label" theme="neutral">
-          Controlls
+          Controls
         </Text>
         <ReprovisionButton isMenuButton />
-        <Button>
-          Deprovision install <Icon variant="ArrowURightDown" />
-        </Button>
-        <Button>
-          Deprovision stack <Icon variant="StackMinus" />
-        </Button>
+        <SyncSecretsButton isMenuButton />
+        <DeprovisionButton isMenuButton />
+        <DeprovisionStackButton isMenuButton />
         <hr />
         <Text variant="label" theme="neutral">
           Danger
         </Text>
-        <Button>
-          Break glass permissions <Icon variant="LockLaminated" />
-        </Button>
         <span>
-          <Button
-            className="!text-red-800 dark:!text-red-500 !p-2 w-full justify-between"
-            variant="ghost"
-          >
-            Forget install
-            <Icon variant="Trash" />
-          </Button>
+          <ForgetButton />
         </span>
       </Menu>
     </Dropdown>
