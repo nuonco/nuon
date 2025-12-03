@@ -1,61 +1,40 @@
 ---
 title: "Create Your First App"
-description: "Learn how to package an app for BYOC distribution."
+description: "Learn how to package an app to install into AWS"
 ---
 
-This guide walks you through packaging an application with the Nuon CLI into a
-Nuon app and deploying it as an Install to an AWS cloud account. Nuon supports
-Azure and soon Google Cloud, but to keep it simple, this guide focuses on AWS.
+This guide walks you through packaging an example app 
+ and install it to an AWS cloud account. Nuon supports
+Azure Google Cloud, or any cloud provider but to keep it simple, this guide focuses on AWS.
 
 <Note>
-If you are new to Nuon, we recommend understanding the life cycle of packaging your app, installing your app into customer clouds, and updating, monitoring and remediating the installs by reading our [App and Install Life Cycle guide](../guides/app-install-life-cycle).
+If you are new to Nuon, we recommend understanding the life cycle of packaging your app, installing your app into a cloud account, and updating, monitoring and remediating the installs by reading our [App and Install Life Cycle guide](../guides/app-install-life-cycle).
 </Note>
 
-## Choose A Sample App
+## Choose An Example App
 
-Choose from the following options to get started:
+Choose one of the following example app guides to get started:
 
-- [aws-lambda](./app-aws-lambda): A Lambda function with DynamoDB and API
-  Gateway
-- [eks-simple](./app-aws-k8s): An AWS Kubernetes Traefik `whoami` application
-
-<Note>
-	These [apps](/concepts/apps) can be found in Nuon's [GitHub
-	repository](https://github.com/nuonco/example-app-configs).
-</Note>
+- [aws-lambda](./app-aws-lambda): A Lambda function with DynamoDB and API Gateway
+- [eks-simple](./app-aws-k8s): An AWS EKS Traefik `whoami` application
 
 ## Other Apps to Explore
 
-For more App examples, clone the
+For these and other app examples, clone the
 [example-app-configs repository](https://github.com/nuonco/example-app-configs).
 Then run the following commands:
 
 ```sh
 brew install nuonco/tap/nuon
-nuon login
+nuon auth login
+nuon orgs select
 cd example-app-configs/<app directory>
 nuon apps create --name <app directory>
 nuon apps sync
 ```
 
-Example Apps:
-
-- Observability software vendor [Grafana](https://grafana.com). Read the blog
-  post on
-  [Installing Grafana with Nuon](https://nuon.co/blog/installing-grafana-with-nuon/)
-- [httpbin](https://httpbingo.org/) on an AWS EC2 VM as a service using a Docker
-  container
-- Collaboration software vendor [Mattermost](https://mattermost.com). Read the
-  blog post on
-  [Installing Mattermost with Nuon](https://nuon.co/blog/installing-mattermost-with-nuon/)
-- Design software vendor [Penpot](https://penpot.com)
-- Cloud Development Environment software vendor [Coder](https://coder.com). Read
-  the blog post on
-  [Installing Coder with Nuon](https://nuon.co/blog/installing-coder-with-nuon/)
-
 ## Prerequisites
 
-- [Set up a Nuon organization](/get-started/quickstart). You will need a working
-  Nuon org.
+- [Signup for the self-service free trial](https://app.nuon.co). You will need a login and an org in Nuon's cloud.
 - [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html).
-  This is the account you will create the install in.
+  This is the account you will install the app in.

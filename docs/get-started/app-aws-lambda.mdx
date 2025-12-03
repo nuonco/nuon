@@ -1,31 +1,30 @@
 ---
-title: "Create Your First AWS Lambda App"
-description: "Learn how to package an AWS Lambda app for BYOC distribution."
+title: "Create An AWS Lambda App"
+description: "Learn how to package and install an AWS Lambda app."
 ---
 
-This guide walks you through packaging an AWS Lambda application and installing
+This guide walks you through packaging an AWS Lambda app and installing
 it into your AWS cloud account.
 
 <Note>
-	This [app](/concepts/apps) can be found in the [GitHub
+	This [app](/concepts/apps) can be found in this [GitHub
 	repository](https://github.com/nuonco/example-app-configs).
 </Note>
 
 ## Prerequisites
 
-- [Set up a Nuon organization](/get-started/quickstart). You will need a working
-  Nuon org.
+- [Signup for the self-service free trial](https://app.nuon.co). You will need a login and an org in Nuon's cloud.
 - [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html).
-  This is the account you will create the install in.
+  This is the account you will install the app in.
 
 ## What You Will Create
 
 This tutorial will walk you through creating the following:
 
-- An [App](/concepts/apps)
+- An [app](/concepts/apps)
 - Several [components](/concepts/components) including a Lambda function, Docker
   image, DynamoDB table, Certificate and API Gateway
-- An [Install](/concepts/installs), using our
+- An [install](/concepts/installs), using our
   [AWS minimal sandbox](/concepts/sandboxes#nuon-managed-sandboxes)
 
 <Note>
@@ -50,10 +49,12 @@ and create the app in Nuon. This will create the app in `app.nuon.co`
 ```sh
 git clone https://github.com/nuonco/example-app-configs
 cd example-app-configs/aws-lambda
+nuon auth login
+nuon orgs select
 nuon apps create -n aws-lambda
 ```
 
-You should see the new App in the dashboard.
+You should see the new app in the dashboard.
 
 ![App List](/images/get-started/aws-lambda/app-config-list.png)
 
@@ -63,7 +64,7 @@ Inputs are customer-specific configs that are entered when you install the App
 in the customer's cloud account. They will be displayed in the Dashboard UI.
 Inputs are optional.
 
-In the App root directory, notice the file named `inputs.toml`:
+In the app root directory, notice the file named `inputs.toml`:
 
 ```toml inputs.toml
 #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
@@ -88,10 +89,10 @@ group        = "dns"
 
 ```
 
-This Input defines a domain, which will default to the install id as subdomain
+This input defines a domain, which will default to the install id as subdomain
 prepended to `nuon.run` and a second-level subdomain for the API Gateway service
 that will be deployed in the customer's AWS account. The customer will be
-prompted to enter these values when they create an Install of the App. For this
+prompted to enter these values when they create an install of the app. For this
 tutorial, you can accept the defaults.
 
 ### Sandbox
@@ -102,9 +103,9 @@ used to provision the infrastructure needed for your app. The `aws-min-sandbox`
 is very streamlined compared to the Kubernetes sandboxes so will provide DNS
 delegation needed for nuon.run.
 
-Your App references these Sandboxes in the `sandbox.toml` file.
+Your app references these Sandboxes in the `sandbox.toml` file.
 
-In the App root directory, notice the file named `sandbox.toml`:
+In the app root directory, notice the file named `sandbox.toml`:
 
 ```toml sandbox.toml
 #:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
@@ -125,15 +126,15 @@ contents = "./sandbox.tfvars"
 
 ```
 
-With `enable_nuon_dns` set to `true`, the Sandbox will create a Route53 DNS zone
+With `enable_nuon_dns` set to `true`, the sandbox will create a Route53 DNS zone
 for the install, allowing you to access the services deployed in the customer's
-AWS account using a Nuon-managed `nuon.run` domain. The config uses the Install
-Id as the subdomain, which will be unique for each install.
+AWS account using a Nuon-managed `nuon.run` domain. The config uses the install
+id as the subdomain, which will be unique for each install.
 
 ### Components
 
-Components are the building blocks of your App and where a software vendor's
-application is installed on top of the Sandbox infrastructure.
+Components are the building blocks of your app and where a software vendor's
+application is installed on top of the sandbox infrastructure.
 
 In this example, there are several components that make up the AWS Lambda app,
 including:
@@ -144,7 +145,7 @@ including:
 - An API Gateway to expose the Lambda function to the internet
 - A Certificate to secure the API Gateway
 
-In the App root directory, navigate to the `components` directory. Notice there
+In the app root directory, navigate to the `components` directory. Notice there
 are several files here, one for each component. Numbers are prefixed to the file
 names to easily show the dependency order.
 
@@ -269,20 +270,20 @@ This is a good place to stop and sync it to Nuon.
 Make sure you are in the root directory of your app, then run:
 
 ```sh
-nuon apps sync .
+nuon apps sync
 ```
 
-Select the App in the Dashboard, and you should now see the updated Inputs,
-Sandbox, Components, and Runner configuration.
+Select the app in the Dashboard, and you should now see the updated inputs,
+sandbox, components, and runner configuration.
 
 ![App](/images/get-started/aws-lambda/app-config-components.png)
 
 ## Create an Install
 
-Click the Create Install button in the top right corner of the App page in the
-Dashboard. Give your Install a name choose the AWS Region.
+Click the Create Install button in the top right corner of the app page in the
+Dashboard. Give your install a name choose the AWS Region.
 
-Notice the Inputs you defined in the `inputs.toml` file are displayed here,
+Notice the inputs you defined in the `inputs.toml` file are displayed here,
 allowing the customer to enter their own values. Just accept the defaults for
 this tutorial.
 
@@ -307,7 +308,7 @@ copy the CloudFormation link to open it in your AWS account. You will need to
 log in to your AWS account if you are not already logged in. This creates a VPC,
 required policies that Nuon expects, an Autoscaling Group, a VM with Docker and
 a container that installs the Nuon Build Runner in your AWS account, which will
-be used to provision the Install of your App. Scroll down to the bottom of the
+be used to provision the Install of your app. Scroll down to the bottom of the
 page, accept the defaults, and click the Create Stack button.
 
 ![CloudFormation Stack](/images/get-started/aws-lambda/cloudformation.png)
@@ -316,8 +317,8 @@ page, accept the defaults, and click the Create Stack button.
 
 Monitor the CloudFormation stack creation in the AWS console. This will take a
 few minutes to complete. You can also pull up the AWS EC2 console and see the
-EC2 VM appear at some point with the install Id in its name. The Nuon Dashboard
-will not provide feedback until the Runner is up and connected to Nuon.
+EC2 VM appear at some point with the install id in its name. The Nuon Dashboard
+will not provide feedback until the runner is up and connected to Nuon.
 
 ![Stack Log](/images/get-started/aws-lambda/cf-detail.png)
 
@@ -370,37 +371,35 @@ Lambda function in the AWS console.
 ## Deprovision the Install
 
 Nuon is mindful of your public cloud spend, so provide the following
-deprovisioning steps. Deprovisioning the Install is a two-step process. First,
-you need to deprovision the Install in the Nuon Dashboard, which will
-deprovision the resources to install your App. Once that is completed
+deprovisioning steps. Deprovisioning the install is a two-step process. First,
+you need to deprovision the install in the Nuon Dashboard, which will
+deprovision the resources to install your app. Once that is completed
 successfully, you then need to delete the CloudFormation stack in the AWS
-console, which removes the Build Runner by destroying the EC2 VM, ASG, and VPC.
+console, which removes the runner by destroying the EC2 VM, ASG, and VPC.
 
 ![Deprovision](/images/get-started/aws-lambda/deprovision-install.png)
 
 <Note>
 	Be sure to back up any data you want to keep before deprovisioning the
-	Install, as this will delete all resources created by the Install.
+	install, as this will delete all resources created by the install.
 </Note>
 
 ## Manually Deprovision the Install
 
-If deprovisioning the Install in the Dashboard fails, deleting the
+If deprovisioning the install in the Dashboard fails, deleting the
 CloudFormation stack in AWS will delete all of the component resources and the
 VPC.
 
 ## Wrapping Up and Next Steps
 
-Congratulations, you just deployed a BYOC app to AWS!
+Congratulations, you just deployed an app to AWS!
 
 A few suggestions for where to go next:
 
-- Try the Mattermost or Coder apps in the
+- Review other example apps in the
   [example-app-configs repository](https://github.com/nuonco/example-app-configs)
   to see how to deploy a more complex app.
 
-- Dig into our [App](/concepts/apps) guide to learn how to configure more
+- Dig into our [app](/concepts/apps) guide to learn how to configure more
   complex apps.
 
-- Share your installer with a friend and have them install your app in their AWS
-  account.
