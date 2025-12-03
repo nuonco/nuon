@@ -21,10 +21,7 @@ func (a *PoliciesConfig) parse() error {
 type AppPolicyType string
 
 const (
-	AppPolicyTypeKubernetesClusterKyverno        AppPolicyType = "kubernetes_cluster"
-	AppPolicyTypeTerraformDeployRunnerJobKyverno AppPolicyType = "runner_job_terraform_deploy"
-	AppPolicyTypeHelmDeployRunnerJobKyverno      AppPolicyType = "runner_job_helm_deploy"
-	AppPolicyTypeActionWorkflowRunnerJobKyverno  AppPolicyType = "runner_job_action_workflow"
+	AppPolicyTypeKubernetesClusterKyverno AppPolicyType = "kubernetes_cluster"
 )
 
 type AppPolicy struct {
@@ -37,9 +34,6 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("type").Short("policy type").
 		Long("Type of policy that determines where and how it is enforced").
 		Example("kubernetes_cluster").
-		Example("runner_job_terraform_deploy").
-		Example("runner_job_helm_deploy").
-		Example("runner_job_action_workflow").
 		Field("contents").Short("policy document").
 		Long("Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https://github.com/org/repo//policy.json), file paths (file:///path/to/policy.json), and relative paths (./policy.json)")
 }

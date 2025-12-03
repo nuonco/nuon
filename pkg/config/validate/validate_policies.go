@@ -32,10 +32,7 @@ func ValidatePolicies(a *config.AppConfig) error {
 
 func validatePolicyType(policyType config.AppPolicyType) error {
 	switch config.AppPolicyType(policyType) {
-	case config.AppPolicyTypeActionWorkflowRunnerJobKyverno,
-		config.AppPolicyTypeKubernetesClusterKyverno,
-		config.AppPolicyTypeHelmDeployRunnerJobKyverno,
-		config.AppPolicyTypeTerraformDeployRunnerJobKyverno:
+	case config.AppPolicyTypeKubernetesClusterKyverno:
 		return nil
 	default:
 		return fmt.Errorf("invalid policy type %s", policyType)
