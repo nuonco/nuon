@@ -48,18 +48,20 @@ export const AdminRunnerModal: FC<{
   const [error, setError] = useState<string>()
 
   const fetchInstalls = () => {
-    fetch(`/api/${org.id}/installs`)
-      .then((res) =>
-        res.json().then((ins) => {
-          setInstalls(ins)
-          setIsLoading(false)
-        })
-      )
-      .catch((err) => {
-        console.error(err?.message)
+    fetch(`/api/orgs/${org.id}/installs`).then((res) =>
+      res.json().then(({ data, error }) => {
         setIsLoading(false)
-        setError('Unable to load org installs')
+        if (error) {
+          console.error(err?.message)
+
+          setError('Unable to load org installs')
+        }
+
+        if (data) {
+          setInstalls(data)
+        }
       })
+    )
   }
 
   useEffect(() => {
