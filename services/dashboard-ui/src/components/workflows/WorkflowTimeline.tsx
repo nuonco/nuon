@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
+import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
@@ -88,7 +89,7 @@ export const WorkflowTimeline = ({
               </span>
             }
             badge={getWorkflowBadge(workflow)}
-            caption={workflow?.id}
+            caption={<ID>{workflow?.id}</ID>}
             createdAt={workflow?.created_at}
             createdBy={workflow?.created_by?.email}
             status={workflow?.status?.status}
