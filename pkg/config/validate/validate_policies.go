@@ -25,16 +25,96 @@ func ValidatePolicies(a *config.AppConfig) error {
 		if err := validatePolicyType(policy.Type); err != nil {
 			return err
 		}
+
+		if err := validatePolicyEngine(policy.Engine); err != nil {
+			return err
+		}
+
+		if err := validatePolicyTypeEngineCompatibility(policy.Type, policy.Engine); err != nil {
+			return err
+		}
+
+		if err := validatePolicyComponents(policy.Components); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func validatePolicyType(policyType config.AppPolicyType) error {
-	switch config.AppPolicyType(policyType) {
-	case config.AppPolicyTypeKubernetesClusterKyverno:
+	switch policyType {
+	case config.AppPolicyTypeKubernetesCluster,
+		config.AppPolicyTypeTerraformModule,
+		config.AppPolicyTypeHelmChart,
+		config.AppPolicyTypeKubernetesManifest,
+		config.AppPolicyTypeDockerBuild,
+		config.AppPolicyTypeContainerImage,
+		config.AppPolicyTypeJob:
 		return nil
 	default:
 		return fmt.Errorf("invalid policy type %s", policyType)
 	}
+}
+
+func validatePolicyEngine(engine config.AppPolicyEngine) error {
+	// Empty engine is allowed for backwards compatibility - will default based on type
+	if engine == "" {
+		return nil
+	}
+
+	switch engine {
+	case config.AppPolicyEngineKyverno, config.AppPolicyEngineOPA:
+		return nil
+	default:
+		return fmt.Errorf("invalid policy engine %s", engine)
+	}
+}
+
+func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engine config.AppPolicyEngine) error {
+	// If no engine specified, skip compatibility check (will use default)
+	if engine == "" {
+		return nil
+	}
+
+	switch policyType {
+	case config.AppPolicyTypeKubernetesCluster:
+		// kubernetes_cluster only supports kyverno
+		if engine != config.AppPolicyEngineKyverno {
+			return fmt.Errorf("policy type %s requires engine %s, got %s", policyType, config.AppPolicyEngineKyverno, engine)
+		}
+	case config.AppPolicyTypeTerraformModule,
+		config.AppPolicyTypeHelmChart,
+		config.AppPolicyTypeKubernetesManifest,
+		config.AppPolicyTypeDockerBuild,
+		config.AppPolicyTypeContainerImage,
+		config.AppPolicyTypeJob:
+		// component-based policy types support both kyverno and opa
+	}
+
+	return nil
+}
+
+func validatePolicyComponents(components []string) error {
+	if len(components) == 0 {
+		return nil
+	}
+
+	// Check for invalid wildcard usage
+	hasWildcard := false
+	for _, c := range components {
+		if c == "*" {
+			hasWildcard = true
+		}
+		if c == "" {
+			return fmt.Errorf("empty component name in components list")
+		}
+	}
+
+	// If wildcard is present, it should be the only element
+	if hasWildcard && len(components) > 1 {
+		return fmt.Errorf("wildcard \"*\" cannot be combined with other component names")
+	}
+
+	return nil
 }

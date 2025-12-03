@@ -30,15 +30,21 @@ func (c CreateAppPoliciesConfigRequest) getPolicies(appID, appConfigID string) [
 			AppID:       appID,
 			AppConfigID: appConfigID,
 			Type:        policy.Type,
+			Engine:      policy.Engine,
 			Contents:    policy.Contents,
+			Components:  policy.Components,
+			Sandbox:     policy.Sandbox,
 		})
 	}
 	return objs
 }
 
 type AppPolicyConfig struct {
-	Type     config.AppPolicyType `json:"type" validate:"required"`
-	Contents string               `json:"contents" validate:"required" swaggertype:"string"`
+	Type       config.AppPolicyType   `json:"type" validate:"required"`
+	Engine     config.AppPolicyEngine `json:"engine,omitempty"`
+	Contents   string                 `json:"contents" validate:"required" swaggertype:"string"`
+	Components []string               `json:"components,omitempty"`
+	Sandbox    bool                   `json:"sandbox,omitempty"`
 }
 
 func (c *CreateAppPoliciesConfigRequest) Validate(v *validator.Validate) error {

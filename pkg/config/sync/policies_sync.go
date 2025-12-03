@@ -11,9 +11,14 @@ import (
 
 func (s sync) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyConfig {
 	pt := models.ConfigAppPolicyType(policy.Type)
+	// TODO: Once nuon-go models are regenerated, add Engine, Components, and Sandbox fields:
+	// pe := models.ConfigAppPolicyEngine(policy.Engine)
+	// Engine:     &pe,
+	// Components: policy.Components,
+	// Sandbox:    generics.ToPtr(policy.Sandbox),
 	return &models.ServiceAppPolicyConfig{
-		Contents: generics.ToPtr(policy.Contents),
 		Type:     &pt,
+		Contents: generics.ToPtr(policy.Contents),
 	}
 }
 
