@@ -1,18 +1,16 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useEffect } from 'react'
 import { cancelWorkflow } from '@/actions/workflows/cancel-workflow'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useServerAction } from '@/hooks/use-server-action'
-import { useToast } from '@/hooks/use-toast'
+import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import type { TWorkflow } from '@/types'
 
 interface ICancelWorkflow {
@@ -26,33 +24,31 @@ export const CancelWorkflowModal = ({
   const path = usePathname()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
-  const { addToast } = useToast()
   const { data, error, isLoading, execute } = useServerAction({
     action: cancelWorkflow,
   })
 
-  useEffect(() => {
-    if (data && !error) {
-      addToast(
-        <Toast theme="info" heading={`${workflow.name} was cancelled.`}>
-          <Text>Cancelled the {workflow.type} workflow.</Text>
-        </Toast>
-      )
+  useServerActionToast({
+    data,
+    error,
+    errorContent: (
+      <>
+        <Text>
+          There was an error while trying to cancel {workflow.type} workflow{' '}
+          {workflow.id}.
+        </Text>
+        <Text>{error?.error || 'Unknown error occurred.'}</Text>
+      </>
+    ),
+    errorHeading: `${workflow.name} was not cancelled.`,
+    onSuccess: () => {
       removeModal(props.modalId)
-    }
-
-    if (!data && error) {
-      addToast(
-        <Toast theme="error" heading={`${workflow.name} was not cancelled.`}>
-          <Text>
-            There was an error while trying to cancel {workflow.type} workflow{' '}
-            {workflow.id}.
-          </Text>
-          <Text>{error?.error || 'Unknow error occurred.'}</Text>
-        </Toast>
-      )
-    }
-  }, [data, error])
+    },
+    successContent: (
+      <Text>Cancelled the {workflow.type} workflow.</Text>
+    ),
+    successHeading: `${workflow.name} was cancelled.`,
+  })
 
   return (
     <Modal
@@ -75,6 +71,7 @@ export const CancelWorkflowModal = ({
         ) : (
           'Cancel workflow'
         ),
+        disabled: isLoading,
         onClick: () => {
           execute({ orgId: org.id, path, workflowId: workflow.id })
         },
