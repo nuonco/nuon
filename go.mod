@@ -69,7 +69,7 @@ require (
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/go-playground/validator/v10 v10.23.0
-	github.com/go-swagger/go-swagger v0.33.0
+	github.com/go-swagger/go-swagger v0.33.1
 	github.com/go-toolsmith/astfmt v1.1.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/golang/mock v1.7.0-rc.1
@@ -371,6 +371,7 @@ require (
 	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.10.0 // indirect
+	github.com/samber/lo v1.51.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.9.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
@@ -599,7 +600,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.37.0
 	golang.org/x/text v0.31.0
@@ -623,3 +624,5 @@ replace (
 	github.com/spf13/viper => github.com/spf13/viper v1.17.0
 	google.golang.org/grpc => google.golang.org/grpc v1.66.0
 )
+
+replace github.com/nuonco/nuon-go => ../nuon-go
