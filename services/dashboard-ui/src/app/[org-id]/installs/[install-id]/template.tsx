@@ -4,21 +4,19 @@ import { usePathname } from 'next/navigation'
 import { TemporalLink } from '@/components/admin/TemporalLink'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
+import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
+import { Time } from '@/components/common/Time'
+import { Text } from '@/components/common/Text'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
+import { InstallManagementDropdown } from "@/components/installs/management/InstallManagementDropdown"
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
-import { Text } from '@/components/common/Text'
-import { Time } from '@/components/common/Time'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-
-// NOTE: old install components
-import { InstallManagementDropdown } from '@/components/old/Installs/ManagementDropdown'
-import { FileCodeIcon } from '@phosphor-icons/react'
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathName = usePathname()
@@ -56,7 +54,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
                 <LabeledValue label="Managed By">
                   <Text variant="subtext">
                     <span className="flex items-center gap-1">
-                      <FileCodeIcon /> Install Config
+                      <Icon variant="FileCodeIcon" /> Install Config
                     </span>
                   </Text>
                 </LabeledValue>

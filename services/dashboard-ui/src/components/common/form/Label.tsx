@@ -1,7 +1,7 @@
-import { type HTMLAttributes } from 'react'
+import { type LabelHTMLAttributes } from 'react'
 import { cn } from '@/utils/classnames'
 
-export interface ILabel extends HTMLAttributes<HTMLLabelElement> {}
+export interface ILabel extends LabelHTMLAttributes<HTMLLabelElement> {}
 
 export const Label = ({ children, className, ...props }: ILabel) => {
   return (
