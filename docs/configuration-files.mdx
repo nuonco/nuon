@@ -9,14 +9,14 @@ the hood, Nuon will handle keeping your configuration in sync.
 ## Create an app
 
 **Create a local App directory** - Create a directory and name it after your
-App. This directory will contain your App's configuration files.
+app. This directory will contain your app's configuration files.
 
 ```sh nuon
 mkdir your-app
 cd your-app
 ```
 
-Config files are used to sync the configuration for a single App. The app name
+Config files are used to sync the configuration for a single app. The app name
 must be the same as the directory you created above.
 
 ```sh nuon
@@ -61,7 +61,7 @@ for common directory structures.
 
 ## Reference
 
-### Input Config
+### Input
 
 Define [inputs](/concepts/app-inputs) for an app using `inputs.toml` file.
 
@@ -87,11 +87,11 @@ type = "string"
 ```
 
 <Note>
-	Inputs are not required, unless you are using a Sandbox that requires Inputs.
+	Inputs are not required, unless you are using a sandbox that requires inputs.
 	e.g., `root_domain` for the `aws-eks-sandbox`.
 </Note>
 
-### Sandbox Config
+### Sandbox 
 
 Define the [sandbox](/concepts/sandboxes) for an app using a `[sandbox]` block.
 
@@ -116,7 +116,7 @@ internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
 contents = "./sandbox.tfvars"
 ```
 
-Nuon maintains [managed Sandboxes](./concepts/sandboxes#nuon-managed-sandboxes)
+Nuon maintains [managed sandboxes](./concepts/sandboxes#nuon-managed-sandboxes)
 for the platforms we support.
 
 <Note>
@@ -258,25 +258,25 @@ tag = "latest"
 region = "us-west-2"
 ```
 
-### Install Config
+### Install Configs
 
-You can create and manage [Installs](/concepts/installs) by creating
+You can create and manage [installs](/concepts/installs) by creating
 `<install>.toml` files in an `installs` directory managed separately from the
-apps. An Install config must declare a `name` field and any relevant
+apps. An install must declare a `name` field and any relevant
 install-specific configuration.
 
 The inputs are defined as a list of input groups. This is just for logical
 grouping, and inputs from different groups can be defined together. Note that if
 an input is defined multiple times, the last defined value would be used.
 
-When you generate a config, inputs will be grouped together, reflecting the
+Input configs will be grouped together, reflecting the
 input groups you have defined in the app. Sensitive inputs will be excluded, to
 avoid saving them in plain text in version control. When syncing install config
 files, sensitive inputs will be ignored. They can still be managed manually via
 the Dashboard.
 
 <Note>
-	Currently only AWS installs are supported using Install config files.
+	Currently only AWS installs are supported using install config files.
 </Note>
 
 **Generate an Install Config File**
