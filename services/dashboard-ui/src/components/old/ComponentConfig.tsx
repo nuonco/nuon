@@ -23,6 +23,8 @@ import { ToolTip } from '@/components/old/ToolTip'
 import { Text, Truncate, type TTextVariant } from '@/components/old/Typography'
 import { TComponentConfig, TVCSGit, TVCSGitHub } from '@/types'
 
+import { CodeBlock } from '@/components/common/CodeBlock'
+
 type TComponentConfigType =
   | 'docker'
   | 'external'
@@ -192,10 +194,9 @@ export const ComponentConfiguration: FC<IComponentConfiguration> = ({
       {config?.kubernetes_manifest && (
         <div className="flex flex-col gap-4">
           <Text variant="med-12">Manifest</Text>
-          <CodeViewer
-            initCodeSource={config?.kubernetes_manifest?.manifest}
-            language="yaml"
-          />
+          <CodeBlock language="yaml">
+            {config?.kubernetes_manifest?.manifest}
+          </CodeBlock>
         </div>
       )}
     </div>

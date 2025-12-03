@@ -1,5 +1,6 @@
 'use client'
 
+import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
@@ -57,7 +58,7 @@ export const RunnerRecentActivity = ({
       events={jobs}
       pagination={pagination}
       renderEvent={(job) => {
-        const jobHref = getJobHref(job)        
+        const jobHref = getJobHref(job)
         const jobTitle =
           jobHref === '' ? (
             <>
@@ -73,7 +74,7 @@ export const RunnerRecentActivity = ({
         return (
           <TimelineEvent
             key={job.id}
-            caption={job?.id}
+            caption={<ID>{job?.id}</ID>}
             createdAt={job?.created_at}
             status={job?.status}
             title={jobTitle}
@@ -83,3 +84,4 @@ export const RunnerRecentActivity = ({
     />
   )
 }
+
