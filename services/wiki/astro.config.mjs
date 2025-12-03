@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
+  trailingSlash: 'never',
   vite: {
     resolve: {
       alias: {
