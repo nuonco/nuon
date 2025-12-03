@@ -130,7 +130,7 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 	}, nil
 }
 
-func (p *Planner) createHelmDeploySandboxMode(ctx workflow.Context, req *plantypes.HelmDeployPlan) *plantypes.HelmSandboxMode {
+func (p *Planner) createHelmDeploySandboxMode(_ctx workflow.Context, _req *plantypes.HelmDeployPlan) *plantypes.HelmSandboxMode {
 	return &plantypes.HelmSandboxMode{
 		PlanContents:        FakeHelmPlanJSON,
 		PlanDisplayContents: FakeHelmPlanDisplayJSON,

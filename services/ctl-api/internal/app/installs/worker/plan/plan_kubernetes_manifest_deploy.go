@@ -105,7 +105,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 	}, nil
 }
 
-func (p *Planner) createKubernetesManifestDeployPlanSandboxMode(req *plantypes.KubernetesManifestDeployPlan) (*plantypes.KubernetesSandboxMode, error) {
+func (p *Planner) createKubernetesManifestDeployPlanSandboxMode(_req *plantypes.KubernetesManifestDeployPlan) (*plantypes.KubernetesSandboxMode, error) {
 	obj := types.KubernetesManifestPlanContents{
 		Plan: "{\n  \"diff\": [\n    {\n      \"_version\": \"2\",\n      \"name\": \"demo\",\n      \"namespace\": \"default\",\n      \"kind\": \"ConfigMap\",\n      \"api\": \"/v1\",\n      \"resource\": \"configmaps\",\n      \"op\": \"apply\",\n      \"type\": 3,\n      \"dry_run\": true,\n      \"entries\": [\n        {\n          \"path\": \"data.sample_data\",\n          \"original\": \"3\",\n          \"applied\": \"4\",\n          \"type\": 3,\n          \"payload\": \"  map[string]any{\\n  \\t\\\"apiVersion\\\": string(\\\"v1\\\"),\\n- \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"3\\\")},\\n+ \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"4\\\")},\\n  \\t\\\"kind\\\":       string(\\\"ConfigMap\\\"),\\n  \\t\\\"metadata\\\":   map[string]any{\\\"name\\\": string(\\\"demo\\\"), ...},\\n  }\\n\"\n        }\n      ]\n    }\n  ]\n}",
 		Op:   "apply",

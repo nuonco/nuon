@@ -16,7 +16,7 @@ import (
 func (p *Planner) createStepPlan(ctx workflow.Context,
 	step *app.InstallActionWorkflowRunStep,
 	stateMap map[string]any,
-	installID string,
+	_installID string,
 ) (*plantypes.ActionWorkflowRunStepPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

@@ -23,8 +23,8 @@ linters:
     # - goconst
     # - noctx
     # - unconvert
-    # - unparam
-    # - unused
+    - unparam
+    - unused
   settings:
     dupl:
       threshold: 100

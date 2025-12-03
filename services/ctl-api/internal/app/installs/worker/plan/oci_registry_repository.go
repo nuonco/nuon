@@ -124,7 +124,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 	return cfg, nil
 }
 
-func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {
+func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID, _deployID string) (*configs.OCIRegistryRepository, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
