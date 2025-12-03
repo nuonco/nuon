@@ -39,8 +39,6 @@ const (
 	AppPolicyTypeDockerBuild AppPolicyType = "docker_build"
 	// AppPolicyTypeContainerImage applies to container image components
 	AppPolicyTypeContainerImage AppPolicyType = "container_image"
-	// AppPolicyTypeJob applies to job components
-	AppPolicyTypeJob AppPolicyType = "job"
 )
 
 // AllAppPolicyTypes contains all valid policy types
@@ -51,7 +49,6 @@ var AllAppPolicyTypes = []AppPolicyType{
 	AppPolicyTypeKubernetesManifest,
 	AppPolicyTypeDockerBuild,
 	AppPolicyTypeContainerImage,
-	AppPolicyTypeJob,
 }
 
 type AppPolicyEngine string
