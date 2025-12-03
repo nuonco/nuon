@@ -94,8 +94,8 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("List of component names this policy applies to. Use [\"*\"] to apply to all components of the specified type. If empty, applies to all components.").
 		Example("*").
 		Example("rds_cluster").
-		Field("sandbox").Short("sandbox mode").
-		Long("When true, policy is only evaluated during sandbox/preview deployments, not production installs")
+		Field("sandbox").Short("sandbox").
+		Long("When true, policy is only evaluated during sandbox operations")
 }
 
 type AppPolicyList struct {

@@ -47,9 +47,7 @@ func validatePolicyType(policyType config.AppPolicyType) error {
 	case config.AppPolicyTypeKubernetesCluster,
 		config.AppPolicyTypeTerraformModule,
 		config.AppPolicyTypeHelmChart,
-		config.AppPolicyTypeKubernetesManifest,
-		config.AppPolicyTypeDockerBuild,
-		config.AppPolicyTypeContainerImage:
+		config.AppPolicyTypeKubernetesManifest:
 		return nil
 	default:
 		return fmt.Errorf("invalid policy type %s", policyType)
@@ -87,7 +85,10 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 		config.AppPolicyTypeKubernetesManifest,
 		config.AppPolicyTypeDockerBuild,
 		config.AppPolicyTypeContainerImage:
-		// component-based policy types support both kyverno and opa
+		// component-based policy types only support OPA engine
+		if engine != config.AppPolicyEngineOPA {
+			return fmt.Errorf("policy type %s (component-based) requires engine %s, got %s", policyType, config.AppPolicyEngineOPA, engine)
+		}
 	}
 
 	return nil
