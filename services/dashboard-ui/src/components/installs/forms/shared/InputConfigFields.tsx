@@ -1,5 +1,6 @@
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Input } from '@/components/common/form/Input'
+import { CodeInput } from '@/components/common/form/CodeInput'
 import { Text } from '@/components/common/Text'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import type { TAppInputConfig, TInstall } from '@/types'
@@ -93,19 +94,15 @@ const InputGroupFields = ({
               helpText={input?.description}
             >
               {input?.type === 'json' ? (
-                <div className="flex flex-col gap-2">
-                  <textarea
-                    className="w-full rounded-md border border-cool-grey-300 dark:border-dark-grey-600 bg-white dark:bg-dark-grey-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    name={`inputs:${input?.name}`}
-                    required={input?.required}
-                    defaultValue={installInputs?.[input?.name || ''] || input?.default}
-                    rows={6}
-                    placeholder="Enter JSON configuration..."
-                  />
-                  <Text variant="subtext" theme="neutral">
-                    Enter valid JSON configuration
-                  </Text>
-                </div>
+                <CodeInput
+                  language="json"
+                  name={`inputs:${input?.name}`}
+                  required={input?.required}
+                  defaultValue={installInputs?.[input?.name || ''] || input?.default}
+                  placeholder="Enter JSON configuration..."
+                  helperText="Enter valid JSON configuration"
+                  minHeight={120}
+                />
               ) : (
                 <Input
                   type={

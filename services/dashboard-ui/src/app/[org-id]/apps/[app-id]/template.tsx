@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { TemporalLink } from '@/components/admin/TemporalLink'
+import { CreateInstallButton } from '@/components/apps/CreateInstall'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -14,9 +15,6 @@ import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-
-// NOTE: old layout stuff
-import { AppCreateInstallButton } from '@/components'
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathName = usePathname()
@@ -35,9 +33,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-4">
               <TemporalLink namespace="apps" eventLoopId={app?.id} />
               {app?.runner_config ? (
-                <AppCreateInstallButton
-                  platform={app?.runner_config?.app_runner_type}
-                />
+                <CreateInstallButton variant="primary" />
               ) : null}
 
               {/* <Dropdown

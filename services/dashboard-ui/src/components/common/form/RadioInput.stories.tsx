@@ -1,6 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
 import { RadioInput } from './RadioInput'
 
+export default {
+  title: 'Forms/RadioInput',
+  component: RadioInput,
+}
+
 export const BasicUsage = () => (
   <div className="space-y-6 max-w-md">
     <div className="space-y-3">
