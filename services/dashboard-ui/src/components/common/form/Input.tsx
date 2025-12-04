@@ -43,29 +43,35 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
       // Base styles
       'w-full rounded-md border transition-colors duration-200',
       'bg-white dark:bg-dark-grey-900',
-      'placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-400',
+      'placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
+      'font-mono',
       
-      // Focus styles
-      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
+      // Focus styles (brightest primary when focused)
+      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:!border-primary-500',
+      
+      // HTML5 validation states - user-invalid overrides everything
+      'user-invalid:!border-red-500 user-invalid:dark:!border-red-400',
+      'user-invalid:focus:!border-red-500 user-invalid:focus:!ring-red-500',
       
       // Size
       sizeClasses[size],
       
       // States
       {
-        // Default state
-        'border-cool-grey-300 dark:border-dark-grey-600': !error && !disabled,
+        // Default state - dimmed primary (subtle but branded)
+        '!border-primary-700 dark:!border-primary-400/50': !error && !disabled,
         'text-cool-grey-900 dark:text-cool-grey-100': !disabled,
         
-        // Error state
-        'border-red-500 dark:border-red-400': error,
-        'focus:ring-red-500 focus:border-red-500': error,
+        // Error state - red overrides everything
+        '!border-red-500 dark:!border-red-400': error,
+        'focus:!ring-red-500 focus:!border-red-500': error,
         
-        // Disabled state
-        'border-cool-grey-200 dark:border-dark-grey-700': disabled,
-        'bg-cool-grey-50 dark:bg-dark-grey-800': disabled,
+        // Disabled state - grey overrides everything
+        '!border-cool-grey-300 dark:!border-dark-grey-600': disabled,
+        '!bg-cool-grey-100 dark:!bg-dark-grey-700': disabled,
         'text-cool-grey-400 dark:text-cool-grey-500': disabled,
         'cursor-not-allowed': disabled,
+        'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600': disabled,
       },
       className
     )
