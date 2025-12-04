@@ -76,5 +76,6 @@ bins/nuonctl/nuonctl
 # IntelliJ IDEA
 .idea/
 
-# LSP binary
+# LSP binary and VS Code extension
 bins/lsp/lsp
+*.vsix
