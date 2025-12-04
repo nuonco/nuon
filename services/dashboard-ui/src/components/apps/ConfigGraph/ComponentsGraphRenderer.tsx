@@ -74,6 +74,8 @@ export const ComponentsGraphRenderer = ({
 }) => {
   return (
     <Modal
+      className="!max-h-[80vh]"
+      childrenClassName="overflow-y-auto"
       heading={
         <Text
           className="!inline-flex gap-4 items-center"
