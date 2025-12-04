@@ -110,9 +110,11 @@ function startStdioMode(context) {
 
   const serverOptions = {
     command: serverCommand,
-    args: [],
-    transport: TransportKind.stdio,
-  };
+    args: [], // nuon-lsp uses stdio by default when no args are provided
+    options: {
+      stdio: 'pipe' // Use pipe transport without extra flags
+    }
+  };sere
 
   const clientOptions = {
     documentSelector: [
