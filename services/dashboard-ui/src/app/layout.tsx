@@ -55,7 +55,7 @@ export default function RootLayout({
           </>
         ) : null}
         <body
-          className={`${inter.variable} ${hack.variable} overflow-hidden disable-ligatures antialiased`}
+          className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures antialiased`}
         >
           <EnvScript
             env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
