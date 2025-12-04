@@ -1,4 +1,11 @@
 import { Select } from './Select'
+import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
+import { getFlagEmoji } from '@/utils/string-utils'
+
+export default {
+  title: 'Forms/Select',
+  component: Select,
+}
 
 const sampleOptions = [
   { value: 'option1', label: 'Option 1' },
@@ -7,12 +14,19 @@ const sampleOptions = [
   { value: 'disabled', label: 'Disabled Option', disabled: true },
 ]
 
-const regionOptions = [
-  { value: 'us-east-1', label: '🇺🇸 US East (N. Virginia) [us-east-1]' },
-  { value: 'us-west-2', label: '🇺🇸 US West (Oregon) [us-west-2]' },
-  { value: 'eu-west-1', label: '🇮🇪 Europe (Ireland) [eu-west-1]' },
-  { value: 'ap-southeast-1', label: '🇸🇬 Asia Pacific (Singapore) [ap-southeast-1]' },
-]
+const awsRegionOptions = AWS_REGIONS.map((region) => ({
+  value: region.value,
+  label: region?.iconVariant
+    ? `${getFlagEmoji(region.iconVariant.substring(5))} ${region.text} [${region.value}]`
+    : region.text,
+}))
+
+const azureRegionOptions = AZURE_REGIONS.map((region) => ({
+  value: region.value,
+  label: region?.iconVariant
+    ? `${getFlagEmoji(region.iconVariant.substring(5))} ${region.text}`
+    : region.text,
+}))
 
 export const BasicUsage = () => (
   <div className="space-y-6 max-w-md">
@@ -176,7 +190,7 @@ export const WithLabelsAndText = () => (
       />
       
       <Select
-        options={regionOptions}
+        options={awsRegionOptions}
         placeholder="Select region"
         labelProps={{ labelText: 'AWS Region' }}
         helperText="Choose the region closest to your users"
@@ -226,7 +240,7 @@ export const ErrorHandling = () => (
       />
       
       <Select
-        options={regionOptions}
+        options={awsRegionOptions}
         placeholder="Select region"
         labelProps={{ labelText: 'AWS Region' }}
         error
@@ -267,7 +281,7 @@ export const RealWorldExamples = () => (
 
     <div className="space-y-4">
       <Select
-        options={regionOptions}
+        options={awsRegionOptions}
         placeholder="Select AWS region"
         labelProps={{ labelText: 'AWS Region' }}
         helperText="Choose the region for your deployment"
@@ -300,3 +314,57 @@ export const RealWorldExamples = () => (
     </div>
   </div>
 )
+
+export function AWSRegions() {
+  return (
+    <div className="space-y-6 max-w-md">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">AWS Regions</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          AWS region selector with flag emojis and region codes. This example uses
+          the actual AWS regions from the configuration.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <Select
+          options={awsRegionOptions}
+          labelProps={{
+            labelText: 'AWS Region *',
+            labelTextProps: { variant: 'body' }
+          }}
+          placeholder="Choose AWS region"
+          helperText="Select the AWS region for your deployment"
+          required
+        />
+      </div>
+    </div>
+  )
+}
+
+export function AzureRegions() {
+  return (
+    <div className="space-y-6 max-w-md">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Azure Regions</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Azure location selector with flag emojis. This example uses
+          the actual Azure regions from the configuration.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <Select
+          options={azureRegionOptions}
+          labelProps={{
+            labelText: 'Azure Location *',
+            labelTextProps: { variant: 'body' }
+          }}
+          placeholder="Choose Azure location"
+          helperText="Select the Azure location for your deployment"
+          required
+        />
+      </div>
+    </div>
+  )
+}

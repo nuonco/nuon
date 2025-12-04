@@ -1,6 +1,6 @@
 'use client'
 
-import { type FormEvent, useRef } from 'react'
+import { type FormEvent, useRef, forwardRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { createAppInstall } from '@/actions/apps/create-app-install'
 import { Banner } from '@/components/common/Banner'
@@ -15,14 +15,14 @@ import { InputConfigFields } from './shared/InputConfigFields'
 import { PlatformFields } from './shared/PlatformFields'
 import type { ICreateInstallForm } from './shared/types'
 
-export const CreateInstallForm = ({
+export const CreateInstallForm = forwardRef<HTMLFormElement, ICreateInstallForm>(({
   appId,
   platform,
   inputConfig,
   onSubmit,
   onSuccess,
   onCancel,
-}: ICreateInstallForm) => {
+}, ref) => {
   const path = usePathname()
   const { org } = useOrg()
   const formRef = useRef<HTMLFormElement>(null)
@@ -36,10 +36,10 @@ export const CreateInstallForm = ({
     error,
     errorContent: <Text>Unable to create install.</Text>,
     errorHeading: 'Install creation failed',
-    onSuccess: () => {
+    onSuccess: onSuccess ? () => {
       const result = { data, headers }
       onSuccess(result)
-    },
+    } : undefined,
     successContent: <Text>Install created successfully!</Text>,
     successHeading: 'Install created',
   })
@@ -52,7 +52,7 @@ export const CreateInstallForm = ({
     if (onSubmit) {
       try {
         const result = await onSubmit(formData)
-        onSuccess(result)
+        onSuccess?.(result)
       } catch (err) {
         console.error('Form submission error:', err)
       }
@@ -68,7 +68,14 @@ export const CreateInstallForm = ({
 
   return (
     <form
-      ref={formRef}
+      ref={(node) => {
+        formRef.current = node
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          ref.current = node
+        }
+      }}
       onSubmit={handleSubmit}
       className="flex flex-col gap-8 justify-between focus:outline-none relative"
     >
@@ -79,13 +86,17 @@ export const CreateInstallForm = ({
       ) : null}
 
       <div className="flex flex-col gap-8 max-w-3xl">
-        <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <span className="flex flex-col gap-0">
+            <Text variant="body" weight="strong">Install name *</Text>
+            <Text variant="subtext" className="max-w-72">
+              A unique name for this install
+            </Text>
+          </span>
           <Input
             id="install-name"
             name="name"
             placeholder="Enter install name"
-            labelProps={{ labelText: 'Install name *' }}
-            helperText="A unique name for this install"
             required
           />
         </div>
@@ -101,4 +112,6 @@ export const CreateInstallForm = ({
 
     </form>
   )
-}
+})
+
+CreateInstallForm.displayName = 'CreateInstallForm'
