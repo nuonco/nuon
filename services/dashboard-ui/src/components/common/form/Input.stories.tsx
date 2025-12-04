@@ -1,6 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
 import { Input } from './Input'
 
+export default {
+  title: 'Forms/Input',
+  component: Input,
+}
+
 export const BasicUsage = () => (
   <div className="space-y-6 max-w-md">
     <div className="space-y-3">

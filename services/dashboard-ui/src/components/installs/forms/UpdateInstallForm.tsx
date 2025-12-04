@@ -70,10 +70,10 @@ export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>
     error,
     errorContent: <Text>Unable to update install {install.name}.</Text>,
     errorHeading: 'Install update failed',
-    onSuccess: () => {
+    onSuccess: onSuccess ? () => {
       const result = { data, headers }
       onSuccess(result)
-    },
+    } : undefined,
     successContent: <Text>Install {install.name} updated successfully!</Text>,
     successHeading: 'Install updated',
   })
@@ -91,7 +91,7 @@ export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>
     if (onSubmit) {
       try {
         const result = await onSubmit(formData)
-        onSuccess(result)
+        onSuccess?.(result)
       } catch (err) {
         console.error('Form submission error:', err)
       }

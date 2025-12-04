@@ -1,4 +1,4 @@
-import { type InputHTMLAttributes } from 'react'
+import { type InputHTMLAttributes, type ReactNode } from 'react'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
@@ -6,7 +6,7 @@ import { cn } from '@/utils/classnames'
 export interface IRadioInput
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   labelProps: Omit<ILabel, 'children'> & {
-    labelText: string
+    labelText: string | ReactNode
     labelTextProps?: Omit<IText, 'children'>
   }
 }
