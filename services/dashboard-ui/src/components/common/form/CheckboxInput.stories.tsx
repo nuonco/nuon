@@ -3,6 +3,11 @@ import { CheckboxInput, Checkbox, CheckboxInputWithButton } from './CheckboxInpu
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 
+export default {
+  title: 'Forms/CheckboxInput',
+  component: CheckboxInput,
+}
+
 export const BasicUsage = () => (
   <div className="space-y-6 max-w-md">
     <div className="space-y-3">
