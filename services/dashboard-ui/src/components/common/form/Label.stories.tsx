@@ -3,6 +3,11 @@ import { Label } from './Label'
 import { Input } from './Input'
 import { Text } from '@/components/common/Text'
 
+export default {
+  title: 'Forms/Label',
+  component: Label,
+}
+
 export const BasicUsage = () => (
   <div className="space-y-6 max-w-md">
     <div className="space-y-3">
