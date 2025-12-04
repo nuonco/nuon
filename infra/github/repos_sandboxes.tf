@@ -40,6 +40,20 @@ module "nuon-aws-eks-karpenter-sandbox-m1" {
   }
 }
 
+module "nuon-aws-eks-karpenter-fargate-sandbox" {
+  source           = "./modules/repository"
+  name             = "aws-eks-karpenter-fargate-sandbox"
+  description      = "AWS EKS + Karpenter + Fargate sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 
 module "nuon-aws-eks-auto-sandbox" {
   source           = "./modules/repository"
