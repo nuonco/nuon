@@ -10,8 +10,8 @@ set -o pipefail
 set -u
 
 BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli
-NAME=nuon
-# Create a temporary directory for downloading the binary
+LSP_BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/lsp
+# Create a temporary directory for downloading the binaries
 TEMP_DIR=$(mktemp -d)
 
 DIR=~/bin
@@ -68,69 +68,84 @@ if command -v 7z &> /dev/null || command -v 7za &> /dev/null || command -v 7zz &
   echo "7zip detected, will try compressed binary first..."
 fi
 
-# Try 7z compressed binary first if 7zip is available
-if [ "$has_7z" = true ]; then
-  echo "fetching compressed binary for ${OS} ${ARCH}..."
-  compressed_url="$BASE_URL/$VERSION/${NAME}_${OS}_${ARCH}.7z"
+# Function to download and install a binary
+# Args: $1=binary_name (e.g., "nuon" or "nuon-lsp"), $2=base_url
+download_and_install_binary() {
+  local NAME=$1
+  local URL=${2:-$BASE_URL}
+  local success=false
 
-  # Try to download .7z file
-  http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME.7z" "$compressed_url" 2>/dev/null)
-  status=$?
+  # Try 7z compressed binary first if 7zip is available
+  if [ "$has_7z" = true ]; then
+    echo "fetching compressed binary for ${OS} ${ARCH}..."
+    compressed_url="$URL/$VERSION/${NAME}_${OS}_${ARCH}.7z"
 
-  if [ $status -eq 0 ] && [ "$http_response" = "200" ]; then
-    echo "✅ compressed binary downloaded, extracting..."
+    # Try to download .7z file
+    http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME.7z" "$compressed_url" 2>/dev/null)
+    status=$?
 
-    # Determine which 7z command to use (prefer 7zz, then 7z, then 7za)
-    extract_cmd=""
-    if command -v 7zz &> /dev/null; then
-      extract_cmd="7zz"
-    elif command -v 7z &> /dev/null; then
-      extract_cmd="7z"
-    elif command -v 7za &> /dev/null; then
-      extract_cmd="7za"
-    fi
+    if [ $status -eq 0 ] && [ "$http_response" = "200" ]; then
+      echo "✅ compressed binary downloaded, extracting..."
 
-    # Extract to temp directory
-    if $extract_cmd x "$TEMP_DIR/$NAME.7z" -o"$TEMP_DIR" -y &> /dev/null; then
-      echo "✅ extraction successful"
+      # Determine which 7z command to use (prefer 7zz, then 7z, then 7za)
+      extract_cmd=""
+      if command -v 7zz &> /dev/null; then
+        extract_cmd="7zz"
+      elif command -v 7z &> /dev/null; then
+        extract_cmd="7z"
+      elif command -v 7za &> /dev/null; then
+        extract_cmd="7za"
+      fi
 
-      # Move the binary
-      if [ -f "$TEMP_DIR/${NAME}_${OS}_${ARCH}" ]; then
-        echo "moving binary to $DIR/$NAME..."
-        mv "$TEMP_DIR/${NAME}_${OS}_${ARCH}" "$DIR/$NAME"
-        echo "making binary executable..."
-        chmod +x "$DIR/$NAME"
-        echo "✅ nuon should be ready to use"
+      # Extract to temp directory
+      if $extract_cmd x "$TEMP_DIR/$NAME.7z" -o"$TEMP_DIR" -y &> /dev/null; then
+        echo "✅ extraction successful"
 
-        # Cleanup
-        rm -f "$TEMP_DIR/$NAME.7z"
-        # Skip fallback
-        has_7z=false
+        # Move the binary
+        if [ -f "$TEMP_DIR/${NAME}_${OS}_${ARCH}" ]; then
+          echo "moving binary to $DIR/$NAME..."
+          mv "$TEMP_DIR/${NAME}_${OS}_${ARCH}" "$DIR/$NAME"
+          echo "making binary executable..."
+          chmod +x "$DIR/$NAME"
+          echo "✅ nuon should be ready to use"
+          success=true
+
+          # Cleanup
+          rm -f "$TEMP_DIR/$NAME.7z"
+        else
+          echo "⚠️  extraction succeeded but binary not found, falling back..."
+        fi
       else
-        echo "⚠️  extraction succeeded but binary not found, falling back..."
+        echo "⚠️  extraction failed, falling back to uncompressed binary..."
       fi
     else
-      echo "⚠️  extraction failed, falling back to uncompressed binary..."
+      echo "⚠️  compressed binary not available (HTTP status: $http_response), falling back..."
     fi
-  else
-    echo "⚠️  compressed binary not available (HTTP status: $http_response), falling back..."
+
+    # Cleanup failed attempt
+    rm -f "$TEMP_DIR/$NAME.7z"
   fi
 
-  # Cleanup failed attempt
-  rm -f "$TEMP_DIR/$NAME.7z"
-fi
+  # Fallback to uncompressed binary if 7z didn't succeed
+  if [ "$success" = false ]; then
+    echo "fetching binary for ${OS} ${ARCH}..."
+    curl -s -o "$TEMP_DIR/$NAME" "$URL/$VERSION/${NAME}_${OS}_${ARCH}"
+    echo "✅ fetching binary for ${OS} ${ARCH}..."
 
-# Fallback to original logic (uncompressed binary) - only if 7z path didn't succeed
-if [ "$has_7z" = true ] || [ ! -f "$DIR/$NAME" ]; then
-  echo "fetching binary for ${OS} ${ARCH}..."
-  curl -s -o "$TEMP_DIR/$NAME" "$BASE_URL/$VERSION/${NAME}_${OS}_${ARCH}"
-  echo "✅ fetching binary for ${OS} ${ARCH}..."
+    echo "moving binary to $DIR/$NAME..."
+    mv "$TEMP_DIR/$NAME" "$DIR/$NAME"
+    echo "making binary executable..."
+    chmod +x "$DIR/$NAME"
+    echo "✅ nuon should be ready to use"
+  fi
+}
 
-  echo "moving binary to $DIR/$NAME..."
-  mv "$TEMP_DIR/$NAME" "$DIR/$NAME"
-  echo "making binary executable..."
-  chmod +x "$DIR/$NAME"
-  echo "✅ nuon should be ready to use"
+# Install nuon CLI
+download_and_install_binary "nuon" "$BASE_URL"
+
+# Install nuon-lsp (Language Server) - EXPERIMENTAL FEATURE
+if [ "${NUON_EXPERIMENT_LSP:-}" = "true" ]; then
+  download_and_install_binary "nuon-lsp" "$LSP_BASE_URL"
 fi
 
 echo "ensuring installed correctly"
@@ -149,5 +164,8 @@ if [ "$version" != "$VERSION" ]; then
   echo "nuon version returned $version, expected $VERSION. This usually means nuon was installed to a separate location outside of this script"
   exit 1
 fi
+
+# Cleanup temp directory
+rm -rf "$TEMP_DIR"
 
 echo "🚀 To get started, please run - nuon login"

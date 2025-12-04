@@ -496,7 +496,8 @@ func looksLikeNumber(s string) bool {
 	}
 
 	// Check if it starts with a digit or negative sign
-	if !((s[0] >= '0' && s[0] <= '9') || s[0] == '-' || s[0] == '+') {
+	firstChar := s[0]
+	if !(firstChar >= '0' && firstChar <= '9') && firstChar != '-' && firstChar != '+' {
 		return false
 	}
 
