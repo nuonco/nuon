@@ -30,17 +30,24 @@
                     "type": "string",
                     "default": "",
                     "description": "Path to the Nuon LSP server binary. Leave empty to use the bundled binary."
+                },
+                "nuonLsp.port": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "TCP port for local development (0 = stdio/binary, 7001 = dev server)"
                 }
             }
         }
     },
     "scripts": {
-        "build": "vsce package -o ./bin/extension.vsix",
+        "build": "yes | vsce package --allow-missing-repository || true",
+        "install": "code --install-extension nuon-lsp-0.0.1.vsix --force",
         "vscode:prepublish": "echo 'Prepublish complete'"
     },
+    "dependencies": {
+        "vscode-languageclient": "^9.0.1"
+    },
     "devDependencies": {
-        "vscode": "^1.1.37",
-        "vscode-languageclient": "^9.0.1",
         "@vscode/vsce": "^2.0.0"
     }
 }

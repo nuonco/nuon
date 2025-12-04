@@ -103,6 +103,7 @@ jobs:
           - dashboard-ui
           - runner
           - cli
+          - lsp
           - wiki
 
           # need to be updated to use nctl
