@@ -171,6 +171,34 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		}
 	}
 
+	// Check policies before approval
+	violations, policyErr := c.checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
+	if policyErr != nil {
+		l.Warn("failed to check policies",
+			zap.String("step_id", step.ID),
+			zap.Error(policyErr))
+	}
+
+	if len(violations) > 0 {
+		l.Debug("policy violations found",
+			zap.String("step_id", step.ID),
+			zap.Int("violation_count", len(violations)))
+		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusError,
+				Metadata: map[string]any{
+					"reason":            "Policy violations found",
+					"policy_violations": violations,
+				},
+				StatusHumanDescription: "Policy check failed",
+			},
+		}); updateErr != nil {
+			return false, errors.Wrap(updateErr, "unable to mark step as error")
+		}
+		return false, fmt.Errorf("policy violations found: %d violations", len(violations))
+	}
+
 	// Auto approve if plan-only mode is enabled
 	if flw.PlanOnly {
 		if err := c.handlePlanOnlyApproval(ctx, step, noopPlan); err != nil {
@@ -641,4 +669,43 @@ func (c *WorkflowConductor[DomainSignal]) handlePlanOnlyApproval(ctx workflow.Co
 	}
 
 	return nil
+}
+
+// checkPolicies prepares policy evaluation and then evaluates all applicable policies in parallel.
+// It returns all violations found across all policies.
+func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, error) {
+	prepResult, err := activities.AwaitPrepPolicyEvaluation(ctx, &activities.PrepPolicyEvaluationRequest{
+		StepTargetID:   stepTargetID,
+		StepTargetType: stepTargetType,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to prepare policy evaluation")
+	}
+
+	if !prepResult.HasPolicies {
+		return nil, nil
+	}
+
+	// Execute all policy evaluations in parallel
+	var futures []workflow.Future
+	for _, policy := range prepResult.Policies {
+		fut := workflow.ExecuteActivity(ctx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
+			PolicyID:  policy.PolicyID,
+			Contents:  policy.Contents,
+			InputJSON: prepResult.InputJSON,
+		})
+		futures = append(futures, fut)
+	}
+
+	// Collect all violations from parallel evaluations
+	var allViolations []activities.PolicyViolation
+	for _, fut := range futures {
+		var result activities.EvaluateSinglePolicyResult
+		if err := fut.Get(ctx, &result); err != nil {
+			return nil, errors.Wrap(err, "policy evaluation failed")
+		}
+		allViolations = append(allViolations, result.Violations...)
+	}
+
+	return allViolations, nil
 }
