@@ -22,6 +22,12 @@ services: |
     - go.sum
     - pkg/**
 
+  lsp:
+    - bins/lsp/**
+    - go.mod
+    - go.sum
+    - pkg/**
+
   nuonctl:
     - bins/nuonctl/**
 

@@ -9,7 +9,7 @@ func TextDocumentDidOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocument
 	uri := params.TextDocument.URI
 	text := params.TextDocument.Text
 	log.Infof("📂 Document opened: %s (length: %d chars)", uri, len(text))
-	
+
 	openDocumentsMutex.Lock()
 	openDocuments[uri] = text
 	openDocumentsMutex.Unlock()
