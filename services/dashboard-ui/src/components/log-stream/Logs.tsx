@@ -68,12 +68,7 @@ export const LogsViewer = ({
       </div>
 
       {logs?.length ? (
-        <div className="flex flex-col divide-y">
-          {isLoading && isPolling ? (
-            <TransitionDiv className="fade" isVisible={isLoading}>
-              <LogLineSkeleton />
-            </TransitionDiv>
-          ) : null}
+        <div className="flex flex-col divide-y">          
           {logs.map((log) => (
             <LogLine key={log.id} log={log} />
           ))}
