@@ -69,10 +69,11 @@ if command -v 7z &> /dev/null || command -v 7za &> /dev/null || command -v 7zz &
 fi
 
 # Function to download and install a binary
-# Args: $1=binary_name (e.g., "nuon" or "nuon-lsp"), $2=base_url
+# Args: $1=binary_name (e.g., "nuon" or "nuon-lsp"), $2=base_url, $3=optional (true/false)
 download_and_install_binary() {
   local NAME=$1
   local URL=${2:-$BASE_URL}
+  local OPTIONAL=${3:-false}
   local success=false
 
   # Try 7z compressed binary first if 7zip is available
@@ -107,7 +108,7 @@ download_and_install_binary() {
           mv "$TEMP_DIR/${NAME}_${OS}_${ARCH}" "$DIR/$NAME"
           echo "making binary executable..."
           chmod +x "$DIR/$NAME"
-          echo "✅ nuon should be ready to use"
+          echo "✅ $NAME should be ready to use"
           success=true
 
           # Cleanup
@@ -119,7 +120,9 @@ download_and_install_binary() {
         echo "⚠️  extraction failed, falling back to uncompressed binary..."
       fi
     else
-      echo "⚠️  compressed binary not available (HTTP status: $http_response), falling back..."
+      if [ "$OPTIONAL" = "false" ]; then
+        echo "⚠️  compressed binary not available (HTTP status: $http_response), falling back..."
+      fi
     fi
 
     # Cleanup failed attempt
@@ -129,24 +132,38 @@ download_and_install_binary() {
   # Fallback to uncompressed binary if 7z didn't succeed
   if [ "$success" = false ]; then
     echo "fetching binary for ${OS} ${ARCH}..."
-    curl -s -o "$TEMP_DIR/$NAME" "$URL/$VERSION/${NAME}_${OS}_${ARCH}"
-    echo "✅ fetching binary for ${OS} ${ARCH}..."
 
-    echo "moving binary to $DIR/$NAME..."
-    mv "$TEMP_DIR/$NAME" "$DIR/$NAME"
-    echo "making binary executable..."
-    chmod +x "$DIR/$NAME"
-    echo "✅ nuon should be ready to use"
+    # Check if binary exists before downloading
+    http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME" "$URL/$VERSION/${NAME}_${OS}_${ARCH}" 2>/dev/null)
+    status=$?
+
+    if [ $status -eq 0 ] && [ "$http_response" = "200" ]; then
+      echo "✅ fetching binary for ${OS} ${ARCH}..."
+
+      echo "moving binary to $DIR/$NAME..."
+      mv "$TEMP_DIR/$NAME" "$DIR/$NAME"
+      echo "making binary executable..."
+      chmod +x "$DIR/$NAME"
+      echo "✅ $NAME should be ready to use"
+      success=true
+    else
+      if [ "$OPTIONAL" = "true" ]; then
+        # Silently skip optional binaries that don't exist
+        rm -f "$TEMP_DIR/$NAME"
+        return 0
+      else
+        echo "❌ failed to download $NAME (HTTP status: $http_response)"
+        return 1
+      fi
+    fi
   fi
 }
 
 # Install nuon CLI
-download_and_install_binary "nuon" "$BASE_URL"
+download_and_install_binary "nuon" "$BASE_URL" false
 
-# Install nuon-lsp (Language Server) - EXPERIMENTAL FEATURE
-if [ "${NUON_EXPERIMENT_LSP:-}" = "true" ]; then
-  download_and_install_binary "nuon-lsp" "$LSP_BASE_URL"
-fi
+# Install nuon-lsp (Language Server) - optional, silently skips if not available
+download_and_install_binary "nuon-lsp" "$LSP_BASE_URL" true
 
 echo "ensuring installed correctly"
 set +e
