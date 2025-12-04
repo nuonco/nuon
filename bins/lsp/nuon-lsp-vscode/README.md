@@ -6,7 +6,11 @@ VS Code extension for Nuon Language Server.
 
 1. Install LSP binary:
    ```bash
-   NUON_EXPERIMENT_LSP=true curl -sSL install.nuon.co | bash
+   # Via install script (installs both CLI and LSP)
+   curl -sSL install.nuon.co | bash
+
+   # Or via Homebrew (installs both CLI and LSP)
+   brew install nuonco/tap/nuon
    ```
 
 2. Install extension:
