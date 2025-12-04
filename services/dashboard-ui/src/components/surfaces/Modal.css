@@ -59,3 +59,7 @@
     transform: translateY(1rem);
   }
 }
+
+.modal {
+  transition: max-width var(--duration-fastest) var(--ease-cubic),  max-height var(--duration-fastest) var(--ease-cubic);
+}
