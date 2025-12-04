@@ -63,6 +63,8 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
       module.cli.repository_arn,
       // public runner
       module.runner.repository_arn,
+      // public lsp
+      module.lsp.repository_arn,
 
       // helm charts
       module.helm_demo.repository_arn,

@@ -8,6 +8,13 @@ A Language Server Protocol implementation for Nuon configuration files, providin
 - **Hover Information**: Contextual documentation on hover
 - **Text Document Sync**: Full document synchronization
 
+## Installation
+
+Install via Nuon CLI (experimental):
+```bash
+NUON_EXPERIMENT_LSP=true curl -sSL install.nuon.co | bash
+```
+
 ## Building the LSP
 
 ```bash
@@ -15,14 +22,49 @@ cd bins/lsp
 go build -o nuon-lsp ./
 ```
 
-This creates the `lsp` binary that serves as the language server.
+This creates the `nuon-lsp` binary that serves as the language server.
 
-For VSCode extension, also copy the binary to the extension's `bin` directory:
+## Local Development with TCP Mode
+
+### Using nuonctl (Recommended)
 
 ```bash
-mkdir -p nuon-lsp-vscode/bin
-cp lsp nuon-lsp-vscode/bin/
+nuonctl services dev --dev lsp
 ```
+
+This automatically:
+- Starts the LSP server on port 7001
+- Starts health check on port 7002 (http://localhost:7002/health)
+- Configures VS Code to use port 7001
+- Cleans up VS Code config on exit (Ctrl+C)
+
+No manual configuration needed!
+
+### Manual Mode
+
+```bash
+cd bins/lsp
+go run . -port 7001 -health-port 7002
+```
+
+Check health:
+```bash
+curl http://localhost:7002/health
+```
+
+Then manually configure VS Code:
+
+```json
+{
+  "nuonLsp.port": 7001
+}
+```
+
+**Benefits:**
+- Restart LSP server without reloading VS Code
+- See server logs directly in terminal
+- Debug with Go debugger
+- Hot reload code changes
 
 ## Development Setup
 

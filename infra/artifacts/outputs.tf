@@ -40,6 +40,11 @@ output "artifacts" {
       ecr           = module.runner.all
     }
 
+    "lsp" = {
+      bucket_prefix = "lsp"
+      ecr           = module.lsp.all
+    }
+
     "website" = {
       bucket_prefix = "website"
       ecr           = module.website.all

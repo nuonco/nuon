@@ -47,6 +47,23 @@ module "runner" {
   }
 }
 
+module "lsp" {
+  source = "../modules/public-ecr"
+
+  name        = "lsp"
+  description = "Nuon LSP server"
+  about       = "Nuon Language Server Protocol server"
+  tags = {
+    artifact      = "lsp"
+    artifact_type = "binary"
+  }
+
+  region = local.aws_settings.public_region
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "stage-runner" {
   source = "../modules/public-ecr"
 
