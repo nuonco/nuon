@@ -14,6 +14,8 @@ import { UpdateInstallForm } from '@/components/installs/forms/UpdateInstallForm
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
+import { useServerAction } from '@/hooks/use-server-action'
+import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TAppConfig } from '@/types'
 
@@ -110,6 +112,26 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
     path: `/api/orgs/${org.id}/apps/${install?.app_id}/configs/${install?.app_config_id}?recurse=true`,
   })
 
+  const { data: result, error: actionError, headers, isLoading: isSubmitting, execute } = useServerAction({
+    action: updateInstallInputs,
+  })
+
+  useServerActionToast({
+    data: result,
+    error: actionError,
+    errorContent: <Text>Unable to update install inputs.</Text>,
+    errorHeading: 'Update failed',
+    onSuccess: () => {
+      const workflowId = headers?.['x-nuon-install-workflow-id']
+      if (workflowId) {
+        router.push(`/${org.id}/installs/${install?.id}/workflows/${workflowId}`)
+      }
+      removeModal(props.modalId)
+    },
+    successContent: <Text>Install inputs updated successfully!</Text>,
+    successHeading: 'Inputs updated',
+  })
+
   const nestInputsUnderGroups = (
     groups: TAppConfig['input']['input_groups'],
     inputs: TAppConfig['input']['inputs']
@@ -120,14 +142,6 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
           app_inputs: inputs?.filter((input) => input.group_id === group.id) || [],
         }))
       : []
-  }
-
-  const handleSuccess = ({ headers }: { headers?: Record<string, string> }) => {
-    const workflowId = headers?.['x-nuon-install-workflow-id']
-    if (workflowId) {
-      router.push(`/${org.id}/installs/${install?.id}/workflows/${workflowId}`)
-    }
-    removeModal(props.modalId)
   }
 
   const handleFormDataSubmit = async (formData: FormData) => {
@@ -141,7 +155,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
       })
     }
 
-    return updateInstallInputs({
+    execute({
       installId: install.id,
       orgId: org.id,
       formData,
@@ -158,8 +172,9 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
 
   return (
     <Modal
-      className="!max-w-5xl"
-      childrenClassName="!max-h-[80vh] overflow-y-auto"
+      size="3/4"
+      className="!max-h-[80vh]"
+      childrenClassName="overflow-y-auto"
       heading={
         <Text
           className="inline-flex gap-4 items-center"
@@ -172,12 +187,18 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
       }
       primaryActionTrigger={
         !isLoading && !error && config ? {
-          children: (
+          children: isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <Icon variant="Loading" />
+              Updating inputs
+            </span>
+          ) : (
             <span className="flex items-center gap-2">
               <Icon variant="Cube" />
               Update inputs
             </span>
           ),
+          disabled: isSubmitting,
           onClick: handleFormSubmit,
           variant: 'primary',
         } : undefined
@@ -301,7 +322,6 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
             ),
           }}
           onSubmit={handleFormDataSubmit}
-          onSuccess={handleSuccess}
           onCancel={() => {
             removeModal(props.modalId)
           }}

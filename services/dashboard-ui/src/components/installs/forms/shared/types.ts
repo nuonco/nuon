@@ -5,7 +5,7 @@ export interface ICreateInstallForm {
   platform: 'aws' | 'azure'
   inputConfig?: TAppInputConfig
   onSubmit?: (formData: FormData) => Promise<any>
-  onSuccess: (result: any) => void
+  onSuccess?: (result: any) => void
   onCancel: () => void
   isLoading?: boolean
   error?: any
@@ -16,7 +16,7 @@ export interface IUpdateInstallForm {
   platform?: 'aws' | 'azure'
   inputConfig?: TAppInputConfig
   onSubmit?: (formData: FormData) => Promise<any>
-  onSuccess: (result: any) => void
+  onSuccess?: (result: any) => void
   onCancel: () => void
   isLoading?: boolean
   error?: any
