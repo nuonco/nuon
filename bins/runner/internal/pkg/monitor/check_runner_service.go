@@ -92,7 +92,7 @@ func (h *Monitor) whoami(ctx context.Context) error {
 }
 
 func (h *Monitor) ensureConfigDirectories(ctx context.Context) error {
-	fmt.Printf("ensuring config directory exists: %s\n", ConfigDirectory)
+	fmt.Println(fmt.Sprintf("ensuring config directory exists: %s\n", ConfigDirectory))
 	// ensure the config dir exists: this dir may be created by the init script
 	_, err := os.Stat(ConfigDirectory)
 	if err != nil {
@@ -112,7 +112,7 @@ func (h *Monitor) ensureConfigDirectories(ctx context.Context) error {
 func (h *Monitor) ensureImageConfigFile(ctx context.Context) error {
 	// NOTE(fd): this method just writes the settings no matter what
 	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
-	fmt.Printf("ensuring runner image config file exists: %s\n", ImageConfigFilename)
+	fmt.Println(fmt.Sprintf("ensuring runner image config file exists: %s\n", ImageConfigFilename))
 	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
 	f, err := os.Create(ImageConfigFilename)
 	if err != nil {
@@ -132,7 +132,7 @@ func (h *Monitor) ensureRunnerTokenFile(ctx context.Context) error {
 	// process has in-hand is expected to already be set in the token file and 2) the
 	// file should only ever be over-written in case of token refresh and we haven't
 	// written that code yet.
-	fmt.Printf("ensuring runner token file exists: %s\n", RunnerTokenFilename)
+	fmt.Println(fmt.Sprintf("ensuring runner token file exists: %s\n", RunnerTokenFilename))
 	_, err := os.Stat(RunnerTokenFilename)
 	if err != nil {
 		return errors.Wrap(err, "unable to stat runner token file")
@@ -143,7 +143,7 @@ func (h *Monitor) ensureRunnerTokenFile(ctx context.Context) error {
 func (h *Monitor) ensureRunnerServiceDefinition(ctx context.Context) error {
 	// NOTE(fd): we need to pivot on the runner platform to grab the right template
 	path := filepath.Join(RunnerServiceDir, RunnerServiceName)
-	fmt.Printf("ensuring runner unit file exists: %s\n", path)
+	fmt.Println(fmt.Sprintf("ensuring runner unit file exists: %s\n", path))
 
 	// dynamically choose the template
 	var tmpl *template.Template
@@ -157,7 +157,7 @@ func (h *Monitor) ensureRunnerServiceDefinition(ctx context.Context) error {
 	info, err := os.Stat(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			fmt.Printf("the file (%s) does not exist - will create it\n", path)
+			fmt.Println(fmt.Sprintf("the file (%s) does not exist - will create it", path))
 			shouldWrite = true
 		} else {
 			return errors.Wrap(err, fmt.Sprintf("unable to stat %s", path))
@@ -165,7 +165,7 @@ func (h *Monitor) ensureRunnerServiceDefinition(ctx context.Context) error {
 	}
 	// 2. if it exists, but it is empty, overwrite it w/ the template
 	if info.Size() == 0 {
-		fmt.Printf("the file (%s) exists, but it is empty - will overwrite it\n", path)
+		fmt.Println(fmt.Sprintf("the file (%s) exists, but it is empty - will overwrite it", path))
 		shouldWrite = true
 	}
 
@@ -222,7 +222,7 @@ func (h *Monitor) ensureRunnerServiceIsActive(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "unable to determine start time")
 		}
-		fmt.Printf("service is up and running - uptime: %s\n", time)
+		fmt.Println(fmt.Sprintf("service is up and running - uptime: %s\n", time))
 	}
 
 	return nil

@@ -359,7 +359,6 @@ func ValidateJSONSchemaExtend(structVal interface{}) error {
 	return validateStructHasJSONSchemaExtend(reflect.TypeOf(structVal), "")
 }
 
-//nolint:gocyclo
 func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
 	// Dereference pointers
 	for t.Kind() == reflect.Ptr {

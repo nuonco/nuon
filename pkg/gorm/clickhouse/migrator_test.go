@@ -23,7 +23,7 @@ type User struct {
 	UpdatedAt time.Time
 }
 
-func TestAutoMigrate(t *testing.T) { //nolint:gocyclo
+func TestAutoMigrate(t *testing.T) {
 	integration := os.Getenv("GORM_INTEGRATION")
 	if integration == "" {
 		t.Skip("GORM_INTEGRATION=true must be set in environment to run.")
@@ -127,17 +127,17 @@ func TestMigrator_DontSupportEmptyDefaultValue(t *testing.T) {
 		return
 	}
 
-	options, parseErr := clickhousego.ParseDSN(dbDSN)
-	if parseErr != nil {
-		t.Fatalf("Can not parse dsn, got error %v", parseErr)
+	options, err := clickhousego.ParseDSN(dbDSN)
+	if err != nil {
+		t.Fatalf("Can not parse dsn, got error %v", err)
 	}
 
-	dbLocal, dbErr := gorm.Open(clickhouse.New(clickhouse.Config{
+	DB, err := gorm.Open(clickhouse.New(clickhouse.Config{
 		Conn:                         clickhousego.OpenDB(options),
 		DontSupportEmptyDefaultValue: true,
 	}))
-	if dbErr != nil {
-		t.Fatalf("failed to connect database, got error %v", dbErr)
+	if err != nil {
+		t.Fatalf("failed to connect database, got error %v", err)
 	}
 
 	type MyTable struct {
@@ -145,20 +145,20 @@ func TestMigrator_DontSupportEmptyDefaultValue(t *testing.T) {
 	}
 
 	// Create the table with AutoMigrate
-	if err := dbLocal.Table("mytable").AutoMigrate(&MyTable{}); err != nil {
+	if err := DB.Table("mytable").AutoMigrate(&MyTable{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
 
 	// Replace every gorm raw SQL command with a function that appends the SQL string to a slice
 	sqlStrings := make([]string, 0)
-	if err := dbLocal.Callback().Raw().Replace("gorm:raw", func(db *gorm.DB) {
+	if err := DB.Callback().Raw().Replace("gorm:raw", func(db *gorm.DB) {
 		sqlToExecute := db.Statement.SQL.String()
 		sqlStrings = append(sqlStrings, sqlToExecute)
 	}); err != nil {
 		t.Fatalf("no error should happen when registering a callback, but got %v", err)
 	}
 
-	if err := dbLocal.Table("mytable").AutoMigrate(&MyTable{}); err != nil {
+	if err := DB.Table("mytable").AutoMigrate(&MyTable{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
 	if len(sqlStrings) > 0 {

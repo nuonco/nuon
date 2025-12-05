@@ -387,8 +387,8 @@ func (h *handler) handleApplyPlan(
 		return errors.Wrap(err, "unable to get apply plan contents")
 	}
 
-	if unmarshalErr := json.Unmarshal(planContents, &manifestPlan); unmarshalErr != nil {
-		return errors.Wrap(unmarshalErr, "unable to decode apply plan")
+	if err := json.Unmarshal(planContents, &manifestPlan); err != nil {
+		return errors.Wrap(err, "unable to decode apply plan")
 	}
 
 	l.Debug("Apply plan decoded",
@@ -410,11 +410,11 @@ func (h *handler) handleApplyPlan(
 			zap.Int("resourceCount", len(desiredKubernetesResources)))
 
 		// Execute delete operation for all resources
-		deleteOutput, deleteErr := h.execDelete(ctx, k.client, desiredKubernetesResources, false)
-		if deleteErr != nil {
-			h.writeErrorResult(ctx, deleteErr)
-			l.Error("Failed to delete resources", zap.Error(deleteErr))
-			return fmt.Errorf("failed to delete resources: %w", deleteErr)
+		deleteOutput, err := h.execDelete(ctx, k.client, desiredKubernetesResources, false)
+		if err != nil {
+			h.writeErrorResult(ctx, err)
+			l.Error("Failed to delete resources", zap.Error(err))
+			return fmt.Errorf("failed to delete resources: %w", err)
 		}
 
 		// Format the diffs to use line-by-line entries
@@ -432,11 +432,11 @@ func (h *handler) handleApplyPlan(
 			zap.Int("resourceCount", len(desiredKubernetesResources)))
 
 		// Execute apply operation for all resources
-		applyOutput, applyErr := h.execApply(ctx, k.client, desiredKubernetesResources, false)
-		if applyErr != nil {
-			h.writeErrorResult(ctx, applyErr)
-			l.Error("Failed to apply resources", zap.Error(applyErr))
-			return fmt.Errorf("failed to apply resources: %w", applyErr)
+		applyOutput, err := h.execApply(ctx, k.client, desiredKubernetesResources, false)
+		if err != nil {
+			h.writeErrorResult(ctx, err)
+			l.Error("Failed to apply resources", zap.Error(err))
+			return fmt.Errorf("failed to apply resources: %w", err)
 		}
 
 		// Format the diffs to use line-by-line entries
@@ -467,7 +467,7 @@ func (h *handler) handleApplyPlan(
 	return nil
 }
 
-func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resources []*kubernetesResource, dryRun bool) (*[]diff.ResourceDiff, error) { //nolint:gocyclo,funlen
+func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resources []*kubernetesResource, dryRun bool) (*[]diff.ResourceDiff, error) {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get logger: %w", err)
@@ -683,6 +683,7 @@ func (h *handler) execDelete(ctx context.Context, client dynamic.Interface, reso
 		op.Entries = append(op.Entries, entry)
 
 		if dryRun {
+
 			output = append(output, op)
 			continue
 		}

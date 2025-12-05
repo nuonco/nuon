@@ -64,7 +64,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			"runner_id":               req.RunnerID,
 		})
 		w.mw.Incr(ctx, "runner.health_check", tags...) // TODO: This counter is redundant with runner.health_check.latency.count
-		w.mw.Timing(ctx, "runner.health_check.latency", time.Since(startTS), tags...)
+		w.mw.Timing(ctx, "runner.health_check.latency", time.Now().Sub(startTS), tags...)
 	}()
 
 	runner, err := activities.AwaitGetByRunnerID(ctx, req.RunnerID)
@@ -133,17 +133,17 @@ func (w *Workflows) executeHealthCheck(ctx workflow.Context, runnerID string) (a
 	heartbeat, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, runnerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_ = newStatus
+			newStatus = app.RunnerStatusError
 		}
 
 		return app.RunnerStatusUnknown, false, nil
 	}
-	if heartbeat == nil { //nolint:staticcheck
+	if heartbeat == nil {
 		newStatus = app.RunnerStatusError
 	}
 
 	minHeartBeatTS := workflow.Now(ctx).Add(-heartBeatTimeout)
-	if heartbeat.CreatedAt.Before(minHeartBeatTS) { //nolint:staticcheck
+	if heartbeat.CreatedAt.Before(minHeartBeatTS) {
 		newStatus = app.RunnerStatusError
 	}
 

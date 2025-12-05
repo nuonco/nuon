@@ -11,10 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/handler"
 )
 
-func (c *Client) AwaitSignal(
-	ctx context.Context,
-	queueSignalID string,
-) (*handler.FinishedResponse, error) {
+func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue")

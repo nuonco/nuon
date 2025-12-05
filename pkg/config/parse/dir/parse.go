@@ -32,7 +32,7 @@ func (p *parser) parseField(str string) (*fieldOpts, error) {
 	}, nil
 }
 
-func (p *parser) parse(ctx context.Context) error { //nolint:gocyclo
+func (p *parser) parse(ctx context.Context) error {
 	v := reflect.ValueOf(p.dst)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()

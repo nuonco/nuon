@@ -27,10 +27,7 @@ type NamespaceMetrics struct {
 // @by-id Name
 // @schedule-to-close-timeout 120s
 // @start-to-close-timeout 120s
-func (a *Activities) GetNamespaceMetrics(
-	ctx context.Context,
-	req GetNamespaceMetricsRequest,
-) (*NamespaceMetrics, error) {
+func (a *Activities) GetNamespaceMetrics(ctx context.Context, req GetNamespaceMetricsRequest) (*NamespaceMetrics, error) {
 	metrics, err := a.getNamespaceMetrics(ctx, req.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get namespace metrics")

@@ -19,24 +19,24 @@ type Attribute struct {
 	Key   string `json:"key"`
 	Value struct {
 		StringValue string `json:"stringValue"`
-	} `json:"value"`
-	BoolValue struct {
+	} `json:"value,omitempty"`
+	Value0 struct {
 		BoolValue bool `json:"boolValue"`
-	} `json:"boolValue,omitempty"`
-	IntValue struct {
+	} `json:"value,omitempty"`
+	Value1 struct {
 		IntValue string `json:"intValue"`
-	} `json:"intValue,omitempty"`
-	DoubleValue struct {
+	} `json:"value,omitempty"`
+	Value2 struct {
 		DoubleValue float64 `json:"doubleValue"`
-	} `json:"doubleValue,omitempty"`
-	ArrayValue struct {
+	} `json:"value,omitempty"`
+	Value3 struct {
 		ArrayValue struct {
 			Values []struct {
 				StringValue string `json:"stringValue"`
 			} `json:"values"`
 		} `json:"arrayValue"`
-	} `json:"arrayValue,omitempty"`
-	KvlistValue struct {
+	} `json:"value,omitempty"`
+	Value4 struct {
 		KvlistValue struct {
 			Values []struct {
 				Key   string `json:"key"`
@@ -45,7 +45,7 @@ type Attribute struct {
 				} `json:"value"`
 			} `json:"values"`
 		} `json:"kvlistValue"`
-	} `json:"kvlistValue,omitempty"`
+	} `json:"value,omitempty"`
 }
 type Resource struct {
 	Attributes []Attribute `json:"attributes"`

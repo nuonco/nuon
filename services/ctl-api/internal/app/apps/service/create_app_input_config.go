@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 	validatoradapter "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
@@ -45,7 +46,7 @@ type CreateAppInputConfigRequest struct {
 
 func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return validatoradapter.FormatValidationError(err)
+		return validatorPkg.FormatValidationError(err)
 	}
 
 	for k, input := range c.Inputs {
@@ -84,7 +85,9 @@ func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 				}
 			}
 		}
+
 	}
+
 	return nil
 }
 
@@ -114,12 +117,12 @@ func (s *service) CreateAppInputsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppInputConfigRequest
-	if bindErr := ctx.BindJSON(&req); bindErr != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
-	if validateErr := req.Validate(s.v); validateErr != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", validateErr))
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

@@ -34,7 +34,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		remainingSteps := h.state.run.Steps[idx+1:]
 		remainingCfgs := h.state.workflowCfg.Steps[idx+1:]
 		if len(remainingSteps) > 0 {
-			if noopErr := h.noopWorkflowSteps(ctx, remainingSteps, remainingCfgs); noopErr != nil {
+			if err := h.noopWorkflowSteps(ctx, remainingSteps, remainingCfgs); err != nil {
 				l.Warn(fmt.Sprintf("unable to mark %d remaining steps as NOOP after step.%d errored", idx, idx-1))
 			}
 		}

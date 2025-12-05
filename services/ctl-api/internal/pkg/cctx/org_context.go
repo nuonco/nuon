@@ -25,6 +25,6 @@ func SetOrgGinContext(ctx *gin.Context, org *app.Org) {
 }
 
 func SetOrgContext(ctx context.Context, org *app.Org) context.Context {
-	ctx = context.WithValue(ctx, keys.OrgIDCtxKey, org.ID) //nolint:staticcheck
-	return context.WithValue(ctx, keys.OrgCtxKey, org)     //nolint:staticcheck
+	ctx = context.WithValue(ctx, keys.OrgIDCtxKey, org.ID)
+	return context.WithValue(ctx, keys.OrgCtxKey, org)
 }

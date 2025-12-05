@@ -17,7 +17,7 @@ type TerraformDeployPlan struct {
 	AWSAuth          *awscredentials.Config   `json:"aws_auth"`
 	Hooks            *TerraformDeployHooks    `json:"hooks"`
 
-	ClusterInfo *kube.ClusterInfo `json:"cluster_info"`
+	ClusterInfo *kube.ClusterInfo `json:"cluster_info,block"`
 
 	Policies map[string]string `json:"policies"`
 	State    *state.State      `json:"state" faker:"-"`

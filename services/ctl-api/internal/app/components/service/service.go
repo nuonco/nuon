@@ -44,7 +44,6 @@ type service struct {
 
 var _ api.Service = (*service)(nil)
 
-//nolint:funlen
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// show all components for an org
 	api.GET("/v1/components", s.GetOrgComponents)

@@ -17,6 +17,7 @@ type GetPhoneHomeScriptRequest struct{}
 
 // @temporal-gen activity
 func (a *Activities) GetPhoneHomeScriptRaw(ctx context.Context, req *GetPhoneHomeScriptRequest) ([]byte, error) {
+
 	r, err := http.NewRequest(http.MethodGet, "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/phonehome.py", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create request for phone-home script")

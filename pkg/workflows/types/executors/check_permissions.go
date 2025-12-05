@@ -30,6 +30,5 @@ func CheckPermissionsIDCallback(req *CheckPermissionsRequest) string {
 // @id-callback CheckPermissionsIDCallback
 func CheckPermissions(workflow.Context, *CheckPermissionsRequest) (*CheckPermissionsResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
-	//nolint:govet
 	return nil, nil
 }

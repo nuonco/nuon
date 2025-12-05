@@ -108,6 +108,7 @@ func (w *workspace) WriteTFPlan(ctx context.Context, log hclog.Logger) ([]byte, 
 
 // Compresses an existing tfplan already at the root
 func (w *workspace) CompressTFPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
+
 	planFilePath := filepath.Join(w.root, defaultPlanFilename)
 	byts, err := os.ReadFile(planFilePath)
 	if err != nil {

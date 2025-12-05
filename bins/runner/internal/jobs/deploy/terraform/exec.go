@@ -19,7 +19,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
 
-//nolint:gocyclo,funlen
 func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
@@ -41,18 +40,17 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	// get the right workspace
 	var wkspace workspace.Workspace
-	var wkErr error
 	if len(planBytes) > 0 {
 		l.Info("the plan has ApplyPlanContents, intializing workspace with plan", zap.Int("plan.bytes.count", len(planBytes)))
-		wkspace, wkErr = p.GetWorkspaceWithPlan(ctx, planBytes)
+		wkspace, err = p.GetWorkspaceWithPlan(ctx, planBytes)
 		l.Debug("create workspace with plan bytes", zap.Int("plan.bytes.count", len(planBytes)))
 	} else {
 		l.Info("the plan has no ApplyPlanContents, intializing workspace without plan", zap.Int("plan.bytes.count", len(planBytes)))
-		wkspace, wkErr = p.GetWorkspace(ctx)
+		wkspace, err = p.GetWorkspace(ctx)
 	}
-	if wkErr != nil {
-		p.writeErrorResult(ctx, "load terraform workspace", wkErr)
-		return fmt.Errorf("unable to create workspace from config: %w", wkErr)
+	if err != nil {
+		p.writeErrorResult(ctx, "load terraform workspace", err)
+		return fmt.Errorf("unable to create workspace from config: %w", err)
 	}
 	p.state.tfWorkspace = wkspace
 
@@ -60,13 +58,13 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
 		// NOTE(jm): we initialize the root here, because we need to write some state to the directory _before_ we do
 		// the run. Ideally this would be handled as part of the lifecycle of the workspace, but it is not yet.
-		if initErr := wkspace.InitRoot(ctx); initErr != nil {
-			return errors.Wrap(initErr, "unable to initialize root")
+		if err := wkspace.InitRoot(ctx); err != nil {
+			return errors.Wrap(err, "unable to initialize root")
 		}
 
 		path := filepath.Join(p.state.tfWorkspace.Root(), config.DefaultKubeConfigFilename)
-		if writeErr := config.WriteConfig(ctx, p.state.plan.TerraformDeployPlan.ClusterInfo, path); writeErr != nil {
-			return errors.Wrap(writeErr, "unable to write kube config")
+		if err := config.WriteConfig(ctx, p.state.plan.TerraformDeployPlan.ClusterInfo, path); err != nil {
+			return errors.Wrap(err, "unable to write kube config")
 		}
 	}
 

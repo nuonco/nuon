@@ -32,6 +32,7 @@ func ProvisionECRRepositoryIDCallback(req *ProvisionECRRepositoryRequest) string
 // @id-callback ProvisionECRRepositoryIDCallback
 func ProvisionECRRepository(workflow.Context, *ProvisionECRRepositoryRequest) (*ProvisionECRRepositoryResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
 }
 
 type DeprovisionECRRepositoryRequest struct {
@@ -52,4 +53,5 @@ func DeprovisionECRRepositoryIDCallback(req *DeprovisionECRRepositoryRequest) st
 // @id-callback DeprovisionECRRepositoryIDCallback
 func DeprovisionECRRepository(workflow.Context, *DeprovisionECRRepositoryRequest) (*DeprovisionECRRepositoryResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
 }

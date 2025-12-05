@@ -11,10 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
 )
 
-func (s *Service) pollDeploys(
-	ctx context.Context, install *models.AppInstall,
-	deploys []*models.AppInstallDeploy,
-) error {
+func (s *Service) pollDeploys(ctx context.Context, install *models.AppInstall, deploys []*models.AppInstallDeploy) error {
 	depByID := make(map[string]*models.AppInstallDeploy)
 	for _, dep := range deploys {
 		depByID[dep.ID] = dep

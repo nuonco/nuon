@@ -37,9 +37,9 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	// if no log stream exists, create one
 	_, err = cctx.GetLogStreamWorkflow(ctx)
 	if err != nil {
-		logStream, streamErr := activities.AwaitCreateLogStreamByOperationID(ctx, op.ID)
-		if streamErr != nil {
-			return errors.Wrap(streamErr, "unable to create log stream")
+		logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, op.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to create log stream")
 		}
 		defer func() {
 			activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)

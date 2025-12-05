@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
@@ -68,5 +69,5 @@ func (s *Service) printAppNotFoundMsg(id string) {
 }
 
 func (s *Service) notFoundErr(id string) error {
-	return fmt.Errorf("app %s was not found", id)
+	return errors.New(fmt.Sprintf("app %s was not found", id))
 }

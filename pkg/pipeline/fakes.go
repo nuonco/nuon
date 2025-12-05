@@ -20,7 +20,6 @@ func fakePipelineCallbackFn(v reflect.Value) (interface{}, error) {
 	}, nil
 }
 
-//nolint:gochecknoinits
 func init() {
 	_ = faker.AddProvider("pipelineCallbackFn", fakePipelineCallbackFn)
 	_ = faker.AddProvider("pipelineExecFn", fakePipelineExecFn)

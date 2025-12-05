@@ -31,8 +31,7 @@ var FakeTerraformPlanContents string
 //go:embed fake_terraform_plan_display_contents.json
 var FakeTerraformPlanDisplayContents string
 
-//nolint:gocyclo
-func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.TerraformDeployPlan, error) { //nolint:funlen
+func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.TerraformDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
@@ -63,7 +62,7 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	state, _ := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
 
@@ -79,21 +78,21 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 
 	// render cross-platform values
 	cfg := compBuild.ComponentConfigConnection.TerraformModuleComponentConfig
-	if cfgErr := render.RenderStruct(cfg, stateData); cfgErr != nil {
+	if err := render.RenderStruct(cfg, stateData); err != nil {
 		l.Error("error rendering terraform config",
-			zap.Error(cfgErr),
+			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(cfgErr, "unable to render config")
+		return nil, errors.Wrap(err, "unable to render config")
 	}
 	vars := generics.ToStringMapAny(cfg.Variables)
-	if varsErr := render.RenderMap(&vars, stateData); varsErr != nil {
+	if err := render.RenderMap(&vars, stateData); err != nil {
 		l.Error("error rendering vars",
 			zap.Any("vars", vars),
-			zap.Error(varsErr),
+			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(varsErr, "unable to render environment variables")
+		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
 	var clusterInfo *kube.ClusterInfo

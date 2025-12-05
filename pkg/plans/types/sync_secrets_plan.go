@@ -22,7 +22,7 @@ type KubernetesSecretSync struct {
 type SyncSecretsPlan struct {
 	KubernetesSecrets []KubernetesSecretSync `json:"kubernetes_secrets"`
 
-	ClusterInfo *kube.ClusterInfo        `json:"cluster_info"`
+	ClusterInfo *kube.ClusterInfo        `json:"cluster_info,block"`
 	AzureAuth   *azurecredentials.Config `json:"azure_auth"`
 	AWSAuth     *awscredentials.Config   `json:"aws_auth"`
 

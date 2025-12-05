@@ -11,7 +11,6 @@ func fakeShortID(v reflect.Value) (interface{}, error) {
 	return fakeNanoID, nil
 }
 
-//nolint:gochecknoinits
 func init() {
 	_ = faker.AddProvider("shortID", fakeShortID)
 }

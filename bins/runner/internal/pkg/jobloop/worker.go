@@ -54,15 +54,15 @@ func (j *jobLoop) worker() error {
 		if err != nil {
 			j.l.Error("unable to fetch jobs", zap.Error(err))
 
-			if sleepErr := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); sleepErr != nil {
-				return sleepErr
+			if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {
+				return err
 			}
 			continue
 		}
 
 		if len(jobs) < 1 {
-			if sleepErr := smithytime.SleepWithContext(j.ctx, starvedJobPollBackoff); sleepErr != nil {
-				return sleepErr
+			if err := smithytime.SleepWithContext(j.ctx, starvedJobPollBackoff); err != nil {
+				return err
 			}
 			continue
 		}

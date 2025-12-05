@@ -1,7 +1,7 @@
 package k8s
 
 import (
-	"os"
+	"io/ioutil"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -41,9 +41,7 @@ func Clientset(kubeconfig, context string) (*kubernetes.Clientset, string, *rest
 }
 
 // ClientsetOutOfCluster loads a Kubernetes clientset using only a kubeconfig.
-func ClientsetOutOfCluster(
-	kubeconfig, context string,
-) (*kubernetes.Clientset, string, *rest.Config, error) {
+func ClientsetOutOfCluster(kubeconfig, context string) (*kubernetes.Clientset, string, *rest.Config, error) {
 	loader := clientcmd.NewDefaultClientConfigLoadingRules()
 
 	// Path to the kube config file
@@ -95,7 +93,7 @@ func ClientsetInCluster() (*kubernetes.Clientset, string, *rest.Config, error) {
 	}
 
 	ns := "default"
-	if data, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
+	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
 		if v := strings.TrimSpace(string(data)); len(v) > 0 {
 			ns = v
 		}
