@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
+	"github.com/powertoolsdev/mono/pkg/config/schema"
 	"github.com/powertoolsdev/mono/pkg/config/validate"
 	"github.com/powertoolsdev/mono/pkg/errs"
 )
@@ -60,10 +61,21 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 		if config.IsWarningErr(err) {
 			ui.PrintError(err)
 		} else {
+			s.checkSchemaCompatibility(ctx)
 			return ui.PrintError(err)
 		}
 	}
 	ui.PrintLn("all configs valid")
 
 	return nil
+}
+
+func (s *Service) checkSchemaCompatibility(ctx context.Context) {
+	diff, err := schema.CheckSchemaCompatibility(ctx, s.cfg.APIURL, "full")
+	if err != nil || diff == nil {
+		return
+	}
+
+	ui.PrintWarning("Your CLI may be outdated. The API schema has been updated and some features might not work as expected: " + diff.String())
+	ui.PrintWarning("Please update your CLI to the latest version.")
 }
