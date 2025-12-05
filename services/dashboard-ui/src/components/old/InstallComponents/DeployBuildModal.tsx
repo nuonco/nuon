@@ -279,7 +279,7 @@ export const BuildOptions: FC<{
                 <span>
                   <Text className="!font-normal text-cool-grey-600 dark:text-white/70">
                     {build?.created_by?.email} created on{' '}
-                    <Time time={build?.updated_at} format="long" />
+                    <Time time={build?.created_at} format="long" />
                   </Text>
                 </span>
               </span>
