@@ -9,26 +9,18 @@ import (
 )
 
 // GetComponentCommit will return a commit for a component, when a connected git source is attached.
-func (s *Helpers) GetComponentCommit(
-	ctx context.Context,
-	cmpID string,
-) (*app.VCSConnectionCommit, error) {
+func (s *Helpers) GetComponentCommit(ctx context.Context, cmpID string) (*app.VCSConnectionCommit, error) {
 	cmp, err := s.GetComponent(ctx, cmpID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component: %w", err)
 	}
 
 	if cmp.LatestConfig.VCSConnectionType != app.VCSConnectionTypeConnectedRepo {
-		return nil, fmt.Errorf(
-			"unable to get component config type for non connected-repo vcs configs",
-		)
+		return nil, fmt.Errorf("unable to get component config type for non connected-repo vcs configs")
 	}
 
 	// find the latest commit for this connection
-	commit, err := s.vcsHelpers.GetVCSConfigLatestCommit(
-		ctx,
-		cmp.LatestConfig.ConnectedGithubVCSConfig,
-	)
+	commit, err := s.vcsHelpers.GetVCSConfigLatestCommit(ctx, cmp.LatestConfig.ConnectedGithubVCSConfig)
 	if err != nil {
 		return nil, err
 	}

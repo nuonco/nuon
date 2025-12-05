@@ -9,11 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
-func (m *Client) CreateAccount(
-	ctx context.Context,
-	email, subject string,
-	userJourneys app.UserJourneys,
-) (*app.Account, error) {
+func (m *Client) CreateAccount(ctx context.Context, email, subject string, userJourneys app.UserJourneys) (*app.Account, error) {
 	acct := app.Account{
 		Email:        email,
 		Subject:      subject,

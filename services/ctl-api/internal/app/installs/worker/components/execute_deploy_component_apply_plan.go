@@ -42,9 +42,9 @@ func (w *Workflows) ExecuteDeployComponentApplyPlan(ctx workflow.Context, sreq s
 	}
 
 	l.Info("executing plan")
-	if execErr := w.execApplyPlan(ctx, install, installDeploy, sreq.FlowStepID, sreq.SandboxMode); execErr != nil {
+	if err := w.execApplyPlan(ctx, install, installDeploy, sreq.FlowStepID, sreq.SandboxMode); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
-		return errors.Wrap(execErr, "unable to execute deploy")
+		return errors.Wrap(err, "unable to execute deploy")
 	}
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")

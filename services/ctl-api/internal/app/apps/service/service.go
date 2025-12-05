@@ -46,7 +46,6 @@ type service struct {
 
 var _ api.Service = (*service)(nil)
 
-//nolint:funlen
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// manage apps
 	apps := ge.Group("/v1/apps")
@@ -156,7 +155,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		{
 			secrets.GET("", s.GetAppSecrets)
 			secrets.DELETE("/:secret_id", s.DeleteAppSecretV2)
+
 		}
+
 		// app branches
 		branches := app.Group("/branches")
 		{

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTerraform(t *testing.T) { //nolint:funlen
+func TestTerraform(t *testing.T) {
 	l := NewMockhcLog(nil)
 
 	tests := map[string]struct {

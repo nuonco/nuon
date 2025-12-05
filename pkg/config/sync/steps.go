@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-//nolint:funlen
 func (s *sync) syncSteps() ([]syncStep, error) {
 	steps := []syncStep{
 		{

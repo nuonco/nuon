@@ -19,10 +19,7 @@ type DeprovisionECRRepositoryResponse struct{}
 // @execution-timeout 30m
 // @task-timeout 15m
 // @id-template {{.CallerID}}-deprovision-ecr-repo
-func (w Wkflow) DeprovisionECRRepository(
-	ctx workflow.Context,
-	req *DeprovisionECRRepositoryRequest,
-) (*DeprovisionECRRepositoryResponse, error) {
+func (w Wkflow) DeprovisionECRRepository(ctx workflow.Context, req *DeprovisionECRRepositoryRequest) (*DeprovisionECRRepositoryResponse, error) {
 	l := log.With(workflow.GetLogger(ctx))
 
 	l.Debug("destroying ecr repository", zap.String("noop", "true"))

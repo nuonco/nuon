@@ -95,36 +95,36 @@ func (l *loader) newConfig(flags *pflag.FlagSet) (*config, error) {
 	c.secure = make(map[string]struct{}, loaderDefaultSize)
 
 	// Set up ENV loading
-	c.SetEnvPrefix(l.envVarPrefix)
-	c.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	c.AutomaticEnv()
+	c.Viper.SetEnvPrefix(l.envVarPrefix)
+	c.Viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	c.Viper.AutomaticEnv()
 
 	// Extract the filename to use in building paths
 	_, file := path.Split(os.Args[0])
 
 	// Set up File loading
-	c.SetConfigName("config")
-	c.AddConfigPath(fmt.Sprintf("/etc/%s/", file))
-	c.AddConfigPath(fmt.Sprintf("$HOME/.%s", file))
-	c.AddConfigPath(".")
-	c.SetConfigFile(l.file)
+	c.Viper.SetConfigName("config")
+	c.Viper.AddConfigPath(fmt.Sprintf("/etc/%s/", file))
+	c.Viper.AddConfigPath(fmt.Sprintf("$HOME/.%s", file))
+	c.Viper.AddConfigPath(".")
+	c.Viper.SetConfigFile(l.file)
 	for _, additionalPath := range l.additionalPaths {
-		c.AddConfigPath(additionalPath)
+		c.Viper.AddConfigPath(additionalPath)
 	}
 
 	// Apply the defaults
 	for k, v := range l.defaults {
-		c.SetDefault(k, v)
+		c.Viper.SetDefault(k, v)
 	}
 
 	// Bind the command line flags
 	if flags != nil {
 		// ignore invalid flags in case of error:
-		_ = c.BindPFlags(flags)
+		_ = c.Viper.BindPFlags(flags)
 	}
 
 	// Read in the file config
-	_ = c.Viper.ReadInConfig() //nolint:staticcheck // QF1008: explicit Viper selection for clarity
+	_ = c.Viper.ReadInConfig()
 	return c, nil
 }
 
@@ -184,7 +184,7 @@ func (c *config) Bind(to interface{}) error {
 					if str, ok := value.(string); ok {
 						return c.parseMap(str), nil
 					}
-				} else if reflect.PointerTo(to).Implements(unmarshalerType) {
+				} else if reflect.PtrTo(to).Implements(unmarshalerType) {
 					if str, ok := value.(string); ok {
 						return c.unmarshal(to, str), nil
 					}
@@ -267,7 +267,7 @@ func (c *config) bindEnvVars(to reflect.Type, prefix string) error {
 		} else if field.Type.Kind() == reflect.Ptr {
 			err = c.bindEnvVars(field.Type.Elem(), tag)
 		} else if !strings.HasSuffix(tag, ".") {
-			err = c.Viper.BindEnv(tag) //nolint:staticcheck // QF1008: explicit Viper selection for clarity
+			err = c.Viper.BindEnv(tag)
 		}
 		if err != nil {
 			return err
@@ -298,8 +298,8 @@ func (c *config) GetStringSlice(key string) []string {
 // GetStringMapString works around an issue with parsing string maps
 func (c *config) GetStringMapString(key string) map[string]string {
 	result := c.Viper.GetStringMapString(key)
-	if c.IsSet(key) && len(result) == 0 {
-		return c.parseMap(c.GetString(key))
+	if c.Viper.IsSet(key) && len(result) == 0 {
+		return c.parseMap(c.Viper.GetString(key))
 	}
 	return result
 }
@@ -307,7 +307,7 @@ func (c *config) GetStringMapString(key string) map[string]string {
 // WriteTo dumps the config to the supplied writer
 func (c *config) WriteTo(w io.Writer) (int64, error) {
 	// Get all the settings, masking those that are secure
-	settings := c.AllSettings() //nolint:staticcheck
+	settings := c.Viper.AllSettings()
 	c.maskSecure(settings, "")
 
 	// Marshall the settings to JSON

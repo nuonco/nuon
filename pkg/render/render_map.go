@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func RenderMap(obj any, data map[string]any) error { //nolint:gocyclo,funlen
+func RenderMap(obj any, data map[string]any) error {
 	data = EnsurePrefix(data)
 
 	val := reflect.ValueOf(obj)
@@ -97,6 +97,7 @@ func RenderMap(obj any, data map[string]any) error { //nolint:gocyclo,funlen
 				return fmt.Errorf("unsupported type %T %s", elem, elem.Kind())
 			}
 		}
+
 	}
 
 	return nil

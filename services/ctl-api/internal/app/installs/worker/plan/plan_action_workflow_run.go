@@ -17,8 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-//nolint:gocyclo
-func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string) (*plantypes.ActionWorkflowRunPlan, error) { //nolint:funlen
+func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string) (*plantypes.ActionWorkflowRunPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err

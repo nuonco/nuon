@@ -34,6 +34,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 			return err
 		}
 		h.state.workspace = wkspace
+
 	} else {
 		l.Info("initializing workspace from helm repo config")
 		wkspace, err := workspace.New(h.v,
@@ -45,6 +46,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 			return err
 		}
 		h.state.workspace = wkspace
+
 	}
 	if err := h.state.workspace.Init(ctx); err != nil {
 		l.Error("unable to initialize workspace", zap.Error(err))

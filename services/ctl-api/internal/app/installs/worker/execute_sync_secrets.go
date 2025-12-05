@@ -87,14 +87,14 @@ func (w *Workflows) SyncSecrets(ctx workflow.Context, sreq signals.RequestSignal
 	}
 
 	// Deprecated: for now we dual write both the plan json and the composite plan
-	if err2 := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			SyncSecretsPlan: plan,
 		},
-	}); err2 != nil {
-		return fmt.Errorf("unable to save plan: %w", err2)
+	}); err != nil {
+		return fmt.Errorf("unable to save plan: %w", err)
 	}
 
 	l.Info("queueing job and waiting on execution")

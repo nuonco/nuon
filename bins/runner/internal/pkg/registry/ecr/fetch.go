@@ -11,12 +11,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 )
 
-func FetchAccessInfo(
-	ctx context.Context,
-	cfg *configs.OCIRegistryRepository,
-) (*registry.AccessInfo, error) {
-	authProvider, err := ecrauthorization.New(
-		validator.New(),
+func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*registry.AccessInfo, error) {
+	authProvider, err := ecrauthorization.New(validator.New(),
 		ecrauthorization.WithCredentials(cfg.ECRAuth),
 	)
 	if err != nil {
@@ -29,10 +25,7 @@ func FetchAccessInfo(
 	}
 
 	// trim the server address from the repository
-	repoName, err := ecrauthorization.TrimRepositoryName(
-		cfg.Repository,
-		authorization.ServerAddress,
-	)
+	repoName, err := ecrauthorization.TrimRepositoryName(cfg.Repository, authorization.ServerAddress)
 	if err != nil {
 		return nil, fmt.Errorf("unable to trim repository name: %w", err)
 	}

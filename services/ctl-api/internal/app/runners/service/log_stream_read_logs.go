@@ -57,9 +57,9 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	var cursor int64
 	cursorStr := ctx.GetHeader("X-Nuon-API-Offset")
 	if cursorStr != "" {
-		cursorVal, parseErr := strconv.ParseInt(cursorStr, 10, 64)
-		if parseErr != nil {
-			ctx.Error(errors.Wrap(parseErr, "unable to parse pagination cursor"))
+		cursorVal, err := strconv.ParseInt(cursorStr, 10, 64)
+		if err != nil {
+			ctx.Error(errors.Wrap(err, "unable to parse pagination cursor"))
 			return
 		}
 		cursor = cursorVal
@@ -136,6 +136,7 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 			last := otelLogRecords[len(otelLogRecords)-1]
 			headers["X-Nuon-API-Next"] = fmt.Sprintf("%d", last.Timestamp.UnixNano())
 		}
+
 	} else {
 		// DESC: Reverse pagination using ASC query + offset calculation
 		var offset int64

@@ -78,5 +78,6 @@ func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
 		} else {
 			currentInterval = nextInterval
 		}
+
 	}
 }

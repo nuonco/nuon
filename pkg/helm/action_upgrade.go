@@ -26,4 +26,5 @@ func ConfigureDefaultUpgrade(client *action.Upgrade) *action.Upgrade {
 	client.WaitForJobs = false
 	client.WaitStrategy = kube.StatusWatcherStrategy
 	return client
+
 }

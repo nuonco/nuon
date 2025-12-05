@@ -18,6 +18,7 @@ func ProvisionIDCallback(req *ProvisionIAMRequest) string {
 // @id-callback ProvisionIDCallback
 func ProvisionIAM(workflow.Context, *ProvisionIAMRequest) (*ProvisionIAMResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
 }
 
 type ProvisionIAMRequest struct {
@@ -46,4 +47,5 @@ func DeprovisionIDCallback(req *DeprovisionIAMRequest) string {
 // @id-callback DeprovisionIDCallback
 func DeprovisionIAM(workflow.Context, *DeprovisionIAMRequest) (*DeprovisionIAMResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
+	return nil, nil
 }

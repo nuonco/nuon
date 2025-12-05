@@ -51,7 +51,6 @@ func (a *Activities) getLatestJobExecutionWithOutputs(ctx context.Context, jobID
 		Limit(1).
 		First(&jobExecution)
 	if res.Error != nil {
-		return nil, res.Error
 	}
 
 	if jobExecution.CreatedAt.Before(availableAt) {

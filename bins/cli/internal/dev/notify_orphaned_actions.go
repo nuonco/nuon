@@ -18,4 +18,5 @@ func (s *Service) notifyOrphanedActions(actions map[string]string) {
 	}
 
 	ui.PrintLn(msg)
+	return
 }

@@ -16,13 +16,8 @@ const (
 )
 
 func NewOTELProvider(logStream *app.LogStream) (*log.LoggerProvider, error) {
-	ctx, cancelFn := context.WithCancel(context.Background())
-	defer func() {
-		if err := recover(); err != nil {
-			cancelFn()
-			panic(err)
-		}
-	}()
+	ctx := context.Background()
+	ctx, cancelFn := context.WithCancel(ctx)
 
 	url := fmt.Sprintf(defaultOTLPLogsEndpointTmpl, logStream.RunnerAPIURL, logStream.ID)
 

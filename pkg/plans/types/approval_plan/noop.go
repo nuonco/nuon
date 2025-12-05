@@ -1,12 +1,12 @@
 package approvalplan
 
 type NoopApprovalPlan struct {
-	PlanJSON []byte `json:"plan_json"`
+	planJSON []byte `json:"plan_json"`
 }
 
 func NewNoopApprovalPlan(planJSON []byte) *NoopApprovalPlan {
 	return &NoopApprovalPlan{
-		PlanJSON: planJSON,
+		planJSON: planJSON,
 	}
 }
 

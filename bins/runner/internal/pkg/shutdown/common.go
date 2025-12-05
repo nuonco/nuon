@@ -26,8 +26,8 @@ func runCommand(ctx context.Context, l *zap.Logger, v *validator.Validate, comma
 	if err != nil {
 		return fmt.Errorf("unable to create shutdown: %w", err)
 	}
-	if err2 := cmd.Exec(ctx); err2 != nil {
-		return fmt.Errorf("unable to shutdown: %w", err2)
+	if err := cmd.Exec(ctx); err != nil {
+		return fmt.Errorf("unable to shutdown: %w", err)
 	}
-	return nil
+	return err
 }
