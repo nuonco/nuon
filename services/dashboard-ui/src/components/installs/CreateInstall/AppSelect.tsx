@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
@@ -21,14 +22,20 @@ interface AppSelectProps {
 
 export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
   const { org } = useOrg()
+  const [allApps, setAllApps] = useState<TApp[]>([])
   const [currentPage, setCurrentPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const limit = 10
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMorePages, setHasMorePages] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const limit = 5
 
-  // Reset page when search changes
+  // Reset everything when search changes
   const handleSearchChange = (query: string) => {
     setSearchQuery(query)
     setCurrentPage(0)
+    setAllApps([])
+    setHasMorePages(true)
   }
 
   const searchParam = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ''
@@ -40,30 +47,70 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
     path: `/api/orgs/${org?.id}/apps?offset=${currentPage * limit}&limit=${limit}${searchParam}`,
   })
 
-  const hasNext = apps && apps.length === limit
-  const hasPrev = currentPage > 0
+  // Update accumulated apps when new data comes in
+  useEffect(() => {
+    if (apps) {
+      if (currentPage === 0) {
+        // First page or search reset
+        setAllApps(apps)
+      } else {
+        // Append to existing apps, but deduplicate by ID
+        setAllApps((prev) => {
+          const existingIds = new Set(prev.map((app) => app.id))
+          const newApps = apps.filter((app) => !existingIds.has(app.id))
+          return [...prev, ...newApps]
+        })
+      }
 
-  const handlePrev = () => {
-    setCurrentPage(prev => Math.max(0, prev - 1))
-  }
+      // Check if we have more pages
+      setHasMorePages(apps.length === limit)
+      
+      // Add a delay to ensure loading state is visible
+      if (isLoadingMore) {
+        setTimeout(() => setIsLoadingMore(false), 800)
+      }
+    }
+  }, [apps, currentPage, isLoadingMore])
 
-  const handleNext = () => {
-    setCurrentPage(prev => prev + 1)
-  }
+  // Load more when scrolling near bottom
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100 // 100px from bottom
+
+      if (isNearBottom && !isLoading && !isLoadingMore && hasMorePages) {
+        setIsLoadingMore(true)
+        setCurrentPage((prev) => prev + 1)
+      }
+    },
+    [isLoading, isLoadingMore, hasMorePages]
+  )
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading && currentPage === 0) {
+      // Initial loading skeleton
       return (
-        <div className="space-y-1">
+        <div className="flex flex-col gap-1">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-start gap-3 p-3 border rounded">
-              <Skeleton width="16px" height="16px" className="rounded-full mt-0.5" />
-              <div className="flex-1 flex flex-col gap-1">
-                <Skeleton width="120px" height="18px" />
-                <div className="flex items-center gap-2">
-                  <Skeleton width="180px" height="12px" />
-                  <span className="text-cool-grey-400 dark:text-cool-grey-500">•</span>
-                  <Skeleton width="80px" height="12px" />
+            <div
+              key={i}
+              className="flex items-start gap-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-md py-2.5 px-3 border h-[66px]"
+            >
+              <Skeleton
+                width="16px"
+                height="16px"
+                className="rounded-full shrink-0 mt-0.5"
+              />
+              <div className="flex items-start justify-between w-full">
+                <div className="flex flex-col gap-0">
+                  <Skeleton width="150px" height="20px" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton width="168px" height="14px" />
+                    <span className="text-cool-grey-400 dark:text-cool-grey-500">
+                      •
+                    </span>
+                    <Skeleton width="122px" height="14px" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -73,13 +120,12 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
     }
 
     if (error) {
-      return <Banner theme="error">{error.error || 'Unable to load apps'}</Banner>
+      return (
+        <Banner theme="error">{error.error || 'Unable to load apps'}</Banner>
+      )
     }
 
-    const validApps =
-      apps?.filter((app) => app?.runner_config?.app_runner_type) || []
-
-    if (validApps.length === 0) {
+    if (allApps.length === 0 && !isLoading) {
       if (searchQuery) {
         return (
           <EmptyState
@@ -89,99 +135,123 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
             emptyMessage={`No apps found matching "${searchQuery}". Try a different search term.`}
           />
         )
-      } else if (currentPage === 0) {
-        return (
-          <EmptyState
-            variant="search"
-            size="sm"
-            emptyTitle="No apps available"
-            emptyMessage="No apps with runner configurations found. Create an app first."
-          />
-        )
       } else {
         return (
           <EmptyState
             variant="search"
             size="sm"
-            emptyTitle="No more apps"
-            emptyMessage="No more apps found."
+            emptyTitle="No apps available"
+            emptyMessage="No apps found. Create an app first."
           />
         )
       }
     }
 
     return (
-      <div className="flex flex-col gap-4">
-        <div className="space-y-1">
-          {validApps.map((app) => (
-            <RadioInput
-              key={app.id}
-              name="app-selection"
-              value={app.id}
-              onChange={() => onSelectApp(app)}
-              labelProps={{
-                labelText: (
-                  <div className="flex flex-col">
-                    <Text className="!leading-[1]" variant="base" weight="strong">
-                      {app.name}
-                    </Text>
-                    <div className="flex items-center gap-2">
-                      <Text variant="subtext" theme="neutral">
-                        {app.id}
-                      </Text>
-                      {app.updated_at && (
-                        <>
-                          <Text theme="neutral">•</Text>
-                          <Time
-                            time={app.updated_at}
-                            variant="subtext"
-                            theme="neutral"
-                          />
-                        </>
+      <>
+        <div className="flex flex-col gap-1">
+          {allApps.map((app) => {
+            const isProvisionable = app?.runner_config?.app_runner_type
+            return (
+              <RadioInput
+                key={app.id}
+                name="app-selection"
+                value={app.id}
+                disabled={!isProvisionable}
+                onChange={() => isProvisionable && onSelectApp(app)}
+                labelProps={{
+                  labelText: (
+                    <div className="flex items-start justify-between w-full">
+                      <div className="flex flex-col">
+                        <Text
+                          className="!leading-[1]"
+                          variant="base"
+                          weight="strong"
+                        >
+                          {app.name}
+                        </Text>
+                        <div className="flex items-center gap-2">
+                          <Text variant="subtext" theme="neutral">
+                            {app.id}
+                          </Text>
+                          {app.updated_at && (
+                            <>
+                              <Text theme="neutral">•</Text>
+                              <Time
+                                time={app.updated_at}
+                                variant="subtext"
+                                theme="neutral"
+                              />
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {!isProvisionable && (
+                        <Badge size="sm" theme="neutral">
+                          Not provisionable
+                        </Badge>
                       )}
                     </div>
-                  </div>
-                ),
-                className:
-                  'flex items-start gap-3 p-3 border rounded hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800 cursor-pointer',
-              }}
-            />
-          ))}
+                  ),
+                  className: `flex items-start gap-3 p-3 border rounded ${
+                    !isProvisionable
+                      ? 'opacity-50 bg-cool-grey-100 dark:bg-dark-grey-800'
+                      : ''
+                  }`,
+                }}
+              />
+            )
+          })}
         </div>
-        
-        {(hasNext || hasPrev) && (
-          <div className="flex items-center justify-center gap-3 pt-4">
-            <Button
-              disabled={!hasPrev}
-              onClick={handlePrev}
-              title="previous"
-            >
-              <Icon variant="ArrowLeft" />
-            </Button>
-            
-            <Button
-              disabled={!hasNext}
-              onClick={handleNext}
-              title="next"
-            >
-              <Icon variant="ArrowRight" />
-            </Button>
+
+        {isLoadingMore && (
+          <div className="flex flex-col gap-1 mt-1">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={`loading-${i}`}
+                className="flex items-start gap-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-md py-2.5 px-3 border h-[66px]"
+              >
+                <Skeleton
+                  width="16px"
+                  height="16px"
+                  className="rounded-full shrink-0 mt-0.5"
+                />
+                <div className="flex items-start justify-between w-full">
+                  <div className="flex flex-col gap-0">
+                    <Skeleton width="150px" height="20px" />
+                    <div className="flex items-center gap-2">
+                      <Skeleton width="168px" height="14px" />
+                      <span className="text-cool-grey-400 dark:text-cool-grey-500">
+                        •
+                      </span>
+                      <Skeleton width="122px" height="14px" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <SearchInput
-        value={searchQuery}
-        onChange={handleSearchChange}
-        placeholder="Search apps..."
-        className="w-full"
-        labelClassName="w-full"
-      />
-      {renderContent()}
+    <div
+      className="relative flex flex-col gap-4 max-h-80 overflow-y-auto -mx-6 -my-6 pb-6"
+      onScroll={handleScroll}
+    >
+      <div className="sticky border-b top-0 bg-background z-10 px-6 py-4 shadow-sm">
+        <SearchInput
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder="Search apps..."
+          className="w-full"
+          labelClassName="w-full"
+        />
+      </div>
+
+      <div className="px-6">{renderContent()}</div>
     </div>
   )
 }
