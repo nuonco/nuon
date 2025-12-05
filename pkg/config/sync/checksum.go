@@ -16,10 +16,7 @@ func (s *componentChecksum) Equals(checksum string) bool {
 	return s.Checksum == checksum || s.LegacyChecksum == checksum
 }
 
-func (s *sync) generateComponentChecksun(
-	ctx context.Context,
-	comp *config.Component,
-) (componentChecksum, error) {
+func (s *sync) generateComponentChecksun(ctx context.Context, comp *config.Component) (componentChecksum, error) {
 	legacyChecksum, err := hasher.HashStruct(comp, hasher.StructHasherOptions{
 		EnableOmitEmpty: false,
 	})

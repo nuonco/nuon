@@ -7,6 +7,29 @@ import (
 )
 
 func (c *cli) installsCmd() *cobra.Command {
+	var (
+		id            string
+		workflowID    string
+		name          string
+		region        string
+		appID         string
+		deployID      string
+		runID         string
+		installCompID string
+		componentID   string
+		inputs        []string
+		noSelect      bool
+		deployDeps    bool
+		offset        int
+		limit         int
+		planOnly      bool
+		fileOrDir     string
+		confirm       bool
+		wait          bool
+		enable        bool
+		disable       bool
+	)
+
 	installsCmds := &cobra.Command{
 		Use:               "installs",
 		Short:             "Manage installs",
@@ -14,21 +37,6 @@ func (c *cli) installsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		GroupID:           InstallGroup.ID,
 	}
-
-	c.addInstallsListCommands(installsCmds)
-	c.addInstallsCRUDCommands(installsCmds)
-	c.addInstallsSyncCommands(installsCmds)
-	c.addInstallsDeployCommands(installsCmds)
-	c.addInstallsSandboxCommands(installsCmds)
-	c.addInstallsWorkflowCommands(installsCmds)
-	c.addInstallsSelectionCommands(installsCmds)
-
-	return installsCmds
-}
-
-func (c *cli) addInstallsListCommands(installsCmds *cobra.Command) {
-	var id, appID string
-	var offset, limit int
 
 	listCmd := &cobra.Command{
 		Use:     "list",
@@ -71,40 +79,6 @@ func (c *cli) addInstallsListCommands(installsCmds *cobra.Command) {
 	generateConfigCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(generateConfigCmd)
 
-	componentsCmd := &cobra.Command{
-		Use:   "components",
-		Short: "Get install components",
-		Long:  "Get all components on an install",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Components(cmd.Context(), id, offset, limit, PrintJSON)
-		}),
-	}
-	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
-	componentsCmd.MarkFlagRequired("install-id")
-	componentsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
-	componentsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum components to return")
-	installsCmds.AddCommand(componentsCmd)
-
-	currentInputs := &cobra.Command{
-		Use:   "current-inputs",
-		Short: "View current inputs",
-		Long:  "View current set app inputs",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.CurrentInputs(cmd.Context(), id, PrintJSON)
-		}),
-	}
-	currentInputs.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
-	currentInputs.MarkFlagRequired("install-id")
-	installsCmds.AddCommand(currentInputs)
-}
-
-func (c *cli) addInstallsCRUDCommands(installsCmds *cobra.Command) {
-	var id, name, region, appID string
-	var inputs []string
-	var noSelect bool
-
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create an install",
@@ -117,6 +91,7 @@ func (c *cli) addInstallsCRUDCommands(installsCmds *cobra.Command) {
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
 	createCmd.MarkFlagRequired("app-id")
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name you want to give this install")
+
 	if !c.cfg.Preview {
 		createCmd.MarkFlagRequired("name")
 	}
@@ -160,26 +135,6 @@ func (c *cli) addInstallsCRUDCommands(installsCmds *cobra.Command) {
 	forgetCmd.MarkFlagRequired("confirm")
 	installsCmds.AddCommand(forgetCmd)
 
-	updateInputCmd := &cobra.Command{
-		Use:   "update-input",
-		Short: "Update install input",
-		Long:  "Update an install input value",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.UpdateInput(cmd.Context(), id, inputs, PrintJSON)
-		}),
-	}
-	updateInputCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to update")
-	updateInputCmd.MarkFlagRequired("install-id")
-	updateInputCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
-	updateInputCmd.MarkFlagRequired("inputs")
-	installsCmds.AddCommand(updateInputCmd)
-}
-
-func (c *cli) addInstallsSyncCommands(installsCmds *cobra.Command) {
-	var id, appID, fileOrDir string
-	var confirm, wait, enable, disable bool
-
 	syncCmd := &cobra.Command{
 		Use:   "sync",
 		Short: "Sync install",
@@ -212,12 +167,21 @@ func (c *cli) addInstallsSyncCommands(installsCmds *cobra.Command) {
 	toggleSyncCmd.MarkFlagRequired("install-id")
 	toggleSyncCmd.MarkFlagsMutuallyExclusive("enable", "disable")
 	installsCmds.AddCommand(toggleSyncCmd)
-}
 
-func (c *cli) addInstallsDeployCommands(installsCmds *cobra.Command) { //nolint:funlen
-	var id, deployID, installCompID, componentID string
-	var offset, limit int
-	var deployDeps, planOnly bool
+	componentsCmd := &cobra.Command{
+		Use:   "components",
+		Short: "Get install components",
+		Long:  "Get all components on an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Components(cmd.Context(), id, offset, limit, PrintJSON)
+		}),
+	}
+	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	componentsCmd.MarkFlagRequired("install-id")
+	componentsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	componentsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum components to return")
+	installsCmds.AddCommand(componentsCmd)
 
 	getDeployCmd := &cobra.Command{
 		Use:   "get-deploy",
@@ -279,53 +243,6 @@ func (c *cli) addInstallsDeployCommands(installsCmds *cobra.Command) { //nolint:
 	listDeploysCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
 	installsCmds.AddCommand(listDeploysCmd)
 
-	deployInstallComponentsCmd := &cobra.Command{
-		Use:   "deploy-components",
-		Short: "Deploy all components to an install.",
-		Long:  "Deploy all components to an install.",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.DeployComponents(cmd.Context(), id, planOnly, PrintJSON)
-		}),
-	}
-	deployInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
-	deployInstallComponentsCmd.MarkFlagRequired("install-id")
-	deployInstallComponentsCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan, do not actually deploy")
-	installsCmds.AddCommand(deployInstallComponentsCmd)
-
-	teardownInstallComponentsCmd := &cobra.Command{
-		Use:   "teardown-components",
-		Short: "Teardown components on install.",
-		Long:  "Teardown all deployed components on an install (deprecated)",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.TeardownComponents(cmd.Context(), id, PrintJSON)
-		}),
-	}
-	teardownInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
-	teardownInstallComponentsCmd.MarkFlagRequired("install-id")
-	installsCmds.AddCommand(teardownInstallComponentsCmd)
-
-	teardownInstallComponentCmd := &cobra.Command{
-		Use:   "teardown-component",
-		Short: "Teardown component on install.",
-		Long:  "Teardown all deployed components on an install",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.TeardownComponent(cmd.Context(), id, componentID, PrintJSON)
-		}),
-	}
-	teardownInstallComponentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
-	teardownInstallComponentCmd.MarkFlagRequired("install-id")
-	teardownInstallComponentCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component you want to teardown")
-	teardownInstallComponentCmd.MarkFlagRequired("component-id")
-	installsCmds.AddCommand(teardownInstallComponentCmd)
-}
-
-func (c *cli) addInstallsSandboxCommands(installsCmds *cobra.Command) {
-	var id, runID, installCompID string
-	var offset, limit int
-
 	sandboxRunsCmd := &cobra.Command{
 		Use:   "sandbox-runs",
 		Short: "View sandbox runs",
@@ -357,6 +274,43 @@ func (c *cli) addInstallsSandboxCommands(installsCmds *cobra.Command) {
 	sandboxRunLogsCmd.Flags().StringVarP(&installCompID, "install-comp-id", "c", "", "The ID of the install component to view logs for")
 	installsCmds.AddCommand(sandboxRunLogsCmd)
 
+	currentInputs := &cobra.Command{
+		Use:   "current-inputs",
+		Short: "View current inputs",
+		Long:  "View current set app inputs",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.CurrentInputs(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	currentInputs.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	currentInputs.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(currentInputs)
+
+	selectInstallCmd := &cobra.Command{
+		Use:   "select",
+		Short: "Select your current install",
+		Long:  "Select your current install from a list or by install ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Select(cmd.Context(), appID, id, PrintJSON)
+		}),
+	}
+	selectInstallCmd.Flags().StringVar(&id, "install", "", "The ID of the install you want to use")
+	selectInstallCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
+	installsCmds.AddCommand(selectInstallCmd)
+
+	unsetCurrentInstallCmd := &cobra.Command{
+		Use:   "unset-current",
+		Short: "Unset your current install selection",
+		Long:  "Unset your current install selection.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.UnsetCurrent(cmd.Context())
+		}),
+	}
+	installsCmds.AddCommand(unsetCurrentInstallCmd)
+
 	reprovisionInstallCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reprovision install",
@@ -383,6 +337,63 @@ func (c *cli) addInstallsSandboxCommands(installsCmds *cobra.Command) {
 	deprovisionInstallCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deprovisionInstallCmd)
 
+	teardownInstallComponentsCmd := &cobra.Command{
+		Use:   "teardown-components",
+		Short: "Teardown components on install.",
+		Long:  "Teardown all deployed components on an install (deprecated)",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.TeardownComponents(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	teardownInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	teardownInstallComponentsCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(teardownInstallComponentsCmd)
+
+	teardownInstallComponentCmd := &cobra.Command{
+		Use:   "teardown-component",
+		Short: "Teardown component on install.",
+		Long:  "Teardown all deployed components on an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.TeardownComponent(cmd.Context(), id, componentID, PrintJSON)
+		}),
+	}
+	teardownInstallComponentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	teardownInstallComponentCmd.MarkFlagRequired("install-id")
+	teardownInstallComponentCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component you want to teardown")
+	teardownInstallComponentCmd.MarkFlagRequired("component-id")
+	installsCmds.AddCommand(teardownInstallComponentCmd)
+
+	deployInstallComponentsCmd := &cobra.Command{
+		Use:   "deploy-components",
+		Short: "Deploy all components to an install.",
+		Long:  "Deploy all components to an install.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.DeployComponents(cmd.Context(), id, planOnly, PrintJSON)
+		}),
+	}
+	deployInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	deployInstallComponentsCmd.MarkFlagRequired("install-id")
+	deployInstallComponentsCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan, do not actually deploy")
+	installsCmds.AddCommand(deployInstallComponentsCmd)
+
+	updateInputCmd := &cobra.Command{
+		Use:   "update-input",
+		Short: "Update install input",
+		Long:  "Update an install input value",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.UpdateInput(cmd.Context(), id, inputs, PrintJSON)
+		}),
+	}
+	updateInputCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to update")
+	updateInputCmd.MarkFlagRequired("install-id")
+	updateInputCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
+	updateInputCmd.MarkFlagRequired("inputs")
+	installsCmds.AddCommand(updateInputCmd)
+
 	deprovisionInstallSandboxCmd := &cobra.Command{
 		Use:   "deprovision-sandbox",
 		Short: "Deprovision install sandbox",
@@ -395,11 +406,6 @@ func (c *cli) addInstallsSandboxCommands(installsCmds *cobra.Command) {
 	deprovisionInstallSandboxCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	deprovisionInstallSandboxCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deprovisionInstallSandboxCmd)
-}
-
-func (c *cli) addInstallsWorkflowCommands(installsCmds *cobra.Command) {
-	var id, workflowID string
-	var offset, limit int
 
 	workflowsCmd := &cobra.Command{
 		Use:   "workflows",
@@ -417,6 +423,7 @@ func (c *cli) addInstallsWorkflowCommands(installsCmds *cobra.Command) {
 	workflowsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID install workflow you want to view")
 	installsCmds.AddCommand(workflowsCmd)
 
+	// workflows get
 	workflowGetCmd := &cobra.Command{
 		Use:   "workflows-get",
 		Short: "Get one workflows",
@@ -432,6 +439,7 @@ func (c *cli) addInstallsWorkflowCommands(installsCmds *cobra.Command) {
 	workflowGetCmd.MarkFlagRequired("workflow-id")
 	installsCmds.AddCommand(workflowGetCmd)
 
+	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
 		Use:   "actions",
 		Short: "View actions",
@@ -446,32 +454,6 @@ func (c *cli) addInstallsWorkflowCommands(installsCmds *cobra.Command) {
 	actionsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	actionsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum actions to return")
 	installsCmds.AddCommand(actionsCmd)
-}
 
-func (c *cli) addInstallsSelectionCommands(installsCmds *cobra.Command) {
-	var id, appID string
-
-	selectInstallCmd := &cobra.Command{
-		Use:   "select",
-		Short: "Select your current install",
-		Long:  "Select your current install from a list or by install ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Select(cmd.Context(), appID, id, PrintJSON)
-		}),
-	}
-	selectInstallCmd.Flags().StringVar(&id, "install", "", "The ID of the install you want to use")
-	selectInstallCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
-	installsCmds.AddCommand(selectInstallCmd)
-
-	unsetCurrentInstallCmd := &cobra.Command{
-		Use:   "unset-current",
-		Short: "Unset your current install selection",
-		Long:  "Unset your current install selection.",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.UnsetCurrent(cmd.Context())
-		}),
-	}
-	installsCmds.AddCommand(unsetCurrentInstallCmd)
+	return installsCmds
 }

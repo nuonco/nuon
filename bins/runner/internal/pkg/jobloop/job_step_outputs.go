@@ -85,7 +85,7 @@ func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.App
 	}
 
 	// write the terraform state to our second endpoint for parsing the resources
-	if _, stateErr := j.apiClient.UpdateTerraformStateJSON(ctx, plan.WorkspaceID, &job.ID, []byte(plan.StateJSON)); stateErr != nil {
+	if _, err := j.apiClient.UpdateTerraformStateJSON(ctx, plan.WorkspaceID, &job.ID, []byte(plan.StateJSON)); err != nil {
 		return errors.Errorf("unable to update state json")
 	}
 
@@ -151,7 +151,7 @@ func (j *jobLoop) writeKubernetesManifestSandboxMode(ctx context.Context, job *m
 	return nil
 }
 
-func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error { //nolint:gocyclo
+func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err

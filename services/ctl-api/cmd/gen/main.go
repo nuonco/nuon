@@ -20,7 +20,7 @@ import (
 
 var v *validator.Validate
 
-func init() { //nolint:gochecknoinits
+func init() {
 	v = validator.New()
 }
 
@@ -115,7 +115,6 @@ func generatePublicSchema(ctx context.Context) error {
 	return nil
 }
 
-//nolint:gocyclo
 func runTemporalGen(ctx context.Context) error {
 	// Build a binary to reuse per-directory
 	binpath, err := compileToTemp(ctx, "github.com/powertoolsdev/mono/pkg/gen/temporal-gen")
@@ -141,9 +140,9 @@ func runTemporalGen(ctx context.Context) error {
 				if _, has := pathmap.Load(dir); has {
 					continue
 				}
-				byt, readErr := os.ReadFile(path)
-				if readErr != nil {
-					return fmt.Errorf("unable to read file %s: %w", path, readErr)
+				byt, err := os.ReadFile(path)
+				if err != nil {
+					return fmt.Errorf("unable to read file %s: %w", path, err)
 				}
 
 				if bytes.Contains(byt, []byte("\n// @temporal-gen ")) {

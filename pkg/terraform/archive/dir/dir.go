@@ -45,12 +45,12 @@ func New(v *validator.Validate, opts ...dirOption) (*dir, error) {
 // WithPath name sets the dir path
 func WithPath(path string) dirOption {
 	return func(d *dir) error {
-		path2, err := filepath.Abs(path)
+		path, err := filepath.Abs(path)
 		if err != nil {
 			return fmt.Errorf("unable to resolve path to absolute: %w", err)
 		}
 
-		d.Path = path2
+		d.Path = path
 
 		return nil
 	}

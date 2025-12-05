@@ -11,7 +11,7 @@ import (
 )
 
 func SetLogStreamContext(ctx context.Context, ls *app.LogStream) context.Context {
-	return context.WithValue(ctx, keys.LogStreamCtxKey, ls) //nolint:staticcheck
+	return context.WithValue(ctx, keys.LogStreamCtxKey, ls)
 }
 
 func GetLogStreamContext(ctx ValueContext) (*app.LogStream, error) {

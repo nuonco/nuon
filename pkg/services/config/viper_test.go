@@ -64,7 +64,7 @@ type TestNestedConfig struct {
 	Nested    TestConfig  `config:"nested"`
 }
 
-func TestViper(t *testing.T) { //nolint:funlen
+func TestViper(t *testing.T) {
 	t.Run("load", func(t *testing.T) {
 		t.Run("file", func(t *testing.T) {
 			t.Run("json", func(t *testing.T) {

@@ -15,11 +15,7 @@ import (
 )
 
 // NOTE(jm): temporal-gen does not support activities with multiple args
-func AwaitCreateQueueSignal(
-	ctx workflow.Context,
-	sig signal.Signal,
-	req *CreateQueueSignalRequest,
-) (*app.QueueSignal, error) {
+func AwaitCreateQueueSignal(ctx workflow.Context, sig signal.Signal, req *CreateQueueSignalRequest) (*app.QueueSignal, error) {
 	_ = (&Activities{}).CreateQueueSignal
 	// use this ^ for to go-to-definition jumping in your editor
 
@@ -44,19 +40,11 @@ type CreateQueueSignalRequest struct {
 	QueueID string `validate:"required"`
 }
 
-func (a *Activities) CreateQueueSignal(
-	ctx context.Context,
-	sig signal.Signal,
-	req *CreateQueueSignalRequest,
-) (*app.QueueSignal, error) {
+func (a *Activities) CreateQueueSignal(ctx context.Context, sig signal.Signal, req *CreateQueueSignalRequest) (*app.QueueSignal, error) {
 	return a.createQueueSignal(ctx, req.QueueID, sig)
 }
 
-func (a *Activities) createQueueSignal(
-	ctx context.Context,
-	queueID string,
-	signal signal.Signal,
-) (*app.QueueSignal, error) {
+func (a *Activities) createQueueSignal(ctx context.Context, queueID string, signal signal.Signal) (*app.QueueSignal, error) {
 	info := activity.GetInfo(ctx)
 
 	queueSignal := app.QueueSignal{

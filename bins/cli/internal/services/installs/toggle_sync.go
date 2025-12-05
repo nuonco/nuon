@@ -11,6 +11,7 @@ import (
 )
 
 func (s *Service) ToggleSync(ctx context.Context, installID string, enable, disable bool) error {
+
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)

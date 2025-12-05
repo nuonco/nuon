@@ -41,9 +41,9 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	}
 	req.CanaryId = canaryID
 
-	if validateErr := req.Validate(); validateErr != nil {
+	if err := req.Validate(); err != nil {
 		w.metricsWriter.Incr(ctx, "provision", "status:error", "step:validate_request", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
-		return nil, validateErr
+		return nil, err
 	}
 
 	w.sendNotification(ctx, notificationTypeCanaryStart, req.CanaryId, req.SandboxMode, nil, nil)
@@ -54,8 +54,8 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 			"err":  err.Error(),
 		})
 
-		if deprovisionErr := w.execProvisionDeprovision(ctx, orgID, req, true); deprovisionErr != nil {
-			l.Error("unable to deprovision", zap.Error(deprovisionErr))
+		if err := w.execProvisionDeprovision(ctx, orgID, req, true); err != nil {
+			l.Error("unable to deprovision", zap.Error(err))
 		}
 		return nil, err
 	}
@@ -67,8 +67,8 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 			"err":  err.Error(),
 		})
 
-		if deprovisionErr := w.execProvisionDeprovision(ctx, orgID, req, true); deprovisionErr != nil {
-			l.Error("unable to deprovision", zap.Error(deprovisionErr))
+		if err := w.execProvisionDeprovision(ctx, orgID, req, true); err != nil {
+			l.Error("unable to deprovision", zap.Error(err))
 		}
 		return nil, err
 	}

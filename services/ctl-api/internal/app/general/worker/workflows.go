@@ -25,7 +25,7 @@ type Workflows struct {
 }
 
 func (w Workflows) All() []any {
-	return []any{
+	wkflows := []any{
 		w.EventLoop,
 		w.PurgeStaleData,
 		w.Metrics,
@@ -35,6 +35,7 @@ func (w Workflows) All() []any {
 		w.RestartOrgRunners,
 		w.RestartOrgEventLoops,
 	}
+	return append(wkflows)
 }
 
 type WorkflowsParams struct {

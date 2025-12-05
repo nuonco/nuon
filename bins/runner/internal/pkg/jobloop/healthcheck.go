@@ -39,7 +39,7 @@ func (j *jobLoop) TimeSinceLastHealthcheck() time.Duration {
 	if j.healthcheck.LatestHealthcheckAt.IsZero() {
 		return time.Duration(0)
 	}
-	return time.Since(j.healthcheck.LatestHealthcheckAt)
+	return time.Now().Sub(j.healthcheck.LatestHealthcheckAt)
 }
 
 // func (j *jobLoop) setLatestJobRun(start time.Time) error {

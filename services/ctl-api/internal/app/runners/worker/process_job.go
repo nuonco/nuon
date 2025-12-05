@@ -18,7 +18,7 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 60m
 // @task-timeout 30m
-func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal) error { //nolint:gocyclo
+func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

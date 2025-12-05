@@ -36,8 +36,8 @@ func (s *service) CreateOrgUser(ctx *gin.Context) {
 	}
 
 	var req AdminCreateOrgUserRequest
-	if err2 := ctx.BindJSON(&req); err2 != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err2))
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 

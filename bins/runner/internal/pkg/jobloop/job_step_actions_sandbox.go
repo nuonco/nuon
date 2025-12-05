@@ -28,8 +28,8 @@ func (h *jobLoop) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 
 	// parse the plan
 	var plan plantypes.ActionWorkflowRunPlan
-	if unmarshalErr := json.Unmarshal([]byte(planJSON), &plan); unmarshalErr != nil {
-		return errors.Wrap(unmarshalErr, "unable to parse action workflow run plan")
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+		return errors.Wrap(err, "unable to parse action workflow run plan")
 	}
 
 	// fetch the run object

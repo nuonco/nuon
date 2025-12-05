@@ -117,7 +117,7 @@ func (a *Migrator) updateMigrationStatus(ctx context.Context, name string, statu
 	return nil
 }
 
-func (a *Migrator) execMigration(ctx context.Context, migration Migration) error { //nolint:gocyclo,funlen
+func (a *Migrator) execMigration(ctx context.Context, migration Migration) error {
 	if migration.Disabled {
 		return nil
 	}
@@ -208,6 +208,7 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 			}
 			return err
 		}
+
 	}
 
 	if migration.SQL != "" {

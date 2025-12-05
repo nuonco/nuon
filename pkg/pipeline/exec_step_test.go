@@ -20,7 +20,7 @@ type testStepFunctions interface {
 	ValidCallbackFn(context.Context, hclog.Logger, []byte) error
 }
 
-func TestPipeline_execStep(t *testing.T) { //nolint:funlen
+func TestPipeline_execStep(t *testing.T) {
 	errPipelineRun := fmt.Errorf("error running pipeline")
 	execResp := generics.GetFakeObj[[]byte]()
 	stepName := generics.GetFakeObj[string]()

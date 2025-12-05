@@ -50,10 +50,7 @@ type GetCHActivePartStatsRequest struct {
 }
 
 // @temporal-gen activity
-func (a *Activities) GetCHTableMetrics(
-	ctx context.Context,
-	req GetCHTableMetricsRequest,
-) ([]app.CHTableSize, error) {
+func (a *Activities) GetCHTableMetrics(ctx context.Context, req GetCHTableMetricsRequest) ([]app.CHTableSize, error) {
 	return a.getCHTableSizes(ctx, a.chDB)
 }
 

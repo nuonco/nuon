@@ -79,7 +79,12 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 	workflow.Sleep(ctx, 1*time.Minute)
 	defaultPollTimeout := 15 * time.Second
 
-	for attempts := 0; attempts <= 20; attempts++ {
+	attempts := 0
+	for {
+		if attempts > 20 {
+			break
+		}
+
 		var installs []api.Install
 		if err := w.defaultExecGetActivity(ctx, w.acts.GetInstallsByOrgID, &activities.GetInstallsByOrgIDRequest{
 			OrgID: orgResp.OrgID,
@@ -98,6 +103,8 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 		if allActive {
 			break
 		}
+
+		attempts++
 
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}

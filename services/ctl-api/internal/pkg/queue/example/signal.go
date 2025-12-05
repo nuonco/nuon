@@ -11,7 +11,6 @@ const (
 	ExampleSignalType signal.SignalType = "example-signal"
 )
 
-//nolint:gochecknoinits
 func init() {
 	catalog.Register(ExampleSignalType, func() signal.Signal {
 		return &ExampleSignal{}

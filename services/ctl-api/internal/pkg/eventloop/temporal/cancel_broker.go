@@ -59,7 +59,6 @@ func (b *CancelBroker[Message]) newMessage(msg Message) {
 	for i, child := range b.children {
 		if child.ctx.Err() != nil {
 			// child context is done, remove from list
-			//nolint:staticcheck // SA4010: remove is collected for future cleanup implementation
 			remove = append(remove, i)
 			continue
 		}
