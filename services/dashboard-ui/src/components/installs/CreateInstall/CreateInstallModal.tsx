@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -14,6 +14,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   const [selectedApp, setSelectedApp] = useState<TApp | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   const handleClose = () => {
     setSelectedApp(undefined)
@@ -25,6 +26,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       formRef.current.requestSubmit()
     }
   }
+
 
   // For the app selection phase, we don't need any action buttons
   // The modal's close button (X) will handle cancellation
@@ -76,7 +78,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       }
       size={selectedApp ? "3/4" : "default"}
       className="!max-h-[80vh]"
-      childrenClassName="!max-h-[80vh] overflow-y-auto"
+      childrenClassName="flex-auto overflow-y-auto"
       onClose={handleClose}
       {...modalProps}
       {...props}
