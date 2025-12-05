@@ -35,8 +35,8 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	// NOTE(jm): this will be removed once the runner is in prod and all orgs are
 	// migrated.
 	if currentApp.Org.OrgType == app.OrgTypeLegacy {
-		if legacyErr := w.reprovisionLegacy(ctx, currentApp.OrgID, sreq.ID, sreq.SandboxMode); legacyErr != nil {
-			return fmt.Errorf("unable to perform legacy org reprovision: %w", legacyErr)
+		if err := w.reprovisionLegacy(ctx, currentApp.OrgID, sreq.ID, sreq.SandboxMode); err != nil {
+			return fmt.Errorf("unable to perform legacy org reprovision: %w", err)
 		}
 
 		return nil

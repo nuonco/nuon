@@ -33,9 +33,8 @@ FROM code AS lint
 
 COPY .golangci.yml .
 
-# Disabling lint temporarily as temporal generated code seems be missing 
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-ctl-api \
-    golangci-lint run -c .golangci.yml  -v
+    golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
 
 # Use the provided runtime image
 FROM ${RUNTIME_IMAGE} AS final

@@ -24,8 +24,6 @@ const (
 // then b.) waiting until it is picked up by a runner (ie: an execution exists) and then c.) finished.
 //
 // it is responsible for updating the runner job with each state, and in some cases the runner job execution.
-//
-//nolint:funlen
 func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{

@@ -15,6 +15,7 @@ func (h *Helpers) CreateHealthCheckJob(ctx context.Context,
 	logStreamID string,
 	metadata map[string]string,
 ) (*app.RunnerJob, error) {
+
 	return h.createHealthcheckRunnerJob(
 		ctx,
 		runnerID,

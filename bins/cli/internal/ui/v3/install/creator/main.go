@@ -302,146 +302,145 @@ func (m *model) prevInput() {
 	m.updateViewportContent()
 }
 
-type formStyles struct {
-	title       lipgloss.Style
-	label       lipgloss.Style
-	desc        lipgloss.Style
-	focused     lipgloss.Style
-	blurred     lipgloss.Style
-	groupHeader lipgloss.Style
-	groupTitle  lipgloss.Style
-	groupInputs lipgloss.Style
-}
-
-func (m *model) getFormStyles() formStyles {
-	width := common.Min(m.width, maxWidth) - 4
-	return formStyles{
-		title: lipgloss.NewStyle().
-			Foreground(styles.PrimaryColor).
-			Bold(true).
-			Padding(1, 0),
-		label: lipgloss.NewStyle().
-			Foreground(styles.TextColor).
-			Bold(true),
-		desc: styles.TextDim.Italic(true),
-		focused: lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(styles.BorderActiveColor).
-			Padding(0, 1),
-		blurred: lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(styles.BorderInactiveColor).
-			Padding(0, 1),
-		groupHeader: lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			BorderLeft(false).
-			BorderRight(false).
-			BorderTop(false).
-			BorderForeground(styles.SubtleColor).
-			Width(width).
-			Padding(0, 1),
-		groupTitle: lipgloss.NewStyle().
-			Foreground(styles.SecondaryColor).
-			Bold(true),
-		groupInputs: lipgloss.NewStyle().
-			Width(width-4).
-			Padding(0, 1),
-	}
-}
-
+// updateViewportContent builds the form content and sets it in the viewport
+// This should be called whenever the form content changes (not in View())
 func (m *model) updateViewportContent() {
-	s := m.getFormStyles()
-	sections := m.renderFormTitle(s)
-	sections = append(sections, m.renderNameField(s)...)
-	sections = append(sections, m.renderRegionField(s)...)
-	sections = append(sections, m.renderDynamicInputs(s)...)
-	m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Top, sections...))
-}
+	width := common.Min(m.width, maxWidth) - 4
+	sections := []string{}
 
-func (m *model) renderFormTitle(s formStyles) []string {
-	title := s.title.Render("Create Install")
+	titleStyle := lipgloss.NewStyle().
+		Foreground(styles.PrimaryColor).
+		Bold(true).
+		Padding(1, 0)
+
+	labelStyle := lipgloss.NewStyle().
+		Foreground(styles.TextColor).
+		Bold(true)
+
+	descStyle := styles.TextDim.Italic(true)
+
+	focusedStyle := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.BorderActiveColor).
+		Padding(0, 1)
+
+	blurredStyle := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.BorderInactiveColor).
+		Padding(0, 1)
+
+	// Title
+	title := titleStyle.Render("Create Install")
 	if m.app != nil {
-		title = s.title.Render(fmt.Sprintf("Create Install for %s", m.app.Name))
+		title = titleStyle.Render(fmt.Sprintf("Create Install for %s", m.app.Name))
 	}
-	return []string{title}
-}
+	sections = append(sections, title)
 
-func (m *model) renderNameField(s formStyles) []string {
-	if len(m.inputMappings) == 0 {
-		return nil
-	}
-	sections := []string{}
-	mapping := m.inputMappings[0]
-	label := s.label.Render(mapping.displayName)
-	if mapping.required {
-		label += styles.TextError.Render(" *")
-	}
-	sections = append(sections, label)
-	if mapping.description != "" {
-		sections = append(sections, s.desc.Render(mapping.description))
-	}
-	fieldContent := m.inputs[0].View()
-	if m.focusIndex == 0 {
-		sections = append(sections, s.focused.Render(fieldContent))
-	} else {
-		sections = append(sections, s.blurred.Render(fieldContent))
-	}
-	return sections
-}
+	// Render name field first
+	if len(m.inputMappings) > 0 {
+		mapping := m.inputMappings[0]
+		label := labelStyle.Render(mapping.displayName)
+		if mapping.required {
+			label += styles.TextError.Render(" *")
+		}
+		sections = append(sections, label)
 
-func (m *model) renderRegionField(s formStyles) []string {
-	sections := []string{}
-	sections = append(sections, s.label.Render("AWS Region"))
+		if mapping.description != "" {
+			sections = append(sections, descStyle.Render(mapping.description))
+		}
+
+		fieldContent := m.inputs[0].View()
+		if m.focusIndex == 0 {
+			sections = append(sections, focusedStyle.Render(fieldContent))
+		} else {
+			sections = append(sections, blurredStyle.Render(fieldContent))
+		}
+	}
+
+	// Render region field (focusIndex 1)
+	sections = append(sections, labelStyle.Render("AWS Region"))
 	sections = append(sections, styles.TextError.Render(" *"))
-	sections = append(sections, s.desc.Render("AWS region for the installation (use left/right arrows to change)"))
+	sections = append(sections, descStyle.Render("AWS region for the installation (use left/right arrows to change)"))
 
 	regionDisplay := fmt.Sprintf("  %s  ", awsRegions[m.regionIndex])
 	if m.focusIndex == 1 {
-		regionDisplay = s.focused.Render(regionDisplay)
+		regionDisplay = focusedStyle.Render(regionDisplay)
 	} else {
-		regionDisplay = s.blurred.Render(regionDisplay)
+		regionDisplay = blurredStyle.Render(regionDisplay)
 	}
-	sections = append(sections, regionDisplay, "\n")
-	return sections
-}
+	sections = append(sections, regionDisplay)
+	sections = append(sections, "\n")
 
-func (m *model) renderDynamicInputs(s formStyles) []string {
-	sections := []string{}
+	// Group header style
+	groupHeaderStyle := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		BorderLeft(false).
+		BorderRight(false).
+		BorderTop(false).
+		BorderForeground(styles.SubtleColor).
+		Width(width).
+		Padding(0, 1)
+	groupTitleStyle := lipgloss.NewStyle().
+		Foreground(styles.SecondaryColor).
+		Bold(true)
+
+	groupInputsStyle := lipgloss.NewStyle().
+		Width(width-4).
+		Padding(0, 1)
+
+	// Render dynamic input fields (focusIndex 2+), grouped by their groups
 	lastGroupID := ""
 	for i := 1; i < len(m.inputMappings); i++ {
 		mapping := m.inputMappings[i]
 
+		// Render group header when group changes
 		if mapping.groupID != "" && mapping.groupID != lastGroupID {
 			if lastGroupID != "" {
+				// Add spacing between groups (not for first group)
 				sections = append(sections, "\n")
 			}
 			groupTitle := lipgloss.JoinVertical(
 				lipgloss.Top,
-				s.groupTitle.Render(mapping.groupName),
+				groupTitleStyle.Render(mapping.groupName),
 				styles.TextDim.Render(mapping.groupDescription),
 			)
-			sections = append(sections, s.groupHeader.Render(groupTitle))
+
+			sections = append(sections, groupHeaderStyle.Render(groupTitle))
 			lastGroupID = mapping.groupID
 		}
 
+		// Render input field
 		inputSections := []string{}
-		label := s.label.Render(mapping.displayName)
+
+		label := labelStyle.Render(mapping.displayName)
 		if mapping.required {
 			label += styles.TextError.Render(" *")
 		}
 		inputSections = append(inputSections, label)
+
 		if mapping.description != "" {
 			inputSections = append(inputSections, styles.TextAccent.Render(mapping.description))
 		}
+
 		fieldContent := m.inputs[i].View()
+		// Dynamic inputs have focusIndex = i + 1 (because region is at 1)
 		if m.focusIndex == i+1 {
-			inputSections = append(inputSections, s.focused.Render(fieldContent))
+			inputSections = append(inputSections, focusedStyle.Render(fieldContent))
 		} else {
-			inputSections = append(inputSections, s.blurred.Render(fieldContent))
+			inputSections = append(inputSections, blurredStyle.Render(fieldContent))
 		}
-		sections = append(sections, s.groupInputs.Render(lipgloss.JoinVertical(lipgloss.Top, inputSections...)))
+		sections = append(sections,
+			groupInputsStyle.Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					inputSections...,
+				),
+			),
+		)
 	}
-	return sections
+
+	// Set the viewport content
+	m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Top, sections...))
 }
 
 func (m *model) validateForm() error {
@@ -502,11 +501,12 @@ func (m *model) submitForm() tea.Cmd {
 	}
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:gocyclo,funlen
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+
 	case configFetchedMsg:
 		m.loading = false
 		if msg.err != nil {

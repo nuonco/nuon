@@ -66,8 +66,8 @@ func (w *Workflows) ProvisionDNS(ctx workflow.Context, sreq signals.RequestSigna
 	}
 
 	var outputs NuonDNSSandboxOutputs
-	if err2 := mapstructure.Decode(state.Sandbox.Outputs, &outputs); err2 != nil {
-		return errors.Wrap(err2, "unable to parse nuon dns")
+	if err := mapstructure.Decode(state.Sandbox.Outputs, &outputs); err != nil {
+		return errors.Wrap(err, "unable to parse nuon dns")
 	}
 
 	if !outputs.DNS.Enabled {

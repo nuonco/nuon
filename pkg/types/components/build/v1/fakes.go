@@ -7,7 +7,7 @@ import (
 	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 )
 
-func init() { //nolint:gochecknoinits
+func init() {
 	_ = faker.AddProvider("buildConfig", fakeBuildConfig)
 }
 

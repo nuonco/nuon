@@ -17,11 +17,7 @@ var rewriteTriggerTypes map[string]string = map[string]string{
 	"post-component-deploy": "post-deploy-component",
 }
 
-func (s *sync) syncAction( //nolint:gocyclo,funlen
-	ctx context.Context,
-	resource string,
-	action *config.ActionConfig,
-) (string, string, error) {
+func (s *sync) syncAction(ctx context.Context, resource string, action *config.ActionConfig) (string, string, error) {
 	isNew := false
 	actionWorkflow, err := s.apiClient.GetAppActionWorkflow(ctx, s.appID, action.Name)
 	if err != nil {

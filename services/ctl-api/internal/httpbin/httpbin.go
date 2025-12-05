@@ -43,6 +43,7 @@ func (s *Service) registerRoutes(api *gin.Engine) error {
 }
 
 func (s *Service) Proxy(c *gin.Context) {
+
 	switch c.Request.URL.Path {
 	case "/httpbin/panic":
 		panic("HTTPBIN force panic")
@@ -55,7 +56,7 @@ func (s *Service) Proxy(c *gin.Context) {
 			for j := 0; j < len(chunk); j += 4096 {
 				chunk[j] = byte(i % 256)
 			}
-			data = append(data, chunk) //nolint:staticcheck
+			data = append(data, chunk)
 			s.l.Info(fmt.Sprintf("Allocated %dMiB", (i+1)*100))
 		}
 	default:

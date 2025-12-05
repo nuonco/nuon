@@ -42,27 +42,27 @@ func (s *installsIntegrationTestSuite) SetupTest() {
 	s.appID = app.ID
 }
 
-func (s *installsIntegrationTestSuite) TestCreateInstall() { //nolint:funlen
+func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 	fakeReq.AwsAccount.Region = "us-west-2"
 	fakeReq.Inputs = nil
 
 	s.T().Run("success", func(t *testing.T) {
-		install, _, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, install)
 
 		require.Equal(t, *fakeReq.Name, install.Name)
 	})
 	s.T().Run("missing name", func(t *testing.T) {
-		install, _, err := s.apiClient.CreateInstall(s.ctx, s.appID, &models.ServiceCreateInstallRequest{})
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, &models.ServiceCreateInstallRequest{})
 		require.Error(t, err)
 		require.Nil(t, install)
 	})
 	s.T().Run("adding inputs", func(t *testing.T) {
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
 		require.Error(t, err)
 		require.True(t, nuon.IsBadRequest(err))
 		require.Nil(t, install)
@@ -90,7 +90,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() { //nolint:funlen
 
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 	})
@@ -107,7 +107,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() { //nolint:funlen
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 	})
@@ -119,7 +119,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() { //nolint:funlen
 		fakeReq.AwsAccount.Region = "us-west-2"
 		fakeReq.Inputs = map[string]string{}
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 		require.True(t, nuon.IsBadRequest(err))
@@ -135,7 +135,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() { //nolint:funlen
 			fakeReq.Inputs[k] = ""
 		}
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 		require.True(t, nuon.IsBadRequest(err))
@@ -148,7 +148,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() { //nolint:funlen
 		fakeReq.AwsAccount.Region = "us-west-2"
 		fakeReq.Inputs = s.fakeInstallInputsForApp(app.ID)
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, install)
 

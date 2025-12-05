@@ -84,6 +84,7 @@ func (m *Model) handleLogsFetched(msg logsFetchedMsg) {
 		attrs := []zap.Field{}
 		for stepName, logs := range m.logsByStep {
 			attrs = append(attrs, zap.Int(stepName, len(logs)))
+
 		}
 		m.log.Info("handled logs fetched", attrs...)
 	}

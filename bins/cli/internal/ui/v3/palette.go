@@ -13,7 +13,7 @@ import (
 )
 
 // NOTE: contributed by claude
-func main() { //nolint:funlen
+func main() {
 	fmt.Println()
 	fmt.Println(styles.TextBold.Render("🎨 NUON CLI LIPGLOSS STYLE PALETTE"))
 	fmt.Println()
