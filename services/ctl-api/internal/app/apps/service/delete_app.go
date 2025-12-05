@@ -77,16 +77,16 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 	// Trigger deletion for all components associated with the app in reverse order of their dependencies.
 	{
 		// Get full app config to include all components including missing components in the latest config.
-		appComponents, getComponentErr := s.helpers.GetAppComponents(ctx, appID)
-		if getComponentErr != nil {
-			ctx.Error(getComponentErr)
+		appComponents, err := s.helpers.GetAppComponents(ctx, appID)
+		if err != nil {
+			ctx.Error(err)
 			return
 		}
 
 		for _, comp := range appComponents {
-			deleteComponentErr := s.helpers.DeleteAppComponent(ctx, comp.ID)
-			if deleteComponentErr != nil {
-				ctx.Error(deleteComponentErr)
+			err = s.helpers.DeleteAppComponent(ctx, comp.ID)
+			if err != nil {
+				ctx.Error(err)
 				return
 			}
 

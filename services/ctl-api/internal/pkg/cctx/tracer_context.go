@@ -23,7 +23,7 @@ func SetTraceIDGinContext(ctx *gin.Context, traceID string) {
 }
 
 func SetTraceIDContext(ctx context.Context, traceID string) context.Context {
-	return context.WithValue(ctx, keys.TraceIDCtxKey, traceID) //nolint:staticcheck
+	return context.WithValue(ctx, keys.TraceIDCtxKey, traceID)
 }
 
 func SetTraceIDWorkflowContext(ctx workflow.Context, traceID string) workflow.Context {

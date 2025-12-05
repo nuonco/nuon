@@ -59,12 +59,12 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 	}
 
 	var req CreateActionWorkflowConfigRequest
-	if bindErr := ctx.BindJSON(&req); bindErr != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
-	if validateErr := req.Validate(s.v); validateErr != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", validateErr))
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
@@ -214,12 +214,12 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 	}
 
 	var req CreateActionWorkflowConfigRequest
-	if bindErr := ctx.BindJSON(&req); bindErr != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
-	if validateErr := req.Validate(s.v); validateErr != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", validateErr))
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

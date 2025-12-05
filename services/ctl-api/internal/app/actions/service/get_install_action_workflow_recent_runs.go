@@ -47,7 +47,7 @@ func (s *service) GetInstallActionRecentRuns(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 	actionWorkflowID := ctx.Param("action_id")
-	iaw, _ := s.getRecentRuns(ctx, org.ID, installID, actionWorkflowID)
+	iaw, err := s.getRecentRuns(ctx, org.ID, installID, actionWorkflowID)
 
 	ctx.JSON(http.StatusOK, iaw)
 }
@@ -82,7 +82,7 @@ func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 	actionWorkflowID := ctx.Param("action_workflow_id")
-	iaw, _ := s.getRecentRuns(ctx, org.ID, installID, actionWorkflowID)
+	iaw, err := s.getRecentRuns(ctx, org.ID, installID, actionWorkflowID)
 
 	ctx.JSON(http.StatusOK, iaw)
 }

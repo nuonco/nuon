@@ -42,6 +42,7 @@ func (p *handler) pollJob(ctx context.Context, clientSet *kubernetes.Clientset, 
 			l.Debug("pod created",
 				zap.String("name", pod.GetName()),
 			)
+			break
 			// case watch.Error:
 			//	// item := event.Object.(*api.Status)
 			//	p.logger.Debug("error event")

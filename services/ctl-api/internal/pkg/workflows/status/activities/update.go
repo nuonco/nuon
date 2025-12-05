@@ -36,12 +36,12 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, r
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var wf app.Workflow
-		if err := a.getStatus(ctx, &wf, req.ID); err != nil {
+		var obj app.Workflow
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return wf.Status, nil
+		return obj.Status, nil
 	}
 
 	return a.updateStatus(ctx, &obj, req.Status, getter)
@@ -55,12 +55,12 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Contex
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var step app.WorkflowStep
-		if err := a.getStatus(ctx, &step, req.ID); err != nil {
+		var obj app.WorkflowStep
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return step.Status, nil
+		return obj.Status, nil
 	}
 
 	return a.updateStatus(ctx, &obj, req.Status, getter)
@@ -73,12 +73,12 @@ func (a *Activities) PkgStatusUpdateInstallStackVersionStatus(ctx context.Contex
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var stackVersion app.InstallStackVersion
-		if err := a.getStatus(ctx, &stackVersion, req.ID); err != nil {
+		var obj app.InstallStackVersion
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return stackVersion.Status, nil
+		return obj.Status, nil
 	}
 
 	return a.updateStatus(ctx, &obj, req.Status, getter)
@@ -140,12 +140,12 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var flow app.Workflow
-		if err := a.getStatus(ctx, &flow, req.ID); err != nil {
+		var obj app.Workflow
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return flow.Status, nil
+		return obj.Status, nil
 	}
 
 	return a.updateStatus(ctx, &obj, req.Status, getter)
@@ -158,12 +158,12 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var flowStep app.WorkflowStep
-		if err := a.getStatus(ctx, &flowStep, req.ID); err != nil {
+		var obj app.WorkflowStep
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return flowStep.Status, nil
+		return obj.Status, nil
 	}
 
 	return a.updateStatus(ctx, &obj, req.Status, getter)
@@ -182,12 +182,12 @@ func (a *Activities) UpdateBuildStatusV2(ctx context.Context, req UpdateBuildSta
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var build app.ComponentBuild
-		if err := a.getStatus(ctx, &build, req.BuildID); err != nil {
+		var obj app.ComponentBuild
+		if err := a.getStatus(ctx, &obj, req.BuildID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return build.StatusV2, nil
+		return obj.StatusV2, nil
 	}
 
 	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
@@ -209,11 +209,11 @@ func (a *Activities) UpdateInstallWorkflowRunStatusV2(ctx context.Context, req U
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var run app.InstallActionWorkflowRun
-		if err := a.getStatus(ctx, &run, req.RunID); err != nil {
+		var install app.InstallActionWorkflowRun
+		if err := a.getStatus(ctx, &install, req.RunID); err != nil {
 			return app.CompositeStatus{}, err
 		}
-		return run.StatusV2, nil
+		return install.StatusV2, nil
 	}
 
 	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
@@ -235,11 +235,11 @@ func (a *Activities) UpdateRunStatusV2(ctx context.Context, req UpdateRunStatusV
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var sandboxRun app.InstallSandboxRun
-		if err := a.getStatus(ctx, &sandboxRun, req.RunID); err != nil {
+		var install app.InstallSandboxRun
+		if err := a.getStatus(ctx, &install, req.RunID); err != nil {
 			return app.CompositeStatus{}, err
 		}
-		return sandboxRun.StatusV2, nil
+		return install.StatusV2, nil
 	}
 
 	compStatus := app.NewCompositeStatus(ctx, app.Status(req.Status))
@@ -290,11 +290,11 @@ func (a *Activities) UpdateRunStatusV2(ctx context.Context, req UpdateRunStatusV
 
 	if !req.SkipStatusSync {
 		getter := func(ctx context.Context) (app.CompositeStatus, error) {
-			var sandbox app.InstallSandbox
-			if getStatusErr := a.getStatus(ctx, &sandbox, installSandbox.ID); getStatusErr != nil {
-				return app.CompositeStatus{}, getStatusErr
+			var ninstallSandbox app.InstallSandbox
+			if err := a.getStatus(ctx, &ninstallSandbox, installSandbox.ID); err != nil {
+				return app.CompositeStatus{}, err
 			}
-			return sandbox.StatusV2, nil
+			return ninstallSandbox.StatusV2, nil
 		}
 
 		err = a.updateStatusV2(ctx, &installSandbox, compStatus, getter)
@@ -319,11 +319,11 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 	}
 
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var deploy app.InstallDeploy
-		if err := a.getStatus(ctx, &deploy, req.DeployID); err != nil {
+		var installDeploy app.InstallDeploy
+		if err := a.getStatus(ctx, &installDeploy, req.DeployID); err != nil {
 			return app.CompositeStatus{}, err
 		}
-		return deploy.StatusV2, nil
+		return installDeploy.StatusV2, nil
 	}
 
 	compositeStatus := app.NewCompositeStatus(ctx, req.Status)

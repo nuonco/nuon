@@ -24,7 +24,7 @@ func (m *offsetPaginationPlugin) Initialize(db *gorm.DB) error {
 
 func (m *offsetPaginationPlugin) enablePagination(tx *gorm.DB) {
 	enablePagination, ok := tx.InstanceGet(OffsetPaginationEnabledKey)
-	if !ok || !enablePagination.(bool) {
+	if !(ok && enablePagination.(bool)) {
 		return
 	}
 

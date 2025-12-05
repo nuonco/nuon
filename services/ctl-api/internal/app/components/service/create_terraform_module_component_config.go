@@ -110,6 +110,7 @@ func (s *service) CreateAppTerraformModuleComponentConfig(ctx *gin.Context) {
 
 	// reuse the same logic as non-app scoped endpoint
 	s.CreateTerraformModuleComponentConfig(ctx)
+
 }
 
 // @ID						CreateTerraformModuleComponentConfig
@@ -149,8 +150,8 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 		req.Version = latestVersion
 	}
 
-	if validateErr := req.Validate(s.v, latestVersion); validateErr != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", validateErr))
+	if err := req.Validate(s.v, latestVersion); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
@@ -211,9 +212,9 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		Checksum:                       req.Checksum,
 	}
 	if req.DriftSchedule != nil {
-		_, parseErr := cron.ParseStandard(*req.DriftSchedule)
-		if parseErr != nil {
-			return nil, fmt.Errorf("invalid drift schedule: must be a valid cron expression: %s . Error: %s", *req.DriftSchedule, parseErr.Error())
+		_, err := cron.ParseStandard(*req.DriftSchedule)
+		if err != nil {
+			return nil, fmt.Errorf("invalid drift schedule: must be a valid cron expression: %s . Error: %s", *req.DriftSchedule, err.Error())
 		}
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule
 	}

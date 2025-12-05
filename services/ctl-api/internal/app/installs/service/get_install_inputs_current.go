@@ -33,6 +33,7 @@ func (s *service) GetInstallCurrentInputs(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install inputs: %w", err))
 		return
+
 	}
 
 	// if no inputs, exit early

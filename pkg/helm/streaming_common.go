@@ -12,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-//nolint:gocyclo
 func streamLogs(
 	streamCtx context.Context, cancelStreaming func(),
 	streamer *LogStreamer,
@@ -53,8 +52,8 @@ func streamLogs(
 				}
 				// in this case, we do have the right annotations
 				set := labels.Set(dpl.Spec.Selector.MatchLabels)
-				dplPods, podsErr := k8sClient.CoreV1().Pods(dpl.Namespace).List(streamCtx, metav1.ListOptions{LabelSelector: set.AsSelector().String()})
-				if podsErr != nil {
+				dplPods, err := k8sClient.CoreV1().Pods(dpl.Namespace).List(streamCtx, metav1.ListOptions{LabelSelector: set.AsSelector().String()})
+				if err != nil {
 					l.Error(
 						"failed to fetch pods for deployment",
 						zap.String("label_selector", labelSelector),

@@ -32,7 +32,7 @@ func TestLoopConcurrency(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	ns := strings.ReplaceAll(uuid.New().String(), "-", "")
+	ns := strings.Replace(uuid.New().String(), "-", "", -1)
 	r, err := devenv.NewRunInNamespace(t, ctx, ns)
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +100,7 @@ func TestContinueAsNew(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	ns := strings.ReplaceAll(uuid.New().String(), "-", "")
+	ns := strings.Replace(uuid.New().String(), "-", "", -1)
 	r, err := devenv.NewRunInNamespace(t, ctx, ns)
 	if err != nil {
 		t.Fatal(err)
@@ -146,9 +146,9 @@ func TestContinueAsNew(t *testing.T) {
 			expect.Add(sig.done())
 		}
 
-		signalErr := r.Client.SignalWorkflow(ctx, t.Name(), "", t.Name(), sig)
-		if signalErr != nil {
-			t.Fatalf("error signaling workflow: %v", signalErr)
+		err := r.Client.SignalWorkflow(ctx, t.Name(), "", t.Name(), sig)
+		if err != nil {
+			t.Fatalf("error signaling workflow: %v", err)
 		}
 	}
 
@@ -166,9 +166,9 @@ func TestContinueAsNew(t *testing.T) {
 			TestName:  t.Name(),
 		}
 		logs = append(logs, sig.done())
-		signalErr2 := r.Client.SignalWorkflow(ctx, t.Name(), "", t.Name(), sig)
-		if signalErr2 != nil {
-			t.Fatalf("error signaling workflow: %v", signalErr2)
+		err := r.Client.SignalWorkflow(ctx, t.Name(), "", t.Name(), sig)
+		if err != nil {
+			t.Fatalf("error signaling workflow: %v", err)
 		}
 	}
 	expect.Add(append(logs, "workflow continued as new")...)

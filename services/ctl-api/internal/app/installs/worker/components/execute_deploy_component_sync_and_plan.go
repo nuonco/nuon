@@ -34,9 +34,9 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 
 		sreq.DeployID = installDeploy.ID
 	} else {
-		componentBuild, buildErr := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteDeployComponentSubSignal.ComponentID)
-		if buildErr != nil {
-			return fmt.Errorf("unable to get component build: %w", buildErr)
+		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, sreq.ExecuteDeployComponentSubSignal.ComponentID)
+		if err != nil {
+			return fmt.Errorf("unable to get component build: %w", err)
 		}
 
 		installDeploy, err = activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
@@ -66,12 +66,12 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 		return errors.Wrap(err, "failed to poll for build")
 	}
 
-	if updateErr := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         sreq.WorkflowStepID,
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: plugins.TableName(w.db, installDeploy),
-	}); updateErr != nil {
-		return errors.Wrap(updateErr, "unable to update install workflow")
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install workflow")
 	}
 
 	defer func() {

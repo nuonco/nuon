@@ -78,20 +78,21 @@ func Shutdown(ctx context.Context, l *zap.Logger, v *validator.Validate) (err er
 	l.Info("preparing to shut down")
 	for _, v := range shutdownDbusArgs {
 		l.Debug(fmt.Sprintf("trying destination: %s", v.destination), zap.String("path", v.path), zap.String("iface", v.iface))
-		if reply, err2 := dbusSend(
+		if reply, err := dbusSend(
 			v.destination,
 			v.path,
 			v.iface,
 			v.method,
 			v.body,
-		); reply && err2 == nil {
+		); reply && err == nil {
 			return nil
 		}
 	}
 
 	l.Error("none of the methods worked. falling back to shell.")
-	runCommand(ctx, l, v, "shutdown", "-h", "now")
+	err = runCommand(ctx, l, v, "shutdown", "-h", "now")
 
 	l.Error("shell fallback failed - executing shutdown with sudo")
-	return runCommand(ctx, l, v, "sudo", "shutdown", "-h", "now")
+	err = runCommand(ctx, l, v, "sudo", "shutdown", "-h", "now")
+	return err
 }

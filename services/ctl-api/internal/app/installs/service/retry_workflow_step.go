@@ -49,9 +49,7 @@ func (c *RetryWorkflowStepResponse) Validate(v *validator.Validate) error {
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					201	{object}	RetryWorkflowByIDResponse
 // @Router					/v1/workflows/{workflow_id}/step/{step_id}/retry [post]
-//
-//nolint:gocyclo
-func (s *service) RetryWorkflowStep(ctx *gin.Context) { //nolint:funlen
+func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 	var req RetryWorkflowByIDRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -90,8 +88,8 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) { //nolint:funlen
 		var planStepSignal []eventloop.SignalType
 		switch step.StepTargetType {
 		case plugins.TableName(s.db, app.InstallDeploy{}):
-			runnerJob, jobErr := s.getRunnerJob(ctx, step.StepTargetID, app.RunnerJobOperationTypeApplyPlan)
-			if jobErr != nil {
+			runnerJob, err := s.getRunnerJob(ctx, step.StepTargetID, app.RunnerJobOperationTypeApplyPlan)
+			if err != nil {
 				ctx.Error(stderr.ErrUser{
 					Err: fmt.Errorf("component runner job not found for owner id %s", step.StepTargetID),
 				})
@@ -127,8 +125,8 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) { //nolint:funlen
 
 		// if we have a plan step signal, we need to fetch the plan step for the apply step
 		if len(planStepSignal) != 0 {
-			rePlanStep, getPlanErr := s.getPlanStepForApplyStep(ctx, workflow, step, &planStepSignal)
-			if getPlanErr != nil {
+			rePlanStep, err := s.getPlanStepForApplyStep(ctx, workflow, step, &planStepSignal)
+			if err != nil {
 				ctx.Error(stderr.ErrUser{
 					Err: fmt.Errorf("unable to fetch plan step for apply step %s", step.ID),
 				})

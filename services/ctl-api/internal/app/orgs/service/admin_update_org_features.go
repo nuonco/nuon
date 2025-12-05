@@ -32,7 +32,8 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 		return
 	}
 
-	if _, err := s.getOrg(ctx, orgID); err != nil {
+	org, err := s.getOrg(ctx, orgID)
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable update org: %w", err))
 		return
 	}
@@ -42,7 +43,7 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.getOrg(ctx, orgID)
+	org, err = s.getOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable update org: %w", err))
 		return

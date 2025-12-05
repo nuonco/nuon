@@ -14,9 +14,9 @@ func (s *Service) Delete(ctx context.Context, appID, compID string, asJSON bool)
 	}
 
 	if asJSON {
-		res, deleteErr := s.api.DeleteComponent(ctx, compID)
-		if deleteErr != nil {
-			return ui.PrintJSONError(deleteErr)
+		res, err := s.api.DeleteComponent(ctx, compID)
+		if err != nil {
+			return ui.PrintJSONError(err)
 		}
 
 		type response struct {

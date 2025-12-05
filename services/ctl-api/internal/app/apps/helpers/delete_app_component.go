@@ -12,7 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error { //nolint:gocyclo
+func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 	comp := app.Component{
 		ID: compID,
 	}

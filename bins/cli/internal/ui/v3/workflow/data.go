@@ -75,6 +75,7 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 		item := m.stepsList.Items()[m.selectedIndex]
 		// coerce to our type so we can use the niecities to grab the step details
 		m.selectedStep = item.(listStep).Step()
+
 	}
 
 	// TODO(fd): hoist into an isDone method
@@ -137,6 +138,7 @@ func (m *model) handleApproveAll(msg approveAllMsg) []tea.Cmd {
 }
 
 func (m *model) handleGetWorkflowStepApprovalContents(msg getWorkflowStepApprovalContentsMsg) []tea.Cmd {
+
 	if msg.err != nil {
 		m.approvalContents = approvalContents{error: msg.err, raw: msg.raw, loading: false}
 		return []tea.Cmd{}
