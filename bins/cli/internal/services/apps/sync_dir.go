@@ -71,6 +71,7 @@ func (s *Service) SyncDir(ctx context.Context, dir string, version string) error
 		if config.IsWarningErr(err) {
 			ui.PrintError(err)
 		} else {
+			s.checkSchemaCompatibility(ctx)
 			return ui.PrintError(err)
 		}
 	}
