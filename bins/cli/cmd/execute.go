@@ -31,6 +31,7 @@ func Execute() {
 		context.Background(),
 		rootCmd,
 		fang.WithColorSchemeFunc(fang.AnsiColorScheme),
+		fang.WithoutVersion(),
 	)
 
 	// Sentry should be flushed just the once, just prior to program exit
