@@ -2,6 +2,7 @@ package installs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon-go"
@@ -62,5 +63,5 @@ func (s *Service) printInstallNotFoundMsg(id string) {
 }
 
 func (s *Service) notFoundErr(id string) error {
-	return fmt.Errorf("install %s was not found", id)
+	return errors.New(fmt.Sprintf("install %s was not found", id))
 }

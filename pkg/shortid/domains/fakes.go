@@ -67,7 +67,6 @@ func fakeUserTokenID(v reflect.Value) (interface{}, error) {
 	return NewUserTokenID(), nil
 }
 
-//nolint:gochecknoinits
 func init() {
 	_ = faker.AddProvider("appID", fakeAppID)
 	_ = faker.AddProvider("artifactID", fakeArtifactID)

@@ -9,6 +9,7 @@ import (
 	appssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	componentssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 	installssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	orgssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	runnerssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
@@ -17,7 +18,7 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 30m
 // @task-timeout 1m
-func (w *Workflows) Restart(ctx workflow.Context, sreq orgssignals.RequestSignal) error {
+func (w *Workflows) Restart(ctx workflow.Context, sreq signals.RequestSignal) error {
 	evs, err := activities.AwaitGetEventLoopsByOrgID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get event loops")
@@ -35,6 +36,7 @@ func (w *Workflows) Restart(ctx workflow.Context, sreq orgssignals.RequestSignal
 func (w *Workflows) restartEventLoop(ctx workflow.Context, namespace, id string) error {
 	switch namespace {
 	case "orgs":
+		return nil
 		w.ev.Send(ctx, id, &orgssignals.Signal{
 			Type: orgssignals.OperationRestart,
 		})

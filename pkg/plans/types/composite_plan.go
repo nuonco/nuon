@@ -65,7 +65,7 @@ func (CompositePlan) GormDataType() string {
 
 // GormDBDataType returns the database data type based on the current using database
 func (CompositePlan) GormDBDataType(db *gorm.DB, field *schema.Field) string {
-	switch db.Name() {
+	switch db.Dialector.Name() {
 	case "postgres":
 		return "JSONB"
 	case "mysql":

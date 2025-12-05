@@ -99,6 +99,7 @@ func (a *API) lifecycleHooks(shutdowner fx.Shutdowner) fx.Hook {
 			}
 
 			if a.cfg.EnableEndpointAuditing {
+
 				routes := []app.EndpointAudit{}
 
 				for _, route := range a.handler.Routes() {

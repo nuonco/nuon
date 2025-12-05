@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -51,7 +51,7 @@ func (c *client) execRequest(ctx context.Context, method string, endpoint string
 		defer res.Body.Close()
 	}
 
-	body, err := io.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read body: %w", err)
 	}

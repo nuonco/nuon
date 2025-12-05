@@ -10,6 +10,7 @@ import (
 
 func fakeDeployConfig(v reflect.Value) (interface{}, error) {
 	return &Config{
+		//nolint:all
 		Timeout: durationpb.New(time.Second * 10),
 		Cfg: &Config_Basic{
 			Basic: &BasicConfig{
@@ -23,7 +24,6 @@ func fakeDeployConfig(v reflect.Value) (interface{}, error) {
 	}, nil
 }
 
-//nolint:gochecknoinits
 func init() {
 	_ = faker.AddProvider("deployConfig", fakeDeployConfig)
 }

@@ -5,8 +5,7 @@ linters:
   exclusions:
     generated: lax
     paths:
-      - "^exp/"
-      - "^infra/"
+      - exp/
   enable:
     - dogsled
     - funlen
@@ -16,9 +15,9 @@ linters:
     - govet
     - ineffassign
     - nakedret
-    # - nolintlint
+    - nolintlint
     - staticcheck
-    # - whitespace
+    - whitespace
     # - bodyclose
     # - goconst
     # - noctx
@@ -74,12 +73,9 @@ formatters:
   enable:
     - gofmt
     - goimports
-    # - golines
+    - golines
   exclusions:
     generated: lax
 run:
   timeout: 5m
   go: "1.25"
-  exclude-dirs:
-    - exp
-    - infra

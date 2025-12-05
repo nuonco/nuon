@@ -35,15 +35,15 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 	}
 
 	if asJSON {
-		install, _, createErr := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
+		install, _, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 			Name: &name,
 			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 				Region: region,
 			},
 			Inputs: inputsMap,
 		})
-		if createErr != nil {
-			return ui.PrintJSONError(createErr)
+		if err != nil {
+			return ui.PrintJSONError(err)
 		}
 		ui.PrintJSON(install)
 		return nil
@@ -62,13 +62,14 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 		}
 		ui.PrintLn(fmt.Sprintf("fetching workflow for new install: %s", installID))
 		// get the first workflow for this install and open it
-		workflows, _, wfErr := s.api.GetWorkflows(ctx, installID, &models.GetPaginatedQuery{Limit: 1, Offset: 0})
-		if wfErr != nil {
-			return ui.PrintError(errors.Wrap(wfErr, "failed to get initial workflow for this new install"))
+		workflows, _, err := s.api.GetWorkflows(ctx, installID, &models.GetPaginatedQuery{Limit: 1, Offset: 0})
+		if err != nil {
+			return ui.PrintError(errors.Wrap(err, "failed to get initial workflow for this new install"))
 		}
 		wf := workflows[0]
 		workflow.WorkflowApp(ctx, s.cfg, s.api, installID, wf.ID)
 		return nil
+
 	}
 
 	install, _, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{

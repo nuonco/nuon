@@ -17,7 +17,7 @@ var tmplFS embed.FS
 // All the parsed templates in the tmpl subdirectory
 var tmpls *template.Template
 
-func init() { //nolint:gochecknoinits
+func init() {
 	base := template.New("codegen").Funcs(template.FuncMap{
 		"TrimPtr":     func(s string) string { return strings.TrimPrefix(s, "*") },
 		"DurationLit": durationToGoCode,

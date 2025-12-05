@@ -42,11 +42,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 	return nil
 }
 
-func (s *Service) getActionWorkflows(
-	ctx context.Context,
-	appID string,
-	offset, limit int,
-) ([]*models.AppActionWorkflow, bool, error) {
+func (s *Service) getActionWorkflows(ctx context.Context, appID string, offset, limit int) ([]*models.AppActionWorkflow, bool, error) {
 	wfs, hasMore, err := s.api.GetActionWorkflows(ctx, appID, &models.GetPaginatedQuery{
 		Offset: offset,
 		Limit:  limit,

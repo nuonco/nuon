@@ -149,7 +149,7 @@ func (m *SelectorModel) getVisibleRows() int {
 }
 
 // Update handles messages for the selector model
-func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:gocyclo
+func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Update width and height for terminal size
@@ -258,7 +258,7 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:gocyc
 }
 
 // View renders the selector
-func (m SelectorModel) View() string { //nolint:gocyclo,funlen
+func (m SelectorModel) View() string {
 	if m.quitting {
 		if m.selected {
 			// Find the selected item from filtered items

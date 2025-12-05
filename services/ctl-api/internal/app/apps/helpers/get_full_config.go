@@ -14,7 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipVersionCheck bool) (*app.AppConfig, error) { //nolint:funlen
+func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipVersionCheck bool) (*app.AppConfig, error) {
 	appCfg := app.AppConfig{}
 	res := h.db.WithContext(ctx).
 		Where(app.AppConfig{

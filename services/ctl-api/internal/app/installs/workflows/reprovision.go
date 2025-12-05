@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
-func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) { //nolint:gocyclo,funlen
+func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
 

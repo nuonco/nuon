@@ -11,7 +11,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/stretchr/testify/assert"
@@ -98,9 +97,10 @@ func registerNS(opts client.Options, ns string) error {
 		return errors.Wrap(err, "Failed to create namespace client")
 	}
 
+	retention := time.Hour
 	err = namespaceClient.Register(context.Background(), &workflowservice.RegisterNamespaceRequest{
 		Namespace:                        ns,
-		WorkflowExecutionRetentionPeriod: durationpb.New(time.Hour),
+		WorkflowExecutionRetentionPeriod: &retention,
 	})
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func registerNS(opts client.Options, ns string) error {
 // - notify with (nil, nil), (val, nil), and (nil, err)
 // - request signals pattern vs. base pattern
 // func (s *SendTestSuite) Test_Send() {
-func TestSend(t *testing.T) { //nolint:funlen
+func TestSend(t *testing.T) {
 	clientOpts := new(client.Options)
 	var err error
 	clientOpts.HostPort, err = getFreeHostPort()
@@ -341,7 +341,7 @@ type SRTestOptions struct {
 }
 
 func (o SRTestOptions) makeWorkflowID(base string) string {
-	return fmt.Sprintf("%s-%s", strings.ReplaceAll(o.ID, "/", "_"), base)
+	return fmt.Sprintf("%s-%s", strings.Replace(o.ID, "/", "_", -1), base)
 }
 
 func (o SRTestOptions) getSignal() eventloop.Signal {

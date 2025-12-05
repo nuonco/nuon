@@ -45,7 +45,7 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 			)
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("runner account associated with more than one org"),
-				Description: "please retry request correct runner account",
+				Description: fmt.Sprintf("please retry request correct runner account"),
 			})
 			ctx.Abort()
 			return
@@ -53,7 +53,7 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 		if len(acct.OrgIDs) < 1 {
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("runner account not associated any org"),
-				Description: "please retry request correct runner account",
+				Description: fmt.Sprintf("please retry request correct runner account"),
 			})
 			ctx.Abort()
 			return

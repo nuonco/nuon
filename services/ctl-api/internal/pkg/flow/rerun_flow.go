@@ -71,7 +71,7 @@ func (c *WorkflowConductor[SignalType]) updateFlowStatus(
 // Rerun is a workflow that reruns a flow from a specific step.
 // It marks the existing step as discarded and creates a new step with the same parameters.
 // It then executes the flow steps from the newly created step.
-func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloop.EventLoopRequest, inp RerunInput) error { //nolint:gocyclo
+func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloop.EventLoopRequest, inp RerunInput) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -92,16 +92,16 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer cancelCtxCancel()
 
-			if cancelStatusErr := c.updateFlowStatus(
-				cancelCtx, flw.ID, app.StatusCancelled, "", nil); cancelStatusErr != nil {
-				l.Error("unable to update status on cancellation", zap.Error(cancelStatusErr))
+			if err := c.updateFlowStatus(
+				cancelCtx, flw.ID, app.StatusCancelled, "", nil); err != nil {
+				l.Error("unable to update status on cancellation", zap.Error(err))
 			}
 		}
 	}()
 
 	defer func() {
-		if finishErr := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, inp.FlowID); finishErr != nil {
-			l.Error("unable to update finished at", zap.Error(finishErr))
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, inp.FlowID); err != nil {
+			l.Error("unable to update finished at", zap.Error(err))
 		}
 	}()
 
@@ -119,9 +119,9 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 
 		flowSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, inp.FlowID)
 		if err != nil {
-			if statusErr := c.updateFlowStatusWithError(
-				ctx, inp.FlowID, "unable to fetch workflow step", err); statusErr != nil {
-				return errors.Wrap(statusErr, "unable to update flow status with error")
+			if err := c.updateFlowStatusWithError(
+				ctx, inp.FlowID, "unable to fetch workflow step", err); err != nil {
+				return errors.Wrap(err, "unable to update flow status with error")
 			}
 			return errors.Errorf("unable to fetch workflow steps for workflow %s: %v", inp.FlowID, err)
 		}
@@ -139,45 +139,45 @@ func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloo
 			return err
 		}
 
-		if statusErr := c.updateFlowStatus(
+		if err := c.updateFlowStatus(
 			ctx, inp.FlowID, app.StatusError, "error while executing steps",
 			map[string]any{"error_message": err.Error()},
-		); statusErr != nil {
-			return statusErr
+		); err != nil {
+			return err
 		}
 
 		return errors.Wrap(err, "unable to execute workflow steps")
 	}
 
-	if successErr := c.updateFlowStatus(
-		ctx, inp.FlowID, app.StatusSuccess, "successfully executed workflow", nil); successErr != nil {
-		return successErr
+	if err := c.updateFlowStatus(
+		ctx, inp.FlowID, app.StatusSuccess, "successfully executed workflow", nil); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Context, inp RerunInput, flw *app.Workflow) (*app.Workflow, int, error) { //nolint:gocyclo,funlen
+func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Context, inp RerunInput, flw *app.Workflow) (*app.Workflow, int, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, 0, nil
 	}
 
 	// reset state of the flow
-	if statusErr := c.updateFlowStatus(
-		ctx, inp.FlowID, app.StatusRetrying, "", nil); statusErr != nil {
-		l.Error("unable to update status on retry", zap.Error(statusErr))
+	if err := c.updateFlowStatus(
+		ctx, inp.FlowID, app.StatusRetrying, "", nil); err != nil {
+		l.Error("unable to update status on retry", zap.Error(err))
 	}
 
-	if resetErr := activities.AwaitPkgWorkflowsFlowResetFlowFinishedAtByID(ctx, inp.FlowID); resetErr != nil {
-		l.Error("unable to reset finished at", zap.Error(resetErr))
+	if err := activities.AwaitPkgWorkflowsFlowResetFlowFinishedAtByID(ctx, inp.FlowID); err != nil {
+		l.Error("unable to reset finished at", zap.Error(err))
 	}
 
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, inp.StepID)
 	if err != nil {
-		if statusErr := c.updateFlowStatusWithError(
-			ctx, inp.FlowID, "unable to fetch workflow step", err); statusErr != nil {
-			return nil, 0, statusErr
+		if err := c.updateFlowStatusWithError(
+			ctx, inp.FlowID, "unable to fetch workflow step", err); err != nil {
+			return nil, 0, err
 		}
 		return nil, 0, errors.Errorf("unable to fetch a step for workflow %s: %v", inp.FlowID, err)
 	}
@@ -197,14 +197,14 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 		status = app.StatusUserSkipped
 		reason = "The step was skipped by the user."
 	default:
-		terr := fmt.Errorf("invalid rerun step operation %s", inp.Operation)
-		if statusErr := c.updateFlowStatusWithError(ctx, inp.FlowID, terr.Error(), terr); statusErr != nil {
-			return nil, 0, statusErr
+		err := fmt.Errorf("invalid rerun step operation %s", inp.Operation)
+		if err := c.updateFlowStatusWithError(ctx, inp.FlowID, err.Error(), err); err != nil {
+			return nil, 0, err
 		}
-		return nil, 0, terr
+		return nil, 0, err
 	}
 
-	if stepStatusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 status,
@@ -213,18 +213,18 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 				"reason": reason,
 			},
 		},
-	}); stepStatusErr != nil {
-		if updateErr := c.updateFlowStatusWithError(
-			ctx, inp.FlowID, stepStatusHumanDescription, errors.New(reason)); updateErr != nil {
-			return nil, 0, updateErr
+	}); err != nil {
+		if err := c.updateFlowStatusWithError(
+			ctx, inp.FlowID, stepStatusHumanDescription, errors.New(reason)); err != nil {
+			return nil, 0, err
 		}
 
-		return nil, 0, errors.Wrapf(stepStatusErr, "unable to update flow step %s status to discarded", step.ID)
+		return nil, 0, errors.Wrapf(err, "unable to update flow step %s status to discarded", step.ID)
 	}
 
-	if statusErr := c.updateFlowStatus(
-		ctx, inp.FlowID, app.StatusInProgress, "generating steps for flow", nil); statusErr != nil {
-		l.Error("unable to update status on retry", zap.Error(statusErr))
+	if err := c.updateFlowStatus(
+		ctx, inp.FlowID, app.StatusInProgress, "generating steps for flow", nil); err != nil {
+		l.Error("unable to update status on retry", zap.Error(err))
 	}
 
 	l.Debug("generating steps for flow")
@@ -238,15 +238,15 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 			l.Debug("updating group number for new plan set and new step group")
 			updatedGroupRetryIdx += 1
 
-			planStep, rePlanErr := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, inp.RePlanStepID)
-			if rePlanErr != nil {
-				if statusErr := c.updateFlowStatusWithError(
-					ctx, inp.FlowID, "unable to fetch replan step for rerun apply step", rePlanErr); statusErr != nil {
-					return nil, 0, statusErr
+			planStep, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, inp.RePlanStepID)
+			if err != nil {
+				if err := c.updateFlowStatusWithError(
+					ctx, inp.FlowID, "unable to fetch replan step for rerun apply step", err); err != nil {
+					return nil, 0, err
 				}
 				return nil, 0, errors.Errorf(
 					"unable to fetch replan steps %s for apply step %s for workflow %s: %v",
-					inp.RePlanStepID, inp.RePlanStepID, inp.FlowID, rePlanErr,
+					inp.RePlanStepID, inp.RePlanStepID, inp.FlowID, err,
 				)
 			}
 
@@ -261,7 +261,7 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 
 			l.Debug("updating status for stale plan step")
 			// update the status of plan step to discarded
-			if stepStatusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: planStep.ID,
 				Status: app.CompositeStatus{
 					Status:                 app.StatusDiscarded,
@@ -270,12 +270,12 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 						"reason": "The plan step was discarded and retried by the user.",
 					},
 				},
-			}); stepStatusErr != nil {
-				if updateErr := c.updateFlowStatusWithError(
-					ctx, inp.FlowID, "unable to update plan step status to discarded", stepStatusErr); updateErr != nil {
-					return nil, 0, updateErr
+			}); err != nil {
+				if err := c.updateFlowStatusWithError(
+					ctx, inp.FlowID, "unable to update plan step status to discarded", err); err != nil {
+					return nil, 0, err
 				}
-				return nil, 0, errors.Wrapf(stepStatusErr, "unable to update plan step %s status to discarded", planStep.ID)
+				return nil, 0, errors.Wrapf(err, "unable to update plan step %s status to discarded", planStep.ID)
 			}
 
 			// fix grop idx and retry count for plan step since this will be in new group
@@ -285,9 +285,9 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 
 			l.Debug("creating new plan step")
 			if err = c.cloneWorkflowStep(ctx, planStep, flw); err != nil {
-				if statusErr := c.updateFlowStatusWithError(
-					ctx, inp.FlowID, "unable to create plan retry step for apply step", err); statusErr != nil {
-					return nil, 0, statusErr
+				if err := c.updateFlowStatusWithError(
+					ctx, inp.FlowID, "unable to create plan retry step for apply step", err); err != nil {
+					return nil, 0, err
 				}
 				return nil, 0, errors.Wrapf(err, "unable to create retry plan step for step %s workflow %s", inp.StepID, inp.FlowID)
 			}
@@ -296,20 +296,20 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 		// create new retry step
 		step.GroupRetryIdx = updatedGroupRetryIdx
 		l.Debug("creating new retry plan")
-		if cloneErr := c.cloneWorkflowStep(ctx, step, flw); cloneErr != nil {
-			if statusErr := c.updateFlowStatusWithError(
-				ctx, inp.FlowID, "unable to create retry step", cloneErr); statusErr != nil {
-				return nil, 0, statusErr
+		if err := c.cloneWorkflowStep(ctx, step, flw); err != nil {
+			if err := c.updateFlowStatusWithError(
+				ctx, inp.FlowID, "unable to create retry step", err); err != nil {
+				return nil, 0, err
 			}
-			return nil, 0, errors.Wrapf(cloneErr, "unable to create retry step for workflow %s", inp.FlowID)
+			return nil, 0, errors.Wrapf(err, "unable to create retry step for workflow %s", inp.FlowID)
 		}
 	}
 
 	flowSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, inp.FlowID)
 	if err != nil {
-		if updateErr := c.updateFlowStatusWithError(
-			ctx, inp.FlowID, "unable to fetch workflow steps", err); updateErr != nil {
-			return nil, 0, updateErr
+		if err := c.updateFlowStatusWithError(
+			ctx, inp.FlowID, "unable to fetch workflow steps", err); err != nil {
+			return nil, 0, err
 		}
 		return nil, 0, errors.Errorf("unable to fetch steps for workflow %s: %v", inp.FlowID, err)
 	}
@@ -327,29 +327,29 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 	}
 
 	for _, s := range flowSteps[workflowStartStepNumber:] {
-		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.ID,
 			Status: app.CompositeStatus{
 				Status:   app.StatusPending,
 				Metadata: map[string]any{"reason": ""},
 			},
-		}); updateErr != nil {
-			return nil, 0, errors.Wrap(updateErr, "unable to update status")
+		}); err != nil {
+			return nil, 0, errors.Wrap(err, "unable to update status")
 		}
 	}
 
-	if updateFlowErr := c.updateFlowStatus(
-		ctx, inp.FlowID, app.StatusInProgress, "successfully generated all steps", nil); updateFlowErr != nil {
-		return nil, 0, updateFlowErr
+	if err := c.updateFlowStatus(
+		ctx, inp.FlowID, app.StatusInProgress, "successfully generated all steps", nil); err != nil {
+		return nil, 0, err
 	}
 
 	// re-fetch steps to get the steps with updated statuses. Current state is stale and results in
 	// the steps being skipped over as they are not marked as pending.
 	flw.Steps, err = activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, inp.FlowID)
 	if err != nil {
-		if updateErr := c.updateFlowStatusWithError(
-			ctx, inp.FlowID, "unable to fetch workflow steps", err); updateErr != nil {
-			return nil, 0, updateErr
+		if err := c.updateFlowStatusWithError(
+			ctx, inp.FlowID, "unable to fetch workflow steps", err); err != nil {
+			return nil, 0, err
 		}
 		return nil, 0, errors.Errorf("unable to fetch steps for workflow %s: %v", inp.FlowID, err)
 	}

@@ -18,23 +18,22 @@ func (m *patcherPlugin) Name() string {
 }
 
 func (m *patcherPlugin) Initialize(db *gorm.DB) error {
-	db.Callback().
-		Update().
-		Before("gorm:update").
-		Register("enable_patcher_on_query", m.enablePatcher)
+	db.Callback().Update().Before("gorm:update").Register("enable_patcher_on_query", m.enablePatcher)
 	return nil
 }
 
 func (m *patcherPlugin) enablePatcher(tx *gorm.DB) {
 	enablePagination, ok := tx.InstanceGet(PatcherEnabledKey)
-	if !ok || !enablePagination.(bool) {
+	if !(ok && enablePagination.(bool)) {
 		return
 	}
 
 	var ctxOptions PatcherOptions
 	ctxPatcher := cctx.PatcherFromContext(tx.Statement.Context)
 	options, ok := tx.InstanceGet(PatcherOptionsKey)
-	if ok {
+	if !ok {
+		options = []string{}
+	} else {
 		ctxOptions, _ = options.(PatcherOptions)
 	}
 

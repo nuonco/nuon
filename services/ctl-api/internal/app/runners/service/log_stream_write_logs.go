@@ -47,8 +47,8 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	// unmarshal bytes into ExportRequest
 	// NOTE(fd): this is essentially our validation step. we do not use this object directly otherwise.
 	expreq := plogotlp.NewExportRequest()
-	if unmarshalErr := expreq.UnmarshalProto(byts); unmarshalErr != nil {
-		ctx.Error(fmt.Errorf("unable to unmarshal request: %w", unmarshalErr))
+	if err := expreq.UnmarshalProto(byts); err != nil {
+		ctx.Error(fmt.Errorf("unable to unmarshal request: %w", err))
 		return
 	}
 

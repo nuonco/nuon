@@ -24,7 +24,9 @@ func FilenameFromAppName(appName string) string {
 }
 
 func AppNameFromFilename(file string) (string, error) {
-	file = strings.TrimPrefix(file, "./")
+	if strings.HasPrefix(file, "./") {
+		file = strings.TrimPrefix(file, "./")
+	}
 	pieces := strings.SplitN(file, ".", 3)
 	if len(pieces) != 3 {
 		return "", ErrInvalidFilename

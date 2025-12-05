@@ -13,6 +13,7 @@ import (
 type FileProcessor func(string, map[string]any) map[string]any
 
 func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcessor) error {
+
 	tomlDec := toml.NewDecoder(rw)
 	tomlDec.SetTagName("mapstructure")
 

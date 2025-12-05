@@ -16,7 +16,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
-//nolint:funlen
 func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, error) {
 	l.Info("fetching previous release")
 	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
@@ -139,10 +138,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	if err != nil {
 		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
 	}
-	diffH, diffReport, diffErr := h.getDiff(l, kubeCfg, nil, rel, h.state.plan.HelmDeployPlan.Namespace)
-	if diffErr != nil {
-		return "", nil, errors.Wrap(diffErr, "unable to get diff")
-	}
+	diffH, diffReport, err := h.getDiff(l, kubeCfg, nil, rel, h.state.plan.HelmDeployPlan.Namespace)
 
 	h.state.outputs = map[string]interface{}{"diff": diffH}
 

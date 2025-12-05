@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) { //nolint:funlen
+func TestNew(t *testing.T) {
 	installID := "987654321"
 	appKeyID := uuid.NewString()
 	appKeySecretName := uuid.NewString()

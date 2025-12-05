@@ -46,7 +46,11 @@ func ToTag(name, val string) string {
 }
 
 func AddTags(tags []string, vals ...string) []string {
-	return append(tags, vals...)
+	for _, val := range vals {
+		tags = append(tags, val)
+	}
+
+	return tags
 }
 
 func AddTagsMap(tags []string, vals map[string]string) []string {
