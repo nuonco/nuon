@@ -61,5 +61,8 @@
 }
 
 .modal {
-  transition: max-width var(--duration-fastest) var(--ease-cubic),  max-height var(--duration-fastest) var(--ease-cubic);
+  transition:
+    max-width var(--duration-fastest) var(--ease-cubic),
+    height var(--duration-fastest) var(--ease-cubic),
+    max-height var(--duration-fastest) var(--ease-cubic);
 }
