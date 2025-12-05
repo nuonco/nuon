@@ -44,7 +44,6 @@ func testStore(t *testing.T, artifacts map[string][]testFile) *file.Store {
 		}
 
 		// pack files
-		//nolint:staticcheck // oras.Pack is deprecated but no clear migration path in oras library yet
 		manifest, err := oras.Pack(ctx, fs, defaultArtifactType, descriptors, oras.PackOptions{
 			PackImageManifest: true,
 		})

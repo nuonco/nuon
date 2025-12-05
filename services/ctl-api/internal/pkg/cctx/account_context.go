@@ -35,8 +35,8 @@ func SetAccountGinContext(ctx *gin.Context, acct *app.Account) {
 }
 
 func SetAccountContext(ctx context.Context, acct *app.Account) context.Context {
-	ctx = context.WithValue(ctx, keys.AccountCtxKey, acct)               //nolint:staticcheck // SA1029: keys package design is intentional
-	ctx = context.WithValue(ctx, keys.AccountIDCtxKey, acct.ID)          //nolint:staticcheck // SA1029: keys package design is intentional
-	ctx = context.WithValue(ctx, keys.IsEmployeeCtxKey, acct.IsEmployee) //nolint:staticcheck // SA1029: keys package design is intentional
+	ctx = context.WithValue(ctx, keys.AccountCtxKey, acct)
+	ctx = context.WithValue(ctx, keys.AccountIDCtxKey, acct.ID)
+	ctx = context.WithValue(ctx, keys.IsEmployeeCtxKey, acct.IsEmployee)
 	return ctx
 }

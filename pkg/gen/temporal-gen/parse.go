@@ -22,8 +22,7 @@ const (
 	GenMarker = "@temporal-gen"
 )
 
-//nolint:gocyclo
-func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) { //nolint:funlen
+func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) {
 	fset := token.NewFileSet()
 
 	pkgs, err := packages.Load(&packages.Config{
@@ -78,9 +77,9 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) { //nolint:f
 										walkerr = withPos(fset, x.Type.Params.Pos(), errors.New("base func must have at least two params, the first being ctx"))
 										return false
 									}
-									afn, err2 := extractAsActivityFn(fset, x, pkg)
-									if err2 != nil {
-										walkerr = err2
+									afn, err := extractAsActivityFn(fset, x, pkg)
+									if err != nil {
+										walkerr = err
 										return false
 									}
 									if afn != nil {
@@ -94,18 +93,18 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) { //nolint:f
 									}
 									switch parts[2] {
 									case "activity":
-										afn, err2 := extractActivityFn(fset, x, pkg)
-										if err2 != nil {
-											walkerr = err2
+										afn, err := extractActivityFn(fset, x, pkg)
+										if err != nil {
+											walkerr = err
 											return false
 										}
 										if afn != nil {
 											actfns = append(actfns, *afn)
 										}
 									case "workflow":
-										wfn, err2 := extractWorkflowFn(fset, x, pkg)
-										if err2 != nil {
-											walkerr = err2
+										wfn, err := extractWorkflowFn(fset, x, pkg)
+										if err != nil {
+											walkerr = err
 											return false
 										}
 										if wfn != nil {
@@ -153,7 +152,6 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) { //nolint:f
 	return ret, nil
 }
 
-//nolint:gocyclo
 func extractActivityFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Package) (*ActivityFn, error) {
 	cg := fn.Doc
 
@@ -256,7 +254,6 @@ func extractAsActivityFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Pa
 	}, nil
 }
 
-//nolint:gocyclo
 func extractWorkflowFn(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Package) (*WorkflowFn, error) {
 	cg := fn.Doc
 

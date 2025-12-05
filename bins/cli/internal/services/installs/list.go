@@ -19,11 +19,12 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 	)
 
 	if appID != "" {
-		resolvedAppID, lookupErr := lookup.AppID(ctx, s.api, appID)
-		if lookupErr != nil {
-			return ui.PrintError(lookupErr)
+		appID, err := lookup.AppID(ctx, s.api, appID)
+		if err != nil {
+			return ui.PrintError(err)
 		}
-		installs, hasMore, _ = s.listAppInstalls(ctx, resolvedAppID, offset, limit)
+		installs, hasMore, err = s.listAppInstalls(ctx, appID, offset, limit)
+
 	} else {
 		installs, hasMore, err = s.listInstalls(ctx, offset, limit)
 	}

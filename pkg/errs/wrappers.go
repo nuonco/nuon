@@ -46,8 +46,7 @@ func HasNuonStackTrace(err error) bool {
 
 	for _, st := range stacks {
 		for _, fr := range st.Frames {
-			if strings.Contains(fr.Module, "powertoolsdev") ||
-				strings.Contains(fr.Module, "nuonco") {
+			if strings.Contains(fr.Module, "powertoolsdev") || strings.Contains(fr.Module, "nuonco") {
 				return true
 			}
 		}

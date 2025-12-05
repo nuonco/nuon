@@ -47,4 +47,5 @@ func (s *service) GetTerraformWorkspaceStateJSONResources(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, "")
+
 }

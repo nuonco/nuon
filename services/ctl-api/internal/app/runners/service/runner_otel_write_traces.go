@@ -40,9 +40,9 @@ func (s *service) OtelWriteTraces(ctx *gin.Context) {
 		return
 	}
 
-	req := ptraceotlp.NewExportRequest()
-	if jsonErr := req.UnmarshalJSON(jsonData); jsonErr != nil {
-		ctx.Error(fmt.Errorf("unable to unmarshal request: %w", jsonErr))
+	var req ptraceotlp.ExportRequest = ptraceotlp.NewExportRequest()
+	if err := req.UnmarshalJSON(jsonData); err != nil {
+		ctx.Error(fmt.Errorf("unable to unmarshal request: %w", err))
 		return
 	}
 
@@ -56,6 +56,7 @@ func (s *service) OtelWriteTraces(ctx *gin.Context) {
 }
 
 func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req ptraceotlp.ExportRequest) error {
+
 	otelTraces := []app.OtelTraceIngestion{}
 	traceSlice := req.Traces().ResourceSpans()
 	for i := 0; i < traceSlice.Len(); i++ {
@@ -160,6 +161,7 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 		if res.Error != nil {
 			return fmt.Errorf("unable to ingest traces: %w", res.Error)
 		}
+
 	}
 	return nil
 }

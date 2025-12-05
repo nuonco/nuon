@@ -29,6 +29,7 @@ func (m *Migrations) migration01InternalAccounts(ctx context.Context, db *gorm.D
 		if err != nil {
 			return errors.Wrap(err, "unable to create "+svcAcctName)
 		}
+
 	}
 
 	return nil

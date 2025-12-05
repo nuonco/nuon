@@ -50,7 +50,6 @@ func (dialector Dialector) Name() string {
 	return "clickhouse"
 }
 
-//nolint:gocyclo,nakedret
 func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
 	// register callbacks
 	ctx := context.Background()
@@ -66,12 +65,12 @@ func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
 	}
 
 	// default settings
-	if dialector.DefaultGranularity == 0 {
-		dialector.DefaultGranularity = 3
+	if dialector.Config.DefaultGranularity == 0 {
+		dialector.Config.DefaultGranularity = 3
 	}
 
-	if dialector.DefaultCompression == "" {
-		dialector.DefaultCompression = "LZ4"
+	if dialector.Config.DefaultCompression == "" {
+		dialector.Config.DefaultCompression = "LZ4"
 	}
 
 	if dialector.DefaultIndexType == "" {
@@ -92,7 +91,7 @@ func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
 	}
 
 	if dialector.DSN != "" {
-		if opts, err2 := clickhouse.ParseDSN(dialector.DSN); err2 == nil {
+		if opts, err := clickhouse.ParseDSN(dialector.DSN); err == nil {
 			dialector.options = *opts
 		}
 	}
@@ -106,7 +105,7 @@ func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
 			versionNoRenameColumn, _ := version.NewConstraint("< 20.4")
 
 			if versionNoRenameColumn.Check(dbversion) {
-				dialector.DontSupportRenameColumn = true //nolint:staticcheck // QF1008: explicit Config selection for clarity
+				dialector.Config.DontSupportRenameColumn = true
 			}
 
 			versionNoPrecisionColumn, _ := version.NewConstraint("< 21.11")
@@ -215,7 +214,6 @@ func (dialector Dialector) Migrator(db *gorm.DB) gorm.Migrator {
 	}
 }
 
-//nolint:gocyclo
 func (dialector Dialector) DataTypeOf(field *schema.Field) string {
 	switch field.DataType {
 	case schema.Bool:

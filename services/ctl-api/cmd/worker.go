@@ -79,8 +79,7 @@ func shouldSkipNamespace(ns string) bool {
 	return false
 }
 
-//nolint:gocyclo
-func (c *cli) runWorker(cmd *cobra.Command, _ []string) { //nolint:funlen
+func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
 		fx.Provide(interceptors.AsInterceptor(metricsinterceptor.New)),
 		fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),

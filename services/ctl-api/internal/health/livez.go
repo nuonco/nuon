@@ -11,7 +11,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-//nolint:funlen
 func (s *Service) GetLivezHandler(ctx *gin.Context) {
 	// ping psql
 	sqlDB, err := s.db.DB()
@@ -22,13 +21,13 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 		})
 		return
 	}
-	if pingErr := sqlDB.PingContext(ctx); pingErr != nil {
+	if err := sqlDB.PingContext(ctx); err != nil {
 		s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 			"system": "psql",
 			"status": "unable_to_ping",
 		}))
 		ctx.Error(stderr.ErrSystem{
-			Err:         pingErr,
+			Err:         err,
 			Description: "unable to ping psql db",
 		})
 		return
@@ -50,7 +49,7 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 		}))
 	} else {
 		// attempt to ping clickhouse, if we get a connection
-		if chPingErr := chDB.PingContext(ctx); chPingErr != nil {
+		if err := chDB.PingContext(ctx); err != nil {
 			degraded = append(degraded, "ch")
 			s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 				"system": "ch",
@@ -77,8 +76,8 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 		var tableName string // Variable to scan each row into
 
 		for rows.Next() {
-			scanErr := rows.Scan(&tableName)
-			if scanErr != nil {
+			err := rows.Scan(&tableName)
+			if err != nil {
 				// Handle scan error
 				degraded = append(degraded, "ch")
 				s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
@@ -110,6 +109,7 @@ func (s *Service) GetLivezHandler(ctx *gin.Context) {
 				ctx.Header(fmt.Sprintf("x-ch-table-in-read-only-%d", i), table)
 			}
 		}
+
 	}
 
 	// ping temporal

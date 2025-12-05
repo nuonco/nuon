@@ -23,4 +23,5 @@ func GetJobs() []fx.Option {
 		fx.Invoke(jobloop.WithManagementJobLoops(func([]jobloop.JobLoop) {})),
 		fx.Invoke(func(*monitor.Monitor) {}),
 	}
+
 }

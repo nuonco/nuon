@@ -6,8 +6,6 @@ import (
 )
 
 // declare all models in the correct order they should be migrated.
-//
-//nolint:funlen
 func AllModels() []interface{} {
 	return []interface{}{
 		&app.EndpointAudit{},

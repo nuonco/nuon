@@ -62,9 +62,9 @@ func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSig
 	}
 
 	{
-		sandbox, err2 := activities.AwaitGetInstallSandboxByInstallID(pctx, sreq.ID)
-		if err2 != nil {
-			return err2
+		sandbox, err := activities.AwaitGetInstallSandboxByInstallID(pctx, sreq.ID)
+		if err != nil {
+			return err
 		}
 		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "sandbox", sandbox.ID)
 		subsreq := sreq

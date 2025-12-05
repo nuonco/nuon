@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
@@ -55,11 +54,7 @@ type ClientBits struct {
 }
 
 // TODO(sdboyer) should we rely on dependency injection, at least to some degree?
-func (e *DevTestEnv) NewRunInNamespace(
-	t *testing.T,
-	ctx context.Context,
-	namespace string,
-) (*ClientBits, error) {
+func (e *DevTestEnv) NewRunInNamespace(t *testing.T, ctx context.Context, namespace string) (*ClientBits, error) {
 	clientOpts := e.ClientOptions
 	clientOpts.Namespace = namespace
 
@@ -68,9 +63,10 @@ func (e *DevTestEnv) NewRunInNamespace(
 		return nil, errors.Wrap(err, "Failed to create namespace client")
 	}
 
+	retention := time.Hour
 	err = namespaceClient.Register(context.Background(), &workflowservice.RegisterNamespaceRequest{
 		Namespace:                        namespace,
-		WorkflowExecutionRetentionPeriod: durationpb.New(time.Hour),
+		WorkflowExecutionRetentionPeriod: &retention,
 	})
 	if err != nil {
 		return nil, err

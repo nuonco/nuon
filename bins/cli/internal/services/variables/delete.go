@@ -14,9 +14,9 @@ func (s *Service) Delete(ctx context.Context, appID, variableID string, asJSON b
 	}
 
 	if asJSON {
-		res, deleteErr := s.api.DeleteAppSecret(ctx, appID, variableID)
-		if deleteErr != nil {
-			return ui.PrintJSONError(deleteErr)
+		res, err := s.api.DeleteAppSecret(ctx, appID, variableID)
+		if err != nil {
+			return ui.PrintJSONError(err)
 		}
 
 		type response struct {

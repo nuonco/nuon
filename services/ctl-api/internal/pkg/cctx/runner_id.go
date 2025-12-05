@@ -22,5 +22,5 @@ func SetRunnerIDGinContext(ctx *gin.Context, runnerID string) {
 }
 
 func SetRunnerIDContext(ctx context.Context, runnerID string) context.Context {
-	return context.WithValue(ctx, keys.RunnerIDCtxKey, runnerID) //nolint:staticcheck
+	return context.WithValue(ctx, keys.RunnerIDCtxKey, runnerID)
 }

@@ -75,8 +75,7 @@ func (w ActivityJenny) JennyName() string {
 	return "ActivityJenny"
 }
 
-//nolint:gocyclo
-func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) { //nolint:funlen
+func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 	if bf == nil || len(bf.ActivityFns) == 0 {
 		return nil, nil
 	}
@@ -103,7 +102,7 @@ func (w ActivityJenny) Generate(bf *BaseFile) (*codejen.File, error) { //nolint:
 		if bfn.Opts.ById.Name != "" && bfn.Opts.ByIdOnly {
 			lead = "a"
 		}
-		wv.FnName = fmt.Sprintf("%swait%s", lead, bfname)
+		wv.FnName = fmt.Sprintf("%swait%s", lead, strings.Title(bfname))
 
 		wv.ReqType = astfmt.Sprint(bfn.Fn.Type.Params.List[1].Type)
 		_, wv.ReqIsPtr = bfn.Fn.Type.Params.List[1].Type.(*ast.StarExpr)

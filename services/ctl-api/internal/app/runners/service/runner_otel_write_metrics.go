@@ -59,7 +59,8 @@ func (s *service) OtelWriteMetrics(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, "ok")
 }
 
-func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *pmetricotlp.ExportRequest) []error { //nolint:gocyclo,funlen
+func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *pmetricotlp.ExportRequest) []error {
+
 	// a list of errors to be returned
 	errors := []error{}
 

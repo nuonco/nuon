@@ -48,7 +48,7 @@ func (m *middleware) Name() string {
 	return "error"
 }
 
-func (m *middleware) Handler() gin.HandlerFunc { //nolint:gocyclo,funlen
+func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Capture the request body
 		var requestBody string

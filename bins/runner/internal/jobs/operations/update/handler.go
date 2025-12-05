@@ -49,10 +49,6 @@ func New(params HandlerParams) *handler {
 	}
 }
 
-func (h *handler) GracefulShutdown(
-	ctx context.Context,
-	job *models.AppRunnerJob,
-	l *zap.Logger,
-) error {
+func (h *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
 	return nil
 }
