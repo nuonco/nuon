@@ -28,7 +28,7 @@ import (
 //return obj, nil
 //}
 
-func DecodeComponent(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) { //nolint:gocyclo,funlen
+func DecodeComponent(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
 	if fromType != reflect.TypeOf(map[string]interface{}{}) {
 		return from, nil
 	}

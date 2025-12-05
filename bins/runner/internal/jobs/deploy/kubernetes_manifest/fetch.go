@@ -29,8 +29,8 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 
 	// parse the plan
 	var plan plantypes.DeployPlan
-	if unmarshalErr := json.Unmarshal([]byte(planJSON), &plan); unmarshalErr != nil {
-		return errors.Wrap(unmarshalErr, "unable to parse sandbox workflow run plan")
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+		return errors.Wrap(err, "unable to parse sandbox workflow run plan")
 	}
 	h.state.plan = &plan
 

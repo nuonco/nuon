@@ -22,8 +22,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-//nolint:gocyclo
-func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) { //nolint:funlen
+func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -73,42 +72,42 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	l.Info("rendering environment variables")
-	if envErr := render.RenderMap(&envVars, stateData); envErr != nil {
+	if err := render.RenderMap(&envVars, stateData); err != nil {
 		l.Error("error rendering environment vars",
 			zap.Any("env-vars", envVars),
-			zap.Error(envErr),
+			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(envErr, "unable to render environment variables")
+		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	if sandboxErr := render.RenderStruct(&appCfg.SandboxConfig, stateData); sandboxErr != nil {
+	if err := render.RenderStruct(&appCfg.SandboxConfig, stateData); err != nil {
 		l.Error("error rendering config",
-			zap.Error(sandboxErr),
+			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(sandboxErr, "unable to render config")
+		return nil, errors.Wrap(err, "unable to render config")
 	}
 
 	l.Info("rendering terraform variables")
-	if varsErr := render.RenderMap(&vars, stateData); varsErr != nil {
+	if err := render.RenderMap(&vars, stateData); err != nil {
 		l.Error("error rendering terraform variables",
 			zap.Any("vars", vars),
-			zap.Error(varsErr),
+			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(varsErr, "unable to render variables")
+		return nil, errors.Wrap(err, "unable to render variables")
 	}
 
 	l.Info("outputs vars", zap.Any("vars", vars))
 
-	if renderErr := render.RenderStruct(&appCfg.PoliciesConfig, stateData); renderErr != nil {
+	if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
 		l.Error("error rendering policies",
 			zap.Any("policies", appCfg.PoliciesConfig),
-			zap.Error(renderErr),
+			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(renderErr, "unable to render policies")
+		return nil, errors.Wrap(err, "unable to render policies")
 	}
 
 	l.Info("getting policies")
@@ -291,8 +290,6 @@ func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandb
 }
 
 // TODO(ja): flesh out sandbox mode for azure
-//
-//nolint:funlen
 func (p *Planner) getSandboxModeOutputs(install app.Install, stack app.InstallStack) map[string]any {
 	switch {
 	case stack.InstallStackOutputs.AzureStackOutputs != nil:

@@ -29,6 +29,7 @@ import (
 )
 
 func (h *handler) packageChart(l *zap.Logger) (string, error) {
+
 	if h.state.plan.Src != nil && h.state.plan.Src.URL != "" {
 		chartDir := h.state.workspace.Source().AbsPath()
 		dstDir := h.state.arch.TmpDir()
@@ -38,6 +39,7 @@ func (h *handler) packageChart(l *zap.Logger) (string, error) {
 
 	l.Info("packaging chart from repo config", zap.String("chart", h.state.cfg.HelmRepoConfig.Chart), zap.String("url", h.state.cfg.HelmRepoConfig.RepoURL))
 	return h.packageChartFromRepoConfig(l)
+
 }
 
 func (h *handler) packageChartFromRepoConfig(l *zap.Logger) (string, error) {
@@ -50,9 +52,9 @@ func (h *handler) packageChartFromRepoConfig(l *zap.Logger) (string, error) {
 	repoName := fmt.Sprintf("repo-%d", time.Now().Unix())
 
 	l.Debug("adding helm repo", zap.String("repo_name", repoName), zap.String("repo_url", h.state.cfg.HelmRepoConfig.RepoURL))
-	if err2 := h.addHelmRepo(l, settings, repoName, h.state.cfg.HelmRepoConfig.RepoURL); err2 != nil {
-		l.Error("unable to add helm repo", zap.String("repo_name", repoName), zap.String("repo_url", h.state.cfg.HelmRepoConfig.RepoURL), zap.Error(err2))
-		return "", fmt.Errorf("unable to add helm repo: %w", err2)
+	if err := h.addHelmRepo(l, settings, repoName, h.state.cfg.HelmRepoConfig.RepoURL); err != nil {
+		l.Error("unable to add helm repo", zap.String("repo_name", repoName), zap.String("repo_url", h.state.cfg.HelmRepoConfig.RepoURL), zap.Error(err))
+		return "", fmt.Errorf("unable to add helm repo: %w", err)
 	}
 
 	destDir := h.state.workspace.Root()
@@ -186,8 +188,8 @@ var deprecatedRepos = map[string]string{
 	"//kubernetes-charts-incubator.storage.googleapis.com": "https://charts.helm.sh/incubator",
 }
 
-//nolint:gocyclo,funlen
 func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSettings, chartDir, name, repository string) error {
+
 	// Set default HTTP client with timeout globally for getters
 	http.DefaultClient.Timeout = 30 * time.Second
 	http.DefaultTransport = &http.Transport{
@@ -248,16 +250,17 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 	if err != nil {
 		return err
 	}
-	// Could not acquire file lock within timeout, continue anyway
-	_ = locked
+	if !locked {
+		// Could not acquire file lock within timeout, continue anyway
+	}
 
 	b, err := os.ReadFile(settings.RepositoryConfig)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	var f repo.File
-	if err2 := yaml.Unmarshal(b, &f); err2 != nil {
-		return err2
+	if err := yaml.Unmarshal(b, &f); err != nil {
+		return err
 	}
 	c := repo.Entry{
 		Name: name,

@@ -18,8 +18,6 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 24h
 // @task-timeout 30s
-//
-//nolint:gocyclo,funlen
 func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals.RequestSignal) error {
 	id := sreq.ID
 	if sreq.InstallStackID != "" {
@@ -63,9 +61,9 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
 		// parse into map[string]interface{}
-		stackOutputs, decodeErr := stacks.DecodeAWSStackOutputData(run.Data)
-		if decodeErr != nil {
-			return errors.Wrap(decodeErr, "unable to decode run data")
+		stackOutputs, err := stacks.DecodeAWSStackOutputData(run.Data)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode run data")
 		}
 
 		// parse into AWSStackOutputs
@@ -77,16 +75,16 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 			WeaklyTypedInput: true,
 			Result:           &outputs.AWSStackOutputs,
 		}
-		decoder, decoderErr := mapstructure.NewDecoder(decoderConfig)
-		if decoderErr != nil {
-			return errors.Wrap(decoderErr, "unable to create decoder")
+		decoder, err := mapstructure.NewDecoder(decoderConfig)
+		if err != nil {
+			return errors.Wrap(err, "unable to create decoder")
 		}
-		if decMapErr := decoder.Decode(stackOutputs); decMapErr != nil {
-			return errors.Wrap(decMapErr, "unable to parse install outputs")
+		if err := decoder.Decode(stackOutputs); err != nil {
+			return errors.Wrap(err, "unable to parse install outputs")
 		}
 
-		if validateErr := w.v.Struct(outputs); validateErr != nil {
-			return errors.Wrap(validateErr, "invalid outputs")
+		if err := w.v.Struct(outputs); err != nil {
+			return errors.Wrap(err, "invalid outputs")
 		}
 	case app.AppRunnerTypeAzure:
 		decoderConfig := &mapstructure.DecoderConfig{
@@ -97,26 +95,26 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 			WeaklyTypedInput: true,
 			Result:           &outputs.AzureStackOutputs,
 		}
-		decoder, decoderErr := mapstructure.NewDecoder(decoderConfig)
-		if decoderErr != nil {
-			return errors.Wrap(decoderErr, "unable to create decoder")
+		decoder, err := mapstructure.NewDecoder(decoderConfig)
+		if err != nil {
+			return errors.Wrap(err, "unable to create decoder")
 		}
-		if decMapErr := decoder.Decode(run.Data); decMapErr != nil {
-			return errors.Wrap(decMapErr, "unable to parse install outputs")
+		if err := decoder.Decode(run.Data); err != nil {
+			return errors.Wrap(err, "unable to parse install outputs")
 		}
 
-		if validateErr := w.v.Struct(outputs); validateErr != nil {
-			return errors.Wrap(validateErr, "invalid outputs")
+		if err := w.v.Struct(outputs); err != nil {
+			return errors.Wrap(err, "invalid outputs")
 		}
 	}
 
 	// update outputs if needed
-	if outputErr := activities.AwaitUpdateInstallStackOutputs(ctx, activities.UpdateInstallStackOutputs{
+	if err := activities.AwaitUpdateInstallStackOutputs(ctx, activities.UpdateInstallStackOutputs{
 		InstallStackID:           version.InstallStackID,
 		InstallStackVersionRunID: run.ID,
 		Data:                     generics.ToStringMap(run.Data),
-	}); outputErr != nil {
-		return errors.Wrap(outputErr, "unable to update install stack outputs")
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install stack outputs")
 	}
 
 	// update the runner settings group
@@ -124,11 +122,11 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	if outputs.AWSStackOutputs != nil {
 		runnerIAMRoleARN = outputs.AWSStackOutputs.RunnerIAMRoleARN
 	}
-	if settingsErr := activities.AwaitUpdateRunnerGroupSettings(ctx, &activities.UpdateRunnerGroupSettings{
+	if err := activities.AwaitUpdateRunnerGroupSettings(ctx, &activities.UpdateRunnerGroupSettings{
 		RunnerID:           install.RunnerID,
 		LocalAWSIAMRoleARN: runnerIAMRoleARN,
-	}); settingsErr != nil {
-		return errors.Wrap(settingsErr, "unable to update runner group settings")
+	}); err != nil {
+		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
@@ -147,13 +145,13 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	// extract app_inputs from stack outputs for install_stack sourced inputs
 	inputValues := extractAppInputsFromStackOutputs(data)
 	if len(inputValues) > 0 {
-		if updateInputErr := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
+		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
 			InstallID:             install.ID,
 			InputConfigID:         appCfg.InputConfig.ID,
 			InputValues:           inputValues,
 			InstallStackVersionID: version.ID,
-		}); updateInputErr != nil {
-			return errors.Wrap(updateInputErr, "unable to update install inputs from stack outputs")
+		}); err != nil {
+			return errors.Wrap(err, "unable to update install inputs from stack outputs")
 		}
 	}
 

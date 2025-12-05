@@ -175,19 +175,19 @@ func PrintFormattedMessage(level, prefix, message string, color lipgloss.Color) 
 	fmt.Println(style.Render(prefix + " " + message))
 }
 
-func PrintfLnf(format string, args ...interface{}) {
+func PrintfLn(format string, args ...interface{}) {
 	PrintLn(fmt.Sprintf(format, args...))
 }
 
-func PrintfSuccessf(format string, args ...interface{}) {
+func PrintfSuccess(format string, args ...interface{}) {
 	PrintSuccess(fmt.Sprintf(format, args...))
 }
 
-func PrintfWarningf(format string, args ...interface{}) {
+func PrintfWarning(format string, args ...interface{}) {
 	PrintWarning(fmt.Sprintf(format, args...))
 }
 
-func PrintfErrorf(format string, args ...interface{}) {
+func PrintfError(format string, args ...interface{}) {
 	err := fmt.Errorf(format, args...)
 	PrintError(err)
 }

@@ -18,8 +18,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
 )
 
-//nolint:gocyclo
-func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool) error { //nolint:funlen
+func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -82,12 +81,12 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return errors.Wrap(err, "unable to create plan")
 	}
 
-	if err2 := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         stepID,
 		StepTargetID:   installRun.ID,
 		StepTargetType: plugins.TableName(w.db, installRun),
-	}); err2 != nil {
-		return errors.Wrap(err2, "unable to update install workflow")
+	}); err != nil {
+		return errors.Wrap(err, "unable to update install workflow")
 	}
 
 	// Add Plan contents from the result to the plan
@@ -100,9 +99,9 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 			"using the compressed contents from the runner job execution result",
 			zap.Int("contents.bytes.compressed", len(planJob.Execution.Result.ContentsGzip)),
 		)
-		applyPlanContents, err2 := planJob.Execution.Result.GetContentsB64String()
-		if err2 != nil {
-			return errors.Wrap(err2, "unable to get contents display string")
+		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
+		if err != nil {
+			return errors.Wrap(err, "unable to get contents display string")
 		}
 		l.Info(
 			"using the compressed contents from the runner job execution result",
@@ -110,9 +109,9 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 			zap.Int("contents.bytes.compressed.b64", len(applyPlanContents)),
 		)
 		runPlan.ApplyPlanContents = applyPlanContents
-		applyPlanContentsDisplay, displayErr := planJob.Execution.Result.GetContentsDisplayDecompressedBytes()
-		if displayErr != nil {
-			return errors.Wrap(displayErr, "unable to get contents display bytes")
+		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayDecompressedBytes()
+		if err != nil {
+			return errors.Wrap(err, "unable to get contents display bytes")
 		}
 		runPlan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
@@ -123,15 +122,15 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	}
 
 	// Deprecated: for now we dual write both the plan json and the composite plan
-	if savePlanErr := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			SandboxRunPlan: runPlan,
 		},
-	}); savePlanErr != nil {
+	}); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
-		return fmt.Errorf("unable to get install: %w", savePlanErr)
+		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	// queue job

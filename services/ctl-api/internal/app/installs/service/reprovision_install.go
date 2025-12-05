@@ -41,8 +41,8 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 	}
 
 	var req ReprovisionInstallRequest
-	if bindErr := ctx.BindJSON(&req); bindErr != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", bindErr))
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 

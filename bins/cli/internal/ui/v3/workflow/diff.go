@@ -42,13 +42,15 @@ func (m model) getTerraformDiff() string {
 	// calculate updates
 	updates := []*tfjson.ResourceChange{}
 	creations := []*tfjson.ResourceChange{}
+	deletions := []*tfjson.ResourceChange{}
+	noops := []*tfjson.ResourceChange{}
 	for _, rc := range plan.ResourceChanges {
 		if rc.Change == nil || len(rc.Change.Actions) == 0 || generics.SliceContains(tfjson.ActionNoop, rc.Change.Actions) {
-			// noop - skip
+			noops = append(noops, rc)
 		} else if generics.SliceContains(tfjson.ActionCreate, rc.Change.Actions) {
 			creations = append(creations, rc)
 		} else if generics.SliceContains(tfjson.ActionDelete, rc.Change.Actions) {
-			// deletion - skip
+			deletions = append(deletions, rc)
 		} else if generics.SliceContains(tfjson.ActionUpdate, rc.Change.Actions) {
 			updates = append(updates, rc)
 		}
@@ -58,13 +60,17 @@ func (m model) getTerraformDiff() string {
 
 	if len(creations) > 0 {
 		for _, rc := range creations {
-			row := createStyle.Width(m.stepDetail.Width - 4).Render(rc.Address)
+			row := createStyle.Width(m.stepDetail.Width - 4).Render(
+				fmt.Sprintf("%s", rc.Address),
+			)
 			changesSection = append(changesSection, row)
 		}
 	}
 	if (len(updates)) > 0 {
 		for _, rc := range updates {
-			row := changeStyle.Width(m.stepDetail.Width - 4).Render(rc.Address)
+			row := changeStyle.Width(m.stepDetail.Width - 4).Render(
+				fmt.Sprintf("%s", rc.Address),
+			)
 			changesSection = append(changesSection, row)
 		}
 	}
@@ -72,6 +78,7 @@ func (m model) getTerraformDiff() string {
 		changesSection = []string{
 			styles.TextSubtle.Bold(true).Margin(1, 0, 0, 0).Render("  No Changes"),
 		}
+
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, changesSection...)
 }

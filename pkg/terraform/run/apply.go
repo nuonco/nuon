@@ -63,7 +63,7 @@ func (r *run) outputCallback(filename string) (pipeline.CallbackFn, error) {
 	return applyCb, nil
 }
 
-func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) { //nolint:funlen
+func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 	// initialize steps to load the workspace
 	pipe, err := pipeline.New(r.v,
 		pipeline.WithLogger(r.Log),

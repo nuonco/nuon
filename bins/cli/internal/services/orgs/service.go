@@ -2,6 +2,7 @@ package orgs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon-go"
@@ -57,7 +58,7 @@ func (s *Service) printOrgNotFoundMsg(id string) {
 }
 
 func (s *Service) notFoundErr(id string) error {
-	return fmt.Errorf("org %s was not found", id)
+	return errors.New(fmt.Sprintf("org %s was not found", id))
 }
 
 func (s *Service) printOrgNotSetMsg() {

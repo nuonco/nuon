@@ -19,7 +19,7 @@ func (s *Service) checkSandbox(ctx context.Context, cfg *config.AppConfig, curre
 		branchName = connectedRepo.Branch
 	}
 	if branchName != currentBranch {
-		return fmt.Errorf("the sanbox is configured to use the git branch \"%s\", please configure it to use your dev branch", branchName)
+		return fmt.Errorf("The sanbox is configured to use the git branch \"%s\". Please configure it to use your dev branch.", branchName)
 	}
 
 	return nil

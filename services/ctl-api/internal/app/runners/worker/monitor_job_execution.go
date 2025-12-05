@@ -17,7 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 )
 
-func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) { //nolint:gocyclo,funlen
+func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
 		"status":    "ok",
@@ -145,11 +145,7 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 
 		// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
 		// not attempted with the correct status, this is retryable.
-		runnerStatus, statusErr := activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
-		if statusErr != nil {
-			l.Error("unable to get runner status", zap.Error(statusErr))
-			return false, statusErr
-		}
+		runnerStatus, err := activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
 		if runnerStatus != app.RunnerStatusActive {
 			l.Error("runner marked unhealthy during job")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "runner became unhealthy during job")

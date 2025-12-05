@@ -10,7 +10,7 @@ import (
 
 // FormatToLineByLine converts a ResourceDiff object to use line-by-line entries
 // This provides a more readable diff for UI presentation
-func FormatToLineByLine(resourceDiff ResourceDiff) ResourceDiff { //nolint:gocyclo,funlen
+func FormatToLineByLine(resourceDiff ResourceDiff) ResourceDiff {
 	result := resourceDiff
 	result.Entries = []DiffEntry{}
 

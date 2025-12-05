@@ -12,6 +12,12 @@ import (
 )
 
 func (c *cli) appsCmd() *cobra.Command {
+	var (
+		noSelect bool
+		offset   int
+		limit    int
+	)
+
 	appsCmd := &cobra.Command{
 		Use:               "apps",
 		Short:             "Manage apps",
@@ -19,19 +25,6 @@ func (c *cli) appsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		GroupID:           CoreGroup.ID,
 	}
-
-	c.addAppsListCommands(appsCmd)
-	c.addAppsConfigCommands(appsCmd)
-	c.addAppsSelectionCommands(appsCmd)
-	c.addAppsSyncCommands(appsCmd)
-	c.addAppsCRUDCommands(appsCmd)
-	appsCmd.AddCommand(c.variablesCmd())
-
-	return appsCmd
-}
-
-func (c *cli) addAppsListCommands(appsCmd *cobra.Command) {
-	var offset, limit int
 
 	listCmd := &cobra.Command{
 		Use:     "list",
@@ -42,11 +35,12 @@ func (c *cli) addAppsListCommands(appsCmd *cobra.Command) {
 			return svc.List(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
+
 	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	appsCmd.AddCommand(listCmd)
 
-	var appID string
+	appID := ""
 	getCmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get an app",
@@ -70,11 +64,6 @@ func (c *cli) addAppsListCommands(appsCmd *cobra.Command) {
 		}),
 	}
 	appsCmd.AddCommand(currentCmd)
-}
-
-func (c *cli) addAppsConfigCommands(appsCmd *cobra.Command) {
-	var appID string
-	var offset, limit int
 
 	latestSandboxConfigCmd := &cobra.Command{
 		Use:   "sandbox-config",
@@ -129,10 +118,6 @@ func (c *cli) addAppsConfigCommands(appsCmd *cobra.Command) {
 	latestRunnerConfig.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	latestRunnerConfig.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(latestRunnerConfig)
-}
-
-func (c *cli) addAppsSelectionCommands(appsCmd *cobra.Command) {
-	var appID string
 
 	selectAppCmd := &cobra.Command{
 		Use:   "select",
@@ -156,18 +141,23 @@ func (c *cli) addAppsSelectionCommands(appsCmd *cobra.Command) {
 		}),
 	}
 	appsCmd.AddCommand(unsetCurrentAppCmd)
-}
 
-func (c *cli) addAppsSyncCommands(appsCmd *cobra.Command) {
 	syncCmd := &cobra.Command{
 		Use:               "sync",
 		Short:             "Sync nuon app directory",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			dirName, err := c.getWorkingDir(args)
-			if err != nil {
-				return err
+			var dirName string
+			if len(args) > 0 {
+				dirName = args[0]
+			} else {
+				var err error
+				dirName, err = os.Getwd()
+				if err != nil {
+					return errors.Wrap(err, "unable to get directory name")
+				}
 			}
+
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.SyncDir(cmd.Context(), dirName, version.Version)
 		}),
@@ -180,10 +170,17 @@ func (c *cli) addAppsSyncCommands(appsCmd *cobra.Command) {
 		Short:             "Sync nuon app directory (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			dirName, err := c.getWorkingDir(args)
-			if err != nil {
-				return err
+			var dirName string
+			if len(args) > 0 {
+				dirName = args[0]
+			} else {
+				var err error
+				dirName, err = os.Getwd()
+				if err != nil {
+					return errors.Wrap(err, "unable to get directory name")
+				}
 			}
+
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version)
 		}),
@@ -195,32 +192,24 @@ func (c *cli) addAppsSyncCommands(appsCmd *cobra.Command) {
 		Short:             "Validate nuon app directory",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			dirName, err := c.getWorkingDir(args)
-			if err != nil {
-				return err
+			var dirName string
+			if len(args) > 0 {
+				dirName = args[0]
+			} else {
+				var err error
+				dirName, err = os.Getwd()
+				if err != nil {
+					return errors.Wrap(err, "unable to get directory name")
+				}
 			}
+
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.ValidateDir(cmd.Context(), dirName)
 		}),
 	}
 	appsCmd.AddCommand(validateCmd)
-}
 
-func (c *cli) getWorkingDir(args []string) (string, error) {
-	if len(args) > 0 {
-		return args[0], nil
-	}
-	dirName, err := os.Getwd()
-	if err != nil {
-		return "", errors.Wrap(err, "unable to get directory name")
-	}
-	return dirName, nil
-}
-
-func (c *cli) addAppsCRUDCommands(appsCmd *cobra.Command) {
-	var name, appID string
-	var noSelect, confirmDelete, rename bool
-
+	var name string
 	createCmd := &cobra.Command{
 		Use:               "create",
 		Short:             "Create a new app",
@@ -233,8 +222,10 @@ func (c *cli) addAppsCRUDCommands(appsCmd *cobra.Command) {
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "app name")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "do not automatically set the new app as the current app")
+
 	appsCmd.AddCommand(createCmd)
 
+	var confirmDelete bool
 	deleteCmd := &cobra.Command{
 		Use:               "delete",
 		Short:             "Delete an existing app",
@@ -248,8 +239,10 @@ func (c *cli) addAppsCRUDCommands(appsCmd *cobra.Command) {
 	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm you want to delete the app")
 	deleteCmd.MarkFlagRequired("app-id")
 	deleteCmd.MarkFlagRequired("confirm")
+
 	appsCmd.AddCommand(deleteCmd)
 
+	var rename bool
 	renameCmd := &cobra.Command{
 		Use:               "rename",
 		Short:             "Rename an app",
@@ -264,7 +257,14 @@ func (c *cli) addAppsCRUDCommands(appsCmd *cobra.Command) {
 	renameCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	renameCmd.MarkFlagRequired("app-id")
 	renameCmd.Flags().BoolVarP(&rename, "rename", "", true, "Rename config file if it exists")
+
 	appsCmd.AddCommand(renameCmd)
+
+	// variables subcommand (replacing secrets)
+	variablesCmd := c.variablesCmd()
+	appsCmd.AddCommand(variablesCmd)
+
+	return appsCmd
 }
 
 func (c *cli) variablesCmd() *cobra.Command {

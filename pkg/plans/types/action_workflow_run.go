@@ -16,7 +16,7 @@ type ActionWorkflowRunPlan struct {
 	OverrideEnvVars map[string]string            `json:"override_env_vars"`
 
 	// optional fields based on the configuration
-	ClusterInfo *kube.ClusterInfo      `json:"cluster_info,block"` //nolint:staticcheck // SA5008: custom block tag
+	ClusterInfo *kube.ClusterInfo      `json:"cluster_info,block"`
 	AWSAuth     *awscredentials.Config `json:"aws_auth"`
 
 	MinSandboxMode

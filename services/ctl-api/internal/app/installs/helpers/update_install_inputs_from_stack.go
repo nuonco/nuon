@@ -11,7 +11,7 @@ import (
 
 // UpdateInstallInputsFromStackOutputs updates install_inputs table with values from stack outputs
 // inputValues should only contain the app inputs extracted from stack outputs (from the "app_inputs" nested object)
-func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, installStackVersionID, installID, inputConfigID string, inputValues map[string]string) error { //nolint:gocyclo
+func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, installStackVersionID, installID, inputConfigID string, inputValues map[string]string) error {
 	// If no input values provided, nothing to update
 	if len(inputValues) == 0 {
 		return nil
@@ -41,11 +41,11 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, insta
 
 	// Get the app input config to validate inputs
 	var appInputConfig app.AppInputConfig
-	if resLocal := h.db.WithContext(ctx).
+	if res := h.db.WithContext(ctx).
 		Preload("AppInputs").
 		Where("id = ?", inputConfigID).
-		First(&appInputConfig); resLocal.Error != nil {
-		return errors.Wrap(resLocal.Error, "unable to get app input config")
+		First(&appInputConfig); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to get app input config")
 	}
 
 	// Validate that inputs are actually install_stack sourced

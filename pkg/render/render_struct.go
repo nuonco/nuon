@@ -13,7 +13,7 @@ func RenderStruct(obj any, data map[string]any) error {
 	return walkFields(obj, data)
 }
 
-func walkFields(obj any, data map[string]any) error { //nolint:gocyclo,funlen
+func walkFields(obj any, data map[string]any) error {
 	val := reflect.ValueOf(obj)
 
 	// If it's a pointer, get the underlying value

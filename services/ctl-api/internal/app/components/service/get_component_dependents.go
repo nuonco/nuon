@@ -36,7 +36,7 @@ type ComponentChildren struct {
 func (s *service) GetAppComponentDependents(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 
-	component, _ := s.getComponent(ctx, componentID)
+	component, err := s.getComponent(ctx, componentID)
 	if component == nil {
 		ctx.Error(fmt.Errorf("component %s not found", componentID))
 		return
@@ -98,7 +98,7 @@ func (s *service) GetAppComponentDependents(ctx *gin.Context) {
 func (s *service) GetComponentDependents(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 
-	component, _ := s.getComponent(ctx, componentID)
+	component, err := s.getComponent(ctx, componentID)
 	if component == nil {
 		ctx.Error(fmt.Errorf("component %s not found", componentID))
 		return

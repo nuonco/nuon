@@ -40,7 +40,7 @@ func (s *service) GetRunnerJobCompositePlan(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cp)
 }
 
-func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID string) (*plantypes.CompositePlan, error) { //nolint:gocyclo
+func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID string) (*plantypes.CompositePlan, error) {
 	var runnerPlan app.RunnerJobPlan
 
 	res := s.db.WithContext(ctx).

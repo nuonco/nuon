@@ -50,6 +50,7 @@ func (ls *LogStreamer) StreamPodLogs(ctx context.Context, pods []*corev1.Pod) er
 		}
 	}
 	return nil
+
 }
 
 // this actually does the work
@@ -131,7 +132,9 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 				)
 			}
 		}
+
 	}()
+
 	return nil
 }
 

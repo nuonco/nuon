@@ -81,8 +81,8 @@ func (s *service) GetTerraformWorkspaceStatesJSONByID(ctx *gin.Context) {
 	decodedReader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(sanitized))
 
 	var builder strings.Builder
-	if _, copyErr := io.Copy(&builder, decodedReader); copyErr != nil {
-		ctx.Error(fmt.Errorf("unable to decode base64 string: %w", copyErr))
+	if _, err := io.Copy(&builder, decodedReader); err != nil {
+		ctx.Error(fmt.Errorf("unable to decode base64 string: %w", err))
 		return
 	}
 
@@ -94,6 +94,7 @@ func (s *service) GetTerraformWorkspaceStatesJSONByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, statejson)
+
 }
 
 func (s *service) GetTerraformStatesJSONById(ctx *gin.Context, workspaceID string, stateID string) (*app.TerraformWorkspaceStateJSON, error) {

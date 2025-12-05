@@ -39,9 +39,9 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	}
 
 	if a.TwoStepConfig.SrcIAMRoleARN != "" {
-		creds, srcErr := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.SrcIAMRoleARN)
-		if srcErr != nil {
-			return nil, fmt.Errorf("failed to assume two step src role: %w", srcErr)
+		creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.SrcIAMRoleARN)
+		if err != nil {
+			return nil, fmt.Errorf("failed to assume two step src role: %w", err)
 		}
 
 		credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId,

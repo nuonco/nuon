@@ -32,14 +32,14 @@ func (b *handler) getBuildContext(
 	// into our build context.
 	relDockerfile, err := filepath.Rel(src.AbsPath(), dockerfile)
 	if err != nil || strings.HasPrefix(relDockerfile, "..") {
-		id, ulidErr := ulid.New(ulid.Now(), rand.Reader)
-		if ulidErr != nil {
-			return "", "", ulidErr
+		id, err := ulid.New(ulid.Now(), rand.Reader)
+		if err != nil {
+			return "", "", err
 		}
 
 		newPath := filepath.Join(src.AbsPath(), fmt.Sprintf("Dockerfile-%s", id.String()))
-		if copyErr := copyFile(dockerfile, newPath); copyErr != nil {
-			return "", "", copyErr
+		if err := copyFile(dockerfile, newPath); err != nil {
+			return "", "", err
 		}
 		defer os.Remove(newPath)
 

@@ -72,7 +72,7 @@ func (s *service) deleteConnection(ctx context.Context, vcsConn *app.VCSConnecti
 }
 
 func (s *service) deleteGithubAppInstallation(ctx context.Context, installId string) error {
-	ghClient, _ := s.helpers.GetJWTVCSConnectionClient()
+	ghClient, err := s.helpers.GetJWTVCSConnectionClient()
 
 	iInstallId, err := strconv.ParseInt(installId, 10, 64)
 	if err != nil {

@@ -14,9 +14,9 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) err
 	}
 
 	if asJSON {
-		res, deleteErr := s.api.DeleteInstall(ctx, installID)
-		if deleteErr != nil {
-			return ui.PrintJSONError(deleteErr)
+		res, err := s.api.DeleteInstall(ctx, installID)
+		if err != nil {
+			return ui.PrintJSONError(err)
 		}
 		type response struct {
 			ID      string `json:"id"`

@@ -11,12 +11,7 @@ import (
 	// workflowui "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow"
 )
 
-func (s *Service) Actions(
-	ctx context.Context,
-	installID string,
-	offset, limit int,
-	asJSON bool,
-) error {
+func (s *Service) Actions(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
