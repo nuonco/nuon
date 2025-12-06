@@ -14,7 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
 
-func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipVersionCheck bool) (*app.AppConfig, error) {
+func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipAdditionalChecks bool) (*app.AppConfig, error) {
 	appCfg := app.AppConfig{}
 	res := h.db.WithContext(ctx).
 		Where(app.AppConfig{
@@ -50,7 +50,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		}
 	}
 
-	if !skipVersionCheck {
+	if !skipAdditionalChecks {
 		versionAllowed, err := h.CliVerisionAllowed(ctx, appCfg.CLIVersion)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to check cli version")
@@ -119,10 +119,6 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 	}
 
 	if len(appCfg.ComponentConfigConnections) != len(appCfg.ComponentIDs) {
-		if appCfg.Status == app.AppConfigStatusActive {
-			return nil, errors.New("app config references a component-id which has a config that could not be found")
-		}
-
 		ctxLogger := cctx.GetLogger(ctx, h.l)
 		ctxLogger.Warn("app config is missing component configs",
 			zap.String("app_config.status", string(appCfg.Status)),
@@ -130,6 +126,10 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 			zap.Int("expected_component_configs", len(appCfg.ComponentIDs)),
 			zap.Int("found_component_configs", len(appCfg.ComponentConfigConnections)),
 		)
+
+		if !skipAdditionalChecks && appCfg.Status == app.AppConfigStatusActive {
+			return nil, errors.New("app config references a component-id which has a config that could not be found")
+		}
 	}
 
 	return &appCfg, nil
