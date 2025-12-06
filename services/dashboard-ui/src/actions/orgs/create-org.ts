@@ -23,8 +23,8 @@ export async function createOrg({
         lastName: session?.user?.family_name,
         email: session?.user?.email,
         companyName: body?.name,
-        jobTitle: '',
-        description: '',
+        notes: '',
+        subject: 'trial-signup',
       }),
     }).catch((err) => {
       console.error('error posting to salesforce api:', err)
