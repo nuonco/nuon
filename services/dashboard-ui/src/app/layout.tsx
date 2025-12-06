@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
-import { API_URL } from "@/configs/api"
+import { API_URL } from '@/configs/api'
 import { InitDatadogLogs } from '@/lib/datadog-logs'
 import { InitDatadogRUM } from '@/lib/datadog-rum'
 import {
@@ -57,6 +57,9 @@ export default function RootLayout({
         <body
           className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures antialiased`}
         >
+          <div id="ui-version" className="hidden">
+            Version: {process.env.VERSION || 'development'}
+          </div>
           <EnvScript
             env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
             githubAppName={process.env.GITHUB_APP_NAME}
