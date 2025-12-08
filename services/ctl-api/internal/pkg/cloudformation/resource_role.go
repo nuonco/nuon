@@ -147,10 +147,10 @@ func (a *Templates) getRolePolicy(role app.AppAWSIAMRoleConfig, policy app.AppAW
 	}
 }
 
-func (a *Templates) getRoleParameters(role app.AppAWSIAMRoleConfig) cloudformation.Parameter {
+func (a *Templates) getRoleParameters(role app.AppAWSIAMRoleConfig, defaultValue bool) cloudformation.Parameter {
 	return cloudformation.Parameter{
 		Type:    "String",
-		Default: true,
+		Default: defaultValue,
 		AllowedValues: []any{
 			"true",
 			"false",
@@ -163,10 +163,10 @@ func (a *Templates) getRolesParameters(inp *TemplateInput) map[string]cloudforma
 	params := make(map[string]cloudformation.Parameter, 0)
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
-		params[role.CloudFormationStackParamName] = a.getRoleParameters(role)
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, true)
 	}
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
-		params[role.CloudFormationStackParamName] = a.getRoleParameters(role)
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, false)
 	}
 
 	return params
