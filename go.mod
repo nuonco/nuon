@@ -29,6 +29,7 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.2.2
 	github.com/Jeffail/gabs v1.4.0
 	github.com/abiosoft/lineprefix v0.1.4
+	github.com/actions/actions-runner-controller v0.27.6
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.55.7
@@ -209,6 +210,7 @@ require (
 	github.com/extism/go-sdk v1.7.1 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250323135004-b31fac66206e // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
+	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/gonvenience/idem v0.0.2 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
@@ -274,6 +276,7 @@ require (
 	golang.org/x/mobile v0.0.0-20250606033058-a2a15c67f36f // indirect
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 )
 
