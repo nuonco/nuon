@@ -121,7 +121,7 @@ data "aws_iam_policy_document" "s3_bucket_policy" {
 
 module "bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = ">= v3.2.4"
+  version = "~> 4.0"
 
   bucket = local.sandbox_bucket_name
   versioning = {
