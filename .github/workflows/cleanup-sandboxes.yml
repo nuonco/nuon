@@ -17,7 +17,7 @@ defaults:
 jobs:
   cleanup:
     name: 🧹 Cleanup Sandboxes
-    runs-on: mono
+    runs-on: build-only
     env:
       NUON_ROOT: ${{ github.workspace }}
       DISABLE_GITHUB_OIDC: true
@@ -27,6 +27,27 @@ jobs:
 
       - name: Setup nuonctl
         uses: ./actions/setup-nuonctl
+
+      - name: Install aws-nuke
+        run: |
+          INSTALL_DIR="$HOME/.local/bin"
+          mkdir -p "$INSTALL_DIR"
+
+          # Download and extract
+          curl -L -o aws-nuke.tar.gz https://github.com/ekristen/aws-nuke/releases/download/v3.40.0/aws-nuke-v3.40.0-linux-amd64.tar.gz
+          tar -xzf aws-nuke.tar.gz
+
+          # Find and move the binary
+          find . -name "aws-nuke" -type f -executable -exec mv {} "$INSTALL_DIR/" \;
+
+          # Ensure it's executable
+          chmod +x "$INSTALL_DIR/aws-nuke"
+
+          # Add to PATH
+          echo "$INSTALL_DIR" >> $GITHUB_PATH
+
+          # Verify installation
+          "$INSTALL_DIR/aws-nuke" version
 
       - name: Execute sandbox cleanup
         run: |
