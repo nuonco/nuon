@@ -97,6 +97,31 @@ export class Accounts extends TerraformStack {
         provider: defaultRegionalProvider,
       });
 
+      // Admin role that GitHub runners can assume for cleanup operations
+      // Only create in sandbox accounts (engineers OU)
+      // Separate from SSO NuonAdmin role since SSO manages trust policies
+      if (/^sandbox-[a-z]{2}$/.test(acct.name)) {
+        new IamRole(this, `${acct.name}-github-runner-admin-role`, {
+          assumeRolePolicy: JSON.stringify({
+            Statement: [
+              {
+                Action: "sts:AssumeRole",
+                Effect: "Allow",
+                Principal: {
+                  AWS: "arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner",
+                },
+              },
+            ],
+            Version: "2012-10-17",
+          }),
+          description: "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+          managedPolicyArns: ["arn:aws:iam::aws:policy/AdministratorAccess"],
+          name: "GithubRunnerAdmin",
+          path: "/",
+          provider: defaultRegionalProvider,
+        });
+      }
+
       // Github OIDC provider. This will allow actions to authenticate to our accounts.
       // Currently, there are no roles for it to assume.
       const ghoidc = new IamOpenidConnectProvider(

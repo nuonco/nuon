@@ -34,7 +34,6 @@ data "aws_iam_policy_document" "runner_assume_role" {
   }
 }
 
-# IAM policy for GitHub Actions runners - only allows assuming gha- prefixed roles
 data "aws_iam_policy_document" "runner_policy" {
   statement {
     sid    = "AssumeGHARoles"
@@ -48,6 +47,48 @@ data "aws_iam_policy_document" "runner_policy" {
         "arn:aws:iam::${account_id}:role/github-actions-role-*"
       ]
     ])
+  }
+
+  statement {
+    sid    = "AssumeSandboxRoles"
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole",
+    ]
+    resources = [
+      "arn:aws:iam::*:role/GithubRunnerAdmin",
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "aws:PrincipalOrgID"
+      values   = [data.aws_organizations_organization.orgs.id]
+    }
+  }
+
+  statement {
+    sid    = "AccessNuonctlBuckets"
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+    ]
+    resources = [
+      data.tfe_outputs.infra-nuonctl.values.bucket_arn,
+      data.tfe_outputs.infra-nuonctl.values.account_locks_bucket_arn,
+    ]
+  }
+
+  statement {
+    sid    = "AccessNuonctlBucketObjects"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+    ]
+    resources = [
+      "${data.tfe_outputs.infra-nuonctl.values.bucket_arn}/*",
+      "${data.tfe_outputs.infra-nuonctl.values.account_locks_bucket_arn}/*",
+    ]
   }
 }
 

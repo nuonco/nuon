@@ -89,7 +89,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-10-28T15:41:38.114Z"
+      "value": "2025-12-08T21:00:59.917Z"
     },
     "demo-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo account",
@@ -4693,6 +4693,22 @@
         "path": "/",
         "provider": "aws.runners-stage"
       },
+      "sandbox-am-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-am-github-runner-admin-role",
+            "uniqueId": "sandbox-am-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-am"
+      },
       "sandbox-am-terraform-role": {
         "//": {
           "metadata": {
@@ -4725,6 +4741,22 @@
         "path": "/",
         "provider": "aws.sandbox-byoc"
       },
+      "sandbox-cb-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-cb-github-runner-admin-role",
+            "uniqueId": "sandbox-cb-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-cb"
+      },
       "sandbox-cb-terraform-role": {
         "//": {
           "metadata": {
@@ -4740,6 +4772,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-cb"
+      },
+      "sandbox-ey-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ey-github-runner-admin-role",
+            "uniqueId": "sandbox-ey-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-ey"
       },
       "sandbox-ey-terraform-role": {
         "//": {
@@ -4757,6 +4805,22 @@
         "path": "/",
         "provider": "aws.sandbox-ey"
       },
+      "sandbox-fd-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-fd-github-runner-admin-role",
+            "uniqueId": "sandbox-fd-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-fd"
+      },
       "sandbox-fd-terraform-role": {
         "//": {
           "metadata": {
@@ -4772,6 +4836,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-fd"
+      },
+      "sandbox-ht-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ht-github-runner-admin-role",
+            "uniqueId": "sandbox-ht-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-ht"
       },
       "sandbox-ht-terraform-role": {
         "//": {
@@ -4789,6 +4869,22 @@
         "path": "/",
         "provider": "aws.sandbox-ht"
       },
+      "sandbox-ja-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ja-github-runner-admin-role",
+            "uniqueId": "sandbox-ja-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-ja"
+      },
       "sandbox-ja-terraform-role": {
         "//": {
           "metadata": {
@@ -4804,6 +4900,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-ja"
+      },
+      "sandbox-jm-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-jm-github-runner-admin-role",
+            "uniqueId": "sandbox-jm-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-jm"
       },
       "sandbox-jm-terraform-role": {
         "//": {
@@ -4821,6 +4933,22 @@
         "path": "/",
         "provider": "aws.sandbox-jm"
       },
+      "sandbox-mm-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-mm-github-runner-admin-role",
+            "uniqueId": "sandbox-mm-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-mm"
+      },
       "sandbox-mm-terraform-role": {
         "//": {
           "metadata": {
@@ -4836,6 +4964,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-mm"
+      },
+      "sandbox-ms-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-ms-github-runner-admin-role",
+            "uniqueId": "sandbox-ms-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-ms"
       },
       "sandbox-ms-terraform-role": {
         "//": {
@@ -4853,6 +4997,22 @@
         "path": "/",
         "provider": "aws.sandbox-ms"
       },
+      "sandbox-nh-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-nh-github-runner-admin-role",
+            "uniqueId": "sandbox-nh-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-nh"
+      },
       "sandbox-nh-terraform-role": {
         "//": {
           "metadata": {
@@ -4869,6 +5029,22 @@
         "path": "/",
         "provider": "aws.sandbox-nh"
       },
+      "sandbox-pk-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-pk-github-runner-admin-role",
+            "uniqueId": "sandbox-pk-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-pk"
+      },
       "sandbox-pk-terraform-role": {
         "//": {
           "metadata": {
@@ -4884,6 +5060,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-pk"
+      },
+      "sandbox-rb-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-rb-github-runner-admin-role",
+            "uniqueId": "sandbox-rb-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-rb"
       },
       "sandbox-rb-terraform-role": {
         "//": {
@@ -4917,6 +5109,22 @@
         "path": "/",
         "provider": "aws.sandbox-retool"
       },
+      "sandbox-se-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-se-github-runner-admin-role",
+            "uniqueId": "sandbox-se-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-se"
+      },
       "sandbox-se-terraform-role": {
         "//": {
           "metadata": {
@@ -4932,6 +5140,22 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.sandbox-se"
+      },
+      "sandbox-sk-github-runner-admin-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/sandbox-sk-github-runner-admin-role",
+            "uniqueId": "sandbox-sk-github-runner-admin-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::821160992543:role/infra-shared-ci-nuon-self-hosted-runners-build-only-runner\"}}],\"Version\":\"2012-10-17\"}",
+        "description": "Admin role for GitHub Actions runners (e.g., cleanup operations)",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "GithubRunnerAdmin",
+        "path": "/",
+        "provider": "aws.sandbox-sk"
       },
       "sandbox-sk-terraform-role": {
         "//": {

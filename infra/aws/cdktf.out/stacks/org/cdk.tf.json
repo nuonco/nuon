@@ -236,7 +236,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2025-10-28T15:41:37.913Z"
+      "value": "2025-12-08T21:00:59.803Z"
     }
   },
   "provider": {
