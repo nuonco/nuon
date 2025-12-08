@@ -1,11 +1,14 @@
 'use client'
 
+import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
-import { Logs, LogsSkeleton } from '@/components/log-stream/Logs'
+import { LogsSkeleton } from '@/components/log-stream/Logs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { LogsProvider } from '@/providers/logs-provider'
+import { SSELogs } from '@/components/log-stream/SSELogs'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider-temp'
+import { LogViewerProvider } from '@/providers/log-viewer-provider-temp'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
 import { useQueryParams } from '@/hooks/use-query-params'
@@ -23,12 +26,7 @@ export const SandboxRunApply = ({
     order: sandboxRun?.log_stream?.open ? 'asc' : 'desc',
   })
 
-  const {
-    data: logs,
-    isLoading: isLoadingLogs,
-    headers,
-  } = useQuery<TOTELLog[]>({
-    initData: [],
+  const { data: logs } = useQuery<TOTELLog[]>({
     path: `/api/orgs/${org.id}/log-streams/${sandboxRun?.log_stream?.id}/logs${params}`,
   })
 
@@ -48,27 +46,22 @@ export const SandboxRunApply = ({
                 status: sandboxRun?.status_v2?.status,
               }}
               tooltipProps={{
-                position: 'top',
+                position: 'right',
                 tipContent: sandboxRun?.status_v2?.status_human_description,
               }}
             />
+            <LabeledValue label="Sandbox Run ID">
+              <ID>{sandboxRun?.id}</ID>
+            </LabeledValue>
           </div>
 
           {sandboxRun?.log_stream ? (
-            <LogStreamProvider
-              shouldPoll
-              initLogStream={sandboxRun?.log_stream}
-            >
-              {isLoadingLogs ? (
-                <SandboxRunLogsSkeleton />
-              ) : (
-                <LogsProvider
-                  initLogs={logs}
-                  initOffset={headers?.['x-nuon-api-next']}
-                >
-                  <Logs />
-                </LogsProvider>
-              )}
+            <LogStreamProvider shouldPoll initLogStream={sandboxRun?.log_stream}>
+              <UnifiedLogsProvider initLogs={logs}>
+                <LogViewerProvider>
+                  <SSELogs />
+                </LogViewerProvider>
+              </UnifiedLogsProvider>
             </LogStreamProvider>
           ) : null}
         </div>
