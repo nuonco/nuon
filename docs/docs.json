@@ -27,8 +27,9 @@
           {
             "group": "Resources",
             "pages": [
-              "configuration-files",
               "cli",
+	      "install",
+              "configuration-files",
               "dashboard-ui",
               "nuon-api",
               "sdks",
