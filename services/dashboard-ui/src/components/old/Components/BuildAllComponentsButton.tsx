@@ -13,12 +13,10 @@ import { Notice } from '@/components/old/Notice'
 import { Text, ID } from '@/components/old/Typography'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import type { TComponent, TAPIError } from '@/types'
+import type { TAPIError } from '@/types'
 import { trackEvent } from '@/lib/segment-analytics'
 
-export const BuildAllComponentsButton: FC<{
-  components: Array<TComponent>
-}> = ({ components }) => {
+export const BuildAllComponentsButton: FC = () => {
   const path = usePathname()
   const { user } = useUser()
   const { org } = useOrg()
@@ -26,7 +24,7 @@ export const BuildAllComponentsButton: FC<{
   const [isOpen, setIsOpen] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | TAPIError[]>()
+  const [error, setError] = useState<string | TAPIError>()
 
   const handleClose = () => {
     setIsOpen(false)
@@ -54,29 +52,10 @@ export const BuildAllComponentsButton: FC<{
             >
               <div className="flex flex-col gap-3 mb-6">
                 {error ? (
-                  Array.isArray(error) ? (
-                    <div className="flex flex-col gap-1">
-                      {error?.map((err) => (
-                        <Notice key={err.meta?.id}>
-                          {err?.meta?.name && err?.meta?.id ? (
-                            <span className="flex gap-2">
-                              <Text variant="med-14">{err?.meta?.name}:</Text>
-                              <ID
-                                className="!text-current"
-                                id={err?.meta?.id}
-                              />
-                            </span>
-                          ) : null}
-                          <Text>{err?.error}</Text>
-                        </Notice>
-                      ))}
-                    </div>
-                  ) : (
-                    <Notice>
-                      {error ||
-                        'Unable to kick off component builds, please refresh page and try again.'}
-                    </Notice>
-                  )
+                  <Notice>
+                    {typeof error === 'string' ? error : error.error ||
+                      'Unable to kick off component builds, please refresh page and try again.'}
+                  </Notice>
                 ) : null}
                 <Text variant="reg-14" className="leading-relaxed">
                   Are you sure you want to build all components?
@@ -97,12 +76,12 @@ export const BuildAllComponentsButton: FC<{
                     setIsLoading(true)
                     setIsKickedOff(true)
                     buildComponents({
-                      components,
+                      appId: app.id,
                       orgId: org.id,
                       path,
                     }).then((res) => {
                       setIsLoading(false)
-                      if (res.some((r) => r.error)) {
+                      if (res.error) {
                         trackEvent({
                           event: 'components_build',
                           user,
@@ -114,7 +93,7 @@ export const BuildAllComponentsButton: FC<{
                         })
 
                         setError(
-                          res.filter((r) => r?.error).map((r) => r?.error) ||
+                          res.error ||
                             'Unable to kick off component builds, please refresh page and try again.'
                         )
                       } else {
