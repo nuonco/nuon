@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -326,4 +327,51 @@ func GetMetadataFromEnv() BuildMetadata {
 	}
 
 	return metadata
+}
+
+type ManifestWithVersion struct {
+	Version  string
+	Manifest *BuildManifest
+}
+
+type DownloadOptions struct {
+	PromotionsOnly bool
+}
+
+func (c *Client) DownloadManifestsParallel(ctx context.Context, serviceName string, versions []string, opts *DownloadOptions) []*ManifestWithVersion {
+	if opts == nil {
+		opts = &DownloadOptions{}
+	}
+
+	var (
+		mu      sync.Mutex
+		wg      sync.WaitGroup
+		results = make([]*ManifestWithVersion, 0)
+	)
+
+	for _, version := range versions {
+		wg.Add(1)
+		go func(ver string) {
+			defer wg.Done()
+
+			buildManifest, err := c.Download(ctx, serviceName, ver)
+			if err != nil {
+				return
+			}
+
+			if opts.PromotionsOnly && !buildManifest.Metadata.IsPromotion {
+				return
+			}
+
+			mu.Lock()
+			results = append(results, &ManifestWithVersion{
+				Version:  ver,
+				Manifest: buildManifest,
+			})
+			mu.Unlock()
+		}(version)
+	}
+
+	wg.Wait()
+	return results
 }
