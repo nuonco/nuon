@@ -227,7 +227,7 @@ export const AppComponentsTable: FC<IAppComponentsTable> = ({
 
             <div className="flex items-center gap-4">
               <AppConfigGraph appId={appId} configId={configId} />
-              <BuildAllComponentsButton components={components} />
+              <BuildAllComponentsButton />
             </div>
           </div>
           <ComponentTypeFilterDropdown

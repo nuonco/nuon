@@ -1,23 +1,16 @@
-import type { TComponent } from '@/types'
-import { buildComponent } from './build-component'
+import { api } from '@/lib/api'
+import type { TBuild } from '@/types'
 
 export const buildComponents = ({
-  components,
+  appId,
   orgId,
 }: {
-  components: TComponent[]
+  appId: string
   orgId: string
-}) => {
-  return Promise.all(
-    components.map(({ id, name }) =>
-      buildComponent({
-        componentId: id,
-        orgId,
-      }).then((res) =>
-        res?.error
-          ? { ...res, error: { ...res.error, meta: { name, id } } }
-          : res
-      )
-    )
-  )
-}
+}) =>
+  api<TBuild[]>({
+    path: `apps/${appId}/components/build-all`,
+    method: 'POST',
+    orgId,
+    body: {},
+  })
