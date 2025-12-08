@@ -4,9 +4,11 @@ import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
-import { Logs, LogsSkeleton } from '@/components/log-stream/Logs'
+import { LogsSkeleton } from '@/components/log-stream/Logs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { LogsProvider } from '@/providers/logs-provider'
+import { SSELogs } from '@/components/log-stream/SSELogs'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider-temp'
+import { LogViewerProvider } from '@/providers/log-viewer-provider-temp'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
 import { useQueryParams } from '@/hooks/use-query-params'
@@ -22,14 +24,8 @@ export const DeployApply = ({
     order: deploy?.log_stream?.open ? 'asc' : 'desc',
   })
 
-  const {
-    data: logs,
-    isLoading: isLoadingLogs,
-    headers,
-  } = useQuery<TOTELLog[]>({
-    initData: [],
+  const { data: logs } = useQuery<TOTELLog[]>({
     path: `/api/orgs/${org.id}/log-streams/${deploy?.log_stream?.id}/logs${params}`,
-    enabled: !deploy?.log_stream?.open,
   })
 
   return (
@@ -59,16 +55,11 @@ export const DeployApply = ({
 
           {deploy?.log_stream ? (
             <LogStreamProvider shouldPoll initLogStream={deploy?.log_stream}>
-              {isLoadingLogs ? (
-                <DeployLogsSkeleton />
-              ) : (
-                <LogsProvider
-                  initLogs={logs}
-                  initOffset={headers?.['x-nuon-api-next']}
-                >
-                  <Logs />
-                </LogsProvider>
-              )}
+              <UnifiedLogsProvider initLogs={logs}>
+                <LogViewerProvider>
+                  <SSELogs />
+                </LogViewerProvider>
+              </UnifiedLogsProvider>
             </LogStreamProvider>
           ) : null}
         </div>

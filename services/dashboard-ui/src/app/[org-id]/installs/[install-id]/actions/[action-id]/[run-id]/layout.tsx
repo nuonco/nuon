@@ -53,6 +53,7 @@ export default async function InstallActionRunLayout({
     >
       {org?.features?.['stratus-layout'] ? (
         <PageSection id={containerId} isScrollable>
+          
           <InstallActionRunHeader
             actionId={actionId}
             actionName={installAction?.action_workflow?.name}

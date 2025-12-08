@@ -84,9 +84,7 @@ export const BuildComponentButton = ({
       })
       if (build?.id) {
         const buildPath = `${path}/builds/${build?.id}`
-        router.push(
-          org?.features?.['dashboard-sse'] ? `${buildPath}/sse` : buildPath
-        )
+        router.push(buildPath)
       }
 
       setIsOpen(false)
