@@ -18,7 +18,6 @@ func TestValidatePolicyType(t *testing.T) {
 		{config.AppPolicyTypeKubernetesManifest, false},
 		{config.AppPolicyTypeDockerBuild, false},
 		{config.AppPolicyTypeContainerImage, false},
-		{config.AppPolicyTypeJob, false},
 		{config.AppPolicyType("invalid_policy_type"), true},
 	}
 
@@ -58,11 +57,13 @@ func TestValidatePolicyTypeEngineCompatibility(t *testing.T) {
 		// kubernetes_cluster only supports kyverno
 		{config.AppPolicyTypeKubernetesCluster, config.AppPolicyEngineKyverno, false},
 		{config.AppPolicyTypeKubernetesCluster, config.AppPolicyEngineOPA, true},
-		// component types support both
-		{config.AppPolicyTypeTerraformModule, config.AppPolicyEngineKyverno, false},
+		// component-based types only support OPA
+		{config.AppPolicyTypeTerraformModule, config.AppPolicyEngineKyverno, true},
 		{config.AppPolicyTypeTerraformModule, config.AppPolicyEngineOPA, false},
-		{config.AppPolicyTypeHelmChart, config.AppPolicyEngineKyverno, false},
+		{config.AppPolicyTypeHelmChart, config.AppPolicyEngineKyverno, true},
 		{config.AppPolicyTypeHelmChart, config.AppPolicyEngineOPA, false},
+		{config.AppPolicyTypeKubernetesManifest, config.AppPolicyEngineKyverno, true},
+		{config.AppPolicyTypeKubernetesManifest, config.AppPolicyEngineOPA, false},
 		// empty engine skips check
 		{config.AppPolicyTypeKubernetesCluster, "", false},
 	}

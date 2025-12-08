@@ -1,0 +1,30 @@
+rules:
+  - apiGroups:
+      - 'rbac.authorization.k8s.io'
+    apiVersions:
+      - v1
+    resources:
+      - roles
+      - clusterroles
+    operations:
+      - CREATE
+      - UPDATE
+mutating: false
+contextAware: false
+executionMode: gatekeeper
+annotations:
+  # artifacthub specific
+  io.artifacthub.displayName: Disallow Reading Secrets
+  io.artifacthub.resources: Role,ClusterRole
+  io.artifacthub.keywords: rbac, secrets
+  # kubewarden specific
+  io.kubewarden.policy.ociUrl: public.ecr.aws/p7e3r5y0/disallow-reading-secrets
+  io.kubewarden.policy.author: Kubewarden developers <cncf-kubewarden-maintainers@lists.cncf.io>
+  io.kubewarden.policy.title: disallow-reading-secrets
+  io.kubewarden.policy.version: v0.1.0
+  io.kubewarden.policy.description: A policy that prevents Roles and ClusterRoles from reading secrets
+  io.kubewarden.policy.url: https://github.com/powertoolsdev/mono
+  io.kubewarden.policy.source: https://github.com/powertoolsdev/mono
+  io.kubewarden.policy.license: Apache-2.0
+  io.kubewarden.policy.category: RBAC
+  io.kubewarden.policy.severity: high

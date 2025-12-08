@@ -1,0 +1,50 @@
+{
+  "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
+  "kind": {
+    "group": "rbac.authorization.k8s.io",
+    "version": "v1",
+    "kind": "Role"
+  },
+  "resource": {
+    "group": "rbac.authorization.k8s.io",
+    "version": "v1",
+    "resource": "roles"
+  },
+  "requestKind": {
+    "group": "rbac.authorization.k8s.io",
+    "version": "v1",
+    "kind": "Role"
+  },
+  "requestResource": {
+    "group": "rbac.authorization.k8s.io",
+    "version": "v1",
+    "resource": "roles"
+  },
+  "name": "my-role",
+  "namespace": "default",
+  "operation": "CREATE",
+  "userInfo": {
+    "username": "kubernetes-admin",
+    "groups": [
+      "system:masters",
+      "system:authenticated"
+    ]
+  },
+  "object": {
+    "kind": "Role",
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "metadata": {
+      "name": "my-role",
+      "namespace": "default",
+      "uid": "04dc7a5e-e1f1-4e34-8d65-2c9337a43e64",
+      "creationTimestamp": "2020-11-12T15:18:36Z"
+    },
+    "rules": []
+  },
+  "oldObject": null,
+  "dryRun": false,
+  "options": {
+    "kind": "CreateOptions",
+    "apiVersion": "meta.k8s.io/v1"
+  }
+}

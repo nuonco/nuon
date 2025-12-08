@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/open-policy-agent/opa/v1/ast"
 	"gopkg.in/yaml.v2"
 )
 
@@ -13,12 +14,20 @@ func ValidatePolicies(a *config.AppConfig) error {
 	}
 
 	for idx, policy := range a.Policies.Policies {
-		var obj map[string]any
-
-		if err := yaml.Unmarshal([]byte(policy.Contents), &obj); err != nil {
-			return config.ErrConfig{
-				Description: fmt.Sprintf("policy %d (%s) was invalid", idx, policy.Type),
-				Err:         err,
+		if policy.Engine == config.AppPolicyEngineOPA {
+			if _, err := ast.ParseModule("policy.rego", policy.Contents); err != nil {
+				return config.ErrConfig{
+					Description: fmt.Sprintf("policy %d (%s) was invalid rego", idx, policy.Type),
+					Err:         err,
+				}
+			}
+		} else {
+			var obj map[string]any
+			if err := yaml.Unmarshal([]byte(policy.Contents), &obj); err != nil {
+				return config.ErrConfig{
+					Description: fmt.Sprintf("policy %d (%s) was invalid yaml", idx, policy.Type),
+					Err:         err,
+				}
 			}
 		}
 
@@ -47,7 +56,9 @@ func validatePolicyType(policyType config.AppPolicyType) error {
 	case config.AppPolicyTypeKubernetesCluster,
 		config.AppPolicyTypeTerraformModule,
 		config.AppPolicyTypeHelmChart,
-		config.AppPolicyTypeKubernetesManifest:
+		config.AppPolicyTypeKubernetesManifest,
+		config.AppPolicyTypeDockerBuild,
+		config.AppPolicyTypeContainerImage:
 		return nil
 	default:
 		return fmt.Errorf("invalid policy type %s", policyType)
