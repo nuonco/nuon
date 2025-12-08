@@ -1,7 +1,12 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/invopop/jsonschema"
+	"github.com/mitchellh/mapstructure"
+
+	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
 type InstallerConfig struct {
@@ -80,5 +85,24 @@ func (a *InstallerConfig) Validate() error {
 		return nil
 	}
 
+	return nil
+}
+
+func (a *InstallerConfig) parse() error {
+	if a.Source == "" {
+		return nil
+	}
+
+	obj, err := source.LoadSource(a.Source)
+	if err != nil {
+		return ErrConfig{
+			Description: fmt.Sprintf("unable to load source %s", a.Source),
+			Err:         err,
+		}
+	}
+
+	if err := mapstructure.Decode(obj, &a); err != nil {
+		return err
+	}
 	return nil
 }

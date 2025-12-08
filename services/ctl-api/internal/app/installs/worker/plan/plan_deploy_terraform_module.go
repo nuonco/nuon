@@ -151,7 +151,7 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	}, nil
 }
 
-func (p *Planner) createTerraformDeploySandboxMode(_ctx workflow.Context, req *plantypes.TerraformDeployPlan) (*plantypes.TerraformSandboxMode, error) {
+func (p *Planner) createTerraformDeploySandboxMode(ctx workflow.Context, req *plantypes.TerraformDeployPlan) (*plantypes.TerraformSandboxMode, error) {
 	pdcJSONByts := new(bytes.Buffer)
 	if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
 		return nil, errors.Wrap(err, "unable to get json")

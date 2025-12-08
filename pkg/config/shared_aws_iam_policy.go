@@ -1,6 +1,8 @@
 package config
 
 import (
+	"context"
+
 	"github.com/invopop/jsonschema"
 )
 
@@ -24,4 +26,8 @@ func (a AppAWSIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("contents").Short("IAM policy document").
 		Long("JSON policy document defining IAM permissions. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https://github.com/org/repo//policy.json), file paths (file:///path/to/policy.json), and relative paths (./policy.json)").
 		Example("{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:*\",\"Resource\":\"*\"}]}")
+}
+
+func (a *AppAWSIAMPolicy) parse(ctx context.Context) error {
+	return nil
 }

@@ -9,8 +9,6 @@ func addDescription(schema *jsonschema.Schema, name, description string) {
 	}
 }
 
-// markDeprecated is kept for potential future use.
-// nolint:unused
 func markDeprecated(schema *jsonschema.Schema, name string, deprecationMessage string) {
 	field, ok := schema.Properties.Get(name)
 	if ok {

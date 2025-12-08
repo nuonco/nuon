@@ -18,6 +18,7 @@ func TestValidatePolicyType(t *testing.T) {
 		{config.AppPolicyTypeKubernetesManifest, false},
 		{config.AppPolicyTypeDockerBuild, false},
 		{config.AppPolicyTypeContainerImage, false},
+		{config.AppPolicyTypeJob, false},
 		{config.AppPolicyType("invalid_policy_type"), true},
 	}
 

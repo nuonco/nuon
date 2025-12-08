@@ -3,6 +3,8 @@ package plan
 import (
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -136,4 +138,13 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 
 	l.Info("successfully created plan")
 	return plan, nil
+}
+
+// TODO(ja): make this a method on the run struct?
+func hstoreToMap(hstore pgtype.Hstore) map[string]string {
+	result := make(map[string]string)
+	for key, value := range hstore {
+		result[key] = *value
+	}
+	return result
 }
