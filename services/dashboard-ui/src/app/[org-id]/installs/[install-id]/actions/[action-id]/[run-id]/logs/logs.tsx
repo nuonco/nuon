@@ -2,7 +2,8 @@ import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
 import { LogsSkeleton as LogsViewerSkeleton } from '@/components/log-stream/Logs'
-import { LogsProvider } from '@/providers/logs-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider-temp'
+import { LogViewerProvider } from '@/providers/log-viewer-provider-temp'
 import { getLogsByLogStreamId } from '@/lib'
 import type { TActionConfig } from '@/types'
 
@@ -30,9 +31,11 @@ export async function Logs({
   return error ? (
     <LogsError />
   ) : (
-    <LogsProvider initLogs={logs} initOffset={headers?.['x-nuon-api-next']}>
-      <InstallActionRunLogs actionConfig={actionConfig} />
-    </LogsProvider>
+    <UnifiedLogsProvider initLogs={logs}>
+      <LogViewerProvider>
+        <InstallActionRunLogs actionConfig={actionConfig} />
+      </LogViewerProvider>
+    </UnifiedLogsProvider>
   )
 }
 

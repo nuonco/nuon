@@ -1,10 +1,9 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
-import {
-  Logs as LogsViewer,
-  LogsSkeleton as LogsViewerSkeleton,
-} from '@/components/log-stream/Logs'
-import { LogsProvider } from '@/providers/logs-provider'
+import { LogsSkeleton as LogsViewerSkeleton } from '@/components/log-stream/Logs'
+import { SSELogs } from '@/components/log-stream/SSELogs'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider-temp'
+import { LogViewerProvider } from '@/providers/log-viewer-provider-temp'
 import { getLogsByLogStreamId } from '@/lib'
 
 export async function Logs({
@@ -29,9 +28,11 @@ export async function Logs({
   return error ? (
     <LogsError />
   ) : (
-    <LogsProvider initLogs={logs} initOffset={headers?.['x-nuon-api-next']}>
-      <LogsViewer />
-    </LogsProvider>
+    <UnifiedLogsProvider initLogs={logs}>
+      <LogViewerProvider>
+        <SSELogs />
+      </LogViewerProvider>
+    </UnifiedLogsProvider>
   )
 }
 
@@ -61,7 +62,7 @@ export const LogsError = () => {
   return (
     <EmptyState
       emptyTitle="No logs found"
-      emptyMessage="Unable to load logs for this deploy."
+      emptyMessage="Unable to load logs for this sandbox run."
       variant="table"
     />
   )
