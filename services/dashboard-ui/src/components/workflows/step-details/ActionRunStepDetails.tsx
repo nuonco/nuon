@@ -9,9 +9,15 @@ import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider-temp'
+import { LogViewerProvider } from '@/providers/log-viewer-provider-temp'
+import { LogsSkeleton as LogsViewerSkeleton } from '@/components/log-stream/Logs'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
-import type { TInstallActionRun, TWorkflowStep } from '@/types'
+import { useQueryParams } from '@/hooks/use-query-params'
+import type { TInstallActionRun, TWorkflowStep, TOTELLog } from '@/types'
 import { hydrateActionRunSteps } from '@/utils/action-utils'
 import { toSentenceCase } from '@/utils/string-utils'
 
@@ -29,6 +35,17 @@ export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
   } = useQuery<TInstallActionRun>({
     dependencies: [step],
     path: `/api/orgs/${org.id}/installs/${step.owner_id}/actions/runs/${step?.step_target_id}`,
+  })
+
+  const params = useQueryParams({
+    order: actionRun?.log_stream?.open ? 'asc' : 'desc',
+  })
+
+  const { data: logs, isLoading: isLoadingLogs } = useQuery<TOTELLog[]>({
+    dependencies: [actionRun?.log_stream?.id],
+    path: actionRun?.log_stream?.id
+      ? `/api/orgs/${org.id}/log-streams/${actionRun?.log_stream?.id}/logs${params}`
+      : null,
   })
 
   return (
@@ -126,6 +143,29 @@ export const ActionRunStepDetails = ({ step }: IActionRunStepDetails) => {
                   </span>
                 ))}
             </div>
+
+            {actionRun?.log_stream ? (
+              <div className="flex flex-col gap-2">
+                <Text weight="strong">Action logs</Text>
+                {isLoadingLogs && !logs?.length ? (
+                  <ActionRunLogsSkeleton />
+                ) : (
+                  <LogStreamProvider
+                    shouldPoll={actionRun?.log_stream?.open}
+                    initLogStream={actionRun?.log_stream}
+                  >
+                    <UnifiedLogsProvider initLogs={logs}>
+                      <LogViewerProvider>
+                        <InstallActionRunLogs
+                          actionConfig={actionRun?.config}
+                          layout="horizontal"
+                        />
+                      </LogViewerProvider>
+                    </UnifiedLogsProvider>
+                  </LogStreamProvider>
+                )}
+              </div>
+            ) : null}
           </>
         </>
       )}
@@ -159,5 +199,34 @@ const ActionRunStepDetailsSkeleton = () => {
         ))}
       </div>
     </>
+  )
+}
+
+const ActionRunLogsSkeleton = () => {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap gap-2">
+        <Skeleton height="32px" width="120px" />
+        <Skeleton height="32px" width="100px" />
+        <Skeleton height="32px" width="140px" />
+        <Skeleton height="32px" width="110px" />
+      </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton height="36px" width="320px" />
+            <Skeleton height="17px" width="85px" />
+          </div>
+          <div className="flex items-center gap-4">
+            <Skeleton height="32px" width="86px" />
+            <Skeleton height="32px" width="135px" />
+            <Skeleton height="32px" width="140px" />
+          </div>
+        </div>
+        <div>
+          <LogsViewerSkeleton />
+        </div>
+      </div>
+    </div>
   )
 }
