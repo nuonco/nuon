@@ -22,7 +22,7 @@ export const LogsSkeleton = () => {
 
 // demo sse logs
 export const SSELogs = () => {
-  const { logs, loadMore, hasMore, isLoading, isStreamOpen, connectionState } =
+  const { loadMore, hasMore, isLoading, isStreamOpen, connectionState } =
     useUnifiedLogData()
   const { filteredLogs, filters } = useLogViewer()
   const [animatingLogs, setAnimatingLogs] = useState<Set<string>>(new Set())
@@ -40,27 +40,30 @@ export const SSELogs = () => {
       const now = Date.now()
       const newTimestamps = new Map(logTimestamps)
 
-      // Assign timestamps to new filteredLogs with staggered delays
-      newLogs.forEach((log, index) => {
-        newTimestamps.set(log.id, now + index * 50) // 50ms between each log
+      if (isStreamOpen) {
+        // Only stagger animations when SSE is enabled
+        newLogs.forEach((log, index) => {
+          newTimestamps.set(log.id, now + index * 50) // 50ms between each log
 
-        // Trigger animation after the delay
-        setTimeout(() => {
+          // Trigger animation after the delay
+          setTimeout(() => {
+            setAnimatingLogs((prev) => new Set(prev).add(log.id))
+          }, index * 50)
+        })
+      } else {
+        // When SSE is not active, show all logs immediately without staggering
+        newLogs.forEach((log) => {
+          newTimestamps.set(log.id, now)
           setAnimatingLogs((prev) => new Set(prev).add(log.id))
-        }, index * 50)
-      })
+        })
+      }
 
       setLogTimestamps(newTimestamps)
     }
-  }, [filteredLogs, logTimestamps])
+  }, [filteredLogs, logTimestamps, isStreamOpen])
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-8 font-mono text-xs text-cool-grey-500">
-        <span>SSE connection: {connectionState}</span>
-        <span>log lines: {logs?.length || 0}</span>
-      </div>
-
       <div className="flex flex-col flex-auto">
         <div className="sticky bg-background border-b z-10 -top-2">
           <LogFilters filters={filters} />
@@ -81,6 +84,10 @@ export const SSELogs = () => {
         </div>
 
         <div className="flex flex-col divide-y">
+          {!isStreamOpen && !filteredLogs?.length && isLoading ? (
+            <LogsSkeleton />
+          ) : null}
+
           {filteredLogs?.slice().map((logLine) => (
             <TransitionDiv
               key={logLine?.id}

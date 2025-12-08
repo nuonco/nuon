@@ -31,11 +31,10 @@ function getStepPanelSize(step: TWorkflowStep): TPanelSize {
 
   if (
     step?.step_target_type === 'install_deploys' ||
-    step?.step_target_type === 'install_sandbox_runs'
+    step?.step_target_type === 'install_sandbox_runs' ||
+    step?.step_target_type === 'install_action_workflow_runs'
   ) {
-    if (step?.execution_type !== 'approval') {
-      size = '3/4'
-    }
+    size = '3/4'
   }
 
   return size
@@ -142,7 +141,7 @@ export const StepDetailPanelButton = ({
     if (step.id && step.id === searchParams?.get('panel')) {
       handleAddPanel()
     }
-  }, []) 
+  }, [])
 
   return (
     <Button
