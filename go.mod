@@ -29,7 +29,6 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.2.2
 	github.com/Jeffail/gabs v1.4.0
 	github.com/abiosoft/lineprefix v0.1.4
-	github.com/actions/actions-runner-controller v0.27.6
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.55.7
@@ -99,6 +98,7 @@ require (
 	github.com/nuonco/nuon-runner-go v0.20.0
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.1.1
+	github.com/open-policy-agent/opa v1.11.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pelletier/go-toml/v2 v2.2.4
@@ -139,7 +139,6 @@ require (
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
 	golang.design/x/clipboard v0.7.1
-	golang.org/x/net v0.47.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sync v0.18.0
 	google.golang.org/grpc v1.74.2
@@ -210,7 +209,6 @@ require (
 	github.com/extism/go-sdk v1.7.1 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250323135004-b31fac66206e // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/gonvenience/idem v0.0.2 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
@@ -232,7 +230,8 @@ require (
 	github.com/muesli/mango-pflag v0.1.0 // indirect
 	github.com/muesli/roff v0.1.0 // indirect
 	github.com/nexus-rpc/sdk-go v0.3.0 // indirect
-	github.com/open-policy-agent/opa v1.11.0 // indirect
+	github.com/olekukonko/errors v1.1.0 // indirect
+	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
