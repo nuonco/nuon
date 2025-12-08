@@ -15,6 +15,7 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { type IPagination } from '@/components/common/Pagination'
 import { ComponentDependencies } from '@/components/components/ComponentDependencies'
 import { ComponentType } from '@/components/components/ComponentType'
+import { ManagementDropdown } from '@/components/components/management/ManagementDropdown'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
@@ -147,11 +148,8 @@ export const ComponentsTable = ({
       data={parseComponentToTableData(components, org.id, app.id)}
       filterActions={
         <div className="flex items-center gap-3">
-          <ComponentsGraph
-            appId={app?.id}
-            configId={app?.app_configs?.at(-1)?.id}
-          />
           <ComponentTypeFilterDropdown />
+          <ManagementDropdown />
         </div>
       }
       emptyStateProps={{
