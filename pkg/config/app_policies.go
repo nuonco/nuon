@@ -39,6 +39,8 @@ const (
 	AppPolicyTypeDockerBuild AppPolicyType = "docker_build"
 	// AppPolicyTypeContainerImage applies to container image components
 	AppPolicyTypeContainerImage AppPolicyType = "container_image"
+	// AppPolicyTypeSandbox applies to sandbox infrastructure
+	AppPolicyTypeSandbox AppPolicyType = "sandbox"
 )
 
 // AllAppPolicyTypes contains all valid policy types
@@ -49,6 +51,7 @@ var AllAppPolicyTypes = []AppPolicyType{
 	AppPolicyTypeKubernetesManifest,
 	AppPolicyTypeDockerBuild,
 	AppPolicyTypeContainerImage,
+	AppPolicyTypeSandbox,
 }
 
 type AppPolicyEngine string
@@ -69,7 +72,6 @@ type AppPolicy struct {
 	Engine     AppPolicyEngine `mapstructure:"engine,omitempty"`
 	Contents   string          `mapstructure:"contents" features:"get,template"`
 	Components []string        `mapstructure:"components,omitempty"`
-	Sandbox    bool            `mapstructure:"sandbox,omitempty"`
 }
 
 func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -81,6 +83,7 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 			string(AppPolicyTypeTerraformModule),
 			string(AppPolicyTypeHelmChart),
 			string(AppPolicyTypeKubernetesManifest),
+			string(AppPolicyTypeSandbox),
 		).
 		Field("engine").Short("policy engine").
 		Long("The policy engine used to evaluate the policy. Must be compatible with the policy type.").
@@ -88,11 +91,9 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("contents").Short("policy document").
 		Long("Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https://github.com/org/repo//policy.json), file paths (file:///path/to/policy.json), and relative paths (./policy.json)").
 		Field("components").Short("target components").
-		Long("List of component names this policy applies to. Use [\"*\"] to apply to all components of the specified type. If empty, applies to all components.").
+		Long("List of component names this policy applies to. Use [\"*\"] to apply to all components of the specified type. If empty, applies to all components. Ignored when type is 'sandbox'.").
 		Example("*").
-		Example("rds_cluster").
-		Field("sandbox").Short("sandbox").
-		Long("When true, policy is only evaluated during sandbox operations")
+		Example("rds_cluster")
 }
 
 type AppPolicyList struct {

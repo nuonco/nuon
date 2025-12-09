@@ -32,7 +32,6 @@ type AppPolicyConfig struct {
 	Engine     config.AppPolicyEngine `json:"engine,omitzero" temporaljson:"engine,omitzero,omitempty"`
 	Contents   string                 `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
 	Components []string               `json:"components,omitzero" gorm:"serializer:json" temporaljson:"components,omitzero,omitempty"`
-	Sandbox    bool                   `json:"sandbox,omitzero" temporaljson:"sandbox,omitzero,omitempty"`
 }
 
 func (a *AppPolicyConfig) Indexes(db *gorm.DB) []migrations.Index {

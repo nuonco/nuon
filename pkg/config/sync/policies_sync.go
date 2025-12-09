@@ -17,7 +17,6 @@ func (s sync) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyC
 		Engine:     pe,
 		Contents:   generics.ToPtr(policy.Contents),
 		Components: policy.Components,
-		Sandbox:    policy.Sandbox,
 	}
 }
 

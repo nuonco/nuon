@@ -204,8 +204,7 @@ func (a *Activities) filterApplicablePolicies(
 }
 
 func (a *Activities) appliesForSandbox(policy app.AppPolicyConfig) bool {
-	return policy.Sandbox &&
-		policyTypeMatchesComponentType(policy.Type, config.AppPolicyTypeTerraformModule)
+	return policy.Type == config.AppPolicyTypeSandbox
 }
 
 func (a *Activities) appliesForComponent(
@@ -213,7 +212,7 @@ func (a *Activities) appliesForComponent(
 	componentType app.ComponentType,
 	componentName string,
 ) bool {
-	return !policy.Sandbox &&
+	return policy.Type != config.AppPolicyTypeSandbox &&
 		policyTypeMatchesComponentType(policy.Type, componentTypeToPolicyType(componentType)) &&
 		len(policy.Components) > 0 &&
 		(slices.Contains(policy.Components, componentName) || slices.Contains(policy.Components, "*"))

@@ -33,7 +33,6 @@ func (c CreateAppPoliciesConfigRequest) getPolicies(appID, appConfigID string) [
 			Engine:      policy.Engine,
 			Contents:    policy.Contents,
 			Components:  policy.Components,
-			Sandbox:     policy.Sandbox,
 		})
 	}
 	return objs
@@ -44,7 +43,6 @@ type AppPolicyConfig struct {
 	Engine     config.AppPolicyEngine `json:"engine,omitempty"`
 	Contents   string                 `json:"contents" validate:"required" swaggertype:"string"`
 	Components []string               `json:"components,omitempty"`
-	Sandbox    bool                   `json:"sandbox,omitempty"`
 }
 
 func (c *CreateAppPoliciesConfigRequest) Validate(v *validator.Validate) error {
