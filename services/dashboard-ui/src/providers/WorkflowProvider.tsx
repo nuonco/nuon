@@ -18,11 +18,13 @@ interface WorkflowContextValue {
   pendingApprovals: any[]
   discardedSteps: any[]
   completedSteps: any[]
+  stepsWithPolicyViolations: any[]
   totalSteps: number
   pendingApprovalsCount: number
   discardedStepsCount: number
   completedStepsCount: number
   failedStepsCount: number
+  policyViolationsCount: number
 }
 
 interface WorkflowProviderProps extends Partial<IPollingProps> {

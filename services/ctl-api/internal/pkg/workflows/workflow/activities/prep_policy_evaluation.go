@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
+	"github.com/powertoolsdev/mono/pkg/types/components/plan"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -24,13 +26,13 @@ type PolicyViolation struct {
 }
 
 type PolicyToEvaluate struct {
-	PolicyID string `json:"policy_id" temporaljson:"policy_id,omitempty"`
-	Contents string `json:"contents" temporaljson:"contents,omitempty"`
+	PolicyID  string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	Contents  string `json:"contents" temporaljson:"contents,omitempty"`
+	InputJSON []byte `json:"input_json" temporaljson:"input_json,omitempty"`
 }
 
 type PrepPolicyEvaluationResult struct {
 	Policies    []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
-	InputJSON   []byte             `json:"input_json" temporaljson:"input_json,omitempty"`
 	HasPolicies bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
 }
 
@@ -66,7 +68,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		return nil, errors.Wrap(err, "unable to get policies config")
 	}
 
-	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)
+	approvalPlan, err := a.getApprovalPlan(ctx, req.StepTargetID)
 	if err != nil {
 		l.Error("unable to get plan contents", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get plan contents")
@@ -89,25 +91,22 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		}, nil
 	}
 
-	policyInput, err := a.preparePolicyInput(plan.PlanContents, policyContext.ComponentType)
+	policyInputs, err := a.preparePolicyInputs(approvalPlan.PlanContents, policyContext.ComponentType)
 	if err != nil {
-		l.Error("unable to prepare policy input", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to prepare policy input")
+		l.Error("unable to prepare policy inputs", zap.Error(err))
+		return nil, errors.Wrap(err, "unable to prepare policy inputs")
 	}
 
-	policies := make([]PolicyToEvaluate, len(applicablePolicies))
-	for i, p := range applicablePolicies {
-		policies[i] = PolicyToEvaluate{
-			PolicyID: p.ID,
-			Contents: p.Contents,
-		}
-	}
+	policies := a.buildPolicyEvaluationItems(applicablePolicies, policyInputs)
 
-	l.Info("policy evaluation preparation complete", zap.Int("policies_count", len(policies)))
+	l.Info("policy evaluation preparation complete",
+		zap.Int("policies_count", len(applicablePolicies)),
+		zap.Int("inputs_count", len(policyInputs)),
+		zap.Int("total_evaluations", len(policies)),
+	)
 
 	return &PrepPolicyEvaluationResult{
 		Policies:    policies,
-		InputJSON:   policyInput,
 		HasPolicies: true,
 	}, nil
 }
@@ -241,15 +240,61 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 	}
 }
 
-func (a *Activities) preparePolicyInput(inputJSON []byte, componentType app.ComponentType) ([]byte, error) {
+func (a *Activities) preparePolicyInputs(planContentsJSON []byte, componentType app.ComponentType) ([][]byte, error) {
 	switch componentType {
 	case app.ComponentTypeTerraformModule:
-		return inputJSON, nil
+		return [][]byte{planContentsJSON}, nil
 	case app.ComponentTypeHelmChart:
-		return inputJSON, nil
+		return [][]byte{planContentsJSON}, nil
 	case app.ComponentTypeKubernetesManifest:
-		return inputJSON, nil
+		return a.prepareKubernetesManifestPolicyInputs(planContentsJSON)
 	default:
 		return nil, fmt.Errorf("unsupported component type for policy input preparation: %s", componentType)
 	}
+}
+
+func (a *Activities) prepareKubernetesManifestPolicyInputs(planContentsJSON []byte) ([][]byte, error) {
+	var planContents plan.KubernetesManifestPlanContents
+	if err := json.Unmarshal(planContentsJSON, &planContents); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal kubernetes manifest plan contents")
+	}
+
+	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(planContents.DryRunOutput)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse dry run output to admission reviews")
+	}
+
+	if len(admissionReviews) == 0 {
+		return [][]byte{planContentsJSON}, nil
+	}
+
+	inputs := make([][]byte, len(admissionReviews))
+	for i, review := range admissionReviews {
+		inputJSON, err := json.Marshal(review)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to marshal admission review %d", i)
+		}
+		inputs[i] = inputJSON
+	}
+
+	return inputs, nil
+}
+
+func (a *Activities) buildPolicyEvaluationItems(
+	policies []app.AppPolicyConfig,
+	inputs [][]byte,
+) []PolicyToEvaluate {
+	result := make([]PolicyToEvaluate, 0, len(policies)*len(inputs))
+
+	for _, policy := range policies {
+		for _, input := range inputs {
+			result = append(result, PolicyToEvaluate{
+				PolicyID:  policy.ID,
+				Contents:  policy.Contents,
+				InputJSON: input,
+			})
+		}
+	}
+
+	return result
 }

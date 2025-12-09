@@ -720,7 +720,7 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 		fut := workflow.ExecuteActivity(policyCtx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
 			PolicyID:  policy.PolicyID,
 			Contents:  policy.Contents,
-			InputJSON: prepResult.InputJSON,
+			InputJSON: policy.InputJSON,
 		})
 		futures = append(futures, fut)
 	}
