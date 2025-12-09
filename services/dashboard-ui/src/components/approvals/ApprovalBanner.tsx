@@ -9,6 +9,7 @@ import {
   getApprovalType,
   getApprovalResponseType,
 } from '@/utils/approval-utils'
+import { toSentenceCase } from '@/utils/string-utils'
 import { ApprovePlanButton } from './ApprovePlan'
 import { DenyPlanButton } from './DenyPlan'
 import { RetryPlanButton } from './RetryPlan'
@@ -39,7 +40,7 @@ interface IApprovalBanner {
 }
 
 export const ApprovalBanner = ({ step }: IApprovalBanner) => {
-  return step?.approval?.response ? (
+  return step?.approval?.response || step?.status?.status === 'auto-skipped' ? (
     <ApprovedPlanBanner step={step} />
   ) : (
     <AwaitingApprovalBanner step={step} />
@@ -75,6 +76,7 @@ const RESPONSE_THEME: Record<
 > = {
   approve: 'success',
   'auto-approve': 'success',
+  'auto-skipped': 'default',
   deny: 'warn',
   skip: 'default',
   retry: 'info',
@@ -87,10 +89,15 @@ const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
     <Banner theme={RESPONSE_THEME[step?.approval?.response?.type]}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col">
-          <Text weight="strong">Plan was {responseType}</Text>
+          <Text weight="strong">
+            {responseType
+              ? `Plan was ${responseType}`
+              : toSentenceCase(step?.status?.status)}
+          </Text>
           <Text variant="subtext" theme="neutral">
-            This {getApprovalType(step?.approval?.type)} plan was {responseType}
-            .
+            {responseType
+              ? `This ${getApprovalType(step?.approval?.type)} plan was ${responseType}.`
+              : toSentenceCase(step?.status?.status_human_description)}
           </Text>
         </div>
       </div>

@@ -163,7 +163,9 @@ export const WorkflowHeader = ({
                 buttonVariant="primary"
               />
             ) : null}
-            {!workflow?.finished && workflow?.status?.status !== 'cancelled' ? (
+            {!workflow?.finished &&
+            workflow?.status?.status !== 'cancelled' &&
+            workflow?.status?.status !== 'error' ? (
               <InstallWorkflowCancelModal installWorkflow={workflow} />
             ) : null}
           </div>
