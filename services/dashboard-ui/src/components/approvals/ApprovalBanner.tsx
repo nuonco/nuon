@@ -40,7 +40,9 @@ interface IApprovalBanner {
 }
 
 export const ApprovalBanner = ({ step }: IApprovalBanner) => {
-  return step?.approval?.response || step?.status?.status === 'auto-skipped' ? (
+  return step?.approval?.response ||
+    step?.status?.status === 'auto-skipped' ||
+    step?.status?.status === 'cancelled' ? (
     <ApprovedPlanBanner step={step} />
   ) : (
     <AwaitingApprovalBanner step={step} />
@@ -97,7 +99,8 @@ const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
           <Text variant="subtext" theme="neutral">
             {responseType
               ? `This ${getApprovalType(step?.approval?.type)} plan was ${responseType}.`
-              : toSentenceCase(step?.status?.status_human_description)}
+              : toSentenceCase(step?.status?.status_human_description) ||
+                toSentenceCase(step?.status?.metadata?.reason as string)}
           </Text>
         </div>
       </div>
