@@ -7,6 +7,7 @@ import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { WorkflowDetails } from '@/components/workflows/WorkflowDetails'
+import { WorkflowProvider } from '@/providers/WorkflowProvider'
 import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
 import { OnboardingCelebrationWrapper } from './OnboardingCelebrationWrapper'
 import { getInstallById, getWorkflowById, getOrgById } from '@/lib'
@@ -92,12 +93,11 @@ export default async function InstallWorkflow({
           ]}
         />
         {org?.features?.['stratus-workflow'] ? (
-          <>
-            <WorkflowDetails
-              initWorkflow={installWorkflow}
-              install={install}
-              shouldPoll
-            />
+          <WorkflowProvider
+            initWorkflow={installWorkflow}
+            shouldPoll
+          >
+            <WorkflowDetails />
 
             <div className="flex flex-col gap-6 mt-6">
               <Text variant="h3" weight="strong">
@@ -117,7 +117,7 @@ export default async function InstallWorkflow({
                 </Suspense>
               </ErrorBoundary>
             </div>
-          </>
+          </WorkflowProvider>
         ) : (
           <>
             <WorkflowHeader initWorkflow={installWorkflow} shouldPoll />

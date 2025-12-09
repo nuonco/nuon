@@ -11,6 +11,7 @@ import { StepButtons } from '@/components/workflows/step-details/StepButtons'
 import { StepDetailPanelButton } from '@/components/workflows/step-details/StepDetailPanel'
 import { StepTitle } from '@/components/workflows/step-details/StepTitle'
 import { useOrg } from '@/hooks/use-org'
+import { useWorkflow } from '@/hooks/use-workflow'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TWorkflowStep } from '@/types'
 import { getStepBadge } from '@/utils/workflow-utils'
@@ -31,10 +32,16 @@ export const WorkflowSteps = ({
   workflowId,
 }: IWorkflowSteps) => {
   const { org } = useOrg()
+  const { workflow } = useWorkflow()
   const [searchName, setSearchName] = useState<string>('')
+  
+  // Stop polling if workflow is finished or cancelled
+  const shouldStopPolling = workflow?.finished || workflow?.status?.status === 'cancelled'
+  const effectiveShouldPoll = shouldPoll && !shouldStopPolling
+  
   const { data: workflowSteps } = usePolling<TWorkflowStep[]>({
     path: `/api/orgs/${org?.id}/workflows/${workflowId}/steps`,
-    shouldPoll,
+    shouldPoll: effectiveShouldPoll,
     initData: initWorkflowSteps,
     pollInterval,
   })
