@@ -77,17 +77,14 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("type").Short("policy type").
 		Long("Type of policy that determines where and how it is enforced").
 		Enum(
-			AppPolicyTypeKubernetesCluster,
-			AppPolicyTypeTerraformModule,
-			AppPolicyTypeHelmChart,
-			AppPolicyTypeKubernetesManifest,
-			// currently, not supported so commenting it out.
-			// AppPolicyTypeDockerBuild,
-			// AppPolicyTypeContainerImage,
+			string(AppPolicyTypeKubernetesCluster),
+			string(AppPolicyTypeTerraformModule),
+			string(AppPolicyTypeHelmChart),
+			string(AppPolicyTypeKubernetesManifest),
 		).
 		Field("engine").Short("policy engine").
 		Long("The policy engine used to evaluate the policy. Must be compatible with the policy type.").
-		Enum(AppPolicyEngineKyverno, AppPolicyEngineOPA).
+		Enum(string(AppPolicyEngineKyverno), string(AppPolicyEngineOPA)).
 		Field("contents").Short("policy document").
 		Long("Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https://github.com/org/repo//policy.json), file paths (file:///path/to/policy.json), and relative paths (./policy.json)").
 		Field("components").Short("target components").

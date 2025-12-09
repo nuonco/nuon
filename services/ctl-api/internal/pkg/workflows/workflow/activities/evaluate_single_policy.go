@@ -20,6 +20,8 @@ type EvaluateSinglePolicyResult struct {
 
 // @temporal-gen activity
 // @max-retries 1
+// @schedule-to-close-timeout 2m
+// @start-to-close-timeout 1m30s
 func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSinglePolicyRequest) (*EvaluateSinglePolicyResult, error) {
 	var input interface{}
 	if err := json.Unmarshal(req.InputJSON, &input); err != nil {

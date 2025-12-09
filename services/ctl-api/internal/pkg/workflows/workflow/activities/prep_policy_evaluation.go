@@ -6,8 +6,10 @@ import (
 	"slices"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -34,19 +36,39 @@ type PrepPolicyEvaluationResult struct {
 
 // @temporal-gen activity
 // @max-retries 1
+// @schedule-to-close-timeout 5m
+// @start-to-close-timeout 4m
 func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEvaluationRequest) (*PrepPolicyEvaluationResult, error) {
+	l := temporalzap.GetActivityLogger(ctx)
+	l = l.With(
+		zap.String("step_target_id", req.StepTargetID),
+		zap.String("step_target_type", req.StepTargetType),
+	)
+
+	l.Info("preparing policy evaluation")
+
 	policyContext, err := a.resolvePolicyContext(ctx, req.StepTargetID, req.StepTargetType)
 	if err != nil {
+		l.Error("unable to resolve policy context", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to resolve policy context")
 	}
 
+	l = l.With(
+		zap.String("app_config_id", policyContext.AppConfigID),
+		zap.String("component_type", string(policyContext.ComponentType)),
+		zap.String("component_name", policyContext.ComponentName),
+		zap.Bool("is_sandbox", policyContext.IsSandbox),
+	)
+
 	policiesConfig, err := a.getPoliciesConfigByAppConfigID(ctx, policyContext.AppConfigID)
 	if err != nil {
+		l.Error("unable to get policies config", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get policies config")
 	}
 
 	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)
 	if err != nil {
+		l.Error("unable to get plan contents", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get plan contents")
 	}
 
@@ -57,7 +79,10 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		policyContext.IsSandbox,
 	)
 
+	l.Info("filtered applicable policies", zap.Int("count", len(applicablePolicies)))
+
 	if len(applicablePolicies) == 0 {
+		l.Info("no applicable policies found")
 		return &PrepPolicyEvaluationResult{
 			Policies:    []PolicyToEvaluate{},
 			HasPolicies: false,
@@ -66,6 +91,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 
 	policyInput, err := a.preparePolicyInput(plan.PlanContents, policyContext.ComponentType)
 	if err != nil {
+		l.Error("unable to prepare policy input", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to prepare policy input")
 	}
 
@@ -76,6 +102,8 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 			Contents: p.Contents,
 		}
 	}
+
+	l.Info("policy evaluation preparation complete", zap.Int("policies_count", len(policies)))
 
 	return &PrepPolicyEvaluationResult{
 		Policies:    policies,
@@ -92,10 +120,10 @@ type policyContext struct {
 }
 
 func (a *Activities) resolvePolicyContext(ctx context.Context, stepTargetID, stepTargetType string) (*policyContext, error) {
-	switch stepTargetType {
-	case app.WorkflowStepTargetTypeInstallDeploy:
+	switch app.WorkflowStepTargetType(stepTargetType) {
+	case app.WorkflowStepTargetTypeInstallDeploy, app.WorkflowStepTargetTypeInstallDeploys:
 		return a.resolveDeployPolicyContext(ctx, stepTargetID)
-	case app.WorkflowStepTargetTypeInstallSandboxRun:
+	case app.WorkflowStepTargetTypeInstallSandboxRun, app.WorkflowStepTargetTypeInstallSandboxRuns:
 		return a.resolveSandboxPolicyContext(ctx, stepTargetID)
 	default:
 		return nil, fmt.Errorf("unsupported step target type for policy checking: %s", stepTargetType)

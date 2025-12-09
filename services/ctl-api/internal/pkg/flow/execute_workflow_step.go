@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -172,16 +173,28 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	// Check policies before approval
+	l.Debug("starting policy check",
+		zap.String("step_id", step.ID),
+		zap.String("step_target_id", step.StepTargetID),
+		zap.String("step_target_type", step.StepTargetType),
+		zap.String("workflow_id", flw.ID))
+
 	violations, policyErr := c.checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
 		l.Warn("failed to check policies",
 			zap.String("step_id", step.ID),
+			zap.String("step_target_id", step.StepTargetID),
+			zap.String("step_target_type", step.StepTargetType),
+			zap.String("workflow_id", flw.ID),
 			zap.Error(policyErr))
 	}
 
 	if len(violations) > 0 {
-		l.Debug("policy violations found",
+		l.Warn("policy violations found",
 			zap.String("step_id", step.ID),
+			zap.String("step_target_id", step.StepTargetID),
+			zap.String("step_target_type", step.StepTargetType),
+			zap.String("workflow_id", flw.ID),
 			zap.Int("violation_count", len(violations)))
 		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
@@ -198,6 +211,12 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		}
 		return false, fmt.Errorf("policy violations found: %d violations", len(violations))
 	}
+
+	l.Debug("policy check completed successfully",
+		zap.String("step_id", step.ID),
+		zap.String("step_target_id", step.StepTargetID),
+		zap.String("step_target_type", step.StepTargetType),
+		zap.String("workflow_id", flw.ID))
 
 	// Auto approve if plan-only mode is enabled
 	if flw.PlanOnly {
@@ -440,13 +459,13 @@ func (c *WorkflowConductor[DomainSignal]) markDependentStepsAsSkipped(ctx workfl
 		return errors.Wrap(err, "unable to mark workflow steps approval deined")
 	}
 
-	switch step.StepTargetType {
-	case app.WorkflowStepTargetTypeInstallSandboxRun:
+	switch app.WorkflowStepTargetType(step.StepTargetType) {
+	case app.WorkflowStepTargetTypeInstallSandboxRun, app.WorkflowStepTargetTypeInstallSandboxRuns:
 		// skip all the component deploys
 		if err := c.markAllComponentDeployStepsSkipped(ctx, flw); err != nil {
 			return errors.Wrap(err, "unable to update step to retry plan status")
 		}
-	case app.WorkflowStepTargetTypeInstallDeploy:
+	case app.WorkflowStepTargetTypeInstallDeploy, app.WorkflowStepTargetTypeInstallDeploys:
 		// installID := generics.FromPtrStr(flw.Metadata["install_id"])
 		// install, err := appactivities.AwaitGetByInstallID(ctx, installID)
 		// if err != nil {
@@ -478,7 +497,7 @@ func (c *WorkflowConductor[DomainSignal]) markDependentStepsAsSkipped(ctx workfl
 func (c *WorkflowConductor[DomainSignal]) markAllComponentDeployStepsSkipped(ctx workflow.Context, flw *app.Workflow) error {
 	var groupsToSkip []int
 	for _, step := range flw.Steps {
-		if step.StepTargetType == app.WorkflowStepTargetTypeInstallDeploy {
+		if app.WorkflowStepTargetType(step.StepTargetType) == app.WorkflowStepTargetTypeInstallDeploy || app.WorkflowStepTargetType(step.StepTargetType) == app.WorkflowStepTargetTypeInstallDeploys {
 			groupsToSkip = append(groupsToSkip, step.GroupIdx)
 		}
 	}
@@ -687,9 +706,18 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 	}
 
 	// Execute all policy evaluations in parallel
+	// TODO: extend temporal-gen to generate an Execute* variant that returns workflow.Future
+	// so we can use generated activity options instead of manually specifying them here.
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout:    1*time.Minute + 30*time.Second,
+		ScheduleToCloseTimeout: 2 * time.Minute,
+		RetryPolicy:            &temporal.RetryPolicy{MaximumAttempts: 1},
+	}
+	policyCtx := workflow.WithActivityOptions(ctx, ao)
+
 	var futures []workflow.Future
 	for _, policy := range prepResult.Policies {
-		fut := workflow.ExecuteActivity(ctx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
+		fut := workflow.ExecuteActivity(policyCtx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
 			PolicyID:  policy.PolicyID,
 			Contents:  policy.Contents,
 			InputJSON: prepResult.InputJSON,

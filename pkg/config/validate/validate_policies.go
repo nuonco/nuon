@@ -5,49 +5,76 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/open-policy-agent/opa/v1/ast"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
+
+	"github.com/powertoolsdev/mono/pkg/config"
 )
 
 func ValidatePolicies(a *config.AppConfig) error {
+	return ValidatePoliciesWithLogger(a, zap.NewNop())
+}
+
+func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 	if a.Policies == nil || len(a.Policies.Policies) < 1 {
+		l.Debug("no policies to validate")
 		return nil
 	}
 
+	l.Info("validating policies", zap.Int("count", len(a.Policies.Policies)))
+
 	for idx, policy := range a.Policies.Policies {
+		policyLogger := l.With(
+			zap.Int("policy_idx", idx),
+			zap.String("policy_type", string(policy.Type)),
+			zap.String("engine", string(policy.Engine)),
+		)
+
 		if policy.Engine == config.AppPolicyEngineOPA {
 			if _, err := ast.ParseModule("policy.rego", policy.Contents); err != nil {
+				policyLogger.Error("invalid OPA rego policy", zap.Error(err))
 				return config.ErrConfig{
 					Description: fmt.Sprintf("policy %d (%s) was invalid rego", idx, policy.Type),
 					Err:         err,
 				}
 			}
+			policyLogger.Debug("OPA rego policy parsed successfully")
 		} else {
 			var obj map[string]any
 			if err := yaml.Unmarshal([]byte(policy.Contents), &obj); err != nil {
+				policyLogger.Error("invalid YAML policy", zap.Error(err))
 				return config.ErrConfig{
 					Description: fmt.Sprintf("policy %d (%s) was invalid yaml", idx, policy.Type),
 					Err:         err,
 				}
 			}
+			policyLogger.Debug("YAML policy parsed successfully")
 		}
 
 		if err := validatePolicyType(policy.Type); err != nil {
+			policyLogger.Error("invalid policy type", zap.Error(err))
 			return err
 		}
 
 		if err := validatePolicyEngine(policy.Engine); err != nil {
+			policyLogger.Error("invalid policy engine", zap.Error(err))
 			return err
 		}
 
 		if err := validatePolicyTypeEngineCompatibility(policy.Type, policy.Engine); err != nil {
+			policyLogger.Error("policy type and engine incompatible", zap.Error(err))
 			return err
 		}
 
 		if err := validatePolicyComponents(policy.Components); err != nil {
+			policyLogger.Error("invalid policy components", zap.Error(err), zap.Strings("components", policy.Components))
 			return err
 		}
+
+		policyLogger.Debug("policy validation passed")
 	}
 
+	l.Info("all policies validated successfully")
 	return nil
 }
 
