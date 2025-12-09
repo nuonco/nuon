@@ -69,7 +69,8 @@ export const WorkflowTimeline = ({
             key={workflow.id}
             actions={
               !workflow?.finished &&
-              workflow?.status?.status !== 'cancelled' ? (
+              workflow?.status?.status !== 'cancelled' &&
+              workflow?.status?.status !== 'error' ? (
                 <CancelWorkflowButton workflow={workflow} size="sm" />
               ) : null
             }

@@ -40,6 +40,11 @@ export function getStepBadge(
   if (step?.execution_type === 'skipped') {
     return { children: 'Skipped' }
   }
+
+   if (step?.status?.status === 'auto-skipped') {
+    return { children: 'Auto skipped' }
+  }
+  
   if (step?.execution_type === 'approval' && !isApprovalPrompt) {
     return WORKFLOW_BADGE_MAP['approved']
   }

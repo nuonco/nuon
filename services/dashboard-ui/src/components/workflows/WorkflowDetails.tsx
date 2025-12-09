@@ -84,7 +84,8 @@ export const WorkflowDetails = ({
               workflow?.status?.status !== 'cancelled' &&
               hasApprovals && <ApproveAllButton workflow={workflow} />}
             {!workflow?.finished &&
-              workflow?.status?.status !== 'cancelled' && (
+              workflow?.status?.status !== 'cancelled' &&
+              workflow?.status?.status !== 'error' && (
                 <CancelWorkflowButton workflow={workflow} />
               )}
             {!isLoading && user?.email?.endsWith('@nuon.co') ? (
