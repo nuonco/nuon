@@ -9,10 +9,12 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { RunnerRecentActivitySkeleton } from '@/components/runners/RunnerRecentActivitySkeleton'
 import { RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCardSkeleton'
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
+import { ManagementDropdown } from '@/components/runners/management/ManagementDropdown'
 import {
   getInstallById,
   getRunnerById,
   getRunnerSettingsById,
+  getRunnerLatestHeartbeat,
   getOrgById,
 } from '@/lib'
 import { TPageProps } from '@/types'
@@ -63,16 +65,18 @@ export default async function Runner({
     getInstallById({ installId, orgId }),
     getOrgById({ orgId }),
   ])
-  const [{ data: runner, error }, { data: settings }] = await Promise.all([
-    getRunnerById({
-      orgId,
-      runnerId: install.runner_id,
-    }),
-    getRunnerSettingsById({
-      orgId,
-      runnerId: install.runner_id,
-    }),
-  ])
+  const [{ data: runner, error }, { data: settings }, { data: heartbeat }] =
+    await Promise.all([
+      getRunnerById({
+        orgId,
+        runnerId: install.runner_id,
+      }),
+      getRunnerSettingsById({
+        orgId,
+        runnerId: install.runner_id,
+      }),
+      getRunnerLatestHeartbeat({ orgId, runnerId: install.runner_id }),
+    ])
 
   if (error) {
     notFound()
@@ -106,10 +110,11 @@ export default async function Runner({
             Install runner
           </Text>
         </hgroup>
-        <ManageRunnerDropdown
+        <ManagementDropdown
           runner={runner}
           settings={settings}
           isInstallRunner
+          isManagedRunner={Boolean(heartbeat?.mng)}
         />
       </div>
 
