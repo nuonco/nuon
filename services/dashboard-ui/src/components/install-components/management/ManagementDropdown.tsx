@@ -3,17 +3,18 @@
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
+import { Text } from '@/components/common/Text'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
 import type { TComponent } from '@/types'
 
-export const ManagementDropdown = ({ 
-  component, 
-  currentBuildId 
-}: { 
+export const ManagementDropdown = ({
+  component,
+  currentBuildId,
+}: {
   component: TComponent
-  currentBuildId?: string 
+  currentBuildId?: string
 }) => {
   return (
     <Dropdown
@@ -27,21 +28,20 @@ export const ManagementDropdown = ({
       alignment="right"
     >
       <Menu>
-        <DriftScanComponentButton 
-          component={component} 
+        <Text>Controls</Text>
+        <DriftScanComponentButton
+          component={component}
           currentBuildId={currentBuildId}
-          isMenuButton 
+          isMenuButton
         />
-        <DeployComponentButton 
-          component={component} 
+        <DeployComponentButton
+          component={component}
           currentBuildId={currentBuildId}
-          isMenuButton 
+          isMenuButton
         />
         <hr />
-        <TeardownComponentButton 
-          component={component}
-          isMenuButton 
-        />        
+        <Text>Remove</Text>
+        <TeardownComponentButton component={component} isMenuButton />
       </Menu>
     </Dropdown>
   )
