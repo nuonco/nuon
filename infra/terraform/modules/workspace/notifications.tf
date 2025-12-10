@@ -17,3 +17,12 @@ resource "tfe_notification_configuration" "pagerduty-incidents" {
   email_user_ids   = [var.pagerduty_service_account_id]
   workspace_id     = tfe_workspace.workspace.id
 }
+
+resource "tfe_notification_configuration" "datadog-oncall" {
+  name             = "${var.name}-datadog-oncall-alerts"
+  enabled          = true
+  destination_type = "generic"
+  url              = "https://http-intake.logs.us5.datadoghq.com/api/v2/logs?dd-api-key=${var.datadog_api_key}&ddsource=terraform-cloud&service=${var.name}&ddtags=env:production"
+  triggers         = ["run:errored"]
+  workspace_id     = tfe_workspace.workspace.id
+}
