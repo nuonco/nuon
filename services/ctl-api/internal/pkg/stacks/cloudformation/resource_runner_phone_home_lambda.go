@@ -5,9 +5,10 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/lambda"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.CustomResource {
+func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudformation.CustomResource {
 	breakGlassRoleArns := make(map[string]interface{})
 
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
@@ -63,7 +64,7 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *TemplateInput) *cloudformation.
 	}
 }
 
-func (a *Templates) getRunnerPhoneHomeLambda(inp *TemplateInput, t tagBuilder) *lambda.Function {
+func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBuilder) *lambda.Function {
 	// This is going to be moved into a cloudformation stack template and split out, with parameters for the body
 	return &lambda.Function{
 		Handler:     ptr("index.lambda_handler"),
@@ -77,7 +78,7 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *TemplateInput, t tagBuilder) *
 	}
 }
 
-func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *TemplateInput, t tagBuilder) *iam.Role {
+func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
 	return &iam.Role{
 		Tags: t.apply(nil, "phone-home-lambda"),
 		AssumeRolePolicyDocument: map[string]any{

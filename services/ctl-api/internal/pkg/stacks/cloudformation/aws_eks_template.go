@@ -8,9 +8,10 @@ import (
 
 	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (t *Templates) getAWSTemplate(inp *TemplateInput) (*cloudformation.Template, error) {
+func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.Template, error) {
 	tmpl := cloudformation.NewTemplate()
 
 	tb := tagBuilder{

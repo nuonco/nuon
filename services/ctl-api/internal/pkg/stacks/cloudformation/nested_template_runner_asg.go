@@ -8,10 +8,11 @@ import (
 
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
 // VPCNestedStack returns a nested stack template for VPC resources
-func (a *Templates) getRunnerASGNestedStack(inp *TemplateInput, t tagBuilder) *nestedcloudformation.Stack {
+func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuilder) *nestedcloudformation.Stack {
 	tags := []tags.Tag{
 		{
 			Key:   "nuon_runner_api_token",

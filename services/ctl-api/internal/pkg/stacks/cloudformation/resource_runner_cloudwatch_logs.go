@@ -7,9 +7,10 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/logs"
 	"github.com/awslabs/goformation/v7/cloudformation/ssm"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerCloudWatchLogGroup(inp *TemplateInput, t tagBuilder) *logs.LogGroup {
+func (a *Templates) getRunnerCloudWatchLogGroup(inp *stacks.TemplateInput, t tagBuilder) *logs.LogGroup {
 	return &logs.LogGroup{
 		LogGroupName:    ptr(fmt.Sprintf("runner-%s", inp.Runner.ID)),
 		RetentionInDays: ptr(7),
@@ -17,7 +18,7 @@ func (a *Templates) getRunnerCloudWatchLogGroup(inp *TemplateInput, t tagBuilder
 	}
 }
 
-func (a *Templates) getRunnerCloudWatchLogStream(inp *TemplateInput, t tagBuilder) *logs.LogStream {
+func (a *Templates) getRunnerCloudWatchLogStream(inp *stacks.TemplateInput, t tagBuilder) *logs.LogStream {
 	// create a default cloudwatch logs stream
 	return &logs.LogStream{
 		LogGroupName:  cloudformation.Ref("RunnerCloudWatchLogGroup"),
@@ -25,7 +26,7 @@ func (a *Templates) getRunnerCloudWatchLogStream(inp *TemplateInput, t tagBuilde
 	}
 }
 
-func (a *Templates) getRunnerCloudWatchLogPolicy(inp *TemplateInput, t tagBuilder) *iam.Policy {
+func (a *Templates) getRunnerCloudWatchLogPolicy(inp *stacks.TemplateInput, t tagBuilder) *iam.Policy {
 	// a policy foro the runner instance role so it can write logs to the log group defined below
 	// src: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/iam-identity-based-access-control-cwl.html#w292aac43c15c15c25c13
 
@@ -52,7 +53,7 @@ func (a *Templates) getRunnerCloudWatchLogPolicy(inp *TemplateInput, t tagBuilde
 	}
 }
 
-func (a *Templates) getRunnerCloudWatchAgentConfig(inp *TemplateInput, t tagBuilder) *ssm.Parameter {
+func (a *Templates) getRunnerCloudWatchAgentConfig(inp *stacks.TemplateInput, t tagBuilder) *ssm.Parameter {
 	// NOTE: idk if we're actually using this rn - configure the log group to send logs from `journalctl -f -u nuon-runner` to cloudwatch
 	return &ssm.Parameter{
 		Name:        ptr(fmt.Sprintf("runner-cw-cfg-%s", inp.Runner.ID)),

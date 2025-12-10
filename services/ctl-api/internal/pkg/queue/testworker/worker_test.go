@@ -17,7 +17,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/analytics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/propagator"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/log"

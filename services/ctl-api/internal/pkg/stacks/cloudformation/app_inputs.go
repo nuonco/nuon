@@ -5,6 +5,7 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
 // getInstallInputParameters returns CloudFormation parameters for inputs with source "install_stack"
@@ -45,7 +46,7 @@ func (a *Templates) getInstallInputsParamLabels(appInputs []app.AppInput, inputG
 	return paramLabels
 }
 
-func (t *Templates) getInstallInputGroupParameters(inp *TemplateInput) map[string]map[string]cloudformation.Parameter {
+func (t *Templates) getInstallInputGroupParameters(inp *stacks.TemplateInput) map[string]map[string]cloudformation.Parameter {
 	groupIDAppInputs := make(map[string][]app.AppInput)
 	for _, inputGroup := range inp.AppCfg.InputConfig.AppInputGroups {
 		groupIDAppInputs[inputGroup.ID] = make([]app.AppInput, 0)
@@ -68,7 +69,7 @@ func (t *Templates) getInstallInputGroupParameters(inp *TemplateInput) map[strin
 	return installGroupParameters
 }
 
-func (t *Templates) getInstallInputGroupParamLable(inp *TemplateInput) map[string]map[string]any {
+func (t *Templates) getInstallInputGroupParamLable(inp *stacks.TemplateInput) map[string]map[string]any {
 	groupIDAppInputs := make(map[string][]app.AppInput)
 	for _, inputGroup := range inp.AppCfg.InputConfig.AppInputGroups {
 		groupIDAppInputs[inputGroup.ID] = make([]app.AppInput, 0)
