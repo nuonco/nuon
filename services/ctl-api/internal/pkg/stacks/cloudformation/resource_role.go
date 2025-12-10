@@ -11,13 +11,14 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
 func (a *Templates) roleConditionName(role app.AppAWSIAMRoleConfig) string {
 	return role.CloudFormationStackParamName
 }
 
-func (t *Templates) getRoleConditions(inp *TemplateInput) map[string]any {
+func (t *Templates) getRoleConditions(inp *stacks.TemplateInput) map[string]any {
 	conditions := make(map[string]any, 0)
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
@@ -31,7 +32,7 @@ func (t *Templates) getRoleConditions(inp *TemplateInput) map[string]any {
 	return conditions
 }
 
-func (a *Templates) getRolesParamLabels(inp *TemplateInput) map[string]any {
+func (a *Templates) getRolesParamLabels(inp *stacks.TemplateInput) map[string]any {
 	paramLabels := make(map[string]any, 0)
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
 		paramLabels[role.CloudFormationStackParamName] = role.DisplayName
@@ -112,7 +113,7 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, t tagBuilder)
 	return rsrcs
 }
 
-func (a *Templates) getRolesResources(inp *TemplateInput, t tagBuilder) map[string]cloudformation.Resource {
+func (a *Templates) getRolesResources(inp *stacks.TemplateInput, t tagBuilder) map[string]cloudformation.Resource {
 	rsrcs := make(map[string]cloudformation.Resource, 0)
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
@@ -159,7 +160,7 @@ func (a *Templates) getRoleParameters(role app.AppAWSIAMRoleConfig, defaultValue
 	}
 }
 
-func (a *Templates) getRolesParameters(inp *TemplateInput) map[string]cloudformation.Parameter {
+func (a *Templates) getRolesParameters(inp *stacks.TemplateInput) map[string]cloudformation.Parameter {
 	params := make(map[string]cloudformation.Parameter, 0)
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
