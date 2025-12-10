@@ -7,10 +7,10 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func Render(inputs *cloudformation.TemplateInput) ([]byte, string, error) {
+func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	t, err := template.New("bicep-stack").Parse(tmpl)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to parse bicep template")

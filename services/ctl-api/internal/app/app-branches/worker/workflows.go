@@ -15,7 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/cloudformation"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
 )
 
