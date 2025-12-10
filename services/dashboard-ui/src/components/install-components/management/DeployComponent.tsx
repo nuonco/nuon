@@ -3,113 +3,221 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0'
-import { deployComponents } from '@/actions/installs/deploy-components'
+import { deployComponent } from '@/actions/installs/deploy-component'
 import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Modal } from '@/components/surfaces/Modal'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
+import { useServerActionToast } from '@/hooks/use-server-action-toast'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import type { TComponent } from '@/types'
 import { trackEvent } from '@/lib/segment-analytics'
+import { BuildSelect } from './BuildSelect'
 
-// old stuff
-import { CheckboxInput } from '@/components/old/Input'
-
-export const DeployComponentButton = () => {
-  return <Button></Button>
+export const DeployComponentButton = ({
+  component,
+  currentBuildId,
+  ...props
+}: IButtonAsButton & {
+  component: TComponent
+  currentBuildId?: string
+}) => {
+  const { addModal } = useSurfaces()
+  const modal = <DeployComponentModal component={component} currentBuildId={currentBuildId} />
+  return (
+    <Button
+      onClick={() => {
+        addModal(modal)
+      }}
+      {...props}
+    >
+      {props?.isMenuButton ? null : <Icon variant="CloudArrowUp" />}
+      Deploy component
+      {props?.isMenuButton ? <Icon variant="CloudArrowUp" /> : null}
+    </Button>
+  )
 }
 
-export const DeployComponent = () => {
+export const DeployComponentModal = ({
+  component,
+  currentBuildId,
+  ...props
+}: IModal & {
+  component: TComponent
+  currentBuildId?: string
+}) => {
   const router = useRouter()
   const { user } = useUser()
   const { org } = useOrg()
   const { install } = useInstall()
-  const [isKickedOff, setIsKickedOff] = useState(false)
-  const [planOnly, setPlanOnly] = useState(false)
+  const { removeModal } = useSurfaces()
+
+  const [buildId, setBuildId] = useState<string>()
+  const [deployDependents, setDeployDependents] = useState(false)
+  const [buildSelected, setBuildSelected] = useState(false)
 
   const {
-    data: deploysOk,
+    data: deploy,
     error,
     execute,
-    headers,
     isLoading,
-  } = useServerAction({ action: deployComponents })
+    headers,
+  } = useServerAction({ action: deployComponent })
 
-  useEffect(() => {
-    const kickoff = () => setIsKickedOff(false)
-
-    if (isKickedOff) {
-      const displayNotice = setTimeout(kickoff, 15000)
-
-      return () => {
-        clearTimeout(displayNotice)
+  useServerActionToast({
+    data: deploy,
+    error,
+    errorContent: <Text>Unable to deploy {component.name} component.</Text>,
+    errorHeading: `Component deploy failed`,
+    onSuccess: () => {
+      removeModal(props.modalId)
+      if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org.id}/installs/${install.id}/workflows/${headers['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org.id}/installs/${install.id}/workflows`)
       }
-    }
-  }, [isKickedOff])
+    },
+    successContent: <Text>Deploy for {component.name} was started.</Text>,
+    successHeading: `${component.name} deploy started`,
+  })
+
+  const handleClose = () => {
+    setBuildId(undefined)
+    setBuildSelected(false)
+    removeModal(props.modalId)
+  }
+
+  const handleBuildSelect = (selectedBuildId: string) => {
+    setBuildId(selectedBuildId)
+  }
 
   useEffect(() => {
     if (error) {
       trackEvent({
-        event: 'components_deploy',
+        event: 'component_deploy',
         status: 'error',
         user,
         props: {
-          installId: install.id,
           orgId: org.id,
+          installId: install.id,
+          componentId: component.id,
+          buildId,
           err: error?.error,
         },
       })
     }
 
-    if (deploysOk) {
+    if (deploy) {
       trackEvent({
-        event: 'components_deploy',
+        event: 'component_deploy',
         status: 'ok',
         user,
         props: {
-          installId: install.id,
           orgId: org.id,
+          installId: install.id,
+          componentId: component.id,
+          buildId,
         },
       })
-
-      if (headers?.['x-nuon-install-workflow-id']) {
-        router.push(
-          `/${org.id}/installs/${install.id}/workflows/${headers?.['x-nuon-install-workflow-id']}`
-        )
-      } else {
-        router.push(`/${org.id}/installs/${install.id}/workflows`)
-      }
     }
-  }, [deploysOk, error, headers])
+  }, [deploy, error, org.id, install.id, component.id, buildId, user])
+
+  const isDeployDisabled = !buildId || isLoading
+
+  // Always show the deploy button and footer actions, disabled when no build selected
+  const modalProps = {
+    primaryActionTrigger: {
+      children: isLoading ? (
+        <span className="flex items-center gap-2">
+          <Icon variant="Loading" />
+          Deploying build
+        </span>
+      ) : (
+        <span className="flex items-center gap-2">
+          <Icon variant="CloudArrowUp" />
+          Deploy build
+        </span>
+      ),
+      disabled: isDeployDisabled,
+      onClick: () => {
+        execute({
+          body: {
+            build_id: buildId!,
+            deploy_dependents: deployDependents,
+            plan_only: false,
+          },
+          installId: install.id,
+          orgId: org.id,
+        })
+      },
+      variant: 'primary' as const,
+    },
+    footerActions: (
+      <div className="flex flex-col gap-1 pl-4">
+        <CheckboxInput
+          checked={deployDependents}
+          onChange={(e) => setDeployDependents(e.target.checked)}
+          labelProps={{
+            className: "hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none",
+            labelText: "Deploy dependents",
+            labelTextProps: { variant: "base", weight: "stronger" }
+          }}
+        />
+        <Text variant="subtext" theme="neutral" className="ml-8 leading-none">
+          Deploy all dependents as well as the selected build.
+        </Text>
+      </div>
+    ),
+  }
 
   return (
     <Modal
-      heading="Deploy all components"
-      triggerButton={{
-        children: 'Deploy all components',
-        isMenuButton: true,
-        variant: 'ghost',
-      }}
+      heading={
+        <div className="flex flex-col gap-2">
+          <Text
+            className="inline-flex gap-4 items-center"
+            variant="h3"
+            weight="strong"
+            theme="info"
+          >
+            <Icon variant="CloudArrowUp" size="24" />
+            Deploy {component.name} component
+          </Text>
+          <Text
+            variant="body"
+            className="text-cool-grey-600 dark:text-cool-grey-400"
+          >
+            Select a build to deploy to your install
+          </Text>
+        </div>
+      }
+      size="3/4"
+      className="!max-h-[80vh]"
+      childrenClassName="flex-auto overflow-y-auto"
+      onClose={handleClose}
+      {...modalProps}
+      {...props}
     >
-      <div className="flex flex-col gap-3 mb-6">
+      <div className="flex flex-col gap-6">
         {error?.error ? (
           <Banner theme="error">
-            {error?.error || 'Unable to deploy components'}
+            {error?.error || 'Unable to deploy component'}
           </Banner>
         ) : null}
-        <Text variant="body">
-          Are you sure you want to deploy components? This will deploy all
-          components to this install.
-        </Text>
-        <CheckboxInput
-          name="ack"
-          defaultChecked={planOnly}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setPlanOnly(Boolean(e?.currentTarget?.checked))
-          }}
-          labelClassName="hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 gap-4 max-w-[300px]"
-          labelText={'Plan Only?'}
+
+        <BuildSelect
+          componentId={component.id}
+          selectedBuildId={buildId}
+          currentBuildId={currentBuildId}
+          onSelectBuild={handleBuildSelect}
+          onClose={handleClose}
         />
       </div>
     </Modal>
