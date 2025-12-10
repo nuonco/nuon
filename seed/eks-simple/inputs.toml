@@ -12,7 +12,7 @@ display_name = "Root Domain"
 group        = "dns"
 
 [[group]]
-name = "user inputs"
+name = "types"
 description = "Source testing user inputs"
 display_name = "testing user sources inputszz"
 
@@ -55,3 +55,21 @@ display_name = "JSON Type"
 group        = "types"
 internal = true
 type = "json"
+
+[[input]]
+name = "runner_nested_template_url"
+description  = "runner template url"
+default      = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/vpc/eks/default/stack.yaml"
+sensitive    = false
+display_name = "runner template url"
+group        = "types"
+internal = true
+
+[[input]]
+name = "vpc_nested_template_url"
+description  = "VPC nested template url"
+default      = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.6/vpc/eks/default/stack.yaml"
+sensitive    = false
+display_name = "vpc nested template url"
+group        = "types"
+internal = true
