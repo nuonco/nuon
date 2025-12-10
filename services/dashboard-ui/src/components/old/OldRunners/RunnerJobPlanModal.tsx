@@ -74,7 +74,7 @@ const RunnerJobPlan = ({ runnerJobId }: { runnerJobId: string }) => {
     isLoading,
   } = useQuery<TRunnerJobPlan>({
     // TODO(nnnnat): remove once the endpoint is fixed with the correct content-type
-    path: `/api/${org.id}/runner-jobs/${runnerJobId}/plan`,
+    path: `/api/orgs/${org.id}/runner-jobs/${runnerJobId}/plan`,
   })
   return (
     <div className="flex flex-col gap-4">
