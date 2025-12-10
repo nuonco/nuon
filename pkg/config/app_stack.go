@@ -9,8 +9,8 @@ type StackConfig struct {
 	Name        string `mapstructure:"name" jsonschema:"required" features:"template"`
 	Description string `mapstructure:"description" jsonschema:"required" features:"template"`
 
-	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url"`
-	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url"`
+	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" features:"template"`
+	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" features:"template"`
 }
 
 func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

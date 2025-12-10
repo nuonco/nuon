@@ -6,9 +6,10 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/ec2"
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerLaunchTemplateData(inp *TemplateInput, t tagBuilder) *ec2.LaunchTemplate_LaunchTemplateData {
+func (a *Templates) getRunnerLaunchTemplateData(inp *stacks.TemplateInput, t tagBuilder) *ec2.LaunchTemplate_LaunchTemplateData {
 	return &ec2.LaunchTemplate_LaunchTemplateData{
 		InstanceType: ptr(inp.Settings.AWSInstanceType),
 		ImageId:      ptr(cloudformation.Sub("{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}")),

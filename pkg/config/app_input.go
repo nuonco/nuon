@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/powertoolsdev/mono/pkg/config/source"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type AppInputSource string
@@ -130,7 +131,19 @@ func (a *AppInputConfig) parse() error {
 }
 
 func (a *AppInputConfig) ValidateInputs() error {
+	grps := make([]string, 0)
+	for _, grp := range a.Groups {
+		grps = append(grps, grp.Name)
+	}
+
 	for _, input := range a.Inputs {
+		if input.Group != "" && !generics.SliceContains(input.Group, grps) {
+			return ErrConfig{
+				Description: fmt.Sprintf("input %s specified a group that does not exist %s", input.Name, input.Group),
+				Err:         fmt.Errorf("group %s does not exist", input.Group),
+			}
+		}
+
 		if input.Type == "json" {
 			if input.Default != nil {
 				if _, ok := input.Default.(string); !ok {

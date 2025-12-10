@@ -5,9 +5,10 @@ import (
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerInstanceRoleCloudWatchLogPolicy(inp *TemplateInput, t tagBuilder) *iam.Policy {
+func (a *Templates) getRunnerInstanceRoleCloudWatchLogPolicy(inp *stacks.TemplateInput, t tagBuilder) *iam.Policy {
 	return &iam.Policy{
 		PolicyName: fmt.Sprintf("nuon-install-%s-metadata", inp.Install.ID),
 		Roles: []string{
