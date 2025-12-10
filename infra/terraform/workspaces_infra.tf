@@ -332,8 +332,10 @@ module "infra-terraform" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   pagerduty_service_account_id    = data.tfe_organization_membership.pagerduty.user_id
 
-  variable_sets = ["datadog"]
-  project_id    = tfe_project.infra.id
+  variable_sets                     = ["datadog"]
+  datadog_terraform_run_error_email = var.datadog_terraform_run_error_email
+
+  project_id = tfe_project.infra.id
 }
 
 module "nuon-dns" {
