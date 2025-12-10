@@ -35,12 +35,6 @@ variable "pagerduty_service_account_id" {
   default     = ""
 }
 
-variable "datadog_api_key" {
-  description = "Datadog API key for sending run notifications to Datadog logs"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
 
 variable "vars" {
   description = "variables to set on the workspace"
