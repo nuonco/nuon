@@ -34,8 +34,8 @@ type AppStackConfig struct {
 	Type                    StackType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	Name                    string    `json:"name,omitzero" features:"template" temporaljson:"name,omitzero,omitempty"`
 	Description             string    `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
-	RunnerNestedTemplateURL string    `json:"runner_nested_template_url,omitzero" temporaljson:"runner_nested_template_url,omitzero,omitempty"`
-	VPCNestedTemplateURL    string    `json:"vpc_nested_template_url,omitzero" temporaljson:"vpc_nested_template_url,omitzero,omitempty"`
+	RunnerNestedTemplateURL string    `json:"runner_nested_template_url,omitzero" temporaljson:"runner_nested_template_url,omitzero,omitempty" features:"template"`
+	VPCNestedTemplateURL    string    `json:"vpc_nested_template_url,omitzero" temporaljson:"vpc_nested_template_url,omitzero,omitempty" features:"template"`
 }
 
 func (a *AppStackConfig) Indexes(db *gorm.DB) []migrations.Index {

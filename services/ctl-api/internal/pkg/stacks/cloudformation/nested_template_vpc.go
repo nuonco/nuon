@@ -5,10 +5,11 @@ import (
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
 // VPCNestedStack returns a nested stack template for VPC resources
-func (a *Templates) getVPCNestedStack(inp *TemplateInput, t tagBuilder) *nestedcloudformation.Stack {
+func (a *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) *nestedcloudformation.Stack {
 	return &nestedcloudformation.Stack{
 		Parameters: map[string]string{
 			"VpcCIDR":           cloudformation.Ref("VpcCIDR"),

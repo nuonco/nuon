@@ -3,9 +3,10 @@ package cloudformation
 import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/autoscaling"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerASG(inp *TemplateInput, t tagBuilder) *autoscaling.AutoScalingGroup {
+func (a *Templates) getRunnerASG(inp *stacks.TemplateInput, t tagBuilder) *autoscaling.AutoScalingGroup {
 	return &autoscaling.AutoScalingGroup{
 		VPCZoneIdentifier: []string{},
 		LaunchTemplate: &autoscaling.AutoScalingGroup_LaunchTemplateSpecification{
