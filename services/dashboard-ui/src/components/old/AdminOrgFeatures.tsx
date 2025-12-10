@@ -20,7 +20,7 @@ export const AdminOrgFeatures: FC<{ org: TOrg }> = ({ org }) => {
   const router = useRouter()
 
   useEffect(() => {
-    fetch(`/api/${org?.id}/features`)
+    fetch(`/api/orgs/${org?.id}/features`)
       .then((res) =>
         res.json().then((feats) => {
           setIsLoading(false)
