@@ -5,9 +5,10 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation/ec2"
 
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerSecurityGroup(inp *TemplateInput, t tagBuilder) *ec2.SecurityGroup {
+func (a *Templates) getRunnerSecurityGroup(inp *stacks.TemplateInput, t tagBuilder) *ec2.SecurityGroup {
 	// NOTE: this tag is REQUIRED. the sandboxes use it to identify the runner group which
 	// needs to be added to the eks node sg additional rules. this is a VIP tag. w/out it the
 	// runner won't be allowed to apply heml/kubectl to the cluster.

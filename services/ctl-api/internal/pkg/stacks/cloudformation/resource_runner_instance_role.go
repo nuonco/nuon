@@ -1,8 +1,11 @@
 package cloudformation
 
-import "github.com/awslabs/goformation/v7/cloudformation/iam"
+import (
+	"github.com/awslabs/goformation/v7/cloudformation/iam"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+)
 
-func (a *Templates) getRunnerInstanceRole(inp *TemplateInput, t tagBuilder) *iam.Role {
+func (a *Templates) getRunnerInstanceRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
 	trustPolicy := []map[string]any{
 		{
 			"Effect": "Allow",

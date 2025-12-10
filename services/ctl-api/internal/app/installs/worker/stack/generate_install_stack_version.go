@@ -10,9 +10,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/bicep"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cloudformation"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/bicep"
 	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -70,6 +70,11 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render secrets config")
 	}
+
+	if stackErr := render.RenderStruct(&cfg.StackConfig, stateData); stackErr != nil {
+		return errors.Wrap(stackErr, "unable to render stack config")
+	}
+
 	// update cf stack param name post rendering variables
 	for i := range cfg.SecretsConfig.Secrets {
 		secret := &cfg.SecretsConfig.Secrets[i]
@@ -118,28 +123,32 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	}
 
 	// TODO(ja): Ignoring this for Azure. Should probably update.
-	phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
-	if err != nil {
-		return errors.Wrap(err, "unable to get phone home script")
-	}
 
 	// AWS and Azure diverge here, while generating the stack template file.
 
 	// Generate the stack template.
 	tmplByts := []byte{}
 	checksum := ""
-	inp := &cloudformation.TemplateInput{
+	inp := &stacks.TemplateInput{
 		Install:                    install,
 		CloudFormationStackVersion: stackVersion,
 		InstallState:               installState,
 		AppCfg:                     cfg,
 		Runner:                     runner,
-		PhonehomeScript:            string(phoneHomeScript),
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
 	}
+
 	switch cfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
+		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
+		if err != nil {
+			return errors.Wrap(err, "unable to get phone home script")
+		}
+		inp.PhonehomeScript = string(phoneHomeScript)
+		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
+		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+
 		// NOTE(fd): we set the runner init script here dynamically in order to have it readily available on the input
 		// the motivation is that the logic for the "decision" on what the runner init script should be belongs firmly
 		// in this workflow, NOT in the templating code

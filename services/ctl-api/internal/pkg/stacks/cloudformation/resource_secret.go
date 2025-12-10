@@ -7,9 +7,10 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation/secretsmanager"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getSecretsParamLabels(inp *TemplateInput) map[string]any {
+func (a *Templates) getSecretsParamLabels(inp *stacks.TemplateInput) map[string]any {
 	paramLabels := make(map[string]any, 0)
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
 		if secret.AutoGenerate {
@@ -22,7 +23,7 @@ func (a *Templates) getSecretsParamLabels(inp *TemplateInput) map[string]any {
 	return paramLabels
 }
 
-func (a *Templates) getSecretsParameters(inp *TemplateInput) map[string]cloudformation.Parameter {
+func (a *Templates) getSecretsParameters(inp *stacks.TemplateInput) map[string]cloudformation.Parameter {
 	params := make(map[string]cloudformation.Parameter, 0)
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
@@ -48,7 +49,7 @@ func (a *Templates) getSecretsParameters(inp *TemplateInput) map[string]cloudfor
 	return params
 }
 
-func (a *Templates) getSecretsResources(inp *TemplateInput, t tagBuilder) map[string]cloudformation.Resource {
+func (a *Templates) getSecretsResources(inp *stacks.TemplateInput, t tagBuilder) map[string]cloudformation.Resource {
 	// NOTE: secrets names are "{{instal.id}}/{{secret.name}}" to guarantee uniqueness
 	rsrcs := make(map[string]cloudformation.Resource, 0)
 
