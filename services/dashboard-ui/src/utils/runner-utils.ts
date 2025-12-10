@@ -17,6 +17,7 @@ export type TJobGroup =
   | 'deploy'
   | 'actions'
   | 'operations'
+  | 'management'
 
 export function getJobHref(job: TRunnerJob): string {
   const { group, metadata, org_id } = job ?? {}
@@ -48,6 +49,8 @@ export function getJobName(job: TRunnerJob): string {
       return metadata?.action_workflow_name ?? 'Unknown'
     case 'operations':
       return type ?? 'Unknown'
+    case 'management':
+      return type === 'mng-shut-down' ? 'Runner shutdown' : 'Instance shutdown'
     default:
       return 'Unknown'
   }
@@ -61,6 +64,7 @@ export function getJobExecutionStatus(job: TRunnerJob): string {
     deploy: getDeployJobExecutionStatus,
     actions: getActionsJobExecutionStatus,
     operations: getOperationsJobExecutionStatus,
+    management: getManagementJobExecutionStatus,
   }
   return statusHandlers[job.group]?.(job) ?? 'Unknown'
 }
@@ -126,6 +130,16 @@ const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
     available: 'operation starting soon',
     cancelled: 'operation canceled',
   },
+  management: {
+    finished: 'completed successfully',
+    failed: 'failed',
+    'timed-out': 'timed out',
+    queued: 'queued',
+    'in-progress': 'is in progress',
+    'not-attempted': 'not attempted',
+    available: 'starting soon',
+    cancelled: 'canceled',
+  },
 }
 
 function getBuildJobExecutionStatus(job: TRunnerJob) {
@@ -145,4 +159,7 @@ function getActionsJobExecutionStatus(job: TRunnerJob) {
 }
 function getOperationsJobExecutionStatus(job: TRunnerJob) {
   return statusMessagesByGroup.operations[job.status as TJobStatus] ?? 'Unknown'
+}
+function getManagementJobExecutionStatus(job: TRunnerJob) {
+  return statusMessagesByGroup.management[job.status as TJobStatus] ?? 'Unknown'
 }
