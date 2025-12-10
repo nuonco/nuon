@@ -35,6 +35,13 @@ variable "pagerduty_service_account_id" {
   default     = ""
 }
 
+variable "datadog_api_key" {
+  description = "Datadog API key for sending run notifications to Datadog logs"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "datadog_terraform_run_error_email" {
   description = "Datadog email for sending terraform run error alerts."
   type        = string
