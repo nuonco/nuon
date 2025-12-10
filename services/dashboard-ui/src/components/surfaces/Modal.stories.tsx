@@ -5,6 +5,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { Card } from '@/components/common/Card'
+import { Icon } from '@/components/common/Icon'
 
 // Simple modal demo component
 const SimpleModalDemo = () => {
@@ -347,6 +348,133 @@ const DataOperationsDemo = () => {
   )
 }
 
+// Footer actions demo component
+const FooterActionsDemo = () => {
+  const { addModal } = useSurfaces()
+
+  const openModalWithInfo = () => {
+    addModal(
+      <Modal 
+        heading="Deploy Component"
+        primaryActionTrigger={{
+          children: 'Deploy Now',
+          onClick: () => alert('Component deployed successfully!'),
+        }}
+        footerActions={
+          <div className="flex items-center gap-2">
+            <Icon variant="Info" size={16} />
+            <Text variant="subtext" theme="neutral">
+              This will take approximately 5 minutes
+            </Text>
+          </div>
+        }
+      >
+        <div className="p-6">
+          <Text className="mb-4">
+            Select the build you want to deploy to your environment.
+          </Text>
+          <div className="space-y-3">
+            <div className="p-3 border rounded">
+              <Text variant="base" weight="strong">Build #123</Text>
+              <Text variant="subtext" theme="neutral">Latest build from main branch</Text>
+            </div>
+            <div className="p-3 border rounded opacity-50">
+              <Text variant="base" weight="strong">Build #122</Text>
+              <Text variant="subtext" theme="neutral">Previous stable build</Text>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
+  const openModalWithActions = () => {
+    addModal(
+      <Modal 
+        heading="Save Draft"
+        primaryActionTrigger={{
+          children: 'Save & Continue',
+          onClick: () => alert('Draft saved successfully!'),
+        }}
+        footerActions={
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => alert('Auto-save enabled!')}
+            >
+              <Icon variant="Lightning" size={16} />
+              Enable Auto-save
+            </Button>
+            <div className="text-sm text-gray-500">|</div>
+            <Text variant="subtext" theme="neutral">
+              Last saved: 2 minutes ago
+            </Text>
+          </div>
+        }
+      >
+        <div className="p-6">
+          <Text className="mb-4">
+            Your document has unsaved changes. Save as draft to continue later?
+          </Text>
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <Text variant="subtext" className="text-yellow-800">
+              You have 3 unsaved changes that will be preserved in the draft.
+            </Text>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
+  const openModalWithStatus = () => {
+    addModal(
+      <Modal 
+        heading="Process File"
+        primaryActionTrigger={{
+          children: 'Start Processing',
+          onClick: () => alert('File processing started!'),
+        }}
+        footerActions={
+          <div className="flex items-center gap-2 text-green-600">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <Text variant="subtext">
+              Ready to process • 2.4MB file size
+            </Text>
+          </div>
+        }
+      >
+        <div className="p-6">
+          <Text className="mb-4">
+            Ready to process the uploaded file. This will analyze the content and generate a report.
+          </Text>
+          <div className="space-y-2 text-sm text-gray-600">
+            <div className="flex justify-between">
+              <span>File name:</span>
+              <span className="font-mono">document.pdf</span>
+            </div>
+            <div className="flex justify-between">
+              <span>File size:</span>
+              <span>2.4 MB</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Estimated time:</span>
+              <span>~30 seconds</span>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      <Button onClick={openModalWithInfo}>Deploy Modal</Button>
+      <Button onClick={openModalWithActions}>Save Draft Modal</Button>
+      <Button onClick={openModalWithStatus}>Process File Modal</Button>
+    </div>
+  )
+}
+
 
 
 
@@ -525,6 +653,85 @@ function DeleteButton({ itemName }) {
           <li>Keep modal content focused and avoid overwhelming users with too much information</li>
           <li>Ensure proper keyboard navigation and screen reader accessibility</li>
         </ul>
+      </div>
+    </div>
+  </SurfacesProvider>
+)
+
+export const FooterActions = () => (
+  <SurfacesProvider>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Footer Actions</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          The <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">footerActions</code> prop
+          allows you to add custom content to the left side of the modal footer, before the Cancel/Close and
+          primary action buttons. This is useful for displaying contextual information, additional actions,
+          or status indicators.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-sm font-medium">Footer Actions Examples</h4>
+        <div className="p-4 border rounded-lg">
+          <FooterActionsDemo />
+        </div>
+        <Text variant="subtext" theme="neutral">
+          Try these examples to see different types of footer actions in practice
+        </Text>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-sm font-medium">Use Cases</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="p-3 border rounded-lg">
+            <strong className="text-blue-600 dark:text-blue-400">Contextual Info:</strong>
+            <span className="block text-gray-600 dark:text-gray-400 mt-1">
+              Show processing time, file size, or other relevant details
+            </span>
+          </div>
+          <div className="p-3 border rounded-lg">
+            <strong className="text-green-600 dark:text-green-400">Additional Actions:</strong>
+            <span className="block text-gray-600 dark:text-gray-400 mt-1">
+              Secondary buttons like "Enable auto-save" or quick toggles
+            </span>
+          </div>
+          <div className="p-3 border rounded-lg">
+            <strong className="text-purple-600 dark:text-purple-400">Status Indicators:</strong>
+            <span className="block text-gray-600 dark:text-gray-400 mt-1">
+              Connection status, validation state, or process readiness
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-sm font-medium">Implementation Example</h4>
+        <div className="p-4 border rounded-lg">
+          <Card>
+            <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded text-sm overflow-x-auto">
+              {`<Modal 
+  heading="Deploy Component"
+  primaryActionTrigger={{
+    children: 'Deploy Now',
+    onClick: handleDeploy
+  }}
+  footerActions={
+    <div className="flex items-center gap-2">
+      <Icon variant="Info" size={16} />
+      <Text variant="subtext" theme="neutral">
+        This will take approximately 5 minutes
+      </Text>
+    </div>
+  }
+>
+  <div className="p-6">
+    <p>Select the build you want to deploy...</p>
+  </div>
+</Modal>`}
+            </pre>
+          </Card>
+        </div>
       </div>
     </div>
   </SurfacesProvider>

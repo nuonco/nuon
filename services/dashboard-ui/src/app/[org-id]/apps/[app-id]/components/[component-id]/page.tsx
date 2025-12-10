@@ -8,6 +8,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
+import { BuildComponentButton } from '@/components/components/management/BuildComponent'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getAppById, getComponentById, getOrgById } from '@/lib'
@@ -16,7 +17,7 @@ import { Builds, BuildsSkeleton, BuildsError } from './builds'
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
-  BuildComponentButton,
+  BuildComponentButton as OldBuildComponentButton,
   DashboardContent,
   ErrorFallback,
   Loading,
@@ -105,7 +106,7 @@ export default async function AppComponent({ params, searchParams }) {
         </HeadingGroup>
 
         <div>
-          <BuildComponentButton component={component} />
+          <BuildComponentButton component={component} variant="primary" />
         </div>
       </div>
 
@@ -173,7 +174,7 @@ export default async function AppComponent({ params, searchParams }) {
       ]}
       heading={component?.name}
       headingUnderline={componentId}
-      statues={<BuildComponentButton component={component} />}
+      statues={<OldBuildComponentButton component={component} />}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <div className="divide-y flex flex-col md:col-span-8">
