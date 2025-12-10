@@ -236,7 +236,7 @@ const LoadRunnerCard: FC<{ runnerId: string; installId: string }> = ({
 
   const fetchRunner = () => {
     setIsLoading(true)
-    fetch(`/api/${org.id}/runners/${runnerId}`)
+    fetch(`/api/orgs/${org.id}/runners/${runnerId}`)
       .then((res) =>
         res.json().then((r) => {
           setIsLoading(false)
@@ -278,7 +278,7 @@ const LoadRunnerHeartbeat: FC<{ runnerId: string }> = ({ runnerId }) => {
   const [error, setError] = useState<string>()
 
   const fetchHeartbeat = () => {
-    fetch(`/api/${org.id}/runners/${runnerId}/latest-heart-beat`)
+    fetch(`/api/orgs/${org.id}/runners/${runnerId}/latest-heart-beat`)
       .then((res) =>
         res.json().then((rnr) => {
           setIsLoading(false)
@@ -364,7 +364,7 @@ const LoadRunnerJob: FC<{
 
   const fetchRecentJob = () => {
     fetch(
-      `/api/${org.id}/runners/${runnerId}/jobs${params ? '?' + params : params}`
+      `/api/orgs/${org.id}/runners/${runnerId}/jobs${params ? '?' + params : params}`
     )
       .then((res) =>
         res.json().then((jbs) => {
