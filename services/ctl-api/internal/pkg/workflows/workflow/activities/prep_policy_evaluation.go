@@ -23,6 +23,7 @@ type PrepPolicyEvaluationRequest struct {
 type PolicyViolation struct {
 	PolicyID string `json:"policy_id" temporaljson:"policy_id,omitempty"`
 	Message  string `json:"message" temporaljson:"message,omitempty"`
+	Severity string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
 }
 
 type PolicyToEvaluate struct {

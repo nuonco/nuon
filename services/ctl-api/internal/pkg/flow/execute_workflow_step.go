@@ -190,26 +190,52 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	if len(violations) > 0 {
+		var denyViolations []activities.PolicyViolation
+		var warnViolations []activities.PolicyViolation
+		for _, v := range violations {
+			if v.Severity == "deny" {
+				denyViolations = append(denyViolations, v)
+			} else {
+				warnViolations = append(warnViolations, v)
+			}
+		}
+
 		l.Warn("policy violations found",
 			zap.String("step_id", step.ID),
 			zap.String("step_target_id", step.StepTargetID),
 			zap.String("step_target_type", step.StepTargetType),
 			zap.String("workflow_id", flw.ID),
-			zap.Int("violation_count", len(violations)))
-		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status: app.StatusError,
-				Metadata: map[string]any{
-					"reason":            "Policy violations found",
-					"policy_violations": violations,
+			zap.Int("deny_count", len(denyViolations)),
+			zap.Int("warn_count", len(warnViolations)))
+
+		if len(denyViolations) > 0 {
+			if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status: app.StatusError,
+					Metadata: map[string]any{
+						"reason":            "Policy violations found",
+						"policy_violations": violations,
+					},
+					StatusHumanDescription: "Policy check failed",
 				},
-				StatusHumanDescription: "Policy check failed",
-			},
-		}); updateErr != nil {
-			return false, errors.Wrap(updateErr, "unable to mark step as error")
+			}); updateErr != nil {
+				return false, errors.Wrap(updateErr, "unable to mark step as error")
+			}
+			return false, fmt.Errorf("policy violations found: %d deny violations", len(denyViolations))
 		}
-		return false, fmt.Errorf("policy violations found: %d violations", len(violations))
+
+		if len(warnViolations) > 0 {
+			if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status:   step.Status.Status,
+					Metadata: map[string]any{"policy_violations": violations},
+				},
+			}); updateErr != nil {
+				l.Warn("failed to update step with policy warnings", zap.Error(updateErr))
+			}
+		}
 	}
 
 	l.Debug("policy check completed successfully",

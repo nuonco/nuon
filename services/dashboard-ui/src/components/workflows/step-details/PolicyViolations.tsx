@@ -5,6 +5,7 @@ import type { TWorkflowStep } from '@/types'
 export interface PolicyViolation {
   policy_id: string
   message: string
+  severity: 'deny' | 'warn'
 }
 
 interface IPolicyViolations {
@@ -20,20 +21,47 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
     return null
   }
 
+  const denyViolations = violations.filter((v) => v.severity === 'deny')
+  const warnViolations = violations.filter((v) => v.severity === 'warn')
+
   return (
-    <Banner theme="error">
-      <div className="flex flex-col gap-2 w-full">
-        <Text weight="strong">Policy Violations ({violations.length})</Text>
-        <ul className="list-disc list-inside space-y-1">
-          {violations.map((violation, index) => (
-            <li key={`${violation.policy_id}-${index}`}>
-              <Text as="span" variant="subtext">
-                {violation.message || 'Policy check failed'}
-              </Text>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Banner>
+    <div className="flex flex-col gap-2">
+      {denyViolations.length > 0 && (
+        <Banner theme="error">
+          <div className="flex flex-col gap-2 w-full">
+            <Text weight="strong">
+              Policy Violations ({denyViolations.length})
+            </Text>
+            <ul className="list-disc list-inside space-y-1">
+              {denyViolations.map((violation, index) => (
+                <li key={`deny-${violation.policy_id}-${index}`}>
+                  <Text as="span" variant="subtext">
+                    {violation.message || 'Policy check failed'}
+                  </Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Banner>
+      )}
+      {warnViolations.length > 0 && (
+        <Banner theme="warning">
+          <div className="flex flex-col gap-2 w-full">
+            <Text weight="strong">
+              Policy Warnings ({warnViolations.length})
+            </Text>
+            <ul className="list-disc list-inside space-y-1">
+              {warnViolations.map((violation, index) => (
+                <li key={`warn-${violation.policy_id}-${index}`}>
+                  <Text as="span" variant="subtext">
+                    {violation.message || 'Policy warning'}
+                  </Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Banner>
+      )}
+    </div>
   )
 }

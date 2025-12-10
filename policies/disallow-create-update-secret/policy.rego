@@ -1,5 +1,5 @@
-package policy
+package nuon
 
-violation = [ {"msg": "Creating or Updating Secrets is not allowed"} |
-    input.review.object.kind == "Secret"
+deny = [{"msg": "Creating or Updating Secrets is not allowed"} |
+	input.review.object.kind == "Secret"
 ]

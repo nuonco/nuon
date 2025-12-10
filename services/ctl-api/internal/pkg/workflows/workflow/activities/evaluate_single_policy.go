@@ -39,57 +39,91 @@ func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSing
 
 	l.Debug("input JSON parsed successfully")
 
-	query, err := rego.New(
-		rego.Query("data.policy.violation"),
-		rego.Module("policy.rego", req.Contents),
-	).PrepareForEval(ctx)
-	if err != nil {
-		l.Error("unable to prepare OPA query", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to prepare OPA query")
-	}
-
-	l.Debug("OPA query prepared successfully")
-
-	results, err := query.Eval(ctx, rego.EvalInput(input))
-	if err != nil {
-		l.Error("unable to evaluate OPA policy", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to evaluate OPA policy")
-	}
-
-	l.Debug("OPA policy evaluated", zap.Int("result_count", len(results)))
-
 	var violations []PolicyViolation
-	for _, result := range results {
-		for _, expr := range result.Expressions {
-			denyResults, ok := expr.Value.([]interface{})
-			if !ok {
-				l.Debug("expression value is not a slice, skipping")
-				continue
-			}
-			for _, deny := range denyResults {
-				violation := PolicyViolation{
-					PolicyID: req.PolicyID,
-				}
 
-				switch v := deny.(type) {
-				case string:
-					violation.Message = v
-				case map[string]interface{}:
-					if msg, ok := v["message"].(string); ok {
-						violation.Message = msg
-					} else if msg, ok := v["msg"].(string); ok {
-						violation.Message = msg
-					}
-				}
+	denyViolations, err := a.evaluateRule(ctx, l, req.Contents, input, "data.nuon.deny", "deny")
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to evaluate deny rules")
+	}
+	violations = append(violations, denyViolations...)
 
-				violations = append(violations, violation)
-			}
-		}
+	warnViolations, err := a.evaluateRule(ctx, l, req.Contents, input, "data.nuon.warn", "warn")
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to evaluate warn rules")
+	}
+	violations = append(violations, warnViolations...)
+
+	for i := range violations {
+		violations[i].PolicyID = req.PolicyID
 	}
 
-	l.Info("policy evaluation complete", zap.Int("violations_count", len(violations)))
+	l.Info("policy evaluation complete",
+		zap.Int("deny_count", len(denyViolations)),
+		zap.Int("warn_count", len(warnViolations)),
+	)
 
 	return &EvaluateSinglePolicyResult{
 		Violations: violations,
 	}, nil
+}
+
+func (a *Activities) evaluateRule(
+	ctx context.Context,
+	l *zap.Logger,
+	contents string,
+	input interface{},
+	queryStr string,
+	severity string,
+) ([]PolicyViolation, error) {
+	l.Debug("preparing OPA query", zap.String("query", queryStr))
+
+	query, err := rego.New(
+		rego.Query(queryStr),
+		rego.Module("policy.rego", contents),
+	).PrepareForEval(ctx)
+	if err != nil {
+		l.Error("unable to prepare OPA query", zap.String("query", queryStr), zap.Error(err))
+		return nil, errors.Wrapf(err, "unable to prepare OPA query for %s", queryStr)
+	}
+
+	l.Debug("OPA query prepared successfully", zap.String("query", queryStr))
+
+	results, err := query.Eval(ctx, rego.EvalInput(input))
+	if err != nil {
+		l.Error("unable to evaluate OPA policy", zap.String("query", queryStr), zap.Error(err))
+		return nil, errors.Wrapf(err, "unable to evaluate OPA policy for %s", queryStr)
+	}
+
+	l.Debug("OPA policy evaluated", zap.String("query", queryStr), zap.Int("result_count", len(results)))
+
+	var violations []PolicyViolation
+	for _, result := range results {
+		for _, expr := range result.Expressions {
+			ruleResults, ok := expr.Value.([]interface{})
+			if !ok {
+				l.Debug("expression value is not a slice, skipping", zap.String("query", queryStr))
+				continue
+			}
+			for _, item := range ruleResults {
+				violation := PolicyViolation{
+					Severity: severity,
+				}
+
+				switch v := item.(type) {
+				case string:
+					violation.Message = v
+				case map[string]interface{}:
+					if msg, ok := v["msg"].(string); ok {
+						violation.Message = msg
+					}
+				}
+
+				if violation.Message != "" {
+					violations = append(violations, violation)
+				}
+			}
+		}
+	}
+
+	return violations, nil
 }

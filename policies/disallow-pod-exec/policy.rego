@@ -1,5 +1,5 @@
-package policy
+package nuon
 
-violation = [{"msg": "Exec into pods is not allowed"} |
+deny = [{"msg": "Exec into pods is not allowed"} |
 	input.review.kind.kind == "PodExecOptions"
 ]
