@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode } from 'react'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
@@ -22,7 +22,7 @@ export const Checkbox = ({ className, ...props }: ICheckbox) => {
 
 export interface ICheckboxInput extends ICheckbox {
   labelProps: Omit<ILabel, 'children'> & {
-    labelText: string
+    labelText: string | ReactNode
     labelTextProps?: Omit<IText, 'children'>
   }
 }

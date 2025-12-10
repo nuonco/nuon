@@ -13,6 +13,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCardSkeleton'
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
 import { RunnerRecentActivitySkeleton } from '@/components/runners/RunnerRecentActivitySkeleton'
+import { ManagementDropdown } from "@/components/runners/management/ManagementDropdown"
 import { getRunnerById, getRunnerSettingsById, getOrgById } from '@/lib'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerError } from './runner-details'
@@ -90,7 +91,7 @@ export default async function OrgRunner({ params, searchParams }) {
 
         <div className="flex items-center gap-4">
           <TemporalLink namespace="runners" eventLoopId={runner?.id} />
-          <ManageRunnerDropdown runner={runner} settings={settings} />
+          <ManagementDropdown runner={runner} settings={settings} />
         </div>
       </PageHeader>
       <PageContent>
