@@ -17,3 +17,13 @@ resource "tfe_notification_configuration" "pagerduty-incidents" {
   email_user_ids   = [var.pagerduty_service_account_id]
   workspace_id     = tfe_workspace.workspace.id
 }
+
+resource "tfe_notification_configuration" "datadog-terraform-run-errors" {
+  count            = var.datadog_terraform_run_error_email != "" ? 1 : 0
+  name             = "${var.name}-datadog-terraform-run-errors"
+  enabled          = true
+  destination_type = "email"
+  triggers         = ["run:errored"]
+  email_addresses  = [var.datadog_terraform_run_error_email]
+  workspace_id     = tfe_workspace.workspace.id
+}
