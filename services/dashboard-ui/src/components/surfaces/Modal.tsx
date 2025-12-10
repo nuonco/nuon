@@ -17,6 +17,7 @@ export interface IModal
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'tabIndex'> {
   actions?: React.ReactNode
   childrenClassName?: string
+  footerActions?: React.ReactNode
   heading?: React.ReactNode
   isVisible?: boolean
   modalId?: string
@@ -32,6 +33,7 @@ export const ModalBase = ({
   children,
   childrenClassName,
   className,
+  footerActions,
   heading,
   isVisible = false,
   modalId,
@@ -114,11 +116,16 @@ export const ModalBase = ({
           >
             {children}
           </div>
-          <div className="py-6 px-4 border-t flex items-center gap-4 justify-end">
-            <Button type="button" onClick={handleClose}>
-              {primaryActionTrigger ? 'Cancel' : 'Close'}
-            </Button>
-            {primaryActionTrigger ? <Button {...primaryActionTrigger} /> : null}
+          <div className="py-6 px-4 border-t flex items-center gap-4 justify-between">
+            <div className="flex items-center gap-4">
+              {footerActions}
+            </div>
+            <div className="flex items-center gap-4">
+              <Button type="button" onClick={handleClose}>
+                {primaryActionTrigger ? 'Cancel' : 'Close'}
+              </Button>
+              {primaryActionTrigger ? <Button {...primaryActionTrigger} /> : null}
+            </div>
           </div>
         </div>
       </TransitionDiv>
