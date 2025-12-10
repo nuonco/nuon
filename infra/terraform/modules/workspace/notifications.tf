@@ -27,12 +27,3 @@ resource "tfe_notification_configuration" "datadog-terraform-run-errors" {
   email_addresses  = [var.datadog_terraform_run_error_email]
   workspace_id     = tfe_workspace.workspace.id
 }
-
-resource "tfe_notification_configuration" "datadog-oncall" {
-  name             = "${var.name}-datadog-oncall-alerts"
-  enabled          = true
-  destination_type = "generic"
-  url              = "https://http-intake.logs.us5.datadoghq.com/v1/input?dd-api-key=${var.datadog_api_key}&ddsource=terraform-cloud&service=${var.name}&ddtags=env:production"
-  triggers         = ["run:errored"]
-  workspace_id     = tfe_workspace.workspace.id
-}
