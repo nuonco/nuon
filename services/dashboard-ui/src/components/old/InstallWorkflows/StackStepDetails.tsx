@@ -29,7 +29,7 @@ export const StackStep = ({
     error,
   } = usePolling<TInstallStack>({
     initIsLoading: true,
-    path: `/api/${org.id}/installs/${step?.owner_id}/stack`,
+    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/stack`,
     pollInterval,
     shouldPoll,
   })
@@ -67,7 +67,7 @@ const GenerateStack = ({ stack }: { stack: TInstallStack }) => {
     error,
   } = useQuery<TAppStackConfig>({
     dependencies: [stack],
-    path: `/api/${org.id}/apps/${install?.app_id}/configs/${
+    path: `/api/orgs/${org.id}/apps/${install?.app_id}/configs/${
       stack?.versions?.at(0).app_config_id
     }`,
   })
