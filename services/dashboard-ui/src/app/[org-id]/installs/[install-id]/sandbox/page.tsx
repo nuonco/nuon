@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { ManagementDropdown } from "@/components/sandbox/management/ManagementDropdown"
 import { getInstallById, getInstallDriftedObjects, getOrgById } from '@/lib'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
@@ -151,7 +152,7 @@ export default async function InstallSandboxPage({
         <div className="divide-y flex flex-col md:col-span-4">
           <Section heading="Sandbox controls" className="flex-initial">
             <div className="flex items-center gap-4 flex-wrap">
-              <SandboxManagementDropdown />
+              <ManagementDropdown />
             </div>
           </Section>
           <Section heading="Sandbox history">

@@ -22,7 +22,10 @@ export const BackendModal: FC<IBackendModal> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false)
 
-  const backendBlock = `
+  const getBackendBlock = () => {
+    if (typeof window === 'undefined') return ''
+    
+    return `
 terraform {
   backend "http" {
     lock_method    = "POST"
@@ -33,6 +36,7 @@ terraform {
   }
 }
 `
+  }
 
   return (
     <>
@@ -63,7 +67,7 @@ terraform {
                 </Button>
                 <Button
                   onClick={() => {
-                    createFileDownload(backendBlock, 'nuon_backend.tf')
+                    createFileDownload(getBackendBlock(), 'nuon_backend.tf')
                   }}
                   className="text-base flex items-center gap-1"
                   variant="primary"
