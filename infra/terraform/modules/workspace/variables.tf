@@ -35,12 +35,6 @@ variable "pagerduty_service_account_id" {
   default     = ""
 }
 
-variable "datadog_terraform_run_error_email" {
-  description = "Datadog email for sending terraform run error alerts."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
 
 variable "vars" {
   description = "variables to set on the workspace"

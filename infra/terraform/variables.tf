@@ -8,8 +8,3 @@ variable "pagerduty_email_address" {
   type        = string
 }
 
-variable "datadog_terraform_run_error_email" {
-  description = "Email address to notify on Terraform run errors in Datadog."
-  type        = string
-}
-
