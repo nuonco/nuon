@@ -45,7 +45,7 @@ export const LogsProvider: FC<ILogsProvider> = ({
 
   const fetchLogs = () => {
     setIsLoading(true)
-    fetch(`/api/${logStream?.org_id}/log-streams/${logStream?.id}/logs`, {
+    fetch(`/api/orgs/${logStream?.org_id}/log-streams/${logStream?.id}/logs`, {
       headers: { 'X-NUON-API-Offset': nextPage },
     })
       .then((res) => {
