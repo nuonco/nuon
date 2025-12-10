@@ -29,8 +29,8 @@
             "pages": [
               "cli",
 	      "install",
-              "configuration-files",
               "dashboard-ui",
+              "configuration-files",
               "nuon-api",
               "sdks",
               {
