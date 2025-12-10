@@ -32,7 +32,7 @@ export const SandboxRunsTimeline = ({
   })
   const { data: runs } = usePolling<TSandboxRun[]>({
     dependencies: [queryParams],
-    path: `/api/orgs/${org?.id}/installs/${install.id}/runs${queryParams}`,
+    path: `/api/orgs/${org?.id}/installs/${install.id}/sandbox/runs${queryParams}`,
     shouldPoll,
     initData: initRuns,
     pollInterval,
