@@ -8,6 +8,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
+import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstallById, getInstallComponentById, getOrgById } from '@/lib'
@@ -134,10 +135,8 @@ export default async function InstallComponentPage({
             namespace="installs"
             eventLoopId={`${installId}-component-${installComponent?.id}`}
           />
-          <InstallComponentManagementDropdown
-            componentId={installComponent?.component_id}
-            componentName={installComponent?.component?.name}
-            componentType={installComponent?.component?.type}
+          <ManagementDropdown
+            component={installComponent?.component}
             currentBuildId={installComponent?.install_deploys?.at(0)?.build_id}
           />
         </div>
