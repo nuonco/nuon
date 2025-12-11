@@ -87,7 +87,7 @@ export const ApprovalStep: FC<IApprovalStep> = ({
 
   const fetchPlan = () => {
     fetch(
-      `/api/orgs/${orgId}/install-workflows/${workflowId}/steps/${step.id}/approvals/${step?.approval?.id}/contents`
+      `/api/orgs/${orgId}/workflows/${workflowId}/steps/${step.id}/approvals/${step?.approval?.id}/contents`
     )
       .then((r) => {
         setIsPlanLoading(false)
