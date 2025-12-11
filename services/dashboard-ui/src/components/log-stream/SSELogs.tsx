@@ -7,12 +7,12 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { Time } from '@/components/common/Time'
-import { LogSeverity } from './LogSeverity'
+import { useLogViewer, useUnifiedLogData } from '@/hooks/use-logs-temp'
 import type { TOTELLog } from '@/types'
 import { cn } from '@/utils/classnames'
+import { LogSeverity } from './LogSeverity'
 import { LogLineSkeleton } from './LogLine'
 import { LogFilters } from './log-filters/LogFilters'
-import { useLogViewer, useUnifiedLogData } from '@/hooks/use-logs-temp'
 
 export const LogsSkeleton = () => {
   return Array.from({ length: 20 }).map((_, idx) => (
@@ -21,7 +21,11 @@ export const LogsSkeleton = () => {
 }
 
 // demo sse logs
-export const SSELogs = () => {
+export const SSELogs = ({
+  filterClassName = '-top-2',
+}: {
+  filterClassName?: string
+}) => {
   const { loadMore, hasMore, isLoading, isStreamOpen, connectionState } =
     useUnifiedLogData()
   const { filteredLogs, filters } = useLogViewer()
@@ -65,7 +69,9 @@ export const SSELogs = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col flex-auto">
-        <div className="sticky bg-background border-b z-10 -top-2">
+        <div
+          className={cn('sticky bg-background border-b z-10', filterClassName)}
+        >
           <LogFilters filters={filters} />
           <div className="grid grid-cols-[3rem_15rem_3rem_1fr] gap-6 py-2">
             <Text variant="subtext" weight="strong" theme="neutral">
