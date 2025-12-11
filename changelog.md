@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a Promotion. There is currently no intention
 to publish this externally.
 
+## v0.19.716
+
+Patch dashboard for Denial of Service: CVE-2025-55184 & Source Code Exposure: CVE-2025-55183
+
 ## v0.19.715
 
 Resyncing version numbers after React2Shell mitigation.
