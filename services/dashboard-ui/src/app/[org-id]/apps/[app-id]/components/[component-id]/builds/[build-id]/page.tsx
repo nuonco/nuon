@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { BuildHeader } from '@/components/builds/BuildHeader'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -8,6 +9,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { BuildProvider } from '@/providers/build-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
   getAppById,
@@ -17,6 +19,7 @@ import {
 } from '@/lib'
 import { ComponentConfig } from './config'
 import { Logs, LogsError, LogsSkeleton } from './logs'
+import { RefreshLogStream } from './refresh-log-stream'
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -72,7 +75,7 @@ export default async function AppComponentBuildPage({ params }) {
 
   const containerId = 'component-build-page'
   return org?.features?.['stratus-layout'] ? (
-    <PageSection className="!p-0 !gap-0" id={containerId} isScrollable>
+    <>
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -101,39 +104,12 @@ export default async function AppComponentBuildPage({ params }) {
           },
         ]}
       />
-      {/* old page layout */}
-      <div className="p-6 border-b flex justify-between">
-        <HeadingGroup>
-          <BackLink className="mb-6" />
-          <span className="flex items-center gap-2">
-            <ComponentConfigType configType={component?.type} isIconOnly />
-            <Text variant="base" weight="strong">
-              {build?.component_name}
-            </Text>
-          </span>
-          <ID>{buildId}</ID>
-          <div className="flex gap-8 items-center justify-start mt-2">
-            <Text className="!flex items-center gap-1">
-              <CalendarBlankIcon />
-              <Time time={build.created_at} />
-            </Text>
-            <Text className="!flex items-center gap-1">
-              <TimerIcon />
-              <Duration
-                beginTime={build.created_at}
-                endTime={build.updated_at}
-              />
-            </Text>
-          </div>
-        </HeadingGroup>
-
-        <BuildDetails initBuild={build} shouldPoll />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <div className="md:col-span-8">
-          {build?.log_stream ? (
-            <Section heading="Build logs">
+      <BuildProvider initBuild={build}>
+        <BuildHeader component={component} />
+        <PageSection id={containerId} isScrollable>
+          {/* old page layout */}
+          <div>
+            {build?.log_stream ? (
               <LogStreamProvider
                 initLogStream={build?.log_stream}
                 shouldPoll={build?.log_stream?.open}
@@ -148,89 +124,16 @@ export default async function AppComponentBuildPage({ params }) {
                   </Suspense>
                 </ErrorBoundary>
               </LogStreamProvider>
-            </Section>
-          ) : (
-            <Section heading="Build logs">
-              <OldText>Waiting on log stream</OldText>
-            </Section>
-          )}
-        </div>
-        <div className="divide-y flex flex-col md:col-span-4">
-          {build.vcs_connection_commit && (
-            <Section className="flex-initial" heading="Commit details">
-              <div className="flex gap-6 items-start justify-start">
-                <span className="flex flex-col gap-2">
-                  <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                    SHA
-                  </OldText>
-                  <ToolTip tipContent={build.vcs_connection_commit?.sha}>
-                    <OldText
-                      className="truncate text-ellipsis w-16"
-                      variant="mono-12"
-                    >
-                      {build.vcs_connection_commit?.sha}
-                    </OldText>
-                  </ToolTip>
-                </span>
+            ) : (
+              <RefreshLogStream />
+            )}
+          </div>
+          {/* old page layout */}
 
-                {build.vcs_connection_commit?.author_name !== '' && (
-                  <span className="flex flex-col gap-2">
-                    <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                      Author
-                    </OldText>
-                    <OldText>
-                      {build.vcs_connection_commit?.author_name}
-                    </OldText>
-                  </span>
-                )}
-
-                <span className="flex flex-col gap-2">
-                  <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                    Message
-                  </OldText>
-                  <OldText>
-                    {build.vcs_connection_commit?.message?.length >= 32 ? (
-                      <ToolTip
-                        tipContent={build.vcs_connection_commit?.message}
-                        alignment="right"
-                        position="top"
-                      >
-                        <Truncate variant="small">
-                          {build.vcs_connection_commit?.message}
-                        </Truncate>
-                      </ToolTip>
-                    ) : (
-                      build?.vcs_connection_commit?.message
-                    )}
-                  </OldText>
-                </span>
-              </div>
-            </Section>
-          )}
-
-          <Section className="flex-initial" heading="Component config">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading component config..."
-                  />
-                }
-              >
-                <ComponentConfig
-                  componentId={componentId}
-                  componentConfigId={build?.component_config_connection_id}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-        </div>
-      </div>
-      {/* old page layout */}
-      <BackToTop containerId={containerId} />
-    </PageSection>
+          <BackToTop containerId={containerId} />
+        </PageSection>
+      </BuildProvider>
+    </>
   ) : (
     <DashboardContent
       breadcrumb={[
@@ -271,7 +174,7 @@ export default async function AppComponentBuildPage({ params }) {
             </OldLogStreamProvider>
           ) : (
             <Section heading="Build logs">
-              <OldText>Waiting on log stream</OldText>
+              <RefreshLogStream />
             </Section>
           )}
         </div>

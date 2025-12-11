@@ -74,7 +74,7 @@ export const Tooltip = ({
 
   return (
     <span
-      className={cn('tooltip-wrapper w-fit', className)}
+      className={cn('tooltip-wrapper w-fit leading-none', className)}
       ref={triggerRef}
       style={{ position: 'relative' }}
       onMouseEnter={() => {

@@ -58,7 +58,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       const initialValue = value !== undefined ? value : defaultValue
       return options.find(option => option.value === initialValue) || null
     })
+    const [isInvalid, setIsInvalid] = useState(false)
+    const [hasBlurred, setHasBlurred] = useState(false)
+    const [showValidationMessage, setShowValidationMessage] = useState(false)
     const hiddenInputRef = useRef<HTMLInputElement>(null)
+    const validationInputRef = useRef<HTMLInputElement>(null)
     const selectRef = useRef<HTMLDivElement>(null)
 
     const currentValue = value !== undefined 
@@ -71,17 +75,72 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       lg: 'px-4 py-3 text-base',
     }
 
-    // Close dropdown when clicking outside
+    // Close dropdown when clicking outside and handle blur
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+          const wasOpen = isOpen
           setIsOpen(false)
+          // Only mark as blurred if the dropdown was actually open (user was interacting)
+          if (required && wasOpen) {
+            setHasBlurred(true)
+            // Check validity after blur
+            if (validationInputRef.current && !validationInputRef.current.checkValidity()) {
+              setIsInvalid(true)
+              setShowValidationMessage(true)
+            }
+          }
         }
       }
 
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
+    }, [required, isOpen])
+
+    // Monitor validation state
+    useEffect(() => {
+      if (required && validationInputRef.current) {
+        const input = validationInputRef.current
+        
+        const checkValidity = () => {
+          // Only show invalid state after user blur or form submission attempt
+          if (hasBlurred) {
+            setIsInvalid(!input.checkValidity())
+          }
+        }
+        
+        // Check validity on value changes (only if already blurred)
+        if (hasBlurred) {
+          checkValidity()
+        }
+        
+        // Listen for validation events (form submission attempts)
+        const handleInvalid = (e: Event) => {
+          e.preventDefault() // Prevent default browser validation message
+          setHasBlurred(true)
+          setIsInvalid(true)
+          setShowValidationMessage(true)
+        }
+        
+        const handleInput = () => {
+          if (hasBlurred) {
+            checkValidity()
+            // Hide validation message when user makes a selection
+            if (input.checkValidity()) {
+              setShowValidationMessage(false)
+            }
+          }
+        }
+        
+        input.addEventListener('invalid', handleInvalid)
+        input.addEventListener('input', handleInput)
+        
+        return () => {
+          input.removeEventListener('invalid', handleInvalid)
+          input.removeEventListener('input', handleInput)
+        }
+      }
+    }, [required, currentValue, hasBlurred])
 
     const handleOptionSelect = (option: SelectOption) => {
       if (value === undefined) {
@@ -103,6 +162,8 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
         onChange(syntheticEvent)
       }
 
+      // Hide validation message when a selection is made
+      setShowValidationMessage(false)
       setIsOpen(false)
     }
 
@@ -117,9 +178,27 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
           {...(ref && typeof ref === 'function' ? {} : { ref })}
         />
         
+        {/* Additional validation input for required selects */}
+        {required && (
+          <input
+            ref={validationInputRef}
+            type="text"
+            value={currentValue?.value || ''}
+            required
+            style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={() => {}} // Controlled input
+          />
+        )}
+        
         <button
           type="button"
-          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onClick={() => {
+            if (!disabled) {
+              setIsOpen(!isOpen)
+            }
+          }}
           disabled={disabled}
           className={cn(
             'flex items-center justify-between w-full border border-solid rounded shadow-sm transition-all duration-300 font-mono',
@@ -136,12 +215,12 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
               'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600': disabled,
               
               // Default state - dimmed primary (subtle but branded)
-              'bg-white dark:bg-dark-grey-900 text-cool-grey-900 dark:text-cool-grey-100': !disabled && !error,
-              '!border-primary-700 dark:!border-primary-400/50': !disabled && !error,
+              'bg-white dark:bg-dark-grey-900 text-cool-grey-900 dark:text-cool-grey-100': !disabled && !error && !isInvalid,
+              '!border-primary-700 dark:!border-primary-400/50': !disabled && !error && !isInvalid,
               
               // Error state - red overrides everything
-              '!border-red-500 dark:!border-red-400': error,
-              'focus:!ring-red-500 focus:!border-red-500': error,
+              '!border-red-500 dark:!border-red-400': error || isInvalid,
+              'focus:!ring-red-500 focus:!border-red-500': error || isInvalid,
             },
             className
           )}
@@ -160,7 +239,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
 
         <TransitionDiv
           isVisible={isOpen}
-          className="select-options absolute z-10 w-full bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 mt-1.5 max-h-72 overflow-x-hidden overflow-y-auto"
+          className="select-options absolute z-30 w-full bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 mt-1.5 max-h-72 overflow-x-hidden overflow-y-auto"
         >
           <div className="flex flex-col gap-1">
             {options.length === 0 && <div className="px-2 py-1 text-sm">No options available</div>}
@@ -184,6 +263,13 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             ))}
           </div>
         </TransitionDiv>
+        
+        {/* Custom validation message */}
+        {required && showValidationMessage && isInvalid && !isOpen && (
+          <Text variant="subtext" theme="error" className="mt-1">
+            Please select an option
+          </Text>
+        )}
       </div>
     )
 

@@ -8,19 +8,19 @@ import { Link } from '@/components/common/Link'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import type { TComponentConfig } from '@/types'
 
 interface IComponentConfigCard extends Omit<ICard, 'children'> {
+  appId: string
   config: TComponentConfig
 }
 
 export const ComponentConfigCard = ({
+  appId,
   config,
   ...props
 }: IComponentConfigCard) => {
-  const { install } = useInstall()
   const { org } = useOrg()
 
   return (
@@ -33,7 +33,7 @@ export const ComponentConfigCard = ({
 
         <Text variant="subtext">
           <Link
-            href={`/${org.id}/apps/${install.app_id}/configs/${install.app_config_id}/components/${config?.component_id}`}
+            href={`/${org.id}/apps/${appId}//components/${config?.component_id}`}
           >
             View details <Icon variant="CaretRight" />
           </Link>
