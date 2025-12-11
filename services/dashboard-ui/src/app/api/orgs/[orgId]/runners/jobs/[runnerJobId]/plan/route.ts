@@ -11,7 +11,7 @@ export async function GET(
   const response = await getRunnerJobPlanById({
     runnerJobId,
     orgId,
-  })  
+  })
   return NextResponse.json(response)
 }
 

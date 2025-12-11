@@ -15,6 +15,7 @@ import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TApp, TAppConfig } from '@/types'
 import { FormSkeleton } from './FormSkeleton'
+import { toSentenceCase } from '@/utils/string-utils'
 
 interface CreateInstallFromAppProps {
   app: TApp
@@ -50,7 +51,13 @@ export const CreateInstallFromApp = ({
     path: `/api/orgs/${org?.id}/apps/${app.id}/configs/${configId}?recurse=true`,
   })
 
-  const { data: install, error: actionError, headers, isLoading: isSubmitting, execute } = useServerAction({
+  const {
+    data: install,
+    error: actionError,
+    headers,
+    isLoading: isSubmitting,
+    execute,
+  } = useServerAction({
     action: createAppInstall,
   })
 
@@ -61,7 +68,15 @@ export const CreateInstallFromApp = ({
   useServerActionToast({
     data: install,
     error: actionError,
-    errorContent: <Text>Unable to create install.</Text>,
+    errorContent: (
+      <Text>
+        {toSentenceCase(
+          actionError?.error ||
+            actionError?.description ||
+            'Unable to create install.'
+        )}
+      </Text>
+    ),
     errorHeading: 'Install creation failed',
     onSuccess: () => {
       const workflowId = headers?.['x-nuon-install-workflow-id']
