@@ -9,6 +9,6 @@ export const getRunnerJobPlanById = ({
   orgId: string
 }) =>
   api<TRunnerJobPlan>({
-    path: `runner-jobs/${runnerJobId}/plan`,
+    path: `runner-jobs/${runnerJobId}/composite-plan`,
     orgId,
   })
