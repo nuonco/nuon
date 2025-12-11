@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
@@ -26,12 +27,18 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 	}
 
 	if c.AWSAccount == nil && c.AzureAccount == nil {
-		return fmt.Errorf("either AWSAccount or AzureAccount must be provided")
+		return stderr.ErrUser{
+			Description: "either AWSAccount or AzureAccount must be provided",
+			Err:         fmt.Errorf("either AWSAccount or AzureAccount must be provided"),
+		}
 	}
 
 	if c.AWSAccount != nil {
 		if c.AWSAccount.Region == "" {
-			return fmt.Errorf("AWSAccount region is required")
+			return stderr.ErrUser{
+				Description: "AWSAccount region is required",
+				Err:         fmt.Errorf("AWSAccount region is required"),
+			}
 		}
 	}
 
@@ -127,12 +134,18 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	}
 
 	if c.AWSAccount == nil && c.AzureAccount == nil {
-		return fmt.Errorf("either AWSAccount or AzureAccount must be provided")
+		return stderr.ErrUser{
+			Description: "either AWSAccount or AzureAccount must be provided",
+			Err:         fmt.Errorf("either AWSAccount or AzureAccount must be provided"),
+		}
 	}
 
 	if c.AWSAccount != nil {
 		if c.AWSAccount.Region == "" {
-			return fmt.Errorf("AWSAccount region is required")
+			return stderr.ErrUser{
+				Description: "AWSAccount region is required",
+				Err:         fmt.Errorf("AWSAccount region is required"),
+			}
 		}
 	}
 
