@@ -17,6 +17,7 @@ import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TAppConfig } from '@/types'
+import { toSentenceCase } from '@/utils/string-utils'
 
 interface ICreateInstall {}
 
@@ -35,7 +36,7 @@ const FormSkeleton = () => {
       {/* AWS Settings */}
       <fieldset className="flex flex-col gap-6 border-t pt-6">
         <Skeleton width="140px" height="24px" />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <span className="flex flex-col gap-1">
             <Skeleton width="130px" height="16px" />
@@ -50,7 +51,7 @@ const FormSkeleton = () => {
           <Skeleton width="220px" height="24px" />
           <Skeleton width="280px" height="16px" />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <span className="flex flex-col gap-1">
             <Skeleton width="80px" height="16px" />
@@ -66,7 +67,7 @@ const FormSkeleton = () => {
           <Skeleton width="180px" height="24px" />
           <Skeleton width="140px" height="16px" />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <span className="flex flex-col gap-1">
             <Skeleton width="90px" height="16px" />
@@ -74,7 +75,7 @@ const FormSkeleton = () => {
           </span>
           <Skeleton width="100%" height="40px" />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <span className="flex flex-col gap-1">
             <Skeleton width="110px" height="16px" />
@@ -82,7 +83,7 @@ const FormSkeleton = () => {
           </span>
           <Skeleton width="100%" height="40px" />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <span className="flex flex-col gap-1">
             <Skeleton width="85px" height="16px" />
@@ -120,14 +121,28 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
     enabled: !!configs?.[0]?.id,
   })
 
-  const { data: install, error: actionError, headers, isLoading: isSubmitting, execute } = useServerAction({
+  const {
+    data: install,
+    error: actionError,
+    headers,
+    isLoading: isSubmitting,
+    execute,
+  } = useServerAction({
     action: createAppInstall,
   })
 
   useServerActionToast({
     data: install,
     error: actionError,
-    errorContent: <Text>Unable to create install.</Text>,
+    errorContent: (
+      <Text>
+        {toSentenceCase(
+          actionError?.error ||
+            actionError?.description ||
+            'Unable to create install.'
+        )}
+      </Text>
+    ),
     errorHeading: 'Install creation failed',
     onSuccess: () => {
       const workflowId = headers?.['x-nuon-install-workflow-id']
@@ -149,7 +164,8 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   }
 
   const isLoading = configsLoading || configLoading
-  const hasError = configsError || configError || !configs || configs.length === 0
+  const hasError =
+    configsError || configError || !configs || configs.length === 0
   const canSubmit = !isLoading && !hasError && config
 
   return (
@@ -168,22 +184,24 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       primaryActionTrigger={
-        canSubmit ? {
-          children: isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <Icon variant="Loading" />
-              Creating install
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Icon variant="Cube" />
-              Create install
-            </span>
-          ),
-          disabled: isSubmitting,
-          onClick: handleFormSubmit,
-          variant: 'primary',
-        } : undefined
+        canSubmit
+          ? {
+              children: isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <Icon variant="Loading" />
+                  Creating install
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Icon variant="Cube" />
+                  Create install
+                </span>
+              ),
+              disabled: isSubmitting,
+              onClick: handleFormSubmit,
+              variant: 'primary',
+            }
+          : undefined
       }
       {...props}
     >
@@ -191,12 +209,14 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
         <FormSkeleton />
       ) : hasError ? (
         <Banner theme="error">
-          {configsError?.error || configError?.error || 'Unable to load app configuration'}
+          {configsError?.error ||
+            configError?.error ||
+            'Unable to load app configuration'}
         </Banner>
       ) : (
-        <CreateInstallFormContent 
+        <CreateInstallFormContent
           ref={formRef}
-          configId={configs[0]?.id} 
+          configId={configs[0]?.id}
           config={config}
           onSubmitAction={(formData: FormData) => {
             return execute({
@@ -206,23 +226,22 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
               formData,
             })
           }}
-          {...props} 
+          {...props}
         />
       )}
     </Modal>
   )
 }
 
-const CreateInstallFormContent = forwardRef<HTMLFormElement, { 
-  configId: string
-  config: TAppConfig
-  onSubmitAction: (formData: FormData) => Promise<any>
-} & ICreateInstall & IModal>(({
-  configId,
-  config,
-  onSubmitAction,
-  ...props 
-}, ref) => {
+const CreateInstallFormContent = forwardRef<
+  HTMLFormElement,
+  {
+    configId: string
+    config: TAppConfig
+    onSubmitAction: (formData: FormData) => Promise<any>
+  } & ICreateInstall &
+    IModal
+>(({ configId, config, onSubmitAction, ...props }, ref) => {
   const { org } = useOrg()
   const { app } = useApp()
   const { removeModal } = useSurfaces()
@@ -234,7 +253,8 @@ const CreateInstallFormContent = forwardRef<HTMLFormElement, {
     return groups
       ? groups.map((group) => ({
           ...group,
-          app_inputs: inputs?.filter((input) => input.group_id === group.id) || [],
+          app_inputs:
+            inputs?.filter((input) => input.group_id === group.id) || [],
         }))
       : []
   }
@@ -265,7 +285,9 @@ const CreateInstallFormContent = forwardRef<HTMLFormElement, {
 
 CreateInstallFormContent.displayName = 'CreateInstallFormContent'
 
-export const CreateInstallButton = ({ ...props }: ICreateInstall & IButtonAsButton) => {
+export const CreateInstallButton = ({
+  ...props
+}: ICreateInstall & IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <CreateInstallModal />
 

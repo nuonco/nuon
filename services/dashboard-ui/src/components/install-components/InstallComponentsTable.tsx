@@ -79,7 +79,7 @@ function parseInstallComponentSummaryToTableData(
                   </Text>
                 </>
               ) : (
-                <Text className="!flex p-2" variant="subtext">
+                <Text className="!flex p-2 !text-nowrap" variant="subtext">
                   Status unknown
                 </Text>
               )}
