@@ -3,6 +3,10 @@
 This is a basic changelog where we track a minimal message whenever we do a Promotion. There is currently no intention
 to publish this externally.
 
+## v0.19.718
+
+Yet another react patch for DoS issue: CVE-2025-67779
+
 ## v0.19.717
 
 Fixed approval content api route in old approval component
