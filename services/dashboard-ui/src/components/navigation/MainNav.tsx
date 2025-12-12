@@ -41,9 +41,11 @@ export const MainNav = () => {
   return (
     <nav className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        {MAIN_LINKS.map((link) => (
-          <MainNavLink key={link.text} basePath={basePath} {...link} />
-        ))}
+        {MAIN_LINKS.map((link, idx) =>
+          !org?.features?.['org-dashboard'] && idx === 0 ? null : (
+            <MainNavLink key={link.text} basePath={basePath} {...link} />
+          )
+        )}
       </div>
 
       <Divider />
