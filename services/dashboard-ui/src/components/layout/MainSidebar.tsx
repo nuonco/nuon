@@ -49,13 +49,13 @@ export const MainSidebar = ({ versions }: { versions: TNuonVersion }) => {
       </div>
       {isSidebarOpen ? (
         <TransitionDiv
-          className="flex gap-4 items-center justify-center justify-self-end p-4 fade"
+          className="flex flex-col gap-0 items-end p-4 fade"
           isVisible={isSidebarOpen}
         >
-          <Text variant="subtext">
+          <Text variant="label" theme="neutral">
             API: <b>{versions?.api?.version}</b>
           </Text>
-          <Text variant="subtext">
+          <Text variant="label" theme="neutral">
             UI: <b>{versions?.ui?.version}</b>
           </Text>
         </TransitionDiv>
