@@ -87,6 +87,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 			// runners
 			current.GET("/runner-group", s.GetOrgRunnerGroup)
+
+			current.GET("/stats", s.GetOrgStats)
 		}
 	}
 
