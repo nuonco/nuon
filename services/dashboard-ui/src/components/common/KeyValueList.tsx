@@ -1,7 +1,7 @@
 import React from 'react'
 import type { TKeyValue } from '@/types'
 import { cn } from '@/utils/classnames'
-import { CodeBlock } from './CodeBlock'
+import { JSONViewer } from './JSONViewer'
 import { EmptyState, type IEmptyState } from './EmptyState'
 import { Skeleton } from './Skeleton'
 import { Text } from './Text'
@@ -56,9 +56,13 @@ export const KeyValueList = ({
             >
               {value ? (
                 type === 'object' || type === 'array' ? (
-                  <CodeBlock className="!w-full !overflow-auto" language="json">
-                    {value}
-                  </CodeBlock>
+                  <JSONViewer 
+                    data={JSON.parse(value)}
+                    expanded={1}
+                    showDataTypes={false}
+                    showSize={false}
+                    className="!border-0 !rounded-none"
+                  />
                 ) : (
                   value
                 )
