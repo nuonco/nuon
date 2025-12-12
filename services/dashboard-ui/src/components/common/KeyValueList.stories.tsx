@@ -199,6 +199,112 @@ export const EmptyStates = () => (
   </div>
 )
 
+export const JsonSupport = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">JSON Object Support</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        KeyValueList automatically detects JSON objects and arrays, rendering them
+        in formatted CodeBlock components with syntax highlighting. This is perfect
+        for displaying configuration objects, API responses, and complex data structures.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Configuration with JSON Objects</h4>
+      <div className="max-w-4xl">
+        <KeyValueList
+          values={[
+            { key: 'service_name', value: 'dashboard-api', type: 'string' },
+            { key: 'version', value: '1.2.3', type: 'string' },
+            { 
+              key: 'database_config', 
+              value: JSON.stringify({
+                host: 'localhost',
+                port: 5432,
+                database: 'dashboard_db',
+                ssl: true,
+                pool: {
+                  min: 2,
+                  max: 10
+                }
+              }, null, 2),
+              type: 'object'
+            },
+            { 
+              key: 'feature_flags', 
+              value: JSON.stringify([
+                'new_ui_enabled',
+                'advanced_analytics',
+                'beta_features'
+              ], null, 2),
+              type: 'array'
+            },
+            { 
+              key: 'user_permissions', 
+              value: JSON.stringify({
+                read: ['dashboard', 'analytics'],
+                write: ['dashboard'],
+                admin: false,
+                metadata: {
+                  created_at: '2024-01-15T10:30:45Z',
+                  updated_at: '2024-03-20T14:22:33Z'
+                }
+              }, null, 2),
+              type: 'object'
+            }
+          ]}
+        />
+      </div>
+      <Text variant="subtext" theme="neutral">
+        Objects and arrays are automatically rendered with JSON syntax highlighting
+      </Text>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">API Response Example</h4>
+      <div className="max-w-4xl">
+        <KeyValueList
+          values={[
+            { key: 'status', value: '200', type: 'string' },
+            { key: 'content_type', value: 'application/json', type: 'string' },
+            { 
+              key: 'response_data', 
+              value: JSON.stringify({
+                success: true,
+                data: {
+                  users: [
+                    { id: 1, name: 'Alice', role: 'admin' },
+                    { id: 2, name: 'Bob', role: 'user' }
+                  ],
+                  pagination: {
+                    page: 1,
+                    per_page: 2,
+                    total: 25
+                  }
+                },
+                timestamp: '2024-03-20T14:30:00Z'
+              }, null, 2),
+              type: 'object'
+            }
+          ]}
+        />
+      </div>
+    </div>
+
+    <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
+      <strong>JSON Rendering Features:</strong>
+      <ul className="mt-2 space-y-1 list-disc list-inside">
+        <li>Automatic detection of object and array types</li>
+        <li>Formatted JSON with proper indentation</li>
+        <li>Syntax highlighting for better readability</li>
+        <li>Scrollable CodeBlock for large JSON objects</li>
+        <li>Works seamlessly with objectToKeyValueArray utility</li>
+      </ul>
+    </div>
+  </div>
+)
+
 export const UsageExamples = () => (
   <div className="space-y-6">
     <div className="space-y-3">

@@ -1,4 +1,4 @@
-import { Markdown } from '@/components/common/Markdown'
+import { Markdown } from '@/components/common/Showdown'
 import { Notice, Text } from '@/components'
 import { getInstallReadme } from '@/lib'
 
