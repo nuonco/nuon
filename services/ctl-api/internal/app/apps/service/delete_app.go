@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -63,36 +64,38 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 	}
 
 	appCfg, err := s.helpers.GetAppLatestConfig(ctx, appID)
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.Error(err)
 		return
 	}
 
-	// Check if there are any active components for the app, if so, do not proceed for deletion.
-	if len(appCfg.ComponentIDs) > 0 {
-		ctx.Error(fmt.Errorf("app has %d active component(s) in it's latest config, please remove them first", len(appCfg.ComponentIDs)))
-		return
-	}
-
-	// Trigger deletion for all components associated with the app in reverse order of their dependencies.
-	{
-		// Get full app config to include all components including missing components in the latest config.
-		appComponents, err := s.helpers.GetAppComponents(ctx, appID)
-		if err != nil {
-			ctx.Error(err)
+	if err == nil {
+		// Check if there are any active components for the app, if so, do not proceed for deletion.
+		if len(appCfg.ComponentIDs) > 0 {
+			ctx.Error(fmt.Errorf("app has %d active component(s) in it's latest config, please remove them first", len(appCfg.ComponentIDs)))
 			return
 		}
 
-		for _, comp := range appComponents {
-			err = s.helpers.DeleteAppComponent(ctx, comp.ID)
+		// Trigger deletion for all components associated with the app in reverse order of their dependencies.
+		{
+			// Get full app config to include all components including missing components in the latest config.
+			appComponents, err := s.helpers.GetAppComponents(ctx, appID)
 			if err != nil {
 				ctx.Error(err)
 				return
 			}
 
-			s.evClient.Send(ctx, comp.ID, &componentssignals.Signal{
-				Type: componentssignals.OperationDelete,
-			})
+			for _, comp := range appComponents {
+				err = s.helpers.DeleteAppComponent(ctx, comp.ID)
+				if err != nil {
+					ctx.Error(err)
+					return
+				}
+
+				s.evClient.Send(ctx, comp.ID, &componentssignals.Signal{
+					Type: componentssignals.OperationDelete,
+				})
+			}
 		}
 	}
 
