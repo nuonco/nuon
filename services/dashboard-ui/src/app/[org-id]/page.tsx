@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getOrgById } from '@/lib'
+import { getOrgById, getOrgStats } from '@/lib'
 import { auth0 } from '@/lib/auth'
 import type { TPageProps } from '@/types'
 
@@ -34,7 +34,10 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
   const { ['org-id']: orgId } = await params
   const session = await auth0.getSession()
-  const { data: org, error } = await getOrgById({ orgId })
+  const [{ data: org, error }, { data: stats }] = await Promise.all([
+    getOrgById({ orgId }),
+    getOrgStats({ orgId }),
+  ])
 
   if (error && !org) {
     return (
@@ -65,9 +68,7 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
             <Text variant="h3" weight="stronger" level={1} role="heading">
               Welcome, {session.user.name}!
             </Text>
-            <Text theme="neutral">
-              Manage your applications and deployed installs.
-            </Text>
+            <Text theme="neutral">Manage your applications and installs.</Text>
           </HeadingGroup>
         </PageHeader>
 
@@ -78,34 +79,14 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
                 Overview
               </Text>
 
-              <div className="grid md:grid-cols-4 rounded-lg border divide-y md:divide-y-0 md:divide-x">
+              <div className="grid md:grid-cols-2 rounded-lg border divide-y md:divide-y-0 md:divide-x">
                 <div className="flex flex-col gap-6 p-4">
                   <Text weight="strong" theme="neutral">
-                    Total installs
+                    Total apps
                   </Text>
 
                   <Text variant="h3" weight="strong">
-                    10
-                  </Text>
-                </div>
-
-                <div className="flex flex-col gap-6 p-4">
-                  <Text weight="strong" theme="neutral">
-                    Active applications
-                  </Text>
-
-                  <Text variant="h3" weight="strong">
-                    10
-                  </Text>
-                </div>
-
-                <div className="flex flex-col gap-6 p-4">
-                  <Text weight="strong" theme="neutral">
-                    Active runners
-                  </Text>
-
-                  <Text variant="h3" weight="strong">
-                    10
+                    {stats.app_count}
                   </Text>
                 </div>
 
@@ -115,20 +96,20 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
                   </Text>
 
                   <Text variant="h3" weight="strong">
-                    10
+                    {stats?.install_count}
                   </Text>
                 </div>
               </div>
 
-              <Text variant="h3" weight="strong">
-                Recent activity
-              </Text>
+              {/* <Text variant="h3" weight="strong">
+                  Recent activity
+                  </Text> */}
             </PageSection>
-            <PageSection>
-              <Text variant="h3" weight="strong">
+            {/* <PageSection>
+                <Text variant="h3" weight="strong">
                 Get production ready!
-              </Text>
-            </PageSection>
+                </Text>
+                </PageSection> */}
           </PageGrid>
         </PageContent>
       </PageLayout>
