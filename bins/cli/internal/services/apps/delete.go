@@ -3,6 +3,7 @@ package apps
 import (
 	"context"
 
+	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -66,6 +67,9 @@ func (s *Service) Delete(ctx context.Context, appID string, asJSON bool) error {
 func (s *Service) ensureNoActiveComponents(ctx context.Context, appID string) error {
 	appCfg, err := s.api.GetAppLatestConfig(ctx, appID)
 	if err != nil {
+		if nuon.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 
