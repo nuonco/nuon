@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@andypf/json-viewer": "^2.1.10",
-    "@auth0/nextjs-auth0": "^4.9.0",
+    "@auth0/nextjs-auth0": "^4.13.0",
     "@dagrejs/dagre": "^1.1.5",
     "@datadog/browser-logs": "^5.16.0",
     "@datadog/browser-rum": "^5.16.0",
