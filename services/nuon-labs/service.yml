@@ -1,0 +1,35 @@
+---
+type: service
+port: 4100
+local_only: true
+
+health_checks:
+  - http://localhost:4100
+
+env:
+  NODE_ENV: development
+  NEXT_PUBLIC_NUON_URL: 'https://nuon.co'
+  NEXT_PUBLIC_DASHBOARD_URL: 'https://app.nuon.co'
+
+env_secrets: {}
+
+disable_watch: true
+watch_ignore:
+  - '\/node_modules/'
+  - '.next/'
+
+local_startup_cmds: []
+local_build_cmds: []
+local_cmds:
+  - npm run dev
+
+namespace: nuon-labs
+
+docker_cmds:
+  - args: []
+    ports:
+      - 4100
+
+docker_env:
+  NEXT_PUBLIC_NUON_URL: 'https://nuon.co'
+  NEXT_PUBLIC_DASHBOARD_URL: 'https://app.nuon.co'

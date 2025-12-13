@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-hack);
+
+  --border-color-light: #dee3e7;
+  --border-color-dark: #27252a;
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  --color-primary-50: #FCFAFF;
+  --color-primary-100: #F6F0FF;
+  --color-primary-200: #F2E5FF;
+  --color-primary-300: #E5D0FB;
+  --color-primary-400: #C494F4;
+  --color-primary-500: #AD71EA;
+  --color-primary-600: #8040BF;
+  --color-primary-700: #7339AC;
+  --color-primary-800: #662F9D;
+  --color-primary-900: #4C2277;
+  --color-primary-950: #2E0E4E;
+
+  --color-blue-50: #FAFBFF;
+  --color-blue-100: #EDF2FF;
+  --color-blue-200: #E5EEFF;
+  --color-blue-300: #CDDDFF;
+  --color-blue-400: #8DB0FB;
+  --color-blue-500: #6792F4;
+  --color-blue-600: #3062D4;
+  --color-blue-700: #2759CD;
+  --color-blue-800: #1E50C0;
+  --color-blue-900: #113997;
+  --color-blue-950: #05205E;
+
+  --color-green-50: #F4FBF7;
+  --color-green-100: #E6F9EF;
+  --color-green-200: #D8F8E7;
+  --color-green-300: #C6F1DA;
+  --color-green-400: #75CC9E;
+  --color-green-500: #4AA578;
+  --color-green-600: #1D7C4D;
+  --color-green-700: #1E714A;
+  --color-green-800: #196742;
+  --color-green-900: #0E4E30;
+  --color-green-950: #062D1B;
+
+  --color-orange-50: #FFF5EB;
+  --color-orange-100: #FFF0E0;
+  --color-orange-200: #FFE8D1;
+  --color-orange-300: #FFD4A8;
+  --color-orange-400: #FEB872;
+  --color-orange-500: #F6A351;
+  --color-orange-600: #F59638;
+  --color-orange-700: #B4610E;
+  --color-orange-800: #A05C1C;
+  --color-orange-900: #7A4510;
+  --color-orange-950: #482909;
+
+  --color-red-50: #FEF2F2;
+  --color-red-100: #FEE2E2;
+  --color-red-200: #FECACA;
+  --color-red-300: #FCA5A5;
+  --color-red-400: #F87171;
+  --color-red-500: #EF4444;
+  --color-red-600: #DC2626;
+  --color-red-700: #B91C1C;
+  --color-red-800: #991B1B;
+  --color-red-900: #7F1D1D;
+  --color-red-950: #450A0A;
+
+  --color-cool-grey-50: #FAFAFA;
+  --color-cool-grey-100: #F0F3F5;
+  --color-cool-grey-200: #EAEDF0;
+  --color-cool-grey-300: #DEE3E7;
+  --color-cool-grey-400: #CFD6DD;
+  --color-cool-grey-500: #9EA8B3;
+  --color-cool-grey-600: #555F6D;
+  --color-cool-grey-700: #4A545E;
+  --color-cool-grey-800: #3A424A;
+  --color-cool-grey-900: #272E35;
+  --color-cool-grey-950: #1B242C;
+
+  --color-dark-grey-50: #3E3D41;
+  --color-dark-grey-100: #3A383C;
+  --color-dark-grey-200: #353337;
+  --color-dark-grey-300: #302E33;
+  --color-dark-grey-400: #2C2A2E;
+  --color-dark-grey-500: #27252A;
+  --color-dark-grey-600: #222025;
+  --color-dark-grey-700: #1D1B20;
+  --color-dark-grey-800: #19171C;
+  --color-dark-grey-900: #141217;
+  --color-dark-grey-950: #121212;
+
+  /* Logo gradient colors */
+  --color-logo-pink: #F72585;
+  --color-logo-purple: #3A00FF;
+  --color-logo-cyan: #4CC9F0;
+
+  --text-gradient-light: linear-gradient(
+    88.14deg,
+    #f9519d 7.25%,
+    #6133ff 62.82%
+  );
+  --text-gradient-dark: linear-gradient(
+    88.14deg,
+    #f72585 7.25%,
+    #3a00ff 62.82%
+  );
+
+  --bg-gradient-light: linear-gradient(172deg, #FFF 0%, #FAFAFA 99.36%), #FFF;
+  --bg-gradient-dark: linear-gradient(172deg, #0D0416 0%, #050109 99.36%), #141217;
+
+  /* text tokens */
+  --font-weight-normal: 400;
+  --font-weight-strong: 500;
+  --font-weight-stronger: 600;
+
+  /* animation tokens */
+  --ease-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fastest: 150ms;
+  --duration-fast: 250ms;
+}
+
+:root {
+  --background: var(--color-dark-grey-900);
+  --background-neutral: var(--color-dark-grey-950);
+  --foreground: var(--color-white);
+  --border-color: var(--border-color-dark);
+  --text-gradient: var(--text-gradient-dark);
+  --bg-gradient: var(--bg-gradient-dark);
+}
+
+hr,
+:where([class*="divide"] > :not(:last-child)),
+[class*="border"],
+[class*="[&:before]:border"]::before
+{
+  border-color: var(--border-color);
+}
+
+.border-transparent {
+  border-color: transparent;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+.text-gradient {
+  background: var(--text-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-gradient {
+  background: var(--bg-gradient);
+}
+
+/* Animation keyframes */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--duration-fast) var(--ease-cubic) forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up var(--duration-fast) var(--ease-cubic) forwards;
+}
