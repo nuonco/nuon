@@ -8,7 +8,7 @@ resource "aws_route53_record" "awesomebyoc_dns_root" {
   provider = aws.prod
 
   zone_id = aws_route53_zone.awesomebyoc_dns.zone_id
-  name    = "@"
+  name    = ""
   type    = "A"
   ttl     = 300
   records = [
