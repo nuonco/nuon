@@ -6,12 +6,12 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getInstallById, getOrgById } from '@/lib'
+import { getInstall, getOrg } from '@/lib'
 import { InstallRoles, InstallRolesSkeleton, InstallRolesError } from './roles'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install } = await getInstallById({ installId, orgId })
+  const { data: install } = await getInstall({ installId, orgId })
 
   return {
     title: `Roles | ${install.name} | Nuon`,
@@ -21,8 +21,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function InstallRolesPage({ params }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const [{ data: install, error }, { data: org }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getOrgById({ orgId }),
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
   ])
 
   if (error) {

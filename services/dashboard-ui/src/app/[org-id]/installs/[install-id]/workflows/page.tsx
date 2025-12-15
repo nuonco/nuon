@@ -10,7 +10,7 @@ import { WorkflowTimelineSkeleton } from '@/components/workflows/WorkflowTimelin
 import { ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
 import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
 import type { TPageProps } from '@/types'
-import { getInstallById, getOrgById } from '@/lib'
+import { getInstall, getOrg } from '@/lib'
 import { Workflows, WorkflowsError } from './workflows'
 
 // NOTE: old layout stuff
@@ -33,7 +33,7 @@ export async function generateMetadata({
   params,
 }: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install } = await getInstallById({ installId, orgId })
+  const { data: install } = await getInstall({ installId, orgId })
 
   return {
     title: `Workflows | ${install.name} | Nuon`,
@@ -47,8 +47,8 @@ export default async function InstallWorkflowsPage({
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
   const [{ data: install }, { data: org }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getOrgById({ orgId }),
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
   ])
 
   return org?.features?.['stratus-layout'] ? (

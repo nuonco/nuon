@@ -1,6 +1,6 @@
 import { WorkflowSteps as Steps } from '@/components/workflows/OldWorkflowSteps'
 import { Empty } from '@/components/old/Empty'
-import { getWorkflowById } from '@/lib'
+import { getWorkflow } from '@/lib'
 
 // TODO(nnnat): this should fetch only the steps
 // when we switch to the resigned workflow view
@@ -11,7 +11,7 @@ export const WorkflowSteps = async ({
   orgId: string
   workflowId: string
 }) => {
-  const { data, error } = await getWorkflowById({
+  const { data, error } = await getWorkflow({
     orgId,
     workflowId,
   })

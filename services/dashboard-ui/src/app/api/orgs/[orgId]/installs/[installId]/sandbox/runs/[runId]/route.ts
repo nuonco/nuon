@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getInstallSandboxRunById } from "@/lib";
+import { getInstallSandboxRun } from "@/lib";
 import type { TRouteProps } from "@/types";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { runId, orgId } = await params;
 
-  const response = await getInstallSandboxRunById({
+  const response = await getInstallSandboxRun({
     runId,
     orgId,
   });

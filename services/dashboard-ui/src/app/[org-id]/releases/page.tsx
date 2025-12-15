@@ -8,11 +8,11 @@ import {
   Section,
   Text,
 } from '@/components'
-import { getOrgById } from '@/lib'
+import { getOrg } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   return {
     title: `Releases | ${org.name} | Nuon`,
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
 export default async function OrgReleases({ params }) {
   const { ['org-id']: orgId } = await params
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   if (org?.features?.['org-support']) {
     return (

@@ -7,7 +7,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getInstallById, getOrgById } from '@/lib'
+import { getInstall, getOrg } from '@/lib'
 import { CurrentInputs } from './inputs'
 import { Readme } from './readme'
 
@@ -28,7 +28,7 @@ import {
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install } = await getInstallById({ installId, orgId })
+  const { data: install } = await getInstall({ installId, orgId })
 
   return {
     title: `Overview | ${install.name} | Nuon`,
@@ -38,8 +38,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function Install({ params }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const [{ data: install, error, status }, { data: org }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getOrgById({ orgId }),
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
   ])
 
   if (error) {

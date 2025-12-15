@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getWorkflowStepById } from '@/lib'
+import { getWorkflowStep } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { orgId, workflowId, stepId } = await params
 
-  const response = await getWorkflowStepById({
+  const response = await getWorkflowStep({
     orgId,
     workflowId,
     workflowStepId: stepId,

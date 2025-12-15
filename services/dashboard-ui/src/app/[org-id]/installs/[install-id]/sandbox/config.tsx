@@ -1,6 +1,6 @@
 import { AppSandboxConfig, AppSandboxVariables, Notice } from '@/components'
 import { ValuesFileModal } from '@/components/old/InstallSandbox'
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 
 export const SandboxConfig = async ({
   appId,
@@ -11,7 +11,7 @@ export const SandboxConfig = async ({
   appConfigId: string
   orgId: string
 }) => {
-  const { data, error } = await getAppConfigById({
+  const { data, error } = await getAppConfig({
     appConfigId,
     appId,
     orgId,

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getRunnerById } from '@/lib'
+import { getRunner } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { runnerId, orgId } = await params
 
-  const response = await getRunnerById({
+  const response = await getRunner({
     runnerId,
     orgId,
   })

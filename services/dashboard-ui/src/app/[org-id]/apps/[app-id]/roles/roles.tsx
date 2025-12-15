@@ -1,6 +1,6 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { IAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
-import { getAppConfigs, getAppConfigById } from '@/lib'
+import { getAppConfigs, getAppConfig } from '@/lib'
 
 export const AppRoles = async ({
   appId,
@@ -18,7 +18,7 @@ export const AppRoles = async ({
     return <AppRolesError />
   }
 
-  const { data: config, error } = await getAppConfigById({
+  const { data: config, error } = await getAppConfig({
     appConfigId: configs?.at(0)?.id,
     appId,
     orgId,
