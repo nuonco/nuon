@@ -1,6 +1,6 @@
 import { EmptyStateGraphic, Section, Text } from '@/components'
 import { Markdown } from "@/components/common/Showdown"
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 
 export const ReadmeConfig = async ({
   appConfigId,
@@ -11,7 +11,7 @@ export const ReadmeConfig = async ({
   appId: string
   orgId: string
 }) => {
-  const { data: config, error } = await getAppConfigById({
+  const { data: config, error } = await getAppConfig({
     appConfigId,
     appId,
     orgId,

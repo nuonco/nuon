@@ -1,2 +1,2 @@
-export * from './get-log-stream-by-id'
-export * from './get-logs-by-log-stream-id'
+export * from './get-log-stream'
+export * from './get-log-stream-logs'

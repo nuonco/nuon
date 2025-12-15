@@ -8,7 +8,7 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getAppById, getActionById, getOrgById } from '@/lib'
+import { getApp, getAction, getOrg } from '@/lib'
 
 // NOTE: old layout stuff
 import {
@@ -30,8 +30,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['action-id']: actionId,
   } = await params
   const [{ data: app }, { data: action }] = await Promise.all([
-    getAppById({ appId, orgId }),
-    getActionById({ actionId, appId, orgId }),
+    getApp({ appId, orgId }),
+    getAction({ actionId, appId, orgId }),
   ])
 
   return {
@@ -46,9 +46,9 @@ export default async function AppActionPage({ params }) {
     ['action-id']: actionId,
   } = await params
   const [{ data: app }, { data: action }, { data: org }] = await Promise.all([
-    getAppById({ appId, orgId }),
-    getActionById({ actionId, appId, orgId }),
-    getOrgById({ orgId }),
+    getApp({ appId, orgId }),
+    getAction({ actionId, appId, orgId }),
+    getOrg({ orgId }),
   ])
 
   const containerId = 'app-action-page'

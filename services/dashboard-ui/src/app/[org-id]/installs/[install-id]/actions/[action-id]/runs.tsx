@@ -1,7 +1,7 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
-import { getInstallActionById } from '@/lib'
+import { getInstallAction } from '@/lib'
 
 export const Runs = async ({
   actionId,
@@ -20,7 +20,7 @@ export const Runs = async ({
     data: action,
     error,
     headers,
-  } = await getInstallActionById({
+  } = await getInstallAction({
     actionId,
     installId,
     limit,

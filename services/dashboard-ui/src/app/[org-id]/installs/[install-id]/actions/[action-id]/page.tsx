@@ -10,10 +10,10 @@ import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import {
-  getInstallActionById,
-  getInstallById,
+  getInstallAction,
+  getInstall,
   getInstallState,
-  getOrgById,
+  getOrg,
 } from '@/lib'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
@@ -51,8 +51,8 @@ export async function generateMetadata({
     ['action-id']: actionId,
   } = await params
   const [{ data: install }, { data: installAction }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getInstallActionById({ actionId, installId, orgId }),
+    getInstall({ installId, orgId }),
+    getInstallAction({ actionId, installId, orgId }),
   ])
 
   return {
@@ -76,10 +76,10 @@ export default async function InstallActionPage({
     { data: installState },
     { data: org },
   ] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getInstallActionById({ actionId, installId, orgId }),
+    getInstall({ installId, orgId }),
+    getInstallAction({ actionId, installId, orgId }),
     getInstallState({ installId, orgId }),
-    getOrgById({ orgId }),
+    getOrg({ orgId }),
   ])
 
   const containerId = 'install-action-page'

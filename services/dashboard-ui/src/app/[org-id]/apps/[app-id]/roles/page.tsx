@@ -6,12 +6,12 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getAppById, getOrgById } from '@/lib'
+import { getApp, getOrg } from '@/lib'
 import { AppRoles, AppRolesSkeleton, AppRolesError } from './roles'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const { data: app } = await getAppById({ appId, orgId })
+  const { data: app } = await getApp({ appId, orgId })
 
   return {
     title: `Roles | ${app.name} | Nuon`,
@@ -21,8 +21,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function AppRolesPage({ params }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const [{ data: app, error }, { data: org }] = await Promise.all([
-    getAppById({ appId, orgId }),
-    getOrgById({ orgId }),
+    getApp({ appId, orgId }),
+    getOrg({ orgId }),
   ])
 
   if (error) {

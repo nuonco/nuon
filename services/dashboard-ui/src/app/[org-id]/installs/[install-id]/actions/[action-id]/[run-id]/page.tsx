@@ -11,11 +11,11 @@ import { CodeBlock } from '@/components/common/CodeBlock'
 import { Text } from '@/components/common/Text'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import {
-  getInstallActionById,
-  getInstallActionRunById,
-  getInstallById,
-  getWorkflowById,
-  getOrgById,
+  getInstallAction,
+  getInstallActionRun,
+  getInstall,
+  getWorkflow,
+  getOrg,
 } from '@/lib'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
 import { hydrateActionRunSteps } from '@/utils/action-utils'
@@ -50,12 +50,12 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   } = await params
   const [{ data: installActionRun }, { data: installAction }] =
     await Promise.all([
-      getInstallActionRunById({
+      getInstallActionRun({
         installId,
         orgId,
         runId,
       }),
-      getInstallActionById({
+      getInstallAction({
         actionId,
         installId,
         orgId,
@@ -80,21 +80,21 @@ export default async function InstallActionRunPage({ params }) {
     { data: installAction },
     { data: org },
   ] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getInstallActionRunById({
+    getInstall({ installId, orgId }),
+    getInstallActionRun({
       installId,
       orgId,
       runId,
     }),
-    getInstallActionById({
+    getInstallAction({
       actionId,
       installId,
       orgId,
     }),
-    getOrgById({ orgId }),
+    getOrg({ orgId }),
   ])
 
-  const { data: workflow } = await getWorkflowById({
+  const { data: workflow } = await getWorkflow({
     orgId,
     workflowId: installActionRun?.install_workflow_id,
   })

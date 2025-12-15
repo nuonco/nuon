@@ -1,6 +1,6 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { IAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 
 export const InstallRoles = async ({
   appConfigId,
@@ -12,7 +12,7 @@ export const InstallRoles = async ({
   orgId: string
 }) => {
 
-  const { data: config, error } = await getAppConfigById({
+  const { data: config, error } = await getAppConfig({
     appConfigId,
     appId,
     orgId,

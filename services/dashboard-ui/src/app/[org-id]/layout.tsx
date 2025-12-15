@@ -6,7 +6,7 @@ import {
   REFRESH_PAGE_WARNING,
   VERSION,
 } from '@/configs/app'
-import { getAPIVersion, getOrgById, getOrgs } from '@/lib'
+import { getAPIVersion, getOrg, getOrgs } from '@/lib'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AutoRefreshProvider } from '@/providers/auto-refresh-provider'
 import { BreadcrumbProvider } from '@/providers/breadcrumb-provider'
@@ -28,7 +28,7 @@ export default async function OrgLayout({
   const { ['org-id']: orgId } = await params
   const [{ data: org, error }, { data: orgs }, { data: apiVersion }] =
     await Promise.all([
-      getOrgById({ orgId }).catch((error) => {
+      getOrg({ orgId }).catch((error) => {
         console.error(error)
         notFound()
       }),

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getAccountsByOrgId } from '@/lib'
+import { getOrgAccounts } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -11,6 +11,6 @@ export async function GET(
   const limit = searchParams.get('limit') || undefined
   const offset = searchParams.get('offset') || undefined
 
-  const response = await getAccountsByOrgId({ limit, offset, orgId })
+  const response = await getOrgAccounts({ limit, offset, orgId })
   return NextResponse.json(response)
 }

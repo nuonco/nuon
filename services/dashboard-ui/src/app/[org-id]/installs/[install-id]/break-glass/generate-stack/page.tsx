@@ -2,11 +2,11 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import { DashboardContent, Section, Text } from '@/components'
 import { BreakGlassForm } from '@/components/old/Installs'
-import { getInstallById } from '@/lib'
+import { getInstall } from '@/lib'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install} = await getInstallById({ installId, orgId })
+  const { data: install} = await getInstall({ installId, orgId })
 
   return {
     title: `Generate break glass stack | ${install.name} | Nuon`,
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
 export default async function InstallBreakGlass({ params }) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const {data: install} = await getInstallById({ installId, orgId })
+  const {data: install} = await getInstall({ installId, orgId })
 
   return (
     <DashboardContent

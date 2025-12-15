@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getDeploysByComponentId } from '@/lib'
+import { getComponentDeploys } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -12,7 +12,7 @@ export async function GET(
   const offset = searchParams.get('offset') || undefined
   const q = searchParams.get('q') || undefined
 
-  const response = await getDeploysByComponentId({
+  const response = await getComponentDeploys({
     installId,
     componentId,
     orgId,

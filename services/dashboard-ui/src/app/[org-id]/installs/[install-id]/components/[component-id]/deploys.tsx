@@ -1,7 +1,7 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
-import { getDeploysByComponentId } from '@/lib'
+import { getComponentDeploys } from '@/lib'
 import type { TComponent } from '@/types'
 
 export const Deploys = async ({
@@ -21,7 +21,7 @@ export const Deploys = async ({
     data: deploys,
     error,
     headers,
-  } = await getDeploysByComponentId({
+  } = await getComponentDeploys({
     componentId: component?.id,
     installId,
     limit,

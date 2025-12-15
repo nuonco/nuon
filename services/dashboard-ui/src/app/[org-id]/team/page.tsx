@@ -10,7 +10,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getOrgById, getAccountsByOrgId } from '@/lib'
+import { getOrg, getOrgAccounts } from '@/lib'
 import { auth0 } from '@/lib/auth'
 import type { TAccount, TInvite } from '@/types'
 import { isNuonSession } from '@/utils/session-utils'
@@ -33,7 +33,7 @@ import { getFetchOpts } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   return {
     title: `Team | ${org.name} | Nuon`,
@@ -43,11 +43,11 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function OrgTeam({ params, searchParams }) {
   const sp = await searchParams
   const { ['org-id']: orgId } = await params
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   const currentOffset = parseInt(sp['offset'] || '0', 10)
   if (currentOffset > 0) {
-    const { data: members } = await getAccountsByOrgId({
+    const { data: members } = await getOrgAccounts({
       orgId,
       limit: 10,
       offset: sp['offset'],
@@ -202,7 +202,7 @@ const OrgMembers: FC<{
     data: members,
     error,
     headers,
-  } = await getAccountsByOrgId({
+  } = await getOrgAccounts({
     orgId,
     limit,
     offset,

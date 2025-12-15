@@ -1,2 +1,2 @@
-export * from './get-action-by-id'
+export * from './get-action'
 export * from './get-actions'
