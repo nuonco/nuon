@@ -19,3 +19,11 @@ output "nuon_run_stage" {
 output "nuon_nameservers" {
   value = aws_route53_zone.main.name_servers
 }
+
+output "awesomebyoc" {
+  value = {
+    nameservers = aws_route53_zone.awesomebyoc_dns.name_servers
+    domain      = aws_route53_zone.awesomebyoc_dns.name
+    zone_id     = aws_route53_zone.awesomebyoc_dns.id
+  }
+}
