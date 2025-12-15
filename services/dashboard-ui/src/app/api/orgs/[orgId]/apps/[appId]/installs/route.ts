@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getInstallsByAppId } from "@/lib";
+import { getAppInstalls } from "@/lib";
 import type { TRouteProps } from "@/types";
 
 export async function GET(request: NextRequest, { params }: TRouteProps<"orgId" | "appId">) {
@@ -9,6 +9,6 @@ export async function GET(request: NextRequest, { params }: TRouteProps<"orgId" 
   const offset = searchParams.get("offset") || undefined;
   const q = searchParams.get("q") || undefined;
   
-  const response = await getInstallsByAppId({ appId, orgId, limit, offset, q });
+  const response = await getAppInstalls({ appId, orgId, limit, offset, q });
   return NextResponse.json(response);
 }

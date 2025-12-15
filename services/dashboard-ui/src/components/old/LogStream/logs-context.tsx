@@ -49,14 +49,14 @@ export const LogsProvider: FC<ILogsProvider> = ({
       headers: { 'X-NUON-API-Offset': nextPage },
     })
       .then((res) => {
-        const next = res.headers.get('x-nuon-api-next') || '0'
-        const keepLoading = next !== '0'
-
-        if (next !== nextPage) setNextPage(next)
         res.json().then((l) => {
-          if (l?.length) {
+          const next = l.headers?.['x-nuon-api-next'] || '0'
+          const keepLoading = next !== '0'
+
+          if (next !== nextPage) setNextPage(next)
+          if (l?.data?.length) {
             updateLogs((state) =>
-              [...state, ...l].filter(
+              [...state, ...l?.data].filter(
                 (log, i, arr) => i === arr.findIndex((lr) => lr?.id === log?.id)
               )
             )

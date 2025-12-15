@@ -12,10 +12,10 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { BuildProvider } from '@/providers/build-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
-  getAppById,
-  getComponentBuildById,
-  getComponentById,
-  getOrgById,
+  getApp,
+  getComponentBuild,
+  getComponent,
+  getOrg,
 } from '@/lib'
 import { ComponentConfig } from './config'
 import { Logs, LogsError, LogsSkeleton } from './logs'
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['component-id']: componentId,
     ['build-id']: buildId,
   } = await params
-  const { data: build } = await getComponentBuildById({
+  const { data: build } = await getComponentBuild({
     componentId,
     buildId,
     orgId,
@@ -67,10 +67,10 @@ export default async function AppComponentBuildPage({ params }) {
 
   const [{ data: app }, { data: build }, { data: component }, { data: org }] =
     await Promise.all([
-      getAppById({ appId, orgId }),
-      getComponentBuildById({ componentId, buildId, orgId }),
-      getComponentById({ componentId, orgId }),
-      getOrgById({ orgId }),
+      getApp({ appId, orgId }),
+      getComponentBuild({ componentId, buildId, orgId }),
+      getComponent({ componentId, orgId }),
+      getOrg({ orgId }),
     ])
 
   const containerId = 'component-build-page'

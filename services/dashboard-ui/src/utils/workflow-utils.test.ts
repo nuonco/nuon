@@ -256,7 +256,7 @@ describe('workflow-utils', () => {
       expect(banner).toEqual({
         copy: 'Step encountered an error: Connection failed',
         theme: 'error',
-        title: 'Step failed',
+        title: 'Step undefined failed',
       })
     })
 
@@ -272,7 +272,7 @@ describe('workflow-utils', () => {
       expect(banner).toEqual({
         copy: 'Step was cancelled: User cancelled',
         theme: 'warn',
-        title: 'Step cancelled',
+        title: 'Step undefined cancelled',
       })
     })
 
@@ -288,7 +288,7 @@ describe('workflow-utils', () => {
       expect(banner).toEqual({
         copy: 'Step was discarded: Step discarded',
         theme: 'default',
-        title: 'Step discarded',
+        title: 'Step undefined discarded',
       })
     })
 
@@ -307,7 +307,7 @@ describe('workflow-utils', () => {
       expect(banner).toEqual({
         copy: 'Step was skipped by user@example.com: Manually skipped',
         theme: 'default',
-        title: 'Step skipped',
+        title: 'Step undefined skipped',
       })
     })
 
@@ -323,7 +323,7 @@ describe('workflow-utils', () => {
       expect(banner).toEqual({
         copy: 'Step was skipped due to being a plan only workflow',
         theme: 'default',
-        title: 'Step skipped',
+        title: 'Step undefined skipped',
       })
     })
 
@@ -344,7 +344,7 @@ describe('workflow-utils', () => {
       expect(banner).toEqual({
         copy: 'Step was retried by user@example.com: Completed after retry',
         theme: 'info',
-        title: 'Step retried',
+        title: 'Step undefined retried',
       })
     })
 

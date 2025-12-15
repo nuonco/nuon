@@ -11,7 +11,7 @@ import { ComponentType } from '@/components/components/ComponentType'
 import { BuildComponentButton } from '@/components/components/management/BuildComponent'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getAppById, getComponentById, getOrgById } from '@/lib'
+import { getApp, getComponent, getOrg } from '@/lib'
 import { Builds, BuildsSkeleton, BuildsError } from './builds'
 
 // NOTE: old layout stuff
@@ -34,8 +34,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['component-id']: componentId,
   } = await params
   const [{ data: app }, { data: component }] = await Promise.all([
-    getAppById({ appId, orgId }),
-    getComponentById({ componentId, orgId }),
+    getApp({ appId, orgId }),
+    getComponent({ componentId, orgId }),
   ])
 
   return {
@@ -52,9 +52,9 @@ export default async function AppComponent({ params, searchParams }) {
   const sp = await searchParams
   const [{ data: app }, { data: component, error, status }, { data: org }] =
     await Promise.all([
-      getAppById({ appId, orgId }),
-      getComponentById({ componentId, orgId }),
-      getOrgById({ orgId }),
+      getApp({ appId, orgId }),
+      getComponent({ componentId, orgId }),
+      getOrg({ orgId }),
     ])
 
   if (error) {

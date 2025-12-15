@@ -5,7 +5,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getAppById, getAppConfigs, getOrgById } from '@/lib'
+import { getApp, getAppConfigs, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InputsConfig } from './inputs-config'
 import { ReadmeConfig } from './readme-config'
@@ -29,7 +29,7 @@ export async function generateMetadata({
   params,
 }: TAppPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const { data: app } = await getAppById({ appId, orgId })
+  const { data: app } = await getApp({ appId, orgId })
 
   return {
     title: `Configuration | ${app.name} | Nuon`,
@@ -39,9 +39,9 @@ export async function generateMetadata({
 export default async function AppOverviewPage({ params }: TAppPageProps) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const [{ data: app }, { data: configs }, { data: org }] = await Promise.all([
-    getAppById({ appId, orgId }),
+    getApp({ appId, orgId }),
     getAppConfigs({ appId, orgId, limit: 1 }),
-    getOrgById({ orgId }),
+    getOrg({ orgId }),
   ])
 
   return org?.features?.['stratus-layout'] ? (

@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getOrgById, getOrgStats } from '@/lib'
+import { getOrg, getOrgStats } from '@/lib'
 import { auth0 } from '@/lib/auth'
 import type { TPageProps } from '@/types'
 
@@ -24,7 +24,7 @@ import {
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   return {
     title: `${org.name} | Dashboard`,
@@ -35,7 +35,7 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
   const { ['org-id']: orgId } = await params
   const session = await auth0.getSession()
   const [{ data: org, error }, { data: stats }] = await Promise.all([
-    getOrgById({ orgId }),
+    getOrg({ orgId }),
     getOrgStats({ orgId }),
   ])
 
