@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getLogsByLogStreamId } from '@/lib'
+import { getLogStreamLogs } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -10,7 +10,7 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const order = searchParams.get('order') as "asc" || "asc"
   const offset = request.headers.get('X-Nuon-API-Offset') || undefined
-  const response = await getLogsByLogStreamId({
+  const response = await getLogStreamLogs({
     logStreamId,
     orgId,
     offset,

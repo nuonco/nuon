@@ -118,8 +118,8 @@ Plan: 1 to add, 0 to change, 0 to destroy
         resource: 'ConfigMap',
         resourceType: 'v1',
         action: 'created',
-        before: undefined,
-        after: undefined,
+        before: null,
+        after: null,
       })
 
       expect(result.summary).toEqual({
@@ -155,8 +155,8 @@ Plan: 1 to add, 0 to change, 0 to destroy
         resource: 'ConfigMap',
         resourceType: 'v1',
         action: 'created',
-        before: undefined, // No matching diff found
-        after: undefined,
+        before: null, // No matching diff found
+        after: null,
       })
     })
 

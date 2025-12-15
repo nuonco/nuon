@@ -3,7 +3,7 @@ import {
   AppInstallsTable as Table,
   AppInstallsTableSkeleton as Skeleton,
 } from '@/components/apps/AppInstallsTable'
-import { getInstallsByAppId } from '@/lib'
+import { getAppInstalls } from '@/lib'
 
 const LIMIT = 10
 
@@ -24,7 +24,7 @@ export const InstallsTable = async ({
     data: installs,
     error,
     headers,
-  } = await getInstallsByAppId({
+  } = await getAppInstalls({
     appId,
     limit,
     offset,

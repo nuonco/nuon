@@ -1,5 +1,5 @@
 import { InstallComponentDeploys, Pagination, Empty } from '@/components'
-import { getDeploysByComponentId } from '@/lib'
+import { getComponentDeploys } from '@/lib'
 import type { TComponent } from '@/types'
 
 export const OldDeploys = async ({
@@ -15,7 +15,7 @@ export const OldDeploys = async ({
   limit?: number
   offset?: string
 }) => {
-  const { data: deploys, headers } = await getDeploysByComponentId({
+  const { data: deploys, headers } = await getComponentDeploys({
     componentId: component.id,
     installId,
     orgId,

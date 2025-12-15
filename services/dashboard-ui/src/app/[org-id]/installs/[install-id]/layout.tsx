@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getIsPageSidebarOpenFromCookie } from '@/actions/layout/page-sidebar-cookie'
-import { getInstallById, getOrgById } from '@/lib'
+import { getInstall, getOrg } from '@/lib'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { InstallProvider } from '@/providers/install-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
@@ -16,8 +16,8 @@ export default async function InstallLayout({
   const isPageSidebarOpen = await getIsPageSidebarOpenFromCookie()
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const [{ data: install, error }, { data: org }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getOrgById({ orgId }),
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
   ])
 
   if (error) {

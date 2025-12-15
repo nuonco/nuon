@@ -1,5 +1,5 @@
 import { AppInputConfig, AppInputConfigModal, Section } from '@/components'
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 import type { TAppConfig } from '@/types'
 
 export const InputsConfig = async ({
@@ -13,7 +13,7 @@ export const InputsConfig = async ({
   appName: string
   orgId: string
 }) => {
-  const { data: config, error } = await getAppConfigById({
+  const { data: config, error } = await getAppConfig({
     appConfigId,
     appId,
     orgId,

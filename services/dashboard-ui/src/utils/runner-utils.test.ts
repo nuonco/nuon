@@ -7,6 +7,7 @@ describe('runner-utils', () => {
     test('should generate correct href for build jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'build',
+        org_id: 'org123',
         metadata: {
           app_id: 'app123',
           component_id: 'comp456',
@@ -15,12 +16,15 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       const href = getJobHref(mockJob)
-      expect(href).toBe('apps/app123/components/comp456/builds/build789')
+      expect(href).toBe(
+        '/org123/apps/app123/components/comp456/builds/build789'
+      )
     })
 
     test('should generate correct href for sandbox jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'sandbox',
+        org_id: 'org123',
         metadata: {
           install_id: 'install123',
           sandbox_run_id: 'sandbox456',
@@ -28,12 +32,13 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       const href = getJobHref(mockJob)
-      expect(href).toBe('installs/install123/sandbox/sandbox456')
+      expect(href).toBe('/org123/installs/install123/sandbox/sandbox456')
     })
 
     test('should generate correct href for sync jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'sync',
+        org_id: 'org123',
         metadata: {
           install_id: 'install123',
           component_id: 'comp456',
@@ -43,13 +48,14 @@ describe('runner-utils', () => {
 
       const href = getJobHref(mockJob)
       expect(href).toBe(
-        'installs/install123/components/comp456/deploys/deploy789'
+        '/org123/installs/install123/components/comp456/deploys/deploy789'
       )
     })
 
     test('should generate correct href for deploy jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'deploy',
+        org_id: 'org123',
         metadata: {
           install_id: 'install123',
           component_id: 'comp456',
@@ -59,13 +65,14 @@ describe('runner-utils', () => {
 
       const href = getJobHref(mockJob)
       expect(href).toBe(
-        'installs/install123/components/comp456/deploys/deploy789'
+        '/org123/installs/install123/components/comp456/deploys/deploy789'
       )
     })
 
     test('should generate correct href for actions jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'actions',
+        org_id: 'org123',
         metadata: {
           install_id: 'install123',
           action_workflow_id: 'workflow456',
@@ -74,12 +81,15 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       const href = getJobHref(mockJob)
-      expect(href).toBe('installs/install123/actions/workflow456/run789')
+      expect(href).toBe(
+        '/org123/installs/install123/actions/workflow456/run789'
+      )
     })
 
     test('should return empty string for unknown job groups', () => {
       const mockJob: TRunnerJob = {
         group: 'unknown' as any,
+        org_id: 'org123',
         metadata: {},
       } as TRunnerJob
 
@@ -90,10 +100,13 @@ describe('runner-utils', () => {
     test('should handle missing metadata gracefully', () => {
       const mockJob: TRunnerJob = {
         group: 'build',
+        org_id: 'org123',
       } as TRunnerJob
 
       const href = getJobHref(mockJob)
-      expect(href).toBe('apps/undefined/components/undefined/builds/undefined')
+      expect(href).toBe(
+        '/org123/apps/undefined/components/undefined/builds/undefined'
+      )
     })
   })
 

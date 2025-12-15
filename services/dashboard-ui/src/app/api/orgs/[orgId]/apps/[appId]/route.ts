@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getAppById } from "@/lib";
+import { getApp } from "@/lib";
 import type { TRouteProps } from "@/types";
 
 export async function GET(
@@ -7,6 +7,6 @@ export async function GET(
   { params }: TRouteProps<"orgId" | "appId">,
 ) {
   const { appId, orgId } = await params;
-  const response = await getAppById({ appId, orgId });
+  const response = await getApp({ appId, orgId });
   return NextResponse.json(response);
 }

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getComponentBuildById } from '@/lib'
+import { getComponentBuild } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -8,6 +8,6 @@ export async function GET(
 ) {
   const { orgId, componentId, buildId } = await params
 
-  const response = await getComponentBuildById({ orgId, componentId, buildId })
+  const response = await getComponentBuild({ orgId, componentId, buildId })
   return NextResponse.json(response)
 }

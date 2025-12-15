@@ -3,10 +3,10 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { PageSection } from '@/components/layout/PageSection'
 import { TabNav } from '@/components/navigation/TabNav'
 import {
-  getInstallActionById,
-  getInstallActionRunById,
-  getWorkflowById,
-  getOrgById,
+  getInstallAction,
+  getInstallActionRun,
+  getWorkflow,
+  getOrg,
 } from '@/lib'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
 import type { TLayoutProps } from '@/types'
@@ -27,20 +27,20 @@ export default async function InstallActionRunLayout({
   } = await params
   const [{ data: installActionRun }, { data: installAction }, { data: org }] =
     await Promise.all([
-      getInstallActionRunById({
+      getInstallActionRun({
         installId,
         orgId,
         runId,
       }),
-      getInstallActionById({
+      getInstallAction({
         actionId,
         installId,
         orgId,
       }),
-      getOrgById({ orgId }),
+      getOrg({ orgId }),
     ])
 
-  const { data: workflow } = await getWorkflowById({
+  const { data: workflow } = await getWorkflow({
     orgId,
     workflowId: installActionRun?.install_workflow_id,
   })
