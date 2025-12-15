@@ -5,7 +5,7 @@ import {
   Link,
   Text,
 } from '@/components'
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 
 export const SandboxConfig = async ({
   appConfigId,
@@ -16,7 +16,7 @@ export const SandboxConfig = async ({
   appId: string
   orgId: string
 }) => {
-  const { data: config, error } = await getAppConfigById({
+  const { data: config, error } = await getAppConfig({
     appConfigId,
     appId,
     orgId,

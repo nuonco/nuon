@@ -9,7 +9,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getOrgById } from '@/lib'
+import { getOrg } from '@/lib'
 import { AppsTable } from './apps-table'
 // TODO(nnnat): move segment init script to org dashboard
 import { SegmentAnalyticsSetOrg } from '@/lib/segment-analytics'
@@ -21,7 +21,7 @@ import { Apps } from './apps'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   return {
     title: `Apps | ${org.name} | Nuon`,
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function AppsPage({ params, searchParams }) {
   const { ['org-id']: orgId } = await params
   const sp = await searchParams
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   return (
     <>

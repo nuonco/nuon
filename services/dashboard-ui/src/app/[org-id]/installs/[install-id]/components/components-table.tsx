@@ -1,7 +1,7 @@
 'use server'
 
 import { InstallComponentsTable as Table } from '@/components/install-components/InstallComponentsTable'
-import { getInstallComponents, getAppConfigById } from '@/lib'
+import { getInstallComponents, getAppConfig } from '@/lib'
 import type { TInstall } from '@/types'
 
 const LIMIT = 10
@@ -35,7 +35,7 @@ export async function InstallComponentsTable({
       q,
       types,
     }),
-    getAppConfigById({
+    getAppConfig({
       appConfigId: install?.app_config_id,
       appId: install.app_id,
       orgId,

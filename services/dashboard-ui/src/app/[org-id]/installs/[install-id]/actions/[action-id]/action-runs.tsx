@@ -1,6 +1,6 @@
 import { Pagination, Text } from '@/components'
 import { InstallActionRuns } from '@/components/old/InstallActionRuns'
-import { getInstallActionById } from '@/lib'
+import { getInstallAction } from '@/lib'
 
 export const ActionRuns = async ({
   actionId,
@@ -19,7 +19,7 @@ export const ActionRuns = async ({
     data: installAction,
     error,
     headers,
-  } = await getInstallActionById({
+  } = await getInstallAction({
     orgId,
     installId,
     actionId,

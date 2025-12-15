@@ -14,7 +14,7 @@ import { RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCar
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
 import { RunnerRecentActivitySkeleton } from '@/components/runners/RunnerRecentActivitySkeleton'
 import { ManagementDropdown } from "@/components/runners/management/ManagementDropdown"
-import { getRunnerById, getRunnerSettingsById, getOrgById } from '@/lib'
+import { getRunner, getRunnerSettings, getOrg } from '@/lib'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerError } from './runner-details'
 import { RunnerHealth, RunnerHealthError } from './runner-health'
@@ -38,7 +38,7 @@ import { UpcomingJobs } from './upcoming-jobs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
 
   return {
     title: `Build runner | ${org.name} | Nuon`,
@@ -48,14 +48,14 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 export default async function OrgRunner({ params, searchParams }) {
   const { ['org-id']: orgId } = await params
   const sp = await searchParams
-  const { data: org } = await getOrgById({ orgId })
+  const { data: org } = await getOrg({ orgId })
   const runnerId = org?.runner_group?.runners?.at(0)?.id
   const [{ data: runner, error }, { data: settings }] = await Promise.all([
-    getRunnerById({
+    getRunner({
       orgId,
       runnerId,
     }),
-    getRunnerSettingsById({
+    getRunnerSettings({
       orgId,
       runnerId,
     }),
