@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getDeployById } from '@/lib'
+import { getDeploy } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { installId, deployId, orgId } = await params
 
-  const response = await getDeployById({
+  const response = await getDeploy({
     installId,
     deployId,
     orgId,

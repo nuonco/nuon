@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -10,7 +10,7 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const recurse = searchParams.get('recurse') === 'true'
 
-  const response = await getAppConfigById({
+  const response = await getAppConfig({
     appId,
     appConfigId: configId,
     orgId,

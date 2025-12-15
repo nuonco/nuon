@@ -5,7 +5,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getAppById, getAppConfigs, getOrgById } from '@/lib'
+import { getApp, getAppConfigs, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { ComponentsTable, ComponentsTableSkeleton } from './components-table'
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
   params,
 }: TAppPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const { data: app } = await getAppById({ appId, orgId })
+  const { data: app } = await getApp({ appId, orgId })
 
   return {
     title: `Components | ${app.name} | Nuon`,
@@ -41,9 +41,9 @@ export default async function AppComponentsPage({
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
   const [{ data: app }, { data: configs }, { data: org }] = await Promise.all([
-    getAppById({ appId, orgId }),
+    getApp({ appId, orgId }),
     getAppConfigs({ appId, orgId }),
-    getOrgById({ orgId }),
+    getOrg({ orgId }),
   ])
 
   return org?.features?.['stratus-layout'] ? (

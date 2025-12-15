@@ -3,7 +3,7 @@ import { getOrgIdFromCookie } from '@/actions/orgs/org-session-cookie'
 import { HomePageWithModal } from '@/components/old/HomePageWithModal'
 import { AppHomePage } from '@/components/old/AppHomePage'
 import { auth0 } from '@/lib/auth'
-import { getOrgs, getOrgById } from '@/lib'
+import { getOrgs, getOrg } from '@/lib'
 
 export default async function Home() {
   const session = await auth0.getSession()
@@ -17,8 +17,8 @@ export default async function Home() {
   const orgIdFromCookie = await getOrgIdFromCookie()
 
   if (orgIdFromCookie) {
-    // Check if the org from cookie exists using getOrgById
-    const { data: org, error } = await getOrgById({ orgId: orgIdFromCookie })
+    // Check if the org from cookie exists using getOrg
+    const { data: org, error } = await getOrg({ orgId: orgIdFromCookie })
     
     if (org && !error) {
       // Org exists, redirect to that org

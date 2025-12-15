@@ -11,11 +11,11 @@ import { RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCar
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
 import { ManagementDropdown } from '@/components/runners/management/ManagementDropdown'
 import {
-  getInstallById,
-  getRunnerById,
-  getRunnerSettingsById,
+  getInstall,
+  getRunner,
+  getRunnerSettings,
   getRunnerLatestHeartbeat,
-  getOrgById,
+  getOrg,
 } from '@/lib'
 import { TPageProps } from '@/types'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
@@ -48,7 +48,7 @@ export async function generateMetadata({
   params,
 }: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install } = await getInstallById({ installId, orgId })
+  const { data: install } = await getInstall({ installId, orgId })
 
   return {
     title: `Runner | ${install?.name} | Nuon`,
@@ -62,16 +62,16 @@ export default async function Runner({
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
   const [{ data: install }, { data: org }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getOrgById({ orgId }),
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
   ])
   const [{ data: runner, error }, { data: settings }, { data: heartbeat }] =
     await Promise.all([
-      getRunnerById({
+      getRunner({
         orgId,
         runnerId: install.runner_id,
       }),
-      getRunnerSettingsById({
+      getRunnerSettings({
         orgId,
         runnerId: install.runner_id,
       }),

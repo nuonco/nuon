@@ -1,6 +1,6 @@
 import { ComponentConfiguration, Text } from '@/components'
 import { ValuesFileModal } from '@/components/old/InstallSandbox'
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 import type { TInstall } from '@/types'
 
 export const ComponentConfig = async ({
@@ -12,7 +12,7 @@ export const ComponentConfig = async ({
   componentId: string
   orgId: string
 }) => {
-  const { data: config, error } = await getAppConfigById({
+  const { data: config, error } = await getAppConfig({
     appConfigId: install.app_config_id,
     appId: install.app_id,
     orgId,

@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { LogsSkeleton as LogsViewerSkeleton } from '@/components/log-stream/Logs'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider-temp'
 import { LogViewerProvider } from '@/providers/log-viewer-provider-temp'
-import { getLogsByLogStreamId } from '@/lib'
+import { getLogStreamLogs } from '@/lib'
 import type { TActionConfig } from '@/types'
 
 export async function Logs({
@@ -22,7 +22,7 @@ export async function Logs({
     data: logs,
     error,
     headers,
-  } = await getLogsByLogStreamId({
+  } = await getLogStreamLogs({
     logStreamId,
     order: logStreamOpen ? 'asc' : 'desc',
     orgId,
