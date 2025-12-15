@@ -12,10 +12,10 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageSection } from '@/components/layout/PageSection'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
-  getInstallById,
-  getInstallSandboxRunById,
-  getWorkflowById,
-  getOrgById,
+  getInstall,
+  getInstallSandboxRun,
+  getWorkflow,
+  getOrg,
 } from '@/lib'
 import { toSentenceCase } from '@/utils/string-utils'
 import { Logs, LogsError, LogsSkeleton } from './logs'
@@ -51,8 +51,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['run-id']: runId,
   } = await params
   const [{ data: install }, { data: sandboxRun }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getInstallSandboxRunById({ runId, orgId }),
+    getInstall({ installId, orgId }),
+    getInstallSandboxRun({ runId, orgId }),
   ])
 
   return {
@@ -68,15 +68,15 @@ export default async function SandboxRuns({ params }) {
   } = await params
   const [{ data: install }, { data: sandboxRun }, { data: org }] =
     await Promise.all([
-      getInstallById({ installId, orgId }),
-      getInstallSandboxRunById({
+      getInstall({ installId, orgId }),
+      getInstallSandboxRun({
         orgId,
         runId,
       }),
-      getOrgById({ orgId }),
+      getOrg({ orgId }),
     ])
 
-  const { data: workflow } = await getWorkflowById({
+  const { data: workflow } = await getWorkflow({
     orgId,
     workflowId: sandboxRun?.install_workflow_id,
   })

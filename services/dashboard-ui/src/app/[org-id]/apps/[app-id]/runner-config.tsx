@@ -1,5 +1,5 @@
 import { AppRunnerConfig, EmptyStateGraphic, Link, Text } from '@/components'
-import { getAppConfigById } from '@/lib'
+import { getAppConfig } from '@/lib'
 
 export const RunnerConfig = async ({
   appConfigId,
@@ -10,7 +10,7 @@ export const RunnerConfig = async ({
   appId: string
   orgId: string
 }) => {
-  const { data: config, error } = await getAppConfigById({
+  const { data: config, error } = await getAppConfig({
     appConfigId,
     appId,
     orgId,

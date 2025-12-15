@@ -13,10 +13,10 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import {
-  getInstallById,
-  getDeployById,
-  getWorkflowById,
-  getOrgById,
+  getInstall,
+  getDeploy,
+  getWorkflow,
+  getOrg,
 } from '@/lib'
 import { Build } from './build'
 import { ComponentConfig } from './config'
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     ['install-id']: installId,
     ['deploy-id']: deployId,
   } = await params
-  const { data: deploy } = await getDeployById({
+  const { data: deploy } = await getDeploy({
     deployId,
     installId,
     orgId,
@@ -79,13 +79,13 @@ export default async function InstallComponentDeploy({ params }) {
   } = await params
   const [{ data: deploy, error, status }, { data: install }, { data: org }] =
     await Promise.all([
-      getDeployById({
+      getDeploy({
         deployId,
         installId,
         orgId,
       }),
-      getInstallById({ installId, orgId }),
-      getOrgById({ orgId }),
+      getInstall({ installId, orgId }),
+      getOrg({ orgId }),
     ])
 
   if (error) {
@@ -102,7 +102,7 @@ export default async function InstallComponentDeploy({ params }) {
     }
   }
 
-  const { data: workflow } = await getWorkflowById({
+  const { data: workflow } = await getWorkflow({
     workflowId: deploy?.install_workflow_id,
     orgId,
   })

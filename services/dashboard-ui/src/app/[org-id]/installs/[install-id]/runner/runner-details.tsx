@@ -1,7 +1,7 @@
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { RunnerDetailsCard } from '@/components/runners/RunnerDetailsCard'
-import { getRunnerById, getRunnerLatestHeartbeat } from '@/lib'
+import { getRunner, getRunnerLatestHeartbeat } from '@/lib'
 import type { TRunnerGroup, TRunnerSettings } from '@/types'
 
 export async function RunnerDetails({
@@ -21,7 +21,7 @@ export async function RunnerDetails({
       orgId,
       runnerId,
     }),
-    getRunnerById({
+    getRunner({
       orgId,
       runnerId,
     }),

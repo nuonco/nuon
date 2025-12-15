@@ -1,5 +1,5 @@
 import { Duration, StatusBadge, Text, Time } from '@/components'
-import { getComponentBuildById } from '@/lib'
+import { getComponentBuild } from '@/lib'
 
 export const Build = async ({
   buildId,
@@ -10,7 +10,7 @@ export const Build = async ({
   componentId: string
   orgId: string
 }) => {
-  const { data: build, error } = await getComponentBuildById({
+  const { data: build, error } = await getComponentBuild({
     buildId,
     componentId,
     orgId,

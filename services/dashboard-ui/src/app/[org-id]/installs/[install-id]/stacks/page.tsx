@@ -5,7 +5,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getInstallById, getOrgById } from '@/lib'
+import { getInstall, getOrg } from '@/lib'
 import { TPageProps } from '@/types'
 import { InstallStacksTable, InstallStacksTableSkeleton } from './stacks-table'
 
@@ -30,7 +30,7 @@ export async function generateMetadata({
   params,
 }: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install }: any = await getInstallById({ installId, orgId })
+  const { data: install }: any = await getInstall({ installId, orgId })
 
   return {
     title: `Stacks | ${install.name} | Nuon`,
@@ -40,8 +40,8 @@ export async function generateMetadata({
 export default async function InstallStack({ params }: TInstallPageProps) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const [{ data: install }, { data: org }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getOrgById({
+    getInstall({ installId, orgId }),
+    getOrg({
       orgId,
     }),
   ])

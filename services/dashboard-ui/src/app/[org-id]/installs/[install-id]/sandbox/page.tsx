@@ -6,7 +6,7 @@ import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { ManagementDropdown } from "@/components/sandbox/management/ManagementDropdown"
-import { getInstallById, getInstallDriftedObjects, getOrgById } from '@/lib'
+import { getInstall, getInstallDriftedObjects, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
 
@@ -36,7 +36,7 @@ export async function generateMetadata({
   params,
 }: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install } = await getInstallById({ installId, orgId })
+  const { data: install } = await getInstall({ installId, orgId })
 
   return {
     title: `Sandbox | ${install.name} | Nuon`,
@@ -51,9 +51,9 @@ export default async function InstallSandboxPage({
   const sp = await searchParams
   const [{ data: install }, { data: driftedObjects }, { data: org }] =
     await Promise.all([
-      getInstallById({ installId, orgId }),
+      getInstall({ installId, orgId }),
       getInstallDriftedObjects({ installId, orgId }),
-      getOrgById({ orgId }),
+      getOrg({ orgId }),
     ])
 
   const latestSandboxRun = install?.install_sandbox_runs?.at(0)

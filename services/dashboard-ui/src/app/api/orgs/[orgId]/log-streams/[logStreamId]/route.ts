@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { getLogStreamById } from '@/lib'
+import { getLogStream } from '@/lib'
 import type { TRouteProps } from '@/types'
 
 export async function GET(
@@ -7,6 +7,6 @@ export async function GET(
   { params }: TRouteProps<'orgId' | 'logStreamId'>
 ) {
   const { logStreamId, orgId } = await params
-  const response = await getLogStreamById({ logStreamId, orgId })
+  const response = await getLogStream({ logStreamId, orgId })
   return NextResponse.json(response)
 }

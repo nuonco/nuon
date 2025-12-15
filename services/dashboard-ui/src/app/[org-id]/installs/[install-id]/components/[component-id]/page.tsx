@@ -11,7 +11,7 @@ import { ComponentType } from '@/components/components/ComponentType'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getInstallById, getInstallComponentById, getOrgById } from '@/lib'
+import { getInstall, getInstallComponent, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { Deploys } from './deploys'
 
@@ -45,8 +45,8 @@ export async function generateMetadata({
     ['component-id']: componentId,
   } = await params
   const [{ data: install }, { data: installComponent }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getInstallComponentById({ componentId, installId, orgId }),
+    getInstall({ installId, orgId }),
+    getInstallComponent({ componentId, installId, orgId }),
   ])
 
   return {
@@ -69,9 +69,9 @@ export default async function InstallComponentPage({
     { data: install },
     { data: installComponent, error, status },
   ] = await Promise.all([
-    getOrgById({ orgId }),
-    getInstallById({ installId, orgId }),
-    getInstallComponentById({ orgId, installId, componentId }),
+    getOrg({ orgId }),
+    getInstall({ installId, orgId }),
+    getInstallComponent({ orgId, installId, componentId }),
   ])
 
   if (error) {
