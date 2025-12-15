@@ -3,10 +3,10 @@ import { Suspense } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import {
-  getInstallActionById,
-  getInstallActionRunById,
-  getInstallById,
-  getOrgById,
+  getInstallAction,
+  getInstallActionRun,
+  getInstall,
+  getOrg,
 } from '@/lib'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import type { TPageProps } from '@/types'
@@ -27,12 +27,12 @@ export async function generateMetadata({
   } = await params
   const [{ data: installActionRun }, { data: installAction }] =
     await Promise.all([
-      getInstallActionRunById({
+      getInstallActionRun({
         installId,
         orgId,
         runId,
       }),
-      getInstallActionById({
+      getInstallAction({
         actionId,
         installId,
         orgId,
@@ -59,18 +59,18 @@ export default async function InstallAcitonRunLogsPage({
     { data: install },
     { data: org },
   ] = await Promise.all([
-    getInstallActionRunById({
+    getInstallActionRun({
       installId,
       orgId,
       runId,
     }),
-    getInstallActionById({
+    getInstallAction({
       actionId,
       installId,
       orgId,
     }),
-    getInstallById({ installId, orgId }),
-    getOrgById({ orgId }),
+    getInstall({ installId, orgId }),
+    getOrg({ orgId }),
   ])
 
   return (

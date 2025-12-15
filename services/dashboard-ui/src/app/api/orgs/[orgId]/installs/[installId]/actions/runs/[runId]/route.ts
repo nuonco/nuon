@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getInstallActionRunById } from "@/lib";
+import { getInstallActionRun } from "@/lib";
 import type { TRouteProps } from "@/types";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { installId, runId, orgId } = await params;
 
-  const response = await getInstallActionRunById({
+  const response = await getInstallActionRun({
     installId,
     runId,
     orgId,

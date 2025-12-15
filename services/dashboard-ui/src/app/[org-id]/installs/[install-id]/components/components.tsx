@@ -4,7 +4,7 @@ import {
   Notice,
   Pagination,
 } from '@/components'
-import { getInstallComponents, getAppConfigById } from '@/lib'
+import { getInstallComponents, getAppConfig } from '@/lib'
 import type { TInstall } from '@/types'
 
 export const InstallComponents = async ({
@@ -34,7 +34,7 @@ export const InstallComponents = async ({
         q,
         types,
       }),
-      getAppConfigById({
+      getAppConfig({
         appConfigId: install?.app_config_id,
         appId: install.app_id,
         orgId,

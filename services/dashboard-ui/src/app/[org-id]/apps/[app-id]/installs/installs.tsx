@@ -1,5 +1,5 @@
 import { AppInstallsTable, Notice, NoInstalls, Pagination } from '@/components'
-import { getInstallsByAppId } from '@/lib'
+import { getAppInstalls } from '@/lib'
 import type { TApp } from '@/types'
 
 export const AppInstalls = async ({
@@ -21,7 +21,7 @@ export const AppInstalls = async ({
     data: installs,
     error,
     headers,
-  } = await getInstallsByAppId({
+  } = await getAppInstalls({
     appId,
     limit,
     offset,

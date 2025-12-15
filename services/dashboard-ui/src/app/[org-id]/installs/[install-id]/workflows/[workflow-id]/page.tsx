@@ -10,7 +10,7 @@ import { WorkflowDetails } from '@/components/workflows/WorkflowDetails'
 import { WorkflowProvider } from '@/providers/WorkflowProvider'
 import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
 import { OnboardingCelebrationWrapper } from './OnboardingCelebrationWrapper'
-import { getInstallById, getWorkflowById, getOrgById } from '@/lib'
+import { getInstall, getWorkflow, getOrg } from '@/lib'
 import { snakeToWords, toSentenceCase } from '@/utils/string-utils'
 import type { TPageProps } from '@/types'
 import { WorkflowSteps, WorkflowStepsError } from './steps'
@@ -31,8 +31,8 @@ export async function generateMetadata({
     ['workflow-id']: installWorkflowId,
   } = await params
   const [{ data: install }, { data: installWorkflow }] = await Promise.all([
-    getInstallById({ installId, orgId }),
-    getWorkflowById({ workflowId: installWorkflowId, orgId }),
+    getInstall({ installId, orgId }),
+    getWorkflow({ workflowId: installWorkflowId, orgId }),
   ])
 
   return {
@@ -56,9 +56,9 @@ export default async function InstallWorkflow({
 
   const [{ data: install }, { data: installWorkflow }, { data: org }] =
     await Promise.all([
-      getInstallById({ installId, orgId }),
-      getWorkflowById({ workflowId: workflowId, orgId }),
-      getOrgById({ orgId }),
+      getInstall({ installId, orgId }),
+      getWorkflow({ workflowId: workflowId, orgId }),
+      getOrg({ orgId }),
     ])
 
   const containerId = 'workflow-page'

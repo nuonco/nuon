@@ -5,7 +5,7 @@ export * from './sandbox'
 // install query
 export * from './get-installs'
 export * from './get-install-audit-log'
-export * from './get-install-by-id'
+export * from './get-install'
 export * from './get-install-stack'
 export * from './get-install-state'
 export * from './get-install-current-inputs'

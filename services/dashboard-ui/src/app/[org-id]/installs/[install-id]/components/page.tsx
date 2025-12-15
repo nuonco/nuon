@@ -6,7 +6,7 @@ import { Text } from '@/components/common/Text'
 import { InstallComponentsTableSkeleton } from "@/components/install-components/InstallComponentsTable";
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getInstallById, getOrgById } from '@/lib'
+import { getInstall, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InstallComponentsTable } from "./components-table";
 
@@ -32,7 +32,7 @@ export async function generateMetadata({
   params,
 }: TInstallPageProps): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
-  const { data: install } = await getInstallById({ installId, orgId })
+  const { data: install } = await getInstall({ installId, orgId })
 
   return {
     title: `Components | ${install.name} | Nuon`,
@@ -46,8 +46,8 @@ export default async function InstallComponentsPage({
   const { ['org-id']: orgId, ['install-id']: installId } = await params
   const sp = await searchParams
   const [{ data: install }, { data: org }] = await Promise.all([
-    getInstallById({ orgId, installId }),
-    getOrgById({ orgId }),
+    getInstall({ orgId, installId }),
+    getOrg({ orgId }),
   ])
 
   return org?.features?.['stratus-layout'] ? (

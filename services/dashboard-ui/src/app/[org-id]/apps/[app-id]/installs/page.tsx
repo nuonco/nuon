@@ -6,7 +6,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getAppById, getOrgById } from '@/lib'
+import { getApp, getOrg } from '@/lib'
 import { InstallsTable, InstallsTableSkeleton } from './installs-table'
 
 // NOTE: old layout stuff
@@ -23,7 +23,7 @@ import { AppInstalls } from './installs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const { data: app } = await getAppById({ appId, orgId })
+  const { data: app } = await getApp({ appId, orgId })
 
   return {
     title: `Installs | ${app.name} | Nuon`,
@@ -34,8 +34,8 @@ export default async function AppInstallsPage({ params, searchParams }) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
   const [{ data: app, error }, { data: org }] = await Promise.all([
-    getAppById({ appId, orgId }),
-    getOrgById({ orgId }),
+    getApp({ appId, orgId }),
+    getOrg({ orgId }),
   ])
 
   if (error) {
