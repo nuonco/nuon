@@ -102,3 +102,9 @@ variable "homepage_url" {
   default = ""
 }
 
+variable "has_discussions" {
+  default     = false
+  type        = bool
+  description = "Whether to enable GitHub discussions for the repo"
+}
+

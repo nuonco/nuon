@@ -9,12 +9,13 @@ resource "github_repository" "main" {
 
   // if is_public is set, then this will be public, if is_private is set, then it will be private, defaulting to
   // "internal"
-  visibility   = var.is_public ? "public" : var.is_private ? "private" : "internal"
-  archived     = var.archived
-  has_issues   = true  # we used to turn off issues for archived repos. that causes issues so don't
-  has_projects = false # we use org projects, not older projects v1
-  has_wiki     = false # we use notion
-  auto_init    = !var.is_fork
+  visibility      = var.is_public ? "public" : var.is_private ? "private" : "internal"
+  archived        = var.archived
+  has_issues      = true  # we used to turn off issues for archived repos. that causes issues so don't
+  has_projects    = false # we use org projects, not older projects v1
+  has_wiki        = false # we use notion
+  has_discussions = var.has_discussions
+  auto_init       = !var.is_fork
 
   # homepage url: used very rarely
   homepage_url = var.homepage_url
@@ -48,4 +49,3 @@ resource "github_team_repository" "owner" {
   team_id    = var.owning_team_id
   permission = "push"
 }
-

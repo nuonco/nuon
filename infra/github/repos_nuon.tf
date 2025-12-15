@@ -498,6 +498,7 @@ module "nuon" {
   description      = "BYOC infrastructure for everyone."
   required_checks  = []
   is_public        = true
+  has_discussions  = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
 
