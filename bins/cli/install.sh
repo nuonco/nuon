@@ -9,6 +9,19 @@ set -e
 set -o pipefail
 set -u
 
+NO_INPUT=false
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --no-input)
+      NO_INPUT=true
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
 BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli
 LSP_BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/lsp
 # Create a temporary directory for downloading the binaries
@@ -26,11 +39,13 @@ if [ ! -d "$DIR" ]; then
 fi
 
 echo "Installing nuon cli into $DIR"
-read -ep "press \"y\" to proceed: " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-    exit 1
+if [ "$NO_INPUT" = false ]; then
+  read -ep "press \"y\" to proceed: " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+      exit 1
+  fi
 fi
 
 echo "checking OS and Architecture..."
