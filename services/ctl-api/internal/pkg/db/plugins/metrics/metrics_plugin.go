@@ -184,6 +184,6 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		"latency_ms", dur.Milliseconds(),
 		"prepared_sql", tx.Statement.SQL.String(),
 		"vars", tx.Statement.Vars,
-		"final_sql", tx.Dialector.Explain(tx.Statement.SQL.String(), tx.Statement.Vars...),
+		"final_sql", tx.Explain(tx.Statement.SQL.String(), tx.Statement.Vars...),
 	)
 }

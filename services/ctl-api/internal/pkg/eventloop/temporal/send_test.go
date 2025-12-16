@@ -11,6 +11,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/stretchr/testify/assert"
@@ -100,7 +101,7 @@ func registerNS(opts client.Options, ns string) error {
 	retention := time.Hour
 	err = namespaceClient.Register(context.Background(), &workflowservice.RegisterNamespaceRequest{
 		Namespace:                        ns,
-		WorkflowExecutionRetentionPeriod: &retention,
+		WorkflowExecutionRetentionPeriod: durationpb.New(retention),
 	})
 	if err != nil {
 		return err
@@ -341,7 +342,7 @@ type SRTestOptions struct {
 }
 
 func (o SRTestOptions) makeWorkflowID(base string) string {
-	return fmt.Sprintf("%s-%s", strings.Replace(o.ID, "/", "_", -1), base)
+	return fmt.Sprintf("%s-%s", strings.ReplaceAll(o.ID, "/", "_"), base)
 }
 
 func (o SRTestOptions) getSignal() eventloop.Signal {
