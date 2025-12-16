@@ -47,7 +47,7 @@ func (s *installInputsSuite) SetupTest() {
 	fakeReq.AwsAccount.Region = "us-west-2"
 	fakeReq.Inputs = s.fakeInstallInputsForApp(s.appID)
 
-	install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+	install, _, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), install)
 	s.installID = install.ID

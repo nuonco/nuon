@@ -319,7 +319,7 @@ func (m Model) View() string {
 				Width:   m.width,
 				Height:  m.stepsHeight,
 				Padding: 1,
-				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(fmt.Sprintf("%s", m.error.Error())),
+				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(m.error.Error()),
 				Level:   "error",
 			})
 		} else {

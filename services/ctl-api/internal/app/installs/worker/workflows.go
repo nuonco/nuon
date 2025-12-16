@@ -19,8 +19,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/state"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/cloudformation"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
 type Params struct {

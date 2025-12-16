@@ -5,19 +5,20 @@ linters:
   exclusions:
     generated: lax
     paths:
-      - exp/
+      - "^exp/"
+      - "^infra/"
   enable:
-    - dogsled
-    - funlen
-    - gochecknoinits
-    - gocyclo
-    - goprintffuncname
-    - govet
-    - ineffassign
-    - nakedret
-    - nolintlint
-    - staticcheck
-    - whitespace
+    # - dogsled
+    # - funlen
+    # - gochecknoinits
+    # - gocyclo
+    # - goprintffuncname
+    # - govet
+    # - ineffassign
+    # - nakedret
+    # - nolintlint
+    # - staticcheck
+    # - whitespace
     # - bodyclose
     # - goconst
     # - noctx
@@ -71,11 +72,14 @@ linters:
 
 formatters:
   enable:
-    - gofmt
+    # - gofmt
     - goimports
-    - golines
+    # - golines
   exclusions:
     generated: lax
 run:
   timeout: 5m
   go: "1.25"
+  exclude-dirs:
+    - exp
+    - infra

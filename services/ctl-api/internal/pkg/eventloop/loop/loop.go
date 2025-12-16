@@ -105,7 +105,7 @@ func (l *Loop[SignalType, ReqSig]) RunWithConcurrency(ctx workflow.Context, req 
 	//    (within their conc group) into pendingSignals. The workflow will restart with ContinueAsNew, and pending signals processed in their respective conc groups.
 	// 	  The Restart() signal itself is processed as part of pendingSignals on the refreshed loop.
 	//  - The maxSignals limit is exceeded. Behavior is identical to the Restart() case, but slightly different telemetry is emitted.
-	for !(l.stop || l.notexist) {
+	for !l.stop && !l.notexist {
 		// fmt.Println(l.stop, l.notexist, l.restart, l.countExceeded)
 		selector.Select(ctx)
 
