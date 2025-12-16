@@ -12,8 +12,8 @@ import (
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/cloudformation"
 	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
 const (

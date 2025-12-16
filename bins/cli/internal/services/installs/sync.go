@@ -69,10 +69,10 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 
 func (s *Service) listAllAppInstalls(ctx context.Context, appID string) (map[string]*models.AppInstall, error) {
 	var (
-		hasMore bool = true
+		hasMore = true
 		offset  int
-		limit   int = 50
-		result      = make(map[string]*models.AppInstall)
+		limit   = 50
+		result  = make(map[string]*models.AppInstall)
 	)
 	for hasMore {
 		installs, more, err := s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{

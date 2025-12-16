@@ -68,7 +68,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	{
 		inputDefaults := make(map[string]string)
 		for _, ic := range appInputCfg.Inputs {
-			if ic.Required == false && ic.Sensitive == false && ic.Default != "" {
+			if !ic.Required && !ic.Sensitive && ic.Default != "" {
 				inputDefaults[ic.Name] = ic.Default
 			}
 		}
@@ -287,7 +287,7 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 	view := ui.NewGetView()
 	view.Render(formatWorkflows([]*models.AppWorkflow{workflow}))
 
-	if wait == false {
+	if !wait {
 		return nil
 	}
 

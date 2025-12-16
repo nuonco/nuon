@@ -24,7 +24,7 @@ func (m *patcherPlugin) Initialize(db *gorm.DB) error {
 
 func (m *patcherPlugin) enablePatcher(tx *gorm.DB) {
 	enablePagination, ok := tx.InstanceGet(PatcherEnabledKey)
-	if !(ok && enablePagination.(bool)) {
+	if !ok || !enablePagination.(bool) {
 		return
 	}
 

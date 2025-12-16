@@ -65,12 +65,12 @@ func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
 	}
 
 	// default settings
-	if dialector.Config.DefaultGranularity == 0 {
-		dialector.Config.DefaultGranularity = 3
+	if dialector.DefaultGranularity == 0 {
+		dialector.DefaultGranularity = 3
 	}
 
-	if dialector.Config.DefaultCompression == "" {
-		dialector.Config.DefaultCompression = "LZ4"
+	if dialector.DefaultCompression == "" {
+		dialector.DefaultCompression = "LZ4"
 	}
 
 	if dialector.DefaultIndexType == "" {
@@ -105,7 +105,7 @@ func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
 			versionNoRenameColumn, _ := version.NewConstraint("< 20.4")
 
 			if versionNoRenameColumn.Check(dbversion) {
-				dialector.Config.DontSupportRenameColumn = true
+				dialector.DontSupportRenameColumn = true
 			}
 
 			versionNoPrecisionColumn, _ := version.NewConstraint("< 21.11")
