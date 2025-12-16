@@ -7,10 +7,15 @@ import { useAccount } from '@/hooks/use-account'
 import type { TUserJourney } from '@/types'
 import { addSupportUsersToOrg } from '@/components/old/admin-actions'
 
-export const useAutoOrgCreation = () => {
+export const useAutoOrgCreation = ({
+  sfData,
+}: {
+  sfData: Record<string, string>
+}) => {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { account, refreshAccount } = useAccount()
+
   const router = useRouter()
 
   // Check if user needs org created automatically
@@ -39,7 +44,11 @@ export const useAutoOrgCreation = () => {
 
     try {
       const { data: newOrg, error: createError } = await createOrg({
-        body: { name: `${account.email}-trial`, use_sandbox_mode: false },
+        body: {
+          name: `${account.email}-trial`,
+          use_sandbox_mode: false,
+          ...sfData,
+        },
       })
 
       if (createError !== null) {
