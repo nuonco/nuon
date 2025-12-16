@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@paper-design/shaders-react": "^0.0.68",
     "@phosphor-icons/react": "^2.1.7",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
