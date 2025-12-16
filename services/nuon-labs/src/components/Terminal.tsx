@@ -312,7 +312,6 @@ export const Terminal = () => {
         onClick={handleTerminalClick}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        data-cursor-terminal
       >
         {/* Terminal Header */}
         <div className="flex items-center gap-2 px-4 py-2.5 bg-[#191919] border-b border-[#2a2a2a]">

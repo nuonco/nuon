@@ -14,7 +14,6 @@ export const Footer = () => {
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-white transition-colors"
-          data-cursor-hover
         >
           Nuon
         </a>

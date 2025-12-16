@@ -84,7 +84,6 @@ export const Hero = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="block group"
-              data-cursor-project
             >
               <div className="bg-[#111111] border border-[#2a2a2a] rounded-lg p-5 hover:border-[#f97316]/30 transition-all">
                 {/* Header row */}
@@ -136,7 +135,6 @@ export const Hero = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="grid grid-cols-[120px_1fr_90px_40px] lg:grid-cols-[140px_1fr_100px_40px] gap-4 py-4 pr-6 border-b border-[#2a2a2a] hover:bg-[#111111] transition-colors cursor-pointer group items-center"
-                data-cursor-project
               >
                 <div className="flex items-center gap-2 text-sm text-[#808080]">
                   <span className="text-[#f97316]">■</span>
