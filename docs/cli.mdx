@@ -21,8 +21,7 @@ After installation, you may need to refresh your shell session.
 source ~/.bashrc # or ~/.zshrc, etc.
 ```
 
-You can also enable autocomplete for you shell. Run `nuon completion` to see
-what shells we support.
+You can also enable autocomplete for you shell. Run `nuon completion` to see what shells we support.
 
 ```sh
 source <(nuon completion <your-shell>)
@@ -39,9 +38,8 @@ If you are not using Homebrew, you can dowload the binaries for MacOS or Linux:
 - `linux_386`
 - `linux_amd64`
 
-Binaries are published to https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli,
-and versioned by release. To download a binary, first look up the current API
-version, and then download the current binary for your platform.
+Binaries are published to https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli, and versioned by release. To download a
+binary, first look up the current API version, and then download the current binary for your platform.
 
 To look up the current API version:
 
@@ -49,8 +47,7 @@ To look up the current API version:
 curl https://api.nuon.co/version
 ```
 
-To download the binaries for a specific version, substitute the version and
-platform into the following URL:
+To download the binaries for a specific version, substitute the version and platform into the following URL:
 `https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_${PLATFORM}`
 
 An example of downloading version `0.19.421` of the CLI for `darwin_arm64`:
@@ -67,9 +64,7 @@ chmod +x nuon
 
 ### Updates
 
-<Note>
-The Nuon CLI changes frequently, so we recommend you update it regularly.
-</Note>
+<Note>The Nuon CLI changes frequently, so we recommend you update it regularly.</Note>
 
 You can update the CLI using Homebrew:
 
@@ -78,14 +73,12 @@ brew update
 brew upgrade nuonco/tap/nuon
 ```
 
-Or, if you are managing the binary directly, you can download the latest version
-from the S3 bucket as described above.
+Or, if you are managing the binary directly, you can download the latest version from the S3 bucket as described above.
 
 ### Debug Mode
 
-In the case that something goes wrong, you can set the environment variable
-`NUON_DEBUG` to print verbose logs. These can be helpful to share with us, while
-debugging any issues.
+In the case that something goes wrong, you can set the environment variable `NUON_DEBUG` to print verbose logs. These
+can be helpful to share with us, while debugging any issues.
 
 ```sh
 NUON_DEBUG=true nuon apps list
@@ -93,11 +86,13 @@ NUON_DEBUG=true nuon apps list
 
 ### Using the CLI against a BYOC Instance
 
-If you are using a Nuon BYOC instance, i.e., a self-hosted Nuon control plane running in your own infrastructure, you can use the CLI to interact with it.
+If you are using a Nuon BYOC instance, i.e., a self-hosted Nuon control plane running in your own infrastructure, you
+can use the CLI to interact with it.
 
 To do this, you can:
+
 ```sh
-NUON_API_URL=https://api.your-byoc-instance.com nuon auth login 
+NUON_API_URL=https://api.your-byoc-instance.com nuon auth login
 
 # or
 
@@ -107,6 +102,16 @@ nuon auth login #or other nuon CLI commands.
 
 By default, the CLI will use api.nuon.co as the API URL.
 
-`nuon auth login` also prompts the user to either use Nuon Cloud (api.nuon.co) or BYOC Nuon where the user can enter their Nuon control place URL
+`nuon auth login` also prompts the user to either use Nuon Cloud (api.nuon.co) or BYOC Nuon where the user can enter
+their Nuon control place URL
 
 ![Nuon auth login](./images/resources/cli/cli-auth-login.png)
+
+## Nuon Preview Features
+
+We are working on a number of TUIs for the CLI. These include contextual TUIs for object selection and full-page TUIs
+for workflows and actions. These features can be enabled by setting `NUON_PREVIEW=true`.
+
+![Nuon CLI TUI](./images/resources/cli/workflow.png)
+
+At the time of writing, we have experimental TUIs for actions, workflows, and for creating new installs.
