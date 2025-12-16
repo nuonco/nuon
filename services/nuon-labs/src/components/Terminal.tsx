@@ -18,39 +18,39 @@ interface Command {
 }
 
 const COMMANDS: Record<string, string[] | ((args: string[]) => string[])> = {
-  '/help': [
+  'help': [
     '',
     '  Available commands:',
     '',
-    '    /help              Show this help message',
-    '    /list              List all experiments',
-    '    /open <project>    Open an experiment',
-    '    /status <project>  Check project status',
-    '    /about             Learn about Nuon Labs',
-    '    /clear             Clear the terminal',
+    '    help              Show this help message',
+    '    list              List all experiments',
+    '    open <project>    Open an experiment',
+    '    status <project>  Check project status',
+    '    about             Learn about Nuon Labs',
+    '    clear             Clear the terminal',
     '',
   ],
-  '/about': [
+  'about': [
     '',
     '  Nuon Labs - Experimental BYOC Playground',
     '',
     '  This is where we build and test cutting-edge features',
     '  before they graduate to production.',
     '',
-    '  All experiments are in alpha/beta - use at your own risk!',
+    '  All experiments are in alpha/beta.',
     '',
   ],
-  '/list': [
+  'list': [
     '',
     '  Active Experiments:',
     '',
     '    ● customer-dashboard   [alpha]',
     '      Purpose-built dashboard for customers',
     '',
-    '  Use "/open <project>" to try one out!',
+    '  Use "open <project>" to try one out!',
     '',
   ],
-  '/open': (args: string[]) => {
+  'open': (args: string[]) => {
     const project = args[0]?.toLowerCase()
     const projects: Record<string, { url: string; status: string }> = {
       'customer-dashboard': {
@@ -60,7 +60,7 @@ const COMMANDS: Record<string, string[] | ((args: string[]) => string[])> = {
     }
 
     if (!project) {
-      return ['', '  Usage: /open <project>', '  Try: /open customer-dashboard', '']
+      return ['', '  Usage: open <project>', '  Try: open customer-dashboard', '']
     }
 
     if (projects[project]) {
@@ -78,11 +78,11 @@ const COMMANDS: Record<string, string[] | ((args: string[]) => string[])> = {
     return [
       '',
       `  ✗ Project "${project}" not found.`,
-      '  Use "/list" to see available experiments.',
+      '  Use "list" to see available experiments.',
       '',
     ]
   },
-  '/status': (args: string[]) => {
+  'status': (args: string[]) => {
     const project = args[0]?.toLowerCase()
     const statuses: Record<string, string[]> = {
       'customer-dashboard': [
@@ -96,14 +96,14 @@ const COMMANDS: Record<string, string[] | ((args: string[]) => string[])> = {
     }
 
     if (!project) {
-      return ['', '  Usage: /status <project>', '  Try: /status customer-dashboard', '']
+      return ['', '  Usage: status <project>', '  Try: status customer-dashboard', '']
     }
 
     return statuses[project] || ['', `  ✗ Project "${project}" not found.`, '']
   },
 }
 
-const ALL_COMMANDS = ['/help', '/list', '/open', '/status', '/about', '/clear']
+const ALL_COMMANDS = ['help', 'list', 'open', 'status', 'about', 'clear']
 const PROJECTS = ['customer-dashboard']
 
 export const Terminal = () => {
@@ -115,6 +115,7 @@ export const Terminal = () => {
   const [suggestion, setSuggestion] = useState('')
   const [showIntro, setShowIntro] = useState(true)
   const [isReady, setIsReady] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const terminalRef = useRef<HTMLDivElement>(null)
   const unicornLoaded = useRef(false)
@@ -147,9 +148,15 @@ export const Terminal = () => {
     }, 4000) // Show intro for 4 seconds
   }, [])
 
+  // Auto-scroll to bottom when history changes
   useEffect(() => {
     if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        if (terminalRef.current) {
+          terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+        }
+      })
     }
   }, [history])
 
@@ -173,16 +180,15 @@ export const Terminal = () => {
 
     // Command autocomplete
     if (parts.length === 1) {
-      const cmdWithSlash = cmd.startsWith('/') ? cmd : '/' + cmd
-      const match = ALL_COMMANDS.find(c => c.startsWith(cmdWithSlash) && c !== cmdWithSlash)
+      const match = ALL_COMMANDS.find(c => c.startsWith(cmd) && c !== cmd)
       if (match) {
-        setSuggestion(match.slice(cmdWithSlash.length))
+        setSuggestion(match.slice(cmd.length))
       } else {
         setSuggestion('')
       }
     }
     // Project argument autocomplete
-    else if (parts.length === 2 && (cmd === '/open' || cmd === '/status' || cmd === 'open' || cmd === 'status')) {
+    else if (parts.length === 2 && (cmd === 'open' || cmd === 'status')) {
       const match = PROJECTS.find(p => p.startsWith(arg) && p !== arg)
       if (match) {
         setSuggestion(match.slice(arg.length))
@@ -197,15 +203,10 @@ export const Terminal = () => {
   const handleCommand = (cmd: string) => {
     const trimmedCmd = cmd.trim()
     const parts = trimmedCmd.split(' ')
-    let command = parts[0].toLowerCase()
+    const command = parts[0].toLowerCase()
     const args = parts.slice(1)
-
-    // Add / prefix if not present
-    if (command && !command.startsWith('/')) {
-      command = '/' + command
-    }
     
-    if (command === '/clear') {
+    if (command === 'clear') {
       setHistory([])
       return
     }
@@ -221,7 +222,7 @@ export const Terminal = () => {
         output = commandHandler
       }
     } else {
-      output = ['', `  ✗ Unknown command: ${command}`, '  Type /help for available commands', '']
+      output = ['', `  ✗ Unknown command: ${command}`, '  Type help for available commands', '']
     }
 
     setHistory([...history, { input: cmd, output }])
@@ -301,11 +302,17 @@ export const Terminal = () => {
       }`}
     >
       <div
-        className="bg-[#111111] border border-[#2a2a2a] rounded-xl overflow-hidden shadow-2xl"
+        className="bg-[#111111] border border-[#2a2a2a] rounded-xl overflow-hidden shadow-2xl transition-all duration-500"
         style={{
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.3)',
+          boxShadow: isHovering 
+            ? '0 25px 50px -12px rgba(59, 130, 246, 0.4), 0 10px 30px -5px rgba(59, 130, 246, 0.3), 0 0 60px rgba(59, 130, 246, 0.2)'
+            : '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.3)',
+          borderColor: isHovering ? 'rgba(59, 130, 246, 0.3)' : '#2a2a2a',
         }}
         onClick={handleTerminalClick}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        data-cursor-terminal
       >
         {/* Terminal Header */}
         <div className="flex items-center gap-2 px-4 py-2.5 bg-[#191919] border-b border-[#2a2a2a]">
@@ -338,23 +345,28 @@ export const Terminal = () => {
           {/* Terminal Content */}
           <div
             ref={terminalRef}
-            className="relative z-10 p-4 sm:p-6 h-full overflow-y-auto text-xs sm:text-sm flex flex-col"
+            className="relative z-10 p-4 sm:p-6 h-full overflow-y-auto text-xs sm:text-sm flex flex-col custom-scrollbar"
           >
-            {/* Welcome Text */}
-            <div className="mb-4 sm:mb-6 md:max-w-[50%]">
-              <div className="whitespace-pre mb-3 sm:mb-4">
-                <div className="text-[#e5e5e5] text-sm sm:text-base font-semibold mb-1 sm:mb-2">Nuon Labs Terminal</div>
-                <div className="text-[#808080] text-[10px] sm:text-xs mb-3 sm:mb-4">Experimental BYOC Playground</div>
+            {/* Spacer to push content to bottom */}
+            <div className="flex-1 min-h-0"></div>
+            
+            {/* Terminal Content - MOTD + Command History */}
+            <div>
+              {/* Welcome Message (MOTD) */}
+              <div className="mb-4 sm:mb-6">
+                <div className="text-[#e5e5e5] text-sm font-mono mb-2">
+                  Nuon Labs
+                </div>
+                <div className="text-[#808080] text-xs mb-3">
+                  Where BYOC ideas take shape.
+                </div>
+                <div className="text-[#666666] text-xs space-y-1 mb-4">
+                  <div>Type <span className="text-[#f97316]">help</span> for available commands</div>
+                  <div>Type <span className="text-[#f97316]">list</span> to see active experiments</div>
+                </div>
               </div>
 
-              <div className="text-[#666666] text-[10px] sm:text-xs space-y-1">
-                <div>Type <span className="text-[#f97316]">/help</span> for available commands</div>
-                <div>Type <span className="text-[#f97316]">/list</span> to see active experiments</div>
-              </div>
-            </div>
-
-            {/* Command History - Scrollable */}
-            <div className="flex-1 overflow-y-auto">
+              {/* Command History */}
               {history.map((cmd, i) => (
                 <div key={i} className="mb-3">
                   {cmd.input && (

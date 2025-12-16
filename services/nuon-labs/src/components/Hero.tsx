@@ -47,7 +47,7 @@ export const Hero = () => {
             <FlipText text="Nuon Labs" isVisible={heroVisible} />
           </h1>
           <p className="text-sm sm:text-base text-white/70 mt-2 sm:mt-3">
-            Where BYOC ideas become reality
+          Nuon Labs is where BYOC experiments take shape.
           </p>
         </div>
       </div>
@@ -84,6 +84,7 @@ export const Hero = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="block group"
+              data-cursor-project
             >
               <div className="bg-[#111111] border border-[#2a2a2a] rounded-lg p-5 hover:border-[#f97316]/30 transition-all">
                 {/* Header row */}
@@ -134,7 +135,8 @@ export const Hero = () => {
                 href={project.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="grid grid-cols-[120px_1fr_90px_40px] lg:grid-cols-[140px_1fr_100px_40px] gap-4 py-4 border-b border-[#2a2a2a] hover:bg-[#111111] transition-colors cursor-pointer group items-center"
+                className="grid grid-cols-[120px_1fr_90px_40px] lg:grid-cols-[140px_1fr_100px_40px] gap-4 py-4 pr-6 border-b border-[#2a2a2a] hover:bg-[#111111] transition-colors cursor-pointer group items-center"
+                data-cursor-project
               >
                 <div className="flex items-center gap-2 text-sm text-[#808080]">
                   <span className="text-[#f97316]">■</span>
@@ -148,8 +150,24 @@ export const Hero = () => {
                     {project.status}
                   </span>
                 </div>
-                <div className="text-[#525252] group-hover:text-[#e5e5e5] transition-colors text-xl">
-                  +
+                <div className="flex items-center gap-1.5 text-[#525252] group-hover:text-[#006CFF] transition-colors text-xs uppercase tracking-wider overflow-visible">
+                  <span>View</span>
+                  <svg 
+                    width="14" 
+                    height="14" 
+                    viewBox="0 0 14 14" 
+                    fill="none" 
+                    className="flex-shrink-0"
+                    style={{ minWidth: '14px', minHeight: '14px' }}
+                  >
+                    <path 
+                      d="M4 10L10 4M10 4H5M10 4V9" 
+                      stroke="currentColor" 
+                      strokeWidth="1.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </div>
               </a>
             ))}

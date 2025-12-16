@@ -13,9 +13,10 @@ export const Footer = () => {
           href="https://nuon.co"
           target="_blank"
           rel="noopener noreferrer"
-            className="hover:text-white transition-colors"
+          className="hover:text-white transition-colors"
+          data-cursor-hover
         >
-            Nuon
+          Nuon
         </a>
           <span className="text-[#2a2a2a]">/</span>
           <span className="text-[#404040]">Labs</span>

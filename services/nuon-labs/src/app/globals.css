@@ -192,3 +192,36 @@ body {
 .animate-slide-up {
   animation: slide-up var(--duration-fast) var(--ease-cubic) forwards;
 }
+
+/* Bubble Tea-style terminal scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #006CFF #1a1a1a;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 12px;
+  background: #0a0a0a;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-left: 1px solid #2a2a2a;
+  border-right: 1px solid #2a2a2a;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #006CFF;
+  border: none;
+  min-height: 30px;
+  opacity: 0.6;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3b8fff;
+  opacity: 1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}

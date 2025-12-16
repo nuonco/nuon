@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface FlipTextProps {
   text: string
@@ -11,10 +11,11 @@ const CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
 
 export const FlipText = ({ text, isVisible }: FlipTextProps) => {
   const [displayText, setDisplayText] = useState(text.split('').map(() => ' '))
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
 
-  useEffect(() => {
-    if (!isVisible) return
-
+  const startAnimation = useCallback(() => {
+    setIsAnimating(true)
     const finalText = text.split('')
     let currentIteration = 0
     const maxIterations = 8
@@ -46,23 +47,55 @@ export const FlipText = ({ text, isVisible }: FlipTextProps) => {
       if (currentIteration > maxIterations) {
         clearInterval(interval)
         setDisplayText(finalText)
+        setIsAnimating(false)
       }
-    }, 80)
+    }, 60) // Faster animation on hover
 
+    return interval
+  }, [text])
+
+  // Initial animation on mount
+  useEffect(() => {
+    if (!isVisible) return
+
+    const interval = startAnimation()
     return () => clearInterval(interval)
-  }, [isVisible, text])
+  }, [isVisible, startAnimation])
+
+  // Hover animation
+  const handleMouseEnter = () => {
+    setIsHovering(true)
+    if (!isAnimating) {
+      startAnimation()
+    }
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovering(false)
+  }
 
   return (
-    <div className="inline-flex">
+    <div 
+      className="inline-flex transition-all duration-300"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform: isHovering ? 'scale(1.01)' : 'scale(1)',
+      }}
+    >
       {displayText.map((char, index) => (
         <div
           key={index}
-          className={`relative inline-block ${char === ' ' ? 'w-4 md:w-6 lg:w-8' : ''}`}
+          className={`relative inline-block ${char === ' ' ? 'w-4 md:w-6 lg:w-8' : ''} ${
+            isAnimating ? 'animating' : ''
+          }`}
           style={{
-            animation: isVisible ? `flip 0.6s ease-out ${index * 0.05}s` : 'none',
+            animation: isAnimating ? `flip 0.5s ease-out ${index * 0.04}s` : 'none',
           }}
         >
-          <span className="inline-block">{char === ' ' ? '\u00A0' : char}</span>
+          <span className="inline-block">
+            {char === ' ' ? '\u00A0' : char}
+          </span>
         </div>
       ))}
       <style jsx>{`
