@@ -219,40 +219,6 @@ const AwaitStack = ({ stack }: { stack: TInstallStack }) => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <Text variant="med-14">Install with Terraform.</Text>
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1 w-fit">
-          <span className="flex justify-between items-center">
-            <Text>Terraform module tfvars</Text>
-
-            <ClickToCopyButton
-              className="w-fit self-end"
-              textToCopy={`# Terraform Variables File (.tfvars) - Example
-# Copy this file to terraform.tfvars and customize with your values
-
-# Nuon Configuration (REQUIRED - Replace these values)
-nuon_org_id = "${install.org_id}"
-nuon_app_id = "${install.app_id}"
-nuon_install_id = "${install.id}"
-nuon_api_token = "tok8ylc4nhzcyaj0tz1s71oj20"
-phone_home_url = "https://f67025120b57.ngrok.app/v1/installs/inlzqq0kygdbnx4qwemicn7g6q/phone-home/aws447a3zmdocla08meewvaxjw"`}
-            />
-          </span>
-          <Code variant="preformated">
-            {`# Terraform Variables File (.tfvars) - Example
-# Copy this file to terraform.tfvars and customize with your values
-
-# Nuon Configuration (REQUIRED - Replace these values)
-nuon_org_id = "${install.org_id}"
-nuon_app_id = "${install.app_id}"
-nuon_install_id = "${install.id}"
-nuon_api_token = "tok8ylc4nhzcyaj0tz1s71oj20"
-phone_home_url = "https://f67025120b57.ngrok.app/v1/installs/inlzqq0kygdbnx4qwemicn7g6q/phone-home/aws447a3zmdocla08meewvaxjw"
-`}
-          </Code>
-        </div>
-      </div>
-
       <div className="border p-3 rounded-md shadow flex flex-col gap-2">
         <ConfigurationVariables
           heading="Stack outputs"
