@@ -151,12 +151,12 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		// Disabled by default
 		OrgFeatureOrgDashboard:       false,
 		OrgFeatureInstallBreakGlass:  false,
-		OrgFeatureStratusLayout:      false,
-		OrgFeatureStratusWorkflow:    false,
 		OrgFeatureTerraformInstaller: false,
-		OrgFeatureDashboardSSE:       false,
 
 		// Enabled by default
+		OrgFeatureStratusLayout:           true,
+		OrgFeatureStratusWorkflow:         true,
+		OrgFeatureDashboardSSE:            true,
 		OrgFeatureAPIPagination:           true,
 		OrgFeatureOrgRunner:               true,
 		OrgFeatureOrgSettings:             true,
