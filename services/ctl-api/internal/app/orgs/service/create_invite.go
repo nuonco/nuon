@@ -56,7 +56,7 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		return
 	}
 
-	if helpers.IsEmail(req.Email) == false {
+	if !helpers.IsEmail(req.Email) {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("invalid email"),
 			Description: "invalid email",

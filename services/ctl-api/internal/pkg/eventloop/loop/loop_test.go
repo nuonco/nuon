@@ -32,7 +32,7 @@ func TestLoopConcurrency(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	ns := strings.Replace(uuid.New().String(), "-", "", -1)
+	ns := strings.ReplaceAll(uuid.New().String(), "-", "")
 	r, err := devenv.NewRunInNamespace(t, ctx, ns)
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +100,7 @@ func TestContinueAsNew(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	ns := strings.Replace(uuid.New().String(), "-", "", -1)
+	ns := strings.ReplaceAll(uuid.New().String(), "-", "")
 	r, err := devenv.NewRunInNamespace(t, ctx, ns)
 	if err != nil {
 		t.Fatal(err)

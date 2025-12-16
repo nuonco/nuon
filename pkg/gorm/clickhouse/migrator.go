@@ -65,8 +65,8 @@ func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
 	if field.HasDefaultValue && (field.DefaultValueInterface != nil || field.DefaultValue != "") {
 		if field.DefaultValueInterface != nil {
 			defaultStmt := &gorm.Statement{Vars: []interface{}{field.DefaultValueInterface}}
-			m.Dialector.BindVarTo(defaultStmt, defaultStmt, field.DefaultValueInterface)
-			expr.SQL += " DEFAULT " + m.Dialector.Explain(defaultStmt.SQL.String(), field.DefaultValueInterface)
+			m.BindVarTo(defaultStmt, defaultStmt, field.DefaultValueInterface)
+			expr.SQL += " DEFAULT " + m.Explain(defaultStmt.SQL.String(), field.DefaultValueInterface)
 		} else if field.DefaultValue != "(-)" {
 			expr.SQL += " DEFAULT " + field.DefaultValue
 		}
@@ -74,7 +74,7 @@ func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
 
 	// Build COMMENT clause optionally after DEFAULT
 	if comment, ok := field.TagSettings["COMMENT"]; ok {
-		expr.SQL += " COMMENT " + m.Dialector.Explain("?", comment)
+		expr.SQL += " COMMENT " + m.Explain("?", comment)
 	}
 
 	// Build TTl clause optionally after COMMENT
@@ -87,7 +87,7 @@ func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
 	if codecstr, ok := field.TagSettings["CODEC"]; ok && codecstr != "" {
 		// parse codec one by one in the codec option
 		codecSlice := strings.Split(codecstr, ",")
-		codecArgsSQL := m.Dialector.DefaultCompression
+		codecArgsSQL := m.DefaultCompression
 		if len(codecSlice) > 0 {
 			codecArgsSQL = strings.Join(codecSlice, ",")
 		}
@@ -157,7 +157,7 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 
 				// Get indexing type `gorm:"index,type:minmax"`
 				// Choice: minmax | set(n) | ngrambf_v1(n, size, hash, seed) | bloomfilter()
-				indexType := m.Dialector.DefaultIndexType
+				indexType := m.DefaultIndexType
 				if index.Type != "" {
 					indexType = index.Type
 				}
@@ -179,7 +179,7 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 			}
 
 			// Step 4. Finally assemble CREATE TABLE ... SQL string
-			engineOpts := m.Dialector.DefaultTableEngineOpts
+			engineOpts := m.DefaultTableEngineOpts
 			if tableOption, ok := m.DB.Get("gorm:table_options"); ok {
 				engineOpts = fmt.Sprint(tableOption)
 			}
@@ -289,7 +289,7 @@ func (m Migrator) AlterColumn(value interface{}, field string) error {
 // See: https://github.com/ClickHouse/ClickHouse/issues/146
 func (m Migrator) RenameColumn(value interface{}, oldName, newName string) error {
 	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
-		if !m.Dialector.DontSupportRenameColumn {
+		if !m.DontSupportRenameColumn {
 			var field *schema.Field
 			if f := stmt.Schema.LookUpField(oldName); f != nil {
 				oldName = f.DBName
@@ -865,7 +865,7 @@ func (m Migrator) ColumnTypes(value interface{}) ([]gorm.ColumnType, error) {
 		rawColumnTypes, err = rows.ColumnTypes()
 
 		columnTypeSQL := "SELECT name, type, default_expression, comment, is_in_primary_key, character_octet_length, numeric_precision, numeric_precision_radix, numeric_scale, datetime_precision FROM system.columns WHERE database = ? AND table = ?"
-		if m.Dialector.DontSupportColumnPrecision {
+		if m.DontSupportColumnPrecision {
 			columnTypeSQL = "SELECT name, type, default_expression, comment, is_in_primary_key FROM system.columns WHERE database = ? AND table = ?"
 		}
 		columns, rowErr := m.DB.Raw(columnTypeSQL, m.CurrentDatabase(), stmt.Table).Rows()
@@ -888,7 +888,7 @@ func (m Migrator) ColumnTypes(value interface{}) ([]gorm.ColumnType, error) {
 				}
 			)
 
-			if m.Dialector.DontSupportColumnPrecision {
+			if m.DontSupportColumnPrecision {
 				values = []interface{}{&column.NameValue, &column.DataTypeValue, &column.DefaultValueValue, &column.CommentValue, &column.PrimaryKeyValue}
 			}
 
@@ -920,7 +920,7 @@ func (m Migrator) ColumnTypes(value interface{}) ([]gorm.ColumnType, error) {
 				column.DefaultValueValue.String = strings.Trim(column.DefaultValueValue.String, "'")
 			}
 
-			if m.Dialector.DontSupportEmptyDefaultValue && column.DefaultValueValue.String == "" {
+			if m.DontSupportEmptyDefaultValue && column.DefaultValueValue.String == "" {
 				column.DefaultValueValue.Valid = false
 			}
 
@@ -965,7 +965,7 @@ func (m Migrator) CreateIndex(value interface{}, name string) error {
 
 			// Get indexing type `gorm:"index,type:minmax"`
 			// Choice: minmax | set(n) | ngrambf_v1(n, size, hash, seed) | bloomfilter()
-			indexType := m.Dialector.DefaultIndexType
+			indexType := m.DefaultIndexType
 			if index.Type != "" {
 				indexType = index.Type
 			}
@@ -1039,7 +1039,7 @@ func (m Migrator) HasIndex(value interface{}, name string) bool {
 
 func (m Migrator) getIndexGranularityOption(opts []schema.IndexOption) int {
 	for _, indexOpt := range opts {
-		if settingStr, ok := indexOpt.Field.TagSettings["INDEX"]; ok {
+		if settingStr, ok := indexOpt.TagSettings["INDEX"]; ok {
 			// e.g. settingStr: "a,expression:u64*i32,type:minmax,granularity:3"
 			for _, str := range strings.Split(settingStr, ",") {
 				// e.g. str: "granularity:3"
@@ -1062,7 +1062,7 @@ func (m Migrator) getIndexGranularityOption(opts []schema.IndexOption) int {
 			}
 		}
 	}
-	return m.Dialector.DefaultGranularity
+	return m.DefaultGranularity
 }
 
 /*

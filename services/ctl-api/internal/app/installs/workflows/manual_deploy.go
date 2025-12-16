@@ -41,7 +41,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.New("install deploy is not set on the install workflow for a manual deploy")
 	}
 
-	deployDependents, _ := flw.Metadata["deploy_dependents"]
+	deployDependents := flw.Metadata["deploy_dependents"]
 
 	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, generics.FromPtrStr(installDeployID))
 	if err != nil {
