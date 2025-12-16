@@ -96,7 +96,7 @@ export const DeployMenu = ({ activeDeployId, componentId }: IDeployMenu) => {
                     '!bg-primary-600/5 dark:!bg-primary-600/5':
                       deploy?.id === activeDeployId,
                   })}
-                  href={`/${org.id}/installs/${install.id}/components/${componentId}/${deploy?.id}`}
+                  href={`/${org.id}/installs/${install.id}/components/${componentId}/deploys/${deploy?.id}`}
                   variant="ghost"
                 >
                   <DeploySummary deploy={deploy} isLatest={idx === 0} />

@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
 import { ID } from '@/components/common/ID'
@@ -12,8 +13,10 @@ import type { TDeploy } from '@/types'
 import { formatBytes } from '@/utils/string-utils'
 
 export const OCIArtifactCard = ({
+  children,
   ociArtifact,
 }: {
+  children: ReactNode
   ociArtifact: TDeploy['oci_artifact']
 }) => {
   return (
@@ -107,11 +110,7 @@ export const OCIArtifactCard = ({
         },
       ]}
     >
-      <Card className="!p-2 !flex-row">
-        <Text className="flex items-center gap-2" weight="strong">
-          OCI artifact <Icon variant="Question" />
-        </Text>
-      </Card>
+      {children}
     </ContextTooltip>
   )
 }
