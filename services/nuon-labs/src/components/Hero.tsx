@@ -12,6 +12,13 @@ const PROJECTS = [
     status: 'alpha',
     url: 'https://vendor.inl0qjpbg8hn5e25ebmcjzmwh2.nuon.run/',
   },
+  {
+    date: '2024.12.16',
+    name: 'TUI for Nuon CLI',
+    description: 'Contextual and full-window TUIs for common Nuon workflows',
+    status: 'alpha',
+    url: 'https://docs.nuon.co/cli#nuon-preview-features',
+  },
 ]
 
 export const Hero = () => {
@@ -35,7 +42,7 @@ export const Hero = () => {
   return (
     <>
       {/* Hero Section - Full viewport height with centered title */}
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pb-24 md:pb-0">
         <div 
           className={`text-center transition-all duration-1000 ${
             heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -46,8 +53,8 @@ export const Hero = () => {
           >
             <FlipText text="Nuon Labs" isVisible={heroVisible} />
           </h1>
-          <p className="text-sm sm:text-base text-white/70 mt-2 sm:mt-3">
-          Nuon Labs is where BYOC experiments take shape.
+          <p className="text-sm sm:text-base text-white/70 mt-3 sm:mt-4">
+            Nuon Labs is where BYOC experiments take shape.
           </p>
         </div>
       </div>
@@ -63,7 +70,7 @@ export const Hero = () => {
 
       {/* Projects List Section - shows after terminal */}
       <div 
-        className={`w-full sm:w-[90%] lg:w-[80%] mx-auto px-4 sm:px-6 pb-20 mt-8 md:mt-8 -mt-32 transition-all duration-1000 delay-300 ${
+        className={`w-full sm:w-[90%] lg:w-[80%] mx-auto px-4 sm:px-6 pb-20 -mt-12 md:mt-8 transition-all duration-1000 delay-300 ${
           terminalVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >
@@ -75,42 +82,50 @@ export const Hero = () => {
           </h2>
         </div>
 
-        {/* Mobile: Modern Card Layout */}
-        <div className="block md:hidden space-y-3">
+        {/* Mobile: Clean List Layout */}
+        <div className="block md:hidden">
           {PROJECTS.map((project) => (
             <a 
               key={project.name} 
               href={project.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block group"
+              className="block py-4 border-b border-[#2a2a2a] group"
             >
-              <div className="bg-[#111111] border border-[#2a2a2a] rounded-lg p-5 hover:border-[#f97316]/30 transition-all">
-                {/* Header row */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="text-[#e5e5e5] text-lg font-semibold mb-1 group-hover:text-white transition-colors">
-                      {project.name}
-                    </div>
-                    <div className="text-[#666666] text-sm leading-relaxed">
-                      {project.description}
-                    </div>
-                  </div>
+              {/* Name and Arrow */}
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[#e5e5e5] text-base font-medium group-hover:text-white transition-colors">
+                  {project.name}
+                </h3>
+                <div className="flex items-center gap-1.5 text-[#525252] group-hover:text-[#006CFF] transition-colors">
+                  <span className="text-xs uppercase tracking-wider">View</span>
+                  <svg 
+                    width="14" 
+                    height="14" 
+                    viewBox="0 0 14 14" 
+                    fill="none" 
+                    className="flex-shrink-0"
+                  >
+                    <path 
+                      d="M4 10L10 4M10 4H5M10 4V9" 
+                      stroke="currentColor" 
+                      strokeWidth="1.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </div>
-                
-                {/* Footer row */}
-                <div className="flex items-center justify-between pt-3 border-t border-[#1a1a1a]">
-                  <div className="flex items-center gap-2 text-xs text-[#808080]">
-                    <span className="text-[#f97316]">●</span>
-                    <span>{project.date}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] px-2.5 py-1 bg-[#0d0d0d] border border-[#2a2a2a] text-[#808080] uppercase tracking-wider rounded">
-                      {project.status}
-                    </span>
-                    <span className="text-[#525252] group-hover:text-[#f97316] transition-colors">→</span>
-                  </div>
+              </div>
+              
+              {/* Date and Status */}
+              <div className="flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-1.5 text-[#808080]">
+                  <span className="text-[#f97316]">■</span>
+                  <span>{project.date}</span>
                 </div>
+                <span className="text-[10px] px-2 py-0.5 border border-[#2a2a2a] text-[#808080] uppercase tracking-wider">
+                  {project.status}
+                </span>
               </div>
             </a>
           ))}
