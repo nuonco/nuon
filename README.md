@@ -12,7 +12,7 @@
 
 [![Go report card](https://goreportcard.com/badge/github.com/nuonco/nuon)](https://goreportcard.com/report/github.com/nuonco/nuon)
 [![Godoc](https://pkg.go.dev/badge/github.com/nuonco/nuon.svg)](https://pkg.go.dev/github.com/nuonco/nuon)
-[![Version](https://img.shields.io/badge/version-1.2.3-blue)](https://github.com/nuonco/nuon/releases)
+[![Version](https://img.shields.io/github/v/tag/nuonco/nuon)](https://github.com/nuonco/nuon/tags)
 [![BYOC community slack](https://img.shields.io/badge/slack-byoc_community-purple)](https://nuon-byoc.slack.com/join/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA)
 
 </div>
