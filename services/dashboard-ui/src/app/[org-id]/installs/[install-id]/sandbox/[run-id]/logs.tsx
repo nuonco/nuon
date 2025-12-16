@@ -30,7 +30,7 @@ export async function Logs({
   ) : (
     <UnifiedLogsProvider initLogs={logs}>
       <LogViewerProvider>
-        <SSELogs />
+        <SSELogs filterClassName="-top-6" />
       </LogViewerProvider>
     </UnifiedLogsProvider>
   )

@@ -44,9 +44,7 @@ export const CancelWorkflowModal = ({
     onSuccess: () => {
       removeModal(props.modalId)
     },
-    successContent: (
-      <Text>Cancelled the {workflow.type} workflow.</Text>
-    ),
+    successContent: <Text>Cancelled the {workflow.type} workflow.</Text>,
     successHeading: `${workflow.name} was cancelled.`,
   })
 
@@ -114,6 +112,7 @@ export const CancelWorkflowButton = ({
       {...props}
     >
       Cancel workflow
+      {props?.isMenuButton ? <Icon variant="StopCircle" /> : null}
     </Button>
   )
 }

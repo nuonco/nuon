@@ -2,111 +2,131 @@
 
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
-import { Dropdown } from '@/components/common/Dropdown'
+import { Duration } from '@/components/common/Duration'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
-import { Menu } from '@/components/common/Menu'
-import { Status } from '@/components/common/Status'
+import { LabeledValue } from '@/components/common/LabeledValue'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
-import type { TSandboxRun, TSandboxConfig, TCloudPlatform } from '@/types'
+import { useSandboxRun } from '@/hooks/use-sandbox-run'
+import type { TCloudPlatform, TWorkflow } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { SandboxRunSwitcher } from './SandboxRunSwitcher'
+import { ManageRunDropdown } from '@/components/sandbox/management/ManageRunDropdown'
+import { SandboxConfigContextTooltip } from '@/components/sandbox/SandboxConfigContextTooltip'
 
-interface ISandboxHeader extends IPollingProps {
-  initSandboxRun: TSandboxRun
-  sandboxConfig?: TSandboxConfig
+interface ISandboxHeader {
+  workflow: TWorkflow
+  stepId: string
 }
 
 export const SandboxHeader = ({
-  initSandboxRun,
-  sandboxConfig,
-  pollInterval = 20000,
-  shouldPoll = false,
+  workflow,
+  stepId,
 }: ISandboxHeader) => {
-  const { install } = useInstall()
   const { org } = useOrg()
-  const { data: sandboxRun } = usePolling<TSandboxRun>({
-    initData: initSandboxRun,
-    path: `/api/orgs/${org.id}/installs/${install.id}/sandbox/runs/${initSandboxRun?.id}`,
-    pollInterval,
-    shouldPoll,
-  })
+  const { install } = useInstall()
+  const { sandboxRun } = useSandboxRun()
 
   return (
-    <>
-      <header className="flex flex-wrap items-center gap-4 justify-between w-full">
-        <div className="flex flex-col gap-4">
-          <BackLink />
-          <HeadingGroup className="">
+    <header className="flex p-6 border-b justify-between w-full">
+      <HeadingGroup>
+        <BackLink className="mb-6" />
+        <div className="flex flex-col gap-1">
+          <span className="flex items-cenert gap-2">
+            <CloudPlatform
+              platform={install.cloud_platform as TCloudPlatform}
+              variant="subtext"
+              displayVariant="icon-only"
+            />
             <Text
               className="inline-flex items-center gap-4"
               variant="h3"
               weight="strong"
             >
               Sandbox {sandboxRun?.run_type}
-              <Status status={sandboxRun?.status_v2?.status} variant="badge" />
             </Text>
-            <Text
-              className="flex items-center gap-1"
-              variant="subtext"
-              theme="info"
-            >
-              {toSentenceCase(sandboxRun?.run_type)}
-              <Time
-                time={sandboxRun?.updated_at}
-                format="relative"
-                variant="subtext"
-                theme="info"
-              />
-            </Text>
-          </HeadingGroup>
-        </div>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4 md:gap-8">
-            <div className="flex items-center gap-4">
-              <SandboxRunSwitcher sandboxRunId={initSandboxRun?.id} />
-              <Dropdown
-                alignment="right"
-                variant="primary"
-                buttonText="Manage"
-                id="install-component-dropdown"
-              >
-                <Menu className="w-56">
-                  <Button>
-                    Reprovision sandbox <Icon variant="CloudArrowUp" />
-                  </Button>
-                  <Button>
-                    Deprovision sandbox <Icon variant="CloudArrowDown" />
-                  </Button>
-
-                  <Button>
-                    Unlock Terraform state <Icon variant="LockOpen" />
-                  </Button>
-                </Menu>
-              </Dropdown>
-            </div>
-          </div>
-        </div>
-      </header>
-      <div className="flex items-center gap-4">
-        <CloudPlatform
-          platform={install.cloud_platform as TCloudPlatform}
-          variant="subtext"
-        />
-        <Text className="flex items-center gap-2" variant="subtext">
-          Install ID: <ID>{install?.id}</ID>
-        </Text>
-        <Text className="flex items-center gap-2" variant="subtext">
-          Run ID:
+          </span>
           <ID>{sandboxRun?.id}</ID>
-        </Text>
+        </div>
+
+        <div className="flex gap-8 items-center justify-start my-2">
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="CalendarBlankIcon" />
+            <Time variant="subtext" time={sandboxRun?.created_at} />
+          </Text>
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="TimerIcon" />
+            <Duration
+              variant="subtext"
+              beginTime={sandboxRun?.created_at}
+              endTime={sandboxRun?.updated_at}
+            />
+          </Text>
+        </div>
+
+        {sandboxRun?.install_workflow_id ? (
+          <Button
+            href={`/${org?.id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
+          >
+            View workflow
+            <Icon variant="CaretRightIcon" />
+          </Button>
+        ) : null}
+      </HeadingGroup>
+
+      <div className="flex flex-col gap-6">
+        <div className="flex items-start justify-start gap-6">
+          <LabeledStatus
+            label="Status"
+            statusProps={{
+              status: sandboxRun?.status_v2?.status,
+            }}
+            tooltipProps={{
+              tipContentClassName: 'w-fit',
+              tipContent: (
+                <Text className="!text-nowrap" variant="subtext">
+                  {toSentenceCase(
+                    sandboxRun?.status_v2?.status_human_description
+                  )}
+                </Text>
+              ),
+              position: 'left',
+            }}
+          />
+
+          <LabeledValue label="Install">
+            <Text variant="subtext">
+              <Link href={`/${org?.id}/installs/${install?.id}`}>
+                {install?.name}
+              </Link>
+            </Text>
+          </LabeledValue>
+          <LabeledValue label="Config">
+            <SandboxConfigContextTooltip
+              appConfigId={install?.app_config_id}
+              appId={install?.app_id}
+            >
+              <Text variant="subtext">
+                <Link href={`/${org?.id}/apps/${install?.app_id}`}>
+                  {install?.app?.name} sandbox
+                </Link>
+              </Text>
+            </SandboxConfigContextTooltip>
+          </LabeledValue>
+          <SandboxRunSwitcher sandboxRunId={sandboxRun?.id} />
+          <ManageRunDropdown 
+            workflow={workflow}
+            variant="primary" 
+          />
+        </div>
       </div>
-    </>
+    </header>
   )
 }

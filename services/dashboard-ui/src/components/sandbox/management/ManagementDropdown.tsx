@@ -1,6 +1,6 @@
 'use client'
 
-import { Dropdown } from '@/components/common/Dropdown'
+import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
@@ -8,7 +8,10 @@ import { DriftScanSandboxButton } from './DriftScanSandbox'
 import { ReprovisionSandboxButton } from './ReprovisionSandbox'
 import { DeprovisionSandboxButton } from './DeprovisionSandbox'
 
-export const ManagementDropdown = () => {
+export const ManagementDropdown = ({
+  alignment = 'right',
+  ...props
+}: Omit<IDropdown, 'id' | 'buttonText' | 'children'>) => {
   return (
     <Dropdown
       id="sandbox-mgmt"
@@ -17,7 +20,8 @@ export const ManagementDropdown = () => {
           <Icon variant="SlidersHorizontalIcon" /> Manage sandbox
         </>
       }
-      alignment="right"
+      alignment={alignment}
+      {...props}
     >
       <Menu>
         <div className="px-2 pt-2 pb-1">
