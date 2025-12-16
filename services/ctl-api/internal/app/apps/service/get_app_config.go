@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
@@ -44,13 +45,21 @@ func (s *service) GetAppConfigV2(ctx *gin.Context) {
 	var appConfig *app.AppConfig
 	if recurse {
 		appConfig, err = s.helpers.GetFullAppConfig(ctx, appConfigID, true)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		// Validate org ownership
+		if appConfig.OrgID != org.ID {
+			ctx.Error(fmt.Errorf("app config not found: %w", gorm.ErrRecordNotFound))
+			return
+		}
 	} else {
 		appConfig, err = s.getAppConfig(ctx, org.ID, appID, appConfigID)
-	}
-
-	if err != nil {
-		ctx.Error(err)
-		return
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, appConfig)
@@ -90,13 +99,21 @@ func (s *service) GetAppConfig(ctx *gin.Context) {
 	var appConfig *app.AppConfig
 	if recurse {
 		appConfig, err = s.helpers.GetFullAppConfig(ctx, appConfigID, true)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		// Validate org ownership
+		if appConfig.OrgID != org.ID {
+			ctx.Error(fmt.Errorf("app config not found: %w", gorm.ErrRecordNotFound))
+			return
+		}
 	} else {
 		appConfig, err = s.getAppConfig(ctx, org.ID, appID, appConfigID)
-	}
-
-	if err != nil {
-		ctx.Error(err)
-		return
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, appConfig)

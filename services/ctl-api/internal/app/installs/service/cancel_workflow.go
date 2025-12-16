@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -34,9 +35,15 @@ import (
 // @Success						202	{boolean}		true
 // @Router						/v1/workflows/{workflow_id}/cancel [post]
 func (s *service) CancelWorkflow(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org from context: %w", err))
+		return
+	}
+
 	workflowID := ctx.Param("workflow_id")
 
-	wf, err := s.getWorkflow(ctx, workflowID)
+	wf, err := s.getWorkflow(ctx, org.ID, workflowID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get workflow: %w", err))
 		return
@@ -103,9 +110,15 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 // @Router						/v1/install-workflows/{install_workflow_id}/cancel [post]
 // @Deprecated
 func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org from context: %w", err))
+		return
+	}
+
 	workflowID := ctx.Param("install_workflow_id")
 
-	wf, err := s.getWorkflow(ctx, workflowID)
+	wf, err := s.getWorkflow(ctx, org.ID, workflowID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install workflow: %w", err))
 		return

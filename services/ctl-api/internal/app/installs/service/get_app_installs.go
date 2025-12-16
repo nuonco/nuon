@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -33,10 +34,23 @@ import (
 // @Success				200	{array}		app.Install
 // @Router					/v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	appID := ctx.Param("app_id")
 	q := ctx.Query("q")
 
-	installs, err := s.getAppInstalls(ctx, appID, q)
+	// Validate app belongs to org before fetching installs
+	currentApp, err := s.findAppByNameOrID(ctx, org.ID, appID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
+		return
+	}
+
+	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -45,7 +59,20 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getAppInstalls(ctx *gin.Context, appID string, q string) ([]app.Install, error) {
+func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app.App, error) {
+	var currentApp app.App
+	res := s.db.WithContext(ctx).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
+		First(&currentApp)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to find app: %w", res.Error)
+	}
+
+	return &currentApp, nil
+}
+
+func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination)
@@ -54,7 +81,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, appID string, q string) ([]ap
 		tx = tx.Where("name ILIKE ?", "%"+q+"%")
 	}
 
-	tx = tx.Where("app_id = ?", appID).
+	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).
 		Preload("AppSandboxConfig").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")

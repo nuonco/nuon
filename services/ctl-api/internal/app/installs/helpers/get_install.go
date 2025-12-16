@@ -11,8 +11,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
-// GetInstall reads an install from the DB.
-func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Install, error) {
+// GetInstall reads an install from the DB scoped to the given org.
+func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := h.db.WithContext(ctx).
 		Preload("AppRunnerConfig").
@@ -36,8 +36,8 @@ func (h *Helpers) GetInstall(ctx context.Context, installID string) (*app.Instal
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("App.Org").
 		Preload("AppSandboxConfig").
-		Where("name = ?", installID).
-		Or("id = ?", installID).
+		Where("org_id = ?", orgID).
+		Where(h.db.Where("name = ?", installID).Or("id = ?", installID)).
 		First(&install)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get install")
