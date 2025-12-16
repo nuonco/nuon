@@ -16,7 +16,7 @@ import (
 func (h *handler) updateStepStatus(ctx context.Context, stepID string, startTS time.Time, status models.AppInstallActionWorkflowRunStepStatus) error {
 	_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, h.state.plan.InstallID, h.state.workflowCfg.ActionWorkflowID, stepID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
 		Status:            status,
-		ExecutionDuration: time.Now().Sub(startTS).Nanoseconds(),
+		ExecutionDuration: time.Since(startTS).Nanoseconds(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to update step status")

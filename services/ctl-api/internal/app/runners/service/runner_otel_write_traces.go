@@ -40,7 +40,7 @@ func (s *service) OtelWriteTraces(ctx *gin.Context) {
 		return
 	}
 
-	var req ptraceotlp.ExportRequest = ptraceotlp.NewExportRequest()
+	var req = ptraceotlp.NewExportRequest()
 	if err := req.UnmarshalJSON(jsonData); err != nil {
 		ctx.Error(fmt.Errorf("unable to unmarshal request: %w", err))
 		return

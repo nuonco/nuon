@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
@@ -66,7 +67,7 @@ func (e *DevTestEnv) NewRunInNamespace(t *testing.T, ctx context.Context, namesp
 	retention := time.Hour
 	err = namespaceClient.Register(context.Background(), &workflowservice.RegisterNamespaceRequest{
 		Namespace:                        namespace,
-		WorkflowExecutionRetentionPeriod: &retention,
+		WorkflowExecutionRetentionPeriod: durationpb.New(retention),
 	})
 	if err != nil {
 		return nil, err

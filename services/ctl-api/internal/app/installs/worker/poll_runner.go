@@ -21,10 +21,7 @@ func (w *Workflows) pollRunnerNotFound(ctx workflow.Context, runnerID string) er
 	timeout := workflow.Now(ctx).Add(pollRunnerTimeout)
 
 	var lastStatus app.RunnerStatus
-	for {
-		if workflow.Now(ctx).After(timeout) {
-			break
-		}
+	for !workflow.Now(ctx).After(timeout) {
 
 		runner, err := activities.AwaitGetRunnerByID(ctx, runnerID)
 		if err != nil {

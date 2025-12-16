@@ -40,7 +40,7 @@ func (i listStep) Description() string {
 		s := spinner.New()
 		s.Spinner = spinner.Line
 		now := int(math.Mod(float64(time.Now().Second()), 6))
-		for _ = range now {
+		for range now {
 			s, _ = s.Update(s.Tick())
 		}
 		return s.View() + " " + color.Render(string(step.Status.Status))

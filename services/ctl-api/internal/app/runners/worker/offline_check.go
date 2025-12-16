@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -37,7 +36,7 @@ func (w *Workflows) OfflineCheck(ctx workflow.Context, sreq signals.RequestSigna
 		})
 		// write metrics now
 		w.mw.Incr(ctx, "runner.health_check", tags...)
-		w.mw.Timing(ctx, "runner.health_check.latency", time.Now().Sub(startTS), tags...)
+		w.mw.Timing(ctx, "runner.health_check.latency", time.Since(startTS), tags...)
 	}()
 
 	err := w.checkOffline(ctx, sreq.ID)
@@ -104,7 +103,7 @@ func (w *Workflows) checkOffline(ctx workflow.Context, runnerID string) error {
 		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          runnerID,
 			Status:            app.RunnerStatusOffline,
-			StatusDescription: fmt.Sprintf("runner is offline"),
+			StatusDescription: "runner is offline",
 		}); err != nil {
 			return errors.Wrap(err, "unable to update runner status")
 		}
