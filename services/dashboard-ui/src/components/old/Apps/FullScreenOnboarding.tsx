@@ -133,6 +133,7 @@ export const FullScreenOnboarding: FC<FullScreenOnboardingProps> = ({
   const [stepTransition, setStepTransition] = useState<'enter' | 'exit' | null>(
     null
   )
+  const [sfData, setSFData] = useState<Record<string, string>>();
 
   // Get evaluation journey
   const accountWithJourneys = account as any
@@ -299,11 +300,13 @@ export const FullScreenOnboarding: FC<FullScreenOnboardingProps> = ({
                   <CreateAccountStepContent
                     stepComplete={displayStep.complete}
                     account={account}
+                    setSFData={setSFData}
                   />
                 ) : displayStep.name === 'org_created' ? (
                   <OrgCreationStepContent
                     stepComplete={displayStep.complete}
                     orgId={orgId}
+                    sfData={sfData}                  
                   />
                 ) : displayStep.name === 'cli_installed' ? (
                   <CLIInstallStepContent stepComplete={displayStep.complete} />
@@ -337,6 +340,7 @@ export const FullScreenOnboarding: FC<FullScreenOnboardingProps> = ({
                 {shouldShowAdvanceButton && (
                   <div className="mt-6 flex justify-end">
                     <Button
+                      form="sf-form"
                       variant="primary"
                       onClick={handleAdvanceToCurrentStep}
                       className="px-3 py-1 text-sm"

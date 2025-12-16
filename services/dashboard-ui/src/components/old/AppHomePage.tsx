@@ -88,14 +88,14 @@ export const AppHomePage: FC = () => {
     setIsSidebarOpen(sidebarCookie?.split('=')[1] === 'true')
 
     // Get API version
-    getAPIVersion().then(({ data: apiVersion }) => {
-      if (apiVersion) {
-        setVersions({
-          api: apiVersion as any,
-          ui: { version: VERSION as any },
-        })
-      }
-    })
+    /* getAPIVersion().then(({ data: apiVersion }) => {
+     *   if (apiVersion) {
+     *     setVersions({
+     *       api: apiVersion as any,
+     *       ui: { version: VERSION as any },
+     *     })
+     *   }
+     * }) */
   }, [])
 
   return (
