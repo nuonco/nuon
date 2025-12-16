@@ -4,6 +4,7 @@ import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
 import { LogsSkeleton } from '@/components/log-stream/Logs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
@@ -45,7 +46,11 @@ export const DeployApply = ({
               }}
               tooltipProps={{
                 position: 'right',
-                tipContent: deploy?.status_v2?.status_human_description,
+                tipContent: (
+                  <Text className="!text-nowrap" variant="subtext">
+                    {deploy?.status_v2?.status_human_description}
+                  </Text>
+                ),
               }}
             />
             <LabeledValue label="Deploy ID">
