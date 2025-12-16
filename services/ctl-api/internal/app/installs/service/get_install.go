@@ -88,8 +88,8 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("InstallConfig").
-		Where("name = ? AND org_id = ?", installID, orgID).
-		Or("id = ?", installID).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", installID).Or("id = ?", installID)).
 		First(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)

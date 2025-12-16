@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetWorkflow
@@ -27,9 +28,15 @@ import (
 // @Success					200	{object}	app.Workflow
 // @Router					/v1/workflows/{workflow_id} [GET]
 func (s *service) GetWorkflow(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		return
+	}
+
 	workflowID := ctx.Param("workflow_id")
 
-	workflow, err := s.getWorkflow(ctx, workflowID)
+	workflow, err := s.getWorkflow(ctx, org.ID, workflowID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflows"))
 		return
@@ -57,9 +64,15 @@ func (s *service) GetWorkflow(ctx *gin.Context) {
 // @Router					/v1/install-workflows/{install_workflow_id} [GET]
 // @Deprecated
 func (s *service) GetInstallWorkflow(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		return
+	}
+
 	workflowID := ctx.Param("install_workflow_id")
 
-	installWorkflow, err := s.getWorkflow(ctx, workflowID)
+	installWorkflow, err := s.getWorkflow(ctx, org.ID, workflowID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get install workflows"))
 		return
@@ -68,7 +81,7 @@ func (s *service) GetInstallWorkflow(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installWorkflow)
 }
 
-func (s *service) getWorkflow(ctx *gin.Context, workflowID string) (*app.Workflow, error) {
+func (s *service) getWorkflow(ctx *gin.Context, orgID, workflowID string) (*app.Workflow, error) {
 	var installWorkflow app.Workflow
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
@@ -79,7 +92,7 @@ func (s *service) getWorkflow(ctx *gin.Context, workflowID string) (*app.Workflo
 		Preload("Steps.CreatedBy").
 		Preload("Steps.Approval").
 		Preload("Steps.Approval.Response").
-		Where("id = ?", workflowID).
+		Where("id = ? AND org_id = ?", workflowID, orgID).
 		First(&installWorkflow)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow")

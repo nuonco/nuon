@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -30,9 +31,22 @@ import (
 // @Success				200	{array}		app.InstallEvent
 // @Router					/v1/installs/{install_id}/events [GET]
 func (s *service) GetInstallEvents(ctx *gin.Context) {
-	appID := ctx.Param("install_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	installEvents, err := s.getInstallEvents(ctx, appID)
+	installID := ctx.Param("install_id")
+
+	// Validate install belongs to org before fetching events
+	install, err := s.findInstall(ctx, org.ID, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
+		return
+	}
+
+	installEvents, err := s.getInstallEvents(ctx, org.ID, install.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install events: %w", err))
 		return
@@ -41,11 +55,11 @@ func (s *service) GetInstallEvents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installEvents)
 }
 
-func (s *service) getInstallEvents(ctx *gin.Context, installID string) ([]app.InstallEvent, error) {
+func (s *service) getInstallEvents(ctx *gin.Context, orgID, installID string) ([]app.InstallEvent, error) {
 	var installEvents []app.InstallEvent
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
-		Where("install_id = ?", installID).
+		Where("org_id = ? AND install_id = ?", orgID, installID).
 		Order("created_at desc").
 		Find(&installEvents)
 	if res.Error != nil {
