@@ -1,10 +1,10 @@
-import { type InputHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react'
+import { type TextareaHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 
-export interface IInput
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface ITextarea
+  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
   labelProps?: Omit<ILabel, 'children'> & {
     labelText: string
     labelTextProps?: Omit<IText, 'children'>
@@ -15,9 +15,12 @@ export interface IInput
   errorMessage?: string
   errorMessageProps?: Omit<IText, 'children'>
   size?: 'sm' | 'md' | 'lg'
+  autoResize?: boolean
+  minRows?: number
+  maxRows?: number
 }
 
-export const Input = forwardRef<HTMLInputElement, IInput>(
+export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
   (
     {
       className,
@@ -30,6 +33,12 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
       size = 'md',
       disabled,
       required,
+      autoResize = false,
+      minRows = 3,
+      maxRows = 10,
+      value,
+      defaultValue,
+      onChange,
       ...props
     },
     ref
@@ -37,17 +46,52 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
     const [isInvalid, setIsInvalid] = useState(false)
     const [hasBlurred, setHasBlurred] = useState(false)
     const [showValidationMessage, setShowValidationMessage] = useState(false)
-    const inputRef = useRef<HTMLInputElement>(null)
+    const [internalValue, setInternalValue] = useState(defaultValue || '')
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+    const currentValue = value !== undefined ? value : internalValue
+
+    // Auto-resize functionality
+    useEffect(() => {
+      if (autoResize && textareaRef.current) {
+        const textarea = textareaRef.current
+        
+        const adjustHeight = () => {
+          // Reset height to calculate scrollHeight properly
+          textarea.style.height = 'auto'
+          
+          // Calculate line height and row constraints
+          const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight)
+          const minHeight = lineHeight * minRows
+          const maxHeight = lineHeight * maxRows
+          
+          // Set height based on content, respecting min/max constraints
+          const newHeight = Math.min(Math.max(textarea.scrollHeight, minHeight), maxHeight)
+          textarea.style.height = `${newHeight}px`
+          
+          // Show scrollbar if content exceeds maxRows
+          textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden'
+        }
+        
+        adjustHeight()
+        
+        // Adjust on content changes
+        const handleInput = () => adjustHeight()
+        textarea.addEventListener('input', handleInput)
+        
+        return () => textarea.removeEventListener('input', handleInput)
+      }
+    }, [autoResize, minRows, maxRows, currentValue])
 
     // Monitor validation state
     useEffect(() => {
-      if (required && inputRef.current) {
-        const input = inputRef.current
+      if (required && textareaRef.current) {
+        const textarea = textareaRef.current
         
         const checkValidity = () => {
           // Only show invalid state after user blur or form submission attempt
           if (hasBlurred) {
-            setIsInvalid(!input.checkValidity())
+            setIsInvalid(!textarea.checkValidity())
           }
         }
         
@@ -68,7 +112,7 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
           if (hasBlurred) {
             checkValidity()
             // Hide validation message when user enters valid input
-            if (input.checkValidity()) {
+            if (textarea.checkValidity()) {
               setShowValidationMessage(false)
             }
           }
@@ -77,33 +121,40 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
         const handleBlur = () => {
           setHasBlurred(true)
           // Check validity after blur
-          if (!input.checkValidity()) {
+          if (!textarea.checkValidity()) {
             setIsInvalid(true)
             setShowValidationMessage(true)
           }
         }
         
-        input.addEventListener('invalid', handleInvalid)
-        input.addEventListener('input', handleInput)
-        input.addEventListener('blur', handleBlur)
+        textarea.addEventListener('invalid', handleInvalid)
+        textarea.addEventListener('input', handleInput)
+        textarea.addEventListener('blur', handleBlur)
         
         return () => {
-          input.removeEventListener('invalid', handleInvalid)
-          input.removeEventListener('input', handleInput)
-          input.removeEventListener('blur', handleBlur)
+          textarea.removeEventListener('invalid', handleInvalid)
+          textarea.removeEventListener('input', handleInput)
+          textarea.removeEventListener('blur', handleBlur)
         }
       }
     }, [required, hasBlurred])
 
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      if (value === undefined) {
+        setInternalValue(e.target.value)
+      }
+      onChange?.(e)
+    }
+
     const sizeClasses = {
-      sm: 'px-2 py-1 text-sm h-8',
-      md: 'px-3 py-2 text-sm h-10',
-      lg: 'px-4 py-3 text-base h-12',
+      sm: 'px-2 py-1 text-sm',
+      md: 'px-3 py-2 text-sm',
+      lg: 'px-4 py-3 text-base',
     }
 
     const baseClasses = cn(
       // Base styles
-      'w-full rounded-md border transition-colors duration-200',
+      'w-full rounded-md border transition-colors duration-200 resize-vertical',
       'bg-white dark:bg-dark-grey-900',
       'placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
       'font-mono',
@@ -117,6 +168,12 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
       
       // Size
       sizeClasses[size],
+      
+      // Auto-resize specific styles
+      {
+        'resize-none overflow-hidden': autoResize,
+        'min-h-[4rem]': !autoResize, // Default min-height when not auto-resizing
+      },
       
       // States
       {
@@ -138,10 +195,10 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
       className
     )
 
-    const input = (
-      <input
+    const textarea = (
+      <textarea
         ref={(node) => {
-          inputRef.current = node
+          textareaRef.current = node
           if (typeof ref === 'function') {
             ref(node)
           } else if (ref) {
@@ -151,6 +208,9 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
         className={baseClasses}
         disabled={disabled}
         required={required}
+        value={currentValue}
+        onChange={handleChange}
+        rows={autoResize ? minRows : props.rows}
         aria-invalid={error || isInvalid}
         aria-describedby={
           helperText || errorMessage || showValidationMessage ? `${props.id}-description` : undefined
@@ -217,7 +277,7 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
               {labelText}
             </Text>
           </Label>
-          {input}
+          {textarea}
           {renderDescription()}
         </div>
       )
@@ -225,11 +285,11 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
 
     return (
       <div className="space-y-1">
-        {input}
+        {textarea}
         {renderDescription()}
       </div>
     )
   }
 )
 
-Input.displayName = 'Input'
+Textarea.displayName = 'Textarea'
