@@ -55,8 +55,8 @@ func (s *service) appByNameOrID(ctx context.Context, appID string) (*app.App, er
 
 	var currentApp app.App
 	res := s.db.WithContext(ctx).
-		Where("name = ? AND org_id = ?", appID, org.ID).
-		Or("id = ?", appID).
+		Where("org_id = ?", org.ID).
+		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
 		First(&currentApp)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to find app")
@@ -98,8 +98,8 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
 		Preload("NotificationsConfig").
-		Where("name = ? AND org_id = ?", appID, orgID).
-		Or("id = ?", appID).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
 		First(&a)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)

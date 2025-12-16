@@ -61,8 +61,8 @@ func (s *service) findAppInputConfigs(ctx *gin.Context, orgID, appID string) ([]
 		Preload("AppInputConfigs.AppInputs").
 		Preload("AppInputConfigs.AppInputs.AppInputGroup").
 		Preload("AppInputConfigs.AppInputGroups.AppInputs").
-		Where("name = ? AND org_id = ?", appID, orgID).
-		Or("id = ?", appID).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
 		First(&app)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)

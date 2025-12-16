@@ -62,8 +62,8 @@ func (s *service) findAppRunnerConfigs(ctx *gin.Context, orgID, appID string) ([
 				Scopes(scopes.WithOffsetPagination).
 				Order("app_runner_configs.created_at DESC")
 		}).
-		Where("name = ? AND org_id = ?", appID, orgID).
-		Or("id = ?", appID).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
 		First(&app)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)

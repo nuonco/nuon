@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
@@ -31,9 +32,15 @@ import (
 // @Success				200	{array}		app.AppSecret
 // @Router					/v1/apps/{app_id}/secrets [get]
 func (s *service) GetAppSecrets(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	appID := ctx.Param("app_id")
 
-	secrets, err := s.getAppSecrets(ctx, appID)
+	secrets, err := s.getAppSecrets(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -42,7 +49,7 @@ func (s *service) GetAppSecrets(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, secrets)
 }
 
-func (s *service) getAppSecrets(ctx *gin.Context, appID string) ([]app.AppSecret, error) {
+func (s *service) getAppSecrets(ctx *gin.Context, orgID, appID string) ([]app.AppSecret, error) {
 	var currentApp app.App
 
 	res := s.db.WithContext(ctx).
@@ -52,7 +59,9 @@ func (s *service) getAppSecrets(ctx *gin.Context, appID string) ([]app.AppSecret
 				Scopes(scopes.WithOffsetPagination).
 				Order("app_secrets.created_at DESC")
 		}).
-		First(&currentApp, "id = ?", appID)
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
+		First(&currentApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app secrets: %w", res.Error)
 	}
