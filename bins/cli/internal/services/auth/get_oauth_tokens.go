@@ -23,7 +23,7 @@ func (a *Service) getOAuthTokens(deviceCode string) (TokenResp, error) {
 	data.Add("client_id", AuthClientID)
 
 	authenticated := false
-	for authenticated == false {
+	for !authenticated {
 		req, err := http.NewRequest(http.MethodPost, reqURL, strings.NewReader(data.Encode()))
 		if err != nil {
 			return tokens, fmt.Errorf("couldn't create oauth token request: %w", err)

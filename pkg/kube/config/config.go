@@ -29,7 +29,7 @@ func WriteConfig(ctx context.Context, cfg *kube.ClusterInfo, fp string) error {
 		Clusters: map[string]*clientcmdapi.Cluster{
 			"default": {
 				Server:                   kubeCfg.Host,
-				CertificateAuthorityData: kubeCfg.TLSClientConfig.CAData,
+				CertificateAuthorityData: kubeCfg.CAData,
 			},
 		},
 		Contexts: map[string]*clientcmdapi.Context{

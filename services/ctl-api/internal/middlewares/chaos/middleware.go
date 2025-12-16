@@ -86,7 +86,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			time.Sleep(m.cfg.ChaosSleep)
 		}
 
-		if m.shouldTriggerWithProbability() == false {
+		if !m.shouldTriggerWithProbability() {
 			ctx.Next()
 			return
 		}

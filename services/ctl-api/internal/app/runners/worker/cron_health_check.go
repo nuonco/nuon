@@ -64,7 +64,7 @@ func (w *Workflows) HealthCheck(ctx workflow.Context, req *HealthCheckRequest) e
 			"runner_id":               req.RunnerID,
 		})
 		w.mw.Incr(ctx, "runner.health_check", tags...) // TODO: This counter is redundant with runner.health_check.latency.count
-		w.mw.Timing(ctx, "runner.health_check.latency", time.Now().Sub(startTS), tags...)
+		w.mw.Timing(ctx, "runner.health_check.latency", time.Since(startTS), tags...)
 	}()
 
 	runner, err := activities.AwaitGetByRunnerID(ctx, req.RunnerID)
