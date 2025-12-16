@@ -11,10 +11,10 @@ import { useEffect, useState, useRef } from 'react';
  * on Dec 15, 2025 at 2:18 PM.
  */
 
-// Radius range: 0.3 (start) -> 1.3 (60%) -> 2.1 (100%)
+// Radius range: 0.3 (start) -> 1.3 (60%) -> 3.0 (120%)
 const RADIUS_START = 0.3;
 const RADIUS_60 = 1.3;  // 60% point (end of intro animation)
-const RADIUS_100 = 2.1; // 100% point (full scroll)
+const RADIUS_100 = 3.0; // 120% point (full scroll)
 
 export default function PaperBackground() {
   const [radius, setRadius] = useState(RADIUS_START);
@@ -55,11 +55,8 @@ export default function PaperBackground() {
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animateIntro);
       } else {
-        // Intro complete - show terminal
+        // Intro complete
         setIntroComplete(true);
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('scroll-started'));
-        }, 600);
       }
     };
 
@@ -80,11 +77,6 @@ export default function PaperBackground() {
   useEffect(() => {
     if (!introComplete) return;
 
-    // Show terminal after a short delay if user hasn't scrolled
-    const fallbackTimer = setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('scroll-started'));
-    }, 2000);
-
     const handleScroll = () => {
       // Calculate scroll progress (0 to 1)
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -94,17 +86,10 @@ export default function PaperBackground() {
       const eased = 1 - Math.pow(1 - scrollProgress, 2); // ease-out quad
       const newRadius = RADIUS_60 + (eased * (RADIUS_100 - RADIUS_60));
       setRadius(newRadius);
-
-      // Dispatch event when user scrolls even a tiny bit to show terminal
-      if (window.scrollY > 10) {
-        clearTimeout(fallbackTimer);
-        window.dispatchEvent(new CustomEvent('scroll-started'));
-      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      clearTimeout(fallbackTimer);
       window.removeEventListener('scroll', handleScroll);
     };
   }, [introComplete]);
