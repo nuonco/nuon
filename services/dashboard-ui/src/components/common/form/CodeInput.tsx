@@ -145,19 +145,20 @@ export const CodeInput = forwardRef<HTMLTextAreaElement, ICodeInput>(
     }
 
     if (labelProps) {
+      const { labelText, labelTextProps, ...restLabelProps } = labelProps
       return (
         <div className="flex flex-col gap-1">
           <Label
             className={cn('block', labelProps.className)}
             htmlFor={props.id}
-            {...(labelProps as any)}
+            {...restLabelProps}
           >
             <Text
-              className={cn('font-medium', labelProps.labelTextProps?.className)}
+              className={cn('font-medium', labelTextProps?.className)}
               variant="body"
-              {...labelProps.labelTextProps}
+              {...labelTextProps}
             >
-              {labelProps.labelText}
+              {labelText}
             </Text>
           </Label>
           {codeEditor}

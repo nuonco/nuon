@@ -9,14 +9,16 @@ import { TOrg } from '@/types/ctl-api.types'
 
 export const OrgCreationStepContent = ({
   stepComplete,
-  onOrgCreated,
   orgId,
+  sfData,
 }: {
   stepComplete: boolean
-  onOrgCreated?: (orgId: string) => void
   orgId: string | undefined
+  sfData: Record<string, string>
 }) => {
-  const { isCreating, error, retry, shouldAutoCreate } = useAutoOrgCreation()
+  const { isCreating, error, retry, shouldAutoCreate } = useAutoOrgCreation({
+    sfData,
+  })
   // Load org data
   const {
     data: org,

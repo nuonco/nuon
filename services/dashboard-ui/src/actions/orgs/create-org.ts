@@ -9,7 +9,11 @@ export async function createOrg({
   body,
   path,
 }: {
-  body: TCreateOrgBody
+  body: TCreateOrgBody & {
+    companyName?: string
+    jobTitle?: string
+    notes?: string
+  }
   path?: string
 }) {
   const session = await auth0.getSession()
@@ -22,8 +26,9 @@ export async function createOrg({
         firstName: session?.user?.given_name,
         lastName: session?.user?.family_name,
         email: session?.user?.email,
-        companyName: body?.name,
-        notes: '',
+        companyName: `${body?.companyName || 'N/A'} | ${body?.name}`,
+        jobTitle: body?.jobTitle || 'N/A',
+        notes: body?.notes || 'N/A',
         subject: 'trial-signup',
       }),
     }).catch((err) => {
@@ -33,7 +38,9 @@ export async function createOrg({
 
   return executeServerAction({
     action: create,
-    args: { body },
+    args: {
+      body: { name: body?.name, use_sandbox_mode: body?.use_sandbox_mode },
+    },
     path,
   })
 }
