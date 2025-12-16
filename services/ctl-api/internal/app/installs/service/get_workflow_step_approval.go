@@ -39,7 +39,7 @@ func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
-	_, err = s.getWorkflowStep(ctx, workflowID, stepID)
+	_, err = s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflow step"))
 		return
@@ -85,7 +85,7 @@ func (s *service) GetInstallWorkflowStepApproval(ctx *gin.Context) {
 	stepID := ctx.Param("install_workflow_step_id")
 	approvalID := ctx.Param("approval_id")
 
-	_, err = s.getWorkflowStep(ctx, workflowID, stepID)
+	_, err = s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get install workflow step"))
 		return

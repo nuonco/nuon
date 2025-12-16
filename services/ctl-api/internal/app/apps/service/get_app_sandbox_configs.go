@@ -64,8 +64,8 @@ func (s *service) findAppSandboxConfigs(ctx *gin.Context, orgID, appID string) (
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
-		Where("name = ? AND org_id = ?", appID, orgID).
-		Or("id = ?", appID).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", appID).Or("id = ?", appID)).
 		First(&app)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)

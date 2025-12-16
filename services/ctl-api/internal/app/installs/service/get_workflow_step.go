@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetWorkflowStep
@@ -28,10 +29,16 @@ import (
 // @Success					200	{object}	app.WorkflowStep
 // @Router					/v1/workflows/{workflow_id}/steps/{step_id} [GET]
 func (s *service) GetWorkflowStep(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		return
+	}
+
 	workflowID := ctx.Param("workflow_id")
 	stepID := ctx.Param("step_id")
 
-	workflow, err := s.getWorkflowStep(ctx, workflowID, stepID)
+	workflow, err := s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflow step"))
 		return
@@ -60,10 +67,16 @@ func (s *service) GetWorkflowStep(ctx *gin.Context) {
 // @Router					/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id} [GET]
 // @Deprecated
 func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		return
+	}
+
 	workflowID := ctx.Param("install_workflow_id")
 	stepID := ctx.Param("install_workflow_step_id")
 
-	installWorkflow, err := s.getWorkflowStep(ctx, workflowID, stepID)
+	installWorkflow, err := s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get install workflow step"))
 		return
@@ -72,10 +85,10 @@ func (s *service) GetInstallWorkflowStep(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installWorkflow)
 }
 
-func (s *service) getWorkflowStep(ctx *gin.Context, workflowID, stepID string) (*app.WorkflowStep, error) {
+func (s *service) getWorkflowStep(ctx *gin.Context, orgID, workflowID, stepID string) (*app.WorkflowStep, error) {
 	var installWorkflowStep app.WorkflowStep
 	res := s.db.WithContext(ctx).
-		Where("id = ? AND install_workflow_id = ?", stepID, workflowID).
+		Where("id = ? AND install_workflow_id = ? AND org_id = ?", stepID, workflowID, orgID).
 		Preload("CreatedBy").
 		Preload("Approval", func(db *gorm.DB) *gorm.DB {
 			return db.Omit("contents")
