@@ -5,6 +5,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-hack);
+  --font-serif: var(--font-serif);
 
   --border-color-light: #dee3e7;
   --border-color-dark: #27252a;
