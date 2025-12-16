@@ -6,17 +6,15 @@ import {
   CaretLeftIcon,
   TimerIcon,
 } from '@phosphor-icons/react/dist/ssr'
-import { BackLink } from '@/components/common/BackLink'
+import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
+import { Plan } from '@/components/approvals/Plan'
 import { BackToTop } from '@/components/common/BackToTop'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageSection } from '@/components/layout/PageSection'
+import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import {
-  getInstall,
-  getInstallSandboxRun,
-  getWorkflow,
-  getOrg,
-} from '@/lib'
+import { SandboxRunProvider } from '@/providers/sandbox-run-provider'
+import { getInstall, getInstallSandboxRun, getWorkflow, getOrg } from '@/lib'
 import { toSentenceCase } from '@/utils/string-utils'
 import { Logs, LogsError, LogsSkeleton } from './logs'
 
@@ -88,55 +86,52 @@ export default async function SandboxRuns({ params }) {
 
   const containerId = 'sandbox-run-page'
   return org?.features?.['stratus-layout'] ? (
-    <PageSection className="!p-0" id={containerId} isScrollable>
-      <Breadcrumbs
-        breadcrumbs={[
-          {
-            path: `/${orgId}`,
-            text: org?.name,
-          },
-          {
-            path: `/${orgId}/installs`,
-            text: 'Installs',
-          },
-          {
-            path: `/${orgId}/installs/${installId}`,
-            text: install?.name,
-          },
-          {
-            path: `/${orgId}/installs/${installId}/sandbox`,
-            text: 'Sandbox',
-          },
-          {
-            path: `/${orgId}/installs/${installId}/sandbox/${runId}`,
-            text: toSentenceCase(sandboxRun?.run_type) || 'Run',
-          },
-        ]}
-      />
-      {/* old page content */}
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <div className="md:col-span-8">
-          <BackLink className="ml-6 mt-6" />
+    <SandboxRunProvider initSandboxRun={sandboxRun}>
+      <SandboxHeader workflow={workflow} stepId={step?.id} />
 
+      <PageSection className="!pb-12" id={containerId} isScrollable>
+        <Breadcrumbs
+          breadcrumbs={[
+            {
+              path: `/${orgId}`,
+              text: org?.name,
+            },
+            {
+              path: `/${orgId}/installs`,
+              text: 'Installs',
+            },
+            {
+              path: `/${orgId}/installs/${installId}`,
+              text: install?.name,
+            },
+            {
+              path: `/${orgId}/installs/${installId}/sandbox`,
+              text: 'Sandbox',
+            },
+            {
+              path: `/${orgId}/installs/${installId}/sandbox/${runId}`,
+              text: toSentenceCase(sandboxRun?.run_type) || 'Run',
+            },
+          ]}
+        />
+        {/* old page content */}
+        <div>
           {workflow &&
           step &&
           step?.approval &&
           !step?.approval?.response &&
           step?.status?.status !== 'auto-skipped' ? (
             <Section
-              className="border-b"
+              className="border-b !px-0 !pt-0"
               childrenClassName="flex flex-col gap-6"
               heading="Approve change"
             >
-              <ApprovalStep
-                step={step}
-                approval={step.approval}
-                workflowId={workflow?.id}
-              />
+              <ApprovalBanner step={step} />
+              <Plan step={step} />
             </Section>
           ) : null}
 
-          <Section>
+          <div>
             <LogStreamProvider
               initLogStream={sandboxRun?.log_stream}
               shouldPoll={sandboxRun?.log_stream?.open}
@@ -151,7 +146,7 @@ export default async function SandboxRuns({ params }) {
                 </Suspense>
               </ErrorBoundary>
             </LogStreamProvider>
-          </Section>
+          </div>
 
           {workflow &&
           step &&
@@ -159,50 +154,19 @@ export default async function SandboxRuns({ params }) {
           step?.approval?.response &&
           step?.status?.status !== 'auto-skipped' ? (
             <Section
-              className="border-t"
+              className="border-t !px-0"
               childrenClassName="flex flex-col gap-6"
               heading="Approve change"
             >
-              <ApprovalStep
-                step={step}
-                approval={step.approval}
-                workflowId={workflow?.id}
-              />
+              <ApprovalBanner step={step} />
+              <Plan step={step} />
             </Section>
           ) : null}
         </div>
-
-        <div className="divide-y flex flex-col md:col-span-4">
-          <Section className="flex-initial" heading="Sandbox">
-            <div className="flex flex-col gap-3">
-              <AppSandboxConfig sandboxConfig={sandboxRun.app_sandbox_config} />
-              <AppSandboxVariables
-                variables={sandboxRun.app_sandbox_config?.variables}
-              />
-            </div>
-          </Section>
-
-          {sandboxRun?.runner_jobs?.at(0)?.outputs ? (
-            <Section className="flex-initial" heading="Sandbox outputs">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <Text variant="med-12">Outputs</Text>
-                  <ClickToCopy className="hover:bg-black/10 rounded-md p-1 text-sm">
-                    <span className="hidden">
-                      {JSON.stringify(sandboxRun?.runner_jobs?.at(0).outputs)}
-                    </span>
-                  </ClickToCopy>
-                </div>
-                <JsonView data={sandboxRun?.runner_jobs?.at(0)?.outputs} />
-              </div>
-            </Section>
-          ) : null}
-        </div>
-      </div>
-
-      {/* old page content */}
-      <BackToTop containerId={containerId} />
-    </PageSection>
+        {/* old page content */}
+        <BackToTop containerId={containerId} />
+      </PageSection>
+    </SandboxRunProvider>
   ) : (
     <DashboardContent
       breadcrumb={[

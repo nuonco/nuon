@@ -4,6 +4,7 @@ import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
 import { LogsSkeleton } from '@/components/log-stream/Logs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
@@ -47,7 +48,11 @@ export const SandboxRunApply = ({
               }}
               tooltipProps={{
                 position: 'right',
-                tipContent: sandboxRun?.status_v2?.status_human_description,
+                tipContent: (
+                  <Text className="!text-nowrap" variant="subtext">
+                    {sandboxRun?.status_v2?.status_human_description}
+                  </Text>
+                ),
               }}
             />
             <LabeledValue label="Sandbox Run ID">
@@ -56,7 +61,10 @@ export const SandboxRunApply = ({
           </div>
 
           {sandboxRun?.log_stream ? (
-            <LogStreamProvider shouldPoll initLogStream={sandboxRun?.log_stream}>
+            <LogStreamProvider
+              shouldPoll
+              initLogStream={sandboxRun?.log_stream}
+            >
               <UnifiedLogsProvider initLogs={logs}>
                 <LogViewerProvider>
                   <SSELogs />
