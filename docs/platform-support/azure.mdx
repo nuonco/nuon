@@ -1,6 +1,6 @@
 ---
 title: 'Azure'
-description: "Deploy and manage BYOC apps on Microsoft Azure."
+description: 'Deploy and manage BYOC apps on Microsoft Azure.'
 icon: 'microsoft'
 ---
 
@@ -8,7 +8,9 @@ Nuon offers first-class support for Microsoft's Azure cloud platorm.
 
 ## Configuration
 
-To deploy an app to Azure, configure it to use an Azure sandbox and runner. We provide an AKS sandbox you can use to get started. You will need to set some vars to configure the sandbox. Create inputs for the public and private domains, since those will be different for each install.
+To deploy an app to Azure, configure it to use an Azure sandbox and runner. We provide an AKS sandbox you can use to get
+started. You will need to set some vars to configure the sandbox. Create inputs for the public and private domains,
+since those will be different for each install.
 
 ```toml sandbox.toml
 #:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
@@ -17,7 +19,7 @@ terraform_version = "1.11.3"
 
 [public_repo]
 directory = "."
-repo      = "nuonco/terraform-azure-aks-sandbox"
+repo      = "nuonco/azure-aks-sandbox"
 branch    = "main"
 
 [vars]
@@ -45,23 +47,28 @@ Azure does not support a GUI installation flow, so you must use the CLI installa
 1. Your customer will provision the install stack, which includes the install runner, in their Azure account.
 1. The install runner will provision your app.
 
-Let's walk  through each step in detail.
+Let's walk through each step in detail.
 
 ### Create an Install
 
-Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
+Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you
+want to install.
 
-This will kick off a provision workflow. A new install stack template will be generated along with CLI commands to install it. These commands will have the install ID and other settings already interpolated, and can be shared with your customer to run as-is.
+This will kick off a provision workflow. A new install stack template will be generated along with CLI commands to
+install it. These commands will have the install ID and other settings already interpolated, and can be shared with your
+customer to run as-is.
 
 ### Install the Stack
 
-Your customer must [install the Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and log in.
+Your customer must
+[install the Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and log in.
 
 ```sh
 az login
 ```
 
-They will be prompted to select a subscription. They should select the subscription they want to manage the install under.
+They will be prompted to select a subscription. They should select the subscription they want to manage the install
+under.
 
 Now they can run the command to create the resource group that the install will be provisioned in.
 
@@ -70,7 +77,9 @@ az group create --name {{install_id}}-rg --location eastus
 ```
 
 <Note>
-We limit the install runner's permissions to this resource group, with the exception of service provider registration. Providers must be registered at the subscription level before their services can be used. We grant the runner this lone permission at the subscription level to facilitate provisioning in a new subscription.
+  We limit the install runner's permissions to this resource group, with the exception of service provider registration.
+  Providers must be registered at the subscription level before their services can be used. We grant the runner this
+  lone permission at the subscription level to facilitate provisioning in a new subscription.
 </Note>
 
 Once the resource group has been created, they can provision the stack.
@@ -81,9 +90,12 @@ az stack group create --name {{install_id}}-stack --resource-group {{install_id}
 
 ## Updating
 
-If you make changes to the install stack template, and need to update an install, your customer must re-provision the stack.
+If you make changes to the install stack template, and need to update an install, your customer must re-provision the
+stack.
 
-1. From the install's Overview page, click on "Reprovision install" in the "Manage" drop-down menu. This will trigger a reprovision workflow, and an updated CLI command will be provided.
+1. From the install's Overview page, click on "Reprovision install" in the "Manage" drop-down menu. This will trigger a
+   reprovision workflow, and an updated CLI command will be provided.
 1. Send the command to your customer for them to run.
 
-Note that the provided CLI command is the same `az stack group create` command you used to create the install. Even though the command is `create` it is effectively an upsert, and will update the stack if it already exists.
+Note that the provided CLI command is the same `az stack group create` command you used to create the install. Even
+though the command is `create` it is effectively an upsert, and will update the stack if it already exists.
