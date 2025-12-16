@@ -34,7 +34,7 @@ FROM code AS lint
 COPY .golangci.yml .
 
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-ctl-api \
-    golangci-lint run -c .golangci.yml --issues-exit-code 0 -v
+    golangci-lint run -c .golangci.yml  -v
 
 # Use the provided runtime image
 FROM ${RUNTIME_IMAGE} AS final

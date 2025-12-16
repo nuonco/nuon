@@ -203,7 +203,7 @@ func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstal
 	fakeReq.AwsAccount.Region = "us-west-2"
 	fakeReq.Inputs = nil
 
-	install, err := s.apiClient.CreateInstall(s.ctx, appID, fakeReq)
+	install, _, err := s.apiClient.CreateInstall(s.ctx, appID, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), install)
 
