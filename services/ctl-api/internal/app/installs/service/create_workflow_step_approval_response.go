@@ -75,7 +75,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
-	_, err = s.getWorkflowStep(ctx, workflowID, stepID)
+	_, err = s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.Error(stderr.ErrNotFound{

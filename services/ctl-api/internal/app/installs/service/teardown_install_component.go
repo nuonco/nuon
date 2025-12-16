@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
@@ -44,6 +45,12 @@ func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error 
 // @Success				201	{string}	ok
 // @Router					/v1/installs/{install_id}/components/{component_id}/teardown [post]
 func (s *service) TeardownInstallComponent(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
 
@@ -53,7 +60,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	install, err := s.helpers.GetInstall(ctx, installID)
+	install, err := s.helpers.GetInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return

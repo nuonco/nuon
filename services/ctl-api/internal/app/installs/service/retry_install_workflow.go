@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
 
@@ -58,6 +59,14 @@ func (c *RetryWorkflowRequest) Validate(v *validator.Validate) error {
 // @Success					201	{object}	RetryWorkflowResponse
 // @Router					/v1/installs/{install_id}/retry-workflow [post]
 func (s *service) RetryWorkflow(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err: fmt.Errorf("unable to get org from context: %w", err),
+		})
+		return
+	}
+
 	install_id := ctx.Param("install_id")
 
 	var req RetryWorkflowRequest
@@ -73,7 +82,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.getWorkflow(ctx, req.WorkflowID)
+	workflow, err := s.getWorkflow(ctx, org.ID, req.WorkflowID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("install workflow not found: %s", req.WorkflowID),
@@ -81,7 +90,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	step, err := s.getWorkflowStep(ctx, workflow.ID, req.StepID)
+	step, err := s.getWorkflowStep(ctx, org.ID, workflow.ID, req.StepID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("install workflow step not found: %s", req.StepID),

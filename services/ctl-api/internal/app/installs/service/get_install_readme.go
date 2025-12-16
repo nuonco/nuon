@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/render"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
 )
 
 type Readme struct {
@@ -38,10 +39,15 @@ type Readme struct {
 // @Success				206	{object}	Readme
 // @Router					/v1/installs/{install_id}/readme [get]
 func (s *service) GetInstallReadme(ctx *gin.Context) {
-	// get install state
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	installID := ctx.Param("install_id")
 
-	install, err := s.helpers.GetInstall(ctx, installID)
+	install, err := s.helpers.GetInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get install"))
 		return
