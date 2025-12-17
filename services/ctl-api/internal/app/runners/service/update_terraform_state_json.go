@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/pkg/errors"
 )
 
 // @ID						UpdateTerraformStateJSON

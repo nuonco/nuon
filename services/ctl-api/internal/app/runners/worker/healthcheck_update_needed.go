@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )

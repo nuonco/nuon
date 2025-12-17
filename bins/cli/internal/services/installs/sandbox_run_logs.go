@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/browser"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/pkg/browser"
 )
 
 func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, asJSON bool) error {

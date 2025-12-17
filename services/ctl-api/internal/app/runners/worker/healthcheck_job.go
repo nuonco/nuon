@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
