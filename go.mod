@@ -1,4 +1,4 @@
-module github.com/powertoolsdev/mono
+module github.com/nuonco/nuon
 
 go 1.25.4
 
