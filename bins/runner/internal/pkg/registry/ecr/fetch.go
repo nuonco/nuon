@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
-	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	ecrauthorization "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*registry.AccessInfo, error) {

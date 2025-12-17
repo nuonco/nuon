@@ -12,10 +12,10 @@ import (
 	"helm.sh/helm/v4/pkg/action"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/pkg/diff"
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"github.com/powertoolsdev/mono/pkg/plans"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/pkg/diff"
+	"github.com/nuonco/nuon/pkg/helm"
+	"github.com/nuonco/nuon/pkg/plans"
 )
 
 // Use the common diff package for the plan contents

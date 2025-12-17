@@ -3,10 +3,10 @@ package sync
 import (
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	noop "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/noop"
-	oci "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync/oci"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/sync/noop"
+	oci "github.com/nuonco/nuon/bins/runner/internal/jobs/sync/oci"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 )
 
 func GetJobs() []fx.Option {

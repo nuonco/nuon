@@ -1,8 +1,8 @@
 package workflow
 
 import (
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
 	"github.com/nuonco/nuon-runner-go/models"
 )

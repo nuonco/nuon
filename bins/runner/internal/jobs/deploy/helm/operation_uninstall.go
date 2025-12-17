@@ -8,7 +8,7 @@ import (
 	"helm.sh/helm/v4/pkg/action"
 	kube "helm.sh/helm/v4/pkg/kube"
 
-	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/nuonco/nuon/pkg/helm"
 )
 
 func (h *handler) uninstall(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) error {

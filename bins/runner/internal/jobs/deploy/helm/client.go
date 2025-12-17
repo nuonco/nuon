@@ -13,9 +13,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/helm"
-	nuondriver "github.com/powertoolsdev/mono/pkg/helm/driver"
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/helm"
+	nuondriver "github.com/nuonco/nuon/pkg/helm/driver"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 func (h *handler) actionInit(ctx context.Context, l *zap.Logger) (*action.Configuration, *rest.Config, error) {

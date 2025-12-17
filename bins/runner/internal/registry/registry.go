@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal"
 )
 
 type Params struct {

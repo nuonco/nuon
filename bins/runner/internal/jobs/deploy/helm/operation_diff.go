@@ -12,8 +12,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/diff"
-	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/nuonco/nuon/pkg/diff"
+	"github.com/nuonco/nuon/pkg/helm"
 )
 
 func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, error) {

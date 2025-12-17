@@ -7,8 +7,8 @@ import (
 
 	"go.opentelemetry.io/contrib/bridges/otelzap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 )
 
 // the system logger is used to log all things that should not be sent to our API via OTEL

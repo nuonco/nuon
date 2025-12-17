@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/version"
+	"github.com/nuonco/nuon/bins/runner/internal/version"
 )
 
 func (s *Settings) fetch(ctx context.Context) error {

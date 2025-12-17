@@ -5,9 +5,9 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	terraformworkspace "github.com/powertoolsdev/mono/pkg/terraform/workspace"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
 const (
