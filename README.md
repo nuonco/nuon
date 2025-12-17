@@ -18,9 +18,7 @@
 
 </div>
 
-This repo contains the complete source code of the Nuon control plane, runner, and CLI.
-
-Read more about our decision to open-source Nuon on our blog: https://nuon.co/blog/oss-announcement/
+This repo contains the complete source code of the Nuon control plane, runner, and CLI. Read our open-source announcement [here](https://nuon.co/blog/oss-announcement/).
 
 ## Getting started
 
