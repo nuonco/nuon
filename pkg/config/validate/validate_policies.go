@@ -3,7 +3,7 @@ package validate
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 	"gopkg.in/yaml.v2"
 )
 

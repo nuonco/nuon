@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/retry"
+	"github.com/nuonco/nuon/pkg/retry"
 )
 
 func (d *devver) initToken(ctx context.Context) error {

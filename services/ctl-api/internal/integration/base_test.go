@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/powertoolsdev/mono/pkg/api"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/api"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type baseIntegrationTestSuite struct {

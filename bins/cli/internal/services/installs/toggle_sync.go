@@ -6,8 +6,8 @@ import (
 
 	"github.com/nuonco/nuon-go/models"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) ToggleSync(ctx context.Context, installID string, enable, disable bool) error {

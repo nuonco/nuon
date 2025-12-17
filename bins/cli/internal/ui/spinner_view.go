@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 )
 
 type SpinnerView struct {

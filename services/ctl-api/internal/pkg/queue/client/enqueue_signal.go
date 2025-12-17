@@ -7,8 +7,8 @@ import (
 
 	tclient "go.temporal.io/sdk/client"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 func (c *Client) EnqueueSignal(ctx context.Context, queueID string, sig signal.Signal) (*queue.EnqueueResponse, error) {

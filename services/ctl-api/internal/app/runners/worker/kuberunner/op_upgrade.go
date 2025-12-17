@@ -8,8 +8,8 @@ import (
 	"helm.sh/helm/v4/pkg/action"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/helm"
 )
 
 func (h *Activities) upgrade(ctx context.Context, actionCfg *action.Configuration, req *InstallOrUpgradeRequest) (*release.Release, error) {

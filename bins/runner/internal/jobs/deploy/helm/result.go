@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
-	"github.com/powertoolsdev/mono/pkg/plans"
+	"github.com/nuonco/nuon/pkg/plans"
 )
 
 // TODO(jm): pull out the helm resources and their statuses from the release, and write them to the api

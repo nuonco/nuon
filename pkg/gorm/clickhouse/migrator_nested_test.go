@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	chTypes "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/types"
+	chTypes "github.com/nuonco/nuon/pkg/gorm/clickhouse/pkg/types"
 )
 
 type Log struct {

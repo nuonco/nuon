@@ -10,7 +10,7 @@ import (
 	sdktally "go.temporal.io/sdk/contrib/tally"
 	converter "go.temporal.io/sdk/converter"
 
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen

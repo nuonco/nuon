@@ -3,7 +3,7 @@ package signaldb
 import (
 	"encoding/json"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 // signalJSON is the actual signal data that is used to store a signal

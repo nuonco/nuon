@@ -1,6 +1,6 @@
 package configs
 
-import "github.com/powertoolsdev/mono/pkg/aws/credentials"
+import "github.com/nuonco/nuon/pkg/aws/credentials"
 
 // TerraformBuild is used by the terraform plugin to create an OCI archive with the build parameters.
 type TerraformBuild struct {

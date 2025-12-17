@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-runner-go/models"
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )

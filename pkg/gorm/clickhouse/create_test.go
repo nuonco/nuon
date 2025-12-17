@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	chClause "github.com/powertoolsdev/mono/pkg/gorm/clickhouse/pkg/clause"
+	chClause "github.com/nuonco/nuon/pkg/gorm/clickhouse/pkg/clause"
 	"gorm.io/gorm/utils/tests"
 )
 

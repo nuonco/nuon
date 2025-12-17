@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/render/features"
+	"github.com/nuonco/nuon/pkg/render/features"
 )
 
 // want to write a type that can walk an object recursively and any field that has a struct

@@ -7,8 +7,8 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/config/refs"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type ActionConfig struct {

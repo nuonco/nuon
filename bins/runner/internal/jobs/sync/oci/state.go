@@ -3,7 +3,7 @@ package containerimage
 import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 type handlerState struct {

@@ -3,8 +3,8 @@ package docker
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*registry.AccessInfo, error) {

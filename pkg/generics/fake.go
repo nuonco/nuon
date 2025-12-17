@@ -2,7 +2,7 @@ package generics
 
 import (
 	"github.com/go-faker/faker/v4"
-	"github.com/powertoolsdev/mono/pkg/shortid"
+	"github.com/nuonco/nuon/pkg/shortid"
 )
 
 // GetFakeObj returns a faked instance of type T

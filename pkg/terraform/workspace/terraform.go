@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 
-	"github.com/powertoolsdev/mono/pkg/terraform/workspace/output"
+	"github.com/nuonco/nuon/pkg/terraform/workspace/output"
 )
 
 func (w *workspace) Init(ctx context.Context, log hclog.Logger) error {

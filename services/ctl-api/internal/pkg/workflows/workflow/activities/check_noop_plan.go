@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	approvalplan "github.com/powertoolsdev/mono/pkg/plans/types/approval_plan"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	approvalplan "github.com/nuonco/nuon/pkg/plans/types/approval_plan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type CheckNoopPlanRequest struct {

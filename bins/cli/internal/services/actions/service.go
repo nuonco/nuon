@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 )
 
 type Service struct {

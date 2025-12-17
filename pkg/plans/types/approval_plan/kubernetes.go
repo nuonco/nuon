@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/diff"
-	"github.com/powertoolsdev/mono/pkg/types/components/plan"
+	"github.com/nuonco/nuon/pkg/diff"
+	"github.com/nuonco/nuon/pkg/types/components/plan"
 )
 
 type KubernetesApprovalPlan struct {

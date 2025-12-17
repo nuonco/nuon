@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	appsv1 "github.com/nuonco/nuon/pkg/types/workflows/apps/v1"
 	enumspb "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 )

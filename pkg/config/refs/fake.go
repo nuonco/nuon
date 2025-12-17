@@ -3,7 +3,7 @@ package refs
 import (
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func GetFakeRefs(refs []Ref) map[string]any {

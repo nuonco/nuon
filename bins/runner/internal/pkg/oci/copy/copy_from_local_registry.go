@@ -8,9 +8,9 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry/remote"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry/local"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/local"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 func (c *copier) CopyFromLocalRegistry(ctx context.Context, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {

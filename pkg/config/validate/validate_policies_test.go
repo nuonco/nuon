@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/pipeline"
-	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
-	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
+	"github.com/nuonco/nuon/pkg/pipeline"
+	callbackmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/callbacks"
+	execmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/exec"
 )
 
 func (r *run) Validate(ctx context.Context) error {

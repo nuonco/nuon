@@ -10,8 +10,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/temporal"
 
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 const (

@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
+	canaryv1 "github.com/nuonco/nuon/pkg/types/workflows/canary/v1"
+	"github.com/nuonco/nuon/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
 )
 

@@ -7,9 +7,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	pkgdataconverter "github.com/powertoolsdev/mono/pkg/temporal/dataconverter"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	signaldb "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal/db"
+	pkgdataconverter "github.com/nuonco/nuon/pkg/temporal/dataconverter"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 type Params struct {

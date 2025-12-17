@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/services/actions"
+	"github.com/nuonco/nuon/bins/cli/internal/services/actions"
 )
 
 func (c *cli) actionsCmd() *cobra.Command {

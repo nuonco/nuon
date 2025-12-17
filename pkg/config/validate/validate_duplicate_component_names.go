@@ -1,8 +1,8 @@
 package validate
 
 import (
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 func ValidateDuplicateComponentNames(cfg *config.AppConfig) error {

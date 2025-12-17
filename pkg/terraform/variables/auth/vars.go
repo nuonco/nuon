@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
-	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
-	"github.com/powertoolsdev/mono/pkg/terraform/variables"
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/terraform/variables"
 )
 
 func (v *auth) Init(context.Context) error {

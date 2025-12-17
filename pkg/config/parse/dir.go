@@ -3,7 +3,7 @@ package parse
 import (
 	"errors"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 // NOTE(jm): this is only required as a temporary migration path, while the old config syncing exists.

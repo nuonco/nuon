@@ -7,7 +7,7 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func groupFn(ctx context.Context) (*segment.Group, error) {

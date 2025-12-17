@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/command"
+	"github.com/nuonco/nuon/pkg/command"
 )
 
 var v *validator.Validate
@@ -117,7 +117,7 @@ func generatePublicSchema(ctx context.Context) error {
 
 func runTemporalGen(ctx context.Context) error {
 	// Build a binary to reuse per-directory
-	binpath, err := compileToTemp(ctx, "github.com/powertoolsdev/mono/pkg/gen/temporal-gen")
+	binpath, err := compileToTemp(ctx, "github.com/nuonco/nuon/pkg/gen/temporal-gen")
 	if err != nil {
 		return fmt.Errorf("unable to compile temporal-gen binary: %w", err)
 	}

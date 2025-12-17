@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/git"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/git"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
 	"github.com/nuonco/nuon-runner-go/models"
 )

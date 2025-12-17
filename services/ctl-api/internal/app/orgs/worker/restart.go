@@ -5,14 +5,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	actionssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
-	appssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	componentssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
-	installssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	orgssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
-	runnerssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	actionssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
+	appssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	componentssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
+	runnerssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
 // @temporal-gen workflow

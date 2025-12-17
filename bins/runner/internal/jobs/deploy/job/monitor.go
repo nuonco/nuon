@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
 
