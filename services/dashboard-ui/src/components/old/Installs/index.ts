@@ -2,8 +2,8 @@
 // app install table
 export * from './CreateInstallModal'
 
-/* 
-install page common 
+/*
+install page common
 =====================================
 */
 
@@ -16,8 +16,8 @@ export * from './ManageComponentsDropdown'
 // teardown components modal
 // forget install modal
 
-/* 
-install overview page 
+/*
+install overview page
 =====================================
 */
 
@@ -26,44 +26,37 @@ install overview page
 // active sandbox
 // Cloud platform
 
-/* 
-install history page 
+/*
+install history page
 =====================================
 */
 
 // events feed
 
-/* 
-install components page 
+/*
+install components page
 =====================================
 */
 
 // install components table
 
-/* 
-install actions page 
+/*
+install actions page
 =====================================
 */
 
 // action workflow table
 
-/* 
-install break glass page
-=====================================
-*/
-
-export * from './BreakGlassForm'
-
-/* 
-install sandbox page 
+/*
+install sandbox page
 =====================================
 */
 export * from './DeprovisionSandboxModal'
 export * from './ReprovisionSandboxModal'
 export * from './SandboxHistory'
 
-/* 
-install stacks page 
+/*
+install stacks page
 =====================================
 */
 export * from './StacksTable'
