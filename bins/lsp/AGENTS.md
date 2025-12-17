@@ -342,8 +342,8 @@ Enable debug logging to trace completion execution.
 - **`github.com/tliron/glsp`** - LSP protocol implementation
 - **`github.com/tliron/commonlog`** - Structured logging
 - **`github.com/invopop/jsonschema`** - JSON schema parsing and traversal
-- **`github.com/powertoolsdev/mono/pkg/config/schema`** - Schema lookup (internal)
-- **`github.com/powertoolsdev/mono/pkg/parser/toml`** - Custom TOML parser (internal)
+- **`github.com/nuonco/nuon/pkg/config/schema`** - Schema lookup (internal)
+- **`github.com/nuonco/nuon/pkg/parser/toml`** - Custom TOML parser (internal)
 
 ### Node.js (for VSCode extension)
 

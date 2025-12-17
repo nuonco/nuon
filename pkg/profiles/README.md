@@ -23,7 +23,7 @@ ENABLE_PROFILING=true PROFILING_PORT=7070 ./your-application
 ### Programmatic Usage
 
 ```go
-import "github.com/powertoolsdev/mono/pkg/profiles"
+import "github.com/nuonco/nuon/pkg/profiles"
 
 // Using environment variables only
 app := fx.New(
