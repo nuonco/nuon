@@ -1,8 +1,8 @@
 package helpers
 
 import (
-	"github.com/powertoolsdev/mono/pkg/config/refs"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // NOTE(jm): this is a function, because it is used directly within a workflow.

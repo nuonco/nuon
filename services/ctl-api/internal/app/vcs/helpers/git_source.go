@@ -8,10 +8,10 @@ import (
 	"github.com/google/go-github/v50/github"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	githubpkg "github.com/powertoolsdev/mono/pkg/github/repo"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/pkg/generics"
+	githubpkg "github.com/nuonco/nuon/pkg/github/repo"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (h *Helpers) GetPubliGitSource(ctx context.Context, cfg *app.PublicGitVCSConfig) (*plantypes.GitSource, error) {

@@ -5,8 +5,8 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	appsv1 "github.com/nuonco/nuon/pkg/types/workflows/apps/v1"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (w *Workflows) reprovisionLegacy(ctx workflow.Context, orgID, appID string, sandboxMode bool) error {

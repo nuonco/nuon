@@ -6,7 +6,7 @@ import (
 
 	"helm.sh/helm/v4/pkg/action"
 
-	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/nuonco/nuon/pkg/helm"
 )
 
 func (a *Activities) uninstall(ctx context.Context, actionCfg *action.Configuration, runnerID string) error {

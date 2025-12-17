@@ -8,7 +8,7 @@ import (
 	"go.temporal.io/sdk/activity"
 	tclient "go.temporal.io/sdk/client"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/handler"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 type UpdateWorkflowExecuteRequest struct {

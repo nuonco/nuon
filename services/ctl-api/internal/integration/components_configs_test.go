@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type componentConfigsSuite struct {
@@ -64,7 +64,7 @@ func (s *componentConfigsSuite) TestCreateDockerBuildComponentConfig() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 
 		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -87,7 +87,7 @@ func (s *componentConfigsSuite) TestCreateTerraformModuleComponentConfig() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateTerraformModuleComponentConfigRequest]()
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 
 		cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -121,7 +121,7 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ChartName = generics.ToPtr("valid-chart")
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -190,7 +190,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ChartName = generics.ToPtr("valid-chart")
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 		req.PublicGitVcsConfig = nil
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -211,7 +211,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ChartName = generics.ToPtr("valid-chart")
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 		req.PublicGitVcsConfig = nil
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -235,7 +235,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ChartName = generics.ToPtr("valid-chart")
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
@@ -254,7 +254,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		}
 		req := generics.GetFakeObj[*models.ServiceCreateTerraformModuleComponentConfigRequest]()
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 
 		cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -273,7 +273,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		}
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 
 		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)

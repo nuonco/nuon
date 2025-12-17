@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	ecrauthorization "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
 )
 
 type OrgECRAccessInfo struct {

@@ -5,10 +5,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/activities"
-	handlerworkflow "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/handler"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	handlerworkflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const EnqueueUpdateName string = "enqueue"

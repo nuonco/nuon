@@ -4,7 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 func (l *Loop[SignalType, ReqSig]) checkExists(ctx workflow.Context, req eventloop.EventLoopRequest) error {

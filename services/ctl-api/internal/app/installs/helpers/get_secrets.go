@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/types/state"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (h *Helpers) getSecrets(ctx context.Context, installID, runnerID string) (*state.SecretsState, error) {

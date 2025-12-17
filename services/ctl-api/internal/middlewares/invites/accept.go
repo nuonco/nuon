@@ -3,7 +3,7 @@ package invites
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (m *middleware) handleInvites(ctx context.Context, acct *app.Account) error {

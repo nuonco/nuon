@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/sender"
+	"github.com/nuonco/nuon/pkg/sender"
 )
 
 func (n *Notifications) sendSlackNotification(ctx context.Context, typ Type, webhookURL string, vars map[string]string) error {
