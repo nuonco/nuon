@@ -7,9 +7,9 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/pkg/errors"
 )
 
 func (s *Service) pollDeploys(ctx context.Context, installID string, deploys []*models.AppInstallDeploy) error {

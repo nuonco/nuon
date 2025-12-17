@@ -3,9 +3,9 @@ package worker
 import (
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 )
 

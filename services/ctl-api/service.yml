@@ -1,0 +1,29 @@
+---
+type: service
+
+base_images:
+  - src: Dockerfile.build
+    name: BUILD_IMAGE
+    tag: buildimage
+  - src: Dockerfile.runtime
+    name: RUNTIME_IMAGE
+    tag: runtimeimage
+
+sources:
+  - src: pkg
+  - src: go.mod
+  - src: go.sum
+  - src: tools.go
+  - src: images/go-base/Dockerfile.build
+    dst: Dockerfile.build
+  - src: images/go-base/Dockerfile-awsauth-cacert.runtime
+    dst: Dockerfile.runtime
+  - src: bins/runner/bundle
+    dst: bundle
+  - src: .golangci.yml
+
+tests:
+  - name: lint
+    docker_target: lint
+
+color: cyan

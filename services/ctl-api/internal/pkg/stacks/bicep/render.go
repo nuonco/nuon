@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 	"text/template"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
+	"github.com/pkg/errors"
 )
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {

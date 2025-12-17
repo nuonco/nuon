@@ -1,0 +1,10 @@
+---
+type: service
+
+tests:
+  - name: lint
+    docker_target: lint
+  - name: test
+    docker_target: test
+
+color: magenta

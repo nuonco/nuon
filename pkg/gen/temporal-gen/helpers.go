@@ -74,12 +74,12 @@ import (
 
 	q := func(s string) string { return "\"" + s + "\"" }
 	imports := map[string]bool{
-		q("time"):                                        true,
-		q("go.temporal.io/sdk/temporal"):                 true,
-		q("go.temporal.io/sdk/workflow"):                 true,
+		q("time"):                                 true,
+		q("go.temporal.io/sdk/temporal"):          true,
+		q("go.temporal.io/sdk/workflow"):          true,
 		q("github.com/nuonco/nuon/pkg/workflows"): true,
 		q("github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"): true,
-		"enumsv1 " + q("go.temporal.io/api/enums/v1"):                              true,
+		"enumsv1 " + q("go.temporal.io/api/enums/v1"):                       true,
 	}
 
 	// pull in all the imports from the file containing the base func, so that at minimum we have the right import for
