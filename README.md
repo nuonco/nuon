@@ -18,9 +18,7 @@
 
 </div>
 
-This repo contains the complete source code of the Nuon control plane, runner, and CLI.
-
-Read more about our decision to open-source Nuon on our blog: https://nuon.co/blog/oss-announcement/
+This repo contains the complete source code of the Nuon control plane, runner, and CLI. Read our open-source announcement [here](https://nuon.co/blog/oss-announcement/).
 
 ## Getting started
 
@@ -30,11 +28,3 @@ Of course, being a BYOC platform, we can also deploy Nuon itself as a BYOC app i
 
 > [!NOTE]
 > Currently, while Nuon can deploy apps to multiple cloud platforms, Nuon itself can only be deployed to AWS.
-
-## Contributors
-
-<a href="https://github.com/nuonco/nuon/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=nuonco/nuon" />
-</a>
-
-Made with [contrib.rocks](https://contrib.rocks).
