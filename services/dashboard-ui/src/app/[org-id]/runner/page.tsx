@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { TemporalLink } from '@/components/admin/TemporalLink'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -13,7 +14,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCardSkeleton'
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
 import { RunnerRecentActivitySkeleton } from '@/components/runners/RunnerRecentActivitySkeleton'
-import { ManagementDropdown } from "@/components/runners/management/ManagementDropdown"
+import { ManagementDropdown } from '@/components/runners/management/ManagementDropdown'
 import { getRunner, getRunnerSettings, getOrg } from '@/lib'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerError } from './runner-details'
@@ -96,29 +97,29 @@ export default async function OrgRunner({ params, searchParams }) {
       </PageHeader>
       <PageContent>
         <PageSection className="flex-row gap-6">
-          <ErrorBoundary fallback={<RunnerError />}>
-            <Suspense
-              fallback={<RunnerDetailsCardSkeleton className="flex-initial" />}
-            >
-              <RunnerDetails org={org} />
-            </Suspense>
-          </ErrorBoundary>
-          <ErrorBoundary fallback={<RunnerHealthError />}>
-            <Suspense
-              fallback={<RunnerHealthCardSkeleton className="flex-auto" />}
-            >
-              <RunnerHealth org={org} />
-            </Suspense>
-          </ErrorBoundary>
+          <AsyncBoundary
+            errorFallback={<RunnerError />}
+            loadingFallback={<RunnerDetailsCardSkeleton />}
+          >
+            <RunnerDetails org={org} />
+          </AsyncBoundary>
+
+          <AsyncBoundary
+            errorFallback={<RunnerHealthError />}
+            loadingFallback={<RunnerHealthCardSkeleton />}
+          >
+            <RunnerHealth org={org} />
+          </AsyncBoundary>
         </PageSection>
 
         <div className="flex gap-6">
           <PageSection>
-            <ErrorBoundary fallback={<RunnerActivityError />}>
-              <Suspense fallback={<RunnerRecentActivitySkeleton />}>
-                <RunnerActivity org={org} offset={sp['offset'] || '0'} />
-              </Suspense>
-            </ErrorBoundary>
+            <AsyncBoundary
+              errorFallback={<RunnerActivityError />}
+              loadingFallback={<RunnerRecentActivitySkeleton />}
+            >
+              <RunnerActivity org={org} offset={sp['offset'] || '0'} />
+            </AsyncBoundary>
           </PageSection>
         </div>
       </PageContent>
