@@ -18,7 +18,7 @@
 
 </div>
 
-Nuon unlocks BYOC for your apps. This repo contains the complete source code of the Nuon control plane, runner, and CLI.
+This repo contains the complete source code of the Nuon control plane, runner, and CLI.
 
 ## Getting started
 
