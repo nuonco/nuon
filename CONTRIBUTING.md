@@ -8,7 +8,7 @@ to provide an overview of how you can get involved.
 ## Asking Questions
 
 Have a question? Instead of opening a GitHub issue, please ask in
-[our Community Slack](https://nuon-byoc.slack.com) in particular the `03-help`
+[our Community Slack](https://nuon-byoc.slack.com) in particular the `03_help`
 channel.
 
 [Click this invite to join our Community Slack](https://join.slack.com/t/nuon-byoc/shared_invite/zt-3kzp3zpn4-0pHH4kGZ3OJul2p_y1Mzag)
@@ -33,7 +33,7 @@ place to ask questions and provide feedback.
 
 [Click this invite to join our Community Slack](https://join.slack.com/t/nuon-byoc/shared_invite/zt-3kzp3zpn4-0pHH4kGZ3OJul2p_y1Mzag)
 
-Please ask techinical questions in the `03-help` channel. Look for announcements
+Please ask techinical questions in the `03_help` channel. Look for announcements
 in the `01_community-general` channel and you're welcome to introduce yourself
 in the `02_welcomes-and-intros` channel.
 
