@@ -3,7 +3,7 @@ package plan
 import (
 	"go.temporal.io/sdk/workflow"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 type CreateSandboxRunPlanRequest struct {

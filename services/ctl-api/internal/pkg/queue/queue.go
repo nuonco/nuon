@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 type QueueWorkflowRequest struct {

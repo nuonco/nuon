@@ -7,11 +7,11 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
-	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/pkg/metrics"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Activities struct {

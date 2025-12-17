@@ -10,10 +10,10 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 

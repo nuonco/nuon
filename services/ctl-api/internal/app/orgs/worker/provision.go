@@ -6,11 +6,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
-	orgiam "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam"
-	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
+	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
+	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
 // @temporal-gen workflow

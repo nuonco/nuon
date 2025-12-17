@@ -11,11 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 
-	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/kube/secret"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/pkg/types/outputs"
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/kube/secret"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/types/outputs"
 )
 
 func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesSecretSync) error {

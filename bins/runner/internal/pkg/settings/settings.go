@@ -11,7 +11,7 @@ import (
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal"
 )
 
 type Settings struct {

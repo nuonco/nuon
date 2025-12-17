@@ -6,11 +6,11 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
-	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
-	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
+	appsv1 "github.com/nuonco/nuon/pkg/types/workflows/apps/v1"
+	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
+	installsv1 "github.com/nuonco/nuon/pkg/types/workflows/installs/v1"
+	orgsv1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1"
 )
 
 const defaultAgent = "unknown"

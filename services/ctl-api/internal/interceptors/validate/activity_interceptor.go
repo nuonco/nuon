@@ -9,7 +9,7 @@ import (
 	"go.temporal.io/sdk/interceptor"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 var _ interceptor.ActivityInboundInterceptor = (*actInterceptor)(nil)

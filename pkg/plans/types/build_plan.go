@@ -1,6 +1,6 @@
 package plantypes
 
-import "github.com/powertoolsdev/mono/pkg/plugins/configs"
+import "github.com/nuonco/nuon/pkg/plugins/configs"
 
 type BuildPlan struct {
 	ComponentID      string `json:"component_id"`

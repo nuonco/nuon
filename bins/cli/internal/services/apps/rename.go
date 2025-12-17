@@ -6,10 +6,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/pkg/config/parse"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/config/parse"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 func (s *Service) Rename(ctx context.Context, appID string, name string, rename, asJSON bool) error {

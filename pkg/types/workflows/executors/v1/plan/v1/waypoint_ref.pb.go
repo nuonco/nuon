@@ -95,7 +95,7 @@ const file_executors_v1_plan_v1_waypoint_ref_proto_rawDesc = "" +
 	"\aproject\x18\x01 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\aproject\x12:\n" +
 	"\tworkspace\x18\x02 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\tworkspace\x12.\n" +
 	"\x03app\x18\x03 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\x03appB\xee\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x10WaypointRefProtoP\x01ZMgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x18com.executors.v1.plan.v1B\x10WaypointRefProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_waypoint_ref_proto_rawDescOnce sync.Once

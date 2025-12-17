@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (n *Notifications) SendEmail(ctx context.Context, cfg *app.NotificationsConfig, typ Type, vars map[string]string) error {

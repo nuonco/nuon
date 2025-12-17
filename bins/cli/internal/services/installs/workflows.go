@@ -8,10 +8,10 @@ import (
 	"github.com/pkg/browser"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	workflowui "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow/selector"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	workflowui "github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow/selector"
 )
 
 func (s *Service) Workflows(ctx context.Context, installID string, offset, limit int, asJSON bool, workflowID string) error {

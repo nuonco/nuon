@@ -8,7 +8,7 @@ import (
 	smithytime "github.com/aws/smithy-go/time"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/retry"
+	"github.com/nuonco/nuon/pkg/retry"
 )
 
 func (d *devver) monitorRunners() error {

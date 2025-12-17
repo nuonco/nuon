@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/browser"
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, asJSON bool) error {

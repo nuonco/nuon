@@ -25,7 +25,7 @@ import (
 	"helm.sh/helm/v4/pkg/registry"
 	"helm.sh/helm/v4/pkg/repo/v1"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 )
 
 func (h *handler) packageChart(l *zap.Logger) (string, error) {

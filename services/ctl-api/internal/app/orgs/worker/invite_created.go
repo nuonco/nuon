@@ -5,10 +5,10 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 )
 
 // inviteCreated: is called when a new org invite is created_by

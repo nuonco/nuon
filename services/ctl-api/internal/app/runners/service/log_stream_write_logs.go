@@ -8,10 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/otel"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"

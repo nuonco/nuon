@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // TableOrViewName returns the table or view name for an object, appending the provided string.

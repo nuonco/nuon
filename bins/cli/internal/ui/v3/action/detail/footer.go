@@ -2,8 +2,8 @@ package detail
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 func (m Model) logMessageView() string {

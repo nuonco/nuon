@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 	"moul.io/zapgorm2"
 
-	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 type Params struct {

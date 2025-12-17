@@ -3,7 +3,7 @@ package orgs
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) PrintConfig(asJSON bool) error {

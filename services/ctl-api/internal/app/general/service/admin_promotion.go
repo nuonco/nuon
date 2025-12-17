@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	generalsig "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
-	installsig "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	generalsig "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	installsig "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type AdminPromotionRequest struct {

@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
 type TerraformWorkspaceLock struct {

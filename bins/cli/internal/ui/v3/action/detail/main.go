@@ -25,11 +25,11 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/config"
 
-	ac "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/common"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
+	ac "github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/common"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 const (

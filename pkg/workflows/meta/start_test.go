@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
+	"github.com/nuonco/nuon/pkg/generics"
+	orgsv1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1"
+	sharedv1 "github.com/nuonco/nuon/pkg/types/workflows/shared/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/protobuf/proto"

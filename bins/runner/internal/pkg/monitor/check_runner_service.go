@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 
 	"text/template"
 

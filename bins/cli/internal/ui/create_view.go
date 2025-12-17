@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors/withstack"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 type CreateView struct {

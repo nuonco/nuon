@@ -8,11 +8,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/pkg/render"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 //go:embed fake_helm_plan.json

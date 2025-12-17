@@ -4,10 +4,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {

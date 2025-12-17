@@ -1,8 +1,8 @@
 package plantypes
 
 import (
-	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
-	"github.com/powertoolsdev/mono/pkg/kube"
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type ActionWorkflowRunPlan struct {

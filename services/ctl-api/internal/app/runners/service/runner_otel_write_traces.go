@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/otel"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/otel"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp"

@@ -3,13 +3,13 @@ package build
 import (
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	containerimagebuild "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/containerimage"
-	docker "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/docker"
-	helm "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/helm"
-	noop "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/noop"
-	terraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/build/terraform"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	containerimagebuild "github.com/nuonco/nuon/bins/runner/internal/jobs/build/containerimage"
+	docker "github.com/nuonco/nuon/bins/runner/internal/jobs/build/docker"
+	helm "github.com/nuonco/nuon/bins/runner/internal/jobs/build/helm"
+	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/build/noop"
+	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/build/terraform"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 )
 
 func GetJobs() []fx.Option {

@@ -7,7 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 func (r *Recorder) Start() error {

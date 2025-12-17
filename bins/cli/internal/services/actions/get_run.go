@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) GetRun(ctx context.Context, installID, runID string, asJSON bool) error {

@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 type View struct {

@@ -3,8 +3,8 @@ package workflows
 import (
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/job"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 )
 
 type WorkflowParams struct {

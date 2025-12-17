@@ -3,7 +3,7 @@ package afterquery
 import (
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // AfterQuery is a custom plugin, that allows us to call an after query hook on models, that is not supported by gorm.

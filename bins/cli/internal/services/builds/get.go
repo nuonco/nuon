@@ -7,8 +7,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/mitchellh/go-wordwrap"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON bool) error {

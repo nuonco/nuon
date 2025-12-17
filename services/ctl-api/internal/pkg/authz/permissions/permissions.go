@@ -3,7 +3,7 @@ package permissions
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type Permission string

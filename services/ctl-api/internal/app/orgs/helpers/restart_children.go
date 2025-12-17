@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/bulk"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 func (h *Helpers) GetEventLoops(ctx context.Context, orgID string) ([]bulk.EventLoop, error) {

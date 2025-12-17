@@ -6,13 +6,13 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
 func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {

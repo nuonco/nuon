@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/go-playground/validator/v10"
-	pkgcommand "github.com/powertoolsdev/mono/pkg/command"
-	"github.com/powertoolsdev/mono/pkg/zapwriter"
+	pkgcommand "github.com/nuonco/nuon/pkg/command"
+	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
 // NOTE: cannibalized from github.com/plackemacher/system-shutdown

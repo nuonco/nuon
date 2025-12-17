@@ -13,12 +13,12 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/handler"
-	handleractivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/handler/activities"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
+	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 )
 
 const (

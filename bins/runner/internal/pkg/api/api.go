@@ -10,11 +10,11 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/bins/runner/internal/version"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/version"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/pkg/retry"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/pkg/retry"
 )
 
 type Params struct {

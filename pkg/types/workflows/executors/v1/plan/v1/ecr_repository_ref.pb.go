@@ -128,7 +128,7 @@ const file_executors_v1_plan_v1_ecr_repository_ref_proto_rawDesc = "" +
 	"\x0erepository_uri\x18\x04 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=98\"R\rrepositoryUri\x12,\n" +
 	"\x03tag\x18\x05 \x01(\tB\x1a\xfaB\x04r\x02\x10\x01\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\x03tag\x12f\n" +
 	"\x06region\x18\x06 \x01(\tBN\xfaB.r,R\tus-west-2R\tus-east-2R\tus-east-1R\tus-west-1\x9a\x84\x9e\x03\x18faker:\"oneof: us-west-2\"R\x06regionB\xf3\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x15EcrRepositoryRefProtoP\x01ZMgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x18com.executors.v1.plan.v1B\x15EcrRepositoryRefProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_ecr_repository_ref_proto_rawDescOnce sync.Once

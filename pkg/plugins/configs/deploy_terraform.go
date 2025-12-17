@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
 type TerraformDeployRunType string

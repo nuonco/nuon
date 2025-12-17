@@ -3,7 +3,7 @@ package actions
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) DeleteWorkflow(ctx context.Context, action_workflow_id string) error {

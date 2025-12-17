@@ -1,8 +1,8 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/pkg/services/config"
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	"github.com/nuonco/nuon/pkg/services/config"
+	workflowsclient "github.com/nuonco/nuon/pkg/workflows/client"
 )
 
 const (

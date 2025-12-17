@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/pagination"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/pagination"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"

@@ -6,12 +6,12 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 
-	temporalanalytics "github.com/powertoolsdev/mono/pkg/analytics/temporal"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/ecrrepository"
+	temporalanalytics "github.com/nuonco/nuon/pkg/analytics/temporal"
+	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
 )
 
 type Workflows struct {

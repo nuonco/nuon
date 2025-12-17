@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"go.temporal.io/sdk/workflow"
 )
 

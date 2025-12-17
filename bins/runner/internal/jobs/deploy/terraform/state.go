@@ -5,10 +5,10 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 
-	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
-	terraformworkspace "github.com/powertoolsdev/mono/pkg/terraform/workspace"
+	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
 const (

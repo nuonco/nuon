@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type PublicGitVCSConfigRequest struct {

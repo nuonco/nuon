@@ -3,7 +3,7 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
 const (

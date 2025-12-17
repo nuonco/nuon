@@ -3,7 +3,7 @@ package hasher
 import (
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 type TestStruct struct {

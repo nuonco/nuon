@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/config/parse"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/parse"
 )
 
 func (s *Service) Parse(ctx context.Context, file string) {

@@ -9,9 +9,9 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/pkg/workflows"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (a *evClient) startEventLoop(ctx context.Context, id string, signal Signal) error {

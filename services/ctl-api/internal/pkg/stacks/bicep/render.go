@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {

@@ -12,8 +12,8 @@ import (
 	"gorm.io/gorm"
 	"moul.io/zapgorm2"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 // database represents the set of configuration options for creating a database connection. If UseIAM is set, we will

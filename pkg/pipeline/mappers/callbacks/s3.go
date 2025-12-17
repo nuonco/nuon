@@ -8,9 +8,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	"github.com/powertoolsdev/mono/pkg/aws/s3uploader"
-	"github.com/powertoolsdev/mono/pkg/pipeline"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/aws/s3uploader"
+	"github.com/nuonco/nuon/pkg/pipeline"
 )
 
 func NewS3Callback(v *validator.Validate, opts ...s3CallbackOption) (pipeline.CallbackFn, error) {

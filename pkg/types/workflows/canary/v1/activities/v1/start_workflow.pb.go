@@ -140,7 +140,7 @@ const file_canary_v1_activities_v1_start_workflow_proto_rawDesc = "" +
 	"\x15StartWorkflowResponse\x12(\n" +
 	"\vworkflow_id\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x05R\n" +
 	"workflowIdB\x88\x02\n" +
-	"\x1bcom.canary.v1.activities.v1B\x12StartWorkflowProtoP\x01ZVgithub.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1;activitiesv1\xa2\x02\x03CVA\xaa\x02\x17Canary.V1.Activities.V1\xca\x02\x17Canary\\V1\\Activities\\V1\xe2\x02#Canary\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aCanary::V1::Activities::V1b\x06proto3"
+	"\x1bcom.canary.v1.activities.v1B\x12StartWorkflowProtoP\x01ZVgithub.com/nuonco/nuon/pkg/types/workflows/canary/v1/activities/v1;activitiesv1\xa2\x02\x03CVA\xaa\x02\x17Canary.V1.Activities.V1\xca\x02\x17Canary\\V1\\Activities\\V1\xe2\x02#Canary\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aCanary::V1::Activities::V1b\x06proto3"
 
 var (
 	file_canary_v1_activities_v1_start_workflow_proto_rawDescOnce sync.Once

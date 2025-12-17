@@ -13,8 +13,8 @@ import (
 
 	commonpb "go.temporal.io/api/common/v1"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 var _ converter.PayloadCodec = (*dataConverter)(nil)
