@@ -12,9 +12,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/pkg/retry"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/retry"
 )
 
 func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {

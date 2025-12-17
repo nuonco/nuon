@@ -6,10 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
-	"github.com/powertoolsdev/mono/pkg/terraform/outputs"
-	terraformworkspace "github.com/powertoolsdev/mono/pkg/terraform/workspace"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/pkg/terraform/outputs"
+	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
 // TerraformOutputs is a helper method that returns outputs in a compatible way with the way they are currently stored

@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal"
 )
 
 func NewDev(cfg *internal.Config) (*zap.Logger, error) {

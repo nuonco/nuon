@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/management"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/heartbeater"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )

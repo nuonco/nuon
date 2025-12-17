@@ -1,13 +1,13 @@
 package operations
 
 import (
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"go.uber.org/fx"
 
-	noop "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/noop"
-	shutdown "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/shutdown"
-	update "github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations/update"
+	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/noop"
+	shutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/shutdown"
+	update "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/update"
 )
 
 func GetJobs() []fx.Option {

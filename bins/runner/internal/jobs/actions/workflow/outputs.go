@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 const (

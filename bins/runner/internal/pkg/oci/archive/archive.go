@@ -3,7 +3,7 @@ package ociarchive
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"

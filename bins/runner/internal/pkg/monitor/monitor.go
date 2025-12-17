@@ -10,9 +10,9 @@ import (
 
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 type Params struct {

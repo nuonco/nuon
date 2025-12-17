@@ -1,14 +1,14 @@
 package management
 
 import (
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/monitor"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
 
-	noop "github.com/powertoolsdev/mono/bins/runner/internal/jobs/management/noop"
-	shutdown "github.com/powertoolsdev/mono/bins/runner/internal/jobs/management/shutdown"
-	update "github.com/powertoolsdev/mono/bins/runner/internal/jobs/management/update"
-	vmshutdown "github.com/powertoolsdev/mono/bins/runner/internal/jobs/management/vm_shutdown"
+	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/management/noop"
+	shutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/management/shutdown"
+	update "github.com/nuonco/nuon/bins/runner/internal/jobs/management/update"
+	vmshutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/management/vm_shutdown"
 	"go.uber.org/fx"
 )
 

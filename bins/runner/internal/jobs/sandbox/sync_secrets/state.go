@@ -3,9 +3,9 @@ package terraform
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/pkg/types/outputs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/types/outputs"
 )
 
 const (

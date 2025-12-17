@@ -9,9 +9,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 )
 
 // handler is the handler implementation

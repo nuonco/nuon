@@ -3,7 +3,7 @@ package containerimage
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {

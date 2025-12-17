@@ -7,8 +7,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 const (
