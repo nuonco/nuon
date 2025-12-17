@@ -10,7 +10,7 @@ import (
 	getter "github.com/hashicorp/go-getter"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/config/features"
+	"github.com/nuonco/nuon/pkg/config/features"
 )
 
 func (g *get) GetAll(ctx context.Context) error {

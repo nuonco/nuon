@@ -1,6 +1,6 @@
 package plan
 
-import "github.com/powertoolsdev/mono/pkg/diff"
+import "github.com/nuonco/nuon/pkg/diff"
 
 type KubernetesManifestPlanOperation string
 

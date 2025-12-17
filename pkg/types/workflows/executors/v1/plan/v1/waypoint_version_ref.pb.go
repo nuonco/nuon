@@ -127,7 +127,7 @@ const file_executors_v1_plan_v1_waypoint_version_ref_proto_rawDesc = "" +
 	"\x0ehelm_chart_url\x18\x05 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\fhelmChartUrl\x12/\n" +
 	"\x0fhelm_chart_name\x18\x06 \x01(\tB\a\xfaB\x04r\x02\x10\x01R\rhelmChartName\x125\n" +
 	"\x12helm_chart_version\x18\a \x01(\tB\a\xfaB\x04r\x02\x10\x01R\x10helmChartVersionB\xf5\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x17WaypointVersionRefProtoP\x01ZMgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x18com.executors.v1.plan.v1B\x17WaypointVersionRefProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_waypoint_version_ref_proto_rawDescOnce sync.Once

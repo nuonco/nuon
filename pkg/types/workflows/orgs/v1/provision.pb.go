@@ -8,9 +8,9 @@ package orgsv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
-	v12 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1"
-	v11 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1"
+	v12 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/kms/v1"
+	v11 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/server/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -169,7 +169,7 @@ const file_orgs_v1_provision_proto_rawDesc = "" +
 	"\tiam_roles\x18\x01 \x01(\v2$.orgs.v1.iam.v1.ProvisionIAMResponseR\biamRoles\x12B\n" +
 	"\x06server\x18\x02 \x01(\v2*.orgs.v1.server.v1.ProvisionServerResponseR\x06server\x126\n" +
 	"\x03kms\x18\x03 \x01(\v2$.orgs.v1.kms.v1.ProvisionKMSResponseR\x03kmsB\x9c\x01\n" +
-	"\vcom.orgs.v1B\x0eProvisionProtoP\x01Z@github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1;orgsv1\xa2\x02\x03OXX\xaa\x02\aOrgs.V1\xca\x02\aOrgs\\V1\xe2\x02\x13Orgs\\V1\\GPBMetadata\xea\x02\bOrgs::V1b\x06proto3"
+	"\vcom.orgs.v1B\x0eProvisionProtoP\x01Z@github.com/nuonco/nuon/pkg/types/workflows/orgs/v1;orgsv1\xa2\x02\x03OXX\xaa\x02\aOrgs.V1\xca\x02\aOrgs\\V1\xe2\x02\x13Orgs\\V1\\GPBMetadata\xea\x02\bOrgs::V1b\x06proto3"
 
 var (
 	file_orgs_v1_provision_proto_rawDescOnce sync.Once

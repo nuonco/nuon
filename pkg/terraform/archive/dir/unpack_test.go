@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 	"github.com/stretchr/testify/assert"
 )
 

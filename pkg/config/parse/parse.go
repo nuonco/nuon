@@ -7,7 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pelletier/go-toml"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 type ParseConfig struct {

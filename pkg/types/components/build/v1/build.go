@@ -1,7 +1,7 @@
 package buildv1
 
 import (
-	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
+	vcsv1 "github.com/nuonco/nuon/pkg/types/components/vcs/v1"
 )
 
 func (c *Config) GetVcsCfg() *vcsv1.Config {

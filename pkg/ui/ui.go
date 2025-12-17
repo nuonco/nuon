@@ -8,7 +8,7 @@ import (
 	"github.com/kyokomi/emoji"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 const (

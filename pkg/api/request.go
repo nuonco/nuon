@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (c *client) execGetRequest(ctx context.Context, endpoint string) ([]byte, error) {

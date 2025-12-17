@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 // RunnerHelm is used to configure the runner to deploy the runner helm chart, which is bundled within it.

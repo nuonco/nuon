@@ -1,9 +1,9 @@
 package plantypes
 
 import (
-	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
-	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
-	"github.com/powertoolsdev/mono/pkg/types/state"
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/types/state"
 )
 
 type TerraformRunPlan struct {

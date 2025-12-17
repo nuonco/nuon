@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) error {

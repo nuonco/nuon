@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen

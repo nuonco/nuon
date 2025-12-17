@@ -164,7 +164,7 @@ const file_executors_v1_log_v1_log_proto_rawDesc = "" +
 	"\rLogRecordAttr\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05valueB\xdf\x01\n" +
-	"\x17com.executors.v1.log.v1B\bLogProtoP\x01ZKgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1;logv1\xa2\x02\x03EVL\xaa\x02\x13Executors.V1.Log.V1\xca\x02\x13Executors\\V1\\Log\\V1\xe2\x02\x1fExecutors\\V1\\Log\\V1\\GPBMetadata\xea\x02\x16Executors::V1::Log::V1b\x06proto3"
+	"\x17com.executors.v1.log.v1B\bLogProtoP\x01ZKgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/log/v1;logv1\xa2\x02\x03EVL\xaa\x02\x13Executors.V1.Log.V1\xca\x02\x13Executors\\V1\\Log\\V1\xe2\x02\x1fExecutors\\V1\\Log\\V1\\GPBMetadata\xea\x02\x16Executors::V1::Log::V1b\x06proto3"
 
 var (
 	file_executors_v1_log_v1_log_proto_rawDescOnce sync.Once

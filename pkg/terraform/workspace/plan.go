@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/pkg/terraform/workspace/output"
+	"github.com/nuonco/nuon/pkg/terraform/workspace/output"
 	"go.uber.org/zap"
 )
 

@@ -95,7 +95,7 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 		defer logStream.Close()
 
 		// NOTE(fd): ruthlessly stolen from:
-		// > https://github.com/powertoolsdev/mono/blob/main/bins/runner/internal/jobs/deploy/job/monitor.go#L67-L79
+		// > https://github.com/nuonco/nuon/blob/main/bins/runner/internal/jobs/deploy/job/monitor.go#L67-L79
 		reader := bufio.NewReader(logStream)
 		for {
 			line, err := reader.ReadString('\n')

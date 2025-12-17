@@ -8,8 +8,8 @@ package installsv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v11 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
-	v1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
+	v11 "github.com/nuonco/nuon/pkg/types/components/variables/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/components/vcs/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -126,7 +126,7 @@ const file_installs_v1_sandbox_settings_proto_rawDesc = "" +
 	"rootDomainB\x1a\n" +
 	"\x18_connected_github_configB\x14\n" +
 	"\x12_public_git_configB\xbe\x01\n" +
-	"\x0fcom.installs.v1B\x14SandboxSettingsProtoP\x01ZHgithub.com/powertoolsdev/mono/pkg/types/workflows/installs/v1;installsv1\xa2\x02\x03IXX\xaa\x02\vInstalls.V1\xca\x02\vInstalls\\V1\xe2\x02\x17Installs\\V1\\GPBMetadata\xea\x02\fInstalls::V1b\x06proto3"
+	"\x0fcom.installs.v1B\x14SandboxSettingsProtoP\x01ZHgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1;installsv1\xa2\x02\x03IXX\xaa\x02\vInstalls.V1\xca\x02\vInstalls\\V1\xe2\x02\x17Installs\\V1\\GPBMetadata\xea\x02\fInstalls::V1b\x06proto3"
 
 var (
 	file_installs_v1_sandbox_settings_proto_rawDescOnce sync.Once

@@ -157,7 +157,7 @@ const file_apps_v1_repository_v1_workflow_proto_rawDesc = "" +
 	"\x0frepository_name\x18\x02 \x01(\tR\x0erepositoryName\x12%\n" +
 	"\x0erepository_arn\x18\x03 \x01(\tR\rrepositoryArn\x12%\n" +
 	"\x0erepository_uri\x18\x04 \x01(\tR\rrepositoryUriB\xf7\x01\n" +
-	"\x19com.apps.v1.repository.v1B\rWorkflowProtoP\x01ZTgithub.com/powertoolsdev/mono/pkg/types/workflows/apps/v1/repository/v1;repositoryv1\xa2\x02\x03AVR\xaa\x02\x15Apps.V1.Repository.V1\xca\x02\x15Apps\\V1\\Repository\\V1\xe2\x02!Apps\\V1\\Repository\\V1\\GPBMetadata\xea\x02\x18Apps::V1::Repository::V1b\x06proto3"
+	"\x19com.apps.v1.repository.v1B\rWorkflowProtoP\x01ZTgithub.com/nuonco/nuon/pkg/types/workflows/apps/v1/repository/v1;repositoryv1\xa2\x02\x03AVR\xaa\x02\x15Apps.V1.Repository.V1\xca\x02\x15Apps\\V1\\Repository\\V1\xe2\x02!Apps\\V1\\Repository\\V1\\GPBMetadata\xea\x02\x18Apps::V1::Repository::V1b\x06proto3"
 
 var (
 	file_apps_v1_repository_v1_workflow_proto_rawDescOnce sync.Once

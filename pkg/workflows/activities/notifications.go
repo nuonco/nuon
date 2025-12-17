@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/sender"
-	sharedactivitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
+	"github.com/nuonco/nuon/pkg/sender"
+	sharedactivitiesv1 "github.com/nuonco/nuon/pkg/types/workflows/shared/v1/activities/v1"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/workflow"
 )
