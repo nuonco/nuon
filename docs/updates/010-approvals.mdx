@@ -1,0 +1,58 @@
+---
+title: '010 - Approvals'
+description: 'Workflows now support approvals, so you can verify the helm / terraform plan.'
+---
+
+_June 16th, 2025_
+
+<div className="badge badge--primary">v0.19.582</div>
+
+## Approvals
+
+You can now see a Helm or Terraform plan when updating an install. Each workflow will automatically prompt you to
+approve the plan, and only proceed upon approval.
+
+![Approve Sandbox](assets/010_approve_sandbox.png)
+
+## Auto Approve Install
+
+You can auto approve all changes on an install.
+
+![Auto Approve Install](assets/010_auto_approve_enabled.png)
+
+## Auto Approve Workflow
+
+Sometimes, you just want to approve the first step in a workflow. You can approve all following steps on a workflow,
+which means each step will automatically proceed.
+
+![Approve Workflow](assets/010_approve_workflow.png)
+
+## Re Plan
+
+When an approval has been waiting for an extended period of time, you can re-run the plan phase by pressing the **Retry
+Plan** button.
+
+![Retry Plan](assets/010_retry_plan.png) ![Retry Plan Two](assets/010_retry_plan_two.png)
+
+This will re-run the plan step, and prompt the approval before continuing.
+
+## Helm component config
+
+You can now define the `TakeOwnership` flag in the helm component config.
+
+```toml
+name           = "helm_chart_two"
+type           = "helm_chart"
+chart_name     = "acme-corporation"
+take_ownership = true
+```
+
+We'll be exposing more helm install flags in the future releases.
+
+## Bug Fixes and other
+
+- `nuon apps sync-dir` has been deprecated in favor of `nuon apps sync`.
+- Fixed an issue related to authentication for BYOC installs of Nuon.
+- Fixed a bug where actions could not be deleted.
+- Fixed a bug where some cron actions did not run.
+- Fixed a bug where an empty permissions boundary errored out.
