@@ -114,7 +114,7 @@ function startStdioMode(context) {
     options: {
       stdio: 'pipe' // Use pipe transport without extra flags
     }
-  };sere
+  };
 
   const clientOptions = {
     documentSelector: [

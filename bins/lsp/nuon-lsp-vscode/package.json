@@ -2,7 +2,7 @@
     "name": "nuon-lsp",
     "displayName": "Nuon LSP",
     "description": "Language Server Protocol support for Nuon TOML configuration files",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "nuon",
     "author": "Nuon",
     "license": "MIT",
@@ -65,7 +65,7 @@
     },
     "scripts": {
         "build": "yes | vsce package --allow-missing-repository || true",
-        "install": "code --install-extension nuon-lsp-0.0.2.vsix --force",
+        "install": "code --install-extension nuon-lsp-0.0.3.vsix --force",
         "vscode:prepublish": "echo 'Prepublish complete'"
     },
     "dependencies": {

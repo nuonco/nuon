@@ -1,6 +1,5 @@
 .vscode/**
 .vscode-test/**
-node_modules/**
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -11,3 +10,4 @@ vsc-extension-quickstart.md
 convert-icon.js
 icon-template.html
 icon.svg
+node_modules/@vscode/vsce/**

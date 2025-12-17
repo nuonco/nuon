@@ -2,134 +2,57 @@
 
 Language Server Protocol support for Nuon TOML configuration files in Visual Studio Code.
 
-## Features
+## Features in Action
 
-- **Syntax Validation**: Real-time validation of Nuon TOML configuration files
-- **Auto-completion**: Intelligent suggestions for Nuon configuration options
-- **Hover Documentation**: View documentation for configuration keys on hover
-- **Go to Definition**: Navigate to configuration definitions
-- **Error Diagnostics**: Clear error messages and warnings for configuration issues
+**Auto-completion for Nuon configuration:**
 
-## Installation
+![Auto-completion](https://i.postimg.cc/50Jky0SM/Screenshot-2025-12-17-at-8-29-27-PM.png)
 
-### Prerequisites
+**Hover documentation and type information:**
 
-1. Install the Nuon LSP server binary:
+![Hover info](https://i.postimg.cc/tTbmJTNy/Screenshot-2025-12-17-at-8-29-43-PM.png)
+
+## Quick Start
+
+1. Install the Nuon CLI (includes the LSP server):
    ```bash
-   # Via install script (installs both CLI and LSP)
-   curl -sSL install.nuon.co | bash
-
-   # Or via Homebrew (installs both CLI and LSP)
    brew install nuonco/tap/nuon
    ```
+   Or use the install script: `curl -sSL install.nuon.co | bash`
 
-### Install Extension
+2. Install the Nuon LSP extension from the [marketplace](https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp).
 
-#### From VSIX (Recommended)
+3. Open a Nuon TOML configuration file (`.toml`) and the extension will activate automatically.
 
-```bash
-cd bins/lsp/nuon-lsp-vscode
-npm install
-npm run build
-npm run install
-```
+**Note:** The Nuon CLI must be installed for the extension to work. See the [CLI installation guide](https://nuoninc.mintlify.app/cli) for detailed instructions.
 
-#### From VS Code Marketplace
+## Features
 
-*(Coming soon)*
+- **Syntax Validation** - Real-time validation of Nuon TOML configuration files
+- **Auto-completion** - Intelligent suggestions for Nuon configuration options
+- **Hover Documentation** - View documentation for configuration keys on hover
+- **Go to Definition** - Navigate to configuration definitions
+- **Error Diagnostics** - Clear error messages and warnings for configuration issues
 
-## Usage
+## Settings
 
-Once installed, the extension automatically activates when you open `.toml` files. The LSP server will:
+The extension works out of the box with no configuration required. It automatically detects the `nuon-lsp` binary from your Nuon CLI installation.
 
-- Validate your Nuon configuration syntax
-- Provide completion suggestions
-- Show documentation on hover
-- Display error diagnostics
-
-## Configuration
-
-### Custom Server Path
-
-If you have a custom build or different installation path for the Nuon LSP server:
-
-```json
-{
-  "nuonLsp.serverPath": "/custom/path/to/nuon-lsp"
-}
-```
-
-Leave empty to use the default (looks for `nuon-lsp` in your PATH or bundled binary).
-
-### Development Mode (TCP)
-
-For local LSP server development, you can connect to a running server via TCP:
-
-```json
-{
-  "nuonLsp.port": 7001
-}
-```
-
-Set to `0` (default) to use stdio mode with the local binary.
-
-## Development
-
-### Building from Source
-
-```bash
-cd bins/lsp/nuon-lsp-vscode
-npm install
-npm run build
-```
-
-### Debugging
-
-1. Open this folder in VS Code
-2. Press F5 to launch the Extension Development Host
-3. Open a `.toml` file to test the extension
-
-### Running LSP Server Locally
-
-For development with a local LSP server:
-
-```bash
-# Terminal 1: Run LSP server in TCP mode
-cd bins/lsp
-go run main.go --port 7001
-
-# Terminal 2: Configure VS Code to connect
-# Set "nuonLsp.port": 7001 in settings
-```
+**Optional settings:**
+- `nuonLsp.serverPath` - Custom path to the nuon-lsp binary (leave empty to auto-detect)
 
 ## Troubleshooting
 
-### Extension not activating
+If the extension is not working:
 
-- Ensure you have `.toml` files open
-- Check the "Nuon LSP" output channel in VS Code for errors
-- Verify `nuon-lsp` binary is in your PATH: `which nuon-lsp`
+1. Verify the Nuon CLI is installed: `nuon-lsp --version`
+2. Check the "Nuon LSP" output channel in VS Code for error details
+3. Ensure `nuon-lsp` is in your PATH: `which nuon-lsp`
+4. Try reloading VS Code: Cmd/Ctrl+Shift+P → "Reload Window"
 
-### LSP server not found
+## Resources
 
-If you see "Nuon LSP server not found" errors:
-
-1. Install the Nuon CLI/LSP: `brew install nuonco/tap/nuon`
-2. Verify installation: `nuon-lsp --version`
-3. Set custom path in settings if needed
-
-### Connection issues
-
-- Check the VS Code Output panel (View > Output > Nuon LSP)
-- Ensure no other process is using the configured port
-- Try restarting VS Code
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/nuonco/nuon/issues)
-- **Documentation**: [Nuon Docs](https://docs.nuon.co)
-- **Website**: [nuon.co](https://nuon.co)
-
-## License
-
-MIT
+- [Nuon Documentation](https://docs.nuon.co/get-started/introduction)
+- [CLI Installation Guide](https://docs.nuon.co/cli)
+- [GitHub Issues](https://github.com/nuonco/nuon/issues)
+- [Website](https://nuon.co)
