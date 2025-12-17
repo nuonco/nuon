@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
 func (s *s3Downloader) getClient(ctx context.Context) (*s3.Client, error) {

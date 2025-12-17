@@ -138,7 +138,7 @@ const file_orgs_v1_runner_v1_provision_runner_proto_rawDesc = "" +
 	"\x06region\x18\x03 \x01(\tB-\xfaB\rr\vR\tus-west-2\x9a\x84\x9e\x03\x18faker:\"oneof: us-west-2\"R\x06region\x120\n" +
 	"\vreprovision\x18\x04 \x01(\bB\x0e\x9a\x84\x9e\x03\tfaker:\"-\"R\vreprovision\"\x19\n" +
 	"\x17ProvisionRunnerResponseB\xe2\x01\n" +
-	"\x15com.orgs.v1.runner.v1B\x14ProvisionRunnerProtoP\x01ZLgithub.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1;runnerv1\xa2\x02\x03OVR\xaa\x02\x11Orgs.V1.Runner.V1\xca\x02\x11Orgs\\V1\\Runner\\V1\xe2\x02\x1dOrgs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Runner::V1b\x06proto3"
+	"\x15com.orgs.v1.runner.v1B\x14ProvisionRunnerProtoP\x01ZLgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/runner/v1;runnerv1\xa2\x02\x03OVR\xaa\x02\x11Orgs.V1.Runner.V1\xca\x02\x11Orgs\\V1\\Runner\\V1\xe2\x02\x1dOrgs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Runner::V1b\x06proto3"
 
 var (
 	file_orgs_v1_runner_v1_provision_runner_proto_rawDescOnce sync.Once

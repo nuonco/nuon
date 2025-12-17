@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/services/config"
+	"github.com/nuonco/nuon/pkg/services/config"
 )
 
 //nolint:gochecknoinits

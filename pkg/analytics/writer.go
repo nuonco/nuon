@@ -8,7 +8,7 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/analytics/events"
+	"github.com/nuonco/nuon/pkg/analytics/events"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen

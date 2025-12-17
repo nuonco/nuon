@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen

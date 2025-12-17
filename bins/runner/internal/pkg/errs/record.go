@@ -6,8 +6,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 type Recorder struct {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/browser"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/nuonco/nuon/pkg/ui"
 )
 
 const (

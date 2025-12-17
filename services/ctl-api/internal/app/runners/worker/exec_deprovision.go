@@ -5,10 +5,10 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
-	kuberunner "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/kuberunner"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	kuberunner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 func (w *Workflows) executeDeprovisionOrgRunner(ctx workflow.Context, runnerID string, sandboxMode bool) error {

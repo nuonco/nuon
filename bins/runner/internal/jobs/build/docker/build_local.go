@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/powertoolsdev/mono/pkg/command"
-	"github.com/powertoolsdev/mono/pkg/zapwriter"
+	"github.com/nuonco/nuon/pkg/command"
+	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
 func (b *handler) dockerPath() (string, error) {

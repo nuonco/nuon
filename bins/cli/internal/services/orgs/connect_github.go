@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/browser"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) ConnectGithub(ctx context.Context) error {

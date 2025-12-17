@@ -5,7 +5,7 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 type handlerState struct {

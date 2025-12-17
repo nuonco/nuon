@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
-	"github.com/powertoolsdev/mono/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/azure/credentials"
 	"go.uber.org/zap"
 )
 

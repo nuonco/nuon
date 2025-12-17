@@ -3,7 +3,7 @@ package links
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func OrgLinks(ctx context.Context, orgID string) map[string]any {

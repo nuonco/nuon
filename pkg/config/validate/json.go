@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/config/schema"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/schema"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func ValidateJSONSchema(ctx context.Context, c *config.AppConfig) error {

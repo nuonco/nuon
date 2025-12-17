@@ -5,7 +5,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/zaphclog"
+	"github.com/nuonco/nuon/pkg/zaphclog"
 )
 
 type Params struct {

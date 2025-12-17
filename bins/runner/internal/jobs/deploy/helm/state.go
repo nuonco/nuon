@@ -5,10 +5,10 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 
-	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
-	"github.com/powertoolsdev/mono/pkg/kube"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
+	"github.com/nuonco/nuon/pkg/kube"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 const (

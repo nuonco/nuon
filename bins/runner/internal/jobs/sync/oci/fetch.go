@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

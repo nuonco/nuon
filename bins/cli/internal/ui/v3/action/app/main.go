@@ -11,11 +11,11 @@ import (
 
 	"github.com/nuonco/nuon-go"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	ac "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/common"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/detail"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/run"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
+	"github.com/nuonco/nuon/bins/cli/internal/config"
+	ac "github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/common"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/detail"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/run"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 )
 
 type ActionView string

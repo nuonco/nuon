@@ -3,7 +3,7 @@ package job
 import (
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 func (p *handler) getClientset() (*kubernetes.Clientset, error) {

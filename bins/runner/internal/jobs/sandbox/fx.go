@@ -1,12 +1,12 @@
 package sandbox
 
 import (
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"go.uber.org/fx"
 
-	syncsecrets "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox/sync_secrets"
-	terraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/sandbox/terraform"
+	syncsecrets "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/sync_secrets"
+	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/terraform"
 )
 
 func GetJobs() []fx.Option {

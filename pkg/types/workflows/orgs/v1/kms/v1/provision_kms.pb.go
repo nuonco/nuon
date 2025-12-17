@@ -148,7 +148,7 @@ const file_orgs_v1_kms_v1_provision_kms_proto_rawDesc = "" +
 	"\vkms_key_arn\x18\x01 \x01(\tB\a\xfaB\x04r\x02\x10\x14R\tkmsKeyArn\x12\x1c\n" +
 	"\n" +
 	"kms_key_id\x18\x02 \x01(\tR\bkmsKeyIdB\xca\x01\n" +
-	"\x12com.orgs.v1.kms.v1B\x11ProvisionKmsProtoP\x01ZFgithub.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1;kmsv1\xa2\x02\x03OVK\xaa\x02\x0eOrgs.V1.Kms.V1\xca\x02\x0eOrgs\\V1\\Kms\\V1\xe2\x02\x1aOrgs\\V1\\Kms\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Kms::V1b\x06proto3"
+	"\x12com.orgs.v1.kms.v1B\x11ProvisionKmsProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/kms/v1;kmsv1\xa2\x02\x03OVK\xaa\x02\x0eOrgs.V1.Kms.V1\xca\x02\x0eOrgs\\V1\\Kms\\V1\xe2\x02\x1aOrgs\\V1\\Kms\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Kms::V1b\x06proto3"
 
 var (
 	file_orgs_v1_kms_v1_provision_kms_proto_rawDescOnce sync.Once

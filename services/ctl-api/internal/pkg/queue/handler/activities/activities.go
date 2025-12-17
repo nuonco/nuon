@@ -5,7 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 )
 
 type Params struct {

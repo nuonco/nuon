@@ -1,7 +1,7 @@
 package plantypes
 
 import (
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type HelmValue struct {

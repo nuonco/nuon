@@ -7,7 +7,7 @@ import (
 
 	enumspb "go.temporal.io/api/enums/v1"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 func (a *evClient) Send(ctx context.Context, id string, signal Signal) {

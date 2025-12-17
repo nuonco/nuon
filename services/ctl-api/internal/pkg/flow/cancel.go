@@ -7,9 +7,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"golang.org/x/net/context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	statusactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/status/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/workflow/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 func (c *WorkflowConductor[DomainSignal]) isCancellationErr(ctx workflow.Context, err error) bool {

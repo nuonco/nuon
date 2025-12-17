@@ -10,12 +10,12 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
-	chmigrations "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch/migrations"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql"
-	psqlmigrations "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
+	chmigrations "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
+	psqlmigrations "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql/migrations"
 )
 
 func (c *cli) registerStartup() error {

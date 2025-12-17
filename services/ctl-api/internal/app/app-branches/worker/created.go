@@ -3,7 +3,7 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/app-branches/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/app-branches/signals"
 )
 
 // @temporal-gen workflow

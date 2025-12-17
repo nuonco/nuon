@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	_ "github.com/powertoolsdev/mono/pkg/types/state"
+	_ "github.com/nuonco/nuon/pkg/types/state"
 )
 
 // type State = state.State

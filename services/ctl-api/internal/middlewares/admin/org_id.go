@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/shortid"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/pkg/shortid"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]func(*gorm.DB, string) (string, error){

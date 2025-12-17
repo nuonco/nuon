@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/services/config"
-	"github.com/powertoolsdev/mono/pkg/workflows/worker"
+	"github.com/nuonco/nuon/pkg/services/config"
+	"github.com/nuonco/nuon/pkg/workflows/worker"
 )
 
 //nolint:gochecknoinits

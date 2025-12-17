@@ -5,7 +5,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/config/diff"
+	"github.com/nuonco/nuon/pkg/config/diff"
 )
 
 type InstallApprovalOption string

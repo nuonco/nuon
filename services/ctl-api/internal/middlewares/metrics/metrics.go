@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"go.uber.org/zap"
 )
 

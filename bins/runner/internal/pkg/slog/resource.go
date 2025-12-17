@@ -1,8 +1,8 @@
 package slog
 
 import (
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/pkg/generics"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"

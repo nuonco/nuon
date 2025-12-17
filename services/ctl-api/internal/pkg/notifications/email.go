@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (n *Notifications) sendEmailNotification(ctx context.Context, typ Type, vars map[string]string) error {

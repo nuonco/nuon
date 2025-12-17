@@ -10,8 +10,8 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/powertoolsdev/mono/pkg/pipeline"
-	tfo "github.com/powertoolsdev/mono/pkg/terraform/outputs"
+	"github.com/nuonco/nuon/pkg/pipeline"
+	tfo "github.com/nuonco/nuon/pkg/terraform/outputs"
 )
 
 func MapTerraformPlan(fn execPlanFn) pipeline.ExecFn {

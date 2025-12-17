@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/api"
+	"github.com/nuonco/nuon/pkg/api"
 )
 
 // This package contains some tooling to help us run runners locally, while mimicing a real environment.

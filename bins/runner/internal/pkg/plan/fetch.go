@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 func FetchPlan(ctx context.Context, apiClient nuonrunner.Client, job *models.AppRunnerJob) (*planv1.Plan, error) {

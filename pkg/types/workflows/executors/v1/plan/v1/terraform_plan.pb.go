@@ -138,7 +138,7 @@ const file_executors_v1_plan_v1_terraform_plan_proto_rawDesc = "" +
 	"\x11terraform_version\x18\x06 \x01(\tR\x10terraformVersion\x12P\n" +
 	"\aoutputs\x18\a \x01(\v2&.executors.v1.plan.v1.TerraformOutputsB\x0e\x9a\x84\x9e\x03\tfaker:\"-\"R\aoutputs\x12J\n" +
 	"\x05hooks\x18\b \x01(\v2$.executors.v1.plan.v1.TerraformHooksB\x0e\x9a\x84\x9e\x03\tfaker:\"-\"R\x05hooksB\xf0\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x12TerraformPlanProtoP\x01ZMgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x18com.executors.v1.plan.v1B\x12TerraformPlanProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_terraform_plan_proto_rawDescOnce sync.Once

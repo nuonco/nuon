@@ -3,7 +3,7 @@ package mappers
 import (
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/config/schema"
+	"github.com/nuonco/nuon/pkg/config/schema"
 )
 
 func TestBuildPropertyMap(t *testing.T) {

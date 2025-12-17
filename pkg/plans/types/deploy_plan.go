@@ -1,7 +1,7 @@
 package plantypes
 
 import (
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 type DeployPlan struct {

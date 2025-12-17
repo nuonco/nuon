@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 )
 
 func printDebugErr(err error) {

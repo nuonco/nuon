@@ -4,16 +4,16 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/api"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/heartbeater"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/metrics"
-	ocicopy "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/copy"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/slog"
-	"github.com/powertoolsdev/mono/bins/runner/internal/registry"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/api"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/metrics"
+	ocicopy "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/copy"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
+	"github.com/nuonco/nuon/bins/runner/internal/registry"
 )
 
 type cli struct{}

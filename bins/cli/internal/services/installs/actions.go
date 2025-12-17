@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/app"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/selector"
-	// workflowui "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/app"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/selector"
+	// workflowui "github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 )
 
 func (s *Service) Actions(ctx context.Context, installID string, offset, limit int, asJSON bool) error {

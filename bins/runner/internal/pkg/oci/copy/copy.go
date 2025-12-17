@@ -13,9 +13,9 @@ import (
 
 	"oras.land/oras-go/v2"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 const (

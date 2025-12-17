@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func (s *Service) checkSandbox(ctx context.Context, cfg *config.AppConfig, currentBranch string) error {

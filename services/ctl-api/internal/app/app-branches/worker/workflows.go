@@ -7,16 +7,16 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	temporalanalytics "github.com/powertoolsdev/mono/pkg/analytics/temporal"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/actions"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/components"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/sandbox"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/stack"
-	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks/cloudformation"
+	temporalanalytics "github.com/nuonco/nuon/pkg/analytics/temporal"
+	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/actions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/components"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/sandbox"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
+	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
 type Params struct {

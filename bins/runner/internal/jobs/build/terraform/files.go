@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
+	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
 )
 
 func (h *handler) getSourceFiles(ctx context.Context, root string) ([]ociarchive.FileRef, error) {

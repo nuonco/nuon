@@ -1,9 +1,9 @@
 package validate
 
 import (
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/errs"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/errs"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func ValidateActionWorkflowTriggers(cfg *config.AppConfig) error {

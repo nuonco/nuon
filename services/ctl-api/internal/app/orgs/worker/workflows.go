@@ -6,13 +6,13 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 
-	temporalanalytics "github.com/powertoolsdev/mono/pkg/analytics/temporal"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	orgiam "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam"
-	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
+	temporalanalytics "github.com/nuonco/nuon/pkg/analytics/temporal"
+	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
+	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 type Params struct {

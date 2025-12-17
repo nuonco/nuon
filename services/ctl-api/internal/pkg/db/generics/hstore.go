@@ -3,7 +3,7 @@ package generics
 import (
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func ToStringMapAny(val pgtype.Hstore) map[string]any {

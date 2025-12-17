@@ -6,9 +6,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
-	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
+	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
+	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 )
 
 type Workflows struct {

@@ -77,8 +77,8 @@ import (
 		q("time"):                                        true,
 		q("go.temporal.io/sdk/temporal"):                 true,
 		q("go.temporal.io/sdk/workflow"):                 true,
-		q("github.com/powertoolsdev/mono/pkg/workflows"): true,
-		q("github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"): true,
+		q("github.com/nuonco/nuon/pkg/workflows"): true,
+		q("github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"): true,
 		"enumsv1 " + q("go.temporal.io/api/enums/v1"):                              true,
 	}
 

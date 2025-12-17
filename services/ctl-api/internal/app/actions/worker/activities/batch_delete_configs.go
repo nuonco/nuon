@@ -3,7 +3,7 @@ package activities
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm/clause"
 )

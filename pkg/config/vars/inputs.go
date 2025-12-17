@@ -1,7 +1,7 @@
 package vars
 
 import (
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (v *varsValidator) getInputs() map[string]interface{} {

@@ -8,9 +8,9 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
+	"github.com/nuonco/nuon/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (m model) stepIsApprovable() bool {

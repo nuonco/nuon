@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"go.temporal.io/sdk/workflow"
 )
 

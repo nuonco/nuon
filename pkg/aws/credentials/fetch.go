@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/go-playground/validator/v10"
 
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 )
 
 // Fetch is used to get credentials, regardless of whether they are in the context, or not. Compared to FromContext,

@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/powertoolsdev/mono/pkg/analytics"
+	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/pkg/analytics"
 )
 
 type cli struct {

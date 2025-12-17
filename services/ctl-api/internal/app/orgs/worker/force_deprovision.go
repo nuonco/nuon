@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"go.temporal.io/sdk/workflow"
 )
 

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/pipeline"
+	"github.com/nuonco/nuon/pkg/pipeline"
 )
 
 func NewLocalCallback(v *validator.Validate, opts ...localCallbackOption) (pipeline.CallbackFn, error) {
