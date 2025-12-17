@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/powertoolsdev/mono/bins/lsp/mappers"
-	"github.com/powertoolsdev/mono/bins/lsp/models"
-	tomlparser "github.com/powertoolsdev/mono/pkg/parser/toml"
+	"github.com/nuonco/nuon/bins/lsp/mappers"
+	"github.com/nuonco/nuon/bins/lsp/models"
+	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
 )
