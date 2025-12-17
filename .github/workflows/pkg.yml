@@ -50,7 +50,7 @@ jobs:
     defaults:
       run:
         working-directory: pkg
-    runs-on: mono
+    runs-on: ubuntu-latest
     env:
       DISABLE_GITHUB_OIDC: true
     steps:
