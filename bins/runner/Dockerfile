@@ -6,7 +6,7 @@ WORKDIR /src
 ARG SERVICE=runner
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/${SERVICE}
+ARG PKG_ROOT=github.com/nuonco/nuon/bins/${SERVICE}
 
 
 # copy each file that is specific to the api into the correct directory

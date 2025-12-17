@@ -6,7 +6,7 @@ ARG BIN_NAME=nuon-lsp
 ARG SERVICE=lsp
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/${SERVICE}
+ARG PKG_ROOT=github.com/nuonco/nuon/bins/${SERVICE}
 
 # copy each file that is specific to the lsp into the correct directory
 WORKDIR /src/bins/${SERVICE}
