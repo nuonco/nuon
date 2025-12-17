@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/version"
+	"github.com/nuonco/nuon/bins/runner/internal/version"
 )
 
 func (c *cli) registerVersion() error {

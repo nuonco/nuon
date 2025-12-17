@@ -6,12 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/services/config"
-	"github.com/powertoolsdev/mono/services/ctl-api/docs/admin"
-	"github.com/powertoolsdev/mono/services/ctl-api/docs/public"
-	"github.com/powertoolsdev/mono/services/ctl-api/docs/runner"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/pkg/services/config"
+	"github.com/nuonco/nuon/services/ctl-api/docs/admin"
+	"github.com/nuonco/nuon/services/ctl-api/docs/public"
+	"github.com/nuonco/nuon/services/ctl-api/docs/runner"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
 	swagger "github.com/nuonco/gin-swagger"
 	swaggerfiles "github.com/swaggo/files"

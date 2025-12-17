@@ -1,6 +1,6 @@
 package audit
 
-import "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
+import "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
 type runnerMiddleware struct {
 	*baseMiddleware

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/powertoolsdev/mono/bins/runner/cmd"
+	"github.com/nuonco/nuon/bins/runner/cmd"
 )
 
 //go:generate ./generate.sh

@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam/roles"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam/roles"
 )
 
 // @temporal-gen workflow

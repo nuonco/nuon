@@ -129,7 +129,7 @@ const file_shared_v1_activities_v1_notification_proto_rawDesc = "" +
 	"\x11slack_webhook_url\x18\x02 \x01(\tB\a\xfaB\x04r\x02\x10\x05R\x0fslackWebhookUrl\x12\x17\n" +
 	"\adry_run\x18\x03 \x01(\bR\x06dryRun\"\x1a\n" +
 	"\x18SendNotificationResponseB\x87\x02\n" +
-	"\x1bcom.shared.v1.activities.v1B\x11NotificationProtoP\x01ZVgithub.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1;activitiesv1\xa2\x02\x03SVA\xaa\x02\x17Shared.V1.Activities.V1\xca\x02\x17Shared\\V1\\Activities\\V1\xe2\x02#Shared\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aShared::V1::Activities::V1b\x06proto3"
+	"\x1bcom.shared.v1.activities.v1B\x11NotificationProtoP\x01ZVgithub.com/nuonco/nuon/pkg/types/workflows/shared/v1/activities/v1;activitiesv1\xa2\x02\x03SVA\xaa\x02\x17Shared.V1.Activities.V1\xca\x02\x17Shared\\V1\\Activities\\V1\xe2\x02#Shared\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aShared::V1::Activities::V1b\x06proto3"
 
 var (
 	file_shared_v1_activities_v1_notification_proto_rawDescOnce sync.Once

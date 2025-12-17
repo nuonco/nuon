@@ -6,7 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-go/models"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) UpdateInput(ctx context.Context, installID string, inputs []string, printJSON bool) error {

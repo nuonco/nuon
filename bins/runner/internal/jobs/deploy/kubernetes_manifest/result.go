@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/nuonco/nuon-runner-go/models"
-	types "github.com/powertoolsdev/mono/pkg/types/components/plan"
+	types "github.com/nuonco/nuon/pkg/types/components/plan"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"

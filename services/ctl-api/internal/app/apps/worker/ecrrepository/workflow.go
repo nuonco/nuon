@@ -1,7 +1,7 @@
 package ecrrepository
 
 import (
-	workers "github.com/powertoolsdev/mono/services/ctl-api/internal"
+	workers "github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 type Wkflow struct {

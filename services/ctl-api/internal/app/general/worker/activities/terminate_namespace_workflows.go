@@ -7,7 +7,7 @@ import (
 	"go.temporal.io/api/workflowservice/v1"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
 type TerminateNamespaceWorkflowsRequest struct {

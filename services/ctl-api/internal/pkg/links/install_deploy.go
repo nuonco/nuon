@@ -3,7 +3,7 @@ package links
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func InstallDeployLinks(ctx context.Context, installDeployID string) map[string]any {

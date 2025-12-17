@@ -7,10 +7,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
-	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
+	installsv1 "github.com/nuonco/nuon/pkg/types/workflows/installs/v1"
+	orgsv1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1"
 )
 
 var (

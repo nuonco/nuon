@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // NOTE(jm): this could probably be implemented with some type of parsing the ID to figure out what model is represented

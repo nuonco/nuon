@@ -4,7 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 )
 
 func (q *queue) setupChannels(ctx workflow.Context) error {

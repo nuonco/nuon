@@ -8,8 +8,8 @@ package runnerv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
-	v11 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/components/context/v1"
+	v11 "github.com/nuonco/nuon/pkg/types/workflows/installs/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -222,7 +222,7 @@ const file_installs_v1_runner_v1_provision_runner_proto_rawDesc = "" +
 	"\x0eazure_settings\x18\v \x01(\v2\x1a.installs.v1.AzureSettingsR\razureSettings\x12G\n" +
 	"\x10sandbox_settings\x18\f \x01(\v2\x1c.installs.v1.SandboxSettingsR\x0fsandboxSettings\"\x19\n" +
 	"\x17ProvisionRunnerResponseB\xfa\x01\n" +
-	"\x19com.installs.v1.runner.v1B\x14ProvisionRunnerProtoP\x01ZPgithub.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
+	"\x19com.installs.v1.runner.v1B\x14ProvisionRunnerProtoP\x01ZPgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
 
 var (
 	file_installs_v1_runner_v1_provision_runner_proto_rawDescOnce sync.Once

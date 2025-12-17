@@ -4,10 +4,10 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPlanRequest) (*plantypes.BuildPlan, error) {

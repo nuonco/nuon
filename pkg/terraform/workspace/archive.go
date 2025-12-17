@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/terraform/hooks"
 )
 
 // LoadArchive loads the archives into the workspace

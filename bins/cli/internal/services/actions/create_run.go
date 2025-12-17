@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, asJSON bool) error {

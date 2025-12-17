@@ -11,10 +11,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateHelmComponentConfigRequest struct {

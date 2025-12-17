@@ -3,7 +3,7 @@ package runner
 import (
 	"github.com/go-playground/validator/v10"
 
-	workers "github.com/powertoolsdev/mono/services/ctl-api/internal"
+	workers "github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 // ProvisionActivities is a type that wraps the set of provision activities that we'll be using to execute this

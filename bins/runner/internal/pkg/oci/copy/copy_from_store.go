@@ -6,8 +6,8 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 func (c *copier) CopyFromStore(ctx context.Context, store oras.ReadOnlyTarget, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {

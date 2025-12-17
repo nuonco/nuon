@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/restmapper"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type kubernetesClient struct {

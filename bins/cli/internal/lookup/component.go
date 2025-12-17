@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func ComponentID(ctx context.Context, apiClient nuon.Client, appID string, compIDOrName string) (string, error) {

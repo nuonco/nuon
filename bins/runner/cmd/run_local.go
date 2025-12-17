@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/dev"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/dev"
 )
 
 func (c *cli) registerRunLocal() error {

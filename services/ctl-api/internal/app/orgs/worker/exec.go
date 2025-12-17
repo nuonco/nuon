@@ -8,11 +8,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
-	orgiam "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam"
+	"github.com/nuonco/nuon/pkg/generics"
+	orgsv1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1"
+	iamv1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1"
+	"github.com/nuonco/nuon/pkg/workflows"
+	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 )
 
 func (w *Workflows) execDeprovisionWorkflow(

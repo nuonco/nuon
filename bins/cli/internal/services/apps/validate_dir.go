@@ -5,13 +5,13 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/config/parse"
-	"github.com/powertoolsdev/mono/pkg/config/schema"
-	"github.com/powertoolsdev/mono/pkg/config/validate"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/parse"
+	"github.com/nuonco/nuon/pkg/config/schema"
+	"github.com/nuonco/nuon/pkg/config/validate"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 func (s *Service) loadConfig(file string) (*config.AppConfig, error) {

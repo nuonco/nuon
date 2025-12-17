@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/terraform/backend"
+	"github.com/nuonco/nuon/pkg/terraform/backend"
 )
 
 type NuonWorkspaceConfig struct {

@@ -4,7 +4,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 // AWSCloudFormationOutputs are used to define the stack outputs for a stack.

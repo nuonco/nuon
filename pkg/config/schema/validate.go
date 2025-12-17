@@ -5,7 +5,7 @@ import (
 
 	"github.com/xeipuuv/gojsonschema"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func Validate(ctx context.Context, obj *config.AppConfig) ([]gojsonschema.ResultError, error) {

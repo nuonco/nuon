@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
+	"github.com/nuonco/nuon/pkg/aws/s3downloader"
+	installsv1 "github.com/nuonco/nuon/pkg/types/workflows/installs/v1"
+	"github.com/nuonco/nuon/pkg/workflows/meta/prefix"
 	"google.golang.org/protobuf/proto"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )

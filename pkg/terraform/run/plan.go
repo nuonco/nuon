@@ -6,9 +6,9 @@ import (
 	"path"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/powertoolsdev/mono/pkg/pipeline"
-	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
-	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
+	"github.com/nuonco/nuon/pkg/pipeline"
+	callbackmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/callbacks"
+	execmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/exec"
 )
 
 // plan will initialize the workspace and then execute functions in it

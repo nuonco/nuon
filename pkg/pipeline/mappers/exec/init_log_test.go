@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/pipeline"
+	"github.com/nuonco/nuon/pkg/pipeline"
 	"github.com/stretchr/testify/assert"
 )
 

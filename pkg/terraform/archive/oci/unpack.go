@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
 // Unpack fetches an archive, and calls the callback with each file contained within it

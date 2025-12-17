@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
 func (d *json) Unpack(ctx context.Context, cb archive.Callback) error {

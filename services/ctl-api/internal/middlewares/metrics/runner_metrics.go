@@ -3,7 +3,7 @@ package metrics
 import (
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 type runnerMiddleware struct {

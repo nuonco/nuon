@@ -2,8 +2,8 @@ package ui
 
 import (
 	"github.com/cockroachdb/errors/withstack"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 type GetView struct {

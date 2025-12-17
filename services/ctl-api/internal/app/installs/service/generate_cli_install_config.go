@@ -12,8 +12,8 @@ import (
 	"github.com/pelletier/go-toml"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 // @ID						GenerateCLIInstallConfig

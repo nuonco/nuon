@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/afterquery"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/afterquery"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {

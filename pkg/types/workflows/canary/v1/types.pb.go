@@ -157,7 +157,7 @@ const file_canary_v1_types_proto_rawDesc = "" +
 	"\tSTATUS_OK\x10\x01\x12\x10\n" +
 	"\fSTATUS_ERROR\x10\x02B\xa6\x01\n" +
 	"\rcom.canary.v1B\n" +
-	"TypesProtoP\x01ZDgithub.com/powertoolsdev/mono/pkg/types/workflows/canary/v1;canaryv1\xa2\x02\x03CXX\xaa\x02\tCanary.V1\xca\x02\tCanary\\V1\xe2\x02\x15Canary\\V1\\GPBMetadata\xea\x02\n" +
+	"TypesProtoP\x01ZDgithub.com/nuonco/nuon/pkg/types/workflows/canary/v1;canaryv1\xa2\x02\x03CXX\xaa\x02\tCanary.V1\xca\x02\tCanary\\V1\xe2\x02\x15Canary\\V1\\GPBMetadata\xea\x02\n" +
 	"Canary::V1b\x06proto3"
 
 var (

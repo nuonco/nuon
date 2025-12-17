@@ -8,9 +8,9 @@ import (
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/gin-gonic/gin"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/docs/admin"
-	"github.com/powertoolsdev/mono/services/ctl-api/docs/public"
-	"github.com/powertoolsdev/mono/services/ctl-api/docs/runner"
+	"github.com/nuonco/nuon/services/ctl-api/docs/admin"
+	"github.com/nuonco/nuon/services/ctl-api/docs/public"
+	"github.com/nuonco/nuon/services/ctl-api/docs/runner"
 )
 
 func (d *Docs) loadOAPI2Spec() (*openapi2.T, error) {

@@ -8,8 +8,8 @@ import (
 	nuonrunner "github.com/nuonco/nuon-runner-go"
 	"github.com/pkg/errors"
 
-	awsassumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
-	"github.com/powertoolsdev/mono/pkg/retry"
+	awsassumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
+	"github.com/nuonco/nuon/pkg/retry"
 )
 
 // if the runner is not in sandbox mode, and has an IAM role ARN, we assume that and set it in the environment,

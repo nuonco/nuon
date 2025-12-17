@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	tfexec "github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
-	"github.com/powertoolsdev/mono/pkg/pipeline"
+	"github.com/nuonco/nuon/pkg/pipeline"
 	"github.com/stretchr/testify/assert"
 )
 

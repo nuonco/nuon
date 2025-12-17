@@ -4,8 +4,8 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 // VPCNestedStack returns a nested stack template for VPC resources

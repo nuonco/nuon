@@ -7,8 +7,8 @@ import (
 	"io"
 
 	"github.com/mholt/archiver/v4"
-	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
-	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	"github.com/nuonco/nuon/pkg/aws/s3downloader"
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
 func (s *s3) Unpack(ctx context.Context, cb archive.Callback) error {

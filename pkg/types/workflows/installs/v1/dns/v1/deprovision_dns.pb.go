@@ -113,7 +113,7 @@ const file_installs_v1_dns_v1_deprovision_dns_proto_rawDesc = "" +
 	"\x15DeprovisionDNSRequest\x123\n" +
 	"\x06domain\x18\x01 \x01(\tB\x1b\xfaB\x04r\x02\x10\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\x06domain\"\x18\n" +
 	"\x16DeprovisionDNSResponseB\xe4\x01\n" +
-	"\x16com.installs.v1.dns.v1B\x13DeprovisionDnsProtoP\x01ZJgithub.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1;dnsv1\xa2\x02\x03IVD\xaa\x02\x12Installs.V1.Dns.V1\xca\x02\x12Installs\\V1\\Dns\\V1\xe2\x02\x1eInstalls\\V1\\Dns\\V1\\GPBMetadata\xea\x02\x15Installs::V1::Dns::V1b\x06proto3"
+	"\x16com.installs.v1.dns.v1B\x13DeprovisionDnsProtoP\x01ZJgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1/dns/v1;dnsv1\xa2\x02\x03IVD\xaa\x02\x12Installs.V1.Dns.V1\xca\x02\x12Installs\\V1\\Dns\\V1\xe2\x02\x1eInstalls\\V1\\Dns\\V1\\GPBMetadata\xea\x02\x15Installs::V1::Dns::V1b\x06proto3"
 
 var (
 	file_installs_v1_dns_v1_deprovision_dns_proto_rawDescOnce sync.Once

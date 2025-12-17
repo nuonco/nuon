@@ -7,8 +7,8 @@ import (
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type SyncComponentConfigResponse struct {

@@ -8,8 +8,8 @@ import (
 	ecr_types "github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type CreateRepositoryRequest struct {

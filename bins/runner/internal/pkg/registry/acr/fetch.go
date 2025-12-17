@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
-	"github.com/powertoolsdev/mono/pkg/azure/acr"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	"github.com/nuonco/nuon/pkg/azure/acr"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*registry.AccessInfo, error) {

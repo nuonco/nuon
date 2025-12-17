@@ -14,9 +14,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/config/parse/dir"
-	"github.com/powertoolsdev/mono/pkg/config/parse/get"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/parse/dir"
+	"github.com/nuonco/nuon/pkg/config/parse/get"
 )
 
 const (

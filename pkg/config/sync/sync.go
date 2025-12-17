@@ -6,7 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-go"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 type sync struct {

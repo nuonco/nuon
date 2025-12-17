@@ -267,7 +267,7 @@ const file_installs_v1_account_settings_proto_rawDesc = "" +
 	"\x16subscription_tenant_id\x18\x03 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x14subscriptionTenantId\x12L\n" +
 	"\x18service_principal_app_id\x18\x04 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x15servicePrincipalAppId\x12Q\n" +
 	"\x1aservice_principal_password\x18\x05 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x18servicePrincipalPasswordB\xbe\x01\n" +
-	"\x0fcom.installs.v1B\x14AccountSettingsProtoP\x01ZHgithub.com/powertoolsdev/mono/pkg/types/workflows/installs/v1;installsv1\xa2\x02\x03IXX\xaa\x02\vInstalls.V1\xca\x02\vInstalls\\V1\xe2\x02\x17Installs\\V1\\GPBMetadata\xea\x02\fInstalls::V1b\x06proto3"
+	"\x0fcom.installs.v1B\x14AccountSettingsProtoP\x01ZHgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1;installsv1\xa2\x02\x03IXX\xaa\x02\vInstalls.V1\xca\x02\vInstalls\\V1\xe2\x02\x17Installs\\V1\\GPBMetadata\xea\x02\fInstalls::V1b\x06proto3"
 
 var (
 	file_installs_v1_account_settings_proto_rawDescOnce sync.Once

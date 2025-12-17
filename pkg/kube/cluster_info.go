@@ -14,9 +14,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
-	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 )
 
 type ClusterInfo struct {

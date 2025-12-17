@@ -2,11 +2,11 @@ package flow
 
 import (
 	"github.com/go-playground/validator/v10"
-	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 

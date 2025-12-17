@@ -11,8 +11,8 @@ import (
 	release "helm.sh/helm/v4/pkg/release/v1"
 	"k8s.io/client-go/rest"
 
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"github.com/powertoolsdev/mono/pkg/zapwriter"
+	"github.com/nuonco/nuon/pkg/helm"
+	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
 const (

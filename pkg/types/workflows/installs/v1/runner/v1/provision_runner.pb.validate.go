@@ -18,7 +18,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/anypb"
 
-	v1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/components/context/v1"
 )
 
 // ensure the imports are used

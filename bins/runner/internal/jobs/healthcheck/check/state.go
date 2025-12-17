@@ -3,8 +3,8 @@ package check
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 // NOTE(fd): borrowed from noop

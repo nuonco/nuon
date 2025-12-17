@@ -3,7 +3,7 @@ package deployv1
 import (
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/types"
+	"github.com/nuonco/nuon/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 

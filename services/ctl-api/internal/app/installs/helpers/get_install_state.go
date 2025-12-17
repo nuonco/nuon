@@ -8,12 +8,12 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"gorm.io/gorm"
 
-	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/types/outputs"
-	"github.com/powertoolsdev/mono/pkg/types/stacks"
-	"github.com/powertoolsdev/mono/pkg/types/state"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/types/outputs"
+	"github.com/nuonco/nuon/pkg/types/stacks"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.

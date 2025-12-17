@@ -8,11 +8,11 @@ package componentv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
-	v12 "github.com/powertoolsdev/mono/pkg/types/components/connections/v1"
-	v14 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
-	v11 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
-	v13 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/components/build/v1"
+	v12 "github.com/nuonco/nuon/pkg/types/components/connections/v1"
+	v14 "github.com/nuonco/nuon/pkg/types/components/context/v1"
+	v11 "github.com/nuonco/nuon/pkg/types/components/deploy/v1"
+	v13 "github.com/nuonco/nuon/pkg/types/components/variables/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/scopes"
-	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type UpdateRunnerSettingsRequest struct {

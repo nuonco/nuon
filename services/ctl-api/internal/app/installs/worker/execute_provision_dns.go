@@ -10,10 +10,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	installdelegationdns "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/dns"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 type NuonDNSChart struct {

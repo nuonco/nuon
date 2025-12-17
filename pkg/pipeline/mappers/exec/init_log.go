@@ -5,7 +5,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
-	"github.com/powertoolsdev/mono/pkg/pipeline"
+	"github.com/nuonco/nuon/pkg/pipeline"
 )
 
 // execInitLogFn is a function that just does an init, and does not return output

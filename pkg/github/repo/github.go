@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 // k8s secrets are actually a mapping, and this is the default key we use to store the actual value

@@ -4,17 +4,17 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/build"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/operations"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs/sync"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/build"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/operations"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/sync"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/registry"
+	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/heartbeater"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 
-	check "github.com/powertoolsdev/mono/bins/runner/internal/jobs/healthcheck/check"
+	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )
 
 func (c *cli) registerBuild() error {
