@@ -1,6 +1,6 @@
 package configs
 
-import "github.com/powertoolsdev/mono/pkg/aws/credentials"
+import "github.com/nuonco/nuon/pkg/aws/credentials"
 
 type SandboxTerraform struct {
 	Plugin string `hcl:"plugin,label"`

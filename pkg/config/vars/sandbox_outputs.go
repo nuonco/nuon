@@ -10,7 +10,7 @@ import (
 	azureaks "github.com/nuonco/sandboxes/pkg/sandboxes/azure-aks"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (v *varsValidator) getSandboxOutputs(ctx context.Context) (map[string]interface{}, error) {

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type appSandboxesSuite struct {
@@ -86,7 +86,7 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 
 		cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -143,7 +143,7 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
 		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 		_, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 

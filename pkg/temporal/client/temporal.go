@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/uber-go/tally/v4"
 	tclient "go.temporal.io/sdk/client"
 	converter "go.temporal.io/sdk/converter"

@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/powertoolsdev/mono/pkg/shortid"
+	"github.com/nuonco/nuon/pkg/shortid"
 )
 
 func fakeAppID(v reflect.Value) (interface{}, error) {

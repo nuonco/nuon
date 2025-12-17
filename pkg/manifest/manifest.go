@@ -12,9 +12,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
-	"github.com/powertoolsdev/mono/pkg/aws/s3uploader"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/aws/s3downloader"
+	"github.com/nuonco/nuon/pkg/aws/s3uploader"
 )
 
 const (

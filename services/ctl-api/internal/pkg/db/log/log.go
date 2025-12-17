@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm/logger"
 	"moul.io/zapgorm2"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 func New(l *zap.Logger, cfg *internal.Config) zapgorm2.Logger {

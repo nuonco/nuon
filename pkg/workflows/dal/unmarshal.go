@@ -3,7 +3,7 @@ package dal
 import (
 	"fmt"
 
-	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
+	sharedv1 "github.com/nuonco/nuon/pkg/types/workflows/shared/v1"
 	"google.golang.org/protobuf/proto"
 )
 

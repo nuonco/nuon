@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type AzureSettings struct {

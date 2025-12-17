@@ -6,7 +6,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/powertoolsdev/mono/pkg/config/source"
+	"github.com/nuonco/nuon/pkg/config/source"
 )
 
 // NOTE(jm): this might not be needed

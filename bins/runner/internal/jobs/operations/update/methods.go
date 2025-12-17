@@ -8,8 +8,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

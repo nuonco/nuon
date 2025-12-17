@@ -5,9 +5,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
-	"github.com/powertoolsdev/mono/pkg/terraform/variables"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/terraform/variables"
 )
 
 // Package vars exposes an archive that loads a terraform archive from an vars artifact

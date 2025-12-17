@@ -3,13 +3,13 @@ package deploy
 import (
 	"go.uber.org/fx"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	helm "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/helm"
-	job "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/job"
-	kubernetesmanifest "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/kubernetes_manifest"
-	noop "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/noop"
-	terraform "github.com/powertoolsdev/mono/bins/runner/internal/jobs/deploy/terraform"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	helm "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/helm"
+	job "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/job"
+	kubernetesmanifest "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/kubernetes_manifest"
+	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/noop"
+	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/deploy/terraform"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 )
 
 func GetJobs() []fx.Option {

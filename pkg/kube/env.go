@@ -6,10 +6,10 @@ import (
 
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
-	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (c *ClusterInfo) fetchEnv(ctx context.Context) ([]clientcmdapi.ExecEnvVar, error) {

@@ -11,10 +11,10 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
-	"github.com/powertoolsdev/mono/pkg/terraform/run"
-	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/pkg/terraform/run"
+	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
 func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

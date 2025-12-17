@@ -6,9 +6,9 @@ import (
 
 	"github.com/pkg/browser"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	logs "github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/logs"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	logs "github.com/nuonco/nuon/bins/cli/internal/ui/v3/logs"
 )
 
 func (s *Service) DeployLogs(ctx context.Context, installID, deployID, installComponentID string, asJSON bool) error {

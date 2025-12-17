@@ -7,8 +7,8 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/powertoolsdev/mono/pkg/config/source"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/config/source"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type AppInputSource string

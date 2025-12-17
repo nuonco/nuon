@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 )
 
 func prompt(autoApprove bool, msg string, vars ...any) error {

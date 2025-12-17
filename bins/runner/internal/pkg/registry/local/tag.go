@@ -3,7 +3,7 @@ package local
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal"
 )
 
 // When we are building and pushing images locally, we have to do things _slightly_ different, to ensure we interoperate

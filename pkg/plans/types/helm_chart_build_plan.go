@@ -1,6 +1,6 @@
 package plantypes
 
-import "github.com/powertoolsdev/mono/pkg/config"
+import "github.com/nuonco/nuon/pkg/config"
 
 type HelmBuildPlan struct {
 	Labels         map[string]string

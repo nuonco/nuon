@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/services/secrets"
+	"github.com/nuonco/nuon/bins/cli/internal/services/secrets"
 )
 
 func (c *cli) secretsCmd() *cobra.Command {

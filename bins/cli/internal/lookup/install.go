@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func InstallID(ctx context.Context, apiClient nuon.Client, installIDOrName string) (string, error) {

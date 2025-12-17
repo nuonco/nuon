@@ -7,7 +7,7 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/logs"
 	"github.com/awslabs/goformation/v7/cloudformation/ssm"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 func (a *Templates) getRunnerCloudWatchLogGroup(inp *stacks.TemplateInput, t tagBuilder) *logs.LogGroup {

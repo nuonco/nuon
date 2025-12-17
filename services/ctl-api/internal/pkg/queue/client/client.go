@@ -5,8 +5,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 type Client struct {

@@ -4,8 +4,8 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/iancoleman/strcase"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 // getInstallInputParameters returns CloudFormation parameters for inputs with source "install_stack"

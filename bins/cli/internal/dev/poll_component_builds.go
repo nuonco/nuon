@@ -8,9 +8,9 @@ import (
 	"github.com/nuonco/nuon-go"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
-	"github.com/powertoolsdev/mono/pkg/config/sync"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/config/sync"
 )
 
 func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.ComponentState) error {

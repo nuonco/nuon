@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
 	"go.temporal.io/sdk/workflow"
 
 	enumsv1 "go.temporal.io/api/enums/v1"

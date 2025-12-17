@@ -7,8 +7,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/config/refs"
-	"github.com/powertoolsdev/mono/pkg/config/source"
+	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/config/source"
 )
 
 type AppSandboxConfig struct {

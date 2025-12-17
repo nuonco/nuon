@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 type SaveRunnerJobPlanRequest struct {

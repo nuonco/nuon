@@ -4,9 +4,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker/activities"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
 )
 
 // @temporal-gen workflow

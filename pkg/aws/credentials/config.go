@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 )
 
 // AssumeRoleConfig is used for assuming an IAM role

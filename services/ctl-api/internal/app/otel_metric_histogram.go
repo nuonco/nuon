@@ -5,7 +5,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"

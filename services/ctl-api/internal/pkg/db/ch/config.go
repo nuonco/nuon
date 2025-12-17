@@ -7,7 +7,7 @@ import (
 	clickhousecore "github.com/ClickHouse/clickhouse-go/v2"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
+	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 )
 
 func (c *database) gormConfig() *gorm.Config {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/invopop/jsonschema"
-	tomlparser "github.com/powertoolsdev/mono/pkg/parser/toml"
+	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 
 // TestDiagnostics_TerraformVersionTypeMismatch tests that type mismatches are caught

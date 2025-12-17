@@ -14,10 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	"github.com/powertoolsdev/mono/pkg/diff"
-	"github.com/powertoolsdev/mono/pkg/plans"
-	plantypes "github.com/powertoolsdev/mono/pkg/types/components/plan"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/pkg/diff"
+	"github.com/nuonco/nuon/pkg/plans"
+	plantypes "github.com/nuonco/nuon/pkg/types/components/plan"
 )
 
 type kubernetesResource struct {

@@ -3,7 +3,7 @@ package cctx
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 var ErrMetricContextNotFound error = fmt.Errorf("metric context not found")

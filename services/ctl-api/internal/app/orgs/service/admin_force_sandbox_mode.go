@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/powertoolsdev/mono/pkg/services/config"
-	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/pkg/services/config"
+	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 )
 
 type OrgForceSandboxModeRequest struct{}

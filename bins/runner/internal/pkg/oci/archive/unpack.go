@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) Current(ctx context.Context, asJSON bool) error {

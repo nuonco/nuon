@@ -10,12 +10,12 @@ import (
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	componentsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componentsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/releases/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateComponentReleaseRequest struct {

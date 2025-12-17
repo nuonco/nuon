@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	canaryv1 "github.com/nuonco/nuon/pkg/types/workflows/canary/v1"
+	"github.com/nuonco/nuon/pkg/workflows"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"

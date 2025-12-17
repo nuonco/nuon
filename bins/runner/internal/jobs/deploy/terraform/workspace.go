@@ -6,14 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/kube/config"
-	dirarchive "github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
-	httpbackend "github.com/powertoolsdev/mono/pkg/terraform/backend/http"
-	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
-	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
-	authvars "github.com/powertoolsdev/mono/pkg/terraform/variables/auth"
-	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
-	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
+	"github.com/nuonco/nuon/pkg/kube/config"
+	dirarchive "github.com/nuonco/nuon/pkg/terraform/archive/dir"
+	httpbackend "github.com/nuonco/nuon/pkg/terraform/backend/http"
+	remotebinary "github.com/nuonco/nuon/pkg/terraform/binary/remote"
+	"github.com/nuonco/nuon/pkg/terraform/hooks/noop"
+	authvars "github.com/nuonco/nuon/pkg/terraform/variables/auth"
+	staticvars "github.com/nuonco/nuon/pkg/terraform/variables/static"
+	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
 // GetWorkspace returns a valid workspace for working with this plugin

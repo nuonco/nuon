@@ -8,12 +8,12 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/indexes"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/viewsql"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type AppConfigStatus string

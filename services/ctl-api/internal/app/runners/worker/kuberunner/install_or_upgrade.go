@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 	release "helm.sh/helm/v4/pkg/release/v1"
 
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/helm"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type InstallOrUpgradeRequest struct {

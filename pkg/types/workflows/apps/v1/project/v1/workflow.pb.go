@@ -120,7 +120,7 @@ const file_apps_v1_project_v1_workflow_proto_rawDesc = "" +
 	"\x06org_id\x18\x01 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\x05orgId\x123\n" +
 	"\x06app_id\x18\x02 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\x05appId\"\x1a\n" +
 	"\x18ProvisionProjectResponseB\xe2\x01\n" +
-	"\x16com.apps.v1.project.v1B\rWorkflowProtoP\x01ZNgithub.com/powertoolsdev/mono/pkg/types/workflows/apps/v1/project/v1;projectv1\xa2\x02\x03AVP\xaa\x02\x12Apps.V1.Project.V1\xca\x02\x12Apps\\V1\\Project\\V1\xe2\x02\x1eApps\\V1\\Project\\V1\\GPBMetadata\xea\x02\x15Apps::V1::Project::V1b\x06proto3"
+	"\x16com.apps.v1.project.v1B\rWorkflowProtoP\x01ZNgithub.com/nuonco/nuon/pkg/types/workflows/apps/v1/project/v1;projectv1\xa2\x02\x03AVP\xaa\x02\x12Apps.V1.Project.V1\xca\x02\x12Apps\\V1\\Project\\V1\xe2\x02\x1eApps\\V1\\Project\\V1\\GPBMetadata\xea\x02\x15Apps::V1::Project::V1b\x06proto3"
 
 var (
 	file_apps_v1_project_v1_workflow_proto_rawDescOnce sync.Once

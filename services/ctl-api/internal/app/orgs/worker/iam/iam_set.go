@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam/roles"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam/roles"
 )
 
 type iamSet struct {

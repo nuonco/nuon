@@ -13,9 +13,9 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pelletier/go-toml"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, autoApprove, wait bool) error {

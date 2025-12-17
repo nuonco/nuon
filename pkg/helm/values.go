@@ -8,7 +8,7 @@ import (
 	chartutil "helm.sh/helm/v4/pkg/chart/common/util"
 	"helm.sh/helm/v4/pkg/strvals"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 func ChartValues(values []string, helmSet []plantypes.HelmValue) (map[string]interface{}, error) {

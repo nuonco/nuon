@@ -6,7 +6,7 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/powertoolsdev/mono/pkg/config/source"
+	"github.com/nuonco/nuon/pkg/config/source"
 )
 
 type InstallerConfig struct {
