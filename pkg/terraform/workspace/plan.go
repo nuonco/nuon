@@ -10,8 +10,8 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/pkg/terraform/workspace/output"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 

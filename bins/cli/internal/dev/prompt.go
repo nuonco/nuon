@@ -3,8 +3,8 @@ package dev
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/pkg/errors"
 )
 
 func prompt(autoApprove bool, msg string, vars ...any) error {

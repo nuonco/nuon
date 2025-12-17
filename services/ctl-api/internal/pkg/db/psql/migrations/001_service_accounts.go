@@ -3,8 +3,8 @@ package migrations
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 

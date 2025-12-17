@@ -94,6 +94,7 @@ jobs:
     uses: ./.github/workflows/build-base-images.yml
     with:
       service: ${{ matrix.service }}
+      disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
 
   services:
@@ -115,6 +116,7 @@ jobs:
       prod: false
       stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
       tag: ${{ needs.tag.outputs.git_ref }}
+      disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
 
   update_status:

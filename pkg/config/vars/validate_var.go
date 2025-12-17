@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/pkg/errors"
 )
 
 func (v *varsValidator) validateVar(inputVar string, tmplData map[string]interface{}) error {
