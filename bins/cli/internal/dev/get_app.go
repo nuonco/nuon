@@ -3,9 +3,9 @@ package dev
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/pkg/config/parse"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/pkg/config/parse"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 func (s *Service) getApp(ctx context.Context, dir string) (string, error) {

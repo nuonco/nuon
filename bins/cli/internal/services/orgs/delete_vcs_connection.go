@@ -3,8 +3,8 @@ package orgs
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) DeleteVCSConnection(ctx context.Context, connID string, asJSON bool) error {

@@ -8,8 +8,8 @@ import (
 
 	"github.com/nuonco/nuon-go/models"
 
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 var buttonStyle = lipgloss.NewStyle().

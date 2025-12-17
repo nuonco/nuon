@@ -3,8 +3,8 @@ package installs
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) Reprovision(ctx context.Context, installID string, asJSON bool) error {

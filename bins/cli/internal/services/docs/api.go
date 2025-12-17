@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/browser"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/nuonco/nuon/pkg/ui"
 )
 
 func (s *Service) BrowseAPI(ctx context.Context, asJSON bool) error {

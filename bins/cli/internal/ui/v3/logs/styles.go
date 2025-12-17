@@ -2,7 +2,7 @@ package logs
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 var appStyle = lipgloss.NewStyle().

@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	cctx "github.com/powertoolsdev/mono/pkg/ctx"
+	cctx "github.com/nuonco/nuon/pkg/ctx"
 )
 
 // Logger is a file-based logger for TUI applications.
