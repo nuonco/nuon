@@ -28,11 +28,3 @@ Of course, being a BYOC platform, we can also deploy Nuon itself as a BYOC app i
 
 > [!NOTE]
 > Currently, while Nuon can deploy apps to multiple cloud platforms, Nuon itself can only be deployed to AWS.
-
-## Contributors
-
-<a href="https://github.com/nuonco/nuon/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=nuonco/nuon" />
-</a>
-
-Made with [contrib.rocks](https://contrib.rocks).
