@@ -20,6 +20,8 @@
 
 This repo contains the complete source code of the Nuon control plane, runner, and CLI.
 
+Read more about our decision to open-source Nuon on our blog: https://nuon.co/blog/oss-announcement/
+
 ## Getting started
 
 The fastest way to get started with Nuon is to sign up for a free trial on Nuon Cloud at https://app.nuon.co. There are no limits to apps and installs, and all core Nuon features will be available to you for free.
