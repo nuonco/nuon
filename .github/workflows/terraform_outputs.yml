@@ -78,7 +78,7 @@ jobs:
           terraform-bin output -json > "${{ env.TF_OUT }}"
 
       - name: Parse terraform outputs
-        uses: powertoolsdev/mono/actions/tf-output@main
+        uses: nuonco/nuon/actions/tf-output@main
         with:
           file: ${{ env.TF_OUT }}
           cleanup: false

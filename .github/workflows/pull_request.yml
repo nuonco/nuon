@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Run lints
-        uses: powertoolsdev/mono/actions/pr-checks@main
+        uses: nuonco/nuon/actions/pr-checks@main
 
   update_status:
     name: update status
