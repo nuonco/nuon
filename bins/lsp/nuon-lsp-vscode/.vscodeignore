@@ -1,0 +1,13 @@
+.vscode/**
+.vscode-test/**
+node_modules/**
+.gitignore
+.yarnrc
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/.eslintrc.json
+**/*.map
+**/*.ts
+convert-icon.js
+icon-template.html
+icon.svg

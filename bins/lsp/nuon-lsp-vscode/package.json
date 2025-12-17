@@ -1,9 +1,33 @@
 {
     "name": "nuon-lsp",
     "displayName": "Nuon LSP",
-    "description": "A simple example VSCode client for your local nuon-lsp server",
-    "version": "0.0.1",
+    "description": "Language Server Protocol support for Nuon TOML configuration files",
+    "version": "0.0.2",
     "publisher": "nuon",
+    "author": "Nuon",
+    "license": "MIT",
+    "icon": "icon.png",
+    "categories": [
+        "Programming Languages",
+        "Linters",
+        "Formatters"
+    ],
+    "keywords": [
+        "nuon",
+        "toml",
+        "lsp",
+        "language-server",
+        "byoc"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nuonco/nuon.git",
+        "directory": "bins/lsp/nuon-lsp-vscode"
+    },
+    "bugs": {
+        "url": "https://github.com/nuonco/nuon/issues"
+    },
+    "homepage": "https://nuon.co",
     "engines": {
         "vscode": "^1.70.0"
     },
@@ -41,7 +65,7 @@
     },
     "scripts": {
         "build": "yes | vsce package --allow-missing-repository || true",
-        "install": "code --install-extension nuon-lsp-0.0.1.vsix --force",
+        "install": "code --install-extension nuon-lsp-0.0.2.vsix --force",
         "vscode:prepublish": "echo 'Prepublish complete'"
     },
     "dependencies": {

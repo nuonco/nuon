@@ -2330,6 +2330,7 @@ github.com/nuonco/gin-swagger v1.6.2 h1:MafFLwTzIoCSmjo9dTu7KMI4XY/RSQSd/GKpyIh9
 github.com/nuonco/gin-swagger v1.6.2/go.mod h1:uTjtvuQS7lK4f8KLmB376B/kb8ypjwV2/zAk6RKV0/k=
 github.com/nuonco/nuon-go v0.92.1 h1:5WCh7mh1Hb2xz6vF4+eJFcc9nWVmJGCgueRvJAW8YOs=
 github.com/nuonco/nuon-go v0.92.1/go.mod h1:lmSoyjpbnQjs9/RrYoP+3xYdlfb2s+HYzTp9880X9kc=
+github.com/nuonco/nuon-go v0.92.3/go.mod h1:lmSoyjpbnQjs9/RrYoP+3xYdlfb2s+HYzTp9880X9kc=
 github.com/nuonco/nuon-runner-go v0.20.0 h1:Znpacu86j6vGexKwpDLQLw0k1pPWXaKLISYB70KMWU4=
 github.com/nuonco/nuon-runner-go v0.20.0/go.mod h1:s2oV2SZL4VI8WgK0tGf2z0ks+LCujbOl18Fm8UZYQjY=
 github.com/nuonco/sandboxes v1.34.0 h1:3ZH4qZw6tQkef7BVaKxUYjEfzghVBn+me5pWTE7Q4fc=
