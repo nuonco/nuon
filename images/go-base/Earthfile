@@ -1,0 +1,50 @@
+VERSION --use-cache-command 0.6
+
+FROM golang:1.25
+
+CACHE /go-cache
+CACHE /go-mod-cache
+
+ARG GOLANGCI_LINT_VERSION=v1.55.2
+
+build-base:
+  ENV CGO_ENABLED=0
+  ENV GOCACHE=/go-cache
+  ENV GOMODCACHE=/go-mod-cache
+  ENV CGO_ENABLED=0
+  ENV GOPRIVATE=github.com/powertoolsdev/*
+
+  RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+    | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+
+  RUN apt-get update && \
+    apt-get install -y ca-certificates \
+      coreutils \
+      make \
+      git \
+      curl \
+      protobuf-compiler \
+      jq
+
+alpine-base:
+  FROM golang:1.25-alpine
+
+  ENV CGO_ENABLED=0
+
+  RUN apk add --no-cache \
+    libc6-compat \
+    build-base \
+    make \
+    ca-certificates-bundle \
+    coreutils \
+    curl \
+    protoc \
+    bash \
+    jq \
+    git \
+    python3 \
+    py3-pip \
+    zip && \
+    pip3 install awscli --upgrade --user --break-system-packages
+
+  ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin

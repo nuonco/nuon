@@ -10,6 +10,7 @@
 
 [Get Started](https://app.nuon.co) | [Docs](https://docs.nuon.co) | [Changelog](https://docs.nuon.co/updates/updates) | [Enterprise](https://nuon.co/pricing)
 
+[![BYOC](https://img.shields.io/badge/BYOC-blue)](https://awesomebyoc.com/)
 [![Go report card](https://goreportcard.com/badge/github.com/nuonco/nuon)](https://goreportcard.com/report/github.com/nuonco/nuon)
 [![Godoc](https://pkg.go.dev/badge/github.com/nuonco/nuon.svg)](https://pkg.go.dev/github.com/nuonco/nuon)
 [![Version](https://img.shields.io/github/v/tag/nuonco/nuon)](https://github.com/nuonco/nuon/tags)
@@ -17,7 +18,7 @@
 
 </div>
 
-Nuon unlocks BYOC for your apps. This repo contains the complete source code of the Nuon control plane, runner, and CLI.
+This repo contains the complete source code of the Nuon control plane, runner, and CLI.
 
 ## Getting started
 
