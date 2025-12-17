@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	tclient "go.temporal.io/sdk/client"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
 func (c *Client) QueueReady(ctx context.Context, queueID string) error {

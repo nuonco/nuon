@@ -6,9 +6,9 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/iancoleman/strcase"
 
-	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.Template, error) {

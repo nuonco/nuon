@@ -3,11 +3,11 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/loop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
 const (

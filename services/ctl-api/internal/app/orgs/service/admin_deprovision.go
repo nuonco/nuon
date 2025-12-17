@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 )
 
 type AdminDeprovisionOrgRequest struct {

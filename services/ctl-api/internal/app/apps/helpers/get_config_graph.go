@@ -6,7 +6,7 @@ import (
 	"github.com/dominikbraun/graph"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // GetConfigGraph builds a directed acyclic graph of component dependencies and returns both the graph

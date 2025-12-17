@@ -8,7 +8,7 @@ import (
 	route53_types "github.com/aws/aws-sdk-go-v2/service/route53/types"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type DelegateDNSRequest struct {

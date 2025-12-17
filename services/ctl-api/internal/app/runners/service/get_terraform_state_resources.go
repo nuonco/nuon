@@ -12,7 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	tfjson "github.com/hashicorp/terraform-json"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 // @ID						GetTerraformWorkspaceStateJSONResourcesV2

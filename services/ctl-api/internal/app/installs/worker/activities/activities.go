@@ -6,17 +6,17 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	actionhelper "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
-	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
-	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
-	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/features"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	actionhelper "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 type Params struct {

@@ -3,7 +3,7 @@ package cloudformation
 import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/autoscaling"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/stacks"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 func (a *Templates) getRunnerASG(inp *stacks.TemplateInput, t tagBuilder) *autoscaling.AutoScalingGroup {

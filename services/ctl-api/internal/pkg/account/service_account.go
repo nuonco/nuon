@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (c *Client) CreateServiceAccount(ctx context.Context, svcAcctID string) (*app.Account, error) {

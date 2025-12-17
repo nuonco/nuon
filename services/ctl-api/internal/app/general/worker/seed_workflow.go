@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/worker/activities"
-	orgssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
+	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 )
 
 // @temporal-gen workflow

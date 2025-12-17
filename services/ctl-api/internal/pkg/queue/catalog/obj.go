@@ -3,7 +3,7 @@ package catalog
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 func NewFromType(typ signal.SignalType) (signal.Signal, error) {

@@ -3,7 +3,7 @@ package helpers
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func componentHash(a *app.Component) string {

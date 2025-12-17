@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )

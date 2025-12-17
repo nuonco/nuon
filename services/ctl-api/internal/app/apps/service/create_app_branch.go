@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/app-branches/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/app-branches/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateAppBranchRequest struct {

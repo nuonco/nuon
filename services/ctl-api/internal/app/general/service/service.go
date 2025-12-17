@@ -8,13 +8,13 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/pkg/metrics"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type service struct {

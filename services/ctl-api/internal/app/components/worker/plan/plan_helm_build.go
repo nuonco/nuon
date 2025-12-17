@@ -3,9 +3,9 @@ package plan
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/pkg/config"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/pkg/config"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (p *Planner) createHelmBuildPlan(ctx workflow.Context, bld *app.ComponentBuild, helmCompCfg *app.HelmComponentConfig) (*plantypes.HelmBuildPlan, error) {

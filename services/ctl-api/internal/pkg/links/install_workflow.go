@@ -3,7 +3,7 @@ package links
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func InstallWorkflowLinks(ctx context.Context, installDeployID string) map[string]any {

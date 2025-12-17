@@ -5,7 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/iam/roles"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam/roles"
 )
 
 func (w Wkflow) provisionRunnerIAM(ctx workflow.Context, req *ProvisionIAMRequest) (string, error) {

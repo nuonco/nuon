@@ -3,7 +3,7 @@ package activities
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // NOTE(sdboyer) - version to update to is determined by a call from the runner
