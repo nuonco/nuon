@@ -1,6 +1,6 @@
 package migrations
 
-import "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/migrations"
+import "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 
 func (m *Migrations) All() []migrations.Migration {
 	return []migrations.Migration{

@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/invopop/jsonschema"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type SecretsConfig struct {

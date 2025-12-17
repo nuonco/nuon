@@ -7,9 +7,9 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/common"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
+	"github.com/nuonco/nuon/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 // If we want to style the items, we'll need to write our own delegate for our custom item type

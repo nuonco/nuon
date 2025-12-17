@@ -6,7 +6,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 
-	"github.com/powertoolsdev/mono/pkg/config/schema"
+	"github.com/nuonco/nuon/pkg/config/schema"
 )
 
 func DetectSchemaType(text string) string {

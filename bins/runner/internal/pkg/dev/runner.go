@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/retry"
+	"github.com/nuonco/nuon/pkg/retry"
 )
 
 func (d *devver) initRunner(ctx context.Context) error {

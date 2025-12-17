@@ -5,7 +5,7 @@ FROM ${BUILD_IMAGE} AS code
 
 # Service specific arguments
 ARG SERVICE=ctl-api
-ARG PKG_ROOT=github.com/powertoolsdev/mono/services/ctl-api
+ARG PKG_ROOT=github.com/nuonco/nuon/services/ctl-api
 ARG ETCSSL=/etc/ssl/cert.pem
 
 # Copy service-specific files

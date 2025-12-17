@@ -713,21 +713,21 @@
             "accounts": [
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/406833060852",
-                "email": "aws-accounts+infra-tests-000@powertools.dev",
+                "email": "aws-accounts+infra-tests-000@nuon.co",
                 "id": "406833060852",
                 "name": "infra-tests-000",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/410635945163",
-                "email": "aws-accounts+public@powertools.dev",
+                "email": "aws-accounts+public@nuon.co",
                 "id": "410635945163",
                 "name": "public",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/044911596875",
-                "email": "aws-accounts+infra-tests@powertools.dev",
+                "email": "aws-accounts+infra-tests@nuon.co",
                 "id": "044911596875",
                 "name": "infra-tests",
                 "status": "SUSPENDED"
@@ -736,243 +736,243 @@
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/491187160246",
                 "email": "aws-root@nuon.co",
                 "id": "491187160246",
-                "name": "powertoolsdev",
+                "name": "nuonco",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/766121324316",
-                "email": "aws-accounts+orgs-stage@powertools.dev",
+                "email": "aws-accounts+orgs-stage@nuon.co",
                 "id": "766121324316",
                 "name": "orgs-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/576099457177",
-                "email": "aws-accounts+infra-shared-stage@powertools.dev",
+                "email": "aws-accounts+infra-shared-stage@nuon.co",
                 "id": "576099457177",
                 "name": "infra-shared-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/423623870300",
-                "email": "aws-accounts+test@powertools.dev",
+                "email": "aws-accounts+test@nuon.co",
                 "id": "423623870300",
                 "name": "test",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/017820687331",
-                "email": "aws-accounts+runners-stage@powertools.dev",
+                "email": "aws-accounts+runners-stage@nuon.co",
                 "id": "017820687331",
                 "name": "runners-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/431927561584",
-                "email": "aws-accounts+infra-shared-prod@powertools.dev",
+                "email": "aws-accounts+infra-shared-prod@nuon.co",
                 "id": "431927561584",
                 "name": "infra-shared-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/503638872234",
-                "email": "aws-accounts+sandbox-jm@powertools.dev",
+                "email": "aws-accounts+sandbox-jm@nuon.co",
                 "id": "503638872234",
                 "name": "sandbox-jm",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/820186421191",
-                "email": "aws-accounts+sandbox-dne@powertools.dev",
+                "email": "aws-accounts+sandbox-dne@nuon.co",
                 "id": "820186421191",
                 "name": "sandbox-dne",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/764373559498",
-                "email": "aws-accounts+infra-tests-02@powertools.dev",
+                "email": "aws-accounts+infra-tests-02@nuon.co",
                 "id": "764373559498",
                 "name": "infra-tests-02",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/814326426574",
-                "email": "aws-accounts+orgs-prod@powertools.dev",
+                "email": "aws-accounts+orgs-prod@nuon.co",
                 "id": "814326426574",
                 "name": "orgs-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/676549690856",
-                "email": "aws-accounts+stage@powertools.dev",
+                "email": "aws-accounts+stage@nuon.co",
                 "id": "676549690856",
                 "name": "stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/034362041463",
-                "email": "aws-accounts+sandbox-fd@powertools.dev",
+                "email": "aws-accounts+sandbox-fd@nuon.co",
                 "id": "034362041463",
                 "name": "sandbox-fd",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/543425801867",
-                "email": "aws-accounts+canary@powertools.dev",
+                "email": "aws-accounts+canary@nuon.co",
                 "id": "543425801867",
                 "name": "canary",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/542568752864",
-                "email": "aws-accounts+infra-tests-01@powertools.dev",
+                "email": "aws-accounts+infra-tests-01@nuon.co",
                 "id": "542568752864",
                 "name": "infra-tests-01",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/390844782764",
-                "email": "aws-accounts+sandbox-sb@powertools.dev",
+                "email": "aws-accounts+sandbox-sb@nuon.co",
                 "id": "390844782764",
                 "name": "sandbox-sb",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/190623960944",
-                "email": "aws-accounts+infra-tests-003@powertools.dev",
+                "email": "aws-accounts+infra-tests-003@nuon.co",
                 "id": "190623960944",
                 "name": "infra-tests-003",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/977099022641",
-                "email": "aws-accounts+sandbox-nh@powertools.dev",
+                "email": "aws-accounts+sandbox-nh@nuon.co",
                 "id": "977099022641",
                 "name": "sandbox-nh",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/014498639566",
-                "email": "aws-accounts+demo-govcloud@powertools.dev",
+                "email": "aws-accounts+demo-govcloud@nuon.co",
                 "id": "014498639566",
                 "name": "demo-govcloud",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/014498639587",
-                "email": "aws-accounts+govcloud-prod@powertools.dev",
+                "email": "aws-accounts+govcloud-prod@nuon.co",
                 "id": "014498639587",
                 "name": "govcloud-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/582224451256",
-                "email": "aws-accounts+infra-test@powertools.dev",
+                "email": "aws-accounts+infra-test@nuon.co",
                 "id": "582224451256",
                 "name": "infra-test",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/504178855485",
-                "email": "aws-accounts+sandbox-ht@powertools.dev",
+                "email": "aws-accounts+sandbox-ht@nuon.co",
                 "id": "504178855485",
                 "name": "sandbox-ht",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/840516475258",
-                "email": "aws-accounts+infra-tests-001@powertools.dev",
+                "email": "aws-accounts+infra-tests-001@nuon.co",
                 "id": "840516475258",
                 "name": "infra-tests-001",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/007754799877",
-                "email": "aws-accounts+prod@powertools.dev",
+                "email": "aws-accounts+prod@nuon.co",
                 "id": "007754799877",
                 "name": "prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/699392538673",
-                "email": "aws-accounts+sandbox-stardog@powertools.dev",
+                "email": "aws-accounts+sandbox-stardog@nuon.co",
                 "id": "699392538673",
                 "name": "sandbox-stardog",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/014498639541",
-                "email": "aws-accounts+govcloud-stage@powertools.dev",
+                "email": "aws-accounts+govcloud-stage@nuon.co",
                 "id": "014498639541",
                 "name": "govcloud-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/105962189369",
-                "email": "aws-accounts+sandbox-ja@powertools.dev",
+                "email": "aws-accounts+sandbox-ja@nuon.co",
                 "id": "105962189369",
                 "name": "sandbox-ja",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/704353679439",
-                "email": "aws-accounts+infra-tests-00@powertools.dev",
+                "email": "aws-accounts+infra-tests-00@nuon.co",
                 "id": "704353679439",
                 "name": "infra-tests-00",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/958110090201",
-                "email": "aws-accounts+infra-tests-04@powertools.dev",
+                "email": "aws-accounts+infra-tests-04@nuon.co",
                 "id": "958110090201",
                 "name": "infra-tests-04",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/017820687303",
-                "email": "aws-accounts+runners-prod@powertools.dev",
+                "email": "aws-accounts+runners-prod@nuon.co",
                 "id": "017820687303",
                 "name": "runners-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/654471563882",
-                "email": "aws-accounts+sandbox-tw@powertools.dev",
+                "email": "aws-accounts+sandbox-tw@nuon.co",
                 "id": "654471563882",
                 "name": "sandbox-tw",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/433801822458",
-                "email": "aws-accounts+infra-tests-002@powertools.dev",
+                "email": "aws-accounts+infra-tests-002@nuon.co",
                 "id": "433801822458",
                 "name": "infra-tests-002",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/644629842868",
-                "email": "aws-accounts+infra-tests-03@powertools.dev",
+                "email": "aws-accounts+infra-tests-03@nuon.co",
                 "id": "644629842868",
                 "name": "infra-tests-03",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/861208160512",
-                "email": "aws-accounts+infra-tests-004@powertools.dev",
+                "email": "aws-accounts+infra-tests-004@nuon.co",
                 "id": "861208160512",
                 "name": "infra-tests-004",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/949309607565",
-                "email": "aws-accounts+demo@powertools.dev",
+                "email": "aws-accounts+demo@nuon.co",
                 "id": "949309607565",
                 "name": "demo",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/145023109787",
-                "email": "aws-accounts+sandbox-rb@powertools.dev",
+                "email": "aws-accounts+sandbox-rb@nuon.co",
                 "id": "145023109787",
                 "name": "sandbox-rb",
                 "status": "ACTIVE"
@@ -1012,263 +1012,263 @@
             "master_account_arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/491187160246",
             "master_account_email": "aws-root@nuon.co",
             "master_account_id": "491187160246",
-            "master_account_name": "powertoolsdev",
+            "master_account_name": "nuonco",
             "non_master_accounts": [
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/406833060852",
-                "email": "aws-accounts+infra-tests-000@powertools.dev",
+                "email": "aws-accounts+infra-tests-000@nuon.co",
                 "id": "406833060852",
                 "name": "infra-tests-000",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/410635945163",
-                "email": "aws-accounts+public@powertools.dev",
+                "email": "aws-accounts+public@nuon.co",
                 "id": "410635945163",
                 "name": "public",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/044911596875",
-                "email": "aws-accounts+infra-tests@powertools.dev",
+                "email": "aws-accounts+infra-tests@nuon.co",
                 "id": "044911596875",
                 "name": "infra-tests",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/766121324316",
-                "email": "aws-accounts+orgs-stage@powertools.dev",
+                "email": "aws-accounts+orgs-stage@nuon.co",
                 "id": "766121324316",
                 "name": "orgs-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/576099457177",
-                "email": "aws-accounts+infra-shared-stage@powertools.dev",
+                "email": "aws-accounts+infra-shared-stage@nuon.co",
                 "id": "576099457177",
                 "name": "infra-shared-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/423623870300",
-                "email": "aws-accounts+test@powertools.dev",
+                "email": "aws-accounts+test@nuon.co",
                 "id": "423623870300",
                 "name": "test",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/017820687331",
-                "email": "aws-accounts+runners-stage@powertools.dev",
+                "email": "aws-accounts+runners-stage@nuon.co",
                 "id": "017820687331",
                 "name": "runners-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/431927561584",
-                "email": "aws-accounts+infra-shared-prod@powertools.dev",
+                "email": "aws-accounts+infra-shared-prod@nuon.co",
                 "id": "431927561584",
                 "name": "infra-shared-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/503638872234",
-                "email": "aws-accounts+sandbox-jm@powertools.dev",
+                "email": "aws-accounts+sandbox-jm@nuon.co",
                 "id": "503638872234",
                 "name": "sandbox-jm",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/820186421191",
-                "email": "aws-accounts+sandbox-dne@powertools.dev",
+                "email": "aws-accounts+sandbox-dne@nuon.co",
                 "id": "820186421191",
                 "name": "sandbox-dne",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/764373559498",
-                "email": "aws-accounts+infra-tests-02@powertools.dev",
+                "email": "aws-accounts+infra-tests-02@nuon.co",
                 "id": "764373559498",
                 "name": "infra-tests-02",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/814326426574",
-                "email": "aws-accounts+orgs-prod@powertools.dev",
+                "email": "aws-accounts+orgs-prod@nuon.co",
                 "id": "814326426574",
                 "name": "orgs-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/676549690856",
-                "email": "aws-accounts+stage@powertools.dev",
+                "email": "aws-accounts+stage@nuon.co",
                 "id": "676549690856",
                 "name": "stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/034362041463",
-                "email": "aws-accounts+sandbox-fd@powertools.dev",
+                "email": "aws-accounts+sandbox-fd@nuon.co",
                 "id": "034362041463",
                 "name": "sandbox-fd",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/543425801867",
-                "email": "aws-accounts+canary@powertools.dev",
+                "email": "aws-accounts+canary@nuon.co",
                 "id": "543425801867",
                 "name": "canary",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/542568752864",
-                "email": "aws-accounts+infra-tests-01@powertools.dev",
+                "email": "aws-accounts+infra-tests-01@nuon.co",
                 "id": "542568752864",
                 "name": "infra-tests-01",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/390844782764",
-                "email": "aws-accounts+sandbox-sb@powertools.dev",
+                "email": "aws-accounts+sandbox-sb@nuon.co",
                 "id": "390844782764",
                 "name": "sandbox-sb",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/190623960944",
-                "email": "aws-accounts+infra-tests-003@powertools.dev",
+                "email": "aws-accounts+infra-tests-003@nuon.co",
                 "id": "190623960944",
                 "name": "infra-tests-003",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/977099022641",
-                "email": "aws-accounts+sandbox-nh@powertools.dev",
+                "email": "aws-accounts+sandbox-nh@nuon.co",
                 "id": "977099022641",
                 "name": "sandbox-nh",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/014498639566",
-                "email": "aws-accounts+demo-govcloud@powertools.dev",
+                "email": "aws-accounts+demo-govcloud@nuon.co",
                 "id": "014498639566",
                 "name": "demo-govcloud",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/014498639587",
-                "email": "aws-accounts+govcloud-prod@powertools.dev",
+                "email": "aws-accounts+govcloud-prod@nuon.co",
                 "id": "014498639587",
                 "name": "govcloud-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/582224451256",
-                "email": "aws-accounts+infra-test@powertools.dev",
+                "email": "aws-accounts+infra-test@nuon.co",
                 "id": "582224451256",
                 "name": "infra-test",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/504178855485",
-                "email": "aws-accounts+sandbox-ht@powertools.dev",
+                "email": "aws-accounts+sandbox-ht@nuon.co",
                 "id": "504178855485",
                 "name": "sandbox-ht",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/840516475258",
-                "email": "aws-accounts+infra-tests-001@powertools.dev",
+                "email": "aws-accounts+infra-tests-001@nuon.co",
                 "id": "840516475258",
                 "name": "infra-tests-001",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/007754799877",
-                "email": "aws-accounts+prod@powertools.dev",
+                "email": "aws-accounts+prod@nuon.co",
                 "id": "007754799877",
                 "name": "prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/699392538673",
-                "email": "aws-accounts+sandbox-stardog@powertools.dev",
+                "email": "aws-accounts+sandbox-stardog@nuon.co",
                 "id": "699392538673",
                 "name": "sandbox-stardog",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/014498639541",
-                "email": "aws-accounts+govcloud-stage@powertools.dev",
+                "email": "aws-accounts+govcloud-stage@nuon.co",
                 "id": "014498639541",
                 "name": "govcloud-stage",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/105962189369",
-                "email": "aws-accounts+sandbox-ja@powertools.dev",
+                "email": "aws-accounts+sandbox-ja@nuon.co",
                 "id": "105962189369",
                 "name": "sandbox-ja",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/704353679439",
-                "email": "aws-accounts+infra-tests-00@powertools.dev",
+                "email": "aws-accounts+infra-tests-00@nuon.co",
                 "id": "704353679439",
                 "name": "infra-tests-00",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/958110090201",
-                "email": "aws-accounts+infra-tests-04@powertools.dev",
+                "email": "aws-accounts+infra-tests-04@nuon.co",
                 "id": "958110090201",
                 "name": "infra-tests-04",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/017820687303",
-                "email": "aws-accounts+runners-prod@powertools.dev",
+                "email": "aws-accounts+runners-prod@nuon.co",
                 "id": "017820687303",
                 "name": "runners-prod",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/654471563882",
-                "email": "aws-accounts+sandbox-tw@powertools.dev",
+                "email": "aws-accounts+sandbox-tw@nuon.co",
                 "id": "654471563882",
                 "name": "sandbox-tw",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/433801822458",
-                "email": "aws-accounts+infra-tests-002@powertools.dev",
+                "email": "aws-accounts+infra-tests-002@nuon.co",
                 "id": "433801822458",
                 "name": "infra-tests-002",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/644629842868",
-                "email": "aws-accounts+infra-tests-03@powertools.dev",
+                "email": "aws-accounts+infra-tests-03@nuon.co",
                 "id": "644629842868",
                 "name": "infra-tests-03",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/861208160512",
-                "email": "aws-accounts+infra-tests-004@powertools.dev",
+                "email": "aws-accounts+infra-tests-004@nuon.co",
                 "id": "861208160512",
                 "name": "infra-tests-004",
                 "status": "SUSPENDED"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/949309607565",
-                "email": "aws-accounts+demo@powertools.dev",
+                "email": "aws-accounts+demo@nuon.co",
                 "id": "949309607565",
                 "name": "demo",
                 "status": "ACTIVE"
               },
               {
                 "arn": "arn:aws:organizations::491187160246:account/o-thxealue7f/145023109787",
-                "email": "aws-accounts+sandbox-rb@powertools.dev",
+                "email": "aws-accounts+sandbox-rb@nuon.co",
                 "id": "145023109787",
                 "name": "sandbox-rb",
                 "status": "ACTIVE"

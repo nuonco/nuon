@@ -9,12 +9,12 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/ecrrepository"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
 const (

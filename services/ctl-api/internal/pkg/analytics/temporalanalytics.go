@@ -3,7 +3,7 @@ package analytics
 import (
 	"github.com/pkg/errors"
 
-	temporalanalytics "github.com/powertoolsdev/mono/pkg/analytics/temporal"
+	temporalanalytics "github.com/nuonco/nuon/pkg/analytics/temporal"
 )
 
 func NewTemporal(params Params) (temporalanalytics.Writer, error) {

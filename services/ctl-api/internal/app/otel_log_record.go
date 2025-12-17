@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
 // Logs are designed to be written via an OTLP exporter.

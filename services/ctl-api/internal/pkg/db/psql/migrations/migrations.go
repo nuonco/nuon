@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"go.uber.org/fx"
 )
 

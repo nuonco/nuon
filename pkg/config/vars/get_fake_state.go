@@ -6,10 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	"github.com/powertoolsdev/mono/pkg/types/outputs"
-	"github.com/powertoolsdev/mono/pkg/types/state"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/pkg/types/outputs"
+	"github.com/nuonco/nuon/pkg/types/state"
 )
 
 func (v *varsValidator) GetFakeState(ctx context.Context) (state.State, error) {

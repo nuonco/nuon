@@ -10,12 +10,12 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/config/parse"
-	"github.com/powertoolsdev/mono/pkg/config/sync"
-	"github.com/powertoolsdev/mono/pkg/config/validate"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/parse"
+	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/config/validate"
 )
 
 const (

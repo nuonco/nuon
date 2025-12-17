@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	pkgworkflows "github.com/powertoolsdev/mono/pkg/workflows"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/activities"
-	runner "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/worker/kuberunner"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
 type Worker struct {

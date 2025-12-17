@@ -3,8 +3,8 @@ package loop
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 func (l *Loop[SignalType, ReqSig]) createSelector(ctx workflow.Context, req eventloop.EventLoopRequest, tags map[string]string) workflow.Selector {

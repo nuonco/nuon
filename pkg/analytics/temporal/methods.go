@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/analytics/events"
+	"github.com/nuonco/nuon/pkg/analytics/events"
 )
 
 func (w *writer) Track(ctx workflow.Context, ev events.Event, props map[string]interface{}) {

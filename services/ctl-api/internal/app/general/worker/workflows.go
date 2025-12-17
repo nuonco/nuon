@@ -5,12 +5,12 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 
-	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	teventloop "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop/temporal"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

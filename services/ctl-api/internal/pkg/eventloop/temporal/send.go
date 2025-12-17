@@ -7,23 +7,23 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/pkg/shortid"
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/shortid"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 
-	actionssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
-	appssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	componentssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
-	generalsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
-	installssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	orgssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	releasessignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
-	runnerssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
-	signalsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/workflows/signals/activities"
+	actionssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
+	appssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	componentssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	generalsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	releasessignals "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/signals"
+	runnerssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
 )
 
 const (

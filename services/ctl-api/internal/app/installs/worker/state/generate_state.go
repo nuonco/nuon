@@ -5,10 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/types/state"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 type GenerateStateRequest struct {

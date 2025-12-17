@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
 // backendConfig represents the full backend configuration

@@ -6,9 +6,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/services/apps"
-	"github.com/powertoolsdev/mono/bins/cli/internal/services/variables"
-	"github.com/powertoolsdev/mono/bins/cli/internal/services/version"
+	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
+	"github.com/nuonco/nuon/bins/cli/internal/services/variables"
+	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
 func (c *cli) appsCmd() *cobra.Command {

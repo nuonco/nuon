@@ -3,14 +3,14 @@ package activities
 import (
 	"context"
 
-	actionssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/signals"
-	appssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	componentssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
-	generalsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/signals"
-	installssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
-	orgssignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	releasessignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
-	runnersignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
+	actionssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
+	appssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	componentssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	generalsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	releasessignals "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/signals"
+	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
 type SendSignalRequest[T any] struct {

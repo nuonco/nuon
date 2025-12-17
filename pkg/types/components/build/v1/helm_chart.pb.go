@@ -8,7 +8,7 @@ package buildv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/components/vcs/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

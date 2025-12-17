@@ -185,7 +185,7 @@ terraform_version = "1.7.5"
 
 [connected_repo]
 directory = "infra"
-repo = "powertoolsdev/mono"
+repo = "nuonco/nuon"
 branch = "main"
 
 [vars]
@@ -200,7 +200,7 @@ terraform_version = "1.7.5"
 
 [connected_repo]
 directory = "deployment"
-repo = "powertoolsdev/mono"
+repo = "nuonco/nuon"
 branch = "main"
 
 [vars]
@@ -214,7 +214,7 @@ chart_name = "e2e-helm"
 
 [connected_repo]
 directory = "deployment"
-repo = "powertoolsdev/mono"
+repo = "nuonco/nuon"
 branch = "main"
 
 [[values_file]]
@@ -234,7 +234,7 @@ dockerfile = "Dockerfile"
 
 [connected_repo]
 directory = "deployment"
-repo = "powertoolsdev/mono"
+repo = "nuonco/nuon"
 branch = "main"
 `
 

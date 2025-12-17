@@ -10,11 +10,11 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/retry"
 
-	pkgregistry "github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry/acr"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry/docker"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry/ecr"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	pkgregistry "github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/acr"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/docker"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/ecr"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*pkgregistry.AccessInfo, error) {

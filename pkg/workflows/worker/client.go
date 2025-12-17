@@ -5,7 +5,7 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 )
 
 func (w *worker) getClient() (client.Client, func(), error) {

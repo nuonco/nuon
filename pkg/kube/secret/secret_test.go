@@ -12,8 +12,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/kube"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 var errTokenTest = fmt.Errorf("token-test-err")

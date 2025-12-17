@@ -3,8 +3,8 @@ package activitiesv1
 import (
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
+	canaryv1 "github.com/nuonco/nuon/pkg/types/workflows/canary/v1"
 	"github.com/stretchr/testify/assert"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 )

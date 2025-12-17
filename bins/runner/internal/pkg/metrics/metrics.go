@@ -8,10 +8,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/settings"
-	"github.com/powertoolsdev/mono/bins/runner/internal/version"
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/bins/runner/internal/version"
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 type Params struct {

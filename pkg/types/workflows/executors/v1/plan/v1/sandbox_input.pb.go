@@ -8,7 +8,7 @@ package planv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/workflows/installs/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -200,7 +200,7 @@ const file_executors_v1_plan_v1_sandbox_input_proto_rawDesc = "" +
 	"\x1eSANDBOX_INPUT_TYPE_DEPROVISION\x10\x02\x12%\n" +
 	"!SANDBOX_INPUT_TYPE_PROVISION_PLAN\x10\x03\x12!\n" +
 	"\x1dSANDBOX_INPUT_TYPE_NOOP_BUILD\x10\x04B\xef\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x11SandboxInputProtoP\x01ZMgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x18com.executors.v1.plan.v1B\x11SandboxInputProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_sandbox_input_proto_rawDescOnce sync.Once

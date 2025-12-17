@@ -1,7 +1,7 @@
 package scopes
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"gorm.io/gorm"
 )
 

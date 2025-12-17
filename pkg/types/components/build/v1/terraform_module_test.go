@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
+	vcsv1 "github.com/nuonco/nuon/pkg/types/components/vcs/v1"
 	"github.com/stretchr/testify/assert"
 )
 

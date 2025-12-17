@@ -9,12 +9,12 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/workspace"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 type InputConfig configs.App[configs.Build[configs.NoopBuild, configs.NoopRegistry], configs.NoopDeploy]

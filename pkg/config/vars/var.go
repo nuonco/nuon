@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 type ValidateVarsParams struct {

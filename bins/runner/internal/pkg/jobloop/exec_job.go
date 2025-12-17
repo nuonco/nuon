@@ -8,10 +8,10 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/jobs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/errs"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/log"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/slog"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
 )
 
 type executeJobStep struct {

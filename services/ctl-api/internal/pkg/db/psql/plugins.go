@@ -3,11 +3,11 @@ package psql
 import (
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/afterquery"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/pagination"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/patcher"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/afterquery"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/pagination"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {

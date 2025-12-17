@@ -5,7 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/pkg/workflows/types/executors"
+	"github.com/nuonco/nuon/pkg/workflows/types/executors"
 )
 
 type DeprovisionRunnerRequest struct {

@@ -8,10 +8,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/git"
-	"github.com/powertoolsdev/mono/pkg/command"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/pkg/zapwriter"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/git"
+	"github.com/nuonco/nuon/pkg/command"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/zapwriter"
 
 	"github.com/nuonco/nuon-runner-go/models"
 )

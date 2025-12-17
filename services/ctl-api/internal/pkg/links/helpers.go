@@ -3,8 +3,8 @@ package links
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 func configFromContext(ctx context.Context) *internal.Config {

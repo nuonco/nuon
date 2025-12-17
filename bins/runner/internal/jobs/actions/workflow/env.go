@@ -6,9 +6,9 @@ import (
 	"github.com/nuonco/nuon-runner-go/models"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/kube/config"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/kube/config"
 )
 
 const (

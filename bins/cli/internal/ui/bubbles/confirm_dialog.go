@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 // ConfirmDialogModel represents an interactive confirmation dialog

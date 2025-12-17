@@ -9,11 +9,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/config/parse"
-	"github.com/powertoolsdev/mono/pkg/config/sync"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/parse"
+	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 const (

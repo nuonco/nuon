@@ -1,6 +1,6 @@
 package configs
 
-import "github.com/powertoolsdev/mono/pkg/kube"
+import "github.com/nuonco/nuon/pkg/kube"
 
 type HelmSet struct {
 	Name  string `hcl:"name"`

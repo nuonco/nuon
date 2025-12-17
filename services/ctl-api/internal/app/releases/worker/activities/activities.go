@@ -4,7 +4,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Params struct {

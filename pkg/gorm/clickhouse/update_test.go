@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
+	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
 )

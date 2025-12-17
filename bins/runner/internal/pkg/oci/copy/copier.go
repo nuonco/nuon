@@ -8,8 +8,8 @@ import (
 	"go.uber.org/fx"
 	"oras.land/oras-go/v2"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal"
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 type Copier interface {

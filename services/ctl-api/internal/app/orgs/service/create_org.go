@@ -9,11 +9,11 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
-	validatorPkg "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateOrgRequest struct {

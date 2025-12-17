@@ -10,9 +10,9 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
-	pkggenerics "github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/types/state"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
 func (w *Workflows) getSecretsStatePartial(ctx workflow.Context, installID string) (*state.SecretsState, error) {

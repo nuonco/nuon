@@ -6,7 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"oras.land/oras-go/v2/content/file"
 
-	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 type builder struct {

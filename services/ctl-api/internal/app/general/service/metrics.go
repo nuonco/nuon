@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 type PublishMetricInput struct {

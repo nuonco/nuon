@@ -10,8 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // WorkflowLogger returns a (*zap.Logger) that logs to both the log stream (if it is set in the context) and the

@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type GetBuildGitSource struct {

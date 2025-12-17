@@ -3,7 +3,7 @@ package domains
 import (
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/shortid"
+	"github.com/nuonco/nuon/pkg/shortid"
 )
 
 func NewAppID() string {

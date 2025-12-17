@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/go-faker/faker/v4"
-	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
+	vcsv1 "github.com/nuonco/nuon/pkg/types/components/vcs/v1"
 )
 
 func init() {

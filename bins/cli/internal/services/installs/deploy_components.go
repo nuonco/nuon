@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) DeployComponents(ctx context.Context, installID string, planOnly bool, asJSON bool) error {

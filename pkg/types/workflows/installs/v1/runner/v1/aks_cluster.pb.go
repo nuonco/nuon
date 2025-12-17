@@ -83,7 +83,7 @@ const file_installs_v1_runner_v1_aks_cluster_proto_rawDesc = "" +
 	"\blocation\x18\x01 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\blocation\x124\n" +
 	"\vkube_config\x18\x02 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\n" +
 	"kubeConfigB\xf5\x01\n" +
-	"\x19com.installs.v1.runner.v1B\x0fAksClusterProtoP\x01ZPgithub.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
+	"\x19com.installs.v1.runner.v1B\x0fAksClusterProtoP\x01ZPgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
 
 var (
 	file_installs_v1_runner_v1_aks_cluster_proto_rawDescOnce sync.Once

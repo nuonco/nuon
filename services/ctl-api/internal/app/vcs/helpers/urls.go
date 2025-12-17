@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 // SplitRepoSlug splits a url that is of the format owner/name into proper values.

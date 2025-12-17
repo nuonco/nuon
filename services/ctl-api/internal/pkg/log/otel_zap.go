@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func NewLogStreamLogger(logStream *app.LogStream, lp *log.LoggerProvider, sysLog *zap.Logger, allAttrs ...map[string]string) (*zap.Logger, error) {

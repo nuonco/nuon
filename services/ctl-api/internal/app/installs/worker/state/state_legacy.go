@@ -1,6 +1,6 @@
 package state
 
-import "github.com/powertoolsdev/mono/pkg/types/state"
+import "github.com/nuonco/nuon/pkg/types/state"
 
 func (w *Workflows) mapLegacyFields(is *state.State) {
 	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to

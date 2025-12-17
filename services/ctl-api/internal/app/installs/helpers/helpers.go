@@ -5,13 +5,13 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	actionshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/actions/helpers"
-	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 
-	runnershelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/helpers"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 )
 
 type Params struct {

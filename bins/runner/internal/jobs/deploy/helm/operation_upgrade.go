@@ -12,8 +12,8 @@ import (
 	"github.com/databus23/helm-diff/v3/manifest"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/outputs"
-	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/outputs"
+	"github.com/nuonco/nuon/pkg/helm"
 )
 
 func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (*release.Release, error) {

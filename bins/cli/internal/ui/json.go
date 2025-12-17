@@ -6,7 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors/withstack"
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/pkg/errs"
+	"github.com/nuonco/nuon/pkg/errs"
 )
 
 func PrintJSON(data interface{}) {

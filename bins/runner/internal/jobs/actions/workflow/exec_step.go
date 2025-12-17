@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	plantypes "github.com/powertoolsdev/mono/pkg/plans/types"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
 	"github.com/nuonco/nuon-runner-go/models"
 )
