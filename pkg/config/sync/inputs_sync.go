@@ -6,7 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-go/models"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {

@@ -1,8 +1,8 @@
 package configs
 
 import (
-	awscredentials "github.com/powertoolsdev/mono/pkg/aws/credentials"
-	azurecredentials "github.com/powertoolsdev/mono/pkg/azure/credentials"
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 )
 
 // RunnerTerraform is a terraform config that is used by the runner terraform job, to deploy runners using Terraform.

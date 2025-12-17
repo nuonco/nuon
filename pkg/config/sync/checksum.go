@@ -3,8 +3,8 @@ package sync
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/hasher"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/hasher"
 )
 
 type componentChecksum struct {

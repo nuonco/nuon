@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/invopop/jsonschema"
 
-	"github.com/powertoolsdev/mono/pkg/config/source"
+	"github.com/nuonco/nuon/pkg/config/source"
 )
 
 type HelmValue struct {

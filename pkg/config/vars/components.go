@@ -1,6 +1,6 @@
 package vars
 
-import "github.com/powertoolsdev/mono/pkg/generics"
+import "github.com/nuonco/nuon/pkg/generics"
 
 func (v *varsValidator) getComponents() map[string]*instanceIntermediate {
 	comps := make(map[string]*instanceIntermediate, 0)

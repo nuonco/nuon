@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/facebookgo/symwalk"
-	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
 const (

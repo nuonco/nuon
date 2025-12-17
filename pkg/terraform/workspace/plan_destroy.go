@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 
-	"github.com/powertoolsdev/mono/pkg/terraform/workspace/output"
+	"github.com/nuonco/nuon/pkg/terraform/workspace/output"
 )
 
 func (w *workspace) PlanDestroy(ctx context.Context, log hclog.Logger) ([]byte, error) {

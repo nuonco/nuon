@@ -113,7 +113,7 @@ const file_executors_v1_plan_v1_plan_proto_rawDesc = "" +
 	"\rwaypoint_plan\x18\x01 \x01(\v2\".executors.v1.plan.v1.WaypointPlanB\x19\x9a\x84\x9e\x03\x14json:\"waypoint_plan\"H\x00R\fwaypointPlan\x12T\n" +
 	"\tnoop_plan\x18\x03 \x01(\v2\x1e.executors.v1.plan.v1.NoopPlanB\x15\x9a\x84\x9e\x03\x10json:\"noop_plan\"H\x00R\bnoopPlanB\x1c\n" +
 	"\x06actual\x12\x12\x9a\x84\x9e\x03\rjson:\"actual\"B\xe7\x01\n" +
-	"\x18com.executors.v1.plan.v1B\tPlanProtoP\x01ZMgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x18com.executors.v1.plan.v1B\tPlanProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_plan_proto_rawDescOnce sync.Once

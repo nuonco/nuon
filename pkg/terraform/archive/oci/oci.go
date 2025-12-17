@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
 )

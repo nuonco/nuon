@@ -7,7 +7,7 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 var SchemaMapping = map[string]func() (*jsonschema.Schema, error){

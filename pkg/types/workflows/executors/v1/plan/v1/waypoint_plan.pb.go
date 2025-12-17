@@ -8,8 +8,8 @@ package planv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
-	v11 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
+	v1 "github.com/nuonco/nuon/pkg/types/components/component/v1"
+	v11 "github.com/nuonco/nuon/pkg/types/components/variables/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -286,7 +286,7 @@ const file_executors_v1_plan_v1_waypoint_plan_proto_rawDesc = "" +
 	"\n" +
 	"events_key\x18\x05 \x01(\tB\a\xfaB\x04r\x02 \x01R\teventsKey\x12*\n" +
 	"\fartifact_key\x18\x06 \x01(\tB\a\xfaB\x04r\x02 \x01R\vartifactKeyB\xef\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x11WaypointPlanProtoP\x01ZMgithub.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x18com.executors.v1.plan.v1B\x11WaypointPlanProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_waypoint_plan_proto_rawDescOnce sync.Once

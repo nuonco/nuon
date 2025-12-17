@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 // ToTags is a flexible tag creator, which can accept a map (for default tags), and either partial tags or full tags.

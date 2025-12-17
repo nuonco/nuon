@@ -6,7 +6,7 @@ import (
 	"time"
 
 	clickhousego "github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/powertoolsdev/mono/pkg/gorm/clickhouse"
+	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 	"gorm.io/gorm"
 )
 

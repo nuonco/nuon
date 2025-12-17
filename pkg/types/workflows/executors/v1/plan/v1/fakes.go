@@ -3,7 +3,7 @@ package planv1
 import (
 	structpb "google.golang.org/protobuf/types/known/structpb"
 
-	variablesv1 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
+	variablesv1 "github.com/nuonco/nuon/pkg/types/components/variables/v1"
 )
 
 func FakeWaypointPlan() *Plan {

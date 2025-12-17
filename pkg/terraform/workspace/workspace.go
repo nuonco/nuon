@@ -6,11 +6,11 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/terraform/archive"
-	"github.com/powertoolsdev/mono/pkg/terraform/backend"
-	"github.com/powertoolsdev/mono/pkg/terraform/binary"
-	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
-	"github.com/powertoolsdev/mono/pkg/terraform/variables"
+	"github.com/nuonco/nuon/pkg/terraform/archive"
+	"github.com/nuonco/nuon/pkg/terraform/backend"
+	"github.com/nuonco/nuon/pkg/terraform/binary"
+	"github.com/nuonco/nuon/pkg/terraform/hooks"
+	"github.com/nuonco/nuon/pkg/terraform/variables"
 )
 
 // Workspace exposes an interface for interacting with terraform and uses inputs to fetch source files, configure the

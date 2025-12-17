@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func (s *sync) createKubernetesManifestComponentConfig(

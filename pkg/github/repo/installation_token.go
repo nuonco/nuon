@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v50/github"
-	"github.com/powertoolsdev/mono/pkg/github/client"
-	"github.com/powertoolsdev/mono/pkg/kube/secret"
+	"github.com/nuonco/nuon/pkg/github/client"
+	"github.com/nuonco/nuon/pkg/kube/secret"
 )
 
 func (g *gh) ClonePath(ctx context.Context) (string, error) {

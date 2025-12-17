@@ -11,8 +11,8 @@ import (
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/pkg/errors"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/ui"
 )
 
 // LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/stretchr/testify/assert"
 )
 

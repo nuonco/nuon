@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
+	"github.com/nuonco/nuon/pkg/terraform/hooks"
 )
 
 type noop struct{}
