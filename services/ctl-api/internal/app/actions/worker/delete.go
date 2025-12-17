@@ -3,11 +3,11 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker/activities"
 	installsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/pkg/errors"
 )
 
 // @temporal-gen workflow

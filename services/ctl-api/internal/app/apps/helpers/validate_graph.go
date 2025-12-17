@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/dominikbraun/graph"
-	"github.com/pkg/errors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/pkg/errors"
 )
 
 func (h *Helpers) ValidateGraph(ctx context.Context, appID string) error {

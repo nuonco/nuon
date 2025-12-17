@@ -19,12 +19,35 @@ runs:
       if: ${{ runner.environment != 'self-hosted' }}
       uses: docker/setup-buildx-action@v3
 
-    - name: install nuonctl
+    - name: install nuonctl (from repo)
+      if: ${{ github.repository != 'nuonco/nuon' }}
       shell: bash
       run: |
         chmod +x ./bins/nuonctl/install.sh
         export NUONCTL_VERSION="${{ github.event.pull_request.number || '' }}"
         echo "y" | ./bins/nuonctl/install.sh
+
+    - name: install nuonctl (from S3)
+      if: ${{ github.repository == 'nuonco/nuon' }}
+      shell: bash
+      run: |
+        set -e
+        BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/nuonctl
+
+        # Detect OS and architecture
+        ARCH=$(uname -m)
+        [ "$ARCH" = "x86_64" ] && ARCH=amd64
+        OS=$(uname -s | awk '{print tolower($0)}')
+
+        # Fetch latest version
+        LATEST_VERSION=$(curl -s $BASE_URL/latest.txt)
+        echo "Downloading nuonctl $LATEST_VERSION for ${OS}_${ARCH}..."
+
+        # Download and install
+        curl -sL "$BASE_URL/$LATEST_VERSION/nuonctl_${OS}_${ARCH}" -o /tmp/nuonctl
+        sudo mv /tmp/nuonctl /usr/local/bin/nuonctl
+        sudo chmod +x /usr/local/bin/nuonctl
+        echo "✅ nuonctl installed successfully"
 
     - name: test-nuonctl
       shell: bash
