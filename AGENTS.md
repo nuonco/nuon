@@ -4,7 +4,7 @@ This is a comprehensive monorepo for Nuon, a BYOC (Bring Your Own Cloud) platfor
 
 ## Repository Structure
 
-This monorepo is written primarily in **Go** (main module: `github.com/powertoolsdev/mono`) with several TypeScript/JavaScript projects for UI components.
+This monorepo is written primarily in **Go** (main module: `github.com/nuonco/nuon`) with several TypeScript/JavaScript projects for UI components.
 
 ### Core Directories
 
