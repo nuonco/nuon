@@ -235,8 +235,8 @@ Use the generator as a library:
 
 ```go
 import (
-    "github.com/powertoolsdev/mono/pkg/gen/markdown-docs/mdast"
-    "github.com/powertoolsdev/mono/pkg/config/schema"
+    "github.com/nuonco/nuon/pkg/gen/markdown-docs/mdast"
+    "github.com/nuonco/nuon/pkg/config/schema"
 )
 
 // Create custom documentation
