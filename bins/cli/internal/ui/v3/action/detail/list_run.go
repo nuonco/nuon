@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/cli/styles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 // our list run is the item we pass to the list

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/powertoolsdev/mono/bins/cli/cmd"
+import "github.com/nuonco/nuon/bins/cli/cmd"
 
 func main() {
 	cmd.Execute()

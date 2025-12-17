@@ -10,10 +10,10 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/browser"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
-	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 const ManagedByNuonCLIConfig = "nuon/cli/install-config"

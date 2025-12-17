@@ -1,6 +1,6 @@
 package docs
 
-import "github.com/powertoolsdev/mono/bins/cli/internal/config"
+import "github.com/nuonco/nuon/bins/cli/internal/config"
 
 type Service struct {
 	cfg *config.Config

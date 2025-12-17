@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/dev"
+	"github.com/nuonco/nuon/bins/cli/internal/dev"
 )
 
 func (c *cli) devCmd() *cobra.Command {

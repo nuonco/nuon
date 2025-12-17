@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/action/run/steps"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/run/steps"
 )
 
 // fetchInstallActionWorkflowRunCmd fetches the workflow run data

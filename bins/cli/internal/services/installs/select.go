@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 )
 
 func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bool) error {

@@ -9,10 +9,10 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/pkg/browser"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/install/creator"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui/v3/workflow"
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/creator"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 )
 
 const (

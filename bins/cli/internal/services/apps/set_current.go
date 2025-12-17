@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) SetCurrent(ctx context.Context, appID string, asJSON bool) error {

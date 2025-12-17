@@ -3,7 +3,7 @@ package auth
 import (
 	"github.com/nuonco/nuon-go"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/config"
 )
 
 type Service struct {

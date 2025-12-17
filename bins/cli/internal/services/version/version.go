@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 var Version string = "development"

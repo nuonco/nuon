@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/services/apps"
-	"github.com/powertoolsdev/mono/bins/cli/internal/services/version"
+	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
+	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
 func (c *cli) syncCmd() *cobra.Command {

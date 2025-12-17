@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func indexOf(array []int64, value int64) int {
