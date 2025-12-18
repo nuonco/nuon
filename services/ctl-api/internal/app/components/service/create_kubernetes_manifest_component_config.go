@@ -30,6 +30,9 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfigRequest `json:"kustomize,omitempty"`
+
+	// VCS configuration for kustomize sources
+	basicVCSConfigRequest
 }
 
 // KustomizeConfigRequest defines kustomize options in API requests
@@ -65,6 +68,18 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 	// Validate kustomize.path is set when kustomize is used
 	if c.Kustomize != nil && c.Kustomize.Path == "" {
 		return errors.New("kustomize.path is required")
+	}
+
+	// Validate VCS config: required for kustomize, not allowed for inline manifest
+	if c.Kustomize != nil {
+		if err := c.basicVCSConfigRequest.Validate(); err != nil {
+			return errors.Wrap(err, "kustomize requires a git source")
+		}
+	} else {
+		// Inline manifest should not have VCS config
+		if c.PublicGitVCSConfig != nil || c.ConnectedGithubVCSConfig != nil {
+			return errors.New("VCS config is only valid for kustomize sources, not inline manifests")
+		}
 	}
 
 	return nil
@@ -162,10 +177,23 @@ func (s *service) createKubernetesManifestComponentConfig(
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
+	// Build VCS configs for kustomize sources
+	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(ctx, parentCmp, s.vcsHelpers)
+	if err != nil {
+		return nil, fmt.Errorf("invalid connected github vcs config: %w", err)
+	}
+
+	publicGitVCSConfig, err := req.publicGitVCSConfig(ctx, parentCmp, s.vcsHelpers)
+	if err != nil {
+		return nil, fmt.Errorf("invalid public vcs config: %w", err)
+	}
+
 	// build component config
 	cfg := app.KubernetesManifestComponentConfig{
-		Manifest:  req.Manifest, // Empty for kustomize sources
-		Namespace: req.Namespace,
+		Manifest:                 req.Manifest, // Empty for kustomize sources
+		Namespace:                req.Namespace,
+		PublicGitVCSConfig:       publicGitVCSConfig,
+		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 	}
 
 	// Populate kustomize config (mutually exclusive with Manifest)

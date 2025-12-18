@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
@@ -16,12 +17,22 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 		return err
 	}
 
-	l.Info("parsing kubernetes manifest to ensure correct")
+	l.Info("parsing kubernetes manifest job plan to ensure correct")
 
-	// Get the manifest content from the job
+	h.state.srcCfg = h.state.plan.Src
+	h.state.srcTag = h.state.plan.SrcTag
+
+	l.Info("artifact repo", zap.Any("repo", h.state.srcCfg.Repository))
+	arch := ociarchive.New()
+	if err := arch.Initialize(ctx); err != nil {
+		return fmt.Errorf("unable to initialize archive: %w", err)
+	}
+	h.state.arch = arch
+
 	manifestContent := h.state.plan.KubernetesManifestDeployPlan.Manifest
 	if manifestContent == "" {
-		return fmt.Errorf("no manifest content provided in job config")
+		l.Info("manifest content not in plan, will be pulled from OCI artifact during initialize")
+		return nil
 	}
 
 	// 1. YAML validation

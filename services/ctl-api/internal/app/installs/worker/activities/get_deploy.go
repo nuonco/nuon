@@ -24,6 +24,7 @@ func (a *Activities) getDeploy(ctx context.Context, deployID string) (*app.Insta
 	installDeploy := app.InstallDeploy{}
 	res := a.db.WithContext(ctx).
 		Preload("ComponentBuild").
+		Preload("OCIArtifact").
 
 		// load install
 		Preload("InstallComponent").

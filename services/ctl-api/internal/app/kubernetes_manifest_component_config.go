@@ -36,6 +36,10 @@ type KubernetesManifestComponentConfig struct {
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfig `json:"kustomize,omitzero" gorm:"type:jsonb" temporaljson:"kustomize,omitzero,omitempty"`
+
+	// VCS configuration for kustomize sources (similar to HelmComponentConfig)
+	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitzero,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 }
 
 // KustomizeConfig defines kustomize build options
@@ -78,7 +82,7 @@ func (KustomizeConfig) GormDataType() string {
 
 // SourceType returns the source type based on which fields are populated
 func (k *KubernetesManifestComponentConfig) SourceType() string {
-	if k.Kustomize != nil {
+	if k.Kustomize != nil && k.Kustomize.Path != "" {
 		return "kustomize"
 	}
 	return "inline"
