@@ -33,6 +33,18 @@ type KustomizeConfig struct {
 	LoadRestrictor string `mapstructure:"load_restrictor,omitempty"`
 }
 
+func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("path").Short("kustomization directory path").
+		Long("Path to the kustomization directory, relative to the source root.").
+		Field("patches").Short("additional patch files").
+		Long("Additional patch files to apply after kustomize build.").
+		Field("enable_helm").Short("enable Helm chart inflation").
+		Long("Enable Helm chart inflation during kustomize build.").
+		Field("load_restrictor").Short("file load restrictor").
+		Long("Controls how kustomize loads files. Options: none, rootOnly. Default: rootOnly.")
+}
+
 func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("source").Short("source path or URL").

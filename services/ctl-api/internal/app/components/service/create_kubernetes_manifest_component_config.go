@@ -34,13 +34,19 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 
 // KustomizeConfigRequest defines kustomize options in API requests
 type KustomizeConfigRequest struct {
-	Path           string   `json:"path" validate:"required"`
+	Path           string   `json:"path"`
 	Patches        []string `json:"patches,omitempty"`
 	EnableHelm     bool     `json:"enable_helm,omitempty"`
 	LoadRestrictor string   `json:"load_restrictor,omitempty"`
 }
 
 func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.Validate) error {
+	// Normalize: treat kustomize with empty path as nil
+	// This handles the case where go-swagger client sends {"kustomize": {"path": null}}
+	if c.Kustomize != nil && c.Kustomize.Path == "" {
+		c.Kustomize = nil
+	}
+
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
@@ -56,11 +62,9 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 		return errors.New("only one of 'manifest' or 'kustomize' can be specified")
 	}
 
-	// Validate kustomize config
-	if c.Kustomize != nil {
-		if c.Kustomize.Path == "" {
-			return errors.New("kustomize.path is required")
-		}
+	// Validate kustomize.path is set when kustomize is used
+	if c.Kustomize != nil && c.Kustomize.Path == "" {
+		return errors.New("kustomize.path is required")
 	}
 
 	return nil
