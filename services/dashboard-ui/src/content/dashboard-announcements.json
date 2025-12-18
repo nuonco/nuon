@@ -1,0 +1,16 @@
+{
+  "announcements": [
+    {
+      "id": "nuon-actions-2025",
+      "title": "Introducing Nuon Actions!",
+      "date": "Jan 29, 2025",
+      "description": "Nuon Actions empowers users to automate workflows through predefined conditions, which can be dynamically configured using YAML code.",
+      "image": "/images/announcements/nuon-actions-light.png",
+      "imageDark": "/images/announcements/nuon-actions-dark.png",
+      "ctaText": "Check it out",
+      "ctaUrl": "https://docs.nuon.co/concepts/nuon-actions",
+      "dismissible": true
+    }
+  ]
+}
+

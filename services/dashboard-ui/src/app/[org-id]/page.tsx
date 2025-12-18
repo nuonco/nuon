@@ -4,15 +4,19 @@ import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
+import { AnnouncementCard } from '@/components/dashboard/AnnouncementCard'
+import { RecentActivities } from '@/components/dashboard/RecentActivities'
+import { StatsGrid } from '@/components/dashboard/StatsCard'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageGrid } from '@/components/layout/PageGrid'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getOrg, getOrgStats } from '@/lib'
+import { getOrg, getOrgStats, getRunnerJobs } from '@/lib'
 import { auth0 } from '@/lib/auth'
 import type { TPageProps } from '@/types'
+import announcementsData from '@/content/dashboard-announcements.json'
 
 import {
   DashboardContent,
@@ -21,6 +25,22 @@ import {
   Section,
   Text as OldText,
 } from '@/components'
+import type { TRunnerJob } from '@/types'
+import {
+  getJobName,
+  getJobExecutionStatus,
+  getJobHref,
+} from '@/utils/runner-utils'
+
+// Helper to format duration
+function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000)
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}h ${minutes % 60}m`
+}
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -53,6 +73,48 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
   }
 
   if (org?.features?.['org-dashboard']) {
+    // Fetch real activity from runner jobs
+    const runner = org?.runner_group?.runners?.at(0)
+    let recentActivities: Array<{
+      id: string
+      installName: string
+      installId: string
+      message: string
+      status: string
+      created_at: string
+      duration?: string
+      triggeredBy: string
+      href?: string
+    }> = []
+
+    if (runner) {
+      const { data: jobs } = await getRunnerJobs({
+        orgId,
+        runnerId: runner.id,
+        groups: ['deploy', 'operations', 'sync'],
+        limit: 10,
+      })
+
+      if (jobs) {
+        recentActivities = jobs.map((job) => ({
+          id: job.id,
+          installName: getJobName(job),
+          installId: job.metadata?.install_id || '',
+          message: getJobExecutionStatus(job),
+          status: job.status,
+          created_at: job.created_at,
+          duration: job.finished_at && job.started_at
+            ? formatDuration(
+                new Date(job.finished_at).getTime() -
+                  new Date(job.started_at).getTime()
+              )
+            : undefined,
+          triggeredBy: '', // Job doesn't have creator info directly
+          href: getJobHref(job),
+        }))
+      }
+    }
+
     return org?.features?.['stratus-layout'] ? (
       <PageLayout className="divide-y" isScrollable>
         <Breadcrumbs
@@ -66,50 +128,49 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
         <PageHeader>
           <HeadingGroup>
             <Text variant="h3" weight="stronger" level={1} role="heading">
-              Welcome, {session.user.name}!
+              Welcome, {session.user.name?.split(' ')[0]}!
             </Text>
-            <Text theme="neutral">Manage your applications and installs.</Text>
+            <Text theme="neutral">
+              Manage your applications and deployed installs.
+            </Text>
           </HeadingGroup>
         </PageHeader>
 
         <PageContent>
-          <PageGrid className="md:divide-x flex-auto">
-            <PageSection>
+          <PageGrid className="md:divide-x flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
+            {/* Main Content */}
+            <PageSection className="flex-1 border-r">
               <Text variant="h3" weight="strong">
                 Overview
               </Text>
 
-              <div className="grid md:grid-cols-2 rounded-lg border divide-y md:divide-y-0 md:divide-x">
-                <div className="flex flex-col gap-6 p-4">
-                  <Text weight="strong" theme="neutral">
-                    Total apps
-                  </Text>
+              <StatsGrid
+                stats={[
+                  { label: 'Total Installs', value: stats?.install_count || 0 },
+                  { label: 'Active Applications', value: stats?.app_count || 0 },
+                  { label: 'Active Runner', value: 0 },
+                  { label: 'Active Installs', value: stats?.install_count || 0 },
+                ]}
+              />
 
-                  <Text variant="h3" weight="strong">
-                    {stats.app_count}
-                  </Text>
-                </div>
+              <Text variant="h3" weight="strong" className="mt-6">
+                Recent activities
+              </Text>
 
-                <div className="flex flex-col gap-6 p-4">
-                  <Text weight="strong" theme="neutral">
-                    Total installs
-                  </Text>
-
-                  <Text variant="h3" weight="strong">
-                    {stats?.install_count}
-                  </Text>
-                </div>
-              </div>
-
-              {/* <Text variant="h3" weight="strong">
-                  Recent activity
-                  </Text> */}
+              <RecentActivities activities={recentActivities} orgId={orgId} />
             </PageSection>
-            {/* <PageSection>
-                <Text variant="h3" weight="strong">
-                Get production ready!
-                </Text>
-                </PageSection> */}
+
+            {/* Sidebar */}
+            <PageSection className="w-full">
+              <div className="flex flex-col gap-6">
+                {announcementsData.announcements.map((announcement) => (
+                  <AnnouncementCard
+                    key={announcement.id}
+                    announcement={announcement}
+                  />
+                ))}
+              </div>
+            </PageSection>
           </PageGrid>
         </PageContent>
       </PageLayout>
