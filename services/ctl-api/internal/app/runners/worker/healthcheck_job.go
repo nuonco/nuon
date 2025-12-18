@@ -34,6 +34,9 @@ func HealthcheckJobRunnerWorkflowsID(req *HealthcheckJobRunnerRequest) string {
 // @id-callback HealthcheckJobRunnerWorkflowsID
 func (w *Workflows) HealthcheckJobRunner(ctx workflow.Context, req *HealthcheckJobRunnerRequest) (*HealthcheckJobRunnerResponse, error) {
 	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return &HealthcheckJobRunnerResponse{ShouldRestart: false}, errors.Wrap(err, "unable to get workflow logger")
+	}
 	logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, req.HealthCheckID)
 	if err != nil {
 		return &HealthcheckJobRunnerResponse{ShouldRestart: false}, errors.Wrap(err, "unable to create logstream")
