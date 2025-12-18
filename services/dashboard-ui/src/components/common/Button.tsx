@@ -22,12 +22,14 @@ export interface IButtonAsButton
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     IButtonBase {
   href?: undefined
+  isAnchorTag?: undefined
 }
 
 export interface IButtonAsAnchor
   extends React.AnchorHTMLAttributes<HTMLAnchorElement>,
     IButtonBase {
   href: string
+  isAnchorTag?: boolean
 }
 
 export type TButton = IButtonAsButton | IButtonAsAnchor
@@ -91,6 +93,7 @@ export const Button = forwardRef<
       variant = 'secondary',
       href,
       isActive,
+      isAnchorTag = false,
       isMenuButton,
       ...props
     },
@@ -112,6 +115,19 @@ export const Button = forwardRef<
     )
 
     if (href) {
+      if (isAnchorTag) {
+        return (
+          <a
+            ref={ref as React.Ref<HTMLAnchorElement>}
+            className={classes}
+            href={href}
+            {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+          >
+            {children}
+          </a>
+        )
+      }
+
       const isInternal = href.startsWith('/')
       if (isInternal) {
         // Next.js 13+ Link: no legacyBehavior, no <a> inside
