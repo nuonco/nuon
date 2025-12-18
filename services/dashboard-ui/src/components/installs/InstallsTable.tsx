@@ -8,8 +8,8 @@ import { CloudRegion } from '@/components/common/CloudRegion'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { type IPagination } from '@/components/common/Pagination'
 import { useOrg } from '@/hooks/use-org'
@@ -18,6 +18,49 @@ import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstall, TCloudPlatform } from '@/types'
 import { CreateInstallButton } from "./CreateInstall"
 import { InstallStatuses } from './InstallStatuses'
+
+// Custom skeleton components for each column type
+const InstallNameSkeleton = () => (
+  <span className="block my-1">
+    <div className="mb-1">
+      <Skeleton height="16px" width="140px" />
+    </div>
+    <Skeleton height="12px" width="200px" />
+  </span>
+)
+
+const AppNameSkeleton = () => (
+  <Skeleton height="16px" width="100px" />
+)
+
+const StatusesSkeleton = () => (
+  <div className="flex items-center gap-2">
+    <Skeleton height="20px" width="50px" className="rounded-full" />
+    <Skeleton height="20px" width="60px" className="rounded-full" />
+    <Skeleton height="20px" width="75px" className="rounded-full" />
+  </div>
+)
+
+const RegionSkeleton = () => (
+  <div className="flex items-center gap-1">
+    <Skeleton height="16px" width="16px" />
+    <Skeleton height="14px" width="120px" />
+  </div>
+)
+
+const PlatformSkeleton = () => (
+  <div className="flex items-center gap-1">
+    <Skeleton height="16px" width="16px" />
+    <Skeleton height="14px" width="40px" />
+  </div>
+)
+
+const ActionSkeleton = () => (
+  <div className="flex items-center gap-1">
+    <Skeleton height="14px" width="30px" />
+    <Skeleton height="12px" width="12px" />
+  </div>
+)
 
 export type InstallRow = {
   actionHref: string
@@ -162,5 +205,65 @@ export const InstallsTable = ({
 }
 
 export const InstallsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
+  const skeletonData = Array.from({ length: 5 }, (_, i) => ({
+    actionHref: '',
+    appHref: '',
+    appName: '',
+    installId: '',
+    name: '',
+    nameHref: '',
+    region: <RegionSkeleton />,
+    statuses: <StatusesSkeleton />,
+    platform: <PlatformSkeleton />,
+  }))
+
+  const skeletonColumns: ColumnDef<InstallRow>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Install name',
+      cell: () => <InstallNameSkeleton />,
+      enableSorting: true,
+    },
+    {
+      accessorKey: 'appName',
+      header: 'App',
+      cell: () => <AppNameSkeleton />,
+    },
+    {
+      enableSorting: false,
+      accessorKey: 'statuses',
+      header: 'Statuses',
+      cell: (info) => info.getValue() as ReactNode,
+    },
+    {
+      enableSorting: true,
+      accessorKey: 'region',
+      header: 'Region',
+      cell: (info) => info.getValue() as ReactNode,
+    },
+    {
+      accessorKey: 'platform',
+      header: 'Platform',
+      cell: (info) => info.getValue() as ReactNode,
+      enableSorting: true,
+    },
+    {
+      enableSorting: false,
+      accessorKey: 'actionHref',
+      id: 'action',
+      header: '',
+      cell: () => <ActionSkeleton />,
+    },
+  ]
+
+  return (
+    <Table<InstallRow>
+      columns={skeletonColumns}
+      data={skeletonData}
+      filterActions={<Skeleton height="32px" width="130px" />}
+      pagination={{ limit: 5, offset: 0 }}
+      isLoading={false}
+      enableSorting={false}
+    />
+  )
 }
