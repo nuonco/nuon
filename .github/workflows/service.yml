@@ -69,44 +69,58 @@ jobs:
           BUILD_PROMOTION: ${{ inputs.is_promotion }}
           GITHUB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
 
-      - name: 🚪 Dry-Run Deploy Stage
+      - name: 🚪 Trigger Private Repo Deploy (Dry-Run Stage)
         if: ${{ inputs.stage }}
         run: |
-          CI=true nuonctl deploys deploy \
-            ${{inputs.service}} \
-            --env=stage \
-            --tag=${{inputs.tag}} \
-            --dry-run=true
+          gh workflow run deploy-public-services.yml \
+            --repo powertoolsdev/mono \
+            --field service=${{inputs.service}} \
+            --field env=stage \
+            --field tag=${{inputs.tag}} \
+            --field dry_run=true \
+            --field source_repo=${{ github.repository }} \
+            --field source_run_id=${{ github.run_id }}
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.STAGE_DEPLOYS_SLACK_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: ⬆️ Deploy Stage
+      - name: ⬆️ Trigger Private Repo Deploy (Stage)
         if: ${{ inputs.stage }}
         run: |
-          CI=true nuonctl deploys deploy \
-            ${{inputs.service}} \
-            --env=stage \
-            --tag=${{inputs.tag}}
+          gh workflow run deploy-public-services.yml \
+            --repo powertoolsdev/mono \
+            --field service=${{inputs.service}} \
+            --field env=stage \
+            --field tag=${{inputs.tag}} \
+            --field dry_run=false \
+            --field source_repo=${{ github.repository }} \
+            --field source_run_id=${{ github.run_id }}
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.STAGE_DEPLOYS_SLACK_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: 🚪 Dry-Run Deploy Prod
+      - name: 🚪 Trigger Private Repo Deploy (Dry-Run Prod)
         if: ${{ inputs.prod }}
         run: |
-          CI=true nuonctl deploys deploy \
-            ${{inputs.service}} \
-            --env=prod \
-            --tag=${{inputs.tag}} \
-            --dry-run=true
+          gh workflow run deploy-public-services.yml \
+            --repo powertoolsdev/mono \
+            --field service=${{inputs.service}} \
+            --field env=prod \
+            --field tag=${{inputs.tag}} \
+            --field dry_run=true \
+            --field source_repo=${{ github.repository }} \
+            --field source_run_id=${{ github.run_id }}
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.PROD_DEPLOYS_SLACK_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: 🌎 Deploy Prod
+      - name: 🌎 Trigger Private Repo Deploy (Prod)
         if: ${{ inputs.prod }}
         run: |
-          CI=true nuonctl deploys deploy \
-            ${{inputs.service}} \
-            --env=prod \
-            --tag=${{inputs.tag}}
+          gh workflow run deploy-public-services.yml \
+            --repo powertoolsdev/mono \
+            --field service=${{inputs.service}} \
+            --field env=prod \
+            --field tag=${{inputs.tag}} \
+            --field dry_run=false \
+            --field source_repo=${{ github.repository }} \
+            --field source_run_id=${{ github.run_id }}
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.PROD_DEPLOYS_SLACK_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
