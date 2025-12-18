@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -119,37 +120,36 @@ export default async function Runner({
       </div>
 
       <div className="flex flex-col @min-4xl:flex-row gap-6">
-        <ErrorBoundary fallback={<RunnerDetailsError />}>
-          <Suspense
-            fallback={<RunnerDetailsCardSkeleton className="flex-initial" />}
-          >
-            <RunnerDetails
-              orgId={orgId}
-              runnerId={install?.runner_id}
-              settings={settings}
-            />
-          </Suspense>
-        </ErrorBoundary>
+        <AsyncBoundary
+          errorFallback={<RunnerDetailsError />}
+          loadingFallback={<RunnerDetailsCardSkeleton className="flex-initial" />}
+        >
+          <RunnerDetails
+            orgId={orgId}
+            runnerId={install?.runner_id}
+            settings={settings}
+          />
+        </AsyncBoundary>
 
-        <ErrorBoundary fallback={<RunnerHealthError />}>
-          <Suspense
-            fallback={<RunnerHealthCardSkeleton className="flex-auto" />}
-          >
-            <RunnerHealth orgId={orgId} runnerId={install.runner_id} />
-          </Suspense>
-        </ErrorBoundary>
+        <AsyncBoundary
+          errorFallback={<RunnerHealthError />}
+          loadingFallback={<RunnerHealthCardSkeleton className="flex-auto" />}
+        >
+          <RunnerHealth orgId={orgId} runnerId={install.runner_id} />
+        </AsyncBoundary>
       </div>
 
       <div className="flex flex-col gap-6">
-        <ErrorBoundary fallback={<RunnerActivityError />}>
-          <Suspense fallback={<RunnerRecentActivitySkeleton />}>
-            <RunnerActivity
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              runnerId={install.runner_id}
-            />
-          </Suspense>
-        </ErrorBoundary>
+        <AsyncBoundary
+          errorFallback={<RunnerActivityError />}
+          loadingFallback={<RunnerRecentActivitySkeleton />}
+        >
+          <RunnerActivity
+            orgId={orgId}
+            offset={sp['offset'] || '0'}
+            runnerId={install.runner_id}
+          />
+        </AsyncBoundary>
       </div>
     </PageSection>
   ) : (
