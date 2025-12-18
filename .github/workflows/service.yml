@@ -69,7 +69,7 @@ jobs:
           BUILD_PROMOTION: ${{ inputs.is_promotion }}
           GITHUB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
 
-      - name: 🚪 Trigger Private Repo Deploy (Dry-Run Stage)
+      - name: 🚪 Dry-Run Deploy Stage
         if: ${{ inputs.stage }}
         run: |
           gh workflow run deploy-public-services.yml \
@@ -83,7 +83,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: ⬆️ Trigger Private Repo Deploy (Stage)
+      - name: ⬆️ Deploy Stage
         if: ${{ inputs.stage }}
         run: |
           gh workflow run deploy-public-services.yml \
@@ -97,7 +97,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: 🚪 Trigger Private Repo Deploy (Dry-Run Prod)
+      - name: 🚪 Dry-Run Deploy Prod
         if: ${{ inputs.prod }}
         run: |
           gh workflow run deploy-public-services.yml \
@@ -111,7 +111,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: 🌎 Trigger Private Repo Deploy (Prod)
+      - name: 🌎 Deploy Prod
         if: ${{ inputs.prod }}
         run: |
           gh workflow run deploy-public-services.yml \
