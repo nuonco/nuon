@@ -2,13 +2,26 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
-First, you'll need to create an `.env.local` file. You can copy the `.example.env.local` file and update the required values.
+### Prerequisites
+
+The dashboard requires Auth0 for authentication. You can create a free Auth0 account at [auth0.com](https://auth0.com) and set up a new application to get the required credentials. See the `.env.local.example` file for the required Auth0 environment variables.
+
+**Note for External Contributors**: For most development use cases, you may want to work with the API or CLI instead if you don't need the dashboard UI. Alternatively, you can use the hosted dashboard at [https://app.nuon.co](https://app.nuon.co).
+
+### Setup
+
+First, create an `.env.local` file with your Auth0 configuration:
 
 ```bash
-cp .example.env.local .env.local
+cp .env.local.example .env.local
+# Edit .env.local to add Auth0 environment variables
 ```
 
-Install the project dependencies using `npm install`.
+Install the project dependencies:
+
+```bash
+npm install
+```
 
 Then, run the development server:
 
