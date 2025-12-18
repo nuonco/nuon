@@ -77,11 +77,12 @@ const (
 	RunnerJobTypeHealthCheck RunnerJobType = "health-check"
 
 	// build job types
-	RunnerJobTypeDockerBuild          RunnerJobType = "docker-build"
-	RunnerJobTypeContainerImageBuild  RunnerJobType = "container-image-build"
-	RunnerJobTypeTerraformModuleBuild RunnerJobType = "terraform-module-build"
-	RunnerJobTypeHelmChartBuild       RunnerJobType = "helm-chart-build"
-	RunnerJobTypeNOOPBuild            RunnerJobType = "noop-build"
+	RunnerJobTypeDockerBuild             RunnerJobType = "docker-build"
+	RunnerJobTypeContainerImageBuild     RunnerJobType = "container-image-build"
+	RunnerJobTypeTerraformModuleBuild    RunnerJobType = "terraform-module-build"
+	RunnerJobTypeHelmChartBuild          RunnerJobType = "helm-chart-build"
+	RunnerJobTypeKubernetesManifestBuild RunnerJobType = "kubernetes-manifest-build"
+	RunnerJobTypeNOOPBuild               RunnerJobType = "noop-build"
 
 	// sync job types
 	RunnerJobTypeOCISync  RunnerJobType = "oci-sync"
@@ -132,7 +133,8 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypeContainerImageBuild,
 		RunnerJobTypeNOOPBuild,
 		RunnerJobTypeTerraformModuleBuild,
-		RunnerJobTypeHelmChartBuild:
+		RunnerJobTypeHelmChartBuild,
+		RunnerJobTypeKubernetesManifestBuild:
 		return RunnerJobGroupBuild
 
 		// syncing

@@ -46,11 +46,11 @@ func (c ComponentType) SyncJobType() RunnerJobType {
 	case ComponentTypeTerraformModule,
 		ComponentTypeDockerBuild,
 		ComponentTypeExternalImage,
-		ComponentTypeHelmChart:
+		ComponentTypeHelmChart,
+		ComponentTypeKubernetesManifest:
 		return RunnerJobTypeOCISync
 
-	case ComponentTypeJob,
-		ComponentTypeKubernetesManifest:
+	case ComponentTypeJob:
 		return RunnerJobTypeNOOPSync
 	default:
 	}
@@ -107,7 +107,9 @@ func (c ComponentType) BuildJobType() RunnerJobType {
 		return RunnerJobTypeDockerBuild
 	case ComponentTypeExternalImage:
 		return RunnerJobTypeContainerImageBuild
-	case ComponentTypeJob, ComponentTypeKubernetesManifest:
+	case ComponentTypeKubernetesManifest:
+		return RunnerJobTypeKubernetesManifestBuild
+	case ComponentTypeJob:
 		return RunnerJobTypeNOOPBuild
 	default:
 	}

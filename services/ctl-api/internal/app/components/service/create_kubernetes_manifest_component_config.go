@@ -23,15 +23,46 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	Checksum     string   `json:"checksum"`
 	Dependencies []string `json:"dependencies"`
 
-	Manifest      string  `json:"manifest"`
+	// Inline manifest (mutually exclusive with Kustomize)
+	Manifest      string  `json:"manifest,omitempty"`
 	Namespace     string  `json:"namespace"`
 	DriftSchedule *string `json:"drift_schedule,omitempty"`
+
+	// Kustomize configuration (mutually exclusive with Manifest)
+	Kustomize *KustomizeConfigRequest `json:"kustomize,omitempty"`
+}
+
+// KustomizeConfigRequest defines kustomize options in API requests
+type KustomizeConfigRequest struct {
+	Path           string   `json:"path" validate:"required"`
+	Patches        []string `json:"patches,omitempty"`
+	EnableHelm     bool     `json:"enable_helm,omitempty"`
+	LoadRestrictor string   `json:"load_restrictor,omitempty"`
 }
 
 func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
+
+	// Exactly one of manifest or kustomize must be set
+	hasManifest := c.Manifest != ""
+	hasKustomize := c.Kustomize != nil
+
+	if !hasManifest && !hasKustomize {
+		return errors.New("one of 'manifest' or 'kustomize' must be specified")
+	}
+	if hasManifest && hasKustomize {
+		return errors.New("only one of 'manifest' or 'kustomize' can be specified")
+	}
+
+	// Validate kustomize config
+	if c.Kustomize != nil {
+		if c.Kustomize.Path == "" {
+			return errors.New("kustomize.path is required")
+		}
+	}
+
 	return nil
 }
 
@@ -129,8 +160,18 @@ func (s *service) createKubernetesManifestComponentConfig(
 
 	// build component config
 	cfg := app.KubernetesManifestComponentConfig{
-		Manifest:  req.Manifest,
+		Manifest:  req.Manifest, // Empty for kustomize sources
 		Namespace: req.Namespace,
+	}
+
+	// Populate kustomize config (mutually exclusive with Manifest)
+	if req.Kustomize != nil {
+		cfg.Kustomize = &app.KustomizeConfig{
+			Path:           req.Kustomize.Path,
+			Patches:        req.Kustomize.Patches,
+			EnableHelm:     req.Kustomize.EnableHelm,
+			LoadRestrictor: req.Kustomize.LoadRestrictor,
+		}
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
