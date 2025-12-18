@@ -42,12 +42,14 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
 
           {/* Sign Up Button */}
           {!showModal && (
-            <a
+            <Button
+              variant="primary"
+              size="lg"
               href="/api/auth/login?returnTo=/"
-              className="inline-flex items-center justify-center w-full font-sans font-medium tracking-tight transition-colors whitespace-nowrap h-9 px-3 py-1 text-sm leading-[21px] border border-transparent rounded-md bg-primary-600 text-white hover:bg-primary-700 focus:outline-primary-400/80 focus:bg-primary-600 active:bg-primary-900"
+              className="w-full justify-center"
             >
               Sign up
-            </a>
+            </Button>
           )}
 
           {/* Divider */}
@@ -60,12 +62,14 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
 
           {/* Sign In Button */}
           {!showModal && (
-            <a
+            <Button
+              variant="secondary"
+              size="lg"
               href="/api/auth/login?returnTo=/"
-              className="inline-flex items-center justify-center w-full font-sans font-medium tracking-tight transition-colors whitespace-nowrap h-9 px-3 py-1 text-sm leading-[21px] border rounded-md bg-white dark:bg-dark-grey-700 text-primary-600 dark:text-primary-400 hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500 focus:outline-primary-400/80 focus:bg-cool-grey-50 dark:focus:bg-dark-grey-500 active:bg-cool-grey-100 dark:active:bg-dark-grey-400"
+              className="w-full justify-center"
             >
               Sign in
-            </a>
+            </Button>
           )}
         </div>
 
