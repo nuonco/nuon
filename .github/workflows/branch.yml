@@ -9,37 +9,10 @@ permissions:
   statuses: write
 
 jobs:
-  branch-name:
-    runs-on: ubuntu-latest
-    steps:
-      - name: check branch
-        uses: deepakputhraya/action-branch-name@master
-        id: check
-        continue-on-error: true
-        with:
-          regex: '([a-z])+\/([a-z0-9])+'
-          allowed_prefixes: "am,ab,cp,nh,ja,jm,cb,fd,rb,se,ht,sk,mm,ps,ey,dependabot,revert,devin,promote"
-          ignore: main
-          min_length: 5
-
-      - name: comment
-        uses: peter-evans/create-or-update-comment@v5
-        if: steps.check.outcome != 'success'
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            🚨 **Invalid branch name** 🚨
-
-            - please use a branch with a valid prefix, or your initials
-            - eg: `cp/fix` or `nh/test`
-          reactions: "eyes"
-
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
     runs-on: ubuntu-latest
-    needs:
-      - branch-name
     steps:
       - uses: martialonline/workflow-status@v4.2
         id: check
