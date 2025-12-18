@@ -3,6 +3,7 @@
 name: pkg
 "on":
   pull_request:
+  merge_group:
   push:
     branches:
       - main
@@ -61,9 +62,9 @@ jobs:
         uses: nuonco/nuon/actions/setup-nuonctl@main
 
       # TODO(jm): need to implement a way to run tests
-      #- name: 😎 Tests
-        #run: |
-          #CI=true nuonctl tests run-all ${{inputs.service}}
+      # - name: 😎 Tests
+      #   run: |
+      #     CI=true nuonctl tests run-all ${{inputs.service}}
 
   update_status:
     name: update status
