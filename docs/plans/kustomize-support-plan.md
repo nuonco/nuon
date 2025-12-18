@@ -7,15 +7,15 @@
 > **Completed**:
 > - ✅ Config & API changes (Phase 1)
 > - ✅ Plan types (Phase 2 partial)
+> - ✅ Build plan generator (`plan_kubernetes_manifest_build.go`, `plan_component_build.go`)
 > 
 > **Remaining**:
-> - ⏳ Build plan generator (`plan_kubernetes_manifest_build.go`)
-> - ⏳ Build runner handler (`bins/runner/internal/jobs/build/kubernetes_manifest/`)
-> - ⏳ Install runner updates (OCI artifact pull)
-> - ⏳ Deploy plan updates (`plan_kubernetes_manifest_deploy.go`)
-> - ⏳ Kustomize SDK dependencies in `go.mod`
-> - ⏳ CLI sync changes (`pkg/config/sync/components_kubernetes_manifest.go`)
-> - ⏳ nuon-go client library update (external dependency)
+> - ✅ Build runner handler (`bins/runner/internal/jobs/build/kubernetes_manifest/`)
+> - ✅ Install runner updates (OCI artifact pull)
+> - ✅ Deploy plan updates (`plan_kubernetes_manifest_deploy.go`)
+> - ✅ CLI sync changes (`pkg/config/sync/components_kubernetes_manifest.go`)
+> - ⏳ nuon-runner-go regeneration (to add `AppRunnerJobTypeKubernetesDashManifestDashBuild`)
+> - ✅ nuon-go client library update (external dependency)
 
 ---
 
@@ -128,8 +128,8 @@ This plan has been broken down into focused documents:
 | Path | Description | Status |
 |------|-------------|--------|
 | `pkg/plans/types/kubernetes_manifest_build_plan.go` | Build plan type | ✅ Done |
-| `services/ctl-api/.../plan/plan_kubernetes_manifest_build.go` | Build plan generator | ⏳ TODO |
-| `bins/runner/internal/jobs/build/kubernetes_manifest/*.go` | Build handler (6 files: handler.go, meta.go, state.go, exec.go, fetch.go, methods.go) | ⏳ TODO |
+| `services/ctl-api/.../plan/plan_kubernetes_manifest_build.go` | Build plan generator | ✅ Done |
+| `bins/runner/internal/jobs/build/kubernetes_manifest/*.go` | Build handler (9 files: handler.go, meta.go, state.go, exec.go, fetch.go, initialize.go, validate.go, cleanup.go, outputs.go, files.go) | ✅ Done |
 
 ### Modified Files
 
@@ -139,18 +139,18 @@ This plan has been broken down into focused documents:
 | `services/ctl-api/internal/app/component.go` | Update `BuildJobType()` → kubernetes-manifest-build, `SyncJobType()` → oci-sync | ✅ Done |
 | `services/ctl-api/internal/app/kubernetes_manifest_component_config.go` | Add `KustomizeSourceConfig` JSONB type, `SourceType()` method | ✅ Done |
 | `services/ctl-api/.../components/service/create_kubernetes_manifest_component_config.go` | Add `KustomizeConfigRequest`, update validation & handler | ✅ Done |
-| `services/ctl-api/.../plan/plan_component_build.go` | Add kubernetes manifest case | ⏳ TODO |
-| `services/ctl-api/.../plan/plan_kubernetes_manifest_deploy.go` | Use OCI artifact reference, remove manifest template rendering (keep namespace rendering) | ⏳ TODO |
+| `services/ctl-api/.../plan/plan_component_build.go` | Add kubernetes manifest case | ✅ Done |
+| `services/ctl-api/.../plan/plan_kubernetes_manifest_deploy.go` | Use OCI artifact reference, remove manifest template rendering (keep namespace rendering) | ✅ Done |
 | `pkg/config/kubernetes_manifest_component.go` | Add `Kustomize` config (no OCIArtifact for MVP) | ✅ Done |
 | `pkg/plans/types/build_plan.go` | Add `KubernetesManifestBuildPlan` field | ✅ Done |
 | `pkg/plans/types/kubernetes_manifest_deploy_plan.go` | Add `OCIArtifact` field | ✅ Done |
-| `bins/runner/internal/jobs/deploy/kubernetes_manifest/initialize.go` | OCI artifact pull via archive pattern | ⏳ TODO |
-| `bins/runner/internal/jobs/deploy/kubernetes_manifest/state.go` | Add manifest from artifact | ⏳ TODO |
-| `bins/runner/internal/jobs/deploy/kubernetes_manifest/handler.go` | Add archive dependency | ⏳ TODO |
-| `bins/runner/internal/jobs/build/fx.go` | Register new handler | ⏳ TODO |
-| `go.mod` | Add kustomize SDK dependencies (`sigs.k8s.io/kustomize/api`, `github.com/fluxcd/pkg/ssa`) | ⏳ TODO |
-| `pkg/config/sync/components_kubernetes_manifest.go` | Map Kustomize config to API request | ⏳ TODO |
-| `go.mod` | Bump nuon-go dependency (after nuon-go update) | ⏳ TODO |
+| `bins/runner/internal/jobs/deploy/kubernetes_manifest/initialize.go` | OCI artifact pull via archive pattern | ✅ Done |
+| `bins/runner/internal/jobs/deploy/kubernetes_manifest/state.go` | Add archive dependency fields | ✅ Done |
+| `bins/runner/internal/jobs/deploy/kubernetes_manifest/validate.go` | Initialize archive instance | ✅ Done |
+| `bins/runner/internal/jobs/build/fx.go` | Register new handler | ✅ Done |
+| `go.mod` | Kustomize SDK already available as indirect dependency | ✅ Done |
+| `pkg/config/sync/components_kubernetes_manifest.go` | Map Kustomize config to API request | ✅ Done |
+| `go.mod` | Bump nuon-go dependency (after nuon-go update) | ✅ Done |
 
 ---
 

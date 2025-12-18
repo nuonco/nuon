@@ -13,6 +13,10 @@ type KubernetesManifestComponentConfig struct {
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfig `mapstructure:"kustomize,omitempty"`
 
+	// VCS configuration for kustomize sources (similar to Helm chart)
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"`
+
 	// Namespace supports template variables (e.g., {{.nuon.install.id}})
 	Namespace     string  `mapstructure:"namespace,omitempty" jsonschema:"required"`
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
@@ -88,6 +92,20 @@ func (t *KubernetesManifestComponentConfig) Validate() error {
 		if t.Kustomize.Path == "" {
 			return errors.New("kustomize.path is required")
 		}
+		// Kustomize requires a VCS source
+		if t.PublicRepo == nil && t.ConnectedRepo == nil {
+			return errors.New("kustomize requires either 'public_repo' or 'connected_repo' to be specified")
+		}
+	}
+
+	// VCS config should only be set with kustomize
+	if !hasKustomize && (t.PublicRepo != nil || t.ConnectedRepo != nil) {
+		return errors.New("'public_repo' and 'connected_repo' are only valid with kustomize, not inline manifests")
+	}
+
+	// Only one VCS source can be specified
+	if t.PublicRepo != nil && t.ConnectedRepo != nil {
+		return errors.New("only one of 'public_repo' or 'connected_repo' can be specified")
 	}
 
 	return nil

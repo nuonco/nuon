@@ -39,7 +39,9 @@ func PreloadLatestConfig(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigs.JobComponentConfig").
 
 		// preload all kubernetes configs
-		Preload("ComponentConfigs.KubernetesManifestComponentConfig")
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig")
 }
 
 // component config connections
@@ -68,5 +70,8 @@ func PreloadComponentBuildConfig(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig").
 
 		// preload all kubernetes configs
-		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig")
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig.VCSConnection")
 }

@@ -7,6 +7,7 @@ import (
 	containerimagebuild "github.com/nuonco/nuon/bins/runner/internal/jobs/build/containerimage"
 	docker "github.com/nuonco/nuon/bins/runner/internal/jobs/build/docker"
 	helm "github.com/nuonco/nuon/bins/runner/internal/jobs/build/helm"
+	kubernetesmanifest "github.com/nuonco/nuon/bins/runner/internal/jobs/build/kubernetes_manifest"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/build/noop"
 	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/build/terraform"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -18,6 +19,7 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobs.AsJobHandler("builds", docker.New)),
 		fx.Provide(jobs.AsJobHandler("builds", containerimagebuild.New)),
 		fx.Provide(jobs.AsJobHandler("builds", helm.New)),
+		fx.Provide(jobs.AsJobHandler("builds", kubernetesmanifest.New)),
 		fx.Provide(jobs.AsJobHandler("builds", terraform.New)),
 		fx.Provide(jobs.AsJobHandler("builds", noop.New)),
 	}

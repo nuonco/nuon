@@ -60,22 +60,14 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 	// parse out various config fields
 	cfg := compBuild.ComponentConfigConnection.KubernetesManifestComponentConfig
 	if err := render.RenderStruct(cfg, stateData); err != nil {
-		l.Error("error rendering helm config",
+		l.Error("error rendering kubernetes manifest config",
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
-	manifest := cfg.Manifest
-	renderedManifest, err := render.RenderV2(manifest, stateData)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to render")
-	}
-
-	// we might need namespace input in config or in manifest, if both are not present then it will go in default
-	// namespace
-
+	// Render namespace with install state - namespace supports template variables like {{.nuon.install.id}}
 	namespace := cfg.Namespace
 	renderedNamespace, err := render.RenderV2(namespace, stateData)
 	if err != nil {
@@ -90,10 +82,26 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 		return nil, errors.Wrap(err, "unable to get cluster info")
 	}
 
+	// Build OCI artifact reference from the install deploy's synced artifact
+	// The manifest content is pulled from this artifact at runtime by the runner
+	ociArtifact := installDeploy.OCIArtifact
+	if ociArtifact.Repository == "" {
+		return nil, errors.New("OCI artifact not found on install deploy - sync job may not have completed")
+	}
+
+	l.Info("using OCI artifact for kubernetes manifest deploy",
+		zap.String("repository", ociArtifact.Repository),
+		zap.String("tag", ociArtifact.Tag),
+		zap.String("digest", ociArtifact.Digest))
+
 	return &plantypes.KubernetesManifestDeployPlan{
 		ClusterInfo: clusterInfo,
-		Manifest:    renderedManifest,
 		Namespace:   renderedNamespace,
+		OCIArtifact: &plantypes.OCIArtifactReference{
+			URL:    ociArtifact.Repository,
+			Tag:    ociArtifact.Tag,
+			Digest: ociArtifact.Digest,
+		},
 	}, nil
 }
 
