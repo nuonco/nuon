@@ -5,6 +5,9 @@ import { AppHomePage } from '@/components/old/AppHomePage'
 import { auth0 } from '@/lib/auth'
 import { getOrgs, getOrg } from '@/lib'
 
+// Force dynamic rendering to always check fresh session state
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const session = await auth0.getSession()
 
