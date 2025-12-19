@@ -9,6 +9,8 @@ local_build_cmds:
   - rm -f ~/bin/nuon-dev
   - go build -o ~/bin/nuon-dev
 local_cmds: []
+health_checks:
+  - http://localhost:8081/livez
 
 base_images:
   - src: Dockerfile.build
@@ -29,7 +31,7 @@ sources:
 color: green
 
 tests:
-  # a test is a dockerfile target. 
+  # a test is a dockerfile target.
   # we can make sure to cache mounts by leveraging dockerfile targets.
   - name: lint
     docker_target: lint
