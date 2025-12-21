@@ -270,6 +270,10 @@ func NewQueueSignalID() string {
 	return shortid.NewNanoID("qsi")
 }
 
+func NewQueueEmitterID() string {
+	return shortid.NewNanoID("qem")
+}
+
 func NewOCIArtifactID() string {
 	return shortid.NewNanoID("oci")
 }
