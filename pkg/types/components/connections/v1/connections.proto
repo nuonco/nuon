@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package connections.v1;
+
+import "connections/v1/instance.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/connections/v1";
+
+// InstanceConnection represents a connection to another component in the same app, deployed to the same install.
+message Connections {
+  repeated connections.v1.InstanceConnection instances = 1;
+}

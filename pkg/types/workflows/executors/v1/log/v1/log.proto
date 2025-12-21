@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package executors.v1.log.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1";
+
+message LogConfiguration {
+  string runner_id = 1;
+  string runner_api_token = 2;
+  string runner_api_url = 3;
+  string runner_job_id = 4;
+
+  // attributes to pass into the logger
+  repeated LogRecordAttr attrs = 5;
+}
+
+message LogRecordAttr {
+  string key = 1;
+  string value = 2;
+}

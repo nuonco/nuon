@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+// ECRRepositoryRef contains all of the information for referencing the app's ECR repo. Note, that all ECR repos are
+// created with the format `orgShortID/appShortID` so we can use prefix based IAM roles to limit them.
+message ECRRepositoryRef {
+  // TODO(jm): make these optional + enforce validations if set
+  // 12 digit aws account id
+  string registry_id = 1 [
+    //(validate.rules).string.len = 12,
+    (tagger.tags) = "faker:\"len=12\""
+  ];
+
+  // org format is: <org_short_id>/<app_short_id>
+  // install format is: <org_short_id>/<app_short_id>
+  string repository_name = 2 [
+    (validate.rules).string.len = 53,
+    (tagger.tags) = "faker:\"len=53\""
+  ];
+
+  // format is: arn:aws:ecr:<region>:<account_id>:repository/<org_short_id>/<app_short_id>.
+  string repository_arn = 3 [
+    //(validate.rules).string.len = 99,
+    (tagger.tags) = "faker:\"len=99\""
+  ];
+
+  // format: <account_id>.dkr.ecr.<region>.amazonaws.com/<org_short_id>/<app_short_id>
+  string repository_uri = 4 [
+    //(validate.rules).string.len = 98,
+    (tagger.tags) = "faker:\"len=98\""
+  ];
+
+  string tag = 5 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+
+  string region = 6 [
+    (validate.rules).string = {
+      in: [
+        "us-west-2",
+        "us-east-2",
+        "us-east-1",
+        "us-west-1"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+}

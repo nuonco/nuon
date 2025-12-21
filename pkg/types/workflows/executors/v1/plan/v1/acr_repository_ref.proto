@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+// ACRRepositoryRef is used to represent an ACR repository in our system
+message ACRRepositoryRef {
+  string image = 1 [
+    (validate.rules).string.min_len = 5,
+    (tagger.tags) = "faker:\"len=53\""
+  ];
+
+  string tag = 2 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+
+  string login_server = 3 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+
+  string username = 4 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+  string password = 5 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+}

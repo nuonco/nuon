@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "executors/v1/plan/v1/s3_object.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+message TerraformModule {
+  oneof actual {
+    LocalTerraformModule local = 1;
+    S3TerraformModule s3 = 2;
+  }
+}
+
+message S3TerraformModule {
+  executors.v1.plan.v1.S3Object object = 1;
+}
+
+message LocalTerraformModule {
+  string dir = 1;
+}

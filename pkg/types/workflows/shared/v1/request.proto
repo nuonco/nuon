@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package shared.v1;
+
+import "apps/v1/provision.proto";
+import "executors/v1/plan/v1/plan.proto";
+import "installs/v1/deprovision.proto";
+import "installs/v1/provision.proto";
+import "orgs/v1/deprovision.proto";
+import "orgs/v1/provision.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// StartActivityRequest is used by clients to implement a standard meta start activity
+message StartActivityRequest {
+  string metadata_bucket = 1 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_assume_role_arn = 2 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_prefix = 3 [(validate.rules).string.min_len = 5];
+  RequestRef request_ref = 4 [(tagger.tags) = "faker:\"-\""];
+  WorkflowInfo workflow_info = 5;
+}
+
+message StartActivityResponse {}
+
+message WorkflowInfo {
+  string id = 1 [(validate.rules).string.min_len = 5];
+}
+
+// Request represents a workflow execution
+message Request {
+  string workflow_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  RequestRef request = 2 [(tagger.tags) = "faker:\"-\""];
+}
+
+// RequestRef represents the request that was passed in
+message RequestRef {
+  oneof request {
+    installs.v1.ProvisionRequest install_provision = 2;
+    installs.v1.DeprovisionRequest install_deprovision = 3;
+
+    orgs.v1.ProvisionRequest org_signup = 4;
+    orgs.v1.DeprovisionRequest org_teardown = 5;
+
+    apps.v1.ProvisionRequest app_provision = 7;
+
+    executors.v1.plan.v1.Plan executors_plan = 8;
+  }
+}

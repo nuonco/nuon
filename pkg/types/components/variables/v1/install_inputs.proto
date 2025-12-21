@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package variables.v1;
+
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+
+// InstallInputs represent a customer provided input
+message InstallInput {
+  string name = 1;
+  string value = 2;
+}
+
+// InstallInputss is a list of env vars, and exposes methods to convert to maps etc.
+message InstallInputs {
+  repeated InstallInput install_inputs = 1 [(tagger.tags) = "faker:\"installInputs\""];
+}

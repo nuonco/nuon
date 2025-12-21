@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package apps.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/apps/v1";
+
+message SyncRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_config_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  string terraform_json = 4;
+  string terraform_version = 5;
+  string api_token = 6;
+  string api_url = 7;
+}
+
+message SyncResponse {}

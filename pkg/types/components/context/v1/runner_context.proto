@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package context.v1;
+
+import "context/v1/runner_type.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/context/v1";
+
+// RunnerContext is a context for passing information about a runner
+message RunnerContext {
+  RunnerType runner_type = 3;
+}

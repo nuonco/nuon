@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "executors/v1/plan/v1/component_input.proto";
+import "executors/v1/plan/v1/plan.proto";
+import "executors/v1/plan/v1/plan_ref.proto";
+import "executors/v1/plan/v1/runner_input.proto";
+import "executors/v1/plan/v1/sandbox_input.proto";
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+// CreatePlanRequest is a child workflow request for the plan phase
+message CreatePlanRequest {
+  oneof input {
+    option (tagger.oneof_tags) = "faker:\"-\"";
+    .executors.v1.plan.v1.ComponentInput component = 100;
+    .executors.v1.plan.v1.SandboxInput sandbox = 101;
+    .executors.v1.plan.v1.RunnerInput runner = 102;
+  }
+}
+
+// CreatePlanResponse is a child workflow response for the plan phase
+message CreatePlanResponse {
+  .executors.v1.plan.v1.PlanRef ref = 1;
+  .executors.v1.plan.v1.Plan plan = 2;
+}

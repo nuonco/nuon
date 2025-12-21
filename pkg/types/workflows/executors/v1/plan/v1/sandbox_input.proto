@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "installs/v1/account_settings.proto";
+import "installs/v1/sandbox_settings.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+message SandboxInput {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string install_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string run_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  SandboxInputType type = 5;
+  installs.v1.SandboxSettings sandbox_settings = 6;
+  installs.v1.AWSSettings aws_settings = 7;
+  installs.v1.AzureSettings azure_settings = 8;
+}
+
+enum SandboxInputType {
+  SANDBOX_INPUT_TYPE_UNSPECIFIED = 0;
+  SANDBOX_INPUT_TYPE_PROVISION = 1;
+  SANDBOX_INPUT_TYPE_DEPROVISION = 2;
+  SANDBOX_INPUT_TYPE_PROVISION_PLAN = 3;
+  SANDBOX_INPUT_TYPE_NOOP_BUILD = 4;
+}

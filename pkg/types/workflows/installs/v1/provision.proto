@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package installs.v1;
+
+import "context/v1/runner_type.proto";
+import "installs/v1/account_settings.proto";
+import "installs/v1/sandbox_settings.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
+
+// ProvisionRequest: provision a nuon sandbox and runner
+message ProvisionRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string install_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string run_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  AWSSettings aws_settings = 5;
+  AzureSettings azure_settings = 6;
+  SandboxSettings sandbox_settings = 7;
+
+  bool plan_only = 8;
+  context.v1.RunnerType runner_type = 9;
+}
+
+// ProvisionResponse returns the response from a deployment workflow
+message ProvisionResponse {}

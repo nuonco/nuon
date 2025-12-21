@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package vcs.v1;
+
+import "vcs/v1/connected_github.proto";
+import "vcs/v1/public_git.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1";
+
+message Config {
+  oneof cfg {
+    ConnectedGithubConfig connected_github_config = 1;
+    PublicGitConfig public_git_config = 2;
+  }
+}

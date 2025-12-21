@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package component.v1;
+
+import "build/v1/build.proto";
+import "connections/v1/connections.proto";
+import "context/v1/context.proto";
+import "deploy/v1/config.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+import "variables/v1/install_inputs.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/component/v1";
+
+// Docker config uses the waypoint build
+message Component {
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"buildConfig\""];
+  deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"deployConfig\""];
+
+  // TODO(jm): both the connections and inputs should be in the context object, for consistency.
+  connections.v1.Connections connections = 4;
+  variables.v1.InstallInputs install_inputs = 5;
+
+  context.v1.Context context = 6;
+}

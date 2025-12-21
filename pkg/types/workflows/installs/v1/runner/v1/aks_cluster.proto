@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package installs.v1.runner.v1;
+
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1";
+
+message AKSClusterInfo {
+  string location = 1 [(tagger.tags) = "faker:\"len=20\""];
+  string kube_config = 2 [(tagger.tags) = "faker:\"len=20\""];
+}

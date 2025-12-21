@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package installs.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
+
+message AWSSettings {
+  string region = 1 [
+    (validate.rules).string = {
+      in: [
+        "us-east-2",
+        "us-east-1",
+        "us-west-1",
+        "us-west-2",
+        "af-south-1",
+        "ap-east-1",
+        "ap-south-2",
+        "ap-southeast-3",
+        "ap-southeast-4",
+        "ap-south-1",
+        "us-gov-west-1",
+        "us-gov-east-1",
+        "ap-northeast-3",
+        "ap-northeast-2",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-northeast-1",
+        "ca-central-1",
+        "ca-west-1",
+        "eu-central-1",
+        "eu-west-1",
+        "eu-west-2",
+        "eu-south-1",
+        "eu-west-3",
+        "eu-south-2",
+        "eu-north-1",
+        "eu-central-2",
+        "il-central-1",
+        "me-south-1",
+        "me-central-1",
+        "sa-east-1"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+
+  string aws_role_arn = 3 [(tagger.tags) = "faker:\"len=20\""];
+
+  AWSRoleDelegation aws_role_delegation = 4;
+}
+
+message AWSRoleDelegation {
+  bool enabled = 1;
+  string iam_role_arn = 2;
+
+  // NOTE: in the future we do not plan to support using access_key_id and secret_access_key directly, but will actually
+  // run the gov cloud runners in a gov cloud account, which allows assuming this role.
+  string access_key_id = 3;
+  string secret_access_key = 4;
+}
+
+message AzureSettings {
+  string location = 1 [
+    (validate.rules).string = {
+      in: [
+        "eastus",
+        "eastus2",
+        "southcentralus",
+        "westus2",
+        "westus3",
+        "australiaeast",
+        "southeastasia",
+        "northeurope",
+        "swedencentral",
+        "uksouth",
+        "westeurope",
+        "centralus",
+        "southafricanorth",
+        "centralindia",
+        "eastasia",
+        "japaneast",
+        "koreacentral",
+        "canadacentral",
+        "francecentral",
+        "germanywestcentral",
+        "italynorth",
+        "norwayeast",
+        "polandcentral",
+        "switzerlandnorth",
+        "uaenorth",
+        "brazilsouth",
+        "centraluseuap",
+        "israelcentral",
+        "qatarcentral",
+        "centralusstage",
+        "eastusstage",
+        "eastus2stage",
+        "northcentralusstage",
+        "southcentralusstage",
+        "westusstage",
+        "westus2stage",
+        "asia",
+        "asiapacific",
+        "australia",
+        "brazil",
+        "canada",
+        "europe",
+        "france",
+        "germany",
+        "global",
+        "india",
+        "israel",
+        "italy",
+        "japan",
+        "korea",
+        "newzealand",
+        "norway",
+        "poland",
+        "qatar",
+        "singapore",
+        "southafrica",
+        "sweden",
+        "switzerland",
+        "uae",
+        "uk",
+        "unitedstates",
+        "unitedstateseuap",
+        "eastasiastage",
+        "southeastasiastage",
+        "brazilus",
+        "eastusstg",
+        "northcentralus",
+        "westus",
+        "japanwest",
+        "jioindiawest",
+        "eastus2euap",
+        "westcentralus",
+        "southafricawest",
+        "australiacentral",
+        "australiacentral2",
+        "australiasoutheast",
+        "jioindiacentral",
+        "koreasouth",
+        "southindia",
+        "westindia",
+        "canadaeast",
+        "francesouth",
+        "germanynorth",
+        "norwaywest",
+        "switzerlandwest",
+        "ukwest",
+        "uaecentral",
+        "brazilsoutheast"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: brazilsoutheast\""
+  ];
+
+  string subscription_id = 2 [(tagger.tags) = "faker:\"len=20\""];
+  string subscription_tenant_id = 3 [(tagger.tags) = "faker:\"len=20\""];
+  string service_principal_app_id = 4 [(tagger.tags) = "faker:\"len=20\""];
+  string service_principal_password = 5 [(tagger.tags) = "faker:\"len=20\""];
+}

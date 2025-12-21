@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+message WaypointVersionRef {
+  string image_url = 1 [(validate.rules).string.min_len = 1];
+
+  string image_tag = 2 [(validate.rules).string.min_len = 1];
+
+  string odr_image_url = 3 [(validate.rules).string.min_len = 1];
+
+  string odr_image_tag = 4 [(validate.rules).string.min_len = 1];
+
+  string helm_chart_url = 5 [(validate.rules).string.min_len = 1];
+
+  string helm_chart_name = 6 [(validate.rules).string.min_len = 1];
+
+  string helm_chart_version = 7 [(validate.rules).string.min_len = 1];
+}

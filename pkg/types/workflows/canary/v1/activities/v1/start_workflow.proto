@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package canary.v1.activities.v1;
+
+import "google/protobuf/any.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/canary/v1/activities/v1";
+
+message StartWorkflowRequest {
+  string namespace = 1 [
+    (validate.rules).string = {
+      in: [
+        "apps",
+        "deployments",
+        "installs",
+        "instances",
+        "orgs"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: instances\""
+  ];
+
+  string workflow_name = 2 [(validate.rules).string.min_len = 5];
+
+  google.protobuf.Any request = 3;
+}
+
+message StartWorkflowResponse {
+  string workflow_id = 2 [(validate.rules).string.min_len = 5];
+}
