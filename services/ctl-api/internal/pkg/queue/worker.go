@@ -51,6 +51,13 @@ func (q *queue) worker(ctx workflow.Context) error {
 			return nil
 		}
 
+		if q.paused {
+			if err := workflow.Sleep(ctx, queueReceiveTimeout); err != nil {
+				return err
+			}
+			continue
+		}
+
 		var obj QueueRef
 		ok, more := q.ch.ReceiveWithTimeout(ctx, queueReceiveTimeout, &obj)
 		if !more {

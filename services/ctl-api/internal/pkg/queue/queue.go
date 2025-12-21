@@ -62,6 +62,7 @@ type queue struct {
 	ready     bool
 	stopped   bool
 	restarted bool
+	paused    bool
 
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState
