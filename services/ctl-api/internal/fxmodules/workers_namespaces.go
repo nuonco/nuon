@@ -6,8 +6,7 @@ import (
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	actionsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker"
 	actionsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker/activities"
-	appbranchesworker "github.com/nuonco/nuon/services/ctl-api/internal/app/app-branches/worker"
-	appbranchesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/app-branches/worker/activities"
+	appbranchesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
 	appsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker"
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"
@@ -47,14 +46,8 @@ var OrgsWorkerModule = fx.Module("worker-orgs",
 var AppsWorkerModule = fx.Module("worker-apps",
 	fx.Provide(appsactivities.New),
 	fx.Provide(appsworker.NewWorkflows),
-	fx.Provide(worker.AsWorker(appsworker.New)),
-)
-
-// AppBranchesWorkerModule provides the app-branches namespace worker.
-var AppBranchesWorkerModule = fx.Module("worker-app-branches",
 	fx.Provide(appbranchesactivities.New),
-	fx.Provide(appbranchesworker.NewWorkflows),
-	fx.Provide(worker.AsWorker(appbranchesworker.New)),
+	fx.Provide(worker.AsWorker(appsworker.New)),
 )
 
 // ComponentsWorkerModule provides the components namespace worker.

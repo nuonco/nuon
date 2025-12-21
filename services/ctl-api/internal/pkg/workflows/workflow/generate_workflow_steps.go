@@ -53,6 +53,7 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 			Status:        step.Status,
 			Name:          step.Name,
 			Signal:        step.Signal,
+			QueueSignal:   step.QueueSignal,
 			Idx:           step.Idx,
 			ExecutionType: step.ExecutionType,
 			Metadata:      step.Metadata,

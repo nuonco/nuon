@@ -7,23 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/app-branches/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateAppBranchRequest struct {
-	Name                       string `json:"name" validate:"required,min=1"`
-	ConnectedGithubVCSConfigID string `json:"connected_github_vcs_config_id" validate:"required"`
+	Name string `json:"name" validate:"required,min=1"`
 }
 
 func (c *CreateAppBranchRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return validatorPkg.FormatValidationError(err)
-	}
-
-	return nil
+	return v.Struct(c)
 }
 
 // @ID						CreateAppBranch
@@ -49,6 +43,17 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 		return
 	}
 
+	// Feature flag checks
+	if !org.Features[string(app.OrgFeatureAppBranches)] {
+		ctx.Error(fmt.Errorf("app branches feature not enabled for this organization"))
+		return
+	}
+
+	if !org.Features[string(app.OrgFeatureQueues)] {
+		ctx.Error(fmt.Errorf("queues feature not enabled for this organization"))
+		return
+	}
+
 	appID := ctx.Param("app_id")
 
 	var req CreateAppBranchRequest
@@ -61,16 +66,12 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	branch, err := s.helpers.CreateAppBranch(ctx, org.ID, appID, req.Name, req.ConnectedGithubVCSConfigID)
+	// Create app branch (VCS config is set via AppBranchConfig, not at branch creation time)
+	branch, err := s.helpers.CreateAppBranch(ctx, appID, req.Name)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch: %w", err))
 		return
 	}
-
-	s.evClient.Send(ctx, appID, &signals.Signal{
-		Type:        signals.OperationCreated,
-		AppBranchID: branch.ID,
-	})
 
 	ctx.JSON(http.StatusCreated, branch)
 }

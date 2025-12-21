@@ -39,12 +39,16 @@ type App struct {
 	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org   `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
+	QueueID *string `json:"queue_id,omitzero"`
+	Queue   Queue   `json:"-"`
+
 	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty,omitzero" temporaljson:"notifications_config,omitzero,omitempty"`
 	Repository          AppRepository       `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"repository,omitzero,omitempty"`
 
 	Components                 []Component        `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"components,omitzero,omitempty"`
 	Installs                   []Install          `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installs,omitzero,omitempty"`
 	ActionWorkflows            []ActionWorkflow   `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflows,omitzero,omitempty"`
+	AppBranches                []AppBranch        `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branches,omitzero,omitempty"`
 	AppInputConfigs            []AppInputConfig   `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_input_configs,omitzero,omitempty"`
 	AppSandboxConfigs          []AppSandboxConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_sandbox_configs,omitzero,omitempty"`
 	AppRunnerConfigs           []AppRunnerConfig  `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_runner_configs,omitzero,omitempty"`
@@ -126,6 +130,15 @@ func (a *App) EventLoops() []bulk.EventLoop {
 		ID:        a.ID,
 	})
 
+	// TODO(jm): remove this after we build out the queue migration
+	for _, branch := range a.AppBranches {
+		evs = append(evs, bulk.EventLoop{
+			Namespace:   "apps",
+			ID:          branch.Queue.ID,
+			WorkflowRef: generics.ToPtr(branch.Queue.Workflow),
+		})
+	}
+
 	for _, cmp := range a.Components {
 		evs = append(evs, bulk.EventLoop{
 			Namespace: "components",
@@ -142,6 +155,10 @@ func (a *App) EventLoops() []bulk.EventLoop {
 
 	for _, inst := range a.Installs {
 		evs = append(evs, inst.EventLoops()...)
+	}
+
+	for _, branch := range a.AppBranches {
+		evs = append(evs, branch.EventLoops()...)
 	}
 
 	return evs

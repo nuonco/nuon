@@ -71,7 +71,7 @@ export const ModalBase = ({
         />
         <div
           className={cn(
-            'modal bg-white dark:bg-dark-grey-900 border flex flex-col m-auto rounded-md shadow-lg',
+            'modal bg-white dark:bg-dark-grey-900 border flex flex-col m-auto rounded-md shadow-lg max-h-[90vh]',
             {
               'max-w-xl': size === 'default',
               'max-w-1/2': size === 'half',
@@ -85,7 +85,7 @@ export const ModalBase = ({
           ref={modalRef}
           {...props}
         >
-          <div className="py-6 px-4 border-b flex items-center justify-between">
+          <div className="py-6 px-4 border-b flex items-center justify-between flex-shrink-0">
             {heading ? (
               typeof heading === 'string' ? (
                 <HeadingGroup>
@@ -112,13 +112,13 @@ export const ModalBase = ({
           </div>
           <div
             className={cn(
-              'p-6 flex flex-col gap-4 md:gap-6',
+              'p-6 flex flex-col gap-4 md:gap-6 overflow-y-auto flex-grow',
               childrenClassName
             )}
           >
             {children}
           </div>
-          <div className="py-6 px-4 border-t flex items-center gap-4 justify-between">
+          <div className="py-6 px-4 border-t flex items-center gap-4 justify-between flex-shrink-0">
             <div className="flex items-center gap-4">
               {footerActions}
             </div>

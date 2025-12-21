@@ -11,12 +11,12 @@ const validateUpdateType = handlerTypeUpdate
 
 type ValidateResponse struct{}
 
-func (w *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, error) {
-	if w.sig == nil {
+func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, error) {
+	if h.sig == nil {
 		return nil, errors.New("signal was empty can not proceed")
 	}
 
-	if err := w.sig.Validate(ctx); err != nil {
+	if err := h.sig.Validate(ctx); err != nil {
 		return nil, errors.Wrap(err, "validate method failed")
 	}
 

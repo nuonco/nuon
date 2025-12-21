@@ -22,6 +22,18 @@ func NewAppBranchID() string {
 	return shortid.NewNanoID("abr")
 }
 
+func NewAppBranchConfigID() string {
+	return shortid.NewNanoID("abc")
+}
+
+func NewAppBranchInstallGroupID() string {
+	return shortid.NewNanoID("aig")
+}
+
+func NewAppBranchRunID() string {
+	return shortid.NewNanoID("arn")
+}
+
 func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }
@@ -282,6 +294,10 @@ func NewQueueSignalID() string {
 	return shortid.NewNanoID("qsi")
 }
 
+func NewQueueEmitterID() string {
+	return shortid.NewNanoID("qem")
+}
+
 func NewOCIArtifactID() string {
 	return shortid.NewNanoID("oci")
 }
@@ -312,6 +328,10 @@ func NewRunnerGroupSettingsID() string {
 
 func NewVCSConnectionID() string {
 	return shortid.NewNanoID("vcs")
+}
+
+func NewVCSCommitID() string {
+	return shortid.NewNanoID("vcc")
 }
 
 func NewVCSID() string {

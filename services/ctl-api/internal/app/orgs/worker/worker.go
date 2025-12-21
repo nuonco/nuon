@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -37,6 +38,7 @@ type WorkerParams struct {
 	L                *zap.Logger
 	LC               fx.Lifecycle
 	Interceptors     []interceptor.WorkerInterceptor `group:"interceptors"`
+	QueueClient      *queueclient.Client
 }
 
 func New(params WorkerParams) (*Worker, error) {

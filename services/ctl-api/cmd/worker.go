@@ -74,10 +74,6 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.AppsWorkerModule)
 	}
 
-	if (namespace == "all" || namespace == "app-branches") && !shouldSkipNamespace("app-branches") {
-		providers = append(providers, fxmodules.AppBranchesWorkerModule)
-	}
-
 	if (namespace == "all" || namespace == "components") && !shouldSkipNamespace("components") {
 		providers = append(providers, fxmodules.ComponentsWorkerModule)
 	}

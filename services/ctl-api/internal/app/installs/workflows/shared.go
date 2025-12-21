@@ -110,7 +110,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		OwnerType:      "installs",
 		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 		Metadata:       metadata,
-		Signal: app.Signal{
+		Signal: &app.Signal{
 			Namespace:   "installs",
 			Type:        string(signal.Type),
 			EventLoopID: installID,

@@ -43,15 +43,32 @@ func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req 
 		return nil
 	}
 
-	var sig DomainSignal
-	if err := json.Unmarshal(step.Signal.SignalJSON, &sig); err != nil {
-		return c.handleStepErr(ctx, step.ID, err)
+	// NOTE(jm): this is for pre-queue workflows
+	if step.Signal != nil {
+		var sig DomainSignal
+		if err := json.Unmarshal(step.Signal.SignalJSON, &sig); err != nil {
+			return c.handleStepErr(ctx, step.ID, err)
+		}
+
+		// TODO(sdboyer) abstract actual dispatch of the signal into here once we can, then remove ExecFn completely
+		err := c.ExecFnLegacy(ctx, req, sig, *step)
+		if err != nil {
+			return c.handleStepErr(ctx, step.ID, errors.Wrapf(err, "error executing step %s", step.Name))
+		}
 	}
 
-	// TODO(sdboyer) abstract actual dispatch of the signal into here once we can, then remove ExecFn completely
-	err := c.ExecFn(ctx, req, sig, *step)
-	if err != nil {
-		return c.handleStepErr(ctx, step.ID, errors.Wrapf(err, "error executing step %s", step.Name))
+	if step.QueueSignal != nil {
+		if c.StepChildWorkflow {
+			err := c.executeStepAsChildWorkflow(ctx, step)
+			if err != nil {
+				return c.handleStepErr(ctx, step.ID, errors.Wrapf(err, "error executing step %s as child workflow", step.Name))
+			}
+		} else if c.ExecFn != nil {
+			err := c.ExecFn(ctx, step.QueueSignal, *step)
+			if err != nil {
+				return c.handleStepErr(ctx, step.ID, errors.Wrapf(err, "error executing step %s", step.Name))
+			}
+		}
 	}
 
 	return nil
