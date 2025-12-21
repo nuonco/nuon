@@ -27,9 +27,10 @@ type PublicGitVCSConfig struct {
 	ComponentConfigType string `json:"component_config_type,omitzero" gorm:"notnull" temporaljson:"component_config_type,omitzero,omitempty"`
 
 	// actual configuration
-	Repo      string `json:"repo,omitzero" gorm:"notnull" temporaljson:"repo,omitzero,omitempty"`
-	Directory string `json:"directory,omitzero" gorm:"notnull" temporaljson:"directory,omitzero,omitempty"`
-	Branch    string `json:"branch,omitzero" gorm:"notnull" temporaljson:"branch,omitzero,omitempty"`
+	Repo       string `json:"repo,omitzero" gorm:"notnull" temporaljson:"repo,omitzero,omitempty"`
+	Directory  string `json:"directory,omitzero" gorm:"notnull" temporaljson:"directory,omitzero,omitempty"`
+	Branch     string `json:"branch,omitzero" gorm:"notnull" temporaljson:"branch,omitzero,omitempty"`
+	PathFilter string `json:"path_filter,omitzero" temporaljson:"path_filter,omitzero,omitempty"`
 }
 
 func (c *PublicGitVCSConfig) Indexes(db *gorm.DB) []migrations.Index {

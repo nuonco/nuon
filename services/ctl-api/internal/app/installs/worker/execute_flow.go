@@ -27,11 +27,11 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 		sreq.FlowID = sreq.InstallWorkflowID
 	}
 	fc := &flow.WorkflowConductor[*signals.Signal]{
-		Cfg:        w.cfg,
-		V:          w.v,
-		MW:         w.mw,
-		Generators: w.getWorkflowStepGenerators(ctx),
-		ExecFn:     w.getExecuteFlowExecFn(sreq),
+		Cfg:          w.cfg,
+		V:            w.v,
+		MW:           w.mw,
+		Generators:   w.getWorkflowStepGenerators(ctx),
+		ExecFnLegacy: w.getExecuteFlowExecFn(sreq),
 	}
 
 	err := fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID, sreq.StartFromStepIdx)

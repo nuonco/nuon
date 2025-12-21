@@ -18,31 +18,41 @@ type workflowHandler struct {
 	handlerValidator any
 }
 
-func (w *handler) registerHandlers(ctx workflow.Context) error {
-	updateHandlers := map[string]workflowHandler{
+func (h *handler) registerHandlers(ctx workflow.Context) error {
+	handlers := map[string]workflowHandler{
+		StatusQueryName: {
+			handlerTypeQuery,
+			h.statusHandler,
+			nil,
+		},
 		ReadyHandlerName: {
 			handlerTypeUpdate,
-			w.readyHandler,
+			h.readyHandler,
 			nil,
 		},
 		ValidateUpdateName: {
 			handlerTypeUpdate,
-			w.validateHandler,
+			h.validateHandler,
 			nil,
 		},
 		ExecuteUpdateName: {
 			handlerTypeUpdate,
-			w.executeHandler,
+			h.executeHandler,
+			nil,
+		},
+		CancelUpdateName: {
+			handlerTypeUpdate,
+			h.cancelHandler,
 			nil,
 		},
 		FinishedHandlerName: {
 			handlerTypeUpdate,
-			w.finishedHandler,
+			h.finishedHandler,
 			nil,
 		},
 	}
 
-	for name, handler := range updateHandlers {
+	for name, handler := range handlers {
 		switch handler.typ {
 		// register query handler
 		case handlerTypeQuery:

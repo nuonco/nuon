@@ -23,8 +23,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	}
 
 	l.Info("making sure queue signal workflow is ready")
-	if _, err := handleractivities.AwaitUpdateWorkflowReady(ctx, &handleractivities.UpdateWorkflowReadyRequest{
-		Namespace:  queueSignal.Workflow.Namespace,
+	if _, err := handleractivities.AwaitUpdateWorkflowReady(ctx, handleractivities.UpdateWorkflowReadyRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 	}); err != nil {
@@ -32,16 +31,14 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	}
 
 	l.Info("making sure queue signal workflow is valid")
-	if _, err := handleractivities.AwaitUpdateWorkflowValidate(ctx, &handleractivities.UpdateWorkflowValidateRequest{
-		Namespace:  queueSignal.Workflow.Namespace,
+	if _, err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 	}); err != nil {
 		return errors.Wrap(err, "unable to validate")
 	}
 
-	if _, err := handleractivities.AwaitUpdateWorkflowExecute(ctx, &handleractivities.UpdateWorkflowExecuteRequest{
-		Namespace:  queueSignal.Workflow.Namespace,
+	if _, err := handleractivities.AwaitUpdateWorkflowExecute(ctx, handleractivities.UpdateWorkflowExecuteRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 	}); err != nil {

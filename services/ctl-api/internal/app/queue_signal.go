@@ -29,6 +29,10 @@ type QueueSignal struct {
 	QueueID string `json:"queue_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"queue_id,omitzero,omitempty"`
 	Queue   Queue  `json:"queue"`
 
+	// Optional: if this signal was emitted by an emitter
+	EmitterID *string       `json:"emitter_id,omitzero" gorm:"type:text;index:idx_queue_signal_emitter_id" temporaljson:"emitter_id,omitzero,omitempty"`
+	Emitter   *QueueEmitter `json:"-" gorm:"constraint:OnDelete:SET NULL;" temporaljson:"emitter,omitzero,omitempty"`
+
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
@@ -53,6 +57,7 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 func (r *QueueSignal) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
 		r.ID = domains.NewQueueSignalID()
+
 		// NOTE: we set the ID here, to avoid having to update the object after creation, while still having a
 		// 1:1 mapping between id and workflow-id (with the template, of course).
 		r.Workflow.ID = fmt.Sprintf(r.Workflow.IDTemplate, r.ID)

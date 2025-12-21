@@ -14,6 +14,7 @@ import (
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
+	queuesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/queues/service"
 	releasesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/service"
 	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
@@ -87,6 +88,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(docs.New)),
 	fx.Provide(api.AsService(health.New)),
 	fx.Provide(api.AsService(httpbin.New)),
+	fx.Provide(api.AsService(queuesservice.New)),
 	fx.Provide(api.AsService(admindashboardservice.New)),
 	// Domain services with swagger-annotated routes.
 	domainServicesFxOptions(),

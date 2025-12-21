@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -56,11 +57,16 @@ type AppConfig struct {
 	Status            AppConfigStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" gorm:"notnull;default null" temporaljson:"status_description,omitzero,omitempty"`
 
-	State        string         `json:"state,omitzero" temporaljson:"state,omitzero,omitempty"`
-	Readme       string         `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
-	Checksum     string         `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
-	CLIVersion   string         `json:"cli_version,omitzero" gorm:"default null" temporaljson:"cli_version,omitzero,omitempty"`
+	State      string `json:"state,omitzero" temporaljson:"state,omitzero,omitempty"`
+	Readme     string `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
+	Checksum   string `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
+	CLIVersion string `json:"cli_version,omitzero" gorm:"default null" temporaljson:"cli_version,omitzero,omitempty"`
+
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
+
+	IntermediateConfig blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
+	// OwnerID            string         `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
+	// OwnerType          string         `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
 	// Lookups on the app config
 
@@ -85,8 +91,8 @@ type AppConfig struct {
 	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index:idx_app_app_branch" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   *AppBranch          `json:"app_branch" temporaljson:"app_branch,omitzero,omitempty"`
 
-	VCSConnectionCommitID generics.NullString  `json:"-"  swaggertype:"string" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
-	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
+	VCSConnectionCommitID generics.NullString `json:"-"  swaggertype:"string" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
+	VCSConnectionCommit   *VCSConnectionCommit          `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 }
 
 func (a *AppConfig) Indexes(db *gorm.DB) []migrations.Index {

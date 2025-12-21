@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 // BlobMetadata represents the JSONB structure stored in the database
@@ -303,10 +303,18 @@ func (b *Blob) SetContentType(contentType string) {
 
 // cctxOrgIDFromContext extracts org ID from context using cctx package
 func cctxOrgIDFromContext(ctx context.Context) (string, error) {
-	return cctx.OrgIDFromContext(ctx)
+	orgID := keys.OrgIDFromContext(ctx)
+	if orgID == "" {
+		return "", fmt.Errorf("org ID not set on context")
+	}
+	return orgID, nil
 }
 
 // cctxAccountIDFromContext extracts account ID from context using cctx package
 func cctxAccountIDFromContext(ctx context.Context) (string, error) {
-	return cctx.AccountIDFromContext(ctx)
+	accountID := keys.CreatedByIDFromContext(ctx)
+	if accountID == "" {
+		return "", fmt.Errorf("account ID not set on context")
+	}
+	return accountID, nil
 }
