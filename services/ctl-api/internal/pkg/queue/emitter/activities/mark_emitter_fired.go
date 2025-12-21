@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -17,21 +16,6 @@ type MarkEmitterFiredRequest struct {
 
 type MarkEmitterFiredResponse struct {
 	Success bool
-}
-
-func AwaitMarkEmitterFired(ctx workflow.Context, req *MarkEmitterFiredRequest) (*MarkEmitterFiredResponse, error) {
-	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 30 * time.Second,
-		StartToCloseTimeout:    5 * time.Second,
-	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
-
-	fut := workflow.ExecuteActivity(ctx, (&Activities{}).MarkEmitterFired, req)
-	var ret MarkEmitterFiredResponse
-	if err := fut.Get(ctx, &ret); err != nil {
-		return nil, err
-	}
-	return &ret, nil
 }
 
 // @temporal-gen activity

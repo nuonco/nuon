@@ -11,8 +11,9 @@ import (
 )
 
 type EmitterWorkflowRequest struct {
-	EmitterID string
-	Version   string
+	QueueID   string `validate:"required"`
+	EmitterID string `validate:"required"`
+	Version   string `validate:"required"`
 
 	State *EmitterState
 }
@@ -24,7 +25,7 @@ type EmitterState struct {
 
 // @temporal-gen workflow
 // @task-queue "queue"
-// @id-template queue-emitter-{{.EmitterID}}
+// @id-template queue-emitter-{{.QueueID}}-{{.EmitterID}}
 func (w *Workflows) Emitter(ctx workflow.Context, req EmitterWorkflowRequest) error {
 	e := &emitterWorkflow{
 		cfg:       w.cfg,
