@@ -24,7 +24,7 @@ type ServiceCreateAppSandboxConfigRequest struct {
 	AppConfigID string `json:"app_config_id,omitempty"`
 
 	// connected github vcs config
-	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSSandboxConfigRequest `json:"connected_github_vcs_config,omitempty"`
+	ConnectedGithubVcsConfig *HelpersConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
@@ -34,7 +34,7 @@ type ServiceCreateAppSandboxConfigRequest struct {
 	EnvVars map[string]string `json:"env_vars"`
 
 	// public git vcs config
-	PublicGitVcsConfig *ServicePublicGitVCSSandboxConfigRequest `json:"public_git_vcs_config,omitempty"`
+	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 
 	// references
 	References []string `json:"references"`

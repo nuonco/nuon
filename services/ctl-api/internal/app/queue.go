@@ -22,7 +22,7 @@ type Queue struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
@@ -33,7 +33,8 @@ type Queue struct {
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 
-	Signals []QueueSignal `json:"queue_signal,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"signals,omitzero,omitempty"`
+	Signals  []QueueSignal  `json:"queue_signal,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"signals,omitzero,omitempty"`
+	Emitters []QueueEmitter `json:"emitters,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"emitters,omitzero,omitempty"`
 }
 
 func (r *Queue) Indexes(db *gorm.DB) []migrations.Index {

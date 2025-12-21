@@ -59,6 +59,9 @@ type AppAppConfig struct {
 	// input
 	Input *AppAppInputConfig `json:"input,omitempty"`
 
+	// intermediate config
+	IntermediateConfig BlobstoreBlob `json:"intermediate_config,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

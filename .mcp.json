@@ -1,5 +1,8 @@
 {
   "mcpServers": {
+    "grep": {
+      "url": "https://mcp.grep.app"
+    },
     "memory": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory"]

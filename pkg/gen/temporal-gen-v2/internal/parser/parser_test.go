@@ -110,6 +110,35 @@ func TestParse(t *testing.T) {
 				},
 			},
 		},
+		"Activity with namespace": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @namespace \"queue.management\"",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					Namespace: "queue.management",
+				},
+			},
+		},
+		"Activity with namespace and other options": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @namespace \"queue.signal\"",
+				"// @schedule-to-close-timeout 5m",
+				"// @max-retries 3",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					Namespace:              "queue.signal",
+					ScheduleToCloseTimeout: 5 * time.Minute,
+					MaxRetries:             3,
+					RetryPolicy:            true,
+				},
+			},
+		},
 		"Invalid by-field-only without by-field": {
 			comments: []string{
 				"// @" + config.AnnotationPrefix + " activity",
@@ -180,6 +209,60 @@ func TestParse(t *testing.T) {
 					ID: "my-update-id",
 				},
 			},
+		},
+		"Activity with as-wrapper and wrapper-prefix": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @as-wrapper",
+				"// @wrapper-prefix Queue",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					GenerateWrapper: true,
+					WrapperPrefix:   "Queue",
+				},
+			},
+		},
+		"Activity with as-wrapper, wrapper-prefix and timeouts": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @as-wrapper",
+				"// @wrapper-prefix Signal",
+				"// @start-to-close-timeout 1m",
+				"// @max-retries 3",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					GenerateWrapper:     true,
+					WrapperPrefix:       "Signal",
+					StartToCloseTimeout: time.Minute,
+					MaxRetries:          3,
+					RetryPolicy:         true,
+				},
+			},
+		},
+		"Activity with as-wrapper and quoted wrapper-prefix": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @as-wrapper",
+				"// @wrapper-prefix \"Custom\"",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					GenerateWrapper: true,
+					WrapperPrefix:   "Custom",
+				},
+			},
+		},
+		"Activity with wrapper-prefix without as-wrapper (invalid)": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @wrapper-prefix Queue",
+			},
+			wantErr: true,
 		},
 		"Unknown argument": {
 			comments: []string{

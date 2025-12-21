@@ -40,6 +40,9 @@ type AppConnectedGithubVCSConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// path filter
+	PathFilter string `json:"path_filter,omitempty"`
+
 	// repo
 	Repo string `json:"repo,omitempty"`
 

@@ -23,8 +23,8 @@ type AppAppBranch struct {
 	// app id
 	AppID string `json:"app_id,omitempty"`
 
-	// connected github vcs config id
-	ConnectedGithubVcsConfigID string `json:"connected_github_vcs_config_id,omitempty"`
+	// configs
+	Configs []*AppAppBranchConfig `json:"configs"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -41,6 +41,9 @@ type AppAppBranch struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// queue
+	Queue *AppQueue `json:"queue,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
@@ -52,6 +55,14 @@ type AppAppBranch struct {
 func (m *AppAppBranch) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateConfigs(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueue(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateWorkflows(formats); err != nil {
 		res = append(res, err)
 	}
@@ -59,6 +70,59 @@ func (m *AppAppBranch) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppAppBranch) validateConfigs(formats strfmt.Registry) error {
+	if swag.IsZero(m.Configs) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Configs); i++ {
+		if swag.IsZero(m.Configs[i]) { // not required
+			continue
+		}
+
+		if m.Configs[i] != nil {
+			if err := m.Configs[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("configs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("configs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppAppBranch) validateQueue(formats strfmt.Registry) error {
+	if swag.IsZero(m.Queue) { // not required
+		return nil
+	}
+
+	if m.Queue != nil {
+		if err := m.Queue.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("queue")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("queue")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -96,6 +160,14 @@ func (m *AppAppBranch) validateWorkflows(formats strfmt.Registry) error {
 func (m *AppAppBranch) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateConfigs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateQueue(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateWorkflows(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -103,6 +175,60 @@ func (m *AppAppBranch) ContextValidate(ctx context.Context, formats strfmt.Regis
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppAppBranch) contextValidateConfigs(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Configs); i++ {
+
+		if m.Configs[i] != nil {
+
+			if swag.IsZero(m.Configs[i]) { // not required
+				return nil
+			}
+
+			if err := m.Configs[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("configs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("configs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppAppBranch) contextValidateQueue(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Queue != nil {
+
+		if swag.IsZero(m.Queue) { // not required
+			return nil
+		}
+
+		if err := m.Queue.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("queue")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("queue")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

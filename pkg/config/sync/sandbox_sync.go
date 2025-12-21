@@ -55,14 +55,14 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 	}
 
 	if s.cfg.Sandbox.ConnectedRepo != nil {
-		req.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSSandboxConfigRequest{
+		req.ConnectedGithubVcsConfig = &models.HelpersConnectedGithubVCSConfigRequest{
 			Repo:      &s.cfg.Sandbox.ConnectedRepo.Repo,
 			Branch:    s.cfg.Sandbox.ConnectedRepo.Branch,
 			Directory: &s.cfg.Sandbox.ConnectedRepo.Directory,
 		}
 	}
 	if s.cfg.Sandbox.PublicRepo != nil {
-		req.PublicGitVcsConfig = &models.ServicePublicGitVCSSandboxConfigRequest{
+		req.PublicGitVcsConfig = &models.HelpersPublicGitVCSConfigRequest{
 			Repo:      &s.cfg.Sandbox.PublicRepo.Repo,
 			Branch:    &s.cfg.Sandbox.PublicRepo.Branch,
 			Directory: &s.cfg.Sandbox.PublicRepo.Directory,

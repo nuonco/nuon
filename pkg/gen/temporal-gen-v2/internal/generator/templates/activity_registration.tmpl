@@ -1,0 +1,13 @@
+{{- if .Options.Namespace}}
+// Register{{.Name | ToPascal}} registers the {{.Name | ToPascal}} activity with namespace "{{.Options.Namespace}}"
+func Register{{.Name | ToPascal}}(w worker.Worker, activities {{.Receiver}}) {
+	opts := activity.RegisterOptions{
+		Name: "{{.QualifiedName}}",
+	}
+	{{- if .Options.GenerateWrapper}}
+	w.RegisterActivityWithOptions(activities.{{.Name | ToPascal}}, opts)
+	{{- else}}
+	w.RegisterActivityWithOptions(activities.{{.OriginalName}}, opts)
+	{{- end}}
+}
+{{- end}}

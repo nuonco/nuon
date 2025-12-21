@@ -12,6 +12,8 @@ type QueueWorkflowRequest struct {
 	QueueID string
 	Version string
 
+	ReleaseWindow *ReleaseWindow
+
 	State *QueueState
 }
 
@@ -23,21 +25,30 @@ type QueueRef struct {
 // QueueState is the data that is passed between continue-as-news
 type QueueState struct {
 	QueueRefs []QueueRef
+	Paused    bool
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @task-queue "queue"
 // @id-template queue-{{.QueueID}}
 func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error {
 	q := &queue{
-		cfg:     w.cfg,
-		v:       w.v,
-		queueID: req.QueueID,
-		state:   req.State,
+		cfg:           w.cfg,
+		v:             w.v,
+		queueID:       req.QueueID,
+		state:         req.State,
+		releaseWindow: req.ReleaseWindow,
 	}
 	if q.state == nil {
 		q.state = &QueueState{
 			QueueRefs: make([]QueueRef, 0),
+		}
+	}
+	q.paused = q.state.Paused
+
+	for _, hook := range w.StartupHooks {
+		if err := hook(ctx, req); err != nil {
+			return err
 		}
 	}
 
@@ -59,9 +70,12 @@ type queue struct {
 
 	queueID string
 
+	releaseWindow *ReleaseWindow
+
 	ready     bool
 	stopped   bool
 	restarted bool
+	paused    bool
 
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState
