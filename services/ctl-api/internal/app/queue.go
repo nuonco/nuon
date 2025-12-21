@@ -33,7 +33,8 @@ type Queue struct {
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 
-	Signals []QueueSignal `json:"queue_signal,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"signals,omitzero,omitempty"`
+	Signals  []QueueSignal  `json:"queue_signal,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"signals,omitzero,omitempty"`
+	Emitters []QueueEmitter `json:"emitters,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"emitters,omitzero,omitempty"`
 }
 
 func (r *Queue) Indexes(db *gorm.DB) []migrations.Index {

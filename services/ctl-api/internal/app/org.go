@@ -54,6 +54,7 @@ const (
 	OrgFeatureStratusWorkflow         OrgFeature = "stratus-workflow"
 	OrgFeatureTerraformInstaller      OrgFeature = "terraform-installer"
 	OrgFeatureDashboardSSE            OrgFeature = "dashboard-sse"
+	OrgFeatureQueues                  OrgFeature = "queues"
 )
 
 type Org struct {
@@ -152,6 +153,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureOrgDashboard:       false,
 		OrgFeatureInstallBreakGlass:  false,
 		OrgFeatureTerraformInstaller: false,
+		OrgFeatureQueues:             false,
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
@@ -215,5 +217,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureStratusWorkflow,
 		OrgFeatureTerraformInstaller,
 		OrgFeatureDashboardSSE,
+		OrgFeatureQueues,
 	}
 }
