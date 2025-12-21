@@ -2,16 +2,12 @@ package activities
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	tclient "go.temporal.io/sdk/client"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type EmitSignalRequest struct {
@@ -22,21 +18,6 @@ type EmitSignalRequest struct {
 type EmitSignalResponse struct {
 	QueueSignalID string
 	WorkflowID    string
-}
-
-func AwaitEmitSignal(ctx workflow.Context, req *EmitSignalRequest) (*EmitSignalResponse, error) {
-	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 2 * time.Minute,
-		StartToCloseTimeout:    30 * time.Second,
-	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
-
-	fut := workflow.ExecuteActivity(ctx, (&Activities{}).EmitSignal, req)
-	var ret EmitSignalResponse
-	if err := fut.Get(ctx, &ret); err != nil {
-		return nil, err
-	}
-	return &ret, nil
 }
 
 // @temporal-gen activity
@@ -53,30 +34,13 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		return nil, errors.New("emitter has no signal template configured")
 	}
 
-	// Get the queue to find its workflow details
-	var q app.Queue
-	if res := a.db.WithContext(ctx).
-		Where("id = ?", req.QueueID).
-		First(&q); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue")
-	}
-
-	// Call the queue's enqueue update handler
-	rawResp, err := a.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID:   q.Workflow.ID,
-		UpdateName:   queue.EnqueueUpdateName,
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			emitter.SignalTemplate.Signal,
-		},
+	// Enqueue the signal to the queue using the queue client
+	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: req.QueueID,
+		Signal:  emitter.SignalTemplate.Signal,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal to queue")
-	}
-
-	var enqueueResp queue.EnqueueResponse
-	if err := rawResp.Get(ctx, &enqueueResp); err != nil {
-		return nil, errors.Wrap(err, "unable to get enqueue response")
 	}
 
 	a.l.Info("signal emitted to queue",

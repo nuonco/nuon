@@ -6,30 +6,30 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
 	fx.In
 
-	V       *validator.Validate
-	DB      *gorm.DB `name:"psql"`
-	TClient temporalclient.Client
-	L       *zap.Logger
+	V           *validator.Validate
+	DB          *gorm.DB `name:"psql"`
+	QueueClient *queueclient.Client
+	L           *zap.Logger
 }
 
 type Activities struct {
-	v       *validator.Validate
-	db      *gorm.DB
-	tClient temporalclient.Client
-	l       *zap.Logger
+	v           *validator.Validate
+	db          *gorm.DB
+	queueClient *queueclient.Client
+	l           *zap.Logger
 }
 
 func New(params Params) *Activities {
 	return &Activities{
-		v:       params.V,
-		db:      params.DB,
-		tClient: params.TClient,
-		l:       params.L,
+		v:           params.V,
+		db:          params.DB,
+		queueClient: params.QueueClient,
+		l:           params.L,
 	}
 }

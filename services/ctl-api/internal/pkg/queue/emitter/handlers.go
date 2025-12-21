@@ -10,6 +10,8 @@ const (
 	RestartUpdateName       string = "restart"
 	StatusUpdateName        string = "status"
 	EnsureRunningUpdateName string = "ensure-running"
+	PauseUpdateName         string = "pause"
+	ResumeUpdateName        string = "resume"
 )
 
 type handlerType string
@@ -44,6 +46,16 @@ func (e *emitterWorkflow) registerHandlers(ctx workflow.Context) error {
 		EnsureRunningUpdateName: {
 			handlerTypeUpdate,
 			e.ensureRunningHandler,
+			nil,
+		},
+		PauseUpdateName: {
+			handlerTypeUpdate,
+			e.pauseHandler,
+			nil,
+		},
+		ResumeUpdateName: {
+			handlerTypeUpdate,
+			e.resumeHandler,
 			nil,
 		},
 	}

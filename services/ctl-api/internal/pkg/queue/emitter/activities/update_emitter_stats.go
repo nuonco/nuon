@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -18,21 +17,6 @@ type UpdateEmitterStatsRequest struct {
 
 type UpdateEmitterStatsResponse struct {
 	EmitCount int64
-}
-
-func AwaitUpdateEmitterStats(ctx workflow.Context, req *UpdateEmitterStatsRequest) (*UpdateEmitterStatsResponse, error) {
-	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 30 * time.Second,
-		StartToCloseTimeout:    5 * time.Second,
-	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
-
-	fut := workflow.ExecuteActivity(ctx, (&Activities{}).UpdateEmitterStats, req)
-	var ret UpdateEmitterStatsResponse
-	if err := fut.Get(ctx, &ret); err != nil {
-		return nil, err
-	}
-	return &ret, nil
 }
 
 // @temporal-gen activity

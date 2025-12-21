@@ -2,10 +2,8 @@ package activities
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -18,21 +16,6 @@ type UpdateSignalEmitterRequest struct {
 
 type UpdateSignalEmitterResponse struct {
 	Success bool
-}
-
-func AwaitUpdateSignalEmitter(ctx workflow.Context, req *UpdateSignalEmitterRequest) (*UpdateSignalEmitterResponse, error) {
-	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 30 * time.Second,
-		StartToCloseTimeout:    5 * time.Second,
-	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
-
-	fut := workflow.ExecuteActivity(ctx, (&Activities{}).UpdateSignalEmitter, req)
-	var ret UpdateSignalEmitterResponse
-	if err := fut.Get(ctx, &ret); err != nil {
-		return nil, err
-	}
-	return &ret, nil
 }
 
 // @temporal-gen activity
