@@ -3,11 +3,13 @@ package app
 import (
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
+
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"gorm.io/gorm"
-	"gorm.io/plugin/soft_delete"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type AppBranch struct {
@@ -24,11 +26,32 @@ type AppBranch struct {
 	AppID string `json:"app_id,omitzero" gorm:"not null;index:idx_app_app_branch;uniqueIndex:idx_app_branch_name_per_app" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
-	Name                       string                   `gorm:"uniqueIndex:idx_app_branch_name_per_app;not null" json:"name" temporaljson:"name"`
-	ConnectedGithubVCSConfigID string                   `gorm:"notnull" json:"connected_github_vcs_config_id" temporaljson:"connected_github_vcs_config_id"`
-	ConnectedGithubVCSConfig   ConnectedGithubVCSConfig `json:"-" temporaljson:"connected_github_vcs_config"`
+	Name string `gorm:"uniqueIndex:idx_app_branch_name_per_app;not null" json:"name" temporaljson:"name"`
+
+	Queue   Queue             `json:"queue,omitzero" gorm:"polymorphic:Owner;" temporaljson:"queue,omitzero,omitempty"`
+	Configs []AppBranchConfig `json:"configs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"configs,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
+}
+
+func (a *AppBranch) EventLoops() []bulk.EventLoop {
+	evs := make([]bulk.EventLoop, 0)
+
+	// Add the app branch event loop
+	evs = append(evs, bulk.EventLoop{
+		Namespace: "apps",
+		ID:        a.ID,
+	})
+
+	// Add the queue workflow event loop if queue exists
+	if a.Queue.ID != "" && a.Queue.Workflow.ID != "" {
+		evs = append(evs, bulk.EventLoop{
+			Namespace: a.Queue.Workflow.Namespace,
+			ID:        a.Queue.Workflow.ID,
+		})
+	}
+
+	return evs
 }
 
 func (a *AppBranch) Indexes(db *gorm.DB) []migrations.Index {

@@ -16,6 +16,8 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
@@ -30,7 +32,9 @@ type Params struct {
 	Helpers         *appshelpers.Helpers
 	InstallsHelpers *installshelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
+	FeaturesClient  *features.Features
 	EvClient        eventloop.Client
+	QueueClient     *queueclient.Client
 	EndpointAudit   *api.EndpointAudit
 	TemporalClient  temporalclient.Client
 }
@@ -46,8 +50,10 @@ type service struct {
 	helpers         *appshelpers.Helpers
 	installsHelpers *installshelpers.Helpers
 	accountsHelpers *accountshelpers.Helpers
+	featuresClient  *features.Features
 	evClient        eventloop.Client
 	temporalClient  temporalclient.Client
+	queueClient     *queueclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -176,7 +182,13 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		{
 			branches.POST("", s.CreateAppBranch)
 			branches.GET("", s.GetAppBranches)
+			branches.GET("/:app_branch_id", s.GetAppBranch)
+			branches.PATCH("/:app_branch_id", s.UpdateAppBranch)
 			branches.GET("/:app_branch_id/configs", s.GetAppBranchAppConfigs)
+			branches.POST("/:app_branch_id/configs", s.CreateAppBranchConfig)
+			branches.GET("/:app_branch_id/latest-config", s.GetAppBranchLatestConfig)
+			branches.POST("/:app_branch_id/runs", s.TriggerAppBranchRun)
+			branches.GET("/:app_branch_id/runs", s.GetAppBranchRuns)
 		}
 
 		// TODO deprecate - latest config routes
@@ -208,11 +220,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// app branches admin routes
-	appBranches := api.Group("/v1/app-branches/:app_branch_id")
+	// app branches
+	appBranches := api.Group("/v1/app-branches")
 	{
-		appBranches.POST("/admin-test-app-branch-workflow", s.AdminTestAppBranchWorkflow)
-		appBranches.POST("/admin-restart", s.AdminRestartAppBranch)
+		appBranches.POST("/:app_branch_id/admin-trigger-run", s.AdminTriggerAppBranchRun)
 	}
 
 	return nil
@@ -245,7 +256,9 @@ func New(params Params) *service {
 		helpers:         params.Helpers,
 		installsHelpers: params.InstallsHelpers,
 		accountsHelpers: params.AccountsHelpers,
+		featuresClient:  params.FeaturesClient,
 		evClient:        params.EvClient,
 		temporalClient:  params.TemporalClient,
+		queueClient:     params.QueueClient,
 	}
 }

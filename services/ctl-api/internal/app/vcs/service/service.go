@@ -42,6 +42,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			connections.POST("", s.CreateConnection)
 			connections.GET("", s.GetConnections)
 			connections.GET("/:connection_id", s.GetConnection)
+			connections.GET("/:connection_id/branches", s.GetVCSConnectionRepoBranches)
 			connections.DELETE("/:connection_id", s.DeleteConnection)
 			connections.GET("/:connection_id/check-status", s.CheckConnectionStatus)
 			connections.GET("/:connection_id/repos", s.ListConnectionRepos)

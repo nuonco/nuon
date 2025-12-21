@@ -29,6 +29,9 @@ func (h *Helpers) GetEventLoops(ctx context.Context, orgID string) ([]bulk.Event
 		// action workflows
 		Preload("Apps.ActionWorkflows").
 
+		// app branches and their queues
+		Preload("Apps.AppBranches.Queue").
+
 		// get org
 		First(&org, "id = ?", orgID); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get org")

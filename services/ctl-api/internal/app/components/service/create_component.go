@@ -12,6 +12,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -95,6 +97,18 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 		Create(&component)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create component: %w", res.Error)
+	}
+
+	// Create a queue for this component (enables cross-namespace signal delivery)
+	_, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     component.ID,
+		OwnerType:   plugins.TableName(s.db, app.Component{}),
+		Namespace:   "components",
+		MaxInFlight: 1,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create queue for component: %w", err)
 	}
 
 	depIDs, err := s.helpers.GetComponentIDs(ctx, appID, req.Dependencies)

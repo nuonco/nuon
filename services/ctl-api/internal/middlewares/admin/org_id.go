@@ -21,6 +21,24 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 
 		return obj.OrgID, nil
 	},
+	"abr": func(db *gorm.DB, id string) (string, error) {
+		var obj app.AppBranch
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch abr")
+		}
+
+		return obj.OrgID, nil
+	},
+	"que": func(db *gorm.DB, id string) (string, error) {
+		var obj app.Queue
+		res := db.First(&obj, "id = ?", id)
+		if res.Error != nil {
+			return "", errors.Wrap(res.Error, "unable to fetch queue")
+		}
+
+		return obj.OrgID, nil
+	},
 	"rgr": func(db *gorm.DB, id string) (string, error) {
 		var obj app.RunnerGroup
 		res := db.First(&obj, "id = ?", id)

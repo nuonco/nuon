@@ -14,12 +14,13 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateAppSandboxConfigRequest struct {
-	basicVCSConfigRequest
+	vcshelpers.VCSConfigRequest
 
 	TerraformVersion string  `json:"terraform_version" validate:"required"`
 	DriftSchedule    *string `json:"drift_schedule,omitempty"`
@@ -151,13 +152,13 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get app sandbox: %w", res.Error)
 	}
 
-	// build the app sandbox config
-	githubVCSConfig, err := req.connectedGithubVCSConfig(ctx, &parentApp, s.vcsHelpers)
+	// Build VCS configs
+	githubVCSConfig, err := s.vcsHelpers.BuildConnectedGithubVCSConfig(ctx, req.ConnectedGithubVCSConfig, parentApp.Org)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connected github vcs config: %w", err)
 	}
 
-	publicGitConfig, err := req.publicGitVCSConfig()
+	publicGitConfig, err := s.vcsHelpers.BuildPublicGitVCSConfig(ctx, req.PublicGitVCSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get public git config: %w", err)
 	}

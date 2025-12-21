@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/pkg/profiles"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 )
 
