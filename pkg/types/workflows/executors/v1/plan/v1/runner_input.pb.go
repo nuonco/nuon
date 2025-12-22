@@ -328,8 +328,8 @@ const file_executors_v1_plan_v1_runner_input_proto_rawDesc = "" +
 	"\x13RUNNER_TYPE_AWS_EKS\x10\x01\x12\x19\n" +
 	"\x15RUNNER_TYPE_AZURE_AKS\x10\x02\x12\x17\n" +
 	"\x13RUNNER_TYPE_AWS_ECS\x10\x03\x12\x19\n" +
-	"\x15RUNNER_TYPE_AZURE_ACS\x10\x04B\xee\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x10RunnerInputProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x15RUNNER_TYPE_AZURE_ACS\x10\x04B\xe7\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x10RunnerInputProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_runner_input_proto_rawDescOnce sync.Once

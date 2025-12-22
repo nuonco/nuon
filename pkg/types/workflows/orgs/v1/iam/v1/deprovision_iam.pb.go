@@ -120,8 +120,8 @@ const file_orgs_v1_iam_v1_deprovision_iam_proto_rawDesc = "" +
 	"\x15DeprovisionIAMRequest\x122\n" +
 	"\x06org_id\x18\x01 \x01(\tB\x1b\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x05orgId\"Y\n" +
 	"\x16DeprovisionIAMResponse\x12?\n" +
-	"\x06status\x18\x01 \x01(\v2\x17.google.protobuf.StructB\x0e\x9a\x84\x9e\x03\tfaker:\"-\"R\x06statusB\xcc\x01\n" +
-	"\x12com.orgs.v1.iam.v1B\x13DeprovisionIamProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1;iamv1\xa2\x02\x03OVI\xaa\x02\x0eOrgs.V1.Iam.V1\xca\x02\x0eOrgs\\V1\\Iam\\V1\xe2\x02\x1aOrgs\\V1\\Iam\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Iam::V1b\x06proto3"
+	"\x06status\x18\x01 \x01(\v2\x17.google.protobuf.StructB\x0e\x9a\x84\x9e\x03\tfaker:\"-\"R\x06statusB\xc5\x01\n" +
+	"\x12com.orgs.v1.iam.v1B\x13DeprovisionIamProtoP\x01Z?github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1;iamv1\xa2\x02\x03OVI\xaa\x02\x0eOrgs.V1.Iam.V1\xca\x02\x0eOrgs\\V1\\Iam\\V1\xe2\x02\x1aOrgs\\V1\\Iam\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Iam::V1b\x06proto3"
 
 var (
 	file_orgs_v1_iam_v1_deprovision_iam_proto_rawDescOnce sync.Once

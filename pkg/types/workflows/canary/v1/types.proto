@@ -4,7 +4,7 @@ package canary.v1;
 
 import "google/type/interval.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/canary/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/canary/v1";
 
 // Status represents both an individual step as well as a full provision/deprovision
 enum Status {

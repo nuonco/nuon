@@ -128,8 +128,8 @@ const file_orgs_v1_runner_v1_deprovision_runner_proto_rawDesc = "" +
 	"\x06org_id\x18\x01 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\x05orgId\x12C\n" +
 	"\x10odr_iam_role_arn\x18\x02 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\rodrIamRoleArn\x12E\n" +
 	"\x06region\x18\x03 \x01(\tB-\xfaB\rr\vR\tus-west-2\x9a\x84\x9e\x03\x18faker:\"oneof: us-west-2\"R\x06region\"\x1b\n" +
-	"\x19DeprovisionRunnerResponseB\xe4\x01\n" +
-	"\x15com.orgs.v1.runner.v1B\x16DeprovisionRunnerProtoP\x01ZLgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/runner/v1;runnerv1\xa2\x02\x03OVR\xaa\x02\x11Orgs.V1.Runner.V1\xca\x02\x11Orgs\\V1\\Runner\\V1\xe2\x02\x1dOrgs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Runner::V1b\x06proto3"
+	"\x19DeprovisionRunnerResponseB\xdd\x01\n" +
+	"\x15com.orgs.v1.runner.v1B\x16DeprovisionRunnerProtoP\x01ZEgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/runner/v1;runnerv1\xa2\x02\x03OVR\xaa\x02\x11Orgs.V1.Runner.V1\xca\x02\x11Orgs\\V1\\Runner\\V1\xe2\x02\x1dOrgs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Runner::V1b\x06proto3"
 
 var (
 	file_orgs_v1_runner_v1_deprovision_runner_proto_rawDescOnce sync.Once

@@ -146,8 +146,8 @@ const file_executors_v1_plan_v1_activities_v1_create_plan_proto_rawDesc = "" +
 	"\x11CreatePlanRequest\x12M\n" +
 	"\x0fcomponent_input\x18\x01 \x01(\v2$.executors.v1.plan.v1.ComponentInputR\x0ecomponentInput\x12G\n" +
 	"\rsandbox_input\x18\x02 \x01(\v2\".executors.v1.plan.v1.SandboxInputR\fsandboxInput\x12D\n" +
-	"\frunner_input\x18\x03 \x01(\v2!.executors.v1.plan.v1.RunnerInputR\vrunnerInputB\xcb\x02\n" +
-	"&com.executors.v1.plan.v1.activities.v1B\x0fCreatePlanProtoP\x01Zagithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1/activities/v1;activitiesv1\xa2\x02\x05EVPVA\xaa\x02\"Executors.V1.Plan.V1.Activities.V1\xca\x02\"Executors\\V1\\Plan\\V1\\Activities\\V1\xe2\x02.Executors\\V1\\Plan\\V1\\Activities\\V1\\GPBMetadata\xea\x02'Executors::V1::Plan::V1::Activities::V1b\x06proto3"
+	"\frunner_input\x18\x03 \x01(\v2!.executors.v1.plan.v1.RunnerInputR\vrunnerInputB\xc4\x02\n" +
+	"&com.executors.v1.plan.v1.activities.v1B\x0fCreatePlanProtoP\x01ZZgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1/activities/v1;activitiesv1\xa2\x02\x05EVPVA\xaa\x02\"Executors.V1.Plan.V1.Activities.V1\xca\x02\"Executors\\V1\\Plan\\V1\\Activities\\V1\xe2\x02.Executors\\V1\\Plan\\V1\\Activities\\V1\\GPBMetadata\xea\x02'Executors::V1::Plan::V1::Activities::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_activities_v1_create_plan_proto_rawDescOnce sync.Once

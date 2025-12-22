@@ -119,8 +119,8 @@ const file_orgs_v1_deprovision_proto_rawDesc = "" +
 	"\x12DeprovisionRequest\x123\n" +
 	"\x06org_id\x18\x01 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\x05orgId\x12E\n" +
 	"\x06region\x18\x02 \x01(\tB-\xfaB\rr\vR\tus-west-2\x9a\x84\x9e\x03\x18faker:\"oneof: us-west-2\"R\x06region\"\x15\n" +
-	"\x13DeprovisionResponseB\x9e\x01\n" +
-	"\vcom.orgs.v1B\x10DeprovisionProtoP\x01Z@github.com/nuonco/nuon/pkg/types/workflows/orgs/v1;orgsv1\xa2\x02\x03OXX\xaa\x02\aOrgs.V1\xca\x02\aOrgs\\V1\xe2\x02\x13Orgs\\V1\\GPBMetadata\xea\x02\bOrgs::V1b\x06proto3"
+	"\x13DeprovisionResponseB\x97\x01\n" +
+	"\vcom.orgs.v1B\x10DeprovisionProtoP\x01Z9github.com/nuonco/nuon/pkg/types/workflows/orgs/v1;orgsv1\xa2\x02\x03OXX\xaa\x02\aOrgs.V1\xca\x02\aOrgs\\V1\xe2\x02\x13Orgs\\V1\\GPBMetadata\xea\x02\bOrgs::V1b\x06proto3"
 
 var (
 	file_orgs_v1_deprovision_proto_rawDescOnce sync.Once

@@ -75,7 +75,7 @@ type WaypointVariableMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m WaypointVariableMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -209,7 +209,7 @@ type WaypointVariablesMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m WaypointVariablesMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

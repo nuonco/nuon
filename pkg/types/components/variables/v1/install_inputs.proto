@@ -4,7 +4,7 @@ package variables.v1;
 
 import "tagger/tagger.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/variables/v1";
 
 // InstallInputs represent a customer provided input
 message InstallInput {

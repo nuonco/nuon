@@ -104,7 +104,7 @@ type HelmValuesMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m HelmValuesMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -209,7 +209,7 @@ type HelmValueMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m HelmValueMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -338,7 +338,7 @@ type HelmValuesMapMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m HelmValuesMapMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

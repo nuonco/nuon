@@ -186,8 +186,8 @@ const file_executors_v1_plan_v1_workflow_proto_rawDesc = "" +
 	"\x05input\x12\x0e\x9a\x84\x9e\x03\tfaker:\"-\"\"u\n" +
 	"\x12CreatePlanResponse\x12/\n" +
 	"\x03ref\x18\x01 \x01(\v2\x1d.executors.v1.plan.v1.PlanRefR\x03ref\x12.\n" +
-	"\x04plan\x18\x02 \x01(\v2\x1a.executors.v1.plan.v1.PlanR\x04planB\xeb\x01\n" +
-	"\x18com.executors.v1.plan.v1B\rWorkflowProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x04plan\x18\x02 \x01(\v2\x1a.executors.v1.plan.v1.PlanR\x04planB\xe4\x01\n" +
+	"\x18com.executors.v1.plan.v1B\rWorkflowProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_workflow_proto_rawDescOnce sync.Once

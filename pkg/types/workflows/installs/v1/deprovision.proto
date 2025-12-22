@@ -8,7 +8,7 @@ import "installs/v1/sandbox_settings.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/workflows/installs/v1";
 
 // DeprovisionRequest: provision a nuon sandbox and runner
 message DeprovisionRequest {

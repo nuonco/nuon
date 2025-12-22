@@ -5,7 +5,7 @@ package orgs.v1.iam.v1;
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1";
 
 message ProvisionIAMRequest {
   string org_id = 1 [

@@ -210,8 +210,8 @@ const file_installs_v1_runner_v1_deprovision_runner_proto_rawDesc = "" +
 	" \x01(\v2\x18.installs.v1.AWSSettingsR\vawsSettings\x12A\n" +
 	"\x0eazure_settings\x18\v \x01(\v2\x1a.installs.v1.AzureSettingsR\razureSettings\x12G\n" +
 	"\x10sandbox_settings\x18\f \x01(\v2\x1c.installs.v1.SandboxSettingsR\x0fsandboxSettings\"\x1b\n" +
-	"\x19DeprovisionRunnerResponseB\xfc\x01\n" +
-	"\x19com.installs.v1.runner.v1B\x16DeprovisionRunnerProtoP\x01ZPgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
+	"\x19DeprovisionRunnerResponseB\xf5\x01\n" +
+	"\x19com.installs.v1.runner.v1B\x16DeprovisionRunnerProtoP\x01ZIgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
 
 var (
 	file_installs_v1_runner_v1_deprovision_runner_proto_rawDescOnce sync.Once

@@ -4,7 +4,7 @@ package build.v1;
 
 import "variables/v1/env.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/build/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/build/v1";
 
 // Since job builds use noop, we don't need anything in the build config.
 // But, removing these causes ctl-api to panic, so deprecating them instead.

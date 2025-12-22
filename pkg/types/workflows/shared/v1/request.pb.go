@@ -412,8 +412,8 @@ const file_shared_v1_request_proto_rawDesc = "" +
 	"\forg_teardown\x18\x05 \x01(\v2\x1b.orgs.v1.DeprovisionRequestH\x00R\vorgTeardown\x12@\n" +
 	"\rapp_provision\x18\a \x01(\v2\x19.apps.v1.ProvisionRequestH\x00R\fappProvision\x12C\n" +
 	"\x0eexecutors_plan\x18\b \x01(\v2\x1a.executors.v1.plan.v1.PlanH\x00R\rexecutorsPlanB\t\n" +
-	"\arequestB\xa8\x01\n" +
-	"\rcom.shared.v1B\fRequestProtoP\x01ZDgithub.com/nuonco/nuon/pkg/types/workflows/shared/v1;sharedv1\xa2\x02\x03SXX\xaa\x02\tShared.V1\xca\x02\tShared\\V1\xe2\x02\x15Shared\\V1\\GPBMetadata\xea\x02\n" +
+	"\arequestB\xa1\x01\n" +
+	"\rcom.shared.v1B\fRequestProtoP\x01Z=github.com/nuonco/nuon/pkg/types/workflows/shared/v1;sharedv1\xa2\x02\x03SXX\xaa\x02\tShared.V1\xca\x02\tShared\\V1\xe2\x02\x15Shared\\V1\\GPBMetadata\xea\x02\n" +
 	"Shared::V1b\x06proto3"
 
 var (

@@ -6,7 +6,7 @@ import "orgs/v1/server/v1/cluster_info.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/server/v1";
 
 message ProvisionServerRequest {
   string org_id = 1 [

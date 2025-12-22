@@ -6,7 +6,7 @@ import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
 import "variables/v1/variable.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/variables/v1";
 
 // Variables represents a set of vars that will be used as inputs into deploys, builds etc.
 message Variables {

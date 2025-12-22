@@ -200,8 +200,8 @@ const file_executors_v1_plan_v1_component_input_proto_rawDesc = "" +
 	"#COMPONENT_INPUT_TYPE_WAYPOINT_BUILD\x10\x01\x12,\n" +
 	"(COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE\x10\x02\x12(\n" +
 	"$COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY\x10\x03\x12)\n" +
-	"%COMPONENT_INPUT_TYPE_WAYPOINT_DESTROY\x10\x04B\xf1\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x13ComponentInputProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"%COMPONENT_INPUT_TYPE_WAYPOINT_DESTROY\x10\x04B\xea\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x13ComponentInputProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_component_input_proto_rawDescOnce sync.Once

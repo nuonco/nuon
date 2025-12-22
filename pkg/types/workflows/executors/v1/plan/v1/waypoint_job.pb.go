@@ -309,8 +309,8 @@ const file_executors_v1_plan_v1_waypoint_job_proto_rawDesc = "" +
 	"!RUNNER_JOB_TYPE_SANDBOX_PROVISION\x10\x90\x03\x12(\n" +
 	"#RUNNER_JOB_TYPE_SANDBOX_DEPROVISION\x10\x91\x03\x12%\n" +
 	" RUNNER_JOB_TYPE_RUNNER_PROVISION\x10\xf4\x03\x12'\n" +
-	"\"RUNNER_JOB_TYPE_RUNNER_DEPROVISION\x10\xf5\x03B\xee\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x10WaypointJobProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\"RUNNER_JOB_TYPE_RUNNER_DEPROVISION\x10\xf5\x03B\xe7\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x10WaypointJobProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_waypoint_job_proto_rawDescOnce sync.Once

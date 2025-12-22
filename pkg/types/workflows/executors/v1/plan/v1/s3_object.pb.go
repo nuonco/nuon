@@ -147,8 +147,8 @@ const file_executors_v1_plan_v1_s3_object_proto_rawDesc = "" +
 	"\x13assume_role_details\x18\x04 \x01(\v2'.executors.v1.plan.v1.AssumeRoleDetailsR\x11assumeRoleDetails\"N\n" +
 	"\x11AssumeRoleDetails\x129\n" +
 	"\n" +
-	"assume_arn\x18\x01 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=25\"R\tassumeArnB\xeb\x01\n" +
-	"\x18com.executors.v1.plan.v1B\rS3ObjectProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"assume_arn\x18\x01 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=25\"R\tassumeArnB\xe4\x01\n" +
+	"\x18com.executors.v1.plan.v1B\rS3ObjectProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_s3_object_proto_rawDescOnce sync.Once

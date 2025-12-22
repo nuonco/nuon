@@ -2,6 +2,6 @@ syntax = "proto3";
 
 package context.v1;
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/context/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/context/v1";
 
 message BuildContext {}

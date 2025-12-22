@@ -93,8 +93,8 @@ const file_executors_v1_plan_v1_plan_ref_proto_rawDesc = "" +
 	"\x06bucket\x18\x01 \x01(\tB\x1a\xfaB\x04r\x02\x10\x01\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\x06bucket\x12&\n" +
 	"\n" +
 	"bucket_key\x18\x02 \x01(\tB\a\xfaB\x04r\x02 \x01R\tbucketKey\x12O\n" +
-	"\x16bucket_assume_role_arn\x18\x03 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=25\"R\x13bucketAssumeRoleArnB\xea\x01\n" +
-	"\x18com.executors.v1.plan.v1B\fPlanRefProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x16bucket_assume_role_arn\x18\x03 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=25\"R\x13bucketAssumeRoleArnB\xe3\x01\n" +
+	"\x18com.executors.v1.plan.v1B\fPlanRefProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_plan_ref_proto_rawDescOnce sync.Once

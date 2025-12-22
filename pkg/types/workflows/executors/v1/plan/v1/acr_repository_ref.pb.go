@@ -110,8 +110,8 @@ const file_executors_v1_plan_v1_acr_repository_ref_proto_rawDesc = "" +
 	"\x03tag\x18\x02 \x01(\tB\x1a\xfaB\x04r\x02\x10\x01\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\x03tag\x12=\n" +
 	"\flogin_server\x18\x03 \x01(\tB\x1a\xfaB\x04r\x02\x10\x01\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\vloginServer\x126\n" +
 	"\busername\x18\x04 \x01(\tB\x1a\xfaB\x04r\x02\x10\x01\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\busername\x126\n" +
-	"\bpassword\x18\x05 \x01(\tB\x1a\xfaB\x04r\x02\x10\x01\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\bpasswordB\xf3\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x15AcrRepositoryRefProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\bpassword\x18\x05 \x01(\tB\x1a\xfaB\x04r\x02\x10\x01\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\bpasswordB\xec\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x15AcrRepositoryRefProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_acr_repository_ref_proto_rawDescOnce sync.Once

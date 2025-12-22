@@ -2,6 +2,6 @@ syntax = "proto3";
 
 package build.v1;
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/build/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/build/v1";
 
 message NoopConfig {}

@@ -102,8 +102,8 @@ const file_executors_v1_plan_v1_waypoint_runner_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tB\x1b\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x02id\x12R\n" +
 	"\x17on_demand_runner_config\x18\x02 \x01(\tB\x1b\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x14onDemandRunnerConfig\x12$\n" +
 	"\timage_url\x18\x03 \x01(\tB\a\xfaB\x04r\x02\x10\x05R\bimageUrl\x12=\n" +
-	"\tvariables\x18\x06 \x01(\v2\x1f.variables.v1.WaypointVariablesR\tvariablesB\xf1\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x13WaypointRunnerProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\tvariables\x18\x06 \x01(\v2\x1f.variables.v1.WaypointVariablesR\tvariablesB\xea\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x13WaypointRunnerProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_waypoint_runner_proto_rawDescOnce sync.Once

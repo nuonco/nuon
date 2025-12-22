@@ -5,7 +5,7 @@ package variables.v1;
 import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/variables/v1";
 
 // HelmValues is a list of waypoint vars, and exposes methods to convert to maps etc.
 message HelmValues {
