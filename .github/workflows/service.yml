@@ -69,8 +69,9 @@ jobs:
           BUILD_PROMOTION: ${{ inputs.is_promotion }}
           GITHUB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
 
-      - name: 🚪 Dry-Run Deploy Stage
-        if: ${{ inputs.stage }}
+      # Services that need k8s charts deploy via mono repo
+      - name: 🚪 Dry-Run Deploy Stage (k8s services)
+        if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo powertoolsdev/mono \
@@ -83,8 +84,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: ⬆️ Deploy Stage
-        if: ${{ inputs.stage }}
+      - name: ⬆️ Deploy Stage (k8s services)
+        if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo powertoolsdev/mono \
@@ -97,8 +98,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: 🚪 Dry-Run Deploy Prod
-        if: ${{ inputs.prod }}
+      - name: 🚪 Dry-Run Deploy Prod (k8s services)
+        if: ${{ inputs.prod && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo powertoolsdev/mono \
@@ -111,8 +112,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
-      - name: 🌎 Deploy Prod
-        if: ${{ inputs.prod }}
+      - name: 🌎 Deploy Prod (k8s services)
+        if: ${{ inputs.prod && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo powertoolsdev/mono \
@@ -124,3 +125,14 @@ jobs:
             --field source_run_id=${{ github.run_id }}
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
+
+      # Artifacts (runner, cli, lsp) deploy directly via nuonctl - no k8s needed
+      - name: ⬆️ Deploy Stage (artifacts)
+        if: ${{ inputs.stage && contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
+        run: |
+          CI=true nuonctl deploys deploy ${{inputs.service}} --env=stage --tag=${{inputs.tag}}
+
+      - name: 🌎 Deploy Prod (artifacts)
+        if: ${{ inputs.prod && contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
+        run: |
+          CI=true nuonctl deploys deploy ${{inputs.service}} --env=prod --tag=${{inputs.tag}}
