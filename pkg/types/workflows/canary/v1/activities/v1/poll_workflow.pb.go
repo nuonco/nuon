@@ -149,8 +149,8 @@ const file_canary_v1_activities_v1_poll_workflow_proto_rawDesc = "" +
 	"workflowId\"\x81\x01\n" +
 	"\x14PollWorkflowResponse\x12-\n" +
 	"\x04step\x18\x01 \x01(\v2\x0f.canary.v1.StepB\b\xfaB\x05\x8a\x01\x02\x10\x01R\x04step\x12:\n" +
-	"\bresponse\x18\x02 \x01(\v2\x14.google.protobuf.AnyB\b\xfaB\x05\xa2\x01\x02\b\x01R\bresponseB\x87\x02\n" +
-	"\x1bcom.canary.v1.activities.v1B\x11PollWorkflowProtoP\x01ZVgithub.com/nuonco/nuon/pkg/types/workflows/canary/v1/activities/v1;activitiesv1\xa2\x02\x03CVA\xaa\x02\x17Canary.V1.Activities.V1\xca\x02\x17Canary\\V1\\Activities\\V1\xe2\x02#Canary\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aCanary::V1::Activities::V1b\x06proto3"
+	"\bresponse\x18\x02 \x01(\v2\x14.google.protobuf.AnyB\b\xfaB\x05\xa2\x01\x02\b\x01R\bresponseB\x80\x02\n" +
+	"\x1bcom.canary.v1.activities.v1B\x11PollWorkflowProtoP\x01ZOgithub.com/nuonco/nuon/pkg/types/workflows/canary/v1/activities/v1;activitiesv1\xa2\x02\x03CVA\xaa\x02\x17Canary.V1.Activities.V1\xca\x02\x17Canary\\V1\\Activities\\V1\xe2\x02#Canary\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aCanary::V1::Activities::V1b\x06proto3"
 
 var (
 	file_canary_v1_activities_v1_poll_workflow_proto_rawDescOnce sync.Once

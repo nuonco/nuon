@@ -99,8 +99,8 @@ const file_executors_v1_plan_v1_git_source_proto_rawDesc = "" +
 	"\x03url\x18\x01 \x01(\tB>\x9a\x84\x9e\x039faker:\"oneof:https_//token_github.com/jonmorehouse/empty\"R\x03url\x12,\n" +
 	"\x03ref\x18\x02 \x01(\tB\x1a\x9a\x84\x9e\x03\x15faker:\"oneof:d4cd4da\"R\x03ref\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12-\n" +
-	"\x12recurse_submodules\x18\x04 \x01(\x05R\x11recurseSubmodulesB\xec\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x0eGitSourceProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x12recurse_submodules\x18\x04 \x01(\x05R\x11recurseSubmodulesB\xe5\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x0eGitSourceProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_git_source_proto_rawDescOnce sync.Once

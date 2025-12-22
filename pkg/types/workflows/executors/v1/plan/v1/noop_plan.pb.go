@@ -64,8 +64,8 @@ const file_executors_v1_plan_v1_noop_plan_proto_rawDesc = "" +
 	"\n" +
 	"$executors/v1/plan/v1/noop_plan.proto\x12\x14executors.v1.plan.v1\"\n" +
 	"\n" +
-	"\bNoopPlanB\xeb\x01\n" +
-	"\x18com.executors.v1.plan.v1B\rNoopPlanProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\bNoopPlanB\xe4\x01\n" +
+	"\x18com.executors.v1.plan.v1B\rNoopPlanProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_noop_plan_proto_rawDescOnce sync.Once

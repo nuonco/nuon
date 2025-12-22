@@ -140,8 +140,8 @@ const file_shared_v1_activities_v1_poll_workflow_proto_rawDesc = "" +
 	"\vworkflow_id\x18\x03 \x01(\tB\a\xfaB\x04r\x02\x10\x05R\n" +
 	"workflowId\"R\n" +
 	"\x14PollWorkflowResponse\x12:\n" +
-	"\bresponse\x18\x02 \x01(\v2\x14.google.protobuf.AnyB\b\xfaB\x05\xa2\x01\x02\b\x01R\bresponseB\x87\x02\n" +
-	"\x1bcom.shared.v1.activities.v1B\x11PollWorkflowProtoP\x01ZVgithub.com/nuonco/nuon/pkg/types/workflows/shared/v1/activities/v1;activitiesv1\xa2\x02\x03SVA\xaa\x02\x17Shared.V1.Activities.V1\xca\x02\x17Shared\\V1\\Activities\\V1\xe2\x02#Shared\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aShared::V1::Activities::V1b\x06proto3"
+	"\bresponse\x18\x02 \x01(\v2\x14.google.protobuf.AnyB\b\xfaB\x05\xa2\x01\x02\b\x01R\bresponseB\x80\x02\n" +
+	"\x1bcom.shared.v1.activities.v1B\x11PollWorkflowProtoP\x01ZOgithub.com/nuonco/nuon/pkg/types/workflows/shared/v1/activities/v1;activitiesv1\xa2\x02\x03SVA\xaa\x02\x17Shared.V1.Activities.V1\xca\x02\x17Shared\\V1\\Activities\\V1\xe2\x02#Shared\\V1\\Activities\\V1\\GPBMetadata\xea\x02\x1aShared::V1::Activities::V1b\x06proto3"
 
 var (
 	file_shared_v1_activities_v1_poll_workflow_proto_rawDescOnce sync.Once

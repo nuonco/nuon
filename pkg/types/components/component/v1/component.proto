@@ -10,7 +10,7 @@ import "tagger/tagger.proto";
 import "validate/validate.proto";
 import "variables/v1/install_inputs.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/component/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/component/v1";
 
 // Docker config uses the waypoint build
 message Component {

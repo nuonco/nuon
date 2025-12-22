@@ -11,7 +11,7 @@ import "deploy/v1/terraform_module.proto";
 import "google/protobuf/duration.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/deploy/v1";
 
 message Config {
   // name maps to the waypoint application in the customer install

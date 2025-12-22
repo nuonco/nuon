@@ -4,7 +4,7 @@ package deploy.v1;
 
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/deploy/v1";
 
 // NOTE: HelmRepoConfig is deprecated, and will be removed in a future iteration.
 // HelmRepoConfig enables a customer to install a helm repository

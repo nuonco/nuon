@@ -76,7 +76,7 @@ type AwsAccountMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AwsAccountMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -185,7 +185,7 @@ type AzureAccountMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AzureAccountMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -343,7 +343,7 @@ type InstallContextMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m InstallContextMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

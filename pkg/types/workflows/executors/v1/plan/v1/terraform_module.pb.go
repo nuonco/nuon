@@ -203,8 +203,8 @@ const file_executors_v1_plan_v1_terraform_module_proto_rawDesc = "" +
 	"\x11S3TerraformModule\x126\n" +
 	"\x06object\x18\x01 \x01(\v2\x1e.executors.v1.plan.v1.S3ObjectR\x06object\"(\n" +
 	"\x14LocalTerraformModule\x12\x10\n" +
-	"\x03dir\x18\x01 \x01(\tR\x03dirB\xf2\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x14TerraformModuleProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x03dir\x18\x01 \x01(\tR\x03dirB\xeb\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x14TerraformModuleProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_terraform_module_proto_rawDescOnce sync.Once

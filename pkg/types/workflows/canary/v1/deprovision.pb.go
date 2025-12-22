@@ -128,8 +128,8 @@ const file_canary_v1_deprovision_proto_rawDesc = "" +
 	"\tcanary_id\x18\x01 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\bcanaryId\x12!\n" +
 	"\fsandbox_mode\x18\x03 \x01(\bR\vsandboxMode\"P\n" +
 	"\x13DeprovisionResponse\x129\n" +
-	"\tcanary_id\x18\x01 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\bcanaryIdB\xac\x01\n" +
-	"\rcom.canary.v1B\x10DeprovisionProtoP\x01ZDgithub.com/nuonco/nuon/pkg/types/workflows/canary/v1;canaryv1\xa2\x02\x03CXX\xaa\x02\tCanary.V1\xca\x02\tCanary\\V1\xe2\x02\x15Canary\\V1\\GPBMetadata\xea\x02\n" +
+	"\tcanary_id\x18\x01 \x01(\tB\x1c\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0ffaker:\"shortID\"R\bcanaryIdB\xa5\x01\n" +
+	"\rcom.canary.v1B\x10DeprovisionProtoP\x01Z=github.com/nuonco/nuon/pkg/types/workflows/canary/v1;canaryv1\xa2\x02\x03CXX\xaa\x02\tCanary.V1\xca\x02\tCanary\\V1\xe2\x02\x15Canary\\V1\\GPBMetadata\xea\x02\n" +
 	"Canary::V1b\x06proto3"
 
 var (

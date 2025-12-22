@@ -93,8 +93,8 @@ const file_executors_v1_plan_v1_terraform_hooks_proto_rawDesc = "" +
 	"\benv_vars\x18\x03 \x03(\v21.executors.v1.plan.v1.TerraformHooks.EnvVarsEntryB\x0e\x9a\x84\x9e\x03\tfaker:\"-\"R\aenvVars\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\xf1\x01\n" +
-	"\x18com.executors.v1.plan.v1B\x13TerraformHooksProtoP\x01ZMgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\xea\x01\n" +
+	"\x18com.executors.v1.plan.v1B\x13TerraformHooksProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1;planv1\xa2\x02\x03EVP\xaa\x02\x14Executors.V1.Plan.V1\xca\x02\x14Executors\\V1\\Plan\\V1\xe2\x02 Executors\\V1\\Plan\\V1\\GPBMetadata\xea\x02\x17Executors::V1::Plan::V1b\x06proto3"
 
 var (
 	file_executors_v1_plan_v1_terraform_hooks_proto_rawDescOnce sync.Once

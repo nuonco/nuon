@@ -164,8 +164,8 @@ const file_apps_v1_sync_proto_rawDesc = "" +
 	"\x11terraform_version\x18\x05 \x01(\tR\x10terraformVersion\x12\x1b\n" +
 	"\tapi_token\x18\x06 \x01(\tR\bapiToken\x12\x17\n" +
 	"\aapi_url\x18\a \x01(\tR\x06apiUrl\"\x0e\n" +
-	"\fSyncResponseB\x97\x01\n" +
-	"\vcom.apps.v1B\tSyncProtoP\x01Z@github.com/nuonco/nuon/pkg/types/workflows/apps/v1;appsv1\xa2\x02\x03AXX\xaa\x02\aApps.V1\xca\x02\aApps\\V1\xe2\x02\x13Apps\\V1\\GPBMetadata\xea\x02\bApps::V1b\x06proto3"
+	"\fSyncResponseB\x90\x01\n" +
+	"\vcom.apps.v1B\tSyncProtoP\x01Z9github.com/nuonco/nuon/pkg/types/workflows/apps/v1;appsv1\xa2\x02\x03AXX\xaa\x02\aApps.V1\xca\x02\aApps\\V1\xe2\x02\x13Apps\\V1\\GPBMetadata\xea\x02\bApps::V1b\x06proto3"
 
 var (
 	file_apps_v1_sync_proto_rawDescOnce sync.Once

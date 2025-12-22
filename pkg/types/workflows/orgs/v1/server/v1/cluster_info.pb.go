@@ -100,8 +100,8 @@ const file_orgs_v1_server_v1_cluster_info_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tB\x1a\xfaB\x04r\x02\x10\x05\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x02id\x126\n" +
 	"\bendpoint\x18\x02 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\bendpoint\x123\n" +
 	"\aca_data\x18\x03 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x06caData\x12D\n" +
-	"\x10trusted_role_arn\x18\x04 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x0etrustedRoleArnB\xde\x01\n" +
-	"\x15com.orgs.v1.server.v1B\x10ClusterInfoProtoP\x01ZLgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/server/v1;serverv1\xa2\x02\x03OVS\xaa\x02\x11Orgs.V1.Server.V1\xca\x02\x11Orgs\\V1\\Server\\V1\xe2\x02\x1dOrgs\\V1\\Server\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Server::V1b\x06proto3"
+	"\x10trusted_role_arn\x18\x04 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x0etrustedRoleArnB\xd7\x01\n" +
+	"\x15com.orgs.v1.server.v1B\x10ClusterInfoProtoP\x01ZEgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/server/v1;serverv1\xa2\x02\x03OVS\xaa\x02\x11Orgs.V1.Server.V1\xca\x02\x11Orgs\\V1\\Server\\V1\xe2\x02\x1dOrgs\\V1\\Server\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Server::V1b\x06proto3"
 
 var (
 	file_orgs_v1_server_v1_cluster_info_proto_rawDescOnce sync.Once

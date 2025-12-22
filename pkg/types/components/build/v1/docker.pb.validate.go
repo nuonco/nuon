@@ -166,7 +166,7 @@ type DockerConfigMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m DockerConfigMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -270,7 +270,7 @@ type DockerBuildArgMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m DockerBuildArgMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

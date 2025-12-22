@@ -8,7 +8,7 @@ import "variables/v1/terraform.proto";
 import "vcs/v1/connected_github.proto";
 import "vcs/v1/public_git.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/workflows/installs/v1";
 
 message SandboxSettings {
   string terraform_version = 1 [

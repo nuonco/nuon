@@ -156,8 +156,8 @@ const file_orgs_v1_server_v1_deprovision_server_proto_rawDesc = "" +
 	"\x10secret_namespace\x18\x02 \x01(\tB\x1a\xfaB\x04r\x02\x10\x05\x9a\x84\x9e\x03\x0efaker:\"len=10\"R\x0fsecretNamespace\x12;\n" +
 	"\vsecret_name\x18\x03 \x01(\tB\x1a\xfaB\x04r\x02\x10\x1a\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\n" +
 	"secretName\x12N\n" +
-	"\x11kube_cluster_info\x18\x04 \x01(\v2\".orgs.v1.server.v1.KubeClusterInfoR\x0fkubeClusterInfoB\xe4\x01\n" +
-	"\x15com.orgs.v1.server.v1B\x16DeprovisionServerProtoP\x01ZLgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/server/v1;serverv1\xa2\x02\x03OVS\xaa\x02\x11Orgs.V1.Server.V1\xca\x02\x11Orgs\\V1\\Server\\V1\xe2\x02\x1dOrgs\\V1\\Server\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Server::V1b\x06proto3"
+	"\x11kube_cluster_info\x18\x04 \x01(\v2\".orgs.v1.server.v1.KubeClusterInfoR\x0fkubeClusterInfoB\xdd\x01\n" +
+	"\x15com.orgs.v1.server.v1B\x16DeprovisionServerProtoP\x01ZEgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/server/v1;serverv1\xa2\x02\x03OVS\xaa\x02\x11Orgs.V1.Server.V1\xca\x02\x11Orgs\\V1\\Server\\V1\xe2\x02\x1dOrgs\\V1\\Server\\V1\\GPBMetadata\xea\x02\x14Orgs::V1::Server::V1b\x06proto3"
 
 var (
 	file_orgs_v1_server_v1_deprovision_server_proto_rawDescOnce sync.Once

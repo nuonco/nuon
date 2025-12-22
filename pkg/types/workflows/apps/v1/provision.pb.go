@@ -131,8 +131,8 @@ const file_apps_v1_provision_proto_rawDesc = "" +
 	"\x11ProvisionResponse\x12R\n" +
 	"\n" +
 	"repository\x18\x01 \x01(\v22.apps.v1.repository.v1.ProvisionRepositoryResponseR\n" +
-	"repositoryB\x9c\x01\n" +
-	"\vcom.apps.v1B\x0eProvisionProtoP\x01Z@github.com/nuonco/nuon/pkg/types/workflows/apps/v1;appsv1\xa2\x02\x03AXX\xaa\x02\aApps.V1\xca\x02\aApps\\V1\xe2\x02\x13Apps\\V1\\GPBMetadata\xea\x02\bApps::V1b\x06proto3"
+	"repositoryB\x95\x01\n" +
+	"\vcom.apps.v1B\x0eProvisionProtoP\x01Z9github.com/nuonco/nuon/pkg/types/workflows/apps/v1;appsv1\xa2\x02\x03AXX\xaa\x02\aApps.V1\xca\x02\aApps\\V1\xe2\x02\x13Apps\\V1\\GPBMetadata\xea\x02\bApps::V1b\x06proto3"
 
 var (
 	file_apps_v1_provision_proto_rawDescOnce sync.Once

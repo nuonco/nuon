@@ -5,7 +5,7 @@ package deploy.v1;
 import "variables/v1/env.proto";
 import "variables/v1/terraform.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/deploy/v1";
 
 // TerraformModuleConfig enables a customer to provision a terraform module in their customer's cloud account
 message TerraformModuleConfig {

@@ -82,8 +82,8 @@ const file_orgs_v1_kms_v1_deprovision_kms_proto_rawDesc = "" +
 	"$orgs/v1/kms/v1/deprovision_kms.proto\x12\x0eorgs.v1.kms.v1\x1a\x13tagger/tagger.proto\x1a\x17validate/validate.proto\"\x98\x01\n" +
 	"\x15DeprovisionKMSRequest\x122\n" +
 	"\x06org_id\x18\x01 \x01(\tB\x1b\xfaB\x05r\x03\x98\x01\x1a\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x05orgId\x12K\n" +
-	"\x14secrets_iam_role_arn\x18\x02 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x11secretsIamRoleArnB\xcc\x01\n" +
-	"\x12com.orgs.v1.kms.v1B\x13DeprovisionKmsProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/kms/v1;kmsv1\xa2\x02\x03OVK\xaa\x02\x0eOrgs.V1.Kms.V1\xca\x02\x0eOrgs\\V1\\Kms\\V1\xe2\x02\x1aOrgs\\V1\\Kms\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Kms::V1b\x06proto3"
+	"\x14secrets_iam_role_arn\x18\x02 \x01(\tB\x1a\xfaB\x04r\x02\x10\x14\x9a\x84\x9e\x03\x0efaker:\"len=26\"R\x11secretsIamRoleArnB\xc5\x01\n" +
+	"\x12com.orgs.v1.kms.v1B\x13DeprovisionKmsProtoP\x01Z?github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/kms/v1;kmsv1\xa2\x02\x03OVK\xaa\x02\x0eOrgs.V1.Kms.V1\xca\x02\x0eOrgs\\V1\\Kms\\V1\xe2\x02\x1aOrgs\\V1\\Kms\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Kms::V1b\x06proto3"
 
 var (
 	file_orgs_v1_kms_v1_deprovision_kms_proto_rawDescOnce sync.Once
