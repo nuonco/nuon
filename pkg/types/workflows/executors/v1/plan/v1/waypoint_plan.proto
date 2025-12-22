@@ -15,7 +15,7 @@ import "tagger/tagger.proto";
 import "validate/validate.proto";
 import "variables/v1/variables.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1";
 
 // WaypointPlan represents a waypoint plan used for builds or deploys.
 message WaypointPlan {

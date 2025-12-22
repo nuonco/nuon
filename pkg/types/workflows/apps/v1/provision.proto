@@ -6,7 +6,7 @@ import "apps/v1/repository/v1/workflow.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/apps/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/apps/v1";
 
 message ProvisionRequest {
   string org_id = 1 [

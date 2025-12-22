@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package vcs.v1;
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/vcs/v1";
 
 message ConnectedGithubConfig {
   // repo is the org/repo path of the repository

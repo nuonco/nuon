@@ -90,8 +90,8 @@ const file_installs_v1_runner_v1_eks_cluster_proto_rawDesc = "" +
 	"\x0eEKSClusterInfo\x12#\n" +
 	"\x02id\x18\x01 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x02id\x12/\n" +
 	"\bendpoint\x18\x02 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\bendpoint\x12,\n" +
-	"\aca_data\x18\x03 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x06caDataB\xf5\x01\n" +
-	"\x19com.installs.v1.runner.v1B\x0fEksClusterProtoP\x01ZPgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
+	"\aca_data\x18\x03 \x01(\tB\x13\x9a\x84\x9e\x03\x0efaker:\"len=20\"R\x06caDataB\xee\x01\n" +
+	"\x19com.installs.v1.runner.v1B\x0fEksClusterProtoP\x01ZIgithub.com/nuonco/nuon/pkg/types/workflows/installs/v1/runner/v1;runnerv1\xa2\x02\x03IVR\xaa\x02\x15Installs.V1.Runner.V1\xca\x02\x15Installs\\V1\\Runner\\V1\xe2\x02!Installs\\V1\\Runner\\V1\\GPBMetadata\xea\x02\x18Installs::V1::Runner::V1b\x06proto3"
 
 var (
 	file_installs_v1_runner_v1_eks_cluster_proto_rawDescOnce sync.Once

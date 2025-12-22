@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package executors.v1.log.v1;
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/log/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/log/v1";
 
 message LogConfiguration {
   string runner_id = 1;

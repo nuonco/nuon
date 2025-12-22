@@ -6,7 +6,7 @@ import "tagger/tagger.proto";
 import "variables/v1/env.proto";
 import "vcs/v1/config.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/components/build/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/components/build/v1";
 
 // Docker config uses the waypoint build
 message DockerConfig {

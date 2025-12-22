@@ -418,8 +418,8 @@ const file_shared_v1_response_proto_rawDesc = "" +
 	"\x0eResponseStatus\x12\x1f\n" +
 	"\x1bRESPONSE_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12RESPONSE_STATUS_OK\x10\x01\x12\x19\n" +
-	"\x15RESPONSE_STATUS_ERROR\x10\x02B\xa9\x01\n" +
-	"\rcom.shared.v1B\rResponseProtoP\x01ZDgithub.com/nuonco/nuon/pkg/types/workflows/shared/v1;sharedv1\xa2\x02\x03SXX\xaa\x02\tShared.V1\xca\x02\tShared\\V1\xe2\x02\x15Shared\\V1\\GPBMetadata\xea\x02\n" +
+	"\x15RESPONSE_STATUS_ERROR\x10\x02B\xa2\x01\n" +
+	"\rcom.shared.v1B\rResponseProtoP\x01Z=github.com/nuonco/nuon/pkg/types/workflows/shared/v1;sharedv1\xa2\x02\x03SXX\xaa\x02\tShared.V1\xca\x02\tShared\\V1\xe2\x02\x15Shared\\V1\\GPBMetadata\xea\x02\n" +
 	"Shared::V1b\x06proto3"
 
 var (

@@ -183,8 +183,8 @@ const file_orgs_v1_iam_v1_provision_iam_proto_rawDesc = "" +
 	"\x12instances_role_arn\x18\x04 \x01(\tB\a\xfaB\x04r\x02\x10\x14R\x10instancesRoleArn\x125\n" +
 	"\x12installer_role_arn\x18\x05 \x01(\tB\a\xfaB\x04r\x02\x10\x14R\x10installerRoleArn\x12+\n" +
 	"\rorgs_role_arn\x18\x06 \x01(\tB\a\xfaB\x04r\x02\x10\x14R\vorgsRoleArn\x121\n" +
-	"\x10secrets_role_arn\x18\a \x01(\tB\a\xfaB\x04r\x02\x10\x14R\x0esecretsRoleArnB\xca\x01\n" +
-	"\x12com.orgs.v1.iam.v1B\x11ProvisionIamProtoP\x01ZFgithub.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1;iamv1\xa2\x02\x03OVI\xaa\x02\x0eOrgs.V1.Iam.V1\xca\x02\x0eOrgs\\V1\\Iam\\V1\xe2\x02\x1aOrgs\\V1\\Iam\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Iam::V1b\x06proto3"
+	"\x10secrets_role_arn\x18\a \x01(\tB\a\xfaB\x04r\x02\x10\x14R\x0esecretsRoleArnB\xc3\x01\n" +
+	"\x12com.orgs.v1.iam.v1B\x11ProvisionIamProtoP\x01Z?github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1;iamv1\xa2\x02\x03OVI\xaa\x02\x0eOrgs.V1.Iam.V1\xca\x02\x0eOrgs\\V1\\Iam\\V1\xe2\x02\x1aOrgs\\V1\\Iam\\V1\\GPBMetadata\xea\x02\x11Orgs::V1::Iam::V1b\x06proto3"
 
 var (
 	file_orgs_v1_iam_v1_provision_iam_proto_rawDescOnce sync.Once

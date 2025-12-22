@@ -104,7 +104,7 @@ type ExternalImageConfigMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExternalImageConfigMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -293,7 +293,7 @@ type ExternalImageAuthConfigMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExternalImageAuthConfigMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -399,7 +399,7 @@ type AWSIAMAuthCfgMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AWSIAMAuthCfgMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -499,7 +499,7 @@ type PublicAuthCfgMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PublicAuthCfgMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

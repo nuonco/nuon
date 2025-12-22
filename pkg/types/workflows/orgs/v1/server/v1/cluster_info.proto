@@ -5,7 +5,7 @@ package orgs.v1.server.v1;
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1";
+option go_package = "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/server/v1";
 
 message KubeClusterInfo {
   string id = 1 [
