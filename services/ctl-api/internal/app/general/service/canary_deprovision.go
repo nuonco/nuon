@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nuonco/nuon/pkg/types/workflows/canary"
 	"github.com/nuonco/nuon/pkg/workflows"
-	"github.com/nuonco/nuon/pkg/workflows/types/canary"
 	tclient "go.temporal.io/sdk/client"
 )
 
