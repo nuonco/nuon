@@ -11,9 +11,9 @@ import (
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 
-	pkgctx "github.com/powertoolsdev/mono/bins/runner/internal/pkg/ctx"
-	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
-	"github.com/powertoolsdev/mono/bins/runner/internal/pkg/registry"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

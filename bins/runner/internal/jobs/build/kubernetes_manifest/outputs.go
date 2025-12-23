@@ -3,7 +3,7 @@ package kubernetes_manifest
 import (
 	"context"
 
-	ociarchive "github.com/powertoolsdev/mono/bins/runner/internal/pkg/oci/archive"
+	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
 )
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
