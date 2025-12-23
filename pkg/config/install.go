@@ -43,8 +43,8 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type InputGroup struct {
-	Inputs map[string]string
-	Group  string
+	Inputs map[string]string `mapstructure:"inputs" toml:"inputs"`
+	Group  string            `mapstructure:"group" toml:"group"`
 }
 
 func (ig InputGroup) MarshalToml() ([]byte, error) {
