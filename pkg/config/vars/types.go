@@ -59,17 +59,17 @@ type componentIntermediate struct {
 }
 
 type installStackIntermediate struct {
-	AccountID             string            `json:"account_id" mapstructure:"account_id"`
-	Region                string            `json:"region" mapstructure:"region"`
-	VPCID                 string            `json:"vpc_id" mapstructure:"vpc_id"`
-	RunnerSubnet          string            `json:"runner_subnet" mapstructure:"runner_subnet"`
-	PublicSubnets         []string          `json:"public_subnets" mapstructure:"public_subnets"`
-	PrivateSubnets        []string          `json:"private_subnets" mapstructure:"private_subnets"`
-	ProvisionIAMRoleARN   string            `json:"provision_iam_role_arn" mapstructure:"provision_iam_role_arn"`
-	DeprovisionIAMRoleARN string            `json:"deprovision_iam_role_arn" mapstructure:"deprovision_iam_role_arn"`
-	MaintenanceIAMRoleARN string            `json:"maintenance_iam_role_arn" mapstructure:"maintenance_iam_role_arn"`
-	RunnerIAMRoleARN      string            `json:"runner_iam_role_arn" mapstructure:"runner_iam_role_arn"`
-	BreakGlassRoles       map[string]string `json:"break_glass_roles" mapstructure:"break_glass_roles"`
+	AccountID             string            `json:"account_id" mapstructure:"account_id" toml:"account_id"`
+	Region                string            `json:"region" mapstructure:"region" toml:"region"`
+	VPCID                 string            `json:"vpc_id" mapstructure:"vpc_id" toml:"vpc_id"`
+	RunnerSubnet          string            `json:"runner_subnet" mapstructure:"runner_subnet" toml:"runner_subnet"`
+	PublicSubnets         []string          `json:"public_subnets" mapstructure:"public_subnets" toml:"public_subnets"`
+	PrivateSubnets        []string          `json:"private_subnets" mapstructure:"private_subnets" toml:"private_subnets"`
+	ProvisionIAMRoleARN   string            `json:"provision_iam_role_arn" mapstructure:"provision_iam_role_arn" toml:"provision_iam_role_arn"`
+	DeprovisionIAMRoleARN string            `json:"deprovision_iam_role_arn" mapstructure:"deprovision_iam_role_arn" toml:"deprovision_iam_role_arn"`
+	MaintenanceIAMRoleARN string            `json:"maintenance_iam_role_arn" mapstructure:"maintenance_iam_role_arn" toml:"maintenance_iam_role_arn"`
+	RunnerIAMRoleARN      string            `json:"runner_iam_role_arn" mapstructure:"runner_iam_role_arn" toml:"runner_iam_role_arn"`
+	BreakGlassRoles       map[string]string `json:"break_glass_roles" mapstructure:"break_glass_roles" toml:"break_glass_roles"`
 }
 
 // intermediate represents the intermediate data available to users to interpolate

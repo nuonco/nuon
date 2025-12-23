@@ -16,20 +16,20 @@ func (t TerraformVariablesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
-	TerraformVersion string `mapstructure:"terraform_version" jsonschema:"required"`
+	TerraformVersion string `mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
 
-	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
-	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
-	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
+	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	VarsMap        map[string]string        `mapstructure:"vars,omitempty" toml:"vars,omitempty"`
+	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
 
-	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
 	// deprecated
-	Variables []TerraformVariable   `mapstructure:"var,omitempty" `
-	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty"`
+	Variables []TerraformVariable   `mapstructure:"var,omitempty" toml:"var,omitempty"`
+	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }
 
 func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

@@ -8,35 +8,35 @@ import (
 
 type AppConfig struct {
 	// Config file version
-	Version string `mapstructure:"version" jsonschema:"required"`
+	Version string `mapstructure:"version" toml:"version" jsonschema:"required"`
 
 	// Description for your app, which is rendered in the installers
-	Description string `mapstructure:"description,omitempty"`
+	Description string `mapstructure:"description,omitempty" toml:"description,omitempty"`
 	// Display name for the app, rendered in the installer
-	DisplayName string `mapstructure:"display_name,omitempty"`
+	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
 	// Slack webhook url to receive notifications
-	SlackWebhookURL string `mapstructure:"slack_webhook_url"`
+	SlackWebhookURL string `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
 	// Readme for the app
-	Readme string `mapstructure:"readme,omitempty" features:"get,template"`
+	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
 
 	// Default App Branch config
-	Branch *AppBranchConfig `mapstructure:"branch,omitempty"`
+	Branch *AppBranchConfig `mapstructure:"branch,omitempty" toml:"branch,omitempty"`
 	// Input configuration
-	Inputs *AppInputConfig `mapstructure:"inputs,omitempty"`
+	Inputs *AppInputConfig `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 	// Sandbox configuration
-	Sandbox *AppSandboxConfig `mapstructure:"sandbox" jsonschema:"required"`
+	Sandbox *AppSandboxConfig `mapstructure:"sandbox" toml:"sandbox" jsonschema:"required"`
 	// Runner configuration
-	Runner *AppRunnerConfig `mapstructure:"runner" jsonschema:"required"`
+	Runner *AppRunnerConfig `mapstructure:"runner" toml:"runner" jsonschema:"required"`
 	// Permissions config
-	Permissions *PermissionsConfig `mapstructure:"permissions,omitempty"`
+	Permissions *PermissionsConfig `mapstructure:"permissions,omitempty" toml:"permissions,omitempty"`
 	// Policies config
-	Policies *PoliciesConfig `mapstructure:"policies,omitempty"`
+	Policies *PoliciesConfig `mapstructure:"policies,omitempty" toml:"policies,omitempty"`
 	// Secrets config
-	Secrets *SecretsConfig `mapstructure:"secrets,omitempty"`
+	Secrets *SecretsConfig `mapstructure:"secrets,omitempty" toml:"secrets,omitempty"`
 	// Break-glass config
-	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty"`
+	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty" toml:"break_glass,omitempty"`
 	// Stack config
-	Stack *StackConfig `mapstructure:"stack,omitempty"`
+	Stack *StackConfig `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]
@@ -45,11 +45,11 @@ type AppConfig struct {
 	// This requires a bit more work/indirection by us, but a bit less by our customers!
 
 	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
-	Components ComponentList `mapstructure:"components,omitempty"`
+	Components ComponentList `mapstructure:"components,omitempty" toml:"components,omitempty"`
 
-	Installs []*Install `mapstructure:"installs,omitempty"`
+	Installs []*Install `mapstructure:"installs,omitempty" toml:"installs,omitempty"`
 
-	Actions []*ActionConfig `mapstructure:"actions,omitempty"`
+	Actions []*ActionConfig `mapstructure:"actions,omitempty" toml:"actions,omitempty"`
 }
 type ComponentList []*Component
 

@@ -10,15 +10,15 @@ import (
 )
 
 type AppRunnerConfig struct {
-	Source string `mapstructure:"source,omitempty"`
+	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	RunnerType string `mapstructure:"runner_type" jsonschema:"required"`
+	RunnerType string `mapstructure:"runner_type" toml:"runner_type" jsonschema:"required"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
+	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 
-	HelmDriver string `mapstructure:"helm_driver,omitempty"`
+	HelmDriver string `mapstructure:"helm_driver,omitempty" toml:"helm_driver,omitempty"`
 
-	InitScriptURL string `mapstructure:"init_script_url"`
+	InitScriptURL string `mapstructure:"init_script_url" toml:"init_script_url"`
 
 	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
