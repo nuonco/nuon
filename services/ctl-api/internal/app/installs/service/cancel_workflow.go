@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
+	"go.temporal.io/api/serviceerror"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -16,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // @ID							CancelWorkflow
@@ -67,7 +69,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 	}
 
 	if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to cancel workflow"))
+		ctx.Error(pkgerrors.Wrap(err, "unable to cancel workflow"))
 		return
 	}
 	if wf.Status.Status == app.StatusPending {
@@ -84,6 +86,14 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 	})
 	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 	if err != nil {
+		var notFoundErr *serviceerror.NotFound
+		if errors.As(err, &notFoundErr) {
+			ctx.Error(stderr.ErrNotFound{
+				Description: "workflow execution not found in temporal",
+				Err:         err,
+			})
+			return
+		}
 		ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
 		return
 	}
@@ -142,7 +152,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	}
 
 	if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to cancel workflow"))
+		ctx.Error(pkgerrors.Wrap(err, "unable to cancel workflow"))
 		return
 	}
 	if wf.Status.Status == app.StatusPending {
@@ -161,6 +171,14 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 
 	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 	if err != nil {
+		var notFoundErr *serviceerror.NotFound
+		if errors.As(err, &notFoundErr) {
+			ctx.Error(stderr.ErrNotFound{
+				Description: "workflow execution not found in temporal",
+				Err:         err,
+			})
+			return
+		}
 		ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
 		return
 	}
@@ -179,10 +197,10 @@ func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) 
 			"status": status,
 		})
 	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update")
+		return pkgerrors.Wrap(res.Error, "unable to update")
 	}
 	if res.RowsAffected < 1 {
-		return errors.New("no object found to update")
+		return pkgerrors.New("no object found to update")
 	}
 
 	return nil
