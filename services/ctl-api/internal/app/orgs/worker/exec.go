@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
-	orgsv1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1"
-	iamv1 "github.com/nuonco/nuon/pkg/types/workflows/orgs/v1/iam/v1"
+	"github.com/nuonco/nuon/pkg/types/workflows/orgs"
+	"github.com/nuonco/nuon/pkg/types/workflows/orgs/iam"
 	"github.com/nuonco/nuon/pkg/workflows"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 )
@@ -18,13 +18,13 @@ import (
 func (w *Workflows) execDeprovisionWorkflow(
 	ctx workflow.Context,
 	dryRun bool,
-	req *orgsv1.DeprovisionRequest,
-) (*orgsv1.DeprovisionResponse, error) {
+	req *orgs.DeprovisionRequest,
+) (*orgs.DeprovisionResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)
 		l.Debug("sandbox-mode enabled, sleeping for to mimic deprovisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
-		return generics.GetFakeObj[*orgsv1.DeprovisionResponse](), nil
+		return generics.GetFakeObj[*orgs.DeprovisionResponse](), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
@@ -36,7 +36,7 @@ func (w *Workflows) execDeprovisionWorkflow(
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
-	var resp orgsv1.DeprovisionResponse
+	var resp orgs.DeprovisionResponse
 	fut := workflow.ExecuteChildWorkflow(ctx, "Deprovision", req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return &resp, fmt.Errorf("unable to get workflow response: %w", err)
@@ -49,12 +49,12 @@ func (w *Workflows) execDeprovisionIAMWorkflow(
 	ctx workflow.Context,
 	dryRun bool,
 	req *orgiam.DeprovisionIAMRequest,
-) (*iamv1.DeprovisionIAMResponse, error) {
+) (*iam.DeprovisionIAMResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)
 		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
-		return generics.GetFakeObj[*iamv1.DeprovisionIAMResponse](), nil
+		return generics.GetFakeObj[*iam.DeprovisionIAMResponse](), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
@@ -66,7 +66,7 @@ func (w *Workflows) execDeprovisionIAMWorkflow(
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
-	var resp iamv1.DeprovisionIAMResponse
+	var resp iam.DeprovisionIAMResponse
 	fut := workflow.ExecuteChildWorkflow(ctx, "DeprovisionIAM", req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return &resp, fmt.Errorf("unable to get workflow response: %w", err)
@@ -78,13 +78,13 @@ func (w *Workflows) execDeprovisionIAMWorkflow(
 func (w *Workflows) execProvisionWorkflow(
 	ctx workflow.Context,
 	dryRun bool,
-	req *orgsv1.ProvisionRequest,
-) (*orgsv1.ProvisionResponse, error) {
+	req *orgs.ProvisionRequest,
+) (*orgs.ProvisionResponse, error) {
 	if dryRun {
 		l := workflow.GetLogger(ctx)
 		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxModeSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
-		return generics.GetFakeObj[*orgsv1.ProvisionResponse](), nil
+		return generics.GetFakeObj[*orgs.ProvisionResponse](), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
@@ -96,7 +96,7 @@ func (w *Workflows) execProvisionWorkflow(
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
-	var resp orgsv1.ProvisionResponse
+	var resp orgs.ProvisionResponse
 	fut := workflow.ExecuteChildWorkflow(ctx, "Provision", req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return &resp, fmt.Errorf("unable to get workflow response: %w", err)
