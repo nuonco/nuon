@@ -5,9 +5,9 @@ import (
 )
 
 type PublicRepoConfig struct {
-	Repo      string `mapstructure:"repo,omitempty" jsonschema:"required"`
-	Directory string `mapstructure:"directory,omitempty" jsonschema:"required"`
-	Branch    string `mapstructure:"branch,omitempty" jsonschema:"required"`
+	Repo      string `mapstructure:"repo,omitempty" toml:"repo,omitempty" jsonschema:"required"`
+	Directory string `mapstructure:"directory,omitempty" toml:"directory,omitempty" jsonschema:"required"`
+	Branch    string `mapstructure:"branch,omitempty" toml:"branch,omitempty" jsonschema:"required"`
 }
 
 func (p PublicRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -28,9 +28,9 @@ func (p PublicRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type ConnectedRepoConfig struct {
-	Repo      string `mapstructure:"repo,omitempty" jsonschema:"required"`
-	Directory string `mapstructure:"directory,omitempty" jsonschema:"required"`
-	Branch    string `mapstructure:"branch,omitempty" jsonschema:"required"`
+	Repo      string `mapstructure:"repo,omitempty" toml:"repo,omitempty" jsonschema:"required"`
+	Directory string `mapstructure:"directory,omitempty" toml:"directory,omitempty" jsonschema:"required"`
+	Branch    string `mapstructure:"branch,omitempty" toml:"branch,omitempty" jsonschema:"required"`
 }
 
 func (c ConnectedRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

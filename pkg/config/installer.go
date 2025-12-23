@@ -10,7 +10,7 @@ import (
 )
 
 type InstallerConfig struct {
-	Source string `mapstructure:"source,omitempty"`
+	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
 	Name        string   `mapstructure:"name,omitempty" toml:"name"`
 	Description string   `mapstructure:"description,omitempty" toml:"description"`

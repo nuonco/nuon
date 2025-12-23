@@ -3,8 +3,8 @@ package config
 import "github.com/invopop/jsonschema"
 
 type AppBranchConfig struct {
-	Name          string               `mapstructure:"name" jsonschema:"required"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"required"`
+	Name          string               `mapstructure:"name" toml:"name" jsonschema:"required"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"required"`
 }
 
 func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

@@ -32,24 +32,24 @@ func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type HelmChartComponentConfig struct {
-	ChartName string `mapstructure:"chart_name,omitempty" jsonschema:"required"`
+	ChartName string `mapstructure:"chart_name,omitempty" toml:"chart_name,omitempty" jsonschema:"required"`
 
-	ValuesMap   map[string]string `mapstructure:"values,omitempty"`
-	ValuesFiles []HelmValuesFile  `mapstructure:"values_file,omitempty"`
+	ValuesMap   map[string]string `mapstructure:"values,omitempty" toml:"values,omitempty"`
+	ValuesFiles []HelmValuesFile  `mapstructure:"values_file,omitempty" toml:"values_file,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	HelmRepo      *HelmRepoConfig      `mapstructure:"helm_repo,omitempty" jsonschema:"oneof_required=helm_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	HelmRepo      *HelmRepoConfig      `mapstructure:"helm_repo,omitempty" toml:"helm_repo,omitempty" jsonschema:"oneof_required=helm_repo"`
 
-	Namespace     string `mapstructure:"namespace" features:"template"`
-	StorageDriver string `mapstructure:"storage_driver,omitempty" features:"template"`
+	Namespace     string `mapstructure:"namespace" toml:"namespace" features:"template"`
+	StorageDriver string `mapstructure:"storage_driver,omitempty" toml:"storage_driver,omitempty" features:"template"`
 
-	TakeOwnership bool `mapstructure:"take_ownership" features:"template"`
+	TakeOwnership bool `mapstructure:"take_ownership" toml:"take_ownership" features:"template"`
 
-	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
 	// deprecated
-	Values []HelmValue `mapstructure:"value,omitempty"`
+	Values []HelmValue `mapstructure:"value,omitempty" toml:"value,omitempty"`
 }
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -72,9 +72,9 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type HelmRepoConfig struct {
-	RepoURL string `mapstructure:"repo_url" jsonschema:"required"`
-	Chart   string `mapstructure:"chart" jsonschema:"required"`
-	Version string `mapstructure:"version,omitempty"`
+	RepoURL string `mapstructure:"repo_url" toml:"repo_url" jsonschema:"required"`
+	Chart   string `mapstructure:"chart" toml:"chart" jsonschema:"required"`
+	Version string `mapstructure:"version,omitempty" toml:"version,omitempty"`
 }
 
 func (h HelmRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

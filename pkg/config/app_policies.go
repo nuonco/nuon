@@ -5,7 +5,7 @@ import (
 )
 
 type PoliciesConfig struct {
-	Policies []AppPolicy `mapstructure:"policy,omitempty"`
+	Policies []AppPolicy `mapstructure:"policy,omitempty" toml:"policy,omitempty"`
 }
 
 func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -28,8 +28,8 @@ const (
 )
 
 type AppPolicy struct {
-	Type     AppPolicyType `mapstructure:"type"`
-	Contents string        `mapstructure:"contents" features:"get,template"`
+	Type     AppPolicyType `mapstructure:"type" toml:"type"`
+	Contents string        `mapstructure:"contents" toml:"contents" features:"get,template"`
 }
 
 func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -45,7 +45,7 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type AppPolicyList struct {
-	Policy []AppPolicy `mapstructure:"policy"`
+	Policy []AppPolicy `mapstructure:"policy" toml:"policy"`
 }
 
 func (a AppPolicyList) JSONSchemaExtend(s *jsonschema.Schema) {

@@ -7,10 +7,10 @@ import (
 )
 
 type AppAWSIAMPolicy struct {
-	ManagedPolicyName string `mapstructure:"managed_policy_name,omitempty"`
-	Name              string `mapstructure:"name" jsonschema:"required"`
+	ManagedPolicyName string `mapstructure:"managed_policy_name,omitempty" toml:"managed_policy_name,omitempty"`
+	Name              string `mapstructure:"name" toml:"name" jsonschema:"required"`
 
-	Contents string `mapstructure:"contents" features:"template,get"`
+	Contents string `mapstructure:"contents" toml:"contents" features:"template,get"`
 }
 
 func (a AppAWSIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {

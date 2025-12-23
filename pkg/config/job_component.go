@@ -6,15 +6,15 @@ import (
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type JobComponentConfig struct {
-	ImageURL string   `mapstructure:"image_url" jsonschema:"required"`
-	Tag      string   `mapstructure:"tag" jsonschema:"required"`
-	Cmd      []string `mapstructure:"cmd"`
+	ImageURL string   `mapstructure:"image_url" toml:"image_url" jsonschema:"required"`
+	Tag      string   `mapstructure:"tag" toml:"tag" jsonschema:"required"`
+	Cmd      []string `mapstructure:"cmd" toml:"cmd"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
-	Args      []string          `mapstructure:"args,omitempty"`
+	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	Args      []string          `mapstructure:"args,omitempty" toml:"args,omitempty"`
 
 	// deprecated
-	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty"`
+	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }
 
 func (j JobComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

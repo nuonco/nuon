@@ -5,12 +5,12 @@ import (
 )
 
 type StackConfig struct {
-	Type        string `mapstructure:"type"`
-	Name        string `mapstructure:"name" jsonschema:"required" features:"template"`
-	Description string `mapstructure:"description" jsonschema:"required" features:"template"`
+	Type        string `mapstructure:"type" toml:"type"`
+	Name        string `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
+	Description string `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
 
-	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" features:"template"`
-	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" features:"template"`
+	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" features:"template"`
+	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" features:"template"`
 }
 
 func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

@@ -7,7 +7,7 @@ import (
 )
 
 type SecretsConfig struct {
-	Secrets []*AppSecret `mapstructure:"secret,omitempty"`
+	Secrets []*AppSecret `mapstructure:"secret,omitempty" toml:"secret,omitempty"`
 }
 
 func (a SecretsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -31,19 +31,19 @@ func (a *SecretsConfig) Validate() error {
 }
 
 type AppSecret struct {
-	Name        string `mapstructure:"name" jsonschema:"required"`
-	DisplayName string `mapstructure:"display_name,omitempty"`
-	Description string `mapstructure:"description" jsonschema:"required"`
+	Name        string `mapstructure:"name" toml:"name" jsonschema:"required"`
+	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
+	Description string `mapstructure:"description" toml:"description" jsonschema:"required"`
 
-	Required     bool   `mapstructure:"required,omitempty"`
-	AutoGenerate bool   `mapstructure:"auto_generate,omitempty"`
-	Format       string `mapstructure:"format,omitempty"`
-	Default      string `mapstructure:"default,omitempty"`
+	Required     bool   `mapstructure:"required,omitempty" toml:"required,omitempty"`
+	AutoGenerate bool   `mapstructure:"auto_generate,omitempty" toml:"auto_generate,omitempty"`
+	Format       string `mapstructure:"format,omitempty" toml:"format,omitempty"`
+	Default      string `mapstructure:"default,omitempty" toml:"default,omitempty"`
 
 	// optional fields
-	KubernetesSync            bool   `mapstructure:"kubernetes_sync,omitempty"`
-	KubernetesSecretNamespace string `mapstructure:"kubernetes_secret_namespace,omitempty"`
-	KubernetesSecretName      string `mapstructure:"kubernetes_secret_name,omitempty"`
+	KubernetesSync            bool   `mapstructure:"kubernetes_sync,omitempty" toml:"kubernetes_sync,omitempty"`
+	KubernetesSecretNamespace string `mapstructure:"kubernetes_secret_namespace,omitempty" toml:"kubernetes_secret_namespace,omitempty"`
+	KubernetesSecretName      string `mapstructure:"kubernetes_secret_name,omitempty" toml:"kubernetes_secret_name,omitempty"`
 }
 
 func (a AppSecret) JSONSchemaExtend(schema *jsonschema.Schema) {

@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/nuonco/nuon/pkg/config/diff"
+	"github.com/pelletier/go-toml/v2"
 )
 
 type InstallApprovalOption string
@@ -29,7 +30,7 @@ func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 }
 
 type AWSAccount struct {
-	Region string `mapstructure:"region,omitempty" jsonschema:"required"`
+	Region string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 }
 
 func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -41,14 +42,25 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("eu-west-1")
 }
 
-type InputGroup map[string]string
+type InputGroup struct {
+	Inputs map[string]string
+	Group  string
+}
+
+func (ig InputGroup) MarshalToml() ([]byte, error) {
+	return toml.Marshal(ig.Inputs)
+}
+
+func (ig InputGroup) TomlComment() string {
+	return fmt.Sprintf("input.group : %s", ig.Group)
+}
 
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
-	Name           string                `mapstructure:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
-	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty"`
-	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty"`
-	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty"`
+	Name           string                `mapstructure:"name" toml:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
+	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
+	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -88,7 +100,7 @@ func (i *Install) Validate() error {
 func (i *Install) FlattenedInputs() map[string]string {
 	flattened := make(map[string]string)
 	for _, group := range i.InputGroups {
-		for key, val := range group {
+		for key, val := range group.Inputs {
 			flattened[key] = val
 		}
 	}

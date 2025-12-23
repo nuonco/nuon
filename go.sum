@@ -2330,7 +2330,6 @@ github.com/nuonco/gin-swagger v1.6.2 h1:MafFLwTzIoCSmjo9dTu7KMI4XY/RSQSd/GKpyIh9
 github.com/nuonco/gin-swagger v1.6.2/go.mod h1:uTjtvuQS7lK4f8KLmB376B/kb8ypjwV2/zAk6RKV0/k=
 github.com/nuonco/nuon-go v0.92.1 h1:5WCh7mh1Hb2xz6vF4+eJFcc9nWVmJGCgueRvJAW8YOs=
 github.com/nuonco/nuon-go v0.92.1/go.mod h1:lmSoyjpbnQjs9/RrYoP+3xYdlfb2s+HYzTp9880X9kc=
-github.com/nuonco/nuon-go v0.92.3/go.mod h1:lmSoyjpbnQjs9/RrYoP+3xYdlfb2s+HYzTp9880X9kc=
 github.com/nuonco/nuon-runner-go v0.20.0 h1:Znpacu86j6vGexKwpDLQLw0k1pPWXaKLISYB70KMWU4=
 github.com/nuonco/nuon-runner-go v0.20.0/go.mod h1:s2oV2SZL4VI8WgK0tGf2z0ks+LCujbOl18Fm8UZYQjY=
 github.com/nuonco/sandboxes v1.34.0 h1:3ZH4qZw6tQkef7BVaKxUYjEfzghVBn+me5pWTE7Q4fc=
@@ -2373,8 +2372,6 @@ github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3v
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/pelletier/go-toml/v2 v2.0.8/go.mod h1:vuYfssBdrU2XDZ9bYydBu6t+6a6PYNcZljzZR9VXg+4=
 github.com/pelletier/go-toml/v2 v2.2.2/go.mod h1:1t835xjRzz80PqgE6HHgN2JOsmgYu/h4qDAS4n929Rs=
-github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
-github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/perimeterx/marshmallow v1.1.5 h1:a2LALqQ1BlHM8PZblsDdidgv1mWi1DgC2UmX50IvK2s=
 github.com/perimeterx/marshmallow v1.1.5/go.mod h1:dsXbUu8CRzfYP5a87xpp0xq9S3u0Vchtcl8we9tYaXw=
 github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+vxiaj6gdUUzhl4XmI=
@@ -2511,6 +2508,8 @@ github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/skeema/knownhosts v1.3.1 h1:X2osQ+RAjK76shCbvhHHHVl3ZlgDm8apHEHFqRjnBY8=
 github.com/skeema/knownhosts v1.3.1/go.mod h1:r7KTdC8l4uxWRyK2TpQZ/1o5HaSzh06ePQNxPwTcfiY=
+github.com/someshkoli/go-toml/v2 v2.0.0-20251222204037-58c1ef67fe54 h1:UM53sfdHID4V4u0+9QlWFHRgGcIF0882AonN0CMHELg=
+github.com/someshkoli/go-toml/v2 v2.0.0-20251222204037-58c1ef67fe54/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9 h1:zA0E5M9f2r8/vuDEBQV71RXzcTu85mD0hV4jmPyUiF0=
 github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9/go.mod h1:sFH3p0RH/ndM++RJ0QxAQ0UCCAz2LUeqRsB0blawaJw=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=

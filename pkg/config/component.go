@@ -52,20 +52,20 @@ func (c ComponentType) APIType() models.AppComponentType {
 
 // Component is a flattened configuration type that allows us to define components using a `type: type` field.
 type Component struct {
-	Source string `mapstructure:"source,omitempty"`
+	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	Type         ComponentType `mapstructure:"type,omitempty" jsonschema:"required"`
-	Name         string        `mapstructure:"name" jsonschema:"required"`
-	VarName      string        `mapstructure:"var_name,omitempty"`
-	Dependencies []string      `mapstructure:"dependencies,omitempty"`
+	Type         ComponentType `mapstructure:"type,omitempty" toml:"type,omitempty" jsonschema:"required"`
+	Name         string        `mapstructure:"name" toml:"name" jsonschema:"required"`
+	VarName      string        `mapstructure:"var_name,omitempty" toml:"var_name,omitempty"`
+	Dependencies []string      `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 
 	// WARNING: properties below should be ignored by nuonhash when empty
-	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
-	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
-	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
-	Job                *JobComponentConfig                `mapstructure:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
-	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
-	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
+	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
+	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" toml:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
+	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" toml:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
+	Job                *JobComponentConfig                `mapstructure:"job,omitempty" toml:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
+	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" toml:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
+	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
 
 	// created during parsing
 	// WARNING: properties below should not be hashed with nuonhash
