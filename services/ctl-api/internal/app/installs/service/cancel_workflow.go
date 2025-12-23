@@ -87,15 +87,12 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
 	if err != nil {
 		var notFoundErr *serviceerror.NotFound
+
 		if errors.As(err, &notFoundErr) {
-			ctx.Error(stderr.ErrNotFound{
-				Description: "workflow execution not found in temporal",
-				Err:         err,
-			})
-			return
+			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
+		} else {
+			ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
 		}
-		ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
-		return
 	}
 
 	ctx.JSON(http.StatusAccepted, true)
@@ -173,13 +170,10 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	if err != nil {
 		var notFoundErr *serviceerror.NotFound
 		if errors.As(err, &notFoundErr) {
-			ctx.Error(stderr.ErrNotFound{
-				Description: "workflow execution not found in temporal",
-				Err:         err,
-			})
-			return
+			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
+		} else {
+			ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
 		}
-		ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
 		return
 	}
 
