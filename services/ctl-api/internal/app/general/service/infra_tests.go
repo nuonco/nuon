@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	infratestsv1 "github.com/nuonco/nuon/pkg/types/workflows/infra_tests/v1"
+	infratests "github.com/nuonco/nuon/pkg/types/workflows/infra_tests"
 	"github.com/nuonco/nuon/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
 )
@@ -32,7 +32,7 @@ func (c *service) InfraTests(ctx *gin.Context) {
 	}
 
 	infraTestID := domains.NewInfraTestID()
-	wkflowReq := &infratestsv1.TestSandboxRequest{
+	wkflowReq := &infratests.TestSandboxRequest{
 		SandboxName: req.SandboxName,
 	}
 

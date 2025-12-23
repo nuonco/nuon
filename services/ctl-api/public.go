@@ -6,7 +6,6 @@ import (
 	_ "github.com/nuonco/nuon/pkg/metrics"
 	_ "github.com/nuonco/nuon/pkg/plans/types"
 	_ "github.com/nuonco/nuon/pkg/types/state"
-	_ "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 //	@title						Nuon

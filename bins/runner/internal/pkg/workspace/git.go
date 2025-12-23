@@ -32,33 +32,33 @@ func (w *workspace) isGit() bool {
 	if w.Src == nil {
 		return false
 	}
-	return w.Src.Url != emptyGithubRepoURL
+	return w.Src.URL != emptyGithubRepoURL
 }
 
 func (w *workspace) clone(ctx context.Context) error {
 	pWriter := zapwriter.New(w.L, zapcore.DebugLevel, "")
 
-	w.L.Info("cloning repository", zap.String("url", w.Src.Url))
+	w.L.Info("cloning repository", zap.String("url", w.Src.URL))
 	repo, err := git.PlainCloneContext(ctx, w.rootDir(), false, &git.CloneOptions{
-		URL:      w.Src.Url,
+		URL:      w.Src.URL,
 		Progress: pWriter,
 	})
 	if err != nil {
 		return CloneErr{
-			Url: w.Src.Url,
+			Url: w.Src.URL,
 			Ref: w.Src.Ref,
 			Err: err,
 		}
 	}
 
 	w.L.Info("fetching working tree",
-		zap.String("url", w.Src.Url),
+		zap.String("url", w.Src.URL),
 		zap.String("ref", w.Src.Ref),
 	)
 	wtree, err := repo.Worktree()
 	if err != nil {
 		return CloneErr{
-			Url: w.Src.Url,
+			Url: w.Src.URL,
 			Ref: w.Src.Ref,
 			Err: err,
 		}
@@ -71,7 +71,7 @@ func (w *workspace) clone(ctx context.Context) error {
 	if IsCommitHash(w.Src.Ref) {
 		hash := plumbing.NewHash(w.Src.Ref)
 		w.L.Info("checking out as reference",
-			zap.String("url", w.Src.Url),
+			zap.String("url", w.Src.URL),
 			zap.String("ref", w.Src.Ref),
 			zap.String("hash", hash.String()),
 		)
@@ -84,7 +84,7 @@ func (w *workspace) clone(ctx context.Context) error {
 			return nil
 		} else {
 			w.L.Error("failed to check out as reference",
-				zap.String("url", w.Src.Url),
+				zap.String("url", w.Src.URL),
 				zap.String("ref", w.Src.Ref),
 				zap.String("hash", hash.String()),
 				zap.String("error", err.Error()),
@@ -94,20 +94,20 @@ func (w *workspace) clone(ctx context.Context) error {
 
 	// fetch remote origin
 	w.L.Debug("fetching remote origin",
-		zap.String("url", w.Src.Url),
+		zap.String("url", w.Src.URL),
 		zap.String("ref", w.Src.Ref),
 	)
 	remote, err := repo.Remote("origin")
 	if err != nil {
 		return CloneErr{
-			Url: w.Src.Url,
+			Url: w.Src.URL,
 			Ref: w.Src.Ref,
 			Err: err,
 		}
 	}
 	refSpecStr := fmt.Sprintf("refs/heads/%s:refs/heads/%s", w.Src.Ref, w.Src.Ref)
 	w.L.Info("fetching remote origin",
-		zap.String("url", w.Src.Url),
+		zap.String("url", w.Src.URL),
 		zap.String("ref", w.Src.Ref),
 		zap.String("ref_spec_str", refSpecStr),
 	)
@@ -117,13 +117,13 @@ func (w *workspace) clone(ctx context.Context) error {
 	if err != nil {
 		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			w.L.Info("failed to fetch remote origin",
-				zap.String("url", w.Src.Url),
+				zap.String("url", w.Src.URL),
 				zap.String("ref", w.Src.Ref),
 				zap.String("ref_spec_str", refSpecStr),
 				zap.String("error", err.Error()),
 			)
 			// return CloneErr{
-			// 	Url: w.Src.Url,
+			// 	Url: w.Src.URL,
 			// 	Ref: w.Src.Ref,
 			// 	Err: errs.Wrap(err, "error fetching origin"),
 			// }
@@ -134,7 +134,7 @@ func (w *workspace) clone(ctx context.Context) error {
 	branchRefName := plumbing.NewBranchReferenceName(w.Src.Ref)
 	branch := plumbing.ReferenceName(branchRefName)
 	w.L.Info("checking out branch",
-		zap.String("url", w.Src.Url),
+		zap.String("url", w.Src.URL),
 		zap.String("ref", w.Src.Ref),
 		zap.String("branch_ref_name", branchRefName.String()),
 		zap.String("branch", branch.String()),
@@ -148,7 +148,7 @@ func (w *workspace) clone(ctx context.Context) error {
 		return nil
 	} else {
 		w.L.Error("failed to check out as branch",
-			zap.String("url", w.Src.Url),
+			zap.String("url", w.Src.URL),
 			zap.String("ref", w.Src.Ref),
 			zap.String("branch_ref_name", branchRefName.String()),
 			zap.String("branch", branch.String()),
@@ -159,7 +159,7 @@ func (w *workspace) clone(ctx context.Context) error {
 	// third, attempt to check out as a tag
 	tagRefName := plumbing.NewTagReferenceName(w.Src.Ref)
 	w.L.Info("checking out as a tag",
-		zap.String("url", w.Src.Url),
+		zap.String("url", w.Src.URL),
 		zap.String("ref", w.Src.Ref),
 		zap.String("tag_ref_name", tagRefName.String()),
 	)
@@ -172,7 +172,7 @@ func (w *workspace) clone(ctx context.Context) error {
 		return nil
 	} else {
 		w.L.Error("failed to check out as a tag",
-			zap.String("url", w.Src.Url),
+			zap.String("url", w.Src.URL),
 			zap.String("ref", w.Src.Ref),
 			zap.String("tag_ref_name", tagRefName.String()),
 			zap.String("error", err.Error()),
@@ -180,7 +180,7 @@ func (w *workspace) clone(ctx context.Context) error {
 	}
 
 	return CloneErr{
-		Url: w.Src.Url,
+		Url: w.Src.URL,
 		Ref: w.Src.Ref,
 		Err: err,
 	}
