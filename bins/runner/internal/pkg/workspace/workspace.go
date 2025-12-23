@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 const (
@@ -38,8 +37,7 @@ type Workspace interface {
 type workspace struct {
 	v *validator.Validate
 
-	Src   *planv1.GitSource
-	SrcV2 *plantypes.GitSource
+	Src *plantypes.GitSource
 
 	TmpRootDir string `validate:"required"`
 	ID         string `validate:"required"`
@@ -71,19 +69,9 @@ func New(v *validator.Validate, opts ...workspaceOption) (*workspace, error) {
 type workspaceOption func(*workspace)
 
 // WithGitSource sets a git source
-func WithGitSource(src *planv1.GitSource) workspaceOption {
+func WithGitSource(src *plantypes.GitSource) workspaceOption {
 	return func(obj *workspace) {
 		obj.Src = src
-	}
-}
-
-func WithNewGitSource(src *plantypes.GitSource) workspaceOption {
-	return func(obj *workspace) {
-		obj.Src = &planv1.GitSource{
-			Url:  src.URL,
-			Ref:  src.Ref,
-			Path: src.Path,
-		}
 	}
 }
 

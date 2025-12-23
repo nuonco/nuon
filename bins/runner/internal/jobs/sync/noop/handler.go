@@ -14,14 +14,12 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
-	planv1 "github.com/nuonco/nuon/pkg/types/workflows/executors/v1/plan/v1"
 )
 
 type InputConfig configs.App[configs.Build[configs.NoopBuild, configs.NoopRegistry], configs.NoopDeploy]
 
 type handlerState struct {
 	// state for an individual run, that can not be reused
-	plan      *planv1.Plan
 	cfg       *InputConfig
 	workspace workspace.Workspace
 }
