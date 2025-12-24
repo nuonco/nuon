@@ -48,9 +48,6 @@ __debug_bin
 # Ignore secret files
 .secret
 
-**/service.yml
-!services/ctl-api/service.yml
-**/service.yaml
 pkg/types/build/
 services/ctl-api/docs/public/docs.go
 services/ctl-api/docs/public/swagger*

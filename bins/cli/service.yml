@@ -1,0 +1,42 @@
+---
+type: artifact
+
+env: {}
+env_secrets: {}
+disable_config_map: true
+local_startup_cmds: []
+local_build_cmds:
+  - rm -f ~/bin/nuon-dev
+  - go build -o ~/bin/nuon-dev
+local_cmds: []
+health_checks:
+  - http://localhost:8081/livez
+
+base_images:
+  - src: Dockerfile.build
+    name: BUILD_IMAGE
+    tag: buildimage
+
+# sources define which pieces of the mono repo are included in your builds/envs.
+sources:
+  - src: pkg
+  - src: images/
+  - src: go.mod
+  - src: go.sum
+  - src: tools.go
+  - src: images/go-base/Dockerfile.build
+    dst: Dockerfile.build
+  - src: .golangci.yml
+  - src: sdks/
+
+
+color: green
+
+tests:
+  # a test is a dockerfile target.
+  # we can make sure to cache mounts by leveraging dockerfile targets.
+  - name: lint
+    docker_target: lint
+
+  - name: unit test
+    docker_target: test

@@ -14,6 +14,8 @@ WORKDIR /src/bins/${SERVICE}
 
 COPY cmd  ./cmd/
 COPY internal ./internal/
+# Copy in-tree SDKs (required for go.mod replace directives)
+COPY sdks ./sdks/
 COPY main.go .
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
