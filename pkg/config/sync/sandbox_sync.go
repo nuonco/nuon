@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *sync) syncAppSandbox(ctx context.Context, resource string) error {

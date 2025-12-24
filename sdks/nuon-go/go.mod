@@ -1,4 +1,4 @@
-module github.com/nuonco/nuon-go
+module github.com/nuonco/nuon/sdks/nuon-go
 
 go 1.24.4
 

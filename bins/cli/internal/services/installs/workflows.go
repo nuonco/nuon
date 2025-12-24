@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/browser"
 
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	workflowui "github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"

@@ -3,7 +3,7 @@ package installs
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 

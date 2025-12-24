@@ -16,7 +16,7 @@ replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playgro
 replace github.com/databus23/helm-diff/v3 v3.12.5 => github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9
 
 // Use in-tree nuon-go SDK instead of external module
-replace github.com/nuonco/nuon-go => ./sdks/nuon-go
+replace github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
@@ -356,7 +356,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/nuonco/nuon-go v0.92.1
+	github.com/nuonco/nuon/sdks/nuon-go v0.92.1
 	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
 	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect

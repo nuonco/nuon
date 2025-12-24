@@ -3,7 +3,7 @@ package sync
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 // shouldSkipBuildDueToChecksum checks if a component build should be skipped

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

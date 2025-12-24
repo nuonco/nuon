@@ -3,7 +3,7 @@ package nuon
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 )
 
 func (c *client) GetWorkflowStepApprovalContents(

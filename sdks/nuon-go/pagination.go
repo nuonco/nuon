@@ -1,7 +1,7 @@
 package nuon
 
 import (
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func handlePagination[T any](items []T, offset, limit int64) ([]T, bool) {

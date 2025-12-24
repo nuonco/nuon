@@ -2,7 +2,7 @@ package nuon
 
 import (
 	"github.com/go-openapi/runtime"
-	"github.com/nuonco/nuon-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 )
 
 type responseHeaderReader struct {

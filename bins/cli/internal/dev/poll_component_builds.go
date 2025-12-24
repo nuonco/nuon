@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"

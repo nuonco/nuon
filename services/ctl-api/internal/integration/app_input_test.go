@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 

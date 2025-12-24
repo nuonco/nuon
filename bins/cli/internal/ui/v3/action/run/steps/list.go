@@ -1,7 +1,7 @@
 package steps
 
 import (
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )

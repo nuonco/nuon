@@ -9,9 +9,9 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-playground/validator/v10"
 
-	genclient "github.com/nuonco/nuon-go/client"
-	"github.com/nuonco/nuon-go/client/operations"
-	"github.com/nuonco/nuon-go/models"
+	genclient "github.com/nuonco/nuon/sdks/nuon-go/client"
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 //go:generate ./generate.sh

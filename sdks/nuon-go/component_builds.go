@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon-go/client/operations"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // builds

@@ -3,8 +3,8 @@ package nuon
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go/client/operations"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (c *client) CreateAppPermissionsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppPermissionsConfigRequest) (*models.AppAppPermissionsConfig, error) {

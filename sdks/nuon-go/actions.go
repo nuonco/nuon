@@ -3,8 +3,8 @@ package nuon
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go/client/operations"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (c *client) GetActionWorkflows(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppActionWorkflow, bool, error) {
