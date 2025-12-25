@@ -31,6 +31,28 @@ To sync an app, and it's configuration run:
 nuon apps sync
 ```
 
+## Language Server Protocol (LSP)
+
+Nuon has a Language Server with a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp) that provides autocompletion, validation, and inline documentation for Nuon configuration `.toml` files.
+
+<Note>
+The Language Server is a beta feature and included in [Nuon Labs](https://labs.nuon.co/) so please report any bugs or inconsistencies as a [GitHub issue](https://github.com/nuonco/nuon/issues).
+</Note>
+
+The Language Server requires the [Nuon CLI](./cli) so please download it first. Future versions of the Language Server will include the CLI.
+
+The component type is required after a `#` at the top of each Nuon configuration `.toml` file.
+
+```
+# terraform
+
+name              = "certificate"
+type              = "terraform_module"
+terraform_version = "1.11.3"
+```
+
+[Here are the valid component types](https://github.com/nuonco/nuon/blob/main/pkg/config/schema/types.go#L15) in the Nuon OSS repository.
+
 ## Breaking up Config Files
 
 Since configs can get complex as your application grows, we follow a structured
@@ -39,7 +61,7 @@ in your project root with individual files for each component. e.g.,
 `components/helm_deploy.toml`.
 
 ```toml components/helm_deploy.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name           = "whoami"
 type           = "helm_chart"
 chart_name     = "whoami"
