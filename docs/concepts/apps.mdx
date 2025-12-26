@@ -22,7 +22,7 @@ into your customer's cloud account.
 
 ## How do you configure an App?
 
-Each app is represented as multiple configuration `.toml` files.
+Each app is represented as multiple configuration TOML files.
 
 Each app consists of the following parts:
 
@@ -96,7 +96,7 @@ this documentation must be rendered per-Install because certain values -- such
 as URLs -- will be different for each Install.
 
 App READMEs were introduced to support this. Each app has a `README.md` text field
-where you can define a Markdown document which will be rendered in the Dashboard
+where you can define a Markdown document which will be rendered in the dashboard
 for each Install of that App. You can use all valid Markdown, including HTML.
 You can also use variables, so that the document will be custom-rendered for
 each Install.
@@ -105,7 +105,7 @@ See the [Using READMEs](guides/using-readmes) guide for more details.
 
 ## App Management
 
-The [CLI](/cli) exposes many operational commands to manage apps. The Dashboard UI can also provide limited app management functionality.
+The [CLI](/cli) exposes many operational commands to manage apps. The dashboard can also provide limited app management functionality.
 
 To see all available commands, run: `nuon apps --help`.
 
@@ -127,7 +127,7 @@ created above.
 nuon apps create --name=your-app
 ```
 
-**List all apps** - List all apps using the CLI or Dashboard UI.
+**List all apps** - List all apps using the CLI or dashboard.
 
 ```sh
 nuon apps list
@@ -174,9 +174,9 @@ You can view various configs for an app and sync configuration files using the
 Sync is a critical step as you iterate and update you app configuration. Syncing performs syntax
 validation, uploads your configuration to the Nuon control plane, and triggers builds for any components. e.g., Terraform module, Helm chart, Kubernetes manifest, container image.
 
-If any component `.toml` files have changed, or any related files such as Helm `values.yaml` files, a new build will be triggered during sync.
+If any component TOML files have changed, or any related files such as Helm `values.yaml` files, a new build will be triggered during sync.
 
-If component source files have changed, you must push those changes to your git repo, then manually build the component using the Dashboard UI or CLI.
+If component source files have changed, you must push those changes to your git repo, then manually build the component using the dashboard or CLI.
 
 Sync all config files in the current directory:
 
@@ -239,6 +239,6 @@ readme       = "./README.md"
 ```
 
 The `readme` field points to a `README.md` file that will be rendered in the
-Dashboard UI for each app and its installs.
+Dashboard for each app and its installs.
 
 ![App README](../images/concepts/apps/readme.png)

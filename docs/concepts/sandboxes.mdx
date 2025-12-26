@@ -36,7 +36,7 @@ private GitHub repo (using a `connected_repo` block). Read more about VCS
 configuration [here](/guides/vcs).
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+# sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
@@ -103,14 +103,14 @@ for your app. The runner is responsible for executing the deployment of your app
 into the customer's account.
 
 ```toml runner.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+# runner
 
 runner_type = "aws"
 helm_driver = "configmap"
 ```
 
 ```toml runner.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+# runner
 
 runner_type = "azure"
 helm_driver = "configmap"
@@ -230,7 +230,7 @@ your new sandbox code. Custom Sandboxes can also use private GitHub repos, that
 are connected to Nuon.
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+# sandbox
 terraform_version = "1.11.3"
 
 [public_repo]

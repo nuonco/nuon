@@ -29,7 +29,7 @@
             "pages": [
               "cli",
 	      "install",
-              "dashboard-ui",
+              "dashboard",
               "configuration-files",
               "nuon-api",
               "sdks",
