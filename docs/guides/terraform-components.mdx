@@ -1,12 +1,12 @@
 ---
 title: "Terraform Components"
 description:
-  "Terraform Components allow you to provision infrastructure in your customer's
+  "Terraform components allow you to provision infrastructure in your customer's
   cloud account to power your install."
 icon: "code"
 ---
 
-Terraform Components allow you to deploy Terraform from a public or connected
+Terraform components allow you to deploy Terraform from a public or connected
 repo, to provision infrastructure resources in customer installs.
 
 ## Configuring a Terraform component
@@ -15,7 +15,7 @@ To configure a Terraform component, specify a repo, the required configuration
 values, and the version of Terraform to run it with.
 
 ```toml components/<your-component>.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
+# terraform
 name              = "certificate_wildcard_public"
 type              = "terraform_module"
 terraform_version = "1.11.3"
@@ -32,9 +32,15 @@ zone_id     = "{{ .nuon.sandbox.outputs.nuon_dns.public_domain.zone_id }}"
 domain_name = "*.{{ .nuon.sandbox.outputs.nuon_dns.public_domain.name }}"
 ```
 
-You can configure Terraform Components to use either a public repo (using a
+You can configure Terraform components to use either a public repo (using a
 `public_repo` block) or a private GitHub repo (using a `connected_repo` block).
 Read more about VCS configuration [here](/guides/vcs).
+
+You can also put the Terraform source inside of the same repo as the app, and point to it.
+
+<Note>
+If you include the Terraform source in the app repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
+</Note>
 
 ## Configuring Terraform Vars
 
@@ -42,10 +48,10 @@ You can configure terraform variables for a component using
 [component variables](/guides/using-variables).
 
 These variables can access inputs, other Components, the sandbox, and details on
-the install itself using interpolation.
+the install itself using templating and interpolation.
 
 ```toml components/<your-component>.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
+# terraform
 name              = "dynamodb_table"
 type              = "terraform_module"
 terraform_version = "1.11.4"
@@ -66,6 +72,10 @@ region     = "{{.nuon.install_stack.outputs.region}}"
 
 All Terraform state is managed by the Nuon data plane through the Nuon
 http-based API.
+
+Each execution of a Terraform component in an install is visible in the plan and apply steps in the dashboard.
+
+The Enterprise edition has two additional features including requiring approvals of the plan and apply steps and showing diffs from previous runs.
 
 ## Execution and Permissions
 

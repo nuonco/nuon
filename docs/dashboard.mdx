@@ -1,63 +1,63 @@
 ---
-title: "Dashboard UI"
+title: "Dashboard"
 description:
-  "Manage your Nuon apps and installs using the web-based Dashboard UI"
+  "Manage your Nuon apps and installs using the web-based dashboard"
 ---
 
 ## Apps
 
 With Nuon, [apps](./concepts/apps) are created and synced to the Nuon control plane with the Nuon
 [CLI](./cli). Once those steps are completed, apps, their components, and
-installs, can be administered in the web-based Dashboard UI.
+installs, can be administered in the web-based dashboard.
 
-Access the Dashboard UI at [https://app.nuon.co](https://app.nuon.co)
+Access the dashboard at [https://app.nuon.co](https://app.nuon.co)
 
 The default page is a list of apps created in your org.
 
-![Dashboard UI - Apps List](./images/resources/dashboard-ui/apps.png)
+![Dashboard - Apps List](./images/resources/dashboard-ui/apps.png)
 
 ## Installs
 
 [Installs](./concepts/installs) of apps are accessible from both the left navigation bar or within an
 app's detail page.
 
-![Dashboard UI - Installs List](./images/resources/dashboard-ui/installs.png)
+![Dashboard - Installs List](./images/resources/dashboard-ui/installs.png)
 
 After clicking into an app, there is a `README.md` describing the app and tabs
 for the components, installs and actions.
 
-![Dashboard UI - App Detail](./images/resources/dashboard-ui/app.png)
+![Dashboard - App Detail](./images/resources/dashboard-ui/app.png)
 
 After clicking into an install, there is the same app README.md with
 interpolated values for the install, inputs, state and tabs for the runner,
 stack, sandbox, components, actions and workflows.
 
-![Dashboard UI - Install Detail](./images/resources/dashboard-ui/install.png)
+![Dashboard - Install Detail](./images/resources/dashboard-ui/install.png)
 
 The [runner](./concepts/runners) tab shows the real-time status and health of the Nuon runner which
 communicates from the install’s cloud account to the Nuon control plane for
 install and maintenance jobs.
 
-![Dashboard UI - Install Detail](./images/resources/dashboard-ui/install-runner.png)
+![Dashboard - Install Detail](./images/resources/dashboard-ui/install-runner.png)
 
 The [components](./concepts/components) tab lists the building blocks of the app such as Helm charts,
 Kubernetes manifests, Terraform modules, and container images. The tab also
 shows which build of an app’s component is used and has menu items to re-build
 and re-deploy components.
 
-![Dashboard UI - Install Components](./images/resources/dashboard-ui/component-list.png)
+![Dashboard - Install Components](./images/resources/dashboard-ui/component-list.png)
 
 [Actions](./concepts/actions) are bash scripts that perform install operations e.g., initialize a
 database and day-2 operations like debug, perform health checks, and conduct
 additional operations like break glass emergency repairs.
 
-![Dashboard UI - Install Actions](./images/resources/dashboard-ui/actions.png)
+![Dashboard - Install Actions](./images/resources/dashboard-ui/actions.png)
 
 [Workflows](./concepts/workflows) are orchestrated steps to perform an app or individual component
 installation aka provisioning, de-provisioning an install or a component,
 tear-down, or run actions, the bash scripts discussed earlier.
 
-![Dashboard UI - Install Workflows](./images/resources/dashboard-ui/workflow-history.png)
+![Dashboard - Install Workflows](./images/resources/dashboard-ui/workflow-history.png)
 
 Here is a manual action workflow prompting the Nuon operator for inputs before
 executing the action script.

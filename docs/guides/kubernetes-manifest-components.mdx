@@ -1,17 +1,17 @@
 ---
 title: 'Kubernetes Manifest Components'
-description: "Kubernetes manifest Components allow you to deploy raw Kubernetes resources directly into your customer's cloud account."
+description: "Kubernetes manifest components allow you to deploy raw Kubernetes resources directly into your customer's cloud account."
 icon: 'code'
 ---
 
-Kubernetes manifest Components allow you to deploy raw Kubernetes resources using YAML manifests.
+Kubernetes manifest components allow you to deploy raw Kubernetes resources using YAML manifests.
 
 ## Configuring a Kubernetes Manifest component
 
 To configure a Kubernetes manifest component, specify a namespace and the manifest files to deploy.
 
 ```toml components/kubernetes_manifest.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=kubernetes-manifest
+# kubernetes-manifest
 name = "kubernetes_manifest"
 type = "kubernetes_manifest"
 
@@ -28,7 +28,7 @@ data:
 
 ## Multiple Resources in a Single Manifest
 
-Kubernetes manifest Components support multiple resources separated by the standard YAML document separator `---`:
+Kubernetes manifest components support multiple resources separated by the standard YAML document separator `---`:
 
 ```yaml components/deployment.yaml
 apiVersion: apps/v1
@@ -69,7 +69,7 @@ spec:
 
 ## Using Nuon Context Variables
 
-Kubernetes manifest Components support Nuon's templating system, allowing you to access variables and outputs from other components:
+Kubernetes manifest components support Nuon's templating system, allowing you to access variables and outputs from other components:
 
 ```yaml components/configmap.yaml
 ---
@@ -187,7 +187,7 @@ spec:
 
 ## Nuon Managed Sandbox Components
 
-The `aws-eks-sandbox` [managed Sandbox](/concepts/sandboxes#nuon-managed-sandboxes) ships with standard Components that your Kubernetes manifests can leverage:
+The `aws-eks-sandbox` [managed Sandbox](/concepts/sandboxes#nuon-managed-sandboxes) ships with standard components that your Kubernetes manifests can leverage:
 
 * [AWS ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller)
 * [External DNS](https://github.com/kubernetes-sigs/external-dns)
@@ -195,7 +195,7 @@ The `aws-eks-sandbox` [managed Sandbox](/concepts/sandboxes#nuon-managed-sandbox
 * [Nginx Ingress](https://docs.nginx.com/nginx-ingress-controller/)
 * [EBS CSI](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
 
-The Sandboxes are [open source](/concepts/sandboxes#nuon-managed-sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these Components do not work for your application.
+The Sandboxes are [open source](/concepts/sandboxes#nuon-managed-sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these components do not work for your application.
 
 ## Best Practices
 
@@ -225,7 +225,7 @@ spec:
 <br />
 
 <Note>
-Kubernetes manifest Components are processed in the order they appear in your repository. If you have dependencies between resources, ensure they are ordered appropriately or use proper Kubernetes resource dependencies.
+Kubernetes manifest components are processed in the order they appear in your repository. If you have dependencies between resources, ensure they are ordered appropriately or use proper Kubernetes resource dependencies.
 </Note>
 
 

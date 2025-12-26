@@ -29,7 +29,7 @@
             "pages": [
               "cli",
 	      "install",
-              "dashboard-ui",
+              "dashboard",
               "configuration-files",
               "nuon-api",
               "sdks",
@@ -94,6 +94,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/028-open-source",
           "updates/027-install-config-toggle",
           "updates/026-helm-repository-support",
           "updates/025-temporal-stability",

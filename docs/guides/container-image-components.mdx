@@ -1,6 +1,6 @@
 ---
 title: 'Container Image Components'
-description: "Container image Components allow you to use prebuilt container images."
+description: "Container image components allow you to use prebuilt container images."
 icon: 'code'
 ---
 
@@ -36,7 +36,7 @@ If you have private prebuilt images in a registry other than AWS ECR, that you w
 To use a public image from any container registry, configure the `public` block.
 
 ```toml components/public_image.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=container-image
+# container-image
 name   = "public"
 type   = "container_image"
 
@@ -50,7 +50,7 @@ tag       = "latest"
 To use an image from a private ECR registry, configure the `aws_ecr` block.
 
 ```toml components/ecr_image.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=container-image
+# container-image
 name   = "ecr"
 type   = "container_image"
 
@@ -65,13 +65,13 @@ To use an AWS ECR image, [please follow the directions](#ecr-access-iam-role) to
 
 ## Deployments
 
-Container image Components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
-into the customer install and made available to other Components via [variables](/guides/using-variables).
+Container image components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
+into the customer install and made available to other components via [variables](/guides/using-variables).
 
 To deploy a Container image component, reference the image from a Helm component or Terraform component:
 
 ```toml components/eks_deployment.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name       = "eks_deployment"
 type       = "helm_chart"
 chart_name = "<your-app>"
@@ -87,7 +87,7 @@ branch    = "main"
 ```
 
 ```toml components/ecs_service.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
+# terraform
 name              = "ecs_service"
 type              = "terraform_module"
 terraform_version = "v1.6.3"
@@ -103,7 +103,7 @@ branch    = "main"
 ```
 
 ```toml components/eks_job.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=action
+# action
 name      = "eks_job"
 type      = "job"
 image_url = "{{.nuon.components.app_image.image.repository.uri}}"
