@@ -19,7 +19,7 @@ We have taken great care to ensure the Nuon experience is as consistent as possi
 To get started, configure an app using an Azure sandbox and runner. Here's an example using our off-the-shelf Azure AKS sandbox.
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+# sandbox
 
 terraform_version = "1.12.2"
 
@@ -39,7 +39,7 @@ public_subnet_names = "{{.nuon.install_stack.outputs.public_subnet_names}}"
 ```
 
 ```toml runner.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+# runner
 
 runner_type = "azure"
 helm_driver = "configmap"

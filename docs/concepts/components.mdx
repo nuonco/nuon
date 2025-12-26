@@ -41,7 +41,7 @@ block) or a private GitHub repo (using a `connected_repo` block). Read more
 about VCS configuration [here](/guides/vcs).
 
 ```toml components/grafana.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name           	= "grafana"
 type           	= "helm_chart"
 chart_name     	= "grafana"
@@ -59,7 +59,7 @@ contents 		= "./values/grafana/values.yaml"
 
 ```
 
-By default, every component must have a `git` repository to store its source files, but you can include them in the app directory and reference the same app repo in the component `.toml` file. This example shows a component that uses the same repo as the app to store its AWS Terraform module to create the certificate in AWS:
+By default, every component must have a `git` repository to store its source files, but you can include them in the app directory and reference the same app repo in the component TOML file. This example shows a component that uses the same repo as the app to store its AWS Terraform module to create the certificate in AWS:
 
 ```toml components/certificate.toml
 
@@ -70,7 +70,7 @@ branch    = "main"
 ```
 
 <Note>
-If you are iterating and making changes to the source files of a component, running `nuon apps sync` will not trigger a new build. You need to first push your changes to your repo then create a new build manually using Dashboard UI or CLI after syncing the app. During development, it is recommended to create a branch and use that branch in the component config file.
+If you are iterating and making changes to the source files of a component, running `nuon apps sync` will not trigger a new build. You need to first push your changes to your repo then create a new build manually using dashboard or CLI after syncing the app. During development, it is recommended to create a branch and use that branch in the component config file.
 </Note>
 
 ![Component Build](../images/concepts/components/component-build.png)
@@ -112,7 +112,7 @@ nuon components get -c <component_id or component_name>
 
 <Note>
 	It is not recommended to delete components using the CLI. Instead, manage them
-	by removing a component `.toml` file from the app directory and then running `nuon apps sync`.
+	by removing a component TOML file from the app directory and then running `nuon apps sync`.
 </Note>
 
 ```sh
@@ -127,11 +127,11 @@ nuon components latest-config -c <component_id or component_name>
 
 ### Component Builds
 
-All components must be built before creating an install or updating an install. `nuon apps sync` for the first time or if a component `.toml` or related Helm `values.yaml` has changed will also trigger a build. The release commands support an `-auto-build` flag which will trigger a build.
+All components must be built before creating an install or updating an install. `nuon apps sync` for the first time or if a component TOML or related Helm `values.yaml` has changed will also trigger a build. The release commands support an `-auto-build` flag which will trigger a build.
 
 Any of the following CLI commands can use component_id or component_name with the `-c` flag to specify which component to build.
 
-**Create or re-create a Build** - Create a build using the latest component configuration in the Dashboard UI or with the CLI.
+**Create or re-create a Build** - Create a build using the latest component configuration in the dashboard or with the CLI.
 
 ![Component Build](../images/concepts/components/component-build.png)
 
@@ -139,7 +139,7 @@ Any of the following CLI commands can use component_id or component_name with th
 nuon builds create -c component_name
 ```
 
-**List Builds** - List builds for a component with the CLI or Dashboard UI.
+**List Builds** - List builds for a component with the CLI or dashboard.
 
 ```sh
 nuon builds list -c component_name
@@ -158,7 +158,7 @@ nuon builds list -c component_name
 nuon builds get -b <build-id> -c component_name
 ```
 
-**Logs** - Show logs for a build by opening the Dashboard UI.
+**Logs** - Show logs for a build by opening the dashboard.
 
 ```sh 
 nuon builds logs -b <build-id> -c component_name
