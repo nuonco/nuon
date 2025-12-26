@@ -12,16 +12,16 @@ import (
 )
 
 type AppSandboxConfig struct {
-	Source string `mapstructure:"source,omitempty"`
+	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	TerraformVersion string               `mapstructure:"terraform_version" jsonschema:"required"`
-	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
-	DriftSchedule    *string              `mapstructure:"drift_schedule,omitempty"`
+	TerraformVersion string               `mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
+	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	DriftSchedule    *string              `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty"`
 
-	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
-	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
-	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
+	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	VarsMap        map[string]string        `mapstructure:"vars,omitempty" toml:"vars,omitempty"`
+	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
 	References     []refs.Ref               `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 }
 

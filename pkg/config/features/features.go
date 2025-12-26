@@ -11,8 +11,8 @@ import (
 )
 
 type FieldFeatures struct {
-	Template bool `mapstructure:"template"`
-	Get      bool `mapstructure:"get"`
+	Template bool `mapstructure:"template" toml:"template"`
+	Get      bool `mapstructure:"get" toml:"get"`
 }
 
 func ParseFieldFeatures(field reflect.StructField) (*FieldFeatures, error) {

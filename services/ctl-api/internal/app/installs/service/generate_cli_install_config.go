@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iancoleman/strcase"
@@ -93,8 +92,8 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 
 	inputGroups := make(map[string]config.InputGroup)
 	for _, inp := range appInputCfg.AppInputs {
-		if inputGroups[inp.AppInputGroupID] == nil {
-			inputGroups[inp.AppInputGroupID] = make(config.InputGroup)
+		if inputGroups[inp.AppInputGroup.Name] == nil {
+			inputGroups[inp.AppInputGroup.Name] = make(config.InputGroup)
 		}
 		if inp.Sensitive {
 			continue
@@ -107,23 +106,20 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 			)
 
 			if inp.Required {
-				inputGroups[inp.AppInputGroupID][inp.Name] = ""
+				inputGroups[inp.AppInputGroup.Name][inp.Name] = ""
 			}
 		} else {
-			inputGroups[inp.AppInputGroupID][inp.Name] = generics.FromPtrStr(val)
+			inputGroups[inp.AppInputGroup.Name][inp.Name] = generics.FromPtrStr(val)
 		}
 	}
 
-	keys := make([]string, 0, len(inputGroups))
-	for groupId, group := range inputGroups {
-		if len(group) > 0 {
-			keys = append(keys, groupId)
+	for groupName, inputGroupInputs := range inputGroups {
+		if len(inputGroupInputs) > 0 {
+			// note(sk): we're doing this here to maintain backward compatibility,
+			// currently group name is being dropped and is not being passed forward
+			inputGroupInputs["__nuon.input.group"] = groupName
+			installCfg.InputGroups = append(installCfg.InputGroups, inputGroupInputs)
 		}
-	}
-
-	slices.Sort(keys)
-	for _, k := range keys {
-		installCfg.InputGroups = append(installCfg.InputGroups, inputGroups[k])
 	}
 
 	return &installCfg, nil

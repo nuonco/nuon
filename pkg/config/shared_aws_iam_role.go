@@ -5,14 +5,14 @@ import (
 )
 
 type AppAWSIAMRole struct {
-	Type string `mapstructure:"type"`
+	Type string `mapstructure:"type" toml:"type"`
 
-	Name        string            `mapstructure:"name" jsonschema:"required" features:"template"`
-	Description string            `mapstructure:"description" jsonschema:"required" features:"template"`
-	DisplayName string            `mapstructure:"display_name,omitempty" features:"template"`
-	Policies    []AppAWSIAMPolicy `mapstructure:"policies" jsonschema:"required"`
+	Name        string            `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
+	Description string            `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
+	DisplayName string            `mapstructure:"display_name,omitempty" toml:"display_name,omitempty" features:"template"`
+	Policies    []AppAWSIAMPolicy `mapstructure:"policies" toml:"policies" jsonschema:"required"`
 
-	PermissionsBoundary string `mapstructure:"permissions_boundary,omitempty" features:"template,get"`
+	PermissionsBoundary string `mapstructure:"permissions_boundary,omitempty" toml:"permissions_boundary,omitempty" features:"template,get"`
 }
 
 func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
