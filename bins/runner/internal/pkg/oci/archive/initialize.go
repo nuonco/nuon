@@ -3,6 +3,7 @@ package ociarchive
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"oras.land/oras-go/v2/content/file"
@@ -16,6 +17,10 @@ func (a *archive) Initialize(ctx context.Context) error {
 	a.tmpDir = tmpDir
 
 	storeDir := filepath.Join(tmpDir, "store")
+	if err := os.MkdirAll(storeDir, 0755); err != nil {
+		return fmt.Errorf("unable to create store directory: %w", err)
+	}
+
 	store, err := file.New(storeDir)
 	if err != nil {
 		return fmt.Errorf("unable to create file store: %w", err)

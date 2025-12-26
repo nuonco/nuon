@@ -11,10 +11,11 @@ type BuildPlan struct {
 	Dst    *configs.OCIRegistryRepository `json:"dst_registry" validate:"required"`
 	DstTag string                         `json:"dst_tag" validate:"required"`
 
-	HelmBuildPlan          *HelmBuildPlan          `json:"helm_build_plan,omitempty"`
-	TerraformBuildPlan     *TerraformBuildPlan     `json:"terraform_build_plan,omitempty"`
-	DockerBuildPlan        *DockerBuildPlan        `json:"docker_build_plan,omitempty"`
-	ContainerImagePullPlan *ContainerImagePullPlan `json:"container_image_pull_plan,omitempty"`
+	HelmBuildPlan               *HelmBuildPlan               `json:"helm_build_plan,omitempty"`
+	TerraformBuildPlan          *TerraformBuildPlan          `json:"terraform_build_plan,omitempty"`
+	DockerBuildPlan             *DockerBuildPlan             `json:"docker_build_plan,omitempty"`
+	ContainerImagePullPlan      *ContainerImagePullPlan      `json:"container_image_pull_plan,omitempty"`
+	KubernetesManifestBuildPlan *KubernetesManifestBuildPlan `json:"kubernetes_manifest_build_plan,omitempty"`
 
 	MinSandboxMode
 }

@@ -83,6 +83,14 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 			return nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmBuildPlan = helmPlan
+
+	case app.ComponentTypeKubernetesManifest:
+		l.Info("generating kubernetes manifest build plan")
+		k8sManifestPlan, err := p.createKubernetesManifestBuildPlan(ctx, build)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create kubernetes manifest build plan")
+		}
+		plan.KubernetesManifestBuildPlan = k8sManifestPlan
 	}
 
 	org, err := activities.AwaitGetOrgByID(ctx, build.OrgID)

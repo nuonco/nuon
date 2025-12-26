@@ -145,6 +145,9 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	} else if c.DockerBuildComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.DockerBuildComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.DockerBuildComponentConfig.PublicGitVCSConfig
+	} else if c.KubernetesManifestComponentConfig != nil {
+		c.ConnectedGithubVCSConfig = c.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig
+		c.PublicGitVCSConfig = c.KubernetesManifestComponentConfig.PublicGitVCSConfig
 	}
 
 	// set the vcs connection type correctly
