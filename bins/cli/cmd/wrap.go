@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -22,7 +24,10 @@ type (
 func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
 	fn := c.sentryWrapCmd(c.analyticsWrapCmd(f))
 	return func(cmd *cobra.Command, args []string) {
-		fn(cmd, args)
+		err := fn(cmd, args)
+		if err != nil {
+			fmt.Println(errors.Wrap(err, "command failed"))
+		}
 	}
 }
 

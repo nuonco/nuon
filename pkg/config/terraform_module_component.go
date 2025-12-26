@@ -34,14 +34,6 @@ type TerraformModuleComponentConfig struct {
 
 func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("source").Short("source path or URL").
-		Long("Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.yaml, git::https://github.com/org/repo//config.yaml, file:///path/to/config.yaml, ./local/config.yaml").
-		Field("type").Short("component type").
-		Field("name").Short("component name").
-		Field("var_name").Short("variable name for component output").
-		Long("Optional name to use when storing component outputs as variables. If not specified, uses the component name").
-		Field("dependencies").Short("component dependencies").
-		Long("List of other components that must be deployed before this component. Automatically extracted from template references").
 		Field("terraform_version").Short("Terraform version").Required().
 		Long("Version of Terraform to use for deployments").
 		Example("1.5.0").
