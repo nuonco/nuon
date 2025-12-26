@@ -54,13 +54,6 @@ type HelmChartComponentConfig struct {
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("source").Short("source path or URL").
-		Long("Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.yaml, git::https://github.com/org/repo//config.yaml, file:///path/to/config.yaml, ./local/config.yaml").
-		Field("type").Short("component type").
-		Field("name").Short("release name").
-		Field("var_name").Short("variable name for component output").
-		Long("Optional name to use when storing component outputs as variables. If not specified, uses the component name").
-		Field("dependencies").Short("additional component dependencies").
 		Field("storage_driver").Short("which helm storage driver to use (defaults to configmap)").Enum("configmap", "secret").
 		Field("namespace").Short("namespace to deploy into. Defaults to {{.nuon.install.id}} and supports templating.").
 		Field("chart_name").Short("chart name").Required().

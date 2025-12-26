@@ -225,6 +225,7 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	appsCmd.AddCommand(createCmd)
 
+	// nuon apps delete
 	var confirmDelete bool
 	deleteCmd := &cobra.Command{
 		Use:               "delete",
@@ -241,6 +242,9 @@ func (c *cli) appsCmd() *cobra.Command {
 	deleteCmd.MarkFlagRequired("confirm")
 
 	appsCmd.AddCommand(deleteCmd)
+
+	// nuon app generate/init commandasss
+	appsCmd.AddCommand(c.initCmd())
 
 	var rename bool
 	renameCmd := &cobra.Command{
