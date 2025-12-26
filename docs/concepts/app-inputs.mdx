@@ -15,7 +15,7 @@ directory.
 Add inputs to your App using the following configuration block
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
+# inputs
 
 [[group]]
 name = "network"
@@ -50,7 +50,7 @@ sandbox:
 
 ```toml sandbox.toml
 
-#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+# sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
@@ -70,7 +70,7 @@ components using Helm values, Terraform variables or environment variables.
 To use Inputs in a Terraform module.
 
 ```toml components.database.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
+# terraform
 type              = "terraform_module"
 name              = "database"
 terraform_version = "1.11.3"
@@ -88,7 +88,7 @@ DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 To use inputs in a Helm chart Component.
 
 ```toml components/helm-database.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 type   = "helm_chart"
 name   = "helm-database"
 chart_name = "database"
@@ -106,7 +106,7 @@ DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 To use inputs in a Docker image.
 
 ```toml components/docker-build.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=docker-build
+# docker-build
 type   = "docker_build"
 name   = "docker-build"
 
@@ -130,7 +130,7 @@ To create a group, and add an input to it, simply declare the group in your
 config or terraform and set the `group` field on any input belonging to it.
 
 ```toml inputs.toml
-#:schema http://localhost:8081/v1/general/config-schema?type=inputs
+# inputs
 [[group]]
 name         = "db"
 description  = "Configuration for the database "
