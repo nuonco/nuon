@@ -1,17 +1,17 @@
 ---
 title: 'Helm Chart Components'
-description: "Helm chart Components allow you to connect an existing Helm chart and deploy it into your customer's cloud account."
+description: "Helm chart components allow you to connect an existing Helm chart and deploy it into your customer's cloud account."
 icon: 'code'
 ---
 
-Helm chart Components allow you to deploy any helm from a public or connected repo.
+Helm chart components allow you to deploy any helm from a public or connected repo.
 
 ## Configuring a Helm component
 
 To configure a Helm component, specify a repo, the required configuration values and version to deploy it with.
 
 ```toml components/helm_chart.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name       = "helm_chart"
 type       = "helm_chart"
 chart_name = "<your-app>"
@@ -32,7 +32,15 @@ image:
 source = "./values.yaml"
 ```
 
-You can configure Helm Components to use either a Helm repository (using a `helm_repo` block), a public repo (using a `public_repo` block), or a private GitHub repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+You can also put the Helm chart source inside of the same repo as the app, and point to it.
+
+<Note>
+If you include the Helm chart source in the app repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
+</Note>
+
+## Multiple ways to use Helm with components
+
+You can configure Helm components to use either a Helm repository (using a `helm_repo` block), a public repo (using a `public_repo` block), or a private GitHub repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ## Using Public Helm Repositories
 
@@ -41,7 +49,7 @@ Helm repositories are the standard way to share and discover Helm charts across 
 To use a public Helm chart, specify the repository URL and chart name:
 
 ```toml components/prometheus.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name       = "prometheus"
 type       = "helm_chart"
 chart_name = "prometheus"
@@ -62,7 +70,7 @@ You can find public Helm charts on [Artifact Hub](https://artifacthub.io/), whic
 ## Open Source and Private Charts
 
 Nuon supports any Helm chart that can be accessed using git. It is common for apps to have both a combination of public,
-open source helm charts for deploying standard Components and private helm charts for application specific
+open source helm charts for deploying standard components and private helm charts for application specific
 configuration.
 
 ## Helm Value Configuration
@@ -71,12 +79,12 @@ One of the most important parts of deploying a Helm chart into a customer accoun
 Values can be used for everything from accessing infrastructure, setting images or scaling pods.
 
 [Variables](/guides/using-variables) allow you to set default values for a Nuon app, expose customer configuration
-options, reference infrastructure from other Components or access an image that was synced into the customer account.
+options, reference infrastructure from other components or access an image that was synced into the customer account.
 
 Examples for accessing common interpolated variables:
 
 ```toml components/helm_chart.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name       = "helm_chart"
 type       = "helm_chart"
 chart_name = "<your-app>"
@@ -102,35 +110,29 @@ internal_root_domain = "{{.nuon.sandbox.outputs.nuon_dns.internal_domain.name}}"
 
 ## Using a Helm Values File
 
-You can add a values file, and set multiple values at once.
+You can add a values file and locate it in the app repository.
 
-```toml components/helm_chart.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
-name       = "helm_chart"
-type       = "helm_chart"
-chart_name = "<your-app>"
+```toml components/grafana.toml
+# helm
+name           = "grafana"
+type           = "helm_chart"
+chart_name     = "grafana"
+namespace      = "grafana"
+storage_driver = "configmap"
+dependencies   = ["prometheus", "grafana_secrets", "exampledb_secrets"]
 
-[connected_repo]
-directory = "components/helm-chart"
-repo      = "<your-org>/<your-repo>"
+[public_repo]
+repo      = "grafana/helm-charts"
+directory = "charts/grafana"
 branch    = "main"
 
 [[values_file]]
-contents = """
-image:
-  tag: "{{.nuon.components.docker_build.image.name}}"
-"""
+contents = "./values/grafana/values.yaml"
 ```
-
-<br />
-
-<Note>
-For now, we do not support reading values files from disk. If this is something that would make your configuration easier, [please get in touch](https://nuon.co/contact-us)!
-</Note>
 
 ## Nuon Managed Sandbox Components and DNS
 
-The `aws-eks-sandbox` [managed Sandbox](/concepts/sandboxes#nuon-managed-sandboxes) ships with standard Helm Components + DNS zones to solve for common use cases, such
+The `aws-eks-sandbox` [managed sandbox](/concepts/sandboxes#nuon-managed-sandboxes) ships with standard Helm components + DNS zones to solve for common use cases, such
 as exposing a public or private https service. This includes:
 
 * [AWS ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller)
@@ -139,12 +141,12 @@ as exposing a public or private https service. This includes:
 * [Nginx Ingress](https://docs.nginx.com/nginx-ingress-controller/)
 * [EBS CSI](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
 
-The Sandboxes are [open source](/concepts/sandboxes#nuon-managed-sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these Components do not work for your application.
+The Sandboxes are [open source](/concepts/sandboxes#nuon-managed-sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these components do not work for your application.
 
 ## Using Domains
 
-The [Nuon managed Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) automatically deploy the Components required to provision DNS, Certificate and Load Balancer resources using Helm.
-There are multiple ways to use these Components. Here are examples of the two most common.
+The [Nuon managed Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) automatically deploy the components required to provision DNS, Certificate and Load Balancer resources using Helm.
+There are multiple ways to use these components. Here are examples of the two most common.
 
 ### AWS NLB with AWS ACM
 
@@ -195,7 +197,7 @@ nlbs:
 Then, you could set those values per install with the following component config.
 
 ```toml components/nlb.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name       = "nlb"
 type       = "helm_chart"
 chart_name = "nlb"
@@ -271,7 +273,7 @@ nginx:
 You could then set the domain per install in your Component config.
 
 ```toml components/nlb.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name       = "nlb"
 type       = "helm_chart"
 chart_name = "nlb"
