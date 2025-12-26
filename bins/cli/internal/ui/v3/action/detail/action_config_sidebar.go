@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/pkg/cli/styles"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (m *Model) populateActionConfigView(setContent bool) {

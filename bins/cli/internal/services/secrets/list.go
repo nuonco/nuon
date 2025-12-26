@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJSON bool) error {

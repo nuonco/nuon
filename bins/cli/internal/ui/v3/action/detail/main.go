@@ -23,9 +23,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
-	"github.com/nuonco/nuon/bins/cli/internal/config"
 
 	ac "github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/common"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"

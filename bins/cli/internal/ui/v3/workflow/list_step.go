@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // If we want to style the items, we'll need to write our own delegate for our custom item type

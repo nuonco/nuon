@@ -3,8 +3,8 @@ package installs
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 func (s *Service) SetCurrent(ctx context.Context, installID string, asJSON bool) {

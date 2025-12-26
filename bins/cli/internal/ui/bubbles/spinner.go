@@ -9,8 +9,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cockroachdb/errors"
-	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/pkg/cli/styles"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 // SpinnerModel represents a spinner with status and message handling

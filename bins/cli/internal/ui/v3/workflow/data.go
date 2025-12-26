@@ -5,8 +5,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func indexOf(array []int64, value int64) int {

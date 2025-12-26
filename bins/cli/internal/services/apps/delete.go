@@ -3,10 +3,10 @@ package apps
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-go"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) Delete(ctx context.Context, appID string, asJSON bool) error {

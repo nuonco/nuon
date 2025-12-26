@@ -3,9 +3,9 @@ package installs
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) Components(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
