@@ -32,26 +32,26 @@ that was used to create it. e.g., deleting the AWS CloudFormation stack.
 ## Install Management
 
 The primary and recommended way to create and manage installs is through the
-Dashboard UI. The Dashboard outputs the AWS CloudFormation stack link to share with
+dashboard. The dashboard outputs the AWS CloudFormation stack link to share with
 the customer to create the runner VM and kick off the install process.
 
-Beginning an install involves entering one or more inputs in a modal form of the Dashboard UI.
+Beginning an install involves entering one or more inputs in a modal form of the dashboard.
 
 ![Inputs](../images/concepts/inputs/inputs.png)
 
 Following the inputs submission, the install process begins as a [workflow](./workflows) of steps
-that can be monitored, approved, and re-tried in the Dashboard UI.
+that can be monitored, approved, and re-tried in the dashboard.
 
 ### Changing Components
 
 If you change a component in an app that already has installs, you need to
-re-deploy the Component to the install in the Dashboard. A modal will prompt you
+re-deploy the Component to the install in the dashboard. A modal will prompt you
 to select the Build you want to use, which usually is the first one in the list
 sorted by build date in descending order.
 
-### Use the Dashboard UI
+### Use the Dashboard
 
-The [Dashboard UI](../dashboard-ui) provides a full interface to create,
+The [Dashboard](../dashboard) provides a full interface to create,
 view, update, de-provision and delete installs.
 
 

@@ -53,7 +53,7 @@ name = "my_install"
 ```
 
 When syncing install config files, sensitive inputs will be ignored. They can
-still be managed manually via the Dashboard.
+still be managed manually via the dashboard.
 
 ## App Variables
 
@@ -71,7 +71,7 @@ nuon apps variables create --name=my_var --value="some value"
 To use an app variable, interpolate them in your app.
 
 ```toml actions/demo_action.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=action
+# action
 
 name    = "simple_demonstration"
 timeout = "1m"
