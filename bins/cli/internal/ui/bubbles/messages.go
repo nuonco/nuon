@@ -8,12 +8,12 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/cockroachdb/errors"
-	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/errs"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 const (

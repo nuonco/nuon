@@ -3,9 +3,9 @@ package orgs
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) error {

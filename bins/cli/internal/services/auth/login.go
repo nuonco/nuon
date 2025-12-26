@@ -7,8 +7,8 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon-go"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"

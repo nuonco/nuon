@@ -10,8 +10,8 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nuonco/nuon-go"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // model wraps the Model for bubbletea

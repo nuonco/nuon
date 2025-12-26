@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/browser"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"

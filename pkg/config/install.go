@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/invopop/jsonschema"
-	"github.com/nuonco/nuon-go/models"
 	"github.com/nuonco/nuon/pkg/config/diff"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 type InstallApprovalOption string

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/errs"

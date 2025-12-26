@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/nuonco/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID string, offset, limit int, asJSON bool) error {

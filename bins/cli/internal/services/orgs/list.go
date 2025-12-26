@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/nuonco/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) List(ctx context.Context, offset, limit int, asJSON bool) error {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 type Service struct {

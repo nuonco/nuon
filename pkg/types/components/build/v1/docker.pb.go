@@ -7,14 +7,15 @@
 package buildv1
 
 import (
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
+
 	v11 "github.com/nuonco/nuon/pkg/types/components/variables/v1"
 	v1 "github.com/nuonco/nuon/pkg/types/components/vcs/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
 )
 
 const (
