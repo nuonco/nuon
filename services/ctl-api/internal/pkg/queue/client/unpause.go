@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
+// @temporal-gen as-activity
 func (c *Client) Unpause(ctx context.Context, queueID string) error {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {

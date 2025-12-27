@@ -29,6 +29,7 @@ type CreateQueueRequest struct {
 	MaxDepth    int
 }
 
+// @temporal-gen as-activity
 func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queue, error) {
 	q := app.Queue{
 		OwnerID:     req.OwnerID,

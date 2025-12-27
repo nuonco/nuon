@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -67,6 +68,11 @@ func New(params WorkerParams) (*Worker, error) {
 	wkr.RegisterActivity(installdelegationdns.NewActivities(params.V, params.Cfg))
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
+	}
+
+	// register queue client activities
+	for _, act := range queueclient.ClientActivityFns() {
+		wkr.RegisterActivity(act)
 	}
 
 	// register workflows

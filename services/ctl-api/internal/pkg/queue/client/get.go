@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
+// @temporal-gen as-activity
 func (c *Client) GetQueue(ctx context.Context, id string) (*app.Queue, error) {
 	q, err := c.getQueue(ctx, id)
 	if err != nil {
@@ -28,6 +29,22 @@ func (c *Client) getQueue(ctx context.Context, id string) (*app.Queue, error) {
 	return &q, nil
 }
 
+// @temporal-gen as-activity
+func (c *Client) GetQueueByOwner(ctx context.Context, ownerID, ownerType string) (*app.Queue, error) {
+	var q app.Queue
+	if res := c.db.WithContext(ctx).
+		Where(&app.Queue{
+			OwnerID:   ownerID,
+			OwnerType: ownerType,
+		}).
+		First(&q); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get queue by owner")
+	}
+
+	return &q, nil
+}
+
+// @temporal-gen as-activity
 func (c *Client) GetQueueStatus(ctx context.Context, queueID string) (*queue.StatusResponse, error) {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
