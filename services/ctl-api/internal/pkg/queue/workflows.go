@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/fx"
 
 	"github.com/go-playground/validator/v10"
@@ -25,6 +26,8 @@ func NewWorkflows(params Params) (*Workflows, error) {
 type Workflows struct {
 	cfg *internal.Config
 	v   *validator.Validate
+
+	StartupHooks []func(workflow.Context, QueueWorkflowRequest) error
 }
 
 func (q *Workflows) All() []any {

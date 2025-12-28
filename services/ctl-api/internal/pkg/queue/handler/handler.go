@@ -63,6 +63,11 @@ type handler struct {
 	stopped   bool
 	restarted bool
 	finished  bool
+	canceled  bool
+
+	// cancelable context for execution
+	executingCtx    workflow.Context
+	executingCancel workflow.CancelFunc
 
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal

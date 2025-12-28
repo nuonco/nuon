@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
-// @temporal-gen as-activity
 func (c *Client) Pause(ctx context.Context, queueID string) error {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
@@ -18,7 +17,7 @@ func (c *Client) Pause(ctx context.Context, queueID string) error {
 
 	update, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 		WorkflowID:   q.Workflow.ID,
-		UpdateName:   queue.PauseUpdateName,
+		UpdateName:   queue.PauseHandlerName,
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		Args: []any{
 			queue.PauseRequest{},
@@ -29,6 +28,32 @@ func (c *Client) Pause(ctx context.Context, queueID string) error {
 	}
 
 	var resp queue.PauseResponse
+	if err := update.Get(ctx, &resp); err != nil {
+		return errors.Wrap(err, "error waiting for handler to finish")
+	}
+
+	return nil
+}
+
+func (c *Client) Resume(ctx context.Context, queueID string) error {
+	q, err := c.getQueue(ctx, queueID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get queue")
+	}
+
+	update, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
+		WorkflowID:   q.Workflow.ID,
+		UpdateName:   queue.ResumeHandlerName,
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		Args: []any{
+			queue.ResumeRequest{},
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to call update handler")
+	}
+
+	var resp queue.ResumeResponse
 	if err := update.Get(ctx, &resp); err != nil {
 		return errors.Wrap(err, "error waiting for handler to finish")
 	}

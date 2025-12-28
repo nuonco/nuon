@@ -70,9 +70,10 @@ func New(params WorkerParams) (*Worker, error) {
 	wkr.RegisterActivity(params.HandlerActs)
 
 	// Register queue client activities (for EnqueueSignal)
-	for _, act := range queueclient.ClientActivityFns() {
-		wkr.RegisterActivity(act)
-	}
+	// TODO: Register client activities if needed with temporal-gen-v2
+	// for _, act := range queueclient.ClientActivityFns() {
+	// 	wkr.RegisterActivity(act)
+	// }
 
 	// Register emitter workflows
 	for _, wkflow := range params.EmitterWkflows.All() {

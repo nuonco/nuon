@@ -35,24 +35,14 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 			w.statusHandler,
 			nil,
 		},
-		RestartUpdateName: {
+		PauseHandlerName: {
 			handlerTypeUpdate,
-			w.restartUpdateHandler,
+			w.pauseHandler,
 			nil,
 		},
-		StopUpdateName: {
+		ResumeHandlerName: {
 			handlerTypeUpdate,
-			w.stopUpdateHandler,
-			nil,
-		},
-		PauseUpdateName: {
-			handlerTypeUpdate,
-			w.pauseUpdateHandler,
-			nil,
-		},
-		UnpauseUpdateName: {
-			handlerTypeUpdate,
-			w.unpauseUpdateHandler,
+			w.resumeHandler,
 			nil,
 		},
 	}

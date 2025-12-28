@@ -39,6 +39,26 @@ func newPayload(data []byte, c converter.PayloadConverter) *commonpb.Payload {
 func (c *PayloadConverter) ToPayload(value interface{}) (*commonpb.Payload, error) {
 	sig, ok := value.(signal.Signal)
 	if !ok {
+		// try to find a field that is a signal
+		rv := reflect.ValueOf(value)
+		if rv.Kind() == reflect.Ptr {
+			rv = rv.Elem()
+		}
+		if rv.Kind() == reflect.Struct {
+			for i := 0; i < rv.NumField(); i++ {
+				field := rv.Field(i)
+				if field.CanInterface() {
+					if s, ok := field.Interface().(signal.Signal); ok {
+						sig = s
+						ok = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if !ok {
 		return nil, nil
 	}
 

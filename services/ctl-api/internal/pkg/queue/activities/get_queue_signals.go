@@ -9,16 +9,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-type GetQueueSignalsRequest struct {
-	QueueID string `validate:"required"`
-}
-
-// @temporal-gen activity
-// @by-id QueueID
-func (a *Activities) GetQueueSignals(ctx context.Context, req *GetQueueSignalsRequest) ([]*app.QueueSignal, error) {
-	return a.getQueueSignals(ctx, req.QueueID)
-}
-
+// @temporal-gen-v2 activity
+// @as-wrapper
+// @by-field QueueID
 func (a *Activities) getQueueSignals(ctx context.Context, queueID string) ([]*app.QueueSignal, error) {
 	var queueSignals []*app.QueueSignal
 
