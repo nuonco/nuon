@@ -1,0 +1,21 @@
+// {{.Name}} sends a signal to a workflow
+func (c *{{.ClientName}}Client) {{.Name}}(ctx context.Context, workflowID string, input {{.InputType}}, opts ...{{.ClientName}}SignalOption) error {
+	options := &{{.ClientName}}SignalOptions{
+		WorkflowID: workflowID,
+	}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	if options.StartWorkflowOperation != nil {
+		op := *options.StartWorkflowOperation
+		if op.Options.ID == "" {
+			op.Options.ID = options.WorkflowID
+		}
+		
+		_, err := c.client.SignalWithStartWorkflow(ctx, op.Options.ID, "{{.Name}}", input, op.Options, op.Workflow, op.Args...)
+		return err
+	}
+
+	return c.client.SignalWorkflow(ctx, options.WorkflowID, options.RunID, "{{.Name}}", input)
+}
