@@ -1,6 +1,6 @@
 package examples
 
-//go:generate go run ../main.go .
+//go:generate go run ../main.go generate .
 
 import (
 	"context"
