@@ -1,0 +1,117 @@
+// {{.ClientName}}Client is a client for the workflows
+type {{.ClientName}}Client struct {
+	client client.Client
+}
+
+// New{{.ClientName}}Client creates a new {{.ClientName}}Client
+func New{{.ClientName}}Client(c client.Client) *{{.ClientName}}Client {
+	return &{{.ClientName}}Client{client: c}
+}
+
+// {{.ClientName}}QueryOptions are options for queries
+type {{.ClientName}}QueryOptions struct {
+	WorkflowID string
+	RunID      string
+}
+
+// {{.ClientName}}QueryOption is an option for queries
+type {{.ClientName}}QueryOption func(*{{.ClientName}}QueryOptions)
+
+// With{{.ClientName}}QueryWorkflowID sets the workflow ID for a query
+func With{{.ClientName}}QueryWorkflowID(workflowID string) {{.ClientName}}QueryOption {
+	return func(o *{{.ClientName}}QueryOptions) {
+		o.WorkflowID = workflowID
+	}
+}
+
+// With{{.ClientName}}QueryRunID sets the run ID for a query
+func With{{.ClientName}}QueryRunID(runID string) {{.ClientName}}QueryOption {
+	return func(o *{{.ClientName}}QueryOptions) {
+		o.RunID = runID
+	}
+}
+
+// {{.ClientName}}UpdateOptions are options for updates
+type {{.ClientName}}UpdateOptions struct {
+	WorkflowID   string
+	RunID        string
+	UpdateID     string
+	WaitForStage client.WorkflowUpdateStage
+	StartWorkflowOperation *client.UpdateWithStartWorkflowOptions
+}
+
+// {{.ClientName}}UpdateOption is an option for updates
+type {{.ClientName}}UpdateOption func(*{{.ClientName}}UpdateOptions)
+
+// With{{.ClientName}}UpdateWorkflowID sets the workflow ID for an update
+func With{{.ClientName}}UpdateWorkflowID(workflowID string) {{.ClientName}}UpdateOption {
+	return func(o *{{.ClientName}}UpdateOptions) {
+		o.WorkflowID = workflowID
+	}
+}
+
+// With{{.ClientName}}UpdateRunID sets the run ID for an update
+func With{{.ClientName}}UpdateRunID(runID string) {{.ClientName}}UpdateOption {
+	return func(o *{{.ClientName}}UpdateOptions) {
+		o.RunID = runID
+	}
+}
+
+// With{{.ClientName}}UpdateID sets the update ID for an update
+func With{{.ClientName}}UpdateID(updateID string) {{.ClientName}}UpdateOption {
+	return func(o *{{.ClientName}}UpdateOptions) {
+		o.UpdateID = updateID
+	}
+}
+
+// With{{.ClientName}}UpdateWaitForStage sets the wait for stage for an update
+func With{{.ClientName}}UpdateWaitForStage(stage client.WorkflowUpdateStage) {{.ClientName}}UpdateOption {
+	return func(o *{{.ClientName}}UpdateOptions) {
+		o.WaitForStage = stage
+	}
+}
+
+// With{{.ClientName}}UpdateWithStart sets the start workflow operation for an update
+func With{{.ClientName}}UpdateWithStart(op client.UpdateWithStartWorkflowOptions) {{.ClientName}}UpdateOption {
+	return func(o *{{.ClientName}}UpdateOptions) {
+		o.StartWorkflowOperation = &op
+	}
+}
+
+// {{.ClientName}}SignalWithStartOptions is an option for signal with start
+type {{.ClientName}}SignalWithStartOptions struct {
+	Options client.StartWorkflowOptions
+	Workflow interface{}
+	Args []interface{}
+}
+
+// {{.ClientName}}SignalOptions are options for signals
+type {{.ClientName}}SignalOptions struct {
+	WorkflowID   string
+	RunID        string
+	StartWorkflowOperation *{{.ClientName}}SignalWithStartOptions
+}
+
+// {{.ClientName}}SignalOption is an option for signals
+type {{.ClientName}}SignalOption func(*{{.ClientName}}SignalOptions)
+
+// With{{.ClientName}}SignalWorkflowID sets the workflow ID for a signal
+func With{{.ClientName}}SignalWorkflowID(workflowID string) {{.ClientName}}SignalOption {
+	return func(o *{{.ClientName}}SignalOptions) {
+		o.WorkflowID = workflowID
+	}
+}
+
+// With{{.ClientName}}SignalRunID sets the run ID for a signal
+func With{{.ClientName}}SignalRunID(runID string) {{.ClientName}}SignalOption {
+	return func(o *{{.ClientName}}SignalOptions) {
+		o.RunID = runID
+	}
+}
+
+// With{{.ClientName}}SignalWithStart sets the start workflow operation for a signal
+func With{{.ClientName}}SignalWithStart(op {{.ClientName}}SignalWithStartOptions) {{.ClientName}}SignalOption {
+	return func(o *{{.ClientName}}SignalOptions) {
+		o.StartWorkflowOperation = &op
+	}
+}
