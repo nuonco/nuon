@@ -1,0 +1,17 @@
+// {{.Name}} sends a query to a workflow
+func (c *{{.ClientName}}Client) {{.Name}}(ctx context.Context, workflowID string, input {{.InputType}}, opts ...{{.ClientName}}QueryOption) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	{{if .OutputType}}var result {{.OutputType}}{{end}}
+	options := &{{.ClientName}}QueryOptions{
+		WorkflowID: workflowID,
+	}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	val, err := c.client.QueryWorkflow(ctx, options.WorkflowID, options.RunID, "{{.Name}}", input)
+	if err != nil {
+		return {{if .OutputType}}result, {{end}}err
+	}
+	err = val.Get(&result)
+	return {{if .OutputType}}result, {{end}}err
+}
