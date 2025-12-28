@@ -1,0 +1,103 @@
+// Exec{{.Name}} executes the {{.Name}} workflow and returns the future
+func Exec{{.Name}}(ctx workflow.Context, input {{.InputType}}, opts ...*workflow.ChildWorkflowOptions) (workflow.ChildWorkflowFuture, error) {
+	cwo := workflow.ChildWorkflowOptions{
+		{{- if .Options.TaskQueue}}
+		TaskQueue: "{{.Options.TaskQueue}}",
+		{{- end}}
+		{{- if .Options.ExecutionTimeout}}
+		WorkflowExecutionTimeout: time.Duration({{.Options.ExecutionTimeout | durationToNs}}),
+		{{- end}}
+		{{- if .Options.TaskTimeout}}
+		WorkflowTaskTimeout: time.Duration({{.Options.TaskTimeout | durationToNs}}),
+		{{- end}}
+		{{- if .Options.WaitForCancellation}}
+		WaitForCancellation: true,
+		{{- end}}
+	}
+
+	// Apply overrides
+	for _, opt := range opts {
+		if opt != nil {
+			if opt.TaskQueue != "" {
+				cwo.TaskQueue = opt.TaskQueue
+			}
+			if opt.WorkflowExecutionTimeout != 0 {
+				cwo.WorkflowExecutionTimeout = opt.WorkflowExecutionTimeout
+			}
+			if opt.WorkflowTaskTimeout != 0 {
+				cwo.WorkflowTaskTimeout = opt.WorkflowTaskTimeout
+			}
+			if opt.WorkflowID != "" {
+				cwo.WorkflowID = opt.WorkflowID
+			}
+			if opt.WorkflowIDReusePolicy != 0 {
+				cwo.WorkflowIDReusePolicy = opt.WorkflowIDReusePolicy
+			}
+			if opt.RetryPolicy != nil {
+				cwo.RetryPolicy = opt.RetryPolicy
+			}
+			if opt.CronSchedule != "" {
+				cwo.CronSchedule = opt.CronSchedule
+			}
+			if opt.Memo != nil {
+				cwo.Memo = opt.Memo
+			}
+			if opt.SearchAttributes != nil {
+				cwo.SearchAttributes = opt.SearchAttributes
+			}
+		}
+	}
+
+	{{- if .Options.IDTemplate}}
+	{
+		info := workflow.GetInfo(ctx)
+		data := struct {
+			Req {{.InputType}}
+			Info *workflow.Info
+		}{
+			Req: input,
+			Info: info,
+		}
+		idTmpl, err := template.New("id").Parse("{{.Options.IDTemplate}}")
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse ID template: %w", err)
+		}
+		var idBuf bytes.Buffer
+		if err := idTmpl.Execute(&idBuf, data); err != nil {
+			return nil, fmt.Errorf("failed to execute ID template: %w", err)
+		}
+		cwo.WorkflowID = idBuf.String()
+	}
+	{{- end}}
+
+	{{- if .Options.IDGenerator}}
+	cwo.WorkflowID = {{.Options.IDGenerator}}(input)
+	{{- end}}
+
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	return workflow.ExecuteChildWorkflow(ctx, {{if .Receiver}}({{.Receiver}}).{{end}}{{.OriginalName}}, input), nil
+}
+
+// Await{{.Name}} executes the {{.Name}} workflow and blocks until completion
+func Await{{.Name}}(ctx workflow.Context, input {{.InputType}}, opts ...*workflow.ChildWorkflowOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	{{if .OutputType}}var result {{.OutputType}}{{end}}
+	
+	future, err := Exec{{.Name}}(ctx, input, opts...)
+	if err != nil {
+		return {{if .OutputType}}result, {{end}}err
+	}
+
+	err = future.Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	return {{if .OutputType}}result, {{end}}err
+}
+
+// Await{{.Name}}WithCron is a wrapper for the {{.Name}} workflow with cron schedule
+func Await{{.Name}}WithCron(ctx workflow.Context, input {{.InputType}}, cronSchedule string, opts ...*workflow.ChildWorkflowOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	cwo := workflow.ChildWorkflowOptions{
+		CronSchedule: cronSchedule,
+	}
+	// Append cron option to overrides
+	opts = append(opts, &cwo)
+	return Await{{.Name}}(ctx, input, opts...)
+}
