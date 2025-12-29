@@ -27,12 +27,22 @@ You can also enable autocomplete for you shell. Run `nuon completion` to see wha
 source <(nuon completion <your-shell>)
 ```
 
-### Manage Binaries Directly
+### Install Script
 
-If you are not using Homebrew, you can dowload the binaries for MacOS or Linux:
+If you are not using Homebrew, you can use our install script to automatically download and install the correct binary for your platform (macOS or Linux):
+
+```sh
+bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)
+```
+
+The script automatically detects your OS and architecture, downloads the latest version, and installs it to your path.
+
+### Manual Binary Download
+
+You can also download binaries directly for macOS or Linux:
 
 - `darwin_amd64`
-- `darmin_arm64`
+- `darwin_arm64`
 - `linux_arm`
 - `linux_arm64`
 - `linux_386`
@@ -53,7 +63,7 @@ To download the binaries for a specific version, substitute the version and plat
 An example of downloading version `0.19.421` of the CLI for `darwin_arm64`:
 
 ```sh
-wget -o nuon https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.421/nuon_darwin_arm64
+wget -O nuon https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.421/nuon_darwin_arm64
 ```
 
 Once the binary has been downloaded remember to make it executable.
@@ -73,7 +83,7 @@ brew update
 brew upgrade nuonco/tap/nuon
 ```
 
-Or, if you are managing the binary directly, you can download the latest version from the S3 bucket as described above.
+Or, if you installed via the install script, simply run it again to get the latest version. For manual binary installs, download the latest version from the S3 bucket as described above.
 
 ### Debug Mode
 
