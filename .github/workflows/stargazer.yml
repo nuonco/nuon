@@ -1,0 +1,106 @@
+---
+name: Stargazer Notification
+
+on:
+  watch:
+    types: [started]
+
+jobs:
+  notify:
+    name: Send Slack notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch user profile
+        id: user
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          USER_DATA=$(gh api users/${{ github.event.sender.login }})
+          
+          echo "name=$(echo "$USER_DATA" | jq -r '.name // empty')" >> $GITHUB_OUTPUT
+          echo "company=$(echo "$USER_DATA" | jq -r '.company // empty')" >> $GITHUB_OUTPUT
+          echo "location=$(echo "$USER_DATA" | jq -r '.location // empty')" >> $GITHUB_OUTPUT
+          echo "bio=$(echo "$USER_DATA" | jq -r '.bio // empty' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          echo "blog=$(echo "$USER_DATA" | jq -r '.blog // empty')" >> $GITHUB_OUTPUT
+          echo "twitter=$(echo "$USER_DATA" | jq -r '.twitter_username // empty')" >> $GITHUB_OUTPUT
+          echo "followers=$(echo "$USER_DATA" | jq -r '.followers // 0')" >> $GITHUB_OUTPUT
+          echo "following=$(echo "$USER_DATA" | jq -r '.following // 0')" >> $GITHUB_OUTPUT
+          echo "public_repos=$(echo "$USER_DATA" | jq -r '.public_repos // 0')" >> $GITHUB_OUTPUT
+          echo "created_at=$(echo "$USER_DATA" | jq -r '.created_at // empty')" >> $GITHUB_OUTPUT
+          echo "email=$(echo "$USER_DATA" | jq -r '.email // empty')" >> $GITHUB_OUTPUT
+          echo "hireable=$(echo "$USER_DATA" | jq -r '.hireable // empty')" >> $GITHUB_OUTPUT
+
+      - name: Build Slack message
+        id: message
+        run: |
+          MSG="⭐ *New GitHub Star!*\n\n"
+          MSG+="*Username:* <${{ github.event.sender.html_url }}|@${{ github.event.sender.login }}>\n"
+          
+          if [ -n "${{ steps.user.outputs.name }}" ]; then
+            MSG+="*Name:* ${{ steps.user.outputs.name }}\n"
+          fi
+          
+          if [ -n "${{ steps.user.outputs.bio }}" ]; then
+            MSG+="*Bio:* ${{ steps.user.outputs.bio }}\n"
+          fi
+          
+          if [ -n "${{ steps.user.outputs.company }}" ]; then
+            MSG+="*Company:* ${{ steps.user.outputs.company }}\n"
+          fi
+          
+          if [ -n "${{ steps.user.outputs.location }}" ]; then
+            MSG+="*Location:* 📍 ${{ steps.user.outputs.location }}\n"
+          fi
+          
+          if [ -n "${{ steps.user.outputs.email }}" ]; then
+            MSG+="*Email:* ${{ steps.user.outputs.email }}\n"
+          fi
+          
+          if [ -n "${{ steps.user.outputs.blog }}" ]; then
+            MSG+="*Website:* ${{ steps.user.outputs.blog }}\n"
+          fi
+          
+          if [ -n "${{ steps.user.outputs.twitter }}" ]; then
+            MSG+="*Twitter:* <https://twitter.com/${{ steps.user.outputs.twitter }}|@${{ steps.user.outputs.twitter }}>\n"
+          fi
+          
+          MSG+="\n*GitHub Stats:*\n"
+          MSG+="• Followers: ${{ steps.user.outputs.followers }} | Following: ${{ steps.user.outputs.following }}\n"
+          MSG+="• Public Repos: ${{ steps.user.outputs.public_repos }}\n"
+          MSG+="• Member since: ${{ steps.user.outputs.created_at }}\n"
+          
+          if [ "${{ steps.user.outputs.hireable }}" = "true" ]; then
+            MSG+="• 💼 Open to opportunities\n"
+          fi
+          
+          MSG+="\n---\n"
+          MSG+="*Repository:* <${{ github.event.repository.html_url }}|${{ github.event.repository.full_name }}>\n"
+          MSG+="*Total Stars:* ⭐ ${{ github.event.repository.stargazers_count }}"
+          
+          echo "text<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$MSG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack about new star
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_STARGAZER_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "⭐ New GitHub Star from ${{ github.event.sender.login }}!",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ steps.message.outputs.text }}"
+                  },
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "${{ github.event.sender.avatar_url }}",
+                    "alt_text": "${{ github.event.sender.login }}"
+                  }
+                }
+              ]
+            }
