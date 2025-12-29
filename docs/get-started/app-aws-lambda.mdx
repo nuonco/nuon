@@ -61,13 +61,13 @@ You should see the new app in the dashboard.
 ### Inputs
 
 Inputs are customer-specific configs that are entered when you install the App
-in the customer's cloud account. They will be displayed in the Dashboard UI.
+in the customer's cloud account. They will be displayed in the dashboard.
 Inputs are optional.
 
 In the app root directory, notice the file named `inputs.toml`:
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+# inputs
 [[group]]
 name         = "dns"
 description  = "DNS Configrations"
@@ -108,7 +108,7 @@ Your app references these Sandboxes in the `sandbox.toml` file.
 In the app root directory, notice the file named `sandbox.toml`:
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
+# sandbox
 terraform_version = "1.11.4"
 
 [public_repo]
@@ -153,7 +153,7 @@ The Docker build component creates a container image including the Go
 application code and pushes it to ECR.
 
 ```toml 0-docker-image.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=docker_build
+# docker-build
 name   = "docker_image"
 type = "docker_build"
 
@@ -170,7 +170,7 @@ The DynamoDB component creates a DynamoDB table using Terraform to store data
 from the Lambda function POST route.
 
 ```toml 1-dynamodb-table.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+# terraform
 name              = "dynamodb_table"
 type              = "terraform_module"
 terraform_version = "1.11.4"
@@ -191,7 +191,7 @@ The Lambda component creates a Lambda function using Terraform that references
 the Docker image in ECR.
 
 ```toml 2-lambda-function.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+# terraform
 name              = "lambda_function"
 type              = "terraform_module"
 terraform_version = "1.11.4"
@@ -215,7 +215,7 @@ The certificate component creates a Certificate using Terraform for the API
 Gateway to use.
 
 ```toml 3-certificate.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+# terraform
 name              = "certificate"
 type              = "terraform_module"
 terraform_version = "1.11.4"
@@ -240,7 +240,7 @@ the Lambda function to the internet. Notice how the certificate, Route53 zone,
 and Lambda function are all referenced in this component through interpolations.
 
 ```toml 4-api-gateway.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=terraform
+# terraform
 name              = "api_gateway"
 type              = "terraform_module"
 terraform_version = "1.11.4"
@@ -273,7 +273,7 @@ Make sure you are in the root directory of your app, then run:
 nuon apps sync
 ```
 
-Select the app in the Dashboard, and you should now see the updated inputs,
+Select the app in the dashboard, and you should now see the updated inputs,
 sandbox, components, and runner configuration.
 
 ![App](/images/get-started/aws-lambda/app-config-components.png)
@@ -324,8 +324,8 @@ will not provide feedback until the runner is up and connected to Nuon.
 
 ### Monitor the Remainder of the Install Workflow
 
-If plan steps require approvals, you will need to approve them in the Dashboard.
-You can also monitor the progress of the install in the Dashboard.
+If plan steps require approvals, you will need to approve them in the dashboard.
+You can also monitor the progress of the install in the dashboard.
 
 ![Workflow](/images/get-started/aws-lambda/lambda-plan.png)
 
@@ -372,7 +372,7 @@ Lambda function in the AWS console.
 
 Nuon is mindful of your public cloud spend, so provide the following
 deprovisioning steps. Deprovisioning the install is a two-step process. First,
-you need to deprovision the install in the Nuon Dashboard, which will
+you need to deprovision the install in the Nuon dashboard, which will
 deprovision the resources to install your app. Once that is completed
 successfully, you then need to delete the CloudFormation stack in the AWS
 console, which removes the runner by destroying the EC2 VM, ASG, and VPC.
@@ -386,7 +386,7 @@ console, which removes the runner by destroying the EC2 VM, ASG, and VPC.
 
 ## Manually Deprovision the Install
 
-If deprovisioning the install in the Dashboard fails, deleting the
+If deprovisioning the install in the dashboard fails, deleting the
 CloudFormation stack in AWS will delete all of the component resources and the
 VPC.
 

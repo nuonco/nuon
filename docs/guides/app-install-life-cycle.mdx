@@ -4,33 +4,24 @@ description: "Understand the life cycle of apps and installs in Nuon."
 icon: "code"
 ---
 
-[Apps](../concepts/apps) and [installs](../concepts/installs) in Nuon have a
-defined life cycle that starts with
-packaging your app, syncing and building OCI artifacts in a container registry.
-This is followed by one to many installations of your app defined specifically
-for customers. Post installation includes updating the installs with change
-controls, and monitoring and remediating the installs.
+[Apps](../concepts/apps) and [installs](../concepts/installs) in Nuon follow a defined lifecycle. You'll start by packaging your app and syncing it to build OCI artifacts. Then you can create one or many customer-specific installations, which you'll update with change controls and monitor over time.
 
-Understanding this life cycle is crucial for effectively using Nuon to manage
+Understanding this life cycle is crucial to effectively using Nuon to manage
 your apps and installs.
 
 # App Life Cycle
 
 ## Package your app
 
-The first step in the app life cycle is to package your app as a set of `.toml`
+The first step in the app life cycle is to package your app as a set of TOML
 files in a git-backed repository. These files define the app's sandbox (e.g.,
 VPC, networking, and Kubernetes infrastructure), components, inputs, variables,
 and other configuration details. These configurations can point to your existing
 Terraform modules, Helm charts, Kubernetes manifests, or other
-infrastructure-as-code resources.
-
-<Note>
-We have several example app configurations in [this public GitHub repository](https://github.com/nuonco/example-app-configs) to see how apps are packaged.
-</Note>
+infrastructure-as-code resources. For examples of packaged apps, see our [public GitHub repository](https://github.com/nuonco/example-app-configs).
 
 Packaging your app can be customized to re-use existing VPCs, networking, or
-Kubernetes clusters, or by default creates new ones for each install.
+Kubernetes clusters, or by default Nuon creates new ones for each install.
 
 ## Sync and Build
 
@@ -40,32 +31,17 @@ When an app is initially created and synced to the Nuon control plane with the
 Builds create an OCI artifact for each component and the Nuon control plane
 stores them in the container registry like AWS ECR.
 
-<Note>
-	If you change a component after the initial `nuon apps sync`, you must
-	re-build the component. Running `nuon apps sync` again will re-build most
-	component changes, or manually through the Dashboard UI for git
-	repository-based source code changes referenced in the component. Otherwise,
-	the changes will not be reflected in the app in Nuon nor any deployed
-	installs.
-</Note>
-
-If the Nuon CLI detects a change during `nuon apps sync`, e.g., a component
-`.toml` file is changed or a referenced file like a Helm values.yaml, it will
-automatically rebuild the component, with the build status visible in the CLI
-progress output.
+**Important:** After the initial sync, component changes require rebuilding. `nuon apps sync` will automatically rebuild when it detects changes to TOML files or referenced files like Helm values.
 
 ![CLI Build](../images/guides/app-install-life-cycle/cli-build.png)
 
-If a git repository referenced by the component changes, e.g., a Terraform
-module source or a Helm chart, you must manually re-build the component in the Dashboard UI.
+However, you must manually rebuild in the dashboard when:
+  - Git repository source code changes (e.g., Terraform modules or Helm charts)
+  - Source code in your app repository changes (push your branch first, then rebuild)
 
-If you include Helm or Terraform source code inside of your app repository and make a change to that source, you must first push your branch to your remote repo and then manually re-build the component in the Dashboard UI.
+**Tip:** Double-check your branch name in the component TOML file when source is included in your app repo—this is a common oversight.
 
-<Note>
-A common overlook is to have an incorrect branch name in the component `.toml` file if the src is included in the app repo.
-</Note>
-
-Again, if anything referenced in the `.toml` files change, you must run `nuon apps sync` with the Nuon CLI.
+Remember to run `nuon apps sync` whenever anything in your TOML files changes.
 
 ![Rebuild components](../images/guides/app-install-life-cycle/component-build.png)
 
@@ -82,14 +58,11 @@ define the steps to deploy, update, manage, and tear down the install.
 
 ![Workflows](../images/guides/app-install-life-cycle/workflow-history.png)
 
-Commencing an install involves adding any inputs defined by the app. e.g., api
-key, cloud region, node instance type, app release version, etc. This is how
-installs are customized for each customer.
+Creating an install starts by providing any inputs defined by the app, such as API keys, cloud region, node instance type, or app release version. This is how you customize installs for each customer.
 
 ![Inputs](../images/guides/app-install-life-cycle/inputs.png)
 
-Install workflows consist of multiple steps that execute in sequence to deploy
-and manage the install.
+Install workflows deploy the sandbox, components, and actions from your app in sequence.
 
 ![Workflow approvals](../images/guides/app-install-life-cycle/approval-sandbox.png)
 
@@ -109,17 +82,9 @@ Kyverno policies can also be applied to installs to enforce security and
 compliance during updates. e.g., creating ingress resources or tampering with
 container resources requests/limits.
 
-If there are any installs for an app where a component is rebuilt, you must
-re-deploy the component in the Dashboard UI otherwise the install will not
-receive the component change.
+**Critical step:** When you rebuild a component for an app with existing installs, you must manually redeploy that component through the dashboard or the CLI. The install won't receive the changes automatically—this is a common step that gets overlooked.
 
 ![Redeploy component](../images/guides/app-install-life-cycle/component-redeploy.png)
-
-<Note>
-	If you have changed an app's components and do not see their changes reflected
-	in your installs, ensure you have re-deployed the updated components in the
-	Nuon Dashboard. This is a common step that can be overlooked.
-</Note>
 
 ## Monitor and Remediate
 
@@ -130,7 +95,7 @@ space, ALB availability, etc.
 ![Action healthcheck](../images/guides/app-install-life-cycle/action-healthcheck.png)
 
 Actions can also perform remediation tasks automatically or manually through the
-Dashboard UI to resolve issues detected during monitoring.
+dashboard to resolve issues detected during monitoring.
 
 ![Action remediation](../images/guides/app-install-life-cycle/action-remediation.png)
 

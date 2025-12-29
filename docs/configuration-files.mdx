@@ -1,9 +1,9 @@
 ---
 title: "Configuration Files"
-description: "Configure apps using `.toml` configuration files"
+description: "Configure apps using TOML configuration files"
 ---
 
-Config files allow you to define a BYOC application using `.toml` files. Under
+Config files allow you to define a BYOC application using TOML files. Under
 the hood, Nuon will handle keeping your configuration in sync.
 
 ## Create an app
@@ -31,6 +31,27 @@ To sync an app, and it's configuration run:
 nuon apps sync
 ```
 
+## Language Server Protocol (LSP)
+
+Nuon has a Language Server with a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp) that provides autocompletion, validation, and inline documentation for Nuon configuration TOML files.
+
+<Note>
+The Language Server is a beta feature and included in [Nuon Labs](https://labs.nuon.co/) so please report any bugs or inconsistencies as a [GitHub issue](https://github.com/nuonco/nuon/issues).
+</Note>
+
+The Language Server requires the [Nuon CLI](./cli) so please download it first. Future versions of the Language Server will include the CLI.
+
+The component type is required after a `#` at the top of each Nuon configuration TOML file.
+
+```toml components/certificate.toml
+# terraform
+name              = "certificate"
+type              = "terraform_module"
+terraform_version = "1.11.3"
+```
+
+[Here are the valid component types](https://github.com/nuonco/nuon/blob/main/pkg/config/schema/types.go#L15) in the Nuon OSS repository.
+
 ## Breaking up Config Files
 
 Since configs can get complex as your application grows, we follow a structured
@@ -39,7 +60,7 @@ in your project root with individual files for each component. e.g.,
 `components/helm_deploy.toml`.
 
 ```toml components/helm_deploy.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name           = "whoami"
 type           = "helm_chart"
 chart_name     = "whoami"
@@ -68,7 +89,7 @@ Define [inputs](/concepts/app-inputs) for an app using `inputs.toml` file.
 To configure a sensitive `api_key` and `vpc_id` input:
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
+# inputs
 [[input]]
 name = "vpc_id"
 description = "vpc_id to install application into"
@@ -87,7 +108,7 @@ type = "string"
 ```
 
 <Note>
-	Inputs are not required, unless you are using a sandbox that requires inputs.
+	Inputs are not required, unless you are using a sandbox or components that require inputs.
 	e.g., `root_domain` for the `aws-eks-sandbox`.
 </Note>
 
@@ -98,7 +119,7 @@ Define the [sandbox](/concepts/sandboxes) using the `sandbox.toml` file.
 To define an `aws-eks-sandbox` Sandbox:
 
 ```toml sandbox.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+# sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
@@ -129,11 +150,21 @@ You can define components by creating `<component>.toml` files in a `components`
 directory. Components must declare a `type` field and any relevant
 component-specific configuration.
 
-<Note>
-	Each component will have dependencies automatically defined based on the order
-	in the config file. Learn more about depencencies
-	[here](/guides/component-dependencies).
-</Note>
+### Component Dependencies
+
+Dependencies can be explicitly defined using the dependencies field in each component’s configuration file. You can specify which components a given component depends on by listing their names in the dependencies array.
+
+Learn more about depencencies [here](/guides/component-dependencies).
+
+In this example, an application load balancer component requires certificate and whoami helm components are deployed first.
+
+```toml components/alb.toml
+# helm
+name         = "application_load_balancer"
+type         = "helm_chart"
+chart_name   = "application-load-balancer"
+dependencies = ["certificate", "whoami"]
+```
 
 ### Terraform Module Component
 
@@ -143,7 +174,7 @@ To define a [terraform module component](/guides/terraform-components) use the
 To configure a terraform component using a connected repo:
 
 ```toml components/terraform.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
+# terraform
 name = "terraform"
 type = "terraform_module"
 terraform_version = "1.11.3"
@@ -169,7 +200,7 @@ To define a [helm chart component](/guides/helm-chart-components) use the
 To configure a helm chart in a connected repo:
 
 ```toml components/helm.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name = "helm"
 type = "helm_chart"
 chart_name = "chart-name"
@@ -190,8 +221,7 @@ To define a
 `kubernetes_manifest` type.
 
 ```toml manifest-db-secret.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=kubernetes-manifest
-
+# kubernetes-manifest
 name   = "grafana_secrets"
 type   = "kubernetes_manifest"
 dependencies   = ["grafana_postgres"]
@@ -218,6 +248,7 @@ To define a [docker build component](/guides/docker-build-components) use the
 To configure a docker build component from a private repo:
 
 ```toml components/docker_build.toml
+# docker-build
 name = "docker_build"
 type = "docker_build"
 
@@ -237,6 +268,7 @@ the `container_image` type.
 To configure a public container image:
 
 ```toml components/container_image.toml
+# container-image
 name = "container_image"
 type = "container_image"
 
@@ -248,6 +280,7 @@ tag = "latest"
 To configure a container image from an ECR repo:
 
 ```toml components/container_image_ecr.toml
+# container-image
 name = "container_image_ecr"
 type = "container_image"
 
@@ -265,6 +298,8 @@ You can create and manage [installs](/concepts/installs) by creating
 apps. An install must declare a `name` field and any relevant
 install-specific configuration.
 
+Install config files allow you to update multiple installs simultaneously, offering a more streamlined experience than the dashboard. By defining these configurations in code, you can automate your workflow using a CI system like GitHub Actions.
+
 The inputs are defined as a list of input groups. This is just for logical
 grouping, and inputs from different groups can be defined together. Note that if
 an input is defined multiple times, the last defined value would be used.
@@ -273,7 +308,7 @@ Input configs will be grouped together, reflecting the
 input groups you have defined in the app. Sensitive inputs will be excluded, to
 avoid saving them in plain text in version control. When syncing install config
 files, sensitive inputs will be ignored. They can still be managed manually via
-the Dashboard.
+the dashboard.
 
 <Note>
 	Currently only AWS installs are supported using install config files.
@@ -307,8 +342,7 @@ process.
 **An Example Install Config File**
 
 ```toml installs/install.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=install
-
+# install
 name = "<install-name>"
 
 # configure Auto Approval settings for an install

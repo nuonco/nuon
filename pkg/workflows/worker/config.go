@@ -2,7 +2,7 @@ package worker
 
 import (
 	"github.com/nuonco/nuon/pkg/services/config"
-	workflowsclient "github.com/nuonco/nuon/pkg/workflows/client"
+	"github.com/nuonco/nuon/pkg/workflows"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 
 //nolint:gochecknoinits
 func init() {
-	config.RegisterDefault("temporal_task_queue", workflowsclient.DefaultTaskQueue)
+	config.RegisterDefault("temporal_task_queue", workflows.DefaultTaskQueue)
 	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_max_concurrent_activities", defaultMaxConcurrentActivities)
 }

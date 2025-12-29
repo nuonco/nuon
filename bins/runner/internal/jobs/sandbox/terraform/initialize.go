@@ -18,7 +18,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	l.Info("initializing workspace")
 	wkspace, err := workspace.New(h.v,
 		workspace.WithLogger(l),
-		workspace.WithNewGitSource(h.state.plan.GitSource),
+		workspace.WithGitSource(h.state.plan.GitSource),
 		workspace.WithWorkspaceID(jobExecution.ID),
 	)
 	if err != nil {

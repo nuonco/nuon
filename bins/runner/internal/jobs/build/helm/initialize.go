@@ -26,7 +26,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		l.Info("initializing workspace from git source", zap.String("repo_url", h.state.plan.Src.URL))
 		wkspace, err := workspace.New(h.v,
 			workspace.WithLogger(l),
-			workspace.WithNewGitSource(h.state.plan.Src),
+			workspace.WithGitSource(h.state.plan.Src),
 			workspace.WithWorkspaceID(jobExecution.ID),
 		)
 		if err != nil {

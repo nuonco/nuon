@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	canaryv1 "github.com/nuonco/nuon/pkg/types/workflows/canary/v1"
+	"github.com/nuonco/nuon/pkg/types/workflows/canary"
 	"github.com/nuonco/nuon/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
 )
@@ -30,7 +30,7 @@ func (c *service) DeprovisionCanary(ctx *gin.Context) {
 		return
 	}
 
-	wkfowReq := &canaryv1.DeprovisionRequest{
+	wkfowReq := &canary.DeprovisionRequest{
 		CanaryId: req.CanaryID,
 	}
 

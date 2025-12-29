@@ -61,14 +61,14 @@ You should see the new app in the dashboard.
 ### Inputs
 
 Inputs are customer-specific configs that are entered when you install the app
-in the customer's cloud account. They will be displayed in the Dashboard UI.
+in the customer's cloud account. They will be displayed in the dashboard.
 Inputs are optional.
 
 In the app root directory, create a file named `inputs.toml` and add the
 following:
 
 ```toml inputs.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+# inputs
 [[group]]
 name         = "dns"
 description  = "DNS Configrations"
@@ -110,6 +110,7 @@ In the app root directory, create a file named `sandbox.toml` and add the
 following:
 
 ```toml sandbox.toml
+# sandbox
 terraform_version = "1.11.3"
 
 [public_repo]
@@ -180,7 +181,7 @@ In the app root directory, create directory called `components` and within it, a
 file named `whoami.toml` and add the following:
 
 ```toml whoami.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+# helm
 name           = "whoami"
 type           = "helm_chart"
 chart_name     = "whoami"
@@ -203,8 +204,7 @@ In the `components` directory, create a file named `alb.toml` and add the
 following:
 
 ```toml alb.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=helm
-
+# helm
 name         = "application_load_balancer"
 type         = "helm_chart"
 chart_name   = "application-load-balancer"
@@ -229,8 +229,7 @@ In the components directory, create a file named `certificate.toml` and add the
 following:
 
 ```toml certificate.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
-
+# terraform
 name              = "certificate"
 type              = "terraform_module"
 terraform_version = "1.11.3"
@@ -258,7 +257,7 @@ actions. Create a file named `healthcheck.toml` and add the following to check
 the ALB status. See the eks-simple directory of the example repo for the `healthcheck.sh` script referenced below.
 
 ```toml healthcheck.toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=action
+# action
 name    = "alb_healthcheck"
 timeout = "30s"
 
@@ -337,7 +336,7 @@ Make sure you are in the root directory of your app, then run:
 nuon apps sync 
 ```
 
-Select the app in the Dashboard, and you should now see the updated inputs,
+Select the app in the dashboard, and you should now see the updated inputs,
 sandbox, components, and runner configuration.
 
 ![App](/images/get-started/create-your-first-app/tutorial-3.jpeg)
@@ -385,8 +384,8 @@ will not provide feedback until the runner is up and connected to Nuon.
 
 ### Monitor the Remainder of the Install Workflow
 
-If plan steps require approvals, you will need to approve them in the Dashboard.
-You can also monitor the progress of the install in the Dashboard.
+If plan steps require approvals, you will need to approve them in the dashboard.
+You can also monitor the progress of the install in the dashboard.
 
 ![Workflow](/images/get-started/create-your-first-app/tutorial-10.jpeg)
 
@@ -432,7 +431,7 @@ X-Forwarded-Port: 443
 
 Nuon is mindful of your public cloud spend, so provide the following
 deprovisioning steps. Deprovisioning the Install is a two-step process. First,
-you need to deprovision the install in the Nuon Dashboard, which will
+you need to deprovision the install in the Nuon dashboard, which will
 deprovision the resources to install your App. Once that is completed
 successfully, you then need to delete the CloudFormation stack in the AWS
 console, which removes the Build Runner by destroying the EC2 VM, ASG, and VPC.
@@ -444,7 +443,7 @@ console, which removes the Build Runner by destroying the EC2 VM, ASG, and VPC.
 
 ## Manually Deprovision the Install
 
-If deprovisioning the install in the Dashboard fails, there is a
+If deprovisioning the install in the dashboard fails, there is a
 `error-destroy.sh` script in the
 [Nuon Managed Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) repository
 that you can use to manually deprovision the install. This script will remove

@@ -32,16 +32,6 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	// NOTE(jm): this will be removed once the runner is in prod and all orgs are
-	// migrated.
-	if currentApp.Org.OrgType == app.OrgTypeLegacy {
-		if err := w.reprovisionLegacy(ctx, currentApp.OrgID, sreq.ID, sreq.SandboxMode); err != nil {
-			return fmt.Errorf("unable to perform legacy org reprovision: %w", err)
-		}
-
-		return nil
-	}
-
 	var repoResp *ecrrepository.ProvisionECRRepositoryResponse
 	if currentApp.Org.OrgType == app.OrgTypeDefault {
 		repoResp, err = ecrrepository.AwaitProvisionECRRepository(ctx, &ecrrepository.ProvisionECRRepositoryRequest{

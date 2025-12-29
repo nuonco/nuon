@@ -13,10 +13,8 @@ runbooks to handle incidents.
 Action workflows can be configured in your app's TOML config. For example, to
 define an HTTP healthcheck:
 
-<CodeGroup>
 ```toml actions/http_healthcheck.toml
-#:schema https://api.nuon.co/v1/general/config-schema?type=action
-
+# action
 name = "http_healthcheck" timeout = "0m15s"
 
 [[triggers]] type = "cron" cron_schedule = "_/5 _ \* \* \*"
@@ -31,20 +29,17 @@ name = "http_healthcheck" timeout = "0m15s"
 "https://your-app.{{.nuon.install.sandbox.outputs.public_domain.name}}" METHOD =
 "HEAD" EXPECTED_STATUS_CODE = "200"
 
-````
+```
 
 ```toml actions/<your-action>.toml
-#:schema https://api.nuon.co/v1/general/config-schema
-
+# action
 version      = "v1"
 description  = "Your app on AWS."
 display_name = "Your App"
 
 [[actions]]
 source = "./actions/alb_healthcheck.toml"
-````
-
-</CodeGroup>
+```
 
 Once configured and synced, you will see the workflow in the "Actions" tab for
 your app.
@@ -96,14 +91,6 @@ tied to a specific component:
 - `post-teardown-component`
 - `pre-teardown-component`
 
-<Note>
-	`pre-component-deploy` and `post-component-deploy` have been renamed to
-	`pre-deploy-component` and `post-deploy-component` for consistency with other
-	triggers. `pre-sandbox-run` and `post-sandbox-run` have been deprecated, in
-	favor of `pre|post-reprovision`, `pre|post-provision`, and
-	`pre|post-deprovision`
-</Note>
-
 Actions can be triggered manually, on a cron, or by install events. You can
 define multiple triggers for an action.
 
@@ -111,6 +98,7 @@ The example action defines two triggers. It will run every five minutes, and can
 also be triggered manually at any time.
 
 ```toml actions/<action-name>.toml
+# action
 [[triggers]]
 type          = "cron"
 cron_schedule = "*/5 * * * *"
@@ -131,6 +119,7 @@ script from our
 and sets a few env vars to configure it.
 
 ```toml actions/<action-name>.toml
+# action
 [[steps]]
 name    = "healthcheck"
 command = "./healthcheck"
@@ -148,6 +137,6 @@ EXPECTED_STATUS_CODE = "200"
 
 # Monitoring Workflow Runs
 
-Actions workflow runs can be monitored on the "Actions" tab in each Install. You
+Actions workflow runs can be monitored on the "Actions" tab in each install. You
 can see a list of all workflow runs, and inspect each run to see logs, what
 triggered the run, and whether is succeeded or not.

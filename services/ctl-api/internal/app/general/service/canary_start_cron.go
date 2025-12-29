@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	canaryv1 "github.com/nuonco/nuon/pkg/types/workflows/canary/v1"
+	"github.com/nuonco/nuon/pkg/types/workflows/canary"
 	"github.com/nuonco/nuon/pkg/workflows"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
@@ -71,7 +71,7 @@ func (c *service) startCanaryCron(ctx context.Context, id string, sandboxMode bo
 			"started-by": "ctl-api",
 		},
 	}
-	wkflowReq := &canaryv1.ProvisionRequest{
+	wkflowReq := &canary.ProvisionRequest{
 		SandboxMode: sandboxMode,
 	}
 

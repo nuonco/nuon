@@ -11,6 +11,7 @@ Most applications have either explicit or implicit dependencies between the diff
 For example, given an app that comprises a [Helm chart](/guides/helm-chart-components) component and a [Terraform component](./terraform-components):
 
 ```toml components/helm.toml
+# helm
 name       = "helm"
 type       = "helm_chart"
 chart_name = "helm"
@@ -26,6 +27,7 @@ database_url = "{{.nuon.components.database.outputs.database_url}}"
 ```
 
 ```toml components/database.toml
+# terraform
 name              = "database"
 type              = "terraform_module"
 terraform_version = "1.11.3"
@@ -60,6 +62,7 @@ Taking the example above, you can make the Helm chart depend on the database by 
 With the directory-based approach, you can specify dependencies explicitly in each component file:
 
 ```toml components/database.toml
+# terraform
 name              = "database"
 type              = "terraform_module"
 terraform_version = "1.11.3"
@@ -71,6 +74,7 @@ branch    = "main"
 ```
 
 ```toml components/helm.toml
+# helm
 name       = "helm"
 type       = "helm_chart"
 chart_name = "helm"
@@ -91,11 +95,7 @@ When an install is provisioned, Nuon will generate a graph of the app based on t
 Nuon will automatically deploy the _latest_ build of each component to the install. In the previous example, this means
 that the database component would be deployed _before_ the Helm chart.
 
-For example, when you create a new install, each component will automatically be deployed:
-
-```sh
-nuon installs create
-```
+For example, when you create a new install, each component will automatically be deployed.
 
 To check the status of each component on the install:
 

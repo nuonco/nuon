@@ -1,0 +1,44 @@
+// {{.Name}} sends an update to a workflow
+func (c *{{.ClientName}}Client) {{.Name}}(ctx context.Context, workflowID string, input {{.InputType}}, opts ...{{.ClientName}}UpdateOption) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	{{if .OutputType}}var result {{.OutputType}}{{end}}
+	updateID := "{{.UpdateName}}"
+	options := &{{.ClientName}}UpdateOptions{
+		WorkflowID:   workflowID,
+		UpdateID:     updateID,
+		WaitForStage: client.WorkflowUpdateStageCompleted,
+	}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	if options.StartWorkflowOperation != nil {
+		op := *options.StartWorkflowOperation
+		if op.UpdateOptions.WorkflowID == "" {
+			op.UpdateOptions.WorkflowID = options.WorkflowID
+		}
+		if op.UpdateOptions.UpdateName == "" {
+			op.UpdateOptions.UpdateName = options.UpdateID
+		}
+		op.UpdateOptions.Args = []interface{}{input}
+
+		handle, err := c.client.UpdateWithStartWorkflow(ctx, op)
+		if err != nil {
+			return {{if .OutputType}}result, {{end}}err
+		}
+		err = handle.Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+		return {{if .OutputType}}result, {{end}}err
+	}
+
+	handle, err := c.client.UpdateWorkflow(ctx, client.UpdateWorkflowOptions{
+		WorkflowID:   options.WorkflowID,
+		RunID:        options.RunID,
+		UpdateName:   options.UpdateID,
+		Args:         []interface{}{input},
+		WaitForStage: options.WaitForStage,
+	})
+	if err != nil {
+		return {{if .OutputType}}result, {{end}}err
+	}
+	err = handle.Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	return {{if .OutputType}}result, {{end}}err
+}
