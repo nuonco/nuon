@@ -10,97 +10,82 @@ jobs:
     name: Send Slack notification
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch user profile
-        id: user
+      - name: Fetch user profile and send Slack notification
         env:
           GH_TOKEN: ${{ github.token }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_STARGAZER_WEBHOOK_URL }}
+          SENDER_LOGIN: ${{ github.event.sender.login }}
+          SENDER_URL: ${{ github.event.sender.html_url }}
+          SENDER_AVATAR: ${{ github.event.sender.avatar_url }}
+          REPO_NAME: ${{ github.event.repository.full_name }}
+          REPO_URL: ${{ github.event.repository.html_url }}
+          STAR_COUNT: ${{ github.event.repository.stargazers_count }}
         run: |
-          USER_DATA=$(gh api users/${{ github.event.sender.login }})
+          # Fetch full user profile
+          USER_DATA=$(gh api users/${SENDER_LOGIN})
           
-          echo "name=$(echo "$USER_DATA" | jq -r '.name // empty')" >> $GITHUB_OUTPUT
-          echo "company=$(echo "$USER_DATA" | jq -r '.company // empty')" >> $GITHUB_OUTPUT
-          echo "location=$(echo "$USER_DATA" | jq -r '.location // empty')" >> $GITHUB_OUTPUT
-          echo "bio=$(echo "$USER_DATA" | jq -r '.bio // empty' | tr '\n' ' ')" >> $GITHUB_OUTPUT
-          echo "blog=$(echo "$USER_DATA" | jq -r '.blog // empty')" >> $GITHUB_OUTPUT
-          echo "twitter=$(echo "$USER_DATA" | jq -r '.twitter_username // empty')" >> $GITHUB_OUTPUT
-          echo "followers=$(echo "$USER_DATA" | jq -r '.followers // 0')" >> $GITHUB_OUTPUT
-          echo "following=$(echo "$USER_DATA" | jq -r '.following // 0')" >> $GITHUB_OUTPUT
-          echo "public_repos=$(echo "$USER_DATA" | jq -r '.public_repos // 0')" >> $GITHUB_OUTPUT
-          echo "created_at=$(echo "$USER_DATA" | jq -r '.created_at // empty')" >> $GITHUB_OUTPUT
-          echo "email=$(echo "$USER_DATA" | jq -r '.email // empty')" >> $GITHUB_OUTPUT
-          echo "hireable=$(echo "$USER_DATA" | jq -r '.hireable // empty')" >> $GITHUB_OUTPUT
-
-      - name: Build Slack message
-        id: message
-        run: |
+          # Extract fields safely with jq
+          NAME=$(echo "$USER_DATA" | jq -r '.name // empty')
+          COMPANY=$(echo "$USER_DATA" | jq -r '.company // empty')
+          LOCATION=$(echo "$USER_DATA" | jq -r '.location // empty')
+          BIO=$(echo "$USER_DATA" | jq -r '.bio // empty' | tr '\n' ' ')
+          BLOG=$(echo "$USER_DATA" | jq -r '.blog // empty')
+          TWITTER=$(echo "$USER_DATA" | jq -r '.twitter_username // empty')
+          FOLLOWERS=$(echo "$USER_DATA" | jq -r '.followers // 0')
+          FOLLOWING=$(echo "$USER_DATA" | jq -r '.following // 0')
+          PUBLIC_REPOS=$(echo "$USER_DATA" | jq -r '.public_repos // 0')
+          CREATED_AT=$(echo "$USER_DATA" | jq -r '.created_at // empty' | cut -d'T' -f1)
+          EMAIL=$(echo "$USER_DATA" | jq -r '.email // empty')
+          HIREABLE=$(echo "$USER_DATA" | jq -r '.hireable // false')
+          
+          # Build message parts
           MSG="⭐ *New GitHub Star!*\n\n"
-          MSG+="*Username:* <${{ github.event.sender.html_url }}|@${{ github.event.sender.login }}>\n"
+          MSG+="*Username:* <${SENDER_URL}|@${SENDER_LOGIN}>\n"
           
-          if [ -n "${{ steps.user.outputs.name }}" ]; then
-            MSG+="*Name:* ${{ steps.user.outputs.name }}\n"
-          fi
-          
-          if [ -n "${{ steps.user.outputs.bio }}" ]; then
-            MSG+="*Bio:* ${{ steps.user.outputs.bio }}\n"
-          fi
-          
-          if [ -n "${{ steps.user.outputs.company }}" ]; then
-            MSG+="*Company:* ${{ steps.user.outputs.company }}\n"
-          fi
-          
-          if [ -n "${{ steps.user.outputs.location }}" ]; then
-            MSG+="*Location:* 📍 ${{ steps.user.outputs.location }}\n"
-          fi
-          
-          if [ -n "${{ steps.user.outputs.email }}" ]; then
-            MSG+="*Email:* ${{ steps.user.outputs.email }}\n"
-          fi
-          
-          if [ -n "${{ steps.user.outputs.blog }}" ]; then
-            MSG+="*Website:* ${{ steps.user.outputs.blog }}\n"
-          fi
-          
-          if [ -n "${{ steps.user.outputs.twitter }}" ]; then
-            MSG+="*Twitter:* <https://twitter.com/${{ steps.user.outputs.twitter }}|@${{ steps.user.outputs.twitter }}>\n"
-          fi
+          [ -n "$NAME" ] && MSG+="*Name:* ${NAME}\n"
+          [ -n "$BIO" ] && MSG+="*Bio:* ${BIO}\n"
+          [ -n "$COMPANY" ] && MSG+="*Company:* ${COMPANY}\n"
+          [ -n "$LOCATION" ] && MSG+="*Location:* 📍 ${LOCATION}\n"
+          [ -n "$EMAIL" ] && MSG+="*Email:* ${EMAIL}\n"
+          [ -n "$BLOG" ] && MSG+="*Website:* ${BLOG}\n"
+          [ -n "$TWITTER" ] && MSG+="*Twitter:* <https://twitter.com/${TWITTER}|@${TWITTER}>\n"
           
           MSG+="\n*GitHub Stats:*\n"
-          MSG+="• Followers: ${{ steps.user.outputs.followers }} | Following: ${{ steps.user.outputs.following }}\n"
-          MSG+="• Public Repos: ${{ steps.user.outputs.public_repos }}\n"
-          MSG+="• Member since: ${{ steps.user.outputs.created_at }}\n"
+          MSG+="• Followers: ${FOLLOWERS} | Following: ${FOLLOWING}\n"
+          MSG+="• Public Repos: ${PUBLIC_REPOS}\n"
+          MSG+="• Member since: ${CREATED_AT}\n"
           
-          if [ "${{ steps.user.outputs.hireable }}" = "true" ]; then
-            MSG+="• 💼 Open to opportunities\n"
-          fi
+          [ "$HIREABLE" = "true" ] && MSG+="• 💼 Open to opportunities\n"
           
           MSG+="\n---\n"
-          MSG+="*Repository:* <${{ github.event.repository.html_url }}|${{ github.event.repository.full_name }}>\n"
-          MSG+="*Total Stars:* ⭐ ${{ github.event.repository.stargazers_count }}"
+          MSG+="*Repository:* <${REPO_URL}|${REPO_NAME}>\n"
+          MSG+="*Total Stars:* ⭐ ${STAR_COUNT}"
           
-          echo "text<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$MSG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Notify Slack about new star
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          webhook: ${{ secrets.SLACK_STARGAZER_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "⭐ New GitHub Star from ${{ github.event.sender.login }}!",
-              "blocks": [
+          # Build JSON payload using jq for proper escaping
+          PAYLOAD=$(jq -n \
+            --arg text "⭐ New GitHub Star from ${SENDER_LOGIN}!" \
+            --arg msg "$MSG" \
+            --arg avatar "$SENDER_AVATAR" \
+            --arg alt "$SENDER_LOGIN" \
+            '{
+              text: $text,
+              blocks: [
                 {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ steps.message.outputs.text }}"
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: $msg
                   },
-                  "accessory": {
-                    "type": "image",
-                    "image_url": "${{ github.event.sender.avatar_url }}",
-                    "alt_text": "${{ github.event.sender.login }}"
+                  accessory: {
+                    type: "image",
+                    image_url: $avatar,
+                    alt_text: $alt
                   }
                 }
               ]
-            }
+            }')
+          
+          # Send to Slack
+          curl -X POST -H 'Content-type: application/json' \
+            --data "$PAYLOAD" \
+            "$SLACK_WEBHOOK_URL"
