@@ -1,0 +1,35 @@
+---
+name: Stargazer Notification
+
+on:
+  watch:
+    types: [started]
+
+jobs:
+  notify:
+    name: Send Slack notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack about new star
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_STARGAZER_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "⭐ New GitHub Star!",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⭐ *New GitHub Star!*\n\n*User:* <${{ github.event.sender.html_url }}|${{ github.event.sender.login }}>\n*Repository:* <${{ github.event.repository.html_url }}|${{ github.event.repository.full_name }}>\n*Total Stars:* ${{ github.event.repository.stargazers_count }}"
+                  },
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "${{ github.event.sender.avatar_url }}",
+                    "alt_text": "${{ github.event.sender.login }}"
+                  }
+                }
+              ]
+            }
