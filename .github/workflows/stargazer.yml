@@ -38,27 +38,28 @@ jobs:
           EMAIL=$(echo "$USER_DATA" | jq -r '.email // empty')
           HIREABLE=$(echo "$USER_DATA" | jq -r '.hireable // false')
           
-          # Build message parts
-          MSG="⭐ *New GitHub Star!*\n\n"
-          MSG+="*Username:* <${SENDER_URL}|@${SENDER_LOGIN}>\n"
+          # Build message parts using $'...' for actual newlines
+          NL=$'\n'
+          MSG="⭐ *New GitHub Star!*${NL}${NL}"
+          MSG+="*Username:* <${SENDER_URL}|@${SENDER_LOGIN}>${NL}"
           
-          [ -n "$NAME" ] && MSG+="*Name:* ${NAME}\n"
-          [ -n "$BIO" ] && MSG+="*Bio:* ${BIO}\n"
-          [ -n "$COMPANY" ] && MSG+="*Company:* ${COMPANY}\n"
-          [ -n "$LOCATION" ] && MSG+="*Location:* 📍 ${LOCATION}\n"
-          [ -n "$EMAIL" ] && MSG+="*Email:* ${EMAIL}\n"
-          [ -n "$BLOG" ] && MSG+="*Website:* ${BLOG}\n"
-          [ -n "$TWITTER" ] && MSG+="*Twitter:* <https://twitter.com/${TWITTER}|@${TWITTER}>\n"
+          [ -n "$NAME" ] && MSG+="*Name:* ${NAME}${NL}"
+          [ -n "$BIO" ] && MSG+="*Bio:* ${BIO}${NL}"
+          [ -n "$COMPANY" ] && MSG+="*Company:* ${COMPANY}${NL}"
+          [ -n "$LOCATION" ] && MSG+="*Location:* 📍 ${LOCATION}${NL}"
+          [ -n "$EMAIL" ] && MSG+="*Email:* ${EMAIL}${NL}"
+          [ -n "$BLOG" ] && MSG+="*Website:* ${BLOG}${NL}"
+          [ -n "$TWITTER" ] && MSG+="*Twitter:* <https://twitter.com/${TWITTER}|@${TWITTER}>${NL}"
           
-          MSG+="\n*GitHub Stats:*\n"
-          MSG+="• Followers: ${FOLLOWERS} | Following: ${FOLLOWING}\n"
-          MSG+="• Public Repos: ${PUBLIC_REPOS}\n"
-          MSG+="• Member since: ${CREATED_AT}\n"
+          MSG+="${NL}*GitHub Stats:*${NL}"
+          MSG+="• Followers: ${FOLLOWERS} | Following: ${FOLLOWING}${NL}"
+          MSG+="• Public Repos: ${PUBLIC_REPOS}${NL}"
+          MSG+="• Member since: ${CREATED_AT}${NL}"
           
-          [ "$HIREABLE" = "true" ] && MSG+="• 💼 Open to opportunities\n"
+          [ "$HIREABLE" = "true" ] && MSG+="• 💼 Open to opportunities${NL}"
           
-          MSG+="\n---\n"
-          MSG+="*Repository:* <${REPO_URL}|${REPO_NAME}>\n"
+          MSG+="${NL}---${NL}"
+          MSG+="*Repository:* <${REPO_URL}|${REPO_NAME}>${NL}"
           MSG+="*Total Stars:* ⭐ ${STAR_COUNT}"
           
           # Build JSON payload using jq for proper escaping
