@@ -1,6 +1,6 @@
 package workflow
 
-import "github.com/nuonco/nuon-go/models"
+import "github.com/nuonco/nuon/sdks/nuon-go/models"
 
 var terminalStatuses = []models.AppStatus{
 	models.AppStatusCancelled,

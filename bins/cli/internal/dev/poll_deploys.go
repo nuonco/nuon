@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuonco/nuon-go"
-	"github.com/nuonco/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
 )
 

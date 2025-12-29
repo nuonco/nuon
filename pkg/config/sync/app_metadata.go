@@ -3,7 +3,7 @@ package sync
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *sync) syncApp(ctx context.Context, resource string) error {

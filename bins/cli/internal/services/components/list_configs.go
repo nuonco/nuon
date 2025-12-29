@@ -3,9 +3,9 @@ package components
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go/models"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) ListConfigs(ctx context.Context, appID, compID string, offset, limit int, asJSON bool) error {

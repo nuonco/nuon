@@ -4,7 +4,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // Messages are events that we respond to in our Update function. This

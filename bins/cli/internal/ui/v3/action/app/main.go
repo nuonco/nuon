@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	ac "github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/common"

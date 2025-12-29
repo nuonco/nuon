@@ -15,6 +15,9 @@ replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playgro
 
 replace github.com/databus23/helm-diff/v3 v3.12.5 => github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9
 
+// Use in-tree nuon-go SDK instead of external module
+replace github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
@@ -64,7 +67,7 @@ require (
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/go-playground/validator/v10 v10.23.0
-	github.com/go-swagger/go-swagger v0.30.5
+	github.com/go-swagger/go-swagger v0.33.0
 	github.com/go-toolsmith/astfmt v1.1.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/golang/mock v1.7.0-rc.1
@@ -99,7 +102,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/segmentio/analytics-go/v3 v3.3.0
-	github.com/sourcegraph/conc v0.3.0
+	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.20.1
@@ -248,7 +251,7 @@ require (
 	cloud.google.com/go/iam v1.4.1 // indirect
 	cloud.google.com/go/monitoring v1.24.0 // indirect
 	cloud.google.com/go/storage v1.50.0 // indirect
-	dario.cat/mergo v1.0.1 // indirect
+	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.1 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 // indirect
 	github.com/ClickHouse/ch-go v0.67.0 // indirect
@@ -300,13 +303,13 @@ require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/go-openapi/analysis v0.23.0 // indirect
-	github.com/go-openapi/errors v0.22.1 // indirect
+	github.com/go-openapi/errors v0.22.2 // indirect
 	github.com/go-openapi/runtime v0.28.0 // indirect
 	github.com/go-openapi/strfmt v0.23.0 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/gonvenience/bunt v1.4.2 // indirect
 	github.com/gonvenience/neat v1.3.16 // indirect
 	github.com/gonvenience/term v1.0.4 // indirect
@@ -353,7 +356,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/nuonco/nuon-go v0.92.1
+	github.com/nuonco/nuon/sdks/nuon-go v0.92.1
 	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
 	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
@@ -364,7 +367,7 @@ require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 // indirect
 	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
-	github.com/sagikazarmark/locafero v0.7.0 // indirect
+	github.com/sagikazarmark/locafero v0.10.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.9.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
@@ -473,8 +476,8 @@ require (
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/inflect v0.19.0 // indirect
-	github.com/go-openapi/jsonpointer v0.21.1 // indirect
+	github.com/go-openapi/inflect v0.21.3 // indirect
+	github.com/go-openapi/jsonpointer v0.21.2 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/loads v0.22.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
@@ -573,7 +576,7 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tj/go-spin v1.1.0 // indirect
-	github.com/toqueteos/webbrowser v1.2.0 // indirect
+	github.com/toqueteos/webbrowser v1.2.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
 	github.com/urfave/cli/v2 v2.27.6 // indirect
@@ -584,7 +587,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/y0ssar1an/q v1.0.10 // indirect
-	go.mongodb.org/mongo-driver v1.14.0 // indirect
+	go.mongodb.org/mongo-driver v1.17.4 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
