@@ -3,7 +3,7 @@ package lookup
 import (
 	"context"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 func VCSConnectionID(ctx context.Context, apiClient nuon.Client, connID string) (string, error) {

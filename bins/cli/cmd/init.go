@@ -10,7 +10,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/cockroachdb/errors"
 	"github.com/getsentry/sentry-go"
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"go.uber.org/zap"
 
 	segment "github.com/segmentio/analytics-go/v3"

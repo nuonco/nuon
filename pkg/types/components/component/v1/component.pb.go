@@ -7,6 +7,10 @@
 package componentv1
 
 import (
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
+
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	v1 "github.com/nuonco/nuon/pkg/types/components/build/v1"
 	v12 "github.com/nuonco/nuon/pkg/types/components/connections/v1"
@@ -16,9 +20,6 @@ import (
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
 )
 
 const (

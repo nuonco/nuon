@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 
 	"github.com/nuonco/nuon/pkg/config"
 )

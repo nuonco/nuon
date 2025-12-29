@@ -30,6 +30,9 @@ WORKDIR /src
 # Copy core dependencies (will be overridden in service build)
 COPY tools.go go.mod go.sum ./
 
+# Copy in-tree SDKs (required for go.mod replace directives)
+COPY sdks ./sdks/
+
 # Pre-download dependencies
 RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
     --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \

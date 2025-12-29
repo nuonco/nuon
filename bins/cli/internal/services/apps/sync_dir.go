@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"

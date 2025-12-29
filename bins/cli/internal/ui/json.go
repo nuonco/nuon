@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors/withstack"
-	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon/pkg/errs"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 func PrintJSON(data interface{}) {

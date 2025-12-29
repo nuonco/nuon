@@ -7,12 +7,13 @@
 package variablesv1
 
 import (
-	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
