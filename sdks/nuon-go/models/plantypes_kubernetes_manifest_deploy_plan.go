@@ -22,11 +22,18 @@ type PlantypesKubernetesManifestDeployPlan struct {
 	// cluster info
 	ClusterInfo *KubeClusterInfo `json:"cluster_info,omitempty"`
 
-	// manifest
+	// Manifest is populated at runtime from the OCI artifact.
+	// This field is no longer set during plan creation - it's populated by the runner
+	// after pulling the OCI artifact during Initialize().
 	Manifest string `json:"manifest,omitempty"`
 
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
+
+	// OCIArtifact reference (set during plan creation, used by runner to pull manifest)
+	OciArtifact struct {
+		PlantypesOCIArtifactReference
+	} `json:"oci_artifact,omitempty"`
 }
 
 // Validate validates this plantypes kubernetes manifest deploy plan
@@ -34,6 +41,10 @@ func (m *PlantypesKubernetesManifestDeployPlan) Validate(formats strfmt.Registry
 	var res []error
 
 	if err := m.validateClusterInfo(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOciArtifact(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -66,11 +77,23 @@ func (m *PlantypesKubernetesManifestDeployPlan) validateClusterInfo(formats strf
 	return nil
 }
 
+func (m *PlantypesKubernetesManifestDeployPlan) validateOciArtifact(formats strfmt.Registry) error {
+	if swag.IsZero(m.OciArtifact) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 // ContextValidate validate this plantypes kubernetes manifest deploy plan based on the context it is used
 func (m *PlantypesKubernetesManifestDeployPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateClusterInfo(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOciArtifact(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -101,6 +124,11 @@ func (m *PlantypesKubernetesManifestDeployPlan) contextValidateClusterInfo(ctx c
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *PlantypesKubernetesManifestDeployPlan) contextValidateOciArtifact(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

@@ -46,6 +46,9 @@ type PlantypesBuildPlan struct {
 	// helm build plan
 	HelmBuildPlan *PlantypesHelmBuildPlan `json:"helm_build_plan,omitempty"`
 
+	// kubernetes manifest build plan
+	KubernetesManifestBuildPlan *PlantypesKubernetesManifestBuildPlan `json:"kubernetes_manifest_build_plan,omitempty"`
+
 	// sandbox mode
 	SandboxMode *PlantypesSandboxMode `json:"sandbox_mode,omitempty"`
 
@@ -78,6 +81,10 @@ func (m *PlantypesBuildPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateHelmBuildPlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubernetesManifestBuildPlan(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -220,6 +227,29 @@ func (m *PlantypesBuildPlan) validateHelmBuildPlan(formats strfmt.Registry) erro
 	return nil
 }
 
+func (m *PlantypesBuildPlan) validateKubernetesManifestBuildPlan(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubernetesManifestBuildPlan) { // not required
+		return nil
+	}
+
+	if m.KubernetesManifestBuildPlan != nil {
+		if err := m.KubernetesManifestBuildPlan.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("kubernetes_manifest_build_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("kubernetes_manifest_build_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesBuildPlan) validateSandboxMode(formats strfmt.Registry) error {
 	if swag.IsZero(m.SandboxMode) { // not required
 		return nil
@@ -287,6 +317,10 @@ func (m *PlantypesBuildPlan) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidateHelmBuildPlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateKubernetesManifestBuildPlan(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -416,6 +450,31 @@ func (m *PlantypesBuildPlan) contextValidateHelmBuildPlan(ctx context.Context, f
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("helm_build_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesBuildPlan) contextValidateKubernetesManifestBuildPlan(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.KubernetesManifestBuildPlan != nil {
+
+		if swag.IsZero(m.KubernetesManifestBuildPlan) { // not required
+			return nil
+		}
+
+		if err := m.KubernetesManifestBuildPlan.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("kubernetes_manifest_build_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("kubernetes_manifest_build_plan")
 			}
 
 			return err
