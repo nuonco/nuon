@@ -23,7 +23,7 @@ usable in workflows.
 
       - name: Parse output
         id: tf_parse
-        uses: powertoolsdev/mono/actions/tf-output@main
+        uses: nuonco/mono/actions/tf-output@main
         with:
           file: ${{ env.TF_OUT }}
 

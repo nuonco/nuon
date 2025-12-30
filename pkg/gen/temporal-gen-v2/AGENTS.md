@@ -36,8 +36,8 @@ package worker
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/runners/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/mono/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/mono/services/ctl-api/internal/pkg/eventloop"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
