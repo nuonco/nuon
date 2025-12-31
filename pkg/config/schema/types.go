@@ -246,14 +246,14 @@ func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
-	schema := jsonschema.Schema{
-		AllOf: []*jsonschema.Schema{
-			r.Reflect(config.Component{}),
-			r.Reflect(config.TerraformModuleComponentConfig{}),
-		},
-	}
+	// schema := jsonschema.Schema{
+	// 	AllOf: []*jsonschema.Schema{
+	// 		r.Reflect(config.Component{}),
+	// 		r.Reflect(config.TerraformModuleComponentConfig{}),
+	// 	},
+	// }
 
-	return &schema, nil
+	return r.Reflect(config.TerraformModuleComponentConfig{}), nil
 }
 
 func MetadataConfigSchema() (*jsonschema.Schema, error) {

@@ -32,6 +32,16 @@ func BuildPropertyMap(schema *jsonschema.Schema) map[string]map[string]*jsonsche
 	}
 
 	buildPropertyMapRecursive(rootSchema, "", hierarchicalMap, defsLookup)
+	for _, s := range schema.AllOf {
+		if s.Ref != "" {
+			resolved := resolveRef(s.Ref, s.Definitions)
+			if resolved != nil {
+				s = resolved
+			}
+		}
+		buildPropertyMapRecursive(s, "", hierarchicalMap, s.Definitions)
+	}
+	// fmt.Printf("%#v", hierarchicalMap)
 	return hierarchicalMap
 }
 
