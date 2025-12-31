@@ -18,7 +18,7 @@ replace github.com/databus23/helm-diff/v3 v3.12.5 => github.com/someshkoli/helm-
 // Use in-tree nuon-go SDK instead of external module
 replace github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
 
-replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20251222204037-58c1ef67fe54
+replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20251231182707-4384d8a2d782
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
