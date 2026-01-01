@@ -55,7 +55,7 @@ jobs:
       - uses: martialonline/workflow-status@v4.2
         id: check
       - name: Update status
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: 'Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo'
           status: success

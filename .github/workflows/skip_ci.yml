@@ -34,49 +34,49 @@ jobs:
     steps:
       - name: set services
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: services ✅
           status: success
       - name:  set artifacts
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: artifacts ✅
           status: success
       - name:  set pkg
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: pkg ✅
           status: success
       - name:  set protos
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: protos ✅
           status: success
       - name:  set pull_request
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: pull_request ✅
           status: success
       - name:  set branch
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: branch ✅
           status: success
       - name:  set lint
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: lint ✅
           status: success
       - name:  set terraform cloud
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo
           status: success

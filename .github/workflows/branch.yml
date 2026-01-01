@@ -17,7 +17,7 @@ jobs:
       - uses: martialonline/workflow-status@v4.2
         id: check
       - name: Update status
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: branch ✅
           status: ${{steps.check.outputs.status}}

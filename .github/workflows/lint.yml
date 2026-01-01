@@ -31,7 +31,7 @@ jobs:
     needs: []
     steps:
       - name: Update status
-        uses: ouzi-dev/commit-status-updater@v2.0.1
+        uses: ouzi-dev/commit-status-updater@v2.0.2
         with:
           name: lint ✅
           status: success
