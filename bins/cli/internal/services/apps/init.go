@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/generator"
@@ -38,15 +39,21 @@ type InitParams struct {
 
 func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *InitParams) error {
 	var c *generator.ConfigStructure
+	var err error
 
 	// Check if prebuilt template is selected
 	if params != nil && params.PrebuiltTemplate != "" {
 		switch params.PrebuiltTemplate {
 		case "aws-eks":
-			c = BuildEKSSimpleConfigStructure(genParams.Path)
+			c, err = BuildEKSSimpleConfigStructure(ctx, genParams.Path)
+			if err != nil {
+				return errors.Wrap(err, "unable to create config structure")
+			}
 		case "aws-ecs":
-			// TODO: Implement BuildECSSimpleConfigStructure
-			return errors.New("aws-ecs template not yet implemented")
+			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			if err != nil {
+				return errors.Wrap(err, "unable to create config structure")
+			}
 		default:
 			return errors.Errorf("unknown prebuilt template: %s", params.PrebuiltTemplate)
 		}
@@ -56,6 +63,7 @@ func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *I
 		c = generator.DefaultAppConfigConfigStructure(genParams.Path)
 	}
 
+	fmt.Println(genParams.EnableComments)
 	gen := generator.NewConfigGen(
 		genParams.EnableDefaults,
 		genParams.EnableComments,
@@ -64,7 +72,7 @@ func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *I
 		genParams.SkipNonRequired,
 	)
 
-	err := gen.Gen(genParams.Path, c)
+	err = gen.Gen(genParams.Path, c)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate app config")
 	}
@@ -738,202 +746,22 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 	return structure
 }
 
-// BuildEKSSimpleConfigStructure creates a config structure for aws-eks style app
-func BuildEKSSimpleConfigStructure(path string) *generator.ConfigStructure {
-	structure := &generator.ConfigStructure{
-		Name:              path,
-		Configs:           []generator.ConfigFileDefinition{},
-		ConfigDirectories: []generator.ConfigDirectoryDefinition{},
+func BuildEKSSimpleConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	configStructure, err := ReadAndConvertConfig(ctx, ConfigReaderParams{
+		Folder: "eks-simple",
+	}, "test")
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to build eks template app config")
 	}
+	return configStructure, nil
+}
 
-	sandboxConfig := &config.AppSandboxConfig{
-		TerraformVersion: "1.11.3",
-		PublicRepo: &config.PublicRepoConfig{
-			Repo:      "nuonco/aws-eks-sandbox",
-			Directory: "",
-			Branch:    "main",
-		},
-		VarsMap: map[string]string{
-			"cluster_identifier": "n-{{.nuon.install.id}}",
-			"enable_dns":         "true",
-			"public_domain":      "{{.nuon.install.id}}.{{.nuon.inputs.domain}}",
-			"internal_domain":    "internal.{{.nuon.install.id}}.{{.nuon.inputs.domain}}",
-		},
-		VariablesFiles: []config.TerraformVariablesFile{
-			{
-				Contents: "./sandbox.tfvars",
-			},
-		},
+func BuildECSSimpleConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	configStructure, err := ReadAndConvertConfig(ctx, ConfigReaderParams{
+		Folder: "ecs-simple",
+	}, configName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to build ecs template app config")
 	}
-	structure.UpdateSandbox(sandboxConfig)
-
-	stackConfig := &config.StackConfig{
-		Type:                    "aws-cloudformation",
-		Name:                    "nuon-demos-eks-simple-{{.nuon.install.id}}",
-		Description:             "QuickLink to install runner for BYOC Nuon: Install {{.nuon.install.id}}",
-		VPCNestedTemplateURL:    "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.8/vpc/eks/default/stack.yaml",
-		RunnerNestedTemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.8/runner/asg/stack.yaml",
-	}
-	structure.UpdateStack(stackConfig)
-
-	runnerConfig := &config.AppRunnerConfig{
-		RunnerType:    "aws",
-		HelmDriver:    "configmap",
-		InitScriptURL: "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng.sh",
-		EnvVarMap:     map[string]string{},
-	}
-	structure.UpdateRunner(runnerConfig)
-
-	inputsConfig := &config.AppInputConfig{
-		Groups: []config.AppInputGroup{
-			{
-				Name:        "dns",
-				Description: "DNS Configrations",
-				DisplayName: "Configurations for the root domain for Route53",
-			},
-		},
-		Inputs: []config.AppInput{
-			{
-				Name:        "domain",
-				Description: "domain for the whoami endpoint e.g., nuon.run",
-				Default:     "nuon.run",
-				DisplayName: "Domain",
-				Group:       "dns",
-			},
-			{
-				Name:        "sub_domain",
-				Description: "The sub domain for the Whoami service",
-				Default:     "whoami",
-				DisplayName: "Sub Domain",
-				Group:       "dns",
-			},
-		},
-	}
-	structure.UpdateInputs(inputsConfig)
-
-	policiesConfig := &config.PoliciesConfig{
-		Policies: []config.AppPolicy{
-			{
-				Type:     config.AppPolicyTypeKubernetesClusterKyverno,
-				Contents: "./disallow-ingress-nginx-custom-snippets.yml",
-			},
-		},
-	}
-	structure.UpdatePolicies(policiesConfig)
-
-	provisionRole := &config.AppAWSIAMRole{
-		Type:        string(config.PermissionsRoleTypeProvision),
-		Name:        "{{.nuon.install.id}}-provision",
-		Description: "provision the sandbox and components; trigger actions.",
-		DisplayName: "provision role",
-		Policies: []config.AppAWSIAMPolicy{
-			{
-				ManagedPolicyName: "AdministratorAccess",
-			},
-		},
-		PermissionsBoundary: "./provision_boundary.json",
-	}
-
-	structure.AddPermission(generator.ConfigFileDefinition{
-		Name: "provision.toml",
-		Schemas: []generator.ConfigFileSchema{
-			{Instance: provisionRole},
-		},
-	})
-
-	maintenanceRole := &config.AppAWSIAMRole{
-		Type:        string(config.PermissionsRoleTypeMaintenance),
-		Name:        "{{.nuon.install.id}}-maintenance",
-		Description: "operate and remediate the app's components and use actions.",
-		DisplayName: "maintenance role",
-		Policies: []config.AppAWSIAMPolicy{
-			{
-				ManagedPolicyName: "AdministratorAccess",
-			},
-			{
-				Name: "limited-rds-secrets-manager-policy",
-				Contents: `{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "VisualEditor0",
-      "Effect": "Allow",
-      "Action": [
-        "secretsmanager:CreateSecret",
-        "secretsmanager:PutSecretValue",
-        "secretsmanager:TagResource",
-        "secretsmanager:UpdateSecret",
-        "secretsmanager:GetSecretValue"
-      ],
-      "Resource": "arn:aws:secretsmanager:{{ .nuon.cloud_account.aws.region }}:*:secret:rds!*",
-      "Condition": {
-        "StringEquals": {
-          "aws:RequestedRegion": "{{ .nuon.cloud_account.aws.region }}",
-          "aws:ResourceTag/nuon_id": "{{ .nuon.install.id }}"
-        }
-      }
-    }
-  ]
-}`,
-			},
-			{
-				Name: "secrets-list-policy",
-				Contents: `{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "VisualEditor0",
-      "Effect": "Allow",
-      "Action": "secretsmanager:ListSecrets",
-      "Resource": "*"
-    }
-  ]
-}`,
-			},
-			{
-				Name: "s3-bucket-policy",
-				Contents: `{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "VisualEditor0",
-      "Effect": "Allow",
-      "Action": "s3:PutBucketPolicy",
-      "Resource": "*"
-    }
-  ]
-}`,
-			},
-		},
-		PermissionsBoundary: "./maintenance_boundary.json",
-	}
-
-	structure.AddPermission(generator.ConfigFileDefinition{
-		Name: "maintenance.toml",
-		Schemas: []generator.ConfigFileSchema{
-			{Instance: maintenanceRole},
-		},
-	})
-
-	deprovisionRole := &config.AppAWSIAMRole{
-		Type:        string(config.PermissionsRoleTypeDeprovision),
-		Name:        "{{.nuon.install.id}}-deprovision",
-		Description: "deprovision sandbox and components. you must still delete the cf stack to delete the runner, ec2 vm, and vpc.",
-		DisplayName: "deprovision role",
-		Policies: []config.AppAWSIAMPolicy{
-			{
-				ManagedPolicyName: "AdministratorAccess",
-			},
-		},
-		PermissionsBoundary: "./deprovision_boundary.json",
-	}
-
-	structure.AddPermission(generator.ConfigFileDefinition{
-		Name: "deprovision.toml",
-		Schemas: []generator.ConfigFileSchema{
-			{Instance: deprovisionRole},
-		},
-	})
-
-	return structure
+	return configStructure, nil
 }

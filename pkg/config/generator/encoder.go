@@ -279,7 +279,13 @@ func formatTOMLValue(value any, schemaType string) string {
 
 	switch v := value.(type) {
 	case string:
-		return fmt.Sprintf(`"%s"`, v)
+		formattedString := ""
+		if strings.Contains(v, "\n") {
+			formattedString = fmt.Sprintf("\"\"\"\n%s\"\"\"", v)
+		} else {
+			formattedString = fmt.Sprintf(`"%s"`, v)
+		}
+		return formattedString
 	case bool:
 		return fmt.Sprintf("%t", v)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
