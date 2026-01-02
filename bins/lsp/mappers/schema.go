@@ -1,6 +1,7 @@
 package mappers
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/invopop/jsonschema"
@@ -33,15 +34,16 @@ func BuildPropertyMap(schema *jsonschema.Schema) map[string]map[string]*jsonsche
 
 	buildPropertyMapRecursive(rootSchema, "", hierarchicalMap, defsLookup)
 	for _, s := range schema.AllOf {
+		defsLookup := s.Definitions
+		sh := s
 		if s.Ref != "" {
-			resolved := resolveRef(s.Ref, s.Definitions)
+			resolved := resolveRef(s.Ref, defsLookup)
 			if resolved != nil {
-				s = resolved
+				sh = resolved
 			}
 		}
-		buildPropertyMapRecursive(s, "", hierarchicalMap, s.Definitions)
+		buildPropertyMapRecursive(sh, "", hierarchicalMap, defsLookup)
 	}
-	// fmt.Printf("%#v", hierarchicalMap)
 	return hierarchicalMap
 }
 
@@ -49,6 +51,7 @@ func BuildPropertyMap(schema *jsonschema.Schema) map[string]map[string]*jsonsche
 // currentPath represents the dotted path to the current level (e.g., "public_repo" or "values_file")
 // defsLookup contains all schema definitions for $ref resolution
 func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hierarchicalMap map[string]map[string]*jsonschema.Schema, defsLookup map[string]*jsonschema.Schema) {
+	ignoredOneOffs := []string{"component_type"}
 	if schema == nil {
 		return
 	}
@@ -67,6 +70,13 @@ func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hi
 	for pair != nil {
 		key := pair.Key
 		prop := pair.Value
+
+		// ignoring dupluicated one of properties to maintain backward compatibility
+		if v, ok := prop.Extras["oneof_required"]; ok {
+			if slices.Contains(ignoredOneOffs, v.(string)) {
+				return
+			}
+		}
 
 		// Store property at current level
 		hierarchicalMap[currentPath][key] = prop

@@ -103,6 +103,6 @@ func (t *KubernetesManifestComponentConfig) Validate() error {
 	return nil
 }
 
-func (t *KubernetesManifestComponentConfig) Parse() error {
+func (k *KubernetesManifestComponentConfig) Parse() error {
 	return nil
 }

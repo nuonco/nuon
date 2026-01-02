@@ -217,15 +217,10 @@ func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
 }
 
 func HelmConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.HelmChartComponentConfig{}); err != nil {
-		return nil, errors.Wrap(err, "HelmChartComponentConfig validation failed")
-	}
-
 	r, err := reflector()
 	if err != nil {
 		return nil, err
 	}
-
 	schema := jsonschema.Schema{
 		AllOf: []*jsonschema.Schema{
 			r.Reflect(config.Component{}),
@@ -233,27 +228,30 @@ func HelmConfigSchema() (*jsonschema.Schema, error) {
 		},
 	}
 
+	if err := ValidateJSONSchemaExtend(schema); err != nil {
+		return nil, errors.Wrap(err, "HelmChartComponentConfig validation failed")
+	}
+
 	return &schema, nil
 }
 
 func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.TerraformModuleComponentConfig{}); err != nil {
-		return nil, errors.Wrap(err, "TerraformModuleComponentConfig validation failed")
-	}
-
 	r, err := reflector()
 	if err != nil {
 		return nil, err
 	}
+	schema := jsonschema.Schema{
+		AllOf: []*jsonschema.Schema{
+			r.Reflect(config.Component{}),
+			r.Reflect(config.TerraformModuleComponentConfig{}),
+		},
+	}
 
-	// schema := jsonschema.Schema{
-	// 	AllOf: []*jsonschema.Schema{
-	// 		r.Reflect(config.Component{}),
-	// 		r.Reflect(config.TerraformModuleComponentConfig{}),
-	// 	},
-	// }
+	if err := ValidateJSONSchemaExtend(schema); err != nil {
+		return nil, errors.Wrap(err, "TerraformModuleComponentConfig validation failed")
+	}
 
-	return r.Reflect(config.TerraformModuleComponentConfig{}), nil
+	return &schema, nil
 }
 
 func MetadataConfigSchema() (*jsonschema.Schema, error) {
@@ -377,10 +375,15 @@ func StackConfigSchema() (*jsonschema.Schema, error) {
 // implement JSONSchemaExtend before being passed to reflection.
 // This ensures proper schema generation with custom extensions.
 func ValidateJSONSchemaExtend(structVal interface{}) error {
-	return validateStructHasJSONSchemaExtend(reflect.TypeOf(structVal), "")
+	return validateStructHasJSONSchemaExtend(reflect.ValueOf(structVal), "")
 }
 
-func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
+type extendSchemaImpl interface {
+	JSONSchemaExtend(*jsonschema.Schema)
+}
+
+func validateStructHasJSONSchemaExtend(t reflect.Value, fieldPath string) error {
+	typ := t.Type()
 	// Dereference pointers
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -391,24 +394,29 @@ func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
 		return validateStructHasJSONSchemaExtend(t.Elem(), fieldPath)
 	}
 
+	if t.CanInterface() {
+		if _, ok := t.Interface().(jsonschema.Schema); ok {
+			return nil
+		}
+	}
+
 	// Only validate struct types
 	if t.Kind() != reflect.Struct {
 		return nil
 	}
 
 	// Check if this struct implements JSONSchemaExtend
-	method, ok := t.MethodByName("JSONSchemaExtend")
-	if !ok || method.Type.NumIn() != 2 || method.Type.In(1).String() != "*jsonschema.Schema" {
+	if _, ok := t.Interface().(extendSchemaImpl); !ok {
 		fullPath := fieldPath
 		if fullPath == "" {
-			fullPath = t.Name()
+			fullPath = t.Type().Name()
 		}
 		return fmt.Errorf("struct %s does not implement JSONSchemaExtend(*jsonschema.Schema)", fullPath)
 	}
 
 	// Validate nested struct fields
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
 
 		// Skip unexported fields
 		if !field.IsExported() {
@@ -441,10 +449,10 @@ func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
 			if nestedPath != "" {
 				nestedPath += "." + field.Name
 			} else {
-				nestedPath = t.Name() + "." + field.Name
+				nestedPath = typ.Name() + "." + field.Name
 			}
 
-			if err := validateStructHasJSONSchemaExtend(fieldType, nestedPath); err != nil {
+			if err := validateStructHasJSONSchemaExtend(t.Field(i), nestedPath); err != nil {
 				return err
 			}
 		}
