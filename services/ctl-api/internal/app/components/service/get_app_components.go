@@ -12,7 +12,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -76,7 +75,7 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []st
 		Where("id IN ?", []string(appCfg.ComponentIDs)).
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
+			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_builds.created_at DESC")
