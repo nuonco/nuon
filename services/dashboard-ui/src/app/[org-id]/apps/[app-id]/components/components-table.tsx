@@ -5,8 +5,6 @@ import {
 } from '@/components/components/ComponentsTable'
 import { getComponents } from '@/lib'
 
-
-
 const LIMIT = 10
 
 export const ComponentsTable = async ({
