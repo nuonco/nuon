@@ -7,6 +7,11 @@ import (
 	"github.com/spf13/afero"
 )
 
+// sourceFileSetter is implemented by config types that can track their source file path.
+type sourceFileSetter interface {
+	SetSourceFile(path string)
+}
+
 func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 	exists, err := p.fs.DirExists(path)
 	if err != nil {
@@ -47,6 +52,18 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 		// Only append non-nil objects
 		if !reflect.ValueOf(obj).IsNil() {
 			objValue := reflect.ValueOf(obj).Elem()
+
+			// Skip nil pointer values (e.g., *config.Component that is nil)
+			if objValue.Kind() == reflect.Ptr && objValue.IsNil() {
+				continue
+			}
+
+			// Set the source file if the object implements sourceFileSetter
+			// Note: obj is **T, but SetSourceFile is on *T, so we use objValue.Interface()
+			if setter, ok := objValue.Interface().(sourceFileSetter); ok {
+				setter.SetSourceFile(f)
+			}
+
 			objs = reflect.Append(objs, objValue)
 		}
 	}
