@@ -2,9 +2,9 @@
   "announcements": [
     {
       "id": "nuon-actions-2025",
-      "title": "Introducing Nuon Actions!",
+      "title": "Day-2 using Actions!",
       "date": "Jan 5, 2026",
-      "description": "Nuon Actions empowers users to automate workflows through predefined conditions, which can be dynamically configured using YAML code.",
+      "description": "NActions empowers users to automate workflows through predefined conditions, which can be dynamically configured using YAML code.",
       "image": "/images/announcements/nuon-actions-light.png",
       "imageDark": "/images/announcements/nuon-actions-dark.png",
       "ctaText": "Check it out",
