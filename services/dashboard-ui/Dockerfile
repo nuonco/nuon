@@ -24,6 +24,7 @@ RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
     npm install
 
 COPY test test
+COPY scripts scripts
 COPY public public
 COPY src src
 
