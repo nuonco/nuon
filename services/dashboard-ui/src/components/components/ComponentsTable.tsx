@@ -3,7 +3,6 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ComponentsGraph } from '@/components/apps/ConfigGraph'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -11,6 +10,7 @@ import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
 import { type IPagination } from '@/components/common/Pagination'
 import { ComponentDependencies } from '@/components/components/ComponentDependencies'
@@ -49,10 +49,35 @@ function parseComponentToTableData(
         <Tooltip
           position="top"
           tipContent={
-            toSentenceCase(component.status_description) || 'Status unknown'
+            <div className="w-fit max-w-64">
+              {component?.latest_build?.status_v2?.status ? (
+                <>
+                  <Time
+                    className="!text-nowrap px-2 py-1"
+                    variant="subtext"
+                    seconds={component?.latest_build?.status_v2?.created_at_ts}
+                    weight="strong"
+                  />
+                  <hr className="my-1" />
+                  <Text className="!flex px-2 pb-2" variant="subtext">
+                    {toSentenceCase(
+                      component?.latest_build?.status_v2
+                        ?.status_human_description
+                    )}
+                  </Text>
+                </>
+              ) : (
+                <Text className="!flex p-2 !text-nowrap" variant="subtext">
+                  Status unknown
+                </Text>
+              )}
+            </div>
           }
         >
-          <Status variant="badge" status={component.status} />
+          <Status
+            variant="badge"
+            status={component?.latest_build?.status_v2?.status}
+          />
         </Tooltip>
       ),
 
