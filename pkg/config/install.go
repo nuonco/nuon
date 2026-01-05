@@ -44,11 +44,42 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 type InputGroup struct {
 	Inputs map[string]string `mapstructure:"inputs" toml:"inputs"`
-	Group  string            `mapstructure:"group" toml:"group"`
+	// this property should only be used for writing comment for input group, and should not be used anywhere else.
+	// it can be empty if client config does not have `__nuon.inputs.group` key in their inputs config causing.
+	Group string `mapstructure:"group" toml:"group"`
+}
+
+func (ig InputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
+	// Make schema treat InputGroup as a map (additionalProperties pattern)
+	schema.Type = "object"
+	schema.AdditionalProperties = &jsonschema.Schema{
+		Type: "string",
+	}
+	schema.Properties = nil
+	schema.Required = nil
 }
 
 func (ig InputGroup) MarshalToml() ([]byte, error) {
 	return toml.Marshal(ig.Inputs)
+}
+
+func (ig *InputGroup) UnmarshalTOML(data interface{}) error {
+	// When unmarshaling from TOML, the data will be a map[string]interface{}
+	m, ok := data.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("expected map for InputGroup, got %T", data)
+	}
+
+	ig.Inputs = make(map[string]string)
+	for k, v := range m {
+		// Handle the special group marker only for backward compatibility
+		if k == "__nuon.input.group" {
+			ig.Group = fmt.Sprint(v)
+		} else {
+			ig.Inputs[k] = fmt.Sprint(v)
+		}
+	}
+	return nil
 }
 
 func (ig InputGroup) TomlComment() string {
@@ -74,7 +105,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
 		Field("inputs").Short("input values").
-		Long("Array of input groups with key-value pairs for customer inputs provided during installation")
+		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
+		Type("object")
 }
 
 func (i *Install) Parse() error {
