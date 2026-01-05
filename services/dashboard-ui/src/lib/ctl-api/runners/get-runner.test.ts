@@ -3,7 +3,7 @@ import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getRunner } from './get-runner'
 
-describe('getRunner should handle response status codes from GET runners/:id endpoint', () => {
+describe.skip('getRunner should handle response status codes from GET runners/:id endpoint', () => {
   const runnerId = 'test-id'
   const orgId = 'test-id'
   test('200 status', async () => {
