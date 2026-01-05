@@ -7,8 +7,6 @@ import (
 	"github.com/open-policy-agent/opa/v1/ast"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
-
-	"github.com/nuonco/nuon/pkg/config"
 )
 
 func ValidatePolicies(a *config.AppConfig) error {
