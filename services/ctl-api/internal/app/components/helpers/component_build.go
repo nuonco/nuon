@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
@@ -54,4 +57,32 @@ func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLat
 		return nil, fmt.Errorf("unable to create build for component: %v", res.Error)
 	}
 	return &bld, nil
+}
+
+func (s *Helpers) GetComponentLatestBuild(ctx context.Context, cmpID string) (*app.ComponentBuild, error) {
+	cmp := app.Component{}
+
+	// query all builds that belong to the component id, starting at the component to ensure the component exists
+	// via the double join.
+	res := s.db.WithContext(ctx).
+		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
+		}).
+		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
+			return db.Order("component_builds.created_at DESC").Limit(1)
+		}).
+		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
+		First(&cmp, "id = ?", cmpID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get component: %w", res.Error)
+	}
+
+	// pull out the first (and only) component build
+	for _, cfg := range cmp.ComponentConfigs {
+		for _, bld := range cfg.ComponentBuilds {
+			return &bld, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no build found for component: %w", gorm.ErrRecordNotFound)
 }
