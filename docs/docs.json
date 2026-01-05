@@ -28,7 +28,7 @@
             "group": "Resources",
             "pages": [
               "cli",
-	      "install",
+	            "deployment-options",
               "dashboard",
               "configuration-files",
               "nuon-api",

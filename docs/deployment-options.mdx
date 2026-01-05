@@ -1,23 +1,15 @@
 ---
-title: 'Install'
-description: 'Install the Nuon CLI and Control Plane'
+title: 'Deployment Options'
+description: 'Options To Deploy Nuon'
 ---
-
-## CLI
-
-See the [CLI documentation](./cli) for how to install and upgrade the Nuon CLI to interact with the Nuon control plane.
-
-The Nuon CLI can interact with Nuon Cloud or a Nuon BYOC instance. `nuon auth login` will prompt the user to select Nuon Cloud or to enter the Url of their BYOC Nuon instance.
-
-![Nuon auth login](./images/resources/cli/cli-auth-login.png)
 
 ## Control Plane
 
 ### Nuon Cloud
 
-Nuon Cloud is a multi-tenant SaaS offering of the Nuon control plane. It is used for trials and smaller production deployments. Nuon Cloud also installs Nuon BYOC, the Nuon control plane for customers requiring self-hosted.
+Nuon Cloud is a multi-tenant SaaS offering of the Nuon control plane. It is used for trials and smaller production deployments. Nuon Cloud also installs Nuon BYOC, the Nuon control plane for customers requiring self-hosted. Therefore, there is no control plane install required.
 
-Therefore, there is no control plane install required.
+Signup for Nuon Cloud [here](https:app.nuon.co).
 
 ### Nuon BYOC
 
@@ -33,14 +25,20 @@ In this way, Nuon is dogfooding Nuon to install and maintain its customer base u
 
 There is a [public GitHub repository](https://github.com/nuonco/byoc) of the Nuon BYOC app which is a good way to learn how to structure a complex Nuon app. The app includes Nuon's dashboard, api, EKS and Karpenter, Temporal, ClickHouse, and PostgreSQL.
 
-
-
 ### Self-hosted
 
 Nuon BYOC is our default and preferred method to install the Nuon control plane for a customer.
 
+Nuon is also currently working on removing cloud dependencies so that Nuon open source can be installed standalone.
+
 [Contact Sales](https://nuon.co/contact-sales) if you would like to discuss using our Helm charts.
 
+## CLI
 
+See the [CLI documentation](./cli) for how to install and upgrade the Nuon CLI to interact with the Nuon control plane.
+
+The Nuon CLI can interact with Nuon Cloud or a Nuon BYOC instance. `nuon auth login` will prompt the user to select Nuon Cloud or to enter the Url of their BYOC Nuon instance.
+
+![Nuon auth login](./images/resources/cli/cli-auth-login.png)
 
 
