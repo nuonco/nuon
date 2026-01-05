@@ -26,6 +26,11 @@ func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcess
 		}
 	}
 
+	// Skip files that are effectively empty (e.g., only comments)
+	if len(obj) == 0 {
+		return nil
+	}
+
 	obj = processor(name, obj)
 
 	// go from map[string]interface{} => config.AppConfig
