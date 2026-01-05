@@ -21,6 +21,7 @@ func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcess
 	err := tomlDec.Decode(&obj)
 	if err != nil {
 		return ParseErr{
+			Filename:    name,
 			Description: "unable to parse configuration file",
 		}
 	}
@@ -38,6 +39,7 @@ func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcess
 	err = mapDec.Decode(obj)
 	if err != nil {
 		return ParseErr{
+			Filename:    name,
 			Description: "error decoding config",
 			Err:         err,
 		}
