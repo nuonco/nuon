@@ -23,8 +23,8 @@ annotations:
   io.kubewarden.policy.title: disallow-reading-secrets
   io.kubewarden.policy.version: v0.1.0
   io.kubewarden.policy.description: A policy that prevents Roles and ClusterRoles from reading secrets
-  io.kubewarden.policy.url: https://github.com/powertoolsdev/mono
-  io.kubewarden.policy.source: https://github.com/powertoolsdev/mono
+  io.kubewarden.policy.url: https://github.com/nuonco/nuon
+  io.kubewarden.policy.source: https://github.com/nuonco/nuon
   io.kubewarden.policy.license: Apache-2.0
   io.kubewarden.policy.category: RBAC
   io.kubewarden.policy.severity: high

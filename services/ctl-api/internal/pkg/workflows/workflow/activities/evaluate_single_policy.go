@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
 type EvaluateSinglePolicyRequest struct {

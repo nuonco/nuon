@@ -7,7 +7,7 @@ All activities should use structured logging via `temporalzap` package.
 ```go
 import (
 	"go.uber.org/zap"
-	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
 func (a *Activities) MyActivity(ctx context.Context, req *MyRequest) (*MyResult, error) {

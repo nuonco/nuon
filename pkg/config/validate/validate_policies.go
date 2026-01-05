@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func ValidatePolicies(a *config.AppConfig) error {
