@@ -4,18 +4,26 @@ description: 'Install Nuon in your own AWS account with Bring Your Own Cloud'
 icon: 'cloud'
 ---
 
-BYOC (Bring Your Own Cloud) allows you to run the Nuon control plane in your own AWS account instead of using Nuon's managed infrastructure. This gives you full control over your data, networking, and compliance requirements.
+Nuon BYOC allows you to run Nuon in your own AWS account instead of using Nuon's managed infrastructure. This gives you full control over your data, networking, and compliance requirements.
+
+<Note>
+For the time being, this process is best done on a call with the Nuon team. Nuon has a complex architecture, and we're still ironing out some of the rough edges in the setup process.
+</Note>
 
 ## Prerequisites
 
 Before starting the BYOC installation, ensure you have:
 
 - An AWS account with permissions to create CloudFormation stacks
-- A GitHub account (for creating a GitHub App)
-- An Auth0 tenant (or the ability to create one)
+- A GitHub account in which you can create a GitHub App to grant access to private repos
+- An Auth0 tenant for auth (we have plans to remove this requirement in the future)
 - Access to the Nuon dashboard
 
 ## Getting Your Install ID
+
+<Note>
+This step should be completed by the Nuon team.
+</Note>
 
 The first step is to create your Nuon install to get an install ID. You'll use this ID to configure the required dependencies.
 
@@ -44,7 +52,7 @@ See [Creating a subdomain that uses Amazon Route 53 as the DNS service](https://
 
 ## Configure GitHub App
 
-Create a GitHub App so BYOC Nuon can clone code for components from private repos.
+Create a GitHub App so Nuon can clone code for components from private repos.
 
 1. Go to [GitHub App Settings](https://github.com/settings/apps) and click **New GitHub App**
 
@@ -73,6 +81,10 @@ Create a GitHub App so BYOC Nuon can clone code for components from private repo
 7. Note your **App ID** and **Client ID** from the app settings page.
 
 ## Configure Auth0
+
+<Note>
+We have plans to remove this dependency in the future, and make it easier to configure your own IdP directly.
+</Note>
 
 Nuon uses Auth0 for authentication. You'll need to configure an API, applications, and a custom action in your Auth0 tenant.
 
