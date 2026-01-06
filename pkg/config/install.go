@@ -43,9 +43,10 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type InputGroup struct {
+	// mapstructure is able to decode map into Inputgroup because the type of InputGroup.Inputs matches that of what
+	// expected by mapstructure.
 	Inputs map[string]string `mapstructure:"inputs" toml:"inputs"`
 	// this property should only be used for writing comment for input group, and should not be used anywhere else.
-	// it can be empty if client config does not have `__nuon.inputs.group` key in their inputs config causing.
 	Group string `mapstructure:"group" toml:"group"`
 }
 
@@ -59,30 +60,25 @@ func (ig InputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
 	schema.Required = nil
 }
 
-func (ig InputGroup) MarshalToml() ([]byte, error) {
+func (ig InputGroup) MarshalTOML() ([]byte, error) {
 	return toml.Marshal(ig.Inputs)
 }
 
-func (ig *InputGroup) UnmarshalTOML(data interface{}) error {
-	// When unmarshaling from TOML, the data will be a map[string]interface{}
-	m, ok := data.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("expected map for InputGroup, got %T", data)
+func (ig *InputGroup) UnmarshalTOML(data []byte) error {
+	// First unmarshal the TOML data into a map
+	var m map[string]string
+	if err := toml.Unmarshal(data, &m); err != nil {
+		return fmt.Errorf("failed to unmarshal TOML data: %w", err)
 	}
 
-	ig.Inputs = make(map[string]string)
+	ig.Inputs = map[string]string{}
 	for k, v := range m {
-		// Handle the special group marker only for backward compatibility
-		if k == "__nuon.input.group" {
-			ig.Group = fmt.Sprint(v)
-		} else {
-			ig.Inputs[k] = fmt.Sprint(v)
-		}
+		ig.Inputs[k] = fmt.Sprint(v)
 	}
 	return nil
 }
 
-func (ig InputGroup) TomlComment() string {
+func (ig InputGroup) TOMLComment() string {
 	return fmt.Sprintf("input.group : %s", ig.Group)
 }
 
@@ -106,7 +102,7 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("AWS-specific settings for this install, including region and other account details").
 		Field("inputs").Short("input values").
 		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
-		Type("object")
+		Type("array")
 }
 
 func (i *Install) Parse() error {
