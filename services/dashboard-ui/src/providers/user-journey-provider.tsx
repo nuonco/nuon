@@ -16,6 +16,9 @@ export const UserJourneyContext = createContext<
   UserJourneyContextValue | undefined
 >(undefined)
 
+const isOnboardingEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING !== 'false'
+
 // check if any journey steps are incomplete
 const incompleteSteps = (account: TAccount) => {
   const evaluationJourney = getUserJourney(account, 'evaluation')
@@ -42,7 +45,7 @@ export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
-    setShowJourneyView(incompleteSteps(account))
+    setShowJourneyView(isOnboardingEnabled && incompleteSteps(account))
   }, [account, manuallyOpened])
 
   // Add method to manually open onboarding (without affecting journey state)
