@@ -54,10 +54,13 @@ func (c ComponentType) APIType() models.AppComponentType {
 type Component struct {
 	Source string `mapstructure:"source,omitempty"`
 
-	Type         ComponentType `mapstructure:"type,omitempty" jsonschema:"required"`
-	Name         string        `mapstructure:"name" jsonschema:"required"`
-	VarName      string        `mapstructure:"var_name,omitempty"`
-	Dependencies []string      `mapstructure:"dependencies,omitempty"`
+	Type ComponentType `mapstructure:"type,omitempty" jsonschema:"required"`
+	Name string        `mapstructure:"name" jsonschema:"required"`
+
+	// SourceFile is the file path this component was parsed from (set during parsing, not serialized)
+	SourceFile   string   `mapstructure:"-" json:"-" jsonschema:"-" nuonhash:"-"`
+	VarName      string   `mapstructure:"var_name,omitempty"`
+	Dependencies []string `mapstructure:"dependencies,omitempty"`
 
 	// WARNING: properties below should be ignored by nuonhash when empty
 	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
@@ -220,4 +223,12 @@ func (c *Component) AllVars() []string {
 	}
 
 	return vars
+}
+
+func (c *Component) SetSourceFile(path string) {
+	c.SourceFile = path
+}
+
+func (c *Component) GetSourceFile() string {
+	return c.SourceFile
 }

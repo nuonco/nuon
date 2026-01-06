@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -72,7 +73,14 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []st
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Where("id IN ?", []string(appCfg.ComponentIDs)).
-		Preload("Dependencies")
+		Preload("Dependencies").
+		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
+		}).
+		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
+			return db.Order("component_builds.created_at DESC")
+		}).
+		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit")
 	if q != "" {
 		tx = tx.Where("components.name ILIKE ?", "%"+q+"%")
 	}

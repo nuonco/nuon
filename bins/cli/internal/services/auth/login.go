@@ -117,7 +117,7 @@ func (a *Service) selectAPIURL() (string, error) {
 	var deploymentType string
 	prompt := &survey.Select{
 		Message: "Which Nuon deployment are you using?",
-		Options: []string{"Nuon Cloud", "BYOC Nuon"},
+		Options: []string{"Nuon Cloud", "Nuon BYOC"},
 		Default: "Nuon Cloud",
 	}
 
