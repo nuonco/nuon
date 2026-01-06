@@ -35,7 +35,7 @@ The docs for creating your first app are [here](https://docs.nuon.co/get-started
 
 ## Deployment options
 
-For enterprise licensed customers, Nuon can be deployed either as Nuon Cloud, our SaaS offering, or managed self-hosted where Nuon uses Nuon (Nuon BYOC) to install Nuon's control plane into a software vendor's AWS cloud account. If you're interested in the managed self-hosted approach, please [contact us](https://nuon.co/contact-sales) and review the Nuon BYOC app configuration [here](https://github.com/nuonco/byoc).
+For enterprise licensed customers, Nuon can be deployed either as Nuon Cloud, our SaaS offering, or managed self-hosted where Nuon BYOC deploys Nuon's control plane into a software vendor's AWS cloud account. If you're interested in the managed self-hosted approach, please [contact us](https://nuon.co/contact-sales) and review the Nuon BYOC app configuration [here](https://github.com/nuonco/byoc).
 
 Nuon engineering is currently working on removing cloud dependencies so that Nuon open source can be deployed standalone as a third option.
 
