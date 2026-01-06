@@ -12,45 +12,21 @@ To get started, [contact sales](https://nuon.co/contact-sales)
 
 ## Prerequisites
 
-Before starting the BYOC installation, ensure you have:
+### Install ID
 
-- An AWS account with permissions to create CloudFormation stacks
-- A GitHub account in which you can create a GitHub App to grant access to private repos
-- An Auth0 tenant for auth (we have plans to remove this requirement in the future)
-- Access to the Nuon dashboard
+Before starting the BYOC installation, ask your Nuon engineer for your install ID. You will need this for various config values. 
 
-## Getting Your Install ID
+### Set up an AWS Account
 
-<Note>
-This step should be completed by the Nuon team.
-</Note>
-
-The first step is to create your Nuon install to get an install ID. You'll use this ID to configure the required dependencies.
-
-1. Log in to the Nuon dashboard
-2. Create a new BYOC install
-3. Note the **Install ID** - you'll need this for the configuration steps below
-4. Cancel the initial provision (you'll reprovision after configuring dependencies)
+If you do not have an account set up already, you will need an AWS account. Nuon will require a VPC, so ensure the account has not reached it's quota limits for VPS, EIPs, and Internet Gateways.
 
 <Note>
-Don't update any inputs yet. First complete the dependency configuration below, then update inputs and reprovision.
+Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.
 </Note>
 
-## Configure DNS (Optional)
+You will need a user with admin permissions to provision the install stack during the installation.
 
-To host your BYOC Nuon instance under a custom domain, configure DNS for your root domain to point to the Route53 Zone created in the sandbox.
-
-After the sandbox provisions, you'll receive:
-- A **Zone ID** for your public domain
-- **Nameserver records** to add to your domain's DNS
-
-Create NS records in your domain's DNS pointing to the Route53 nameservers provided.
-
-<Tip>
-See [Creating a subdomain that uses Amazon Route 53 as the DNS service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html) for detailed instructions.
-</Tip>
-
-## Configure GitHub App
+### Configure a GitHub App
 
 Create a GitHub App so Nuon can clone code for components from private repos.
 
@@ -80,7 +56,7 @@ Create a GitHub App so Nuon can clone code for components from private repos.
 
 7. Note your **App ID** and **Client ID** from the app settings page.
 
-## Configure Auth0
+### Configure Auth0
 
 <Note>
 We have plans to remove this dependency in the future, and make it easier to configure your own IdP directly.
@@ -88,7 +64,7 @@ We have plans to remove this dependency in the future, and make it easier to con
 
 Nuon uses Auth0 for authentication. You'll need to configure an API, applications, and a custom action in your Auth0 tenant.
 
-### Using the Terraform Module (Recommended)
+#### Using the Terraform Module (Recommended)
 
 Nuon provides a Terraform module to automate Auth0 configuration:
 
@@ -110,13 +86,13 @@ module "byoc_auth0" {
 
 After applying, the module outputs the values you'll need for the install inputs.
 
-### Manual Configuration
+#### Manual Configuration
 
 If you prefer to configure Auth0 manually, follow these steps:
 
 <Accordion title="Manual Auth0 Setup">
 
-#### 1. Create a Custom Action
+##### 1. Create a Custom Action
 
 Add an action to enrich the access token with the user's email:
 
@@ -136,7 +112,7 @@ exports.onExecutePostLogin = async (event, api) => {
 6. Go to **Actions > Triggers > Post Login**
 7. Drag the `AddScope` action into the flow and save
 
-#### 2. Create an API
+##### 2. Create an API
 
 Create an API with these settings:
 
@@ -152,7 +128,7 @@ Create an API with these settings:
 The Identifier must match your API URL exactly. It cannot be changed after creation.
 </Note>
 
-#### 3. Create a Single Page Application
+##### 3. Create a Single Page Application
 
 Create an SPA for the dashboard UI:
 
@@ -167,7 +143,7 @@ Create an SPA for the dashboard UI:
 | Allow Refresh Token Rotation | `true` |
 | Rotation Overlap Period | `0` |
 
-#### 4. Create a Native Application
+##### 4. Create a Native Application
 
 Create a native app for CLI authentication:
 
@@ -180,20 +156,20 @@ Create a native app for CLI authentication:
 
 </Accordion>
 
-### Optional: Additional Identity Providers
+#### Optional: Additional Identity Providers
 
 Auth0 supports multiple identity providers. The default configuration enables Google authentication.
 
 <Accordion title="Okta Integration">
 
-#### Step 1: Create an OIDC Application in Okta
+##### Step 1: Create an OIDC Application in Okta
 
 1. In Okta, create a new OIDC application
 2. Set the **Sign In Redirect** to `<your-auth0-tenant>/login/callback`
 3. Set **Trusted Origins** to `<your-root-domain>`
 4. Note the **Client ID** and **Client Secret**
 
-#### Step 2: Create an Enterprise Connection in Auth0
+##### Step 2: Create an Enterprise Connection in Auth0
 
 1. Go to **Authentication > Enterprise > Okta Workforce > Create**
 2. Configure:
@@ -270,6 +246,20 @@ Once all inputs and secrets are configured:
 1. Return to your install in the Nuon dashboard
 2. Click **Reprovision Install** from the Manage menu
 3. Wait for the provision workflow to complete
+
+## Configure DNS (Optional)
+
+To host your BYOC Nuon instance under a custom domain, configure DNS for your root domain to point to the Route53 Zone created in the sandbox.
+
+After the sandbox provisions, you'll receive:
+- A **Zone ID** for your public domain
+- **Nameserver records** to add to your domain's DNS
+
+Create NS records in your domain's DNS pointing to the Route53 nameservers provided.
+
+<Tip>
+See [Creating a subdomain that uses Amazon Route 53 as the DNS service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html) for detailed instructions.
+</Tip>
 
 ## Verify Installation
 
