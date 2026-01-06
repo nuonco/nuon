@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, type IButtonAsButton } from '@/components/common/Button'
-import { CodeBlock } from '@/components/common/CodeBlock'
+import { JSONViewer } from "@/components/common/JSONViewer"
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Banner } from '@/components/common/Banner'
@@ -16,7 +16,6 @@ import { useQuery } from '@/hooks/use-query'
 interface IViewState {}
 
 export const ViewStateModal = ({ ...props }: IViewState & IModal) => {
-  const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()
 
@@ -55,7 +54,7 @@ export const ViewStateModal = ({ ...props }: IViewState & IModal) => {
             <div className="flex justify-end">
               <Skeleton height="26px" width="26px" />
             </div>
-            <Skeleton height="600px" width="100%" />
+            <Skeleton height="458px" width="100%" />
           </div>
         ) : state ? (
           <div className="flex flex-col gap-4">
@@ -65,12 +64,7 @@ export const ViewStateModal = ({ ...props }: IViewState & IModal) => {
                 className="w-fit"
               />
             </div>
-            <CodeBlock 
-              language="json"
-              className="max-h-[600px]"
-            >
-              {JSON.stringify(state, null, 2)}
-            </CodeBlock>
+            <JSONViewer className="min-h-[458px] max-h-[600px] bg-code" data={state} expanded={1}  />          
           </div>
         ) : (
           <div className="flex items-center justify-center p-8">
