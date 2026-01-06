@@ -4,8 +4,6 @@ import { type FormEvent, useRef, forwardRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { createAppInstall } from '@/actions/apps/create-app-install'
 import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
@@ -15,14 +13,10 @@ import { InputConfigFields } from './shared/InputConfigFields'
 import { PlatformFields } from './shared/PlatformFields'
 import type { ICreateInstallForm } from './shared/types'
 
-export const CreateInstallForm = forwardRef<HTMLFormElement, ICreateInstallForm>(({
-  appId,
-  platform,
-  inputConfig,
-  onSubmit,
-  onSuccess,
-  onCancel,
-}, ref) => {
+export const CreateInstallForm = forwardRef<
+  HTMLFormElement,
+  ICreateInstallForm
+>(({ appId, platform, inputConfig, onSubmit, onSuccess, onCancel }, ref) => {
   const path = usePathname()
   const { org } = useOrg()
   const formRef = useRef<HTMLFormElement>(null)
@@ -36,19 +30,21 @@ export const CreateInstallForm = forwardRef<HTMLFormElement, ICreateInstallForm>
     error,
     errorContent: <Text>Unable to create install.</Text>,
     errorHeading: 'Install creation failed',
-    onSuccess: onSuccess ? () => {
-      const result = { data, headers }
-      onSuccess(result)
-    } : undefined,
+    onSuccess: onSuccess
+      ? () => {
+          const result = { data, headers }
+          onSuccess(result)
+        }
+      : undefined,
     successContent: <Text>Install created successfully!</Text>,
     successHeading: 'Install created',
   })
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     const formData = new FormData(e.currentTarget)
-    
+
     if (onSubmit) {
       try {
         const result = await onSubmit(formData)
@@ -85,10 +81,15 @@ export const CreateInstallForm = forwardRef<HTMLFormElement, ICreateInstallForm>
         </Banner>
       ) : null}
 
-      <div className="flex flex-col gap-8 max-w-3xl">
+      <div className="flex flex-col gap-8 max-w-4xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <span className="flex flex-col gap-0">
-            <Text variant="body" weight="strong">Install name *</Text>
+            <Text variant="body" weight="strong">
+              Install name{' '}
+              <Text className="ml-1" variant="subtext" theme="error">
+                {'*'}
+              </Text>
+            </Text>
             <Text variant="subtext" className="max-w-72">
               A unique name for this install
             </Text>
@@ -102,14 +103,9 @@ export const CreateInstallForm = forwardRef<HTMLFormElement, ICreateInstallForm>
         </div>
 
         {platform && <PlatformFields platform={platform} />}
-        
-        {inputConfig && (
-          <InputConfigFields 
-            inputConfig={inputConfig} 
-          />
-        )}
-      </div>
 
+        {inputConfig && <InputConfigFields inputConfig={inputConfig} />}
+      </div>
     </form>
   )
 })

@@ -4,7 +4,11 @@ import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
 import type { IPlatformFields } from './types'
 
-const FieldWrapper = ({ children, labelText, helpText }: {
+const FieldWrapper = ({
+  children,
+  labelText,
+  helpText,
+}: {
   children: React.ReactElement
   labelText: string
   helpText?: string
@@ -12,7 +16,12 @@ const FieldWrapper = ({ children, labelText, helpText }: {
   return (
     <label className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
       <span className="flex flex-col gap-0">
-        <Text variant="body" weight="strong">{labelText}</Text>
+        <Text variant="body" weight="strong">
+          {labelText}{' '}
+          <Text className="ml-1" variant="subtext" theme="error">
+            {'*'}
+          </Text>
+        </Text>
         {helpText ? (
           <Text variant="subtext" className="max-w-72">
             {helpText}
@@ -34,16 +43,19 @@ const AWSFields = () => {
 
   return (
     <fieldset className="flex flex-col gap-6 border-t pt-6">
-      <legend className="text-lg font-semibold mb-6 pr-6">
-        Set AWS settings
+      <legend className="text-lg font-semibold mb-3 pr-6">
+        Set AWS settings{' '}
+        <Text className="ml-1" variant="subtext" theme="error">
+          (required)
+        </Text>
       </legend>
-      
-      <FieldWrapper labelText="Select AWS region *">
-        <Select 
-          name="region" 
-          options={options} 
+
+      <FieldWrapper labelText="Select AWS region">
+        <Select
+          name="region"
+          options={options}
           placeholder="Choose AWS region"
-          required 
+          required
         />
       </FieldWrapper>
     </fieldset>
@@ -60,16 +72,19 @@ const AzureFields = () => {
 
   return (
     <fieldset className="flex flex-col gap-6 border-t pt-6">
-      <legend className="text-lg font-semibold mb-6 pr-6">
-        Set Azure configuration
+      <legend className="text-lg font-semibold mb-3 pr-6">
+        Set Azure configuration{' '}
+        <Text className="ml-1" variant="subtext" theme="error">
+          (required)
+        </Text>
       </legend>
-      
-      <FieldWrapper labelText="Select Azure location *">
-        <Select 
-          name="location" 
-          options={options} 
+
+      <FieldWrapper labelText="Select Azure location">
+        <Select
+          name="location"
+          options={options}
           placeholder="Choose Azure location"
-          required 
+          required
         />
       </FieldWrapper>
     </fieldset>
@@ -80,10 +95,10 @@ export const PlatformFields = ({ platform }: IPlatformFields) => {
   if (platform === 'aws') {
     return <AWSFields />
   }
-  
+
   if (platform === 'azure') {
     return <AzureFields />
   }
-  
+
   return null
 }
