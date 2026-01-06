@@ -17,7 +17,9 @@ export const UserJourneyContext = createContext<
 >(undefined)
 
 const isOnboardingEnabled =
-  process?.env?.NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING !== 'false'
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING !== 'false'
+    : true
 
 // check if any journey steps are incomplete
 const incompleteSteps = (account: TAccount) => {
