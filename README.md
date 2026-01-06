@@ -19,7 +19,7 @@ Nuon is an open-source platform for software vendors to deploy and operate their
 
 This software category is called Bring Your Own Cloud (BYOC).
 
-## What in Nuon?
+## What is Nuon?
 
 Historically there have been two ways to deploy any software vendor's product: SaaS (in the vendor's cloud) and self-hosted (the customer manually installs the vendor's software in their cloud). But some customers have compliance and regulatory reasons that require some or all of the vendor's software be installed in the customers' cloud accounts. Customers who self-host would also prefer if the software vendor installed and managed their software versus managing the complexity themselves.
 
