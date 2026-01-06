@@ -164,6 +164,7 @@
           {
             "group": "How To",
             "pages": [
+              "guides/byoc",
               "guides/install-access-permissions",
               "guides/using-variables",
               "guides/using-readmes",
