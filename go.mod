@@ -117,7 +117,7 @@ require (
 	github.com/uber-go/tally/v4 v4.1.1
 	go.opentelemetry.io/collector/cmd/builder v0.131.0
 	go.opentelemetry.io/collector/component v1.37.0
-	go.opentelemetry.io/collector/config/configcompression v1.37.0
+	go.opentelemetry.io/collector/config/configcompression v1.49.0
 	go.opentelemetry.io/collector/config/confighttp v0.131.0
 	go.opentelemetry.io/collector/config/configopaque v1.37.0
 	go.opentelemetry.io/collector/config/configretry v1.37.0
