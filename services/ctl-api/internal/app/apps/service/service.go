@@ -15,6 +15,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
@@ -30,6 +31,7 @@ type Params struct {
 	InstallsHelpers *installshelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	EvClient        eventloop.Client
+	QueueClient     *queueclient.Client
 	EndpointAudit   *api.EndpointAudit
 }
 
@@ -45,6 +47,7 @@ type service struct {
 	installsHelpers *installshelpers.Helpers
 	accountsHelpers *accountshelpers.Helpers
 	evClient        eventloop.Client
+	queueClient     *queueclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -233,5 +236,6 @@ func New(params Params) *service {
 		installsHelpers: params.InstallsHelpers,
 		accountsHelpers: params.AccountsHelpers,
 		evClient:        params.EvClient,
+		queueClient:     params.QueueClient,
 	}
 }

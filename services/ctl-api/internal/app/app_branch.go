@@ -6,6 +6,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
@@ -28,7 +29,20 @@ type AppBranch struct {
 	ConnectedGithubVCSConfigID string                   `gorm:"notnull" json:"connected_github_vcs_config_id" temporaljson:"connected_github_vcs_config_id"`
 	ConnectedGithubVCSConfig   ConnectedGithubVCSConfig `json:"-" temporaljson:"connected_github_vcs_config"`
 
+	QueueID          string `json:"queue_id,omitzero" gorm:"type:varchar(26)" temporaljson:"queue_id,omitzero,omitempty"`
+	Queue            Queue  `json:"-" temporaljson:"queue,omitzero,omitempty"`
+	LastSyncedCommit string `json:"last_synced_commit,omitzero" temporaljson:"last_synced_commit,omitzero,omitempty"`
+
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
+}
+
+func (a *AppBranch) EventLoops() []bulk.EventLoop {
+	return []bulk.EventLoop{
+		{
+			Namespace: "apps",
+			ID:        a.ID,
+		},
+	}
 }
 
 func (a *AppBranch) Indexes(db *gorm.DB) []migrations.Index {
