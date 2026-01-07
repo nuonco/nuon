@@ -375,15 +375,10 @@ func StackConfigSchema() (*jsonschema.Schema, error) {
 // implement JSONSchemaExtend before being passed to reflection.
 // This ensures proper schema generation with custom extensions.
 func ValidateJSONSchemaExtend(structVal interface{}) error {
-	return validateStructHasJSONSchemaExtend(reflect.ValueOf(structVal), "")
+	return validateStructHasJSONSchemaExtend(reflect.TypeOf(structVal), "")
 }
 
-type extendSchemaImpl interface {
-	JSONSchemaExtend(*jsonschema.Schema)
-}
-
-func validateStructHasJSONSchemaExtend(t reflect.Value, fieldPath string) error {
-	typ := t.Type()
+func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
 	// Dereference pointers
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -394,10 +389,9 @@ func validateStructHasJSONSchemaExtend(t reflect.Value, fieldPath string) error 
 		return validateStructHasJSONSchemaExtend(t.Elem(), fieldPath)
 	}
 
-	if t.CanInterface() {
-		if _, ok := t.Interface().(jsonschema.Schema); ok {
-			return nil
-		}
+	// Skip validation for jsonschema.Schema type (built-in exception)
+	if t == reflect.TypeOf(jsonschema.Schema{}) {
+		return nil
 	}
 
 	// Only validate struct types
@@ -406,17 +400,18 @@ func validateStructHasJSONSchemaExtend(t reflect.Value, fieldPath string) error 
 	}
 
 	// Check if this struct implements JSONSchemaExtend
-	if _, ok := t.Interface().(extendSchemaImpl); !ok {
+	method, ok := t.MethodByName("JSONSchemaExtend")
+	if !ok || method.Type.NumIn() != 2 || method.Type.In(1).String() != "*jsonschema.Schema" {
 		fullPath := fieldPath
 		if fullPath == "" {
-			fullPath = t.Type().Name()
+			fullPath = t.Name()
 		}
 		return fmt.Errorf("struct %s does not implement JSONSchemaExtend(*jsonschema.Schema)", fullPath)
 	}
 
 	// Validate nested struct fields
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
 
 		// Skip unexported fields
 		if !field.IsExported() {
@@ -449,10 +444,10 @@ func validateStructHasJSONSchemaExtend(t reflect.Value, fieldPath string) error 
 			if nestedPath != "" {
 				nestedPath += "." + field.Name
 			} else {
-				nestedPath = typ.Name() + "." + field.Name
+				nestedPath = t.Name() + "." + field.Name
 			}
 
-			if err := validateStructHasJSONSchemaExtend(t.Field(i), nestedPath); err != nil {
+			if err := validateStructHasJSONSchemaExtend(fieldType, nestedPath); err != nil {
 				return err
 			}
 		}

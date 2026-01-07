@@ -93,6 +93,7 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 	// Find the target schema (handle $ref schemas like the API does)
 	targetSchema := resolveSchemaRef(s)
 
+
 	// Add properties table if schema has properties
 	if targetSchema.Properties != nil && targetSchema.Properties.Len() > 0 {
 		doc.AddHeading(2, "Properties")
@@ -111,6 +112,18 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 		for pair := targetSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
 			propName := pair.Key
 			prop := pair.Value
+
+			// Skip excluded properties
+			if isExcludedProperty(propName) {
+				continue
+			}
+
+			// Skip component type properties (oneof_required=component_type)
+			if prop.Extras != nil {
+				if oneOfReq, ok := prop.Extras["oneof_required"].(string); ok && oneOfReq == "component_type" {
+					continue
+				}
+			}
 
 			// Check if required
 			isRequired := isPropertyRequired(targetSchema.Required, propName)
@@ -207,23 +220,126 @@ func generateIndexPage(schemaNames []string, outputDir, format string) error {
 	return nil
 }
 
-// resolveSchemaRef handles $ref schemas like the API endpoint does
+// resolveSchemaRef handles $ref schemas and allOf compositions
 func resolveSchemaRef(s *jsonschema.Schema) *jsonschema.Schema {
+	// Handle allOf first
+	if len(s.AllOf) > 0 {
+		return mergeAllOfSchemas(s, s.Definitions)
+	}
+
+	// Then handle $ref
 	if s.Ref != "" && s.Definitions != nil {
 		refParts := strings.Split(s.Ref, "/")
 		if len(refParts) > 0 {
 			defName := refParts[len(refParts)-1]
 			if def, ok := s.Definitions[defName]; ok {
+				// After resolving ref, check if it has allOf
+				if len(def.AllOf) > 0 {
+					return mergeAllOfSchemas(def, s.Definitions)
+				}
 				return def
 			}
 		}
 	}
+
 	return s
+}
+
+// mergeAllOfSchemas merges all schemas in an allOf array into a single schema
+func mergeAllOfSchemas(s *jsonschema.Schema, definitions map[string]*jsonschema.Schema) *jsonschema.Schema {
+	// Create a new schema to hold merged properties
+	merged := &jsonschema.Schema{
+		Type:        s.Type,
+		Description: s.Description,
+		Properties:  jsonschema.NewProperties(),
+		Required:    []string{},
+	}
+
+	// Copy properties from the parent schema if any
+	if s.Properties != nil && s.Properties.Len() > 0 {
+		for pair := s.Properties.Oldest(); pair != nil; pair = pair.Next() {
+			merged.Properties.Set(pair.Key, pair.Value)
+		}
+	}
+
+	// Copy required fields from parent
+	merged.Required = append(merged.Required, s.Required...)
+
+	// Merge properties and required fields from all allOf schemas
+	for _, allOfSchema := range s.AllOf {
+		// Resolve any $ref in the allOf entry
+		// Use the allOfSchema's own Definitions for resolution
+		resolved := allOfSchema
+		if allOfSchema.Ref != "" {
+			// Try to resolve from the allOfSchema's own definitions first
+			if allOfSchema.Definitions != nil {
+				refParts := strings.Split(allOfSchema.Ref, "/")
+				if len(refParts) > 0 {
+					defName := refParts[len(refParts)-1]
+					if def, ok := allOfSchema.Definitions[defName]; ok {
+						resolved = def
+					}
+				}
+			}
+			// Fallback to parent definitions if provided
+			if resolved == allOfSchema && definitions != nil {
+				refParts := strings.Split(allOfSchema.Ref, "/")
+				if len(refParts) > 0 {
+					defName := refParts[len(refParts)-1]
+					if def, ok := definitions[defName]; ok {
+						resolved = def
+					}
+				}
+			}
+		}
+
+		// Recursively handle nested allOf
+		if len(resolved.AllOf) > 0 {
+			resolved = mergeAllOfSchemas(resolved, definitions)
+		}
+
+		// Merge properties
+		if resolved.Properties != nil && resolved.Properties.Len() > 0 {
+			for pair := resolved.Properties.Oldest(); pair != nil; pair = pair.Next() {
+				merged.Properties.Set(pair.Key, pair.Value)
+			}
+		}
+
+		// Merge required fields
+		merged.Required = append(merged.Required, resolved.Required...)
+
+		// Use first non-empty description
+		if merged.Description == "" && resolved.Description != "" {
+			merged.Description = resolved.Description
+		}
+
+		// Use first non-empty type
+		if merged.Type == "" && resolved.Type != "" {
+			merged.Type = resolved.Type
+		}
+	}
+
+	return merged
 }
 
 func isPropertyRequired(required []string, propName string) bool {
 	for _, req := range required {
 		if req == propName {
+			return true
+		}
+	}
+	return false
+}
+
+// isExcludedProperty checks if a property should be excluded from documentation
+func isExcludedProperty(propName string) bool {
+	// Properties that are common across schemas but don't need documentation
+	excludedProperties := []string{
+		"source",
+	}
+
+	for _, excluded := range excludedProperties {
+		if propName == excluded {
 			return true
 		}
 	}
