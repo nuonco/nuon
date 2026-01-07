@@ -6,16 +6,16 @@ import (
 
 type MetadataConfig struct {
 	// Config file version
-	Version string `mapstructure:"version" jsonschema:"required"`
+	Version string `mapstructure:"version" toml:"version" jsonschema:"required"`
 
 	// Description for your app, which is rendered in the installers
-	Description string `mapstructure:"description,omitempty"`
+	Description string `mapstructure:"description,omitempty" toml:"description,omitempty"`
 	// Display name for the app, rendered in the installer
-	DisplayName string `mapstructure:"display_name,omitempty"`
+	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
 	// Slack webhook url to receive notifications
-	SlackWebhookURL string `mapstructure:"slack_webhook_url"`
+	SlackWebhookURL string `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
 	// Readme for the app
-	Readme string `mapstructure:"readme,omitempty"`
+	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty"`
 }
 
 func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

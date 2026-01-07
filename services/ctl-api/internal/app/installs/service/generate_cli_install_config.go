@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
 	"slices"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // @ID						GenerateCLIInstallConfig
@@ -91,40 +93,65 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		return nil, fmt.Errorf("unable to get inputs for install %s: %w", installID, err)
 	}
 
-	inputGroups := make(map[string]config.InputGroup)
-	for _, inp := range appInputCfg.AppInputs {
-		if inputGroups[inp.AppInputGroupID] == nil {
-			inputGroups[inp.AppInputGroupID] = make(config.InputGroup)
+	installCfg.InputGroups = s.buildInputGroupsFromInputs(appInputCfg.AppInputs, installInputs.Values, s.l)
+
+	return &installCfg, nil
+}
+
+// buildInputGroupsFromInputs constructs input groups from app inputs and install input values.
+// it filters out sensitive inputs and only includes inputs that have values or are required.
+// returns a sorted list of input groups with their corresponding inputs.
+func (s *service) buildInputGroupsFromInputs(appInputs []app.AppInput, installInputValues map[string]*string, logger *zap.Logger) []config.InputGroup {
+	// Build a map of input groups
+	inputGroupsMap := make(map[string]*config.InputGroup)
+
+	for _, inp := range appInputs {
+		// Initialize input group if it doesn't exist
+		if inputGroupsMap[inp.AppInputGroup.Name] == nil {
+			inputGroupsMap[inp.AppInputGroup.Name] = &config.InputGroup{
+				Inputs: make(map[string]string),
+			}
 		}
+
+		// Skip sensitive inputs - they should not be included in the generated config
 		if inp.Sensitive {
 			continue
 		}
 
-		val, ok := installInputs.Values[inp.Name]
+		// Check if the input has a value in install inputs
+		val, ok := installInputValues[inp.Name]
 		if !ok {
-			s.l.Error("input is not set when generating install config",
+			// Log error if input is not set
+			logger.Error("input is not set when generating install config",
 				zap.String("key", inp.Name),
 			)
 
+			// If input is required but not set, add it with empty string as placeholder
 			if inp.Required {
-				inputGroups[inp.AppInputGroupID][inp.Name] = ""
+				inputGroupsMap[inp.AppInputGroup.Name].Inputs[inp.Name] = ""
 			}
+			// If not required and not set, skip it entirely
 		} else {
-			inputGroups[inp.AppInputGroupID][inp.Name] = generics.FromPtrStr(val)
+			// Add the input value to the group
+			inputGroupsMap[inp.AppInputGroup.Name].Inputs[inp.Name] = generics.FromPtrStr(val)
 		}
 	}
 
-	keys := make([]string, 0, len(inputGroups))
-	for groupId, group := range inputGroups {
-		if len(group) > 0 {
-			keys = append(keys, groupId)
+	// Convert map to sorted slice
+	inputGroupsNames := slices.Collect(maps.Keys(inputGroupsMap))
+	slices.Sort(inputGroupsNames)
+
+	var result []config.InputGroup
+	for _, groupName := range inputGroupsNames {
+		ig := inputGroupsMap[groupName]
+		// Only include groups that have at least one input
+		if len(ig.Inputs) > 0 {
+			result = append(result, config.InputGroup{
+				Group:  groupName,
+				Inputs: ig.Inputs,
+			})
 		}
 	}
 
-	slices.Sort(keys)
-	for _, k := range keys {
-		installCfg.InputGroups = append(installCfg.InputGroups, inputGroups[k])
-	}
-
-	return &installCfg, nil
+	return result
 }

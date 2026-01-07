@@ -5,21 +5,21 @@ import (
 )
 
 type AWSECRConfig struct {
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" jsonschema:"required"`
-	AWSRegion  string `mapstructure:"region,omitempty" jsonschema:"required"`
-	ImageURL   string `mapstructure:"image_url,omitempty" jsonschema:"required"`
-	Tag        string `mapstructure:"tag,omitempty" jsonschema:"required"`
+	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
+	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty" jsonschema:"required"`
 }
 
 type PublicImageConfig struct {
-	ImageURL string `mapstructure:"image_url,omitempty" jsonschema:"required" `
-	Tag      string `mapstructure:"tag,omitempty" jsonschema:"required"`
+	ImageURL string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required" `
+	Tag      string `mapstructure:"tag,omitempty" toml:"tag,omitempty" jsonschema:"required"`
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type ExternalImageComponentConfig struct {
-	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" jsonschema:"oneof_required=public"`
-	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" jsonschema:"oneof_required=aws_ecr"`
+	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=public"`
+	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=aws_ecr"`
 }
 
 func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

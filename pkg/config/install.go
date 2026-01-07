@@ -6,6 +6,7 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
+	"github.com/pelletier/go-toml/v2"
 )
 
 type InstallApprovalOption string
@@ -29,7 +30,7 @@ func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 }
 
 type AWSAccount struct {
-	Region string `mapstructure:"region,omitempty" jsonschema:"required"`
+	Region string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 }
 
 func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -41,14 +42,52 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("eu-west-1")
 }
 
-type InputGroup map[string]string
+type InputGroup struct {
+	// mapstructure is able to decode map into Inputgroup because the type of InputGroup.Inputs matches that of what
+	// expected by mapstructure.
+	Inputs map[string]string `mapstructure:"inputs" toml:"inputs"`
+	// this property should only be used for writing comment for input group, and should not be used anywhere else.
+	Group string `mapstructure:"group" toml:"group"`
+}
+
+func (ig InputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
+	// Make schema treat InputGroup as a map (additionalProperties pattern)
+	schema.Type = "object"
+	schema.AdditionalProperties = &jsonschema.Schema{
+		Type: "string",
+	}
+	schema.Properties = nil
+	schema.Required = nil
+}
+
+func (ig InputGroup) MarshalTOML() ([]byte, error) {
+	return toml.Marshal(ig.Inputs)
+}
+
+func (ig *InputGroup) UnmarshalTOML(data []byte) error {
+	// First unmarshal the TOML data into a map
+	var m map[string]string
+	if err := toml.Unmarshal(data, &m); err != nil {
+		return fmt.Errorf("failed to unmarshal TOML data: %w", err)
+	}
+
+	ig.Inputs = map[string]string{}
+	for k, v := range m {
+		ig.Inputs[k] = fmt.Sprint(v)
+	}
+	return nil
+}
+
+func (ig InputGroup) TOMLComment() string {
+	return fmt.Sprintf("input.group : %s", ig.Group)
+}
 
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
-	Name           string                `mapstructure:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
-	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty"`
-	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty"`
-	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty"`
+	Name           string                `mapstructure:"name" toml:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
+	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
+	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -62,7 +101,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
 		Field("inputs").Short("input values").
-		Long("Array of input groups with key-value pairs for customer inputs provided during installation")
+		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
+		Type("array")
 }
 
 func (i *Install) Parse() error {
@@ -88,7 +128,7 @@ func (i *Install) Validate() error {
 func (i *Install) FlattenedInputs() map[string]string {
 	flattened := make(map[string]string)
 	for _, group := range i.InputGroups {
-		for key, val := range group {
+		for key, val := range group.Inputs {
 			flattened[key] = val
 		}
 	}
