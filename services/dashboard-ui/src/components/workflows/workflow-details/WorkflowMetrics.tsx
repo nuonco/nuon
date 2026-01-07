@@ -9,7 +9,8 @@ import { useWorkflow } from '@/hooks/use-workflow'
 export const WorkflowMetrics = () => {
   const { 
     workflow,
-    pendingApprovalsCount, 
+    pendingApprovalsCount,
+    policyViolationsCount,
     discardedStepsCount, 
     completedStepsCount, 
     totalSteps 
@@ -53,6 +54,10 @@ export const WorkflowMetrics = () => {
             <Text variant="base">{pendingApprovalsCount}</Text>
           </LabeledValue>
         )}
+
+        <LabeledValue label="Policy violations">
+          <Text variant="base">{policyViolationsCount}</Text>
+        </LabeledValue>
 
         <LabeledValue label="Discarded">
           <Text variant="base">{discardedStepsCount}</Text>
