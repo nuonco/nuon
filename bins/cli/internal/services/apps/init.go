@@ -2,7 +2,6 @@ package apps
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/generator"
@@ -63,7 +62,6 @@ func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *I
 		c = generator.DefaultAppConfigConfigStructure(genParams.Path)
 	}
 
-	fmt.Println(genParams.EnableComments)
 	gen := generator.NewConfigGen(
 		genParams.EnableDefaults,
 		genParams.EnableComments,
@@ -639,6 +637,106 @@ func (s *Service) InitKubernetesManifestComponentConfig(ctx context.Context, gen
 	err := gen.Gen(genParams.Path, customStructure)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate kubernetes manifest component config")
+	}
+
+	return nil
+}
+
+type ActionParams struct {
+	Name             string
+	Timeout          string
+	TriggerType      string
+	CronSchedule     string
+	ComponentName    string
+	StepName         string
+	StepCommand      string
+	InlineContents   string
+	EnvVars          map[string]string
+	PublicRepo       string
+	PublicRepoDir    string
+	PublicRepoBranch string
+	ConnectedRepo    string
+	ConnectedRepoDir string
+	ConnectedBranch  string
+	BreakGlassRole   string
+	Dependencies     []string
+}
+
+func (s *Service) InitActionConfig(ctx context.Context, genParams ConfigGenParams, params ActionParams) error {
+	gen := NewGen(genParams)
+
+	trigger := &config.ActionTriggerConfig{
+		Type: params.TriggerType,
+	}
+
+	if params.CronSchedule != "" {
+		trigger.CronSchedule = params.CronSchedule
+	}
+
+	if params.ComponentName != "" {
+		trigger.ComponentName = params.ComponentName
+	}
+
+	step := &config.ActionStepConfig{
+		Name:      params.StepName,
+		Command:   params.StepCommand,
+		EnvVarMap: params.EnvVars,
+	}
+
+	if params.InlineContents != "" {
+		step.InlineContents = params.InlineContents
+	}
+
+	if params.PublicRepo != "" {
+		step.PublicRepo = &config.PublicRepoConfig{
+			Repo:      params.PublicRepo,
+			Directory: params.PublicRepoDir,
+			Branch:    params.PublicRepoBranch,
+		}
+	}
+
+	if params.ConnectedRepo != "" {
+		step.ConnectedRepo = &config.ConnectedRepoConfig{
+			Repo:      params.ConnectedRepo,
+			Directory: params.ConnectedRepoDir,
+			Branch:    params.ConnectedBranch,
+		}
+	}
+
+	actionConfig := &config.ActionConfig{
+		Name:         params.Name,
+		Timeout:      params.Timeout,
+		Triggers:     []*config.ActionTriggerConfig{trigger},
+		Steps:        []*config.ActionStepConfig{step},
+		Dependencies: params.Dependencies,
+	}
+
+	if params.BreakGlassRole != "" {
+		actionConfig.BreakGlassRole = params.BreakGlassRole
+	}
+
+	customStructure := &generator.ConfigStructure{
+		Name: genParams.Path,
+		ConfigDirectories: []generator.ConfigDirectoryDefinition{
+			{
+				Name: "actions",
+				Configs: []generator.ConfigFileDefinition{
+					{
+						Name: params.Name + ".toml",
+						Schemas: []generator.ConfigFileSchema{
+							{
+								Instance: actionConfig,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := gen.Gen(genParams.Path, customStructure)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate action config")
 	}
 
 	return nil

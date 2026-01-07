@@ -23,9 +23,13 @@ func NewDefaultReflector() *jsonschema.Reflector {
 const (
 	StructTagOneofRequired                   = "oneof_required"
 	StructTagOneofRequiredGroupComponentType = "component_type"
+	StructTagOneofRequiredGroupGitRepository = "git_repository"
 )
 
-var StructTagOneOfRequiredGroups = []string{"component_type", "git_repository"}
+var (
+	StructTagOneOfRequiredGroups = []string{StructTagOneofRequiredGroupComponentType, StructTagOneofRequiredGroupGitRepository}
+	IgnoredProperties            = []string{"source"}
+)
 
 /*
 todo(sk):
@@ -156,7 +160,6 @@ func (g *ConfigGen) EncodeToTOML(cs *ConfigStructure) error {
 			if err != nil {
 				return err
 			}
-			// fmt.Println(tomlEncoded.String())
 			cs.ConfigDirectories[di].Configs[fi].TomlEncoded = tomlEncoded.String()
 		}
 	}

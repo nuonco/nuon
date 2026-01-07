@@ -71,7 +71,7 @@ func (r *ConfigReader) Clone(ctx context.Context) error {
 
 	r.clonePath = filepath.Join(r.params.TempDir, "repo")
 
-	cmd := exec.CommandContext(ctx, "git", "clone", "--depth", "1", "--branch", r.params.Branch, r.params.RepoURL, r.clonePath)
+	cmd := exec.CommandContext(ctx, "git", "clone", "--depth", "1", "--branch", r.params.Branch, r.params.RepoURL, r.clonePath, "--quiet")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -188,11 +188,36 @@ func ConvertToConfigStructure(appConfig *config.AppConfig, targetPath string) (*
 			continue
 		}
 
+		var componentConfig any
+		switch component.Type {
+		case config.ComponentType(config.TerraformModuleComponentType):
+			componentConfig = component.TerraformModule
+			component.TerraformModule = nil
+		case config.ComponentType(config.KubernetesManifestComponentType):
+			componentConfig = component.KubernetesManifest
+			component.KubernetesManifest = nil
+		case config.ComponentType(config.DockerBuildComponentType):
+			componentConfig = component.DockerBuild
+			component.DockerBuild = nil
+		case config.ComponentType(config.HelmChartComponentType):
+			componentConfig = component.HelmChart
+			component.HelmChart = nil
+		case config.ComponentType(config.ContainerImageComponentType):
+			componentConfig = component.ExternalImage
+			component.ExternalImage = nil
+		case config.ComponentType(config.JobComponentType):
+			componentConfig = component.Job
+			component.Job = nil
+		}
+
 		componentDef := generator.ConfigFileDefinition{
 			Name: component.Name + ".toml",
 			Schemas: []generator.ConfigFileSchema{
 				{
 					Instance: component,
+				},
+				{
+					Instance: componentConfig,
 				},
 			},
 		}
@@ -232,10 +257,7 @@ func ConvertToConfigStructure(appConfig *config.AppConfig, targetPath string) (*
 				continue
 			}
 
-			roleName := role.Name
-			if roleName == "" {
-				roleName = role.Type
-			}
+			roleName := role.Type
 
 			permissionDef := generator.ConfigFileDefinition{
 				Name: roleName + ".toml",

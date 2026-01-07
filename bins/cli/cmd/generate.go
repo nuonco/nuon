@@ -69,18 +69,18 @@ func (c *cli) initCmd() *cobra.Command {
 					return errors.Wrap(err, "unable to get init parameters")
 				}
 
-				if params.PrebuiltTemplate != "" {
-					sampleComponentPArams := apps.SampleComponentParams{}
-					err = ui.RunComponentsMenu(&sampleComponentPArams)
-					if err != nil {
-						return errors.Wrap(err, "unable to get sample components parameters")
-					}
-					err = ui.RunActionsMenu(&sampleActionsParams)
-					if err != nil {
-						return errors.Wrap(err, "unable to get sample actions parameters")
-					}
-
-				}
+				// if params.PrebuiltTemplate != "" {
+				// sampleComponentPArams := apps.SampleComponentParams{}
+				// err = ui.RunComponentsMenu(&sampleComponentPArams)
+				// if err != nil {
+				// 	return errors.Wrap(err, "unable to get sample components parameters")
+				// }
+				// err = ui.RunActionsMenu(&sampleActionsParams)
+				// if err != nil {
+				// 	return errors.Wrap(err, "unable to get sample actions parameters")
+				// }
+				//
+				// }
 
 				err = ui.RunGeneratorConfigMenu(&genParams)
 				if err != nil {
@@ -93,20 +93,22 @@ func (c *cli) initCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "unable to init app config")
 			}
-			if sampleComponentPArams.EnableSampleComponents {
-				gparams := genParams
-				gparams.Overwrite = true
-				err = svc.InitSampleComponents(cmd.Context(), genParams, sampleComponentPArams)
-				if err != nil {
-					return errors.Wrap(err, "unable to init app config")
+			if params.PrebuiltTemplate == "" {
+				if sampleComponentPArams.EnableSampleComponents {
+					gparams := genParams
+					gparams.Overwrite = true
+					err = svc.InitSampleComponents(cmd.Context(), genParams, sampleComponentPArams)
+					if err != nil {
+						return errors.Wrap(err, "unable to init app config")
+					}
 				}
-			}
-			if sampleActionsParams.EnableSampleActions {
-				gparams := genParams
-				gparams.Overwrite = true
-				err = svc.InitSampleActions(cmd.Context(), genParams, sampleActionsParams)
-				if err != nil {
-					return errors.Wrap(err, "unable to init app config")
+				if sampleActionsParams.EnableSampleActions {
+					gparams := genParams
+					gparams.Overwrite = true
+					err = svc.InitSampleActions(cmd.Context(), genParams, sampleActionsParams)
+					if err != nil {
+						return errors.Wrap(err, "unable to init app config")
+					}
 				}
 			}
 
@@ -147,6 +149,7 @@ func (c *cli) initCmd() *cobra.Command {
 	// initCmd.AddCommand(createConfigCmd("break-glass", "break_glass.toml", "break glass configuration"))
 	// initCmd.AddCommand(createConfigCmd("policies", "policies.toml", "policies configuration"))
 	initCmd.AddCommand(c.initComponentCmd())
+	initCmd.AddCommand(c.initActionCmd())
 
 	return initCmd
 }
@@ -572,6 +575,102 @@ func (c *cli) initComponentCmd() *cobra.Command {
 	componentCmd.AddCommand(c.initComponentKubernetesManifestCmd())
 
 	return componentCmd
+}
+
+func (c *cli) initActionCmd() *cobra.Command {
+	var (
+		// Action-specific flags
+		actionName       string
+		timeout          string
+		triggerType      string
+		cronSchedule     string
+		componentName    string
+		stepName         string
+		stepCommand      string
+		inlineContents   string
+		envVars          []string
+		publicRepo       string
+		publicRepoDir    string
+		publicRepoBranch string
+		connectedRepo    string
+		connectedRepoDir string
+		connectedBranch  string
+		breakGlassRole   string
+		dependencies     []string
+	)
+
+	actionCmd := &cobra.Command{
+		Use:               "action",
+		Short:             "Initialize action configuration",
+		Long:              "Generate an action configuration file with custom parameters",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			genParams := initRootParams(cmd)
+
+			params := apps.ActionParams{
+				Name:             actionName,
+				Timeout:          timeout,
+				TriggerType:      triggerType,
+				CronSchedule:     cronSchedule,
+				ComponentName:    componentName,
+				StepName:         stepName,
+				StepCommand:      stepCommand,
+				InlineContents:   inlineContents,
+				EnvVars:          parseKeyValuePairs(envVars),
+				PublicRepo:       publicRepo,
+				PublicRepoDir:    publicRepoDir,
+				PublicRepoBranch: publicRepoBranch,
+				ConnectedRepo:    connectedRepo,
+				ConnectedRepoDir: connectedRepoDir,
+				ConnectedBranch:  connectedBranch,
+				BreakGlassRole:   breakGlassRole,
+				Dependencies:     dependencies,
+			}
+
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			err := svc.InitActionConfig(cmd.Context(), genParams, params)
+			if err != nil {
+				return err
+			}
+
+			successMesssage(genParams.Path, fmt.Sprintf("actions/%s.toml", params.Name))
+			return nil
+		}),
+	}
+
+	// Action flags
+	actionCmd.Flags().StringVar(&actionName, "name", "", "Action name (required)")
+	actionCmd.Flags().StringVar(&timeout, "timeout", "5m", "Timeout for action execution (e.g., 30s, 5m, 30m)")
+
+	// Trigger flags
+	actionCmd.Flags().StringVar(&triggerType, "trigger-type", "manual", "Type of trigger (manual, cron, post-provision, etc.)")
+	actionCmd.Flags().StringVar(&cronSchedule, "cron-schedule", "", "Cron schedule expression (required for cron triggers)")
+	actionCmd.Flags().StringVar(&componentName, "component-name", "", "Component name (required for component-specific triggers)")
+
+	// Step flags
+	actionCmd.Flags().StringVar(&stepName, "step-name", "", "Name of the step (required)")
+	actionCmd.Flags().StringVar(&stepCommand, "step-command", "", "Command to execute (required)")
+	actionCmd.Flags().StringVar(&inlineContents, "inline-contents", "", "Inline script contents")
+	actionCmd.Flags().StringArrayVar(&envVars, "env-var", []string{}, "Environment variable in key=value format (can be specified multiple times)")
+
+	// Repository flags
+	actionCmd.Flags().StringVar(&publicRepo, "public-repo", "", "Public repository URL")
+	actionCmd.Flags().StringVar(&publicRepoDir, "public-repo-dir", ".", "Directory within the public repository")
+	actionCmd.Flags().StringVar(&publicRepoBranch, "public-repo-branch", "main", "Branch of the public repository")
+	actionCmd.Flags().StringVar(&connectedRepo, "connected-repo", "", "Connected repository")
+	actionCmd.Flags().StringVar(&connectedRepoDir, "connected-repo-dir", ".", "Directory within the connected repository")
+	actionCmd.Flags().StringVar(&connectedBranch, "connected-branch", "main", "Branch of the connected repository")
+
+	// Break glass and dependencies
+	actionCmd.Flags().StringVar(&breakGlassRole, "break-glass-role", "", "IAM role for break-glass access")
+	actionCmd.Flags().StringArrayVar(&dependencies, "dependency", []string{}, "Component dependencies (can be specified multiple times)")
+
+	// Mark required flags
+	actionCmd.MarkFlagRequired("name")
+	actionCmd.MarkFlagRequired("step-name")
+	actionCmd.MarkFlagRequired("step-command")
+
+	return actionCmd
 }
 
 func splitKeyValue(s string) []string {

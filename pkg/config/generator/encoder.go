@@ -40,6 +40,10 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 		propertyName := pair.Key
 		propertySchema := pair.Value
 
+		if slices.Contains(IgnoredProperties, propertyName) {
+			continue
+		}
+
 		isRequired := requiredFields[propertyName]
 
 		fullPath := propertyName
