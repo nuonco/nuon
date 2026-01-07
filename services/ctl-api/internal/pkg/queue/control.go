@@ -22,7 +22,10 @@ func (q *queue) pauseHandler(ctx workflow.Context, req *PauseRequest) (*PauseRes
 	q.paused = true
 	q.state.Paused = true
 
-	if err := activities.AwaitUpdateQueuePausedByQueueID(ctx, q.queueID, true, &workflow.ActivityOptions{
+	if err := activities.AwaitUpdateQueuePaused(ctx, activities.UpdateQueuePausedRequest{
+		QueueID: q.queueID,
+		Paused:  true,
+	}, &workflow.ActivityOptions{
 		StartToCloseTimeout: 10 * time.Second,
 	}); err != nil {
 		return nil, err
@@ -40,7 +43,10 @@ func (q *queue) resumeHandler(ctx workflow.Context, req *ResumeRequest) (*Resume
 	q.paused = false
 	q.state.Paused = false
 
-	if err := activities.AwaitUpdateQueuePausedByQueueID(ctx, q.queueID, false, &workflow.ActivityOptions{
+	if err := activities.AwaitUpdateQueuePaused(ctx, activities.UpdateQueuePausedRequest{
+		QueueID: q.queueID,
+		Paused:  false,
+	}, &workflow.ActivityOptions{
 		StartToCloseTimeout: 10 * time.Second,
 	}); err != nil {
 		return nil, err
