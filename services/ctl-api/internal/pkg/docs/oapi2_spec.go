@@ -85,3 +85,19 @@ func (d *Docs) getOAPI2RunnerSpec(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, doc)
 }
+
+// LoadPublicOAPI2Spec loads the public Swagger 2.0 spec without requiring a server context
+// This is used for offline spec generation
+func LoadPublicOAPI2Spec() (*openapi2.T, error) {
+	spec := public.SwaggerInfo.ReadDoc()
+	byts := []byte(spec)
+
+	var doc openapi2.T
+	err := json.Unmarshal(byts, &doc)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert open api spec to json: %w", err)
+	}
+
+	addSpecTags(&doc)
+	return &doc, nil
+}

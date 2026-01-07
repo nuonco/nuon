@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
@@ -12,10 +13,12 @@ import (
 	"sync"
 
 	"golang.org/x/sync/errgroup"
+	"github.com/getkin/kin-openapi/openapi2conv"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/command"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
 var v *validator.Validate
@@ -112,6 +115,37 @@ func generatePublicSchema(ctx context.Context) error {
 	}
 
 	fmt.Fprintf(os.Stdout, "✅ successfully generated public schema\n")
+	return nil
+}
+
+func generatePublicOAPI3Spec(ctx context.Context) error {
+	// Load the generated Swagger 2.0 spec
+	doc, err := docs.LoadPublicOAPI2Spec()
+	if err != nil {
+		return fmt.Errorf("unable to load swagger spec: %w", err)
+	}
+
+	// Convert to OpenAPI 3.0
+	oapi3Doc, err := openapi2conv.ToV3(doc)
+	if err != nil {
+		return fmt.Errorf("unable to convert to openapi v3: %w", err)
+	}
+
+	// Write to docs/public/swagger-v3.json
+	outputPath := "docs/public/swagger-v3.json"
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("unable to create output file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(oapi3Doc); err != nil {
+		return fmt.Errorf("unable to write json: %w", err)
+	}
+
+	fmt.Fprintf(os.Stdout, "✅ successfully generated public openapi v3 spec: %s\n", outputPath)
 	return nil
 }
 
@@ -248,6 +282,7 @@ func main() {
 	fns := []func(context.Context) error{
 		generateRunnerSchema,
 		generatePublicSchema,
+		generatePublicOAPI3Spec,
 		generateAdminSchema,
 		runTemporalGen,
 	}
