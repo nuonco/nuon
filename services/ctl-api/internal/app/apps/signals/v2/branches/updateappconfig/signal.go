@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -32,7 +32,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("commit_sha is required")
 	}
 
-	_, err := activities.AwaitGetAppBranchByID(ctx, s.AppBranchID)
+	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")
 	}
@@ -42,14 +42,14 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	// Get app branch
-	branch, err := activities.AwaitGetAppBranchByID(ctx, s.AppBranchID)
+	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
 	// Parse nuon.yaml from repo at commit
-	config, err := activities.AwaitParseNuonYamlFromRepo(ctx, activities.ParseNuonYamlRequest{
-		VCSConfigID: branch.ConnectedGithubVCSConfigID,
+	config, err := activities.AwaitParseNuonYamlFromRepo(ctx, activities.ParseNuonYamlFromRepoRequest{
+		VcsConfigID: branch.ConnectedGithubVCSConfigID,
 		CommitSHA:   s.CommitSHA,
 	})
 	if err != nil {
@@ -66,7 +66,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Update app branch last synced commit
-	if err := activities.AwaitUpdateAppBranchLastSyncedCommit(ctx, branch.ID, s.CommitSHA); err != nil {
+	if err := activities.AwaitUpdateAppBranchLastSyncedCommit(ctx, activities.UpdateAppBranchLastSyncedCommitRequest{
+		AppBranchID: branch.ID,
+		CommitSHA:   s.CommitSHA,
+	}); err != nil {
 		return fmt.Errorf("unable to update last synced commit: %w", err)
 	}
 

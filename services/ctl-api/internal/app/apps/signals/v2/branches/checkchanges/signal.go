@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -28,7 +28,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("app_branch_id is required")
 	}
 
-	_, err := activities.AwaitGetAppBranchByID(ctx, s.AppBranchID)
+	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")
 	}
@@ -38,13 +38,13 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	// Get app branch
-	branch, err := activities.AwaitGetAppBranchByID(ctx, s.AppBranchID)
+	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
 	// Get latest commit from VCS
-	latestCommit, err := activities.AwaitGetLatestCommitFromVCS(ctx, branch.ConnectedGithubVCSConfigID)
+	latestCommit, err := activities.AwaitGetLatestCommitFromVCSByVcsConfigID(ctx, branch.ConnectedGithubVCSConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get latest commit: %w", err)
 	}

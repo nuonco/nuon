@@ -6,10 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	branchescreated "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/created"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -72,18 +70,6 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch: %w", err))
 		return
-	}
-
-	// Enqueue created signal to app branch's queue
-	_, err = s.queueClient.Enqueue(ctx, branch.QueueID, &branchescreated.Signal{
-		AppBranchID: branch.ID,
-	})
-	if err != nil {
-		// Log error but don't fail the request - the branch was created successfully
-		s.l.Error("unable to enqueue created signal",
-			zap.Error(err),
-			zap.String("app_branch_id", branch.ID),
-			zap.String("queue_id", branch.QueueID))
 	}
 
 	ctx.JSON(http.StatusCreated, branch)

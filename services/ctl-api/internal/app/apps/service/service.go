@@ -202,13 +202,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// app branches admin routes
-	appBranches := api.Group("/v1/app-branches/:app_branch_id")
-	{
-		appBranches.POST("/admin-test-app-branch-workflow", s.AdminTestAppBranchWorkflow)
-		appBranches.POST("/admin-restart", s.AdminRestartAppBranch)
-	}
-
 	return nil
 }
 

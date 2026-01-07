@@ -10,7 +10,7 @@ import (
 
 // @temporal-gen-v2 activity
 // @as-wrapper
-// @by-field QueueID
+// @by-field queueID
 // @schedule-to-start-timeout 5m
 func (a *Activities) getQueue(ctx context.Context, queueID string) (*app.Queue, error) {
 	var queue app.Queue

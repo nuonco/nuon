@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -99,17 +98,6 @@ func (s *service) CreateApp(ctx *gin.Context) {
 }
 
 func (s *service) createApp(ctx context.Context, acct *app.Account, org *app.Org, req *CreateAppRequest) (*app.App, error) {
-	// Check if queues feature is enabled
-	queuesEnabled := org.Features[string(app.OrgFeatureQueues)]
-
-	// Start transaction if queues are enabled
-	var tx *gorm.DB
-	if queuesEnabled {
-		tx = s.db.WithContext(ctx).Begin()
-	} else {
-		tx = s.db.WithContext(ctx)
-	}
-
 	newApp := app.App{
 		OrgID:             org.ID,
 		Name:              req.Name,
@@ -125,37 +113,10 @@ func (s *service) createApp(ctx context.Context, acct *app.Account, org *app.Org
 		SlackWebhookURL:          req.SlackWebhookURL,
 	}
 
-	if err := tx.Create(&newApp).Error; err != nil {
-		if queuesEnabled {
-			tx.Rollback()
-		}
-		return nil, fmt.Errorf("unable to create app: %w", err)
-	}
-
-	// Create queue if feature is enabled
-	if queuesEnabled {
-		queue, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-			OwnerID:     newApp.ID,
-			OwnerType:   "App",
-			Namespace:   "apps",
-			MaxInFlight: 3,
-			MaxDepth:    50,
-		})
-		if err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("unable to create queue for app: %w", err)
-		}
-
-		// Update app with queue ID
-		newApp.QueueID = queue.ID
-		if err := tx.Save(&newApp).Error; err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("unable to update app with queue_id: %w", err)
-		}
-
-		if err := tx.Commit().Error; err != nil {
-			return nil, fmt.Errorf("unable to commit transaction: %w", err)
-		}
+	res := s.db.WithContext(ctx).
+		Create(&newApp)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create app: %w", res.Error)
 	}
 
 	return &newApp, nil

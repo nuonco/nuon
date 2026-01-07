@@ -28,6 +28,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
@@ -63,6 +64,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(notifications.New),
 		fx.Provide(eventloop.New),
 		fx.Provide(teventloop.New),
+		fx.Provide(client.New),
 		fx.Provide(authz.New),
 		fx.Provide(features.New),
 		fx.Provide(account.New),
