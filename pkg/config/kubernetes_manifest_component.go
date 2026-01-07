@@ -8,14 +8,14 @@ import (
 
 type KubernetesManifestComponentConfig struct {
 	// Inline manifest (mutually exclusive with Kustomize)
-	Manifest string `mapstructure:"manifest,omitempty" toml:"manifest,omitempty" jsonschema:"required" features:"get,template"`
+	Manifest string `mapstructure:"manifest,omitempty" toml:"manifest,omitempty"  features:"get,template"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfig `mapstructure:"kustomize,omitempty" toml:"kustomize"`
 
 	// VCS configuration for kustomize sources (similar to Helm chart)
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
 	// Namespace supports template variables (e.g., {{.nuon.install.id}})
 	Namespace     string  `mapstructure:"namespace,omitempty" toml:"namespace,omitempty" jsonschema:"required"`
