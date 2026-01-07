@@ -12,13 +12,14 @@ import (
 	"runtime"
 	"sync"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/command"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
+	"github.com/nuonco/nuon/services/ctl-api/docs/public"
 )
 
 var v *validator.Validate
@@ -120,7 +121,7 @@ func generatePublicSchema(ctx context.Context) error {
 
 func generatePublicOAPI3Spec(ctx context.Context) error {
 	// Load the generated Swagger 2.0 spec
-	doc, err := docs.LoadPublicOAPI2Spec()
+	doc, err := LoadPublicOAPI2Spec()
 	if err != nil {
 		return fmt.Errorf("unable to load swagger spec: %w", err)
 	}
@@ -295,4 +296,17 @@ func main() {
 	if err := eg.Wait(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func LoadPublicOAPI2Spec() (*openapi2.T, error) {
+	spec := public.SwaggerInfo.ReadDoc()
+	byts := []byte(spec)
+
+	var doc openapi2.T
+	err := json.Unmarshal(byts, &doc)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert open api spec to json: %w", err)
+	}
+
+	return &doc, nil
 }
