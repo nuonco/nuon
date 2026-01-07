@@ -11,9 +11,12 @@ import (
 
 func (s sync) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyConfig {
 	pt := models.ConfigAppPolicyType(policy.Type)
+	pe := models.ConfigAppPolicyEngine(policy.Engine)
 	return &models.ServiceAppPolicyConfig{
-		Contents: generics.ToPtr(policy.Contents),
-		Type:     &pt,
+		Type:       &pt,
+		Engine:     pe,
+		Contents:   generics.ToPtr(policy.Contents),
+		Components: policy.Components,
 	}
 }
 
