@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// @temporal-gen as-activity
+// @temporal-gen-v2 activity
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {

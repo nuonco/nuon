@@ -16,7 +16,7 @@ type EnqueueSignalRequest struct {
 	Signal  signal.Signal `validate:"required"`
 }
 
-// @temporal-gen as-activity
+// @temporal-gen-v2 activity
 func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (*queue.EnqueueResponse, error) {
 	q, err := c.getQueue(ctx, req.QueueID)
 	if err != nil {
