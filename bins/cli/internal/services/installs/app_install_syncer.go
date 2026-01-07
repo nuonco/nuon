@@ -16,8 +16,10 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-const ManagedByNuonCLIConfig = "nuon/cli/install-config"
-const ManagedByNuonDashboard = "nuon/dashboard"
+const (
+	ManagedByNuonCLIConfig = "nuon/cli/install-config"
+	ManagedByNuonDashboard = "nuon/dashboard"
+)
 
 const defaultPollDuration = time.Second * 10
 
@@ -72,7 +74,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 				inputDefaults[ic.Name] = ic.Default
 			}
 		}
-		installCfg.InputGroups = append([]config.InputGroup{inputDefaults}, installCfg.InputGroups...)
+		installCfg.InputGroups = append([]config.InputGroup{
+			{
+				Inputs: inputDefaults,
+			},
+		}, installCfg.InputGroups...)
 	}
 
 	sensitiveInputs := make(map[string]struct{})
@@ -89,7 +95,9 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			delete(finalInputs, inputName)
 		}
 	}
-	installCfg.InputGroups = []config.InputGroup{finalInputs}
+	installCfg.InputGroups = []config.InputGroup{{
+		Inputs: finalInputs,
+	}}
 
 	diff, _, err := installCfg.Diff(nil)
 	if err != nil {
@@ -227,7 +235,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	// Use the current inputs as defaults, for missing values in the current inputs.
-	installCfg.InputGroups = append([]config.InputGroup{currInputs.Values}, installCfg.InputGroups...)
+	installCfg.InputGroups = append([]config.InputGroup{{
+		Inputs: currInputs.Values,
+	}}, installCfg.InputGroups...)
 
 	installCfgInputs := installCfg.FlattenedInputs()
 
