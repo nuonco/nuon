@@ -44,13 +44,21 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
+var apiCmd *cobra.Command
+
 func (c *cli) registerAPI() error {
-	runApiCmd := &cobra.Command{
+	apiCmd = &cobra.Command{
 		Use:   "api",
-		Short: "run api",
+		Short: "run API",
+		Long:  "Run the APIs. All APIs are run by default. Use -h for guidance on running individual APIs.",
 		Run:   c.runAPI,
 	}
-	rootCmd.AddCommand(runApiCmd)
+	rootCmd.AddCommand(apiCmd)
+
+	c.registerAPIPublic()
+	c.registerAPIAdmin()
+	c.registerAPIRunner()
+
 	return nil
 }
 

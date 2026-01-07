@@ -44,14 +44,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
-func (c *cli) registerAPIPublic() error {
-	runApiCmd := &cobra.Command{
-		Use:   "api",
-		Short: "run public api",
+func (c *cli) registerAPIPublic() {
+	publicCmd := &cobra.Command{
+		Use:   "public",
+		Short: "run public api only",
 		Run:   c.runAPIPublic,
 	}
-	rootCmd.AddCommand(runApiCmd)
-	return nil
+	apiCmd.AddCommand(publicCmd)
 }
 
 func (c *cli) runAPIPublic(cmd *cobra.Command, _ []string) {
@@ -107,8 +106,6 @@ func (c *cli) runAPIPublic(cmd *cobra.Command, _ []string) {
 
 		// add api
 		fx.Provide(api.AsAPI(api.NewPublicAPI)),
-		fx.Provide(api.AsAPI(api.NewRunnerAPI)),
-		fx.Provide(api.AsAPI(api.NewInternalAPI)),
 
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(api.APIGroupParam(func([]*api.API) {})),

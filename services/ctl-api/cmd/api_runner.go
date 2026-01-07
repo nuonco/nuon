@@ -44,14 +44,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
-func (c *cli) registerAPIRunner() error {
-	runApiCmd := &cobra.Command{
-		Use:   "api",
-		Short: "run runner api",
+func (c *cli) registerAPIRunner() {
+	runnerCmd := &cobra.Command{
+		Use:   "runner",
+		Short: "run runner api only",
 		Run:   c.runAPIRunner,
 	}
-	rootCmd.AddCommand(runApiCmd)
-	return nil
+	apiCmd.AddCommand(runnerCmd)
 }
 
 func (c *cli) runAPIRunner(cmd *cobra.Command, _ []string) {
@@ -106,9 +105,7 @@ func (c *cli) runAPIRunner(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(httpbin.New)),
 
 		// add api
-		fx.Provide(api.AsAPI(api.NewPublicAPI)),
 		fx.Provide(api.AsAPI(api.NewRunnerAPI)),
-		fx.Provide(api.AsAPI(api.NewInternalAPI)),
 
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(api.APIGroupParam(func([]*api.API) {})),

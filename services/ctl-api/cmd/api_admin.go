@@ -44,15 +44,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
-func (c *cli) registerAPIAdmin() error {
-	// TODO: this becomes a subcommand of API
-	runApiCmd := &cobra.Command{
-		Use:   "api",
+func (c *cli) registerAPIAdmin() {
+	adminCmd := &cobra.Command{
+		Use:   "admin",
 		Short: "run admin api",
 		Run:   c.runAPIAdmin,
 	}
-	rootCmd.AddCommand(runApiCmd)
-	return nil
+	apiCmd.AddCommand(adminCmd)
 }
 
 func (c *cli) runAPIAdmin(cmd *cobra.Command, _ []string) {
@@ -107,8 +105,6 @@ func (c *cli) runAPIAdmin(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(httpbin.New)),
 
 		// add api
-		fx.Provide(api.AsAPI(api.NewPublicAPI)),
-		fx.Provide(api.AsAPI(api.NewRunnerAPI)),
 		fx.Provide(api.AsAPI(api.NewInternalAPI)),
 
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
