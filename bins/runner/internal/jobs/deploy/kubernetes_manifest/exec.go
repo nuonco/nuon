@@ -263,6 +263,13 @@ func (h *handler) handleCreateApplyPlan(
 	// Store the detailed diffs in the plan
 	manifestPlan.ContentDiff = resourceDiffs
 
+	// Generate multi-doc YAML output from resources to apply
+	dryRunYAML, err := kubernetesResourcesToMultiDocYAML(resourcesToApply)
+	if err != nil {
+		return fmt.Errorf("failed to generate dry run YAML output: %w", err)
+	}
+	manifestPlan.DryRunOutput = dryRunYAML
+
 	// Convert to JSON for the plan field
 	jsonBytes, err := json.MarshalIndent(map[string]interface{}{
 		"k8s_content_diff": resourceDiffs,
