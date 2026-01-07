@@ -5,7 +5,8 @@ description:
   configure your app."
 ---
 
-Inputs are used to collect customer provider values for configuring your app.
+Inputs are variable parameters used for configuring your app. Inputs can either be user facing or vendor facing. By default all inputs are vendor
+facing.
 
 ## Defining Inputs
 
@@ -30,6 +31,31 @@ default      = ""
 required     = true
 sensitive    = false
 ```
+
+### Customer facing inputs
+A customer facing input is a parameters that can be tweaked by customer via stack inputs (AWS Cloudformation, Azure Bicep) during install creation or
+any time after that.
+
+To mark an input as customer facing mark the parameter `user_configurable = true` in the app input config. Example:
+
+``` toml inputs.toml
+[[input]]
+name = "sub_domain"
+display_name = "Sub Domain"
+description = "The sub domain for the Whoami service"
+group = "dns"
+default = "whoami"
+sensitive = false
+type = ""
+internal = false
+
+user_configurable = true
+```
+
+Customer facing inputs cannot be modifies via the vendor in any way, to modity the input value, customer must goto the install stack and update the
+input parameter.
+This triggers a callback to the install which then updates/deploys any/all components that is dependant on that particular input(s).
+
 
 ## Configuration Using Inputs
 
