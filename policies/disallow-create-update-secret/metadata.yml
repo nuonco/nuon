@@ -1,0 +1,29 @@
+rules:
+  - apiGroups:
+      - ''
+    apiVersions:
+      - v1
+    resources:
+      - secrets
+    operations:
+      - CREATE
+      - UPDATE
+mutating: false
+contextAware: false
+executionMode: gatekeeper
+annotations:
+  # artifacthub specific
+  io.artifacthub.displayName: Disallow Create Update Secret
+  io.artifacthub.resources: Secret
+  io.artifacthub.keywords: secret
+  # kubewarden specific
+  io.kubewarden.policy.ociUrl: public.ecr.aws/p7e3r5y0/disallow-create-update-secret
+  io.kubewarden.policy.author: Kubewarden developers <cncf-kubewarden-maintainers@lists.cncf.io>
+  io.kubewarden.policy.title: disallow-create-update-secret
+  io.kubewarden.policy.version: v0.1.0
+  io.kubewarden.policy.description: A policy that prevents the creation and update of Secret resources
+  io.kubewarden.policy.url: https://github.com/kubewarden/disallow-create-update-secret
+  io.kubewarden.policy.source: https://github.com/kubewarden/disallow-create-update-secret
+  io.kubewarden.policy.license: Apache-2.0
+  io.kubewarden.policy.category: Secret
+  io.kubewarden.policy.severity: high

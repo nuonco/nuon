@@ -1,0 +1,25 @@
+rules:
+  - apiGroups:
+      - 'rbac.authorization.k8s.io'
+    apiVersions:
+      - v1
+    resources:
+      - roles
+      - clusterroles
+    operations:
+      - CREATE
+      - UPDATE
+mutating: false
+contextAware: false
+executionMode: gatekeeper
+annotations:
+  io.artifacthub.displayName: Disallow Creating Roles and ClusterRoles
+  io.artifacthub.resources: Role, ClusterRole
+  io.artifacthub.keywords: role, clusterrole, rbac
+  io.kubewarden.policy.ociUrl: public.ecr.aws/p7e3r5y0/disallow-creating-roles-clusterroles
+  io.kubewarden.policy.title: disallow-creating-roles-clusterroles
+  io.kubewarden.policy.version: v0.1.0
+  io.kubewarden.policy.description: A policy that prevents the creation of Role and ClusterRole resources
+  io.kubewarden.policy.license: Apache-2.0
+  io.kubewarden.policy.category: RBAC
+  io.kubewarden.policy.severity: high

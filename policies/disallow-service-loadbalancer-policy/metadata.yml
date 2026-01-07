@@ -1,0 +1,29 @@
+rules:
+  - apiGroups:
+      - ''
+    apiVersions:
+      - v1
+    resources:
+      - services
+    operations:
+      - CREATE
+      - UPDATE
+mutating: false
+contextAware: false
+executionMode: gatekeeper
+annotations:
+  # artifacthub specific
+  io.artifacthub.displayName: Disallow Service Loadbalancer
+  io.artifacthub.resources: Service
+  io.artifacthub.keywords: service
+  # kubewarden specific
+  io.kubewarden.policy.ociUrl: public.ecr.aws/p7e3r5y0/disallow-lb
+  io.kubewarden.policy.author: Kubewarden developers <cncf-kubewarden-maintainers@lists.cncf.io>
+  io.kubewarden.policy.title: disallow-service-loadbalancer
+  io.kubewarden.policy.version: v0.1.0
+  io.kubewarden.policy.description: A policy that prevents the creation of Service resources of type `LoadBalancer`
+  io.kubewarden.policy.url: https://github.com/kubewarden/disallow-service-loadbalancer-policy
+  io.kubewarden.policy.source: https://github.com/kubewarden/disallow-service-loadbalancer-policy
+  io.kubewarden.policy.license: Apache-2.0
+  io.kubewarden.policy.category: Service
+  io.kubewarden.policy.severity: high

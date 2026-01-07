@@ -1,0 +1,23 @@
+{
+  "uid": "role-mixed-permissions",
+  "kind": { "group": "rbac.authorization.k8s.io", "version": "v1", "kind": "Role" },
+  "resource": { "group": "rbac.authorization.k8s.io", "version": "v1", "resource": "roles" },
+  "requestKind": { "group": "rbac.authorization.k8s.io", "version": "v1", "kind": "Role" },
+  "requestResource": { "group": "rbac.authorization.k8s.io", "version": "v1", "resource": "roles" },
+  "name": "my-mixed-role",
+  "namespace": "default",
+  "operation": "CREATE",
+  "userInfo": { "username": "admin" },
+  "object": {
+    "kind": "Role",
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "metadata": { "name": "my-mixed-role", "namespace": "default" },
+    "rules": [
+      {
+        "apiGroups": [""],
+        "resources": ["pods", "secrets"],
+        "verbs": ["*"]
+      }
+    ]
+  }
+}

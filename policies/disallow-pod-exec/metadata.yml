@@ -1,0 +1,26 @@
+rules:
+  - apiGroups:
+      - ''
+    apiVersions:
+      - v1
+    resources:
+      - pods/exec
+    operations:
+      - CONNECT
+mutating: false
+contextAware: false
+executionMode: gatekeeper
+annotations:
+  io.artifacthub.displayName: Disallow Pod Exec
+  io.artifacthub.resources: Pod
+  io.artifacthub.keywords: pod, exec, security
+  io.kubewarden.policy.ociUrl: public.ecr.aws/p7e3r5y0/disallow-pod-exec
+  io.kubewarden.policy.author: Amp
+  io.kubewarden.policy.title: disallow-pod-exec
+  io.kubewarden.policy.version: v0.1.0
+  io.kubewarden.policy.description: A policy that prevents executing commands in pods
+  io.kubewarden.policy.url: https://github.com/kubewarden/disallow-pod-exec-policy
+  io.kubewarden.policy.source: https://github.com/kubewarden/disallow-pod-exec-policy
+  io.kubewarden.policy.license: Apache-2.0
+  io.kubewarden.policy.category: Pod
+  io.kubewarden.policy.severity: high

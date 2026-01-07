@@ -1,0 +1,13 @@
+name: disallow-creating-roles-clusterroles
+description: A policy that prevents the creation of Role and ClusterRole resources
+author:
+  name: Nuon
+  homepage: https://nuon.co
+keywords:
+  - Role
+  - ClusterRole
+resources:
+  - Role
+  - ClusterRole
+mutation: false
+contextAware: false

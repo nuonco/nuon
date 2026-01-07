@@ -1,0 +1,59 @@
+{
+  "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
+  "kind": {
+    "group": "",
+    "version": "v1",
+    "kind": "PodExecOptions"
+  },
+  "resource": {
+    "group": "",
+    "version": "v1",
+    "resource": "pods"
+  },
+  "subResource": "exec",
+  "requestKind": {
+    "group": "",
+    "version": "v1",
+    "kind": "PodExecOptions"
+  },
+  "requestResource": {
+    "group": "",
+    "version": "v1",
+    "resource": "pods"
+  },
+  "requestSubResource": "exec",
+  "name": "nginx",
+  "namespace": "default",
+  "operation": "CONNECT",
+  "userInfo": {
+    "username": "kubernetes-admin",
+    "groups": [
+      "system:masters",
+      "system:authenticated"
+    ]
+  },
+  "object": {
+    "kind": "PodExecOptions",
+    "apiVersion": "v1",
+    "stdin": true,
+    "stdout": true,
+    "tty": true,
+    "container": "nginx",
+    "command": [
+      "sh"
+    ]
+  },
+  "oldObject": null,
+  "dryRun": false,
+  "options": {
+    "kind": "PodExecOptions",
+    "apiVersion": "v1",
+    "stdin": true,
+    "stdout": true,
+    "tty": true,
+    "container": "nginx",
+    "command": [
+      "sh"
+    ]
+  }
+}
