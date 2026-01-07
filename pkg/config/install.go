@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/invopop/jsonschema"
@@ -62,6 +63,13 @@ func (ig InputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (ig InputGroup) MarshalTOML() ([]byte, error) {
 	return toml.Marshal(ig.Inputs)
+}
+func (ig InputGroup) MarshalJSON() ([]byte, error) {
+	// Marshal as flat map to match the JSONSchemaExtend definition
+	if ig.Inputs == nil {
+		return []byte("{}"), nil
+	}
+	return json.Marshal(ig.Inputs)
 }
 
 func (ig *InputGroup) UnmarshalTOML(data []byte) error {
