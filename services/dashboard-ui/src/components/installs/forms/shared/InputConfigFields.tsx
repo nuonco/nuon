@@ -2,7 +2,6 @@ import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Input } from '@/components/common/form/Input'
 import { CodeInput } from '@/components/common/form/CodeInput'
 import { Text } from '@/components/common/Text'
-import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import type { TAppInputConfig, TInstall } from '@/types'
 import type { IInputConfigFields } from './types'
@@ -36,28 +35,28 @@ const FieldWrapper = ({
 const InputGroupFields = ({
   groupInputs,
   install,
+  disabled = false,
 }: {
   groupInputs: TAppInputConfig['input_groups'][0]
   install?: TInstall
+  disabled?: boolean
 }) => {
   const installInputs = install ? install?.install_inputs?.at(0)?.values : {}
 
-  const vendorInputs = groupInputs?.app_inputs?.filter(
-    (input) => !input?.source || input?.source === 'vendor'
-  )
+  const allInputs = groupInputs?.app_inputs || []
 
-  if (!vendorInputs || vendorInputs.length === 0) {
+  if (allInputs.length === 0) {
     return null
   }
 
   // Sort inputs first, then separate required from optional
-  const sortedInputs = vendorInputs.sort(
+  const sortedInputs = allInputs.sort(
     (a, b) => (a?.index || 0) - (b?.index || 0)
   )
   const requiredInputs = sortedInputs.filter((input) => input?.required)
   const optionalInputs = sortedInputs.filter((input) => !input?.required)
 
-  const renderInput = (input: (typeof vendorInputs)[0]) => {
+  const renderInput = (input: (typeof allInputs)[0]) => {
     const isBoolean =
       Boolean(input?.default === 'true' || input?.default === 'false') ||
       input?.type === 'bool'
@@ -70,7 +69,9 @@ const InputGroupFields = ({
         >
           <div />
           <div className="ml-1">
-            <input type="hidden" name={`inputs:${input?.name}`} value="off" />
+            {!disabled && (
+              <input type="hidden" name={`inputs:${input?.name}`} value="off" />
+            )}
             <CheckboxInput
               defaultChecked={
                 installInputs?.[input?.name || '']
@@ -82,7 +83,8 @@ const InputGroupFields = ({
                 className:
                   'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0',
               }}
-              name={`inputs:${input?.name}`}
+              name={disabled ? undefined : `inputs:${input?.name}`}
+              disabled={disabled}
             />
           </div>
         </div>
@@ -95,13 +97,25 @@ const InputGroupFields = ({
         labelText={
           <>
             {input?.display_name || input?.name || ''}
-            <Text
-              className="ml-1"
-              variant="subtext"
-              theme={input?.required ? 'error' : 'neutral'}
-            >
-              {input?.required ? '*' : '(optional)'}
-            </Text>
+            {!disabled ? (
+              <Text
+                className="ml-1"
+                variant="subtext"
+                theme={input?.required ? 'error' : 'neutral'}
+              >
+                {input?.required ? '*' : '(optional)'}
+              </Text>
+            ) : (
+              input?.required && (
+                <Text
+                  className="ml-1"
+                  variant="subtext"
+                  theme="warn"
+                >
+                  (required by customer)
+                </Text>
+              )
+            )}
           </>
         }
         helpText={input?.description}
@@ -109,12 +123,13 @@ const InputGroupFields = ({
         {input?.type === 'json' ? (
           <CodeInput
             language="json"
-            name={`inputs:${input?.name}`}
-            required={input?.required}
+            name={disabled ? undefined : `inputs:${input?.name}`}
+            required={disabled ? false : input?.required}
             defaultValue={installInputs?.[input?.name || ''] || input?.default}
             placeholder="Enter JSON configuration..."
             helperText="Enter valid JSON configuration"
             minHeight={120}
+            disabled={disabled}
           />
         ) : (
           <Input
@@ -126,10 +141,11 @@ const InputGroupFields = ({
                   : 'text'
             }
             autoComplete="off"
-            name={`inputs:${input?.name}`}
-            required={input?.required}
+            name={disabled ? undefined : `inputs:${input?.name}`}
+            required={disabled ? false : input?.required}
             defaultValue={installInputs?.[input?.name || ''] || input?.default}
             placeholder={`Enter ${input?.display_name?.toLowerCase() || 'value'}`}
+            disabled={disabled}
           />
         )}
       </FieldWrapper>
@@ -141,14 +157,18 @@ const InputGroupFields = ({
       <legend className="flex flex-col gap-0 pr-6">
         <span className="text-lg font-semibold">
           {groupInputs?.display_name}{' '}
-          {requiredInputs?.length ? (
-            <Text variant="subtext" theme="error">
-              (required)
-            </Text>
-          ) : (
-            <Text variant="subtext" theme="neutral">
-              (optional)
-            </Text>
+          {!disabled && (
+            <>
+              {requiredInputs?.length ? (
+                <Text variant="subtext" theme="error">
+                  (required)
+                </Text>
+              ) : (
+                <Text variant="subtext" theme="neutral">
+                  (optional)
+                </Text>
+              )}
+            </>
           )}
         </span>
         <span className="text-sm font-normal">{groupInputs?.description}</span>
@@ -183,17 +203,72 @@ export const InputConfigFields = ({
     return null
   }
 
+  const sortedGroups = inputConfig.input_groups.sort(
+    (a, b) => (a?.index || 0) - (b?.index || 0)
+  )
+
+  // Separate groups into vendor and customer groups
+  const vendorGroups: typeof sortedGroups = []
+  const customerGroups: typeof sortedGroups = []
+
+  sortedGroups.forEach((group) => {
+    const vendorInputs =
+      group?.app_inputs?.filter(
+        (input) => !input?.source || input?.source === 'vendor'
+      ) || []
+
+    const customerInputs =
+      group?.app_inputs?.filter((input) => input?.source === 'customer') || []
+
+    if (vendorInputs.length > 0) {
+      vendorGroups.push({
+        ...group,
+        app_inputs: vendorInputs,
+      })
+    }
+
+    if (customerInputs.length > 0) {
+      customerGroups.push({
+        ...group,
+        app_inputs: customerInputs,
+      })
+    }
+  })
+
   return (
     <>
-      {inputConfig.input_groups
-        .sort((a, b) => (a?.index || 0) - (b?.index || 0))
-        .map((group) => (
-          <InputGroupFields
-            key={group.id}
-            groupInputs={group}
-            install={install}
-          />
-        ))}
+      {/* Render vendor input groups normally */}
+      {vendorGroups.map((group) => (
+        <InputGroupFields
+          key={`vendor-${group.id}`}
+          groupInputs={group}
+          install={install}
+          disabled={false}
+        />
+      ))}
+
+      {/* Render customer input groups with header */}
+      {customerGroups.length > 0 && (
+        <>
+          <div className="flex flex-col gap-2 border-t pt-6 mt-6">
+            <span className="text-lg font-semibold text-cool-grey-600 dark:text-cool-grey-400">
+              Customer configuration
+            </span>
+            <span className="text-sm font-normal text-cool-grey-500 dark:text-cool-grey-500">
+              These fields are configured by the customer and cannot be edited
+              here.
+            </span>
+          </div>
+          {customerGroups.map((group) => (
+            <InputGroupFields
+              key={`customer-${group.id}`}
+              groupInputs={group}
+              install={install}
+              disabled={true}
+            />
+          ))}
+        </>
+      )}
     </>
   )
 }
