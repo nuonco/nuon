@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "grain": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://api.grain.com/_/mcp"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "nuon-cms": {
+      "type": "http",
+      "url": "http://localhost:5001/api/mcp"
+    },
+    "ctl-api-db": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://ctl_api@localhost:5432/ctl_api"
+      ]
+    }
+  }
+}

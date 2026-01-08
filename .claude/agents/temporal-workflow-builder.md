@@ -161,6 +161,14 @@ wrap and use different namespaces. Please use this in all places.
 
 We use `fx` for dependency injection. You can see many wrappers in the `ctl-api`.
 
+## Await Functions
+
+We try to write plain go code where possible. We use generators to generate await functions. Please reference 
+pkg/gen/temporal-gen-v2 (and specifically the examples in there) to see the correct temporal-gen wrapper annotations.
+
+From there, we never want to write activity requests and expose the activities unless we need to. Prefer private 
+methods, and using the `temporal-gen-v2 wrapper` annotation.
+
 ## Communication Guidelines
 
 - **Be explicit about queue assignment**: Always specify which queue the workflow will run on
