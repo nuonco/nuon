@@ -170,6 +170,7 @@ func (a *Activities) getPoliciesConfigByAppConfigID(ctx context.Context, appConf
 	res := a.db.WithContext(ctx).
 		Where("app_config_id = ?", appConfigID).
 		Preload("Policies").
+		Order("created_at DESC").
 		First(&policiesConfig)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get policies config")
