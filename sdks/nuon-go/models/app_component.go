@@ -37,6 +37,9 @@ type AppComponent struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// latest build
+	LatestBuild *AppComponentBuild `json:"latest_build,omitempty"`
+
 	// links
 	Links map[string]any `json:"links,omitempty"`
 
@@ -66,6 +69,10 @@ type AppComponent struct {
 func (m *AppComponent) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateLatestBuild(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateType(formats); err != nil {
 		res = append(res, err)
 	}
@@ -73,6 +80,29 @@ func (m *AppComponent) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppComponent) validateLatestBuild(formats strfmt.Registry) error {
+	if swag.IsZero(m.LatestBuild) { // not required
+		return nil
+	}
+
+	if m.LatestBuild != nil {
+		if err := m.LatestBuild.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("latest_build")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("latest_build")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -101,6 +131,10 @@ func (m *AppComponent) validateType(formats strfmt.Registry) error {
 func (m *AppComponent) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateLatestBuild(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -108,6 +142,31 @@ func (m *AppComponent) ContextValidate(ctx context.Context, formats strfmt.Regis
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppComponent) contextValidateLatestBuild(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LatestBuild != nil {
+
+		if swag.IsZero(m.LatestBuild) { // not required
+			return nil
+		}
+
+		if err := m.LatestBuild.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("latest_build")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("latest_build")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
