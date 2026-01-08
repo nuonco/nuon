@@ -19,7 +19,6 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/command"
-	"github.com/nuonco/nuon/services/ctl-api/docs/public"
 )
 
 var v *validator.Validate
@@ -279,31 +278,41 @@ func main() {
 	ctx, cancelFn := context.WithCancel(ctx)
 	defer cancelFn()
 
+	// Phase 1: Run independent tasks in parallel
 	eg, ctx := errgroup.WithContext(ctx)
-	fns := []func(context.Context) error{
+	parallelFns := []func(context.Context) error{
 		generateRunnerSchema,
-		generatePublicSchema,
-		generatePublicOAPI3Spec,
 		generateAdminSchema,
 		runTemporalGen,
 	}
 
-	for _, fn := range fns {
+	for _, fn := range parallelFns {
 		eg.Go(func() error {
 			return fn(ctx)
 		})
 	}
+
+	// Phase 2: Generate public schema first, then convert to v3
+	eg.Go(func() error {
+		if err := generatePublicSchema(ctx); err != nil {
+			return err
+		}
+		return generatePublicOAPI3Spec(ctx)
+	})
+
 	if err := eg.Wait(); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func LoadPublicOAPI2Spec() (*openapi2.T, error) {
-	spec := public.SwaggerInfo.ReadDoc()
-	byts := []byte(spec)
+	byts, err := os.ReadFile("docs/public/swagger.json")
+	if err != nil {
+		return nil, fmt.Errorf("unable to read swagger.json file: %w", err)
+	}
 
 	var doc openapi2.T
-	err := json.Unmarshal(byts, &doc)
+	err = json.Unmarshal(byts, &doc)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert open api spec to json: %w", err)
 	}
