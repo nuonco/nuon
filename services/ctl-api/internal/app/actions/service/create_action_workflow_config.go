@@ -172,6 +172,25 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
+	//validate only inline contents or public/connected git is set
+	for _, step := range c.Steps {
+		if step.InlineContents != "" {
+			if step.PublicGitVCSConfig != nil || step.ConnectedGithubVCSConfig != nil {
+				return stderr.ErrUser{
+					Err:         errors.New("only one of inline_contents, public_git_vcs_config, or connected_github_vcs_config can be set"),
+					Description: "only one of inline_contents, public_git_vcs_config, or connected_github_vcs_config can be set",
+				}
+			}
+		} else {
+			if step.PublicGitVCSConfig == nil && step.ConnectedGithubVCSConfig == nil {
+				return stderr.ErrUser{
+					Err:         errors.New("one of inline_contents, public_git_vcs_config, or connected_github_vcs_config must be set"),
+					Description: "one of inline_contents, public_git_vcs_config, or connected_github_vcs_config must be set",
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
