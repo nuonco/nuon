@@ -224,8 +224,6 @@ require (
 	github.com/muesli/mango-pflag v0.1.0 // indirect
 	github.com/muesli/roff v0.1.0 // indirect
 	github.com/nexus-rpc/sdk-go v0.3.0 // indirect
-	github.com/olekukonko/errors v1.1.0 // indirect
-	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
@@ -651,3 +649,5 @@ replace (
 	github.com/spf13/viper => github.com/spf13/viper v1.17.0
 	google.golang.org/grpc => google.golang.org/grpc v1.66.0
 )
+
+replace github.com/olekukonko/tablewriter => github.com/olekukonko/tablewriter v0.0.5
