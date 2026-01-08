@@ -7,6 +7,8 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Time } from '@/components/common/Time'
+import { Link } from '@/components/common/Link'
+import { Icon } from '@/components/common/Icon'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getApp, getAppBranch, getOrg } from '@/lib'
@@ -130,11 +132,21 @@ export default async function AppBranchDetailPage({
       </div>
 
       <div className="mt-8">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Workflows
-          </Text>
-        </HeadingGroup>
+        <div className="flex items-center justify-between mb-4">
+          <HeadingGroup>
+            <Text variant="base" weight="strong">
+              Workflows
+            </Text>
+          </HeadingGroup>
+          <Link
+            href={`/${orgId}/apps/${appId}/branches/${branchId}/canvas`}
+            variant="ghost"
+            className="flex items-center gap-2"
+          >
+            <Icon variant="square-kanban" size={16} />
+            <Text variant="base">View Canvas</Text>
+          </Link>
+        </div>
 
         <ErrorBoundary fallback={<>Error loading workflows</>}>
           <Suspense fallback={<div>Loading workflows...</div>}>
@@ -195,9 +207,19 @@ export default async function AppBranchDetailPage({
         </div>
 
         <div>
-          <Text variant="h4" weight="strong" className="mb-4">
-            Workflows
-          </Text>
+          <div className="flex items-center justify-between mb-4">
+            <Text variant="h4" weight="strong">
+              Workflows
+            </Text>
+            <Link
+              href={`/${orgId}/apps/${appId}/branches/${branchId}/canvas`}
+              variant="ghost"
+              className="flex items-center gap-2"
+            >
+              <Icon variant="square-kanban" size={16} />
+              <Text variant="base">View Canvas</Text>
+            </Link>
+          </div>
           <OldErrorBoundary fallbackRender={ErrorFallback}>
             <Suspense
               fallback={<Loading loadingText="Loading workflows..." />}

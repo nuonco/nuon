@@ -15,8 +15,8 @@ export const BranchWorkflows = ({ branch }: IBranchWorkflows) => {
   if (workflows.length === 0) {
     return (
       <EmptyState
-        title="No workflows yet"
-        description="Workflows will appear here once the branch starts processing updates."
+        emptyTitle="No workflows yet"
+        emptyMessage="Workflows will appear here once the branch starts processing updates."
       />
     )
   }
@@ -31,20 +31,21 @@ export const BranchWorkflows = ({ branch }: IBranchWorkflows) => {
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{workflow.workflow_type}</span>
-                {workflow.status && (
+                <span className="font-medium">{workflow.type}</span>
+                {workflow.status?.status && (
                   <Badge
-                    variant={
-                      workflow.status === 'completed'
+                    theme={
+                      workflow.status.status === 'success'
                         ? 'success'
-                        : workflow.status === 'failed'
+                        : workflow.status.status === 'error'
                           ? 'error'
-                          : workflow.status === 'running'
+                          : workflow.status.status === 'in-progress' ||
+                              workflow.status.status === 'queued'
                             ? 'info'
                             : 'default'
                     }
                   >
-                    {workflow.status}
+                    {workflow.status.status}
                   </Badge>
                 )}
               </div>
@@ -59,9 +60,9 @@ export const BranchWorkflows = ({ branch }: IBranchWorkflows) => {
                     Started <Time time={workflow.created_at} format="relative" />
                   </span>
                 )}
-                {workflow.completed_at && (
+                {workflow.finished_at && (
                   <span>
-                    Completed <Time time={workflow.completed_at} format="relative" />
+                    Finished <Time time={workflow.finished_at} format="relative" />
                   </span>
                 )}
               </div>

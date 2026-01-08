@@ -26,8 +26,8 @@ type ConnectedGithubVCSConfigRequest struct {
 }
 
 type basicVCSConfigRequest struct {
-	PublicGitVCSConfig       *PublicGitVCSSandboxConfigRequest       `json:"public_git_vcs_config"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSSandboxConfigRequest `json:"connected_github_vcs_config" `
+	PublicGitVCSConfig       *PublicGitVCSConfigRequest       `json:"public_git_vcs_config"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config" `
 }
 
 func (b basicVCSConfigRequest) Validate() error {

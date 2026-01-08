@@ -1,40 +1,36 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { api } from '@/lib/api'
-import type { TAppBranch, TCreateAppBranchRequest } from '@/types'
+import { executeServerAction } from '@/actions/execute-server-action'
+import {
+  createAppBranch as create,
+  type TCreateAppBranchRequest,
+} from '@/lib/ctl-api/apps/branches'
+import type { TAppBranch } from '@/types'
 
 export async function createAppBranch(
   orgId: string,
   appId: string,
   data: TCreateAppBranchRequest
 ): Promise<{ success: boolean; error?: string; branch?: TAppBranch }> {
-  try {
-    const response = await api<TAppBranch>({
-      path: `apps/${appId}/branches`,
-      method: 'POST',
-      orgId,
+  const result = await executeServerAction({
+    action: create,
+    args: {
+      appId,
       body: data,
-    })
+      orgId,
+    },
+    path: `/${orgId}/apps/${appId}/branches`,
+  })
 
-    if (response.error) {
-      return {
-        success: false,
-        error: response.error.error || 'Failed to create branch',
-      }
-    }
-
-    // Revalidate the branches page to show the new branch
-    revalidatePath(`/${orgId}/apps/${appId}/branches`)
-
-    return {
-      success: true,
-      branch: response.data,
-    }
-  } catch (error) {
+  if (result.error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: result.error.error || 'Failed to create branch',
     }
+  }
+
+  return {
+    success: true,
+    branch: result.data,
   }
 }
