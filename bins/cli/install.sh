@@ -22,8 +22,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli
-LSP_BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/lsp
+BASE_URL=https://cdn.public.nuon.co/cli
+LSP_BASE_URL=https://cdn.public.nuon.co/lsp
 # Create a temporary directory for downloading the binaries
 TEMP_DIR=$(mktemp -d)
 
