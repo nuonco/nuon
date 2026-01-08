@@ -23,6 +23,14 @@ import (
 
 var ErrNotApproved error = fmt.Errorf("not approved")
 
+// Policy violation metadata keys
+const (
+	// DenyViolationsKey is used in metadata to store deny-level violations
+	DenyViolationsKey = "deny_violations"
+	// WarnViolationsKey is used in metadata to store warning-level violations
+	WarnViolationsKey = "warn_violations"
+)
+
 // executeFlowStep executes a single step in the flow. It handles the execution of the step, updates the status, and waits for approval if necessary.
 // It returns true if the step needs to be refetched (in case of approval steps), false otherwise.
 func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
@@ -190,52 +198,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	if len(violations) > 0 {
-		var denyViolations []activities.PolicyViolation
-		var warnViolations []activities.PolicyViolation
-		for _, v := range violations {
-			if v.Severity == "deny" {
-				denyViolations = append(denyViolations, v)
-			} else {
-				warnViolations = append(warnViolations, v)
-			}
-		}
-
-		l.Warn("policy violations found",
-			zap.String("step_id", step.ID),
-			zap.String("step_target_id", step.StepTargetID),
-			zap.String("step_target_type", step.StepTargetType),
-			zap.String("workflow_id", flw.ID),
-			zap.Int("deny_count", len(denyViolations)),
-			zap.Int("warn_count", len(warnViolations)))
-
-		if len(denyViolations) > 0 {
-			if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: step.ID,
-				Status: app.CompositeStatus{
-					Status: app.StatusError,
-					Metadata: map[string]any{
-						"reason":            "Policy violations found",
-						"policy_violations": violations,
-					},
-					StatusHumanDescription: "Policy check failed",
-				},
-			}); updateErr != nil {
-				return false, errors.Wrap(updateErr, "unable to mark step as error")
-			}
-			return false, fmt.Errorf("policy violations found: %d deny violations", len(denyViolations))
-		}
-
-		if len(warnViolations) > 0 {
-			if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: step.ID,
-				Status: app.CompositeStatus{
-					Status:   step.Status.Status,
-					Metadata: map[string]any{"policy_violations": violations},
-				},
-			}); updateErr != nil {
-				l.Warn("failed to update step with policy warnings", zap.Error(updateErr))
-			}
-		}
+		return c.processPolicyViolations(ctx, l, step, flw, violations)
 	}
 
 	l.Debug("policy check completed successfully",
@@ -714,6 +677,68 @@ func (c *WorkflowConductor[DomainSignal]) handlePlanOnlyApproval(ctx workflow.Co
 	}
 
 	return nil
+}
+
+// processPolicyViolations separates violations into deny and warn categories and updates step status accordingly.
+// Returns early with error if deny violations exist, otherwise continues with warnings logged.
+func (c *WorkflowConductor[DomainSignal]) processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, violations []activities.PolicyViolation) (bool, error) {
+	denyViolations, warnViolations := c.separateViolations(violations)
+
+	l.Warn("policy violations found",
+		zap.String("step_id", step.ID),
+		zap.String("step_target_id", step.StepTargetID),
+		zap.String("step_target_type", step.StepTargetType),
+		zap.String("workflow_id", flw.ID),
+		zap.Int("deny_count", len(denyViolations)),
+		zap.Int("warn_count", len(warnViolations)))
+
+	if len(denyViolations) > 0 {
+		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusError,
+				Metadata: map[string]any{
+					"reason":          "Policy violations found",
+					DenyViolationsKey: denyViolations,
+					WarnViolationsKey: warnViolations,
+				},
+				StatusHumanDescription: "Policy check failed",
+			},
+		}); updateErr != nil {
+			return false, errors.Wrap(updateErr, "unable to mark step as error")
+		}
+		return false, fmt.Errorf("policy violations found: %d deny violations", len(denyViolations))
+	}
+
+	if len(warnViolations) > 0 {
+		if updateErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: step.Status.Status,
+				Metadata: map[string]any{
+					WarnViolationsKey: warnViolations,
+				},
+			},
+		}); updateErr != nil {
+			l.Warn("failed to update step with policy warnings", zap.Error(updateErr))
+		}
+	}
+
+	return false, nil
+}
+
+// separateViolations categorizes violations into deny and warn severity levels.
+func (c *WorkflowConductor[DomainSignal]) separateViolations(violations []activities.PolicyViolation) ([]activities.PolicyViolation, []activities.PolicyViolation) {
+	var denyViolations []activities.PolicyViolation
+	var warnViolations []activities.PolicyViolation
+	for _, v := range violations {
+		if v.Severity == "deny" {
+			denyViolations = append(denyViolations, v)
+		} else {
+			warnViolations = append(warnViolations, v)
+		}
+	}
+	return denyViolations, warnViolations
 }
 
 // checkPolicies prepares policy evaluation and then evaluates all applicable policies in parallel.
