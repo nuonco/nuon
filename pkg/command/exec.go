@@ -16,10 +16,11 @@ func (c *command) ExecWithOutput(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("must set stdout to nil for output")
 	}
 
-	cmd, err := c.buildCommand(ctx)
+	cmd, cleanup, err := c.buildCommand(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to build command")
 	}
+	defer cleanup()
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -30,10 +31,11 @@ func (c *command) ExecWithOutput(ctx context.Context) ([]byte, error) {
 }
 
 func (c *command) Exec(ctx context.Context) error {
-	cmd, err := c.buildCommand(ctx)
+	cmd, cleanup, err := c.buildCommand(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to build command")
 	}
+	defer cleanup()
 
 	err = cmd.Run()
 	if err != nil {
@@ -44,7 +46,7 @@ func (c *command) Exec(ctx context.Context) error {
 }
 
 //nolint:gosec
-func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
+func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 	cmd := exec.CommandContext(ctx, c.Cmd, c.Args...)
 
 	envVars := os.Environ()
@@ -87,11 +89,18 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
 		stdout = io.Discard
 	}
 
+	// cleanup function to close any file handles
+	cleanup := func() {}
+
 	// if file output path is set, we also write to that.
 	if c.FileOutputPath != "" {
 		fpWriter, err := os.OpenFile(c.FileOutputPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to open file output path")
+			return nil, nil, errors.Wrap(err, "unable to open file output path")
+		}
+
+		cleanup = func() {
+			fpWriter.Close()
 		}
 
 		stdout = io.MultiWriter(stdout, fpWriter)
@@ -105,5 +114,5 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, error) {
 	cmd.Stdout = stdout
 	cmd.Dir = c.Cwd
 
-	return cmd, nil
+	return cmd, cleanup, nil
 }
