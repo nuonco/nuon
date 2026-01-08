@@ -37,7 +37,7 @@ func newAppInstallSyncer(api nuon.Client, appID, orgID string) *appInstallSyncer
 }
 
 func (s *appInstallSyncer) syncInstall(
-	ctx context.Context, installCfg *config.Install, installID string, autoApprove, wait bool,
+	ctx context.Context, installCfg *config.Install, installID string, autoApprove, wait, dryRun bool,
 ) (*models.AppInstall, error) {
 	var err error
 	ui.PrintLn(fmt.Sprintf("syncing install %s", installCfg.Name))
@@ -46,8 +46,12 @@ func (s *appInstallSyncer) syncInstall(
 		return nil, fmt.Errorf("install config cannot be nil")
 	}
 
+	if dryRun {
+		ui.PrintLn(fmt.Sprintf("dry run enabled, no changes will be made for install %s", installCfg.Name))
+	}
+
 	if installID == "" {
-		appInstall, err := s.syncNewInstall(ctx, installCfg, autoApprove, wait)
+		appInstall, err := s.syncNewInstall(ctx, installCfg, autoApprove, wait, dryRun)
 		return appInstall, err
 	}
 
@@ -56,11 +60,11 @@ func (s *appInstallSyncer) syncInstall(
 		return nil, fmt.Errorf("error getting install %s: %w", installCfg.Name, err)
 	}
 
-	appInstall, err = s.syncExistingInstall(ctx, installCfg, appInstall, autoApprove, wait)
+	appInstall, err = s.syncExistingInstall(ctx, installCfg, appInstall, autoApprove, wait, dryRun)
 	return appInstall, err
 }
 
-func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, autoApprove, wait bool) (*models.AppInstall, error) {
+func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, autoApprove, wait, dryRun bool) (*models.AppInstall, error) {
 	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
@@ -104,6 +108,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, fmt.Errorf("error generating diff for new install %s: %w", installCfg.Name, err)
 	}
 	fmt.Println(diff)
+
+	if dryRun {
+		// Print diff and exit without making any changes if dry run is enabled.
+		return nil, nil
+	}
 
 	if !autoApprove {
 		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with creating this install?")
@@ -150,7 +159,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 }
 
 func (s *appInstallSyncer) syncExistingInstall(
-	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove, wait bool,
+	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove, wait, dryRun bool,
 ) (*models.AppInstall, error) {
 	var err error
 
@@ -200,6 +209,11 @@ func (s *appInstallSyncer) syncExistingInstall(
 %s
 (added %d, removed %d, changed %d)
 `, diff, diffRes.Added, diffRes.Removed, diffRes.Changed)
+
+	if dryRun {
+		// Print diff and exit without making any changes if dry run is enabled.
+		return nil, nil
+	}
 
 	if !autoApprove {
 		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?")

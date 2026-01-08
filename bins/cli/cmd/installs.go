@@ -28,6 +28,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		wait          bool
 		enable        bool
 		disable       bool
+		dryRun        bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -141,13 +142,14 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Sync install(s) with the help of config files",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait)
+			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait, dryRun)
 		}),
 	}
 	syncCmd.Flags().StringVarP(&fileOrDir, "file", "d", "", "Path to an install config file or a directory with install config files to sync")
 	syncCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the install belongs to")
 	syncCmd.Flags().BoolVarP(&confirm, "yes", "y", false, "Set to automatically approve diffs and workflows for synced installs")
 	syncCmd.Flags().BoolVarP(&wait, "wait", "w", false, "Set to wait for workflows to complete after syncing installs")
+	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "If set the changes will not be applied, only the diffs will be shown")
 	syncCmd.MarkFlagRequired("file")
 	syncCmd.MarkFlagRequired("app-id")
 	installsCmds.AddCommand(syncCmd)
