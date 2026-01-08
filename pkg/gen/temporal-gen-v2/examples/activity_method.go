@@ -2,6 +2,7 @@ package examples
 
 import (
 	"context"
+
 	"go.temporal.io/sdk/workflow"
 )
 

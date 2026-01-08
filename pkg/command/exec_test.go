@@ -53,7 +53,7 @@ func Test_command_buildCommand(t *testing.T) {
 			ctx := context.Background()
 			cmd := test.commandFn(t)
 
-			execCmd, err := cmd.buildCommand(ctx)
+			execCmd, _, err := cmd.buildCommand(ctx)
 			assert.NoError(t, err)
 			assert.NotNil(t, execCmd)
 			test.assertFn(t, execCmd)
