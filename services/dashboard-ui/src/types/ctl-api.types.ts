@@ -6,6 +6,7 @@ export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+<<<<<<< HEAD
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
   | 'kubernetes_cluster'
@@ -43,6 +44,11 @@ export type TAppPoliciesConfig = {
   app_config_id?: string
   policies?: TAppPolicyConfig[]
 }
+=======
+export type TAppBranch = components['schemas']['app.AppBranch']
+export type TCreateAppBranchRequest =
+  components['schemas']['service.CreateAppBranchRequest']
+>>>>>>> 1d63238a5 (feat: initial dashboard-ui layout for app branches)
 
 // component
 export type TComponent = components['schemas']['app.Component']
@@ -360,6 +366,7 @@ export type TTerraformState = {
       }>
     }
   }
+<<<<<<< HEAD
 }
 
 // auth
@@ -374,3 +381,6 @@ export type TMe = {
 }
 // TODO(nnnnat): use the generated type once it is ready
 // components['schemas']['service.AuthMeResponse']
+=======
+}
+>>>>>>> 865ed5017 (feat: initial dashboard-ui layout for app branches)

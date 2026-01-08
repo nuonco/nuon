@@ -70,6 +70,16 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   text: 'Components',
                 },
                 {
+                  path: `/installs`,
+                  iconVariant: 'Cube',
+                  text: 'Installs',
+                },
+                {
+                  path: `/branches`,
+                  iconVariant: 'GitBranch',
+                  text: 'Branches',
+                },
+                {
                   path: `/actions`,
                   iconVariant: 'TerminalWindow',
                   text: 'Actions',
@@ -79,6 +89,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   iconVariant: 'FileLock',
                   text: 'Roles',
                 },
+<<<<<<< HEAD
                 {
                   path: `/installs`,
                   iconVariant: 'Cube',
@@ -94,6 +105,13 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   iconVariant: 'ShieldCheck',
                   text: 'Policies',
                 },
+=======
+                /*{
+              path: `/readme`,
+              iconVariant: "BookOpen",
+              text: "README",
+            },*/
+>>>>>>> 1d63238a5 (feat: initial dashboard-ui layout for app branches)
               ]}
             />
             {children}
