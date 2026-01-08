@@ -73,7 +73,7 @@ export const CreateInstallForm = forwardRef<
         }
       }}
       onSubmit={handleSubmit}
-      className="flex flex-col gap-8 justify-between focus:outline-none relative"
+      className="flex flex-col min-h-[50vh] gap-8 justify-between focus:outline-none relative"
     >
       {error ? (
         <Banner theme="error">
