@@ -5,55 +5,52 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-func (h *Helpers) CreateAppBranch(ctx context.Context, orgID, appID, name string, connectedGithubVCSConfigID string) (*app.AppBranch, error) {
-	// Start transaction
-	tx := h.db.WithContext(ctx).Begin()
-	if tx.Error != nil {
-		return nil, fmt.Errorf("unable to start transaction: %w", tx.Error)
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
+func (h *Helpers) CreateAppBranch(
+	ctx context.Context,
+	appID string,
+	name string,
+	connectedGithubVCSConfig *app.ConnectedGithubVCSConfig,
+	publicGitVCSConfig *app.PublicGitVCSConfig,
+) (*app.AppBranch, error) {
 	branch := app.AppBranch{
-		OrgID:                      orgID,
-		AppID:                      appID,
-		Name:                       name,
-		ConnectedGithubVCSConfigID: connectedGithubVCSConfigID,
+		AppID: appID,
+		Name:  name,
 	}
 
-	if err := tx.Create(&branch).Error; err != nil {
-		tx.Rollback()
+	// Create branch first to get ID
+	if err := h.db.WithContext(ctx).Create(&branch).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app branch: %w", err)
 	}
 
+	// Set ownership on VCS config if connected GitHub config
+	if connectedGithubVCSConfig != nil {
+		connectedGithubVCSConfig.ComponentConfigID = branch.ID
+		connectedGithubVCSConfig.ComponentConfigType = plugins.TableName(h.db, app.AppBranch{})
+
+		if err := h.db.WithContext(ctx).Create(connectedGithubVCSConfig).Error; err != nil {
+			return nil, fmt.Errorf("unable to create connected github vcs config: %w", err)
+		}
+
+		branch.ConnectedGithubVCSConfigID = connectedGithubVCSConfig.ID
+		if err := h.db.WithContext(ctx).Save(&branch).Error; err != nil {
+			return nil, fmt.Errorf("unable to update branch with vcs config: %w", err)
+		}
+	}
+
 	// Create queue for app branch
-	queue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     branch.ID,
-		OwnerType:   "AppBranch",
+		OwnerType:   plugins.TableName(h.db, app.AppBranch{}),
 		Namespace:   "apps",
-		MaxInFlight: 3,
+		MaxInFlight: 1,
 		MaxDepth:    50,
 	})
 	if err != nil {
-		tx.Rollback()
 		return nil, fmt.Errorf("unable to create queue: %w", err)
-	}
-
-	// Update branch with queue ID
-	branch.QueueID = queue.ID
-	if err := tx.Save(&branch).Error; err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("unable to update app branch with queue: %w", err)
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return nil, fmt.Errorf("unable to commit transaction: %w", err)
 	}
 
 	return &branch, nil

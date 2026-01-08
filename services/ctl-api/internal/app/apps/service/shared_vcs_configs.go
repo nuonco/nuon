@@ -10,15 +10,16 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-type PublicGitVCSSandboxConfigRequest struct {
+type PublicGitVCSConfigRequest struct {
 	Repo      string `validate:"required"`
 	Directory string `validate:"required"`
 	Branch    string `validate:"required"`
 }
 
-type ConnectedGithubVCSSandboxConfigRequest struct {
-	Repo      string `validate:"required"`
-	Directory string `validate:"required"`
+type ConnectedGithubVCSConfigRequest struct {
+	Repo       string `validate:"required"`
+	Directory  string `validate:"required"`
+	PathFilter string
 
 	Branch string `validate:"required_without=GitRef"`
 	GitRef string `validate:"required_without=Branch"`
@@ -37,18 +38,15 @@ func (b basicVCSConfigRequest) Validate() error {
 		}
 	}
 
-	if b.PublicGitVCSConfig == nil && b.ConnectedGithubVCSConfig == nil {
-		return stderr.ErrUser{
-			Err:         fmt.Errorf("one of public and connected github config set"),
-			Description: "one of connected github or public git configs must be set",
-			Code:        "vcs_config_required",
-		}
-	}
-
+	// VCS config is now optional - can be nil for both
 	return nil
 }
 
-func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, parentApp *app.App, vcsHelpers *vcshelpers.Helpers) (*app.ConnectedGithubVCSConfig, error) {
+func (b *basicVCSConfigRequest) connectedGithubVCSConfig(
+	ctx context.Context,
+	parentApp *app.App,
+	vcsHelpers *vcshelpers.Helpers,
+) (*app.ConnectedGithubVCSConfig, error) {
 	if b.ConnectedGithubVCSConfig == nil {
 		return nil, nil
 	}
@@ -69,11 +67,16 @@ func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, pa
 		RepoOwner:       owner,
 		Directory:       b.ConnectedGithubVCSConfig.Directory,
 		Branch:          b.ConnectedGithubVCSConfig.Branch,
+		PathFilter:      b.ConnectedGithubVCSConfig.PathFilter,
 		VCSConnectionID: vcsConnID,
 	}, nil
 }
 
-func (b *basicVCSConfigRequest) publicGitVCSConfig() (*app.PublicGitVCSConfig, error) {
+func (b *basicVCSConfigRequest) publicGitVCSConfig(
+	ctx context.Context,
+	parentApp *app.App,
+	vcsHelpers *vcshelpers.Helpers,
+) (*app.PublicGitVCSConfig, error) {
 	if b.PublicGitVCSConfig == nil {
 		return nil, nil
 	}

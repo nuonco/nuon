@@ -39,8 +39,8 @@ type App struct {
 	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org   `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	QueueID string `json:"queue_id,omitzero" gorm:"type:varchar(26)"`
-	Queue   Queue  `json:"-"`
+	QueueID *string `json:"queue_id,omitzero"`
+	Queue   Queue   `json:"-"`
 
 	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty,omitzero" temporaljson:"notifications_config,omitzero,omitempty"`
 	Repository          AppRepository       `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"repository,omitzero,omitempty"`

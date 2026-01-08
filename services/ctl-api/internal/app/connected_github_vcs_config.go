@@ -27,11 +27,12 @@ type ConnectedGithubVCSConfig struct {
 	ComponentConfigID   string `json:"component_config_id,omitzero" gorm:"notnull" temporaljson:"component_config_id,omitzero,omitempty"`
 	ComponentConfigType string `json:"component_config_type,omitzero" gorm:"notnull" temporaljson:"component_config_type,omitzero,omitempty"`
 
-	Repo      string `json:"repo,omitzero" gorm:"notnull" temporaljson:"repo,omitzero,omitempty"`
-	RepoName  string `json:"repo_name,omitzero" gorm:"notnull" temporaljson:"repo_name,omitzero,omitempty"`
-	RepoOwner string `json:"repo_owner,omitzero" gorm:"notnull" temporaljson:"repo_owner,omitzero,omitempty"`
-	Directory string `json:"directory,omitzero" gorm:"notnull" temporaljson:"directory,omitzero,omitempty"`
-	Branch    string `json:"branch,omitzero" gorm:"notnull" temporaljson:"branch,omitzero,omitempty"`
+	Repo       string `json:"repo,omitzero" gorm:"notnull" temporaljson:"repo,omitzero,omitempty"`
+	RepoName   string `json:"repo_name,omitzero" gorm:"notnull" temporaljson:"repo_name,omitzero,omitempty"`
+	RepoOwner  string `json:"repo_owner,omitzero" gorm:"notnull" temporaljson:"repo_owner,omitzero,omitempty"`
+	Directory  string `json:"directory,omitzero" gorm:"notnull" temporaljson:"directory,omitzero,omitempty"`
+	Branch     string `json:"branch,omitzero" gorm:"notnull" temporaljson:"branch,omitzero,omitempty"`
+	PathFilter string `json:"path_filter,omitzero" temporaljson:"path_filter,omitzero,omitempty"`
 
 	VCSConnectionID string        `json:"vcs_connection_id,omitzero" gorm:"notnull" temporaljson:"vcs_connection_id,omitzero,omitempty"`
 	VCSConnection   VCSConnection `json:"vcs_connection,omitzero,omitempty" temporaljson:"vcs_connection,omitzero,omitempty"`

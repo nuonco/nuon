@@ -8,18 +8,30 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateAppBranchRequest struct {
-	Name                       string `json:"name" validate:"required,min=1"`
-	ConnectedGithubVCSConfigID string `json:"connected_github_vcs_config_id" validate:"required"`
+	basicVCSConfigRequest
+	Name string `json:"name" validate:"required,min=1"`
 }
 
 func (c *CreateAppBranchRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
-		return validatorPkg.FormatValidationError(err)
+		return err
+	}
+
+	if err := c.basicVCSConfigRequest.Validate(); err != nil {
+		return err
+	}
+
+	// App branches only support connected GitHub repos, not public repos (if VCS config is provided)
+	if c.PublicGitVCSConfig != nil {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("public git repos not supported for app branches"),
+			Description: "App branches only support connected GitHub repositories. Please use a connected_github_vcs_config or omit VCS config entirely.",
+		}
 	}
 
 	return nil
@@ -48,9 +60,14 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Feature flag check
+	// Feature flag checks
 	if !org.Features[string(app.OrgFeatureAppBranches)] {
 		ctx.Error(fmt.Errorf("app branches feature not enabled for this organization"))
+		return
+	}
+
+	if !org.Features[string(app.OrgFeatureQueues)] {
+		ctx.Error(fmt.Errorf("queues feature not enabled for this organization"))
 		return
 	}
 
@@ -66,11 +83,43 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	branch, err := s.helpers.CreateAppBranch(ctx, org.ID, appID, req.Name, req.ConnectedGithubVCSConfigID)
+	// Load app with org and VCS connections for lookup
+	parentApp, err := s.getAppWithOrg(ctx, appID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app: %w", err))
+		return
+	}
+
+	// Create VCS config using shared helpers
+	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(ctx, parentApp, s.vcsHelpers)
+	if err != nil {
+		ctx.Error(fmt.Errorf("invalid connected github vcs config: %w", err))
+		return
+	}
+
+	publicGitVCSConfig, err := req.publicGitVCSConfig(ctx, parentApp, s.vcsHelpers)
+	if err != nil {
+		ctx.Error(fmt.Errorf("invalid public git vcs config: %w", err))
+		return
+	}
+
+	branch, err := s.helpers.CreateAppBranch(ctx, appID, req.Name, connectedGithubVCSConfig, publicGitVCSConfig)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, branch)
+}
+
+func (s *service) getAppWithOrg(ctx *gin.Context, appID string) (*app.App, error) {
+	var parentApp app.App
+	res := s.db.WithContext(ctx).
+		Preload("Org").
+		Preload("Org.VCSConnections").
+		First(&parentApp, "id = ?", appID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+	return &parentApp, nil
 }

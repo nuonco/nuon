@@ -144,7 +144,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to create connected github vcs config: %w", err)
 	}
 
-	publicGitConfig, err := req.publicGitVCSConfig()
+	publicGitConfig, err := req.publicGitVCSConfig(ctx, &parentApp, s.vcsHelpers)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get public git config: %w", err)
 	}
