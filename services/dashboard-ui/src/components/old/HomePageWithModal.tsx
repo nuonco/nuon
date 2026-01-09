@@ -1,7 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/common/Button'
-import { Icon } from "@/components/common/Icon"
+import { Icon } from '@/components/common/Icon'
 import { LogoLight } from '@/components/common/Logo/LogoLight'
 import { LogoDark } from '@/components/common/Logo/LogoDark'
 import { Text } from '@/components/common/Text'
@@ -15,11 +15,10 @@ interface HomePageWithModalProps {
 export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
   showModal,
 }) => {
-  const authUrl = USE_AUTH_SERVICE 
+  const authUrl = USE_AUTH_SERVICE
     ? `${AUTH_SERVICE_URL}/?url=${APP_URL}`
     : '/api/auth/login?returnTo=/'
 
-  console.log('on the server?')
   return (
     <div className="flex h-screen w-full">
       {/* Left Side */}

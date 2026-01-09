@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CloudCheckIcon, CloudArrowUpIcon } from '@phosphor-icons/react'
 import { deployComponent } from '@/actions/installs/deploy-component'
 import { Button, type TButtonVariant } from '@/components/old/Button'
@@ -36,7 +36,7 @@ export const InstallDeployBuildModal: FC<{
   initDeployDeps = false,
 }) => {
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { install } = useInstall()
 

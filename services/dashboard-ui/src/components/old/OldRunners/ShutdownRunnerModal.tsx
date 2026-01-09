@@ -3,7 +3,7 @@
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CheckIcon, ArrowClockwiseIcon } from '@phosphor-icons/react'
 import { shutdownRunner } from '@/actions/runners/shutdown-runner'
 import { Button } from '@/components/old/Button'
@@ -22,7 +22,7 @@ interface IShutdownRunnerModal {
 
 export const ShutdownRunnerModal: FC<IShutdownRunnerModal> = ({ runnerId }) => {
   const path = usePathname()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
   const [isKickedOff, setIsKickedOff] = useState(false)

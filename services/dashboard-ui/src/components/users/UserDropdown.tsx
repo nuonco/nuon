@@ -1,6 +1,6 @@
 'use client'
 
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { AdminPanel } from '@/components/admin/AdminPanel'
 import { Button } from '@/components/common/Button'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
@@ -22,7 +22,7 @@ export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {}
 
 export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
-  const { user } = useUser()
+  const { isAdmin, useAuthService } = useAuth()
   const { addPanel } = useSurfaces()
   const { openOnboarding } = useUserJourney() || {}
 
@@ -55,7 +55,7 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
         {/* <Link href="/settings">
             Report bug <Icon variant="Bug" />
             </Link> */}
-        {user?.email?.endsWith('@nuon.co') ? (
+        {isAdmin ? (
           <Button
             onClick={() => {
               addPanel(<AdminPanel />)
@@ -66,7 +66,7 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
         ) : null}
         <hr />
         <Link
-          href="/api/auth/logout"
+          href={useAuthService ? "/auth/logout" : "/api/auth/logout"}
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
           isExternal

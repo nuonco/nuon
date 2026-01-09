@@ -1,8 +1,8 @@
 'use server'
 
-import { auth0 } from '@/lib/auth'
+import { getAccessToken } from '@/lib/auth-server'
 
 export async function getToken() {
-  const result = await auth0.getAccessToken()
+  const result = await getAccessToken()
   return { status: 200, result }
 }

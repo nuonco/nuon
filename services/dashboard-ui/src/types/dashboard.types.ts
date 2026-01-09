@@ -276,3 +276,12 @@ export type TNuonVersion = {
 }
 
 export type TAPIHealth = { status: 'ok' | 'degraded'; degraded: string[] }
+
+// User interface for authentication
+export interface IUser {
+  email?: string
+  name?: string
+  picture?: string
+  sub?: string
+  [key: string]: any
+}

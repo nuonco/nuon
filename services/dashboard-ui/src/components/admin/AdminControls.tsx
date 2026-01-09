@@ -1,13 +1,13 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { AdminOrgSection } from './sections/AdminOrgSection'
 import { AdminAppSection } from './sections/AdminAppSection'
 import { AdminInstallSection } from './sections/AdminInstallSection'
 
 export const AdminControls = () => {
-  const { user } = useUser()
+  const { user } = useAuth()
   const params = useParams()
   
   // Only show to Nuon employees

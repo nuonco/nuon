@@ -6,8 +6,10 @@ export default async function middleware(request: NextRequest) {
   const { pathname } = new URL(request.url)
 
   if (USE_AUTH_SERVICE) {
+    // eslint-disable-next-line no-console
     console.log('using nuon auth service')
   } else {
+    // eslint-disable-next-line no-console
     console.log('using Auth0')
 
     const authResponse = await auth0.middleware(request)

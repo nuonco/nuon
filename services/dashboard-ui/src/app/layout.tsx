@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
 import { API_URL } from '@/configs/api'
+import { USE_AUTH_SERVICE } from '@/configs/auth'
 import { InitDatadogLogs } from '@/lib/datadog-logs'
 import { InitDatadogRUM } from '@/lib/datadog-rum'
 import {
@@ -11,6 +12,7 @@ import {
   SegmentAnalyticsIdentify,
 } from '@/lib/segment-analytics'
 import { AccountProvider } from '@/providers/account-provider'
+import { AuthProvider } from '@/providers/auth-provider'
 import { UserJourneyProvider } from '@/providers/user-journey-provider'
 import './old-styles.css'
 import './globals.css'
@@ -71,9 +73,11 @@ export default async function RootLayout({
             tfBackendUrl={API_URL}
           />
 
-          <AccountProvider shouldPoll>
-            <UserJourneyProvider>{children}</UserJourneyProvider>
-          </AccountProvider>
+          <AuthProvider useAuthService={USE_AUTH_SERVICE}>
+            <AccountProvider shouldPoll>
+              <UserJourneyProvider>{children}</UserJourneyProvider>
+            </AccountProvider>
+          </AuthProvider>
           {process.env.SEGMENT_WRITE_KEY && (
             <Suspense>
               <InitSegmentAnalytics writeKey={process.env.SEGMENT_WRITE_KEY} />
