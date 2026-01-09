@@ -10,6 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type ProviderType string
@@ -24,9 +26,14 @@ type IdentityProvider struct {
 	ID        string                `gorm:"primarykey" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_identity_provider_deleted,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_provider_type,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	ProviderType ProviderType `json:"provider_type,omitzero" gorm:"not null" temporaljson:"provider_type,omitzero,omitempty"`
+	// OrgID can be nil for global providers available to all orgs in the deployment.
+	// If set, the provider is only available to users in that specific org.
+	OrgID *string `json:"org_id,omitempty" gorm:"index:idx_provider_type,unique" temporaljson:"org_id,omitzero,omitempty"`
+	Org   *Org    `faker:"-" json:"-" gorm:"constraint:OnDelete:SET NULL" temporaljson:"org,omitzero,omitempty"`
+
+	ProviderType ProviderType `json:"provider_type,omitzero" gorm:"not null,index:idx_provider_type,unique" temporaljson:"provider_type,omitzero,omitempty"`
 	Enabled      bool         `json:"enabled" gorm:"default:false" temporaljson:"enabled,omitempty"`
 
 	// Config holds provider-specific configuration as JSON.
@@ -43,6 +50,17 @@ func (a *IdentityProvider) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (a *IdentityProvider) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &IdentityProvider{}, "org_id"),
+			Columns: []string{
+				"org_id",
+			},
+		},
+	}
 }
 
 // ValidateConfig validates the Config field based on ProviderType.

@@ -74,6 +74,15 @@ For these examples, assume the BYOC Nuon is deployed with the following ROOT_DOM
 | nuon_auth_client_secret | `[secret]`              |
 | nuon_auth_redirect_url  | `auth.byoc.org.co/auth` |
 
+### in-database configs
+
+If additional IdPs must be created, we need to add to the `identity_providers` table. At the time of writing, only
+install-wide configs are supported. This means any providers added this way will be available to all users of the
+install. As such, these are created via and admin api endpoint.
+
+Future: in the future we'll add support for org-specific IdPs. At that point, an org-specific endpont on the public api
+may be added.
+
 ### Loading Order
 
 The default provider is required for startup. this default provider is composed from the provider configs loaded from
@@ -173,6 +182,9 @@ Split up the service fx providers into discrete sets.
 
 - Changing an env-var provider to a different provider of the same type is likely to cause issues. At this time, this is
   not supported.
+- Changing the provider, site-wide or for an org, of a given type to a different provider of the same type will cause
+  issues. At this point, this is unsupported until we develop a story for handling changes in `sub`. Theoretically,
+  email is enough to preserve the connectio to the account.
 
 ### Agents
 

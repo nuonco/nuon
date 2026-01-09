@@ -16,6 +16,7 @@ func AllModels() []any {
 		&app.AccountRole{},
 		&app.Token{},
 		&app.Policy{},
+		&app.IdentityProvider{},
 
 		&app.NotificationsConfig{},
 
