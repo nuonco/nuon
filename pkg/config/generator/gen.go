@@ -117,11 +117,10 @@ func (g *ConfigGen) Gen(path string, c *ConfigStructure) error {
 	return nil
 }
 
-// todo: fix the folder permissions, should not be 777
 func (g *ConfigGen) WriteConfigToDisk(c *ConfigStructure) error {
 	if _, err := os.Stat(c.Name); err != nil && os.IsNotExist(err) {
 		// create config directory if it doesn't exist
-		if err := os.Mkdir(c.Name, 0o777); err != nil {
+		if err := os.Mkdir(c.Name, 0o755); err != nil {
 			return errors.Wrapf(err, "unable to create app config directory for path: %s", c.Name)
 		}
 	}
@@ -129,7 +128,7 @@ func (g *ConfigGen) WriteConfigToDisk(c *ConfigStructure) error {
 	for _, f := range c.Configs {
 		fp := filepath.Join(c.Name)
 		fp = filepath.Join(fp, f.Name)
-		if err := os.WriteFile(fp, []byte(strings.TrimSpace(f.TomlEncoded)), 0o777); err != nil {
+		if err := os.WriteFile(fp, []byte(strings.TrimSpace(f.TomlEncoded)), 0o644); err != nil {
 			return errors.Wrapf(err, "failed to write schema file %s", fp)
 		}
 	}
@@ -138,14 +137,14 @@ func (g *ConfigGen) WriteConfigToDisk(c *ConfigStructure) error {
 		dp := filepath.Join(c.Name)
 		dp = filepath.Join(dp, d.Name)
 
-		if err := os.Mkdir(dp, 0o777); err != nil && !os.IsExist(err) {
+		if err := os.Mkdir(dp, 0o755); err != nil && !os.IsExist(err) {
 			return errors.Wrapf(err, "unable to create app config sub-dirctory for path: %s", dp)
 		}
 
 		for _, f := range d.Configs {
 			fp := filepath.Join(dp, f.Name)
 
-			if err := os.WriteFile(fp, []byte(strings.TrimSpace(f.TomlEncoded)), 0o777); err != nil {
+			if err := os.WriteFile(fp, []byte(strings.TrimSpace(f.TomlEncoded)), 0o644); err != nil {
 				return errors.Wrapf(err, "failed to write schema file : %s", fp)
 			}
 		}
