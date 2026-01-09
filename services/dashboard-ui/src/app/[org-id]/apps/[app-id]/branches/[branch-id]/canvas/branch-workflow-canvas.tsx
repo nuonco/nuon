@@ -245,7 +245,8 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
       id: 'stage-4',
       name: 'Update Installs',
       description: 'Deploy updated components to affected installs in parallel',
-      status: 'pending',
+      status: 'running',
+      startedAt: new Date(Date.now() - 120000).toISOString(),
       metadata: {
         installsAffected: 4,
       },
@@ -253,24 +254,28 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
         {
           id: 'step-4-1',
           name: 'Identify affected installs',
-          status: 'pending',
+          status: 'completed',
+          executionTime: 2000000000,
         },
       ],
       parallelInstalls: [
         {
           id: 'install-1',
           installName: 'Production Install',
-          status: 'pending',
+          status: 'running',
+          startedAt: new Date(Date.now() - 90000).toISOString(),
           steps: [
             {
               id: 'install-1-step-1',
               name: 'Generate deployment plan',
-              status: 'pending',
+              status: 'completed',
+              executionTime: 5000000000,
             },
             {
               id: 'install-1-step-2',
               name: 'Apply plan to cluster',
-              status: 'pending',
+              status: 'running',
+              message: 'Applying Kubernetes manifests...',
             },
             {
               id: 'install-1-step-3',
@@ -282,39 +287,48 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
         {
           id: 'install-2',
           installName: 'Staging Install',
-          status: 'pending',
+          status: 'completed',
+          startedAt: new Date(Date.now() - 90000).toISOString(),
+          completedAt: new Date(Date.now() - 30000).toISOString(),
+          executionTime: 60000000000,
           steps: [
             {
               id: 'install-2-step-1',
               name: 'Generate deployment plan',
-              status: 'pending',
+              status: 'completed',
+              executionTime: 4000000000,
             },
             {
               id: 'install-2-step-2',
               name: 'Apply plan to cluster',
-              status: 'pending',
+              status: 'completed',
+              executionTime: 45000000000,
             },
             {
               id: 'install-2-step-3',
               name: 'Verify deployment health',
-              status: 'pending',
+              status: 'completed',
+              executionTime: 11000000000,
             },
           ],
         },
         {
           id: 'install-3',
           installName: 'Dev Install',
-          status: 'pending',
+          status: 'running',
+          startedAt: new Date(Date.now() - 60000).toISOString(),
           steps: [
             {
               id: 'install-3-step-1',
               name: 'Generate deployment plan',
-              status: 'pending',
+              status: 'completed',
+              executionTime: 3000000000,
             },
             {
               id: 'install-3-step-2',
               name: 'Apply plan to cluster',
-              status: 'pending',
+              status: 'running',
+              message: 'Waiting for pods to be ready...',
             },
             {
               id: 'install-3-step-3',
@@ -366,40 +380,39 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
         {
           id: 'install-5',
           installName: 'Customer A Install',
-          status: 'completed',
+          status: 'pending',
           steps: [
             {
               id: 'install-5-step-1',
               name: 'Generate deployment plan',
-              status: 'completed',
+              status: 'pending',
             },
             {
               id: 'install-5-step-2',
               name: 'Apply plan to cluster',
-              status: 'completed',
+              status: 'pending',
             },
             {
               id: 'install-5-step-3',
               name: 'Verify deployment health',
-              status: 'completed',
+              status: 'pending',
             },
           ],
         },
         {
           id: 'install-6',
           installName: 'Customer B Install',
-          status: 'failed',
+          status: 'pending',
           steps: [
             {
               id: 'install-6-step-1',
               name: 'Generate deployment plan',
-              status: 'completed',
+              status: 'pending',
             },
             {
               id: 'install-6-step-2',
               name: 'Apply plan to cluster',
-              status: 'failed',
-              error: 'Connection timeout to cluster',
+              status: 'pending',
             },
             {
               id: 'install-6-step-3',
@@ -411,39 +424,39 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
         {
           id: 'install-7',
           installName: 'Customer C Install',
-          status: 'completed',
+          status: 'pending',
           steps: [
             {
               id: 'install-7-step-1',
               name: 'Generate deployment plan',
-              status: 'completed',
+              status: 'pending',
             },
             {
               id: 'install-7-step-2',
               name: 'Apply plan to cluster',
-              status: 'completed',
+              status: 'pending',
             },
             {
               id: 'install-7-step-3',
               name: 'Verify deployment health',
-              status: 'completed',
+              status: 'pending',
             },
           ],
         },
         {
           id: 'install-8',
           installName: 'Customer D Install',
-          status: 'running',
+          status: 'pending',
           steps: [
             {
               id: 'install-8-step-1',
               name: 'Generate deployment plan',
-              status: 'completed',
+              status: 'pending',
             },
             {
               id: 'install-8-step-2',
               name: 'Apply plan to cluster',
-              status: 'running',
+              status: 'pending',
             },
             {
               id: 'install-8-step-3',
@@ -749,40 +762,48 @@ const WorkflowStageCard = ({
     const hiddenCount = stage.parallelInstalls!.length - COLLAPSE_THRESHOLD
 
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="relative flex flex-col gap-0.5">
         {visibleInstalls.map((install, idx) => {
           const status = install.status
+          // Create stacking effect with increasing offset and shadow depth
+          const stackOffset = idx * 4 // 4px stagger per card
+          const shadowIntensity = idx + 1 // Increasing shadow depth
           
           return (
             <button
               key={install.id}
               onClick={onClick}
+              style={{
+                marginLeft: `${stackOffset}px`,
+                zIndex: visibleInstalls.length - idx, // Front cards have higher z-index
+              }}
               className={cn(
-                'relative flex items-center gap-3 px-4 py-2',
-                'min-w-[280px] rounded border-2 transition-all duration-200',
+                'relative flex items-center gap-3 px-4 py-2.5',
+                'min-w-[280px] rounded-md border-2 transition-all duration-300',
                 'cursor-pointer select-none',
                 'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-                'hover:shadow-md',
+                // Enhanced hover with lift effect
+                'hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02]',
                 {
-                  // Completed state
-                  'border-green-400 bg-green-50 dark:bg-green-950/30':
+                  // Completed state with layered shadows
+                  'border-green-400 bg-green-50 dark:bg-green-950/30 shadow-md':
                     status === 'completed' && !isSelected,
-                  'border-green-500 bg-green-100 dark:bg-green-900/40 shadow-lg ring-2 ring-green-500':
+                  'border-green-500 bg-green-100 dark:bg-green-900/40 shadow-2xl ring-2 ring-green-500':
                     status === 'completed' && isSelected,
-                  // Running state
-                  'border-blue-400 bg-blue-50 dark:bg-blue-950/30':
+                  // Running state with layered shadows
+                  'border-blue-400 bg-blue-50 dark:bg-blue-950/30 shadow-md':
                     status === 'running' && !isSelected,
-                  'border-blue-500 bg-blue-100 dark:bg-blue-900/40 shadow-lg ring-2 ring-blue-500':
+                  'border-blue-500 bg-blue-100 dark:bg-blue-900/40 shadow-2xl ring-2 ring-blue-500':
                     status === 'running' && isSelected,
-                  // Failed state
-                  'border-red-400 bg-red-50 dark:bg-red-950/30':
+                  // Failed state with layered shadows
+                  'border-red-400 bg-red-50 dark:bg-red-950/30 shadow-md':
                     status === 'failed' && !isSelected,
-                  'border-red-500 bg-red-100 dark:bg-red-900/40 shadow-lg ring-2 ring-red-500':
+                  'border-red-500 bg-red-100 dark:bg-red-900/40 shadow-2xl ring-2 ring-red-500':
                     status === 'failed' && isSelected,
-                  // Pending state
-                  'border-cool-grey-300 bg-cool-grey-50 dark:bg-dark-grey-800/50':
+                  // Pending state with layered shadows
+                  'border-cool-grey-300 bg-cool-grey-50 dark:bg-dark-grey-800/50 shadow-sm':
                     status === 'pending' && !isSelected,
-                  'border-cool-grey-400 bg-cool-grey-100 dark:bg-dark-grey-700/60 shadow-lg ring-2 ring-cool-grey-400':
+                  'border-cool-grey-400 bg-cool-grey-100 dark:bg-dark-grey-700/60 shadow-xl ring-2 ring-cool-grey-400':
                     status === 'pending' && isSelected,
                 }
               )}
@@ -838,22 +859,30 @@ const WorkflowStageCard = ({
               e.stopPropagation()
               onToggleExpand?.()
             }}
+            style={{
+              marginLeft: `${visibleInstalls.length * 4}px`,
+            }}
             className={cn(
-              'flex items-center justify-center gap-2 px-4 py-2',
-              'min-w-[280px] rounded border-2 transition-all duration-200',
+              'flex items-center justify-center gap-2 px-4 py-2.5',
+              'min-w-[280px] rounded-md border-2 transition-all duration-300',
               'cursor-pointer select-none',
               'border-cool-grey-300 bg-cool-grey-100 hover:bg-cool-grey-200',
               'dark:border-dark-grey-600 dark:bg-dark-grey-700 dark:hover:bg-dark-grey-600',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+              'hover:shadow-md hover:-translate-y-0.5',
+              'active:scale-95'
             )}
           >
             <Icon
               variant={isExpanded ? 'chevron-up' : 'chevron-down'}
               size={16}
-              className="text-cool-grey-600 dark:text-cool-grey-400"
+              className={cn(
+                'text-cool-grey-600 dark:text-cool-grey-400 transition-transform duration-300',
+                isExpanded && 'rotate-180'
+              )}
             />
             <Text variant="subtext" weight="normal" className="text-cool-grey-700 dark:text-cool-grey-300">
-              {isExpanded ? 'Collapse' : `+${hiddenCount} more`}
+              {isExpanded ? 'Show Less' : `Show ${hiddenCount} More`}
             </Text>
           </button>
         )}
@@ -1478,70 +1507,229 @@ const StageDetailSection = ({
   )
 }
 
-// Draggable canvas component
+// Zoom controls component
+const ZoomControls = ({
+  zoom,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
+}: {
+  zoom: number
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onZoomReset: () => void
+}) => {
+  return (
+    <div className="absolute top-4 right-4 z-10 flex flex-col items-center gap-0.5 bg-white dark:bg-dark-grey-800 rounded-lg border border-cool-grey-200 dark:border-dark-grey-600 shadow-lg p-1">
+      {/* Zoom level display - at the top */}
+      <div className="px-2 py-1 text-center min-w-[44px]">
+        <Text variant="caption" weight="strong" className="text-cool-grey-600 dark:text-cool-grey-400 tabular-nums text-xs">
+          {Math.round(zoom * 100)}%
+        </Text>
+      </div>
+      
+      {/* Zoom in button */}
+      <button
+        onClick={onZoomIn}
+        disabled={zoom >= 2}
+        title="Zoom In (Ctrl/Cmd + Scroll Up)"
+        className={cn(
+          'w-7 h-7 flex items-center justify-center rounded transition-all duration-150',
+          'bg-cool-grey-100 dark:bg-dark-grey-700',
+          'hover:bg-blue-100 dark:hover:bg-blue-900/40 hover:text-blue-600 dark:hover:text-blue-400',
+          'active:scale-95 active:bg-blue-200 dark:active:bg-blue-900/60',
+          'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-cool-grey-100 dark:disabled:hover:bg-dark-grey-700',
+          'text-cool-grey-700 dark:text-cool-grey-300',
+          'border border-cool-grey-200 dark:border-dark-grey-600'
+        )}
+      >
+        <Icon variant="Plus" size={14} />
+      </button>
+      
+      {/* Zoom out button */}
+      <button
+        onClick={onZoomOut}
+        disabled={zoom <= 0.5}
+        title="Zoom Out (Ctrl/Cmd + Scroll Down)"
+        className={cn(
+          'w-7 h-7 flex items-center justify-center rounded transition-all duration-150',
+          'bg-cool-grey-100 dark:bg-dark-grey-700',
+          'hover:bg-blue-100 dark:hover:bg-blue-900/40 hover:text-blue-600 dark:hover:text-blue-400',
+          'active:scale-95 active:bg-blue-200 dark:active:bg-blue-900/60',
+          'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-cool-grey-100 dark:disabled:hover:bg-dark-grey-700',
+          'text-cool-grey-700 dark:text-cool-grey-300',
+          'border border-cool-grey-200 dark:border-dark-grey-600'
+        )}
+      >
+        <Icon variant="Minus" size={14} />
+      </button>
+      
+      {/* Divider */}
+      <div className="w-5 h-px bg-cool-grey-200 dark:bg-dark-grey-600 my-0.5" />
+      
+      {/* Reset zoom button - resets to 100% */}
+      <button
+        onClick={onZoomReset}
+        title="Reset to 100%"
+        className={cn(
+          'w-7 h-7 flex items-center justify-center rounded transition-all duration-150',
+          'bg-cool-grey-100 dark:bg-dark-grey-700',
+          'hover:bg-blue-100 dark:hover:bg-blue-900/40 hover:text-blue-600 dark:hover:text-blue-400',
+          'active:scale-95 active:bg-blue-200 dark:active:bg-blue-900/60',
+          'text-cool-grey-700 dark:text-cool-grey-300',
+          'border border-cool-grey-200 dark:border-dark-grey-600'
+        )}
+      >
+        <Icon variant="ArrowsInSimple" size={14} />
+      </button>
+    </div>
+  )
+}
+
+// Draggable canvas component with zoom (no momentum)
 const DraggableCanvas = ({
   children,
+  zoom,
+  onZoomChange,
 }: {
   children: React.ReactNode
+  zoom: number
+  onZoomChange: (newZoom: number) => void
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
+  
+  // All drag state in refs for synchronous access
+  const dragStateRef = useRef({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+    hasMoved: false,
+  })
+  
+  // Visual state for cursor
+  const [isDraggingVisual, setIsDraggingVisual] = useState(false)
+  
+  // Use refs for zoom to avoid stale closures in wheel handler
+  const zoomRef = useRef(zoom)
+  const onZoomChangeRef = useRef(onZoomChange)
+  
+  // Keep refs in sync with props
+  useEffect(() => {
+    zoomRef.current = zoom
+    onZoomChangeRef.current = onZoomChange
+  }, [zoom, onZoomChange])
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!containerRef.current) return
-    setIsDragging(true)
-    setStartX(e.pageX - containerRef.current.offsetLeft)
-    setScrollLeft(containerRef.current.scrollLeft)
-  }
+  // Use native event listeners for reliable drag handling
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
 
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
+    const handleMouseDown = (e: MouseEvent) => {
+      // Always start drag on mousedown in the container
+      dragStateRef.current = {
+        isDragging: true,
+        startX: e.pageX - container.offsetLeft,
+        startY: e.pageY - container.offsetTop,
+        scrollLeft: container.scrollLeft,
+        scrollTop: container.scrollTop,
+        hasMoved: false,
+      }
+      setIsDraggingVisual(true)
+    }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !containerRef.current) return
-    e.preventDefault()
-    const x = e.pageX - containerRef.current.offsetLeft
-    const walk = (x - startX) * 1.5 // Scroll speed multiplier
-    containerRef.current.scrollLeft = scrollLeft - walk
-  }
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragStateRef.current.isDragging) return
+      
+      e.preventDefault()
+      
+      const x = e.pageX - container.offsetLeft
+      const y = e.pageY - container.offsetTop
+      const deltaX = x - dragStateRef.current.startX
+      const deltaY = y - dragStateRef.current.startY
+      
+      // Mark as moved if we've dragged more than 3 pixels
+      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+        dragStateRef.current.hasMoved = true
+      }
+      
+      // Apply drag with zoom-adjusted sensitivity
+      const walkX = deltaX * 1.5
+      const walkY = deltaY * 1.5
+      container.scrollLeft = dragStateRef.current.scrollLeft - walkX
+      container.scrollTop = dragStateRef.current.scrollTop - walkY
+    }
 
-  const handleMouseLeave = () => {
-    setIsDragging(false)
-  }
+    const handleMouseUp = () => {
+      dragStateRef.current.isDragging = false
+      setIsDraggingVisual(false)
+    }
+
+    const handleMouseLeave = () => {
+      if (dragStateRef.current.isDragging) {
+        dragStateRef.current.isDragging = false
+        setIsDraggingVisual(false)
+      }
+    }
+
+    // Wheel handler for zoom
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1
+        const newZoom = Math.max(0.5, Math.min(2, zoomRef.current + zoomDelta))
+        onZoomChangeRef.current(newZoom)
+      }
+    }
+
+    // Add event listeners
+    container.addEventListener('mousedown', handleMouseDown)
+    container.addEventListener('mousemove', handleMouseMove)
+    container.addEventListener('mouseup', handleMouseUp)
+    container.addEventListener('mouseleave', handleMouseLeave)
+    container.addEventListener('wheel', handleWheel, { passive: false })
+
+    // Cleanup
+    return () => {
+      container.removeEventListener('mousedown', handleMouseDown)
+      container.removeEventListener('mousemove', handleMouseMove)
+      container.removeEventListener('mouseup', handleMouseUp)
+      container.removeEventListener('mouseleave', handleMouseLeave)
+      container.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
 
   // Center the canvas on mount
   useEffect(() => {
     if (containerRef.current && contentRef.current) {
       const containerWidth = containerRef.current.offsetWidth
+      const containerHeight = containerRef.current.offsetHeight
       const contentWidth = contentRef.current.offsetWidth
-      const centerPosition = (contentWidth - containerWidth) / 2
-      containerRef.current.scrollLeft = Math.max(0, centerPosition)
+      const contentHeight = contentRef.current.offsetHeight
+      const centerPositionX = (contentWidth - containerWidth) / 2
+      const centerPositionY = (contentHeight - containerHeight) / 2
+      containerRef.current.scrollLeft = Math.max(0, centerPositionX)
+      containerRef.current.scrollTop = Math.max(0, centerPositionY)
     }
   }, [])
 
   return (
     <div
       ref={containerRef}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       className={cn(
-        'relative overflow-x-auto overflow-y-hidden',
+        'relative overflow-auto select-none', // overflow-auto is REQUIRED for drag-to-scroll functionality
         'bg-cool-grey-50 dark:bg-dark-grey-900 rounded-lg border-2 border-cool-grey-200 dark:border-dark-grey-700',
-        'py-12 px-8',
+        'h-[calc(100vh-450px)] min-h-[400px] w-1/2', // Viewport-based height with minimum, 50% width
         {
-          'cursor-grabbing': isDragging,
-          'cursor-grab': !isDragging,
+          'cursor-grabbing': isDraggingVisual,
+          'cursor-grab': !isDraggingVisual,
         }
       )}
       style={{
-        scrollbarWidth: 'none', // Firefox
-        msOverflowStyle: 'none', // IE/Edge
+        scrollbarWidth: 'none', // Firefox - hide scrollbar but keep scroll functionality
+        msOverflowStyle: 'none', // IE/Edge - hide scrollbar but keep scroll functionality
       }}
     >
       {/* Hide scrollbar for Chrome/Safari */}
@@ -1551,21 +1739,43 @@ const DraggableCanvas = ({
         }
       `}</style>
 
-      <div ref={contentRef} className="inline-flex items-center gap-0 min-h-[180px]">
-        {children}
+      <div 
+        ref={contentRef} 
+        className="inline-flex items-center gap-0 min-h-full min-w-full transition-transform duration-200 origin-center pointer-events-none p-12"
+        style={{
+          transform: `scale(${zoom})`,
+          transformOrigin: 'center center',
+        }}
+      >
+        {/* Re-enable pointer events for children so clicks work */}
+        <div className="pointer-events-auto inline-flex items-center justify-center gap-0 min-h-full">
+          {children}
+        </div>
       </div>
 
-      {/* Drag hint */}
-      {!isDragging && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 bg-cool-grey-800/80 dark:bg-dark-grey-700/80 rounded-full backdrop-blur-sm">
-          <Icon
-            variant="arrows-alt-h"
-            size={14}
-            className="text-cool-grey-300 dark:text-dark-grey-300"
-          />
-          <Text variant="subtext" className="text-cool-grey-300 dark:text-dark-grey-300">
-            Drag to navigate pipeline
-          </Text>
+      {/* Drag and zoom hints */}
+      {!isDraggingVisual && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 pointer-events-none">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-cool-grey-800/80 dark:bg-dark-grey-700/80 rounded-full backdrop-blur-sm">
+            <Icon
+              variant="Hand"
+              size={14}
+              className="text-cool-grey-300 dark:text-dark-grey-300"
+            />
+            <Text variant="subtext" className="text-cool-grey-300 dark:text-dark-grey-300">
+              Drag to navigate
+            </Text>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-cool-grey-800/80 dark:bg-dark-grey-700/80 rounded-full backdrop-blur-sm">
+            <Icon
+              variant="MagnifyingGlassPlus"
+              size={14}
+              className="text-cool-grey-300 dark:text-dark-grey-300"
+            />
+            <Text variant="subtext" className="text-cool-grey-300 dark:text-dark-grey-300">
+              Ctrl/Cmd + Scroll to zoom
+            </Text>
+          </div>
         </div>
       )}
     </div>
@@ -1579,6 +1789,27 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
   const [selectedStep, setSelectedStep] = useState<IWorkflowStep | null>(null)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [expandedParallelStages, setExpandedParallelStages] = useState<Set<string>>(new Set())
+  const [zoom, setZoom] = useState(1)
+
+  const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2]
+
+  const handleZoomIn = () => {
+    const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom)
+    if (currentIndex < ZOOM_LEVELS.length - 1) {
+      setZoom(ZOOM_LEVELS[currentIndex + 1])
+    }
+  }
+
+  const handleZoomOut = () => {
+    const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom)
+    if (currentIndex > 0) {
+      setZoom(ZOOM_LEVELS[currentIndex - 1])
+    }
+  }
+
+  const handleZoomReset = () => {
+    setZoom(1)
+  }
 
   const handleToggleStep = (stepId: string) => {
     setExpandedSteps(prev => {
@@ -1624,7 +1855,7 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
       />
 
       {/* Canvas section header */}
-      <div>
+      <div className="w-full">
         <Text variant="h4" weight="strong">
           Workflow Pipeline
         </Text>
@@ -1633,49 +1864,59 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
         </Text>
       </div>
 
-      {/* Draggable canvas */}
-      <DraggableCanvas>
-        {stages.map((stage, index) => (
-          <div key={stage.id} className="flex items-center">
-            <WorkflowStageCard
-              stage={stage}
-              isSelected={selectedStage.id === stage.id}
-              onClick={() => setSelectedStage(stage)}
-              isExpanded={expandedParallelStages.has(stage.id)}
-              onToggleExpand={() => handleToggleParallelStage(stage.id)}
-            />
-            {index < stages.length - 1 && (
-              <StageConnector
-                isActive={
-                  stage.status === 'completed' ||
-                  (stage.status === 'running' &&
-                    stages[index + 1]?.status === 'pending')
-                }
+      {/* Draggable canvas with zoom controls - Fixed-size viewport container */}
+      <div className="relative w-full">
+        <ZoomControls
+          zoom={zoom}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onZoomReset={handleZoomReset}
+        />
+        <DraggableCanvas zoom={zoom} onZoomChange={setZoom}>
+          {stages.map((stage, index) => (
+            <div key={stage.id} className="flex items-center">
+              <WorkflowStageCard
+                stage={stage}
+                isSelected={selectedStage.id === stage.id}
+                onClick={() => setSelectedStage(stage)}
+                isExpanded={expandedParallelStages.has(stage.id)}
+                onToggleExpand={() => handleToggleParallelStage(stage.id)}
               />
-            )}
-          </div>
-        ))}
-      </DraggableCanvas>
+              {index < stages.length - 1 && (
+                <StageConnector
+                  isActive={
+                    stage.status === 'completed' ||
+                    (stage.status === 'running' &&
+                      stages[index + 1]?.status === 'pending')
+                  }
+                />
+              )}
+            </div>
+          ))}
+        </DraggableCanvas>
+      </div>
 
       {/* Detail section */}
       {selectedStage && (
-        <StageDetailSection 
-          stage={selectedStage}
-          expandedSteps={expandedSteps}
-          onToggleStep={handleToggleStep}
-          onOpenStepPanel={handleOpenStepPanel}
-        />
+        <div className="w-full">
+          <StageDetailSection 
+            stage={selectedStage}
+            expandedSteps={expandedSteps}
+            onToggleStep={handleToggleStep}
+            onOpenStepPanel={handleOpenStepPanel}
+          />
+        </div>
       )}
 
       {/* Mock data notice */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-400 dark:border-blue-500/40 rounded-md">
+      <div className="w-full max-w-full p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-400 dark:border-blue-500/40 rounded-md">
         <div className="flex items-start gap-3">
           <Icon
             variant="info"
             size={20}
             className="text-blue-600 dark:text-blue-400 mt-0.5"
           />
-          <div>
+          <div className="min-w-0 flex-1">
             <Text variant="base" weight="strong" theme="info">
               Mock Data Preview
             </Text>
