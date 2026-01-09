@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
@@ -35,11 +36,15 @@ export const metadata: Metadata = {
   description: 'Bring your own cloud with Nuon',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookiesList = await cookies()
+
+  console.log('auth cookie:', cookiesList.get('X-Nuon-Auth')?.value)
+
   return (
     <html
       className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 overflow-hidden"
