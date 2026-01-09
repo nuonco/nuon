@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/abiosoft/lineprefix"
 	"github.com/pkg/errors"
@@ -48,6 +49,11 @@ func (c *command) Exec(ctx context.Context) error {
 //nolint:gosec
 func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 	cmd := exec.CommandContext(ctx, c.Cmd, c.Args...)
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Cancel = func() error {
+		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	}
 
 	envVars := os.Environ()
 	for k, v := range c.Env {
