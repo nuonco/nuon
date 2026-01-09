@@ -14,6 +14,12 @@ import (
 func init() {
 	config.RegisterDefault("http_address", "0.0.0.0")
 
+	// ports
+	config.RegisterDefault("http_port", "8081")
+	config.RegisterDefault("internal_http_port", "8082")
+	config.RegisterDefault("runner_http_port", "8083")
+	config.RegisterDefault("auth_http_port", "8084")
+
 	// defaults for psql database
 	config.RegisterDefault("db_region", "us-west-2")
 	config.RegisterDefault("db_port", 5432)
@@ -77,12 +83,15 @@ type Config struct {
 	MetricsTags    []string `config:"metrics_tags"`
 	DisableMetrics bool     `config:"disable_metrics"`
 
-	ServiceName             string        `config:"service_name" validate:"required"`
-	ServiceType             string        `config:"service_type" validate:"required"`
-	ServiceDeployment       string        `config:"service_deployment"`
-	HTTPPort                string        `config:"http_port" validate:"required"`
-	InternalHTTPPort        string        `config:"internal_http_port" validate:"required"`
-	RunnerHTTPPort          string        `config:"runner_http_port" validate:"required"`
+	ServiceName       string `config:"service_name" validate:"required"`
+	ServiceType       string `config:"service_type" validate:"required"`
+	ServiceDeployment string `config:"service_deployment"`
+
+	HTTPPort         string `config:"http_port" validate:"required"`
+	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
+	RunnerHTTPPort   string `config:"runner_http_port" validate:"required"`
+	AuthHTTPPort     string `config:"auth_http_port" validate:"required"`
+
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
