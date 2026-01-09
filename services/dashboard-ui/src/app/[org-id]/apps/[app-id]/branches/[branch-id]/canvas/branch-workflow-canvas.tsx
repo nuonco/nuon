@@ -1931,31 +1931,6 @@ const DraggableCanvas = ({
         </div>
       </div>
 
-      {/* Drag and zoom hints */}
-      {!isDraggingVisual && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 pointer-events-none">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-cool-grey-800/80 dark:bg-dark-grey-700/80 rounded-full backdrop-blur-sm">
-            <Icon
-              variant="Hand"
-              size={14}
-              className="text-cool-grey-300 dark:text-dark-grey-300"
-            />
-            <Text variant="subtext" className="text-cool-grey-300 dark:text-dark-grey-300">
-              Drag to navigate
-            </Text>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-cool-grey-800/80 dark:bg-dark-grey-700/80 rounded-full backdrop-blur-sm">
-            <Icon
-              variant="MagnifyingGlassPlus"
-              size={14}
-              className="text-cool-grey-300 dark:text-dark-grey-300"
-            />
-            <Text variant="subtext" className="text-cool-grey-300 dark:text-dark-grey-300">
-              Ctrl/Cmd + Scroll to zoom
-            </Text>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -2024,7 +1999,7 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
   }
 
   return (
-    <div className="w-full flex flex-col gap-8">
+    <div className="w-full flex flex-col gap-8 overflow-x-hidden">
       {/* Side panel for step details */}
       <StepDetailSidePanel
         step={selectedStep}
@@ -2040,11 +2015,6 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
         <div>
           <Text variant="base" theme="neutral">
             6-stage deployment pipeline: Config → Detection → Build → Approval → Deploy (Batch 1) → Deploy (Batch 2)
-          </Text>
-        </div>
-        <div>
-          <Text variant="base" theme="neutral">
-            Drag the canvas to navigate. Click any stage to view details below. Click step arrows to view logs and details.
           </Text>
         </div>
       </div>
@@ -2079,6 +2049,13 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
             </div>
           ))}
         </DraggableCanvas>
+        
+        {/* Canvas navigation hints - below the canvas */}
+        <div className="flex items-center justify-center gap-4 mt-2">
+          <Text variant="subtext" theme="neutral" className="italic opacity-60">
+            Drag to navigate • Ctrl/Cmd + Scroll to zoom
+          </Text>
+        </div>
       </div>
 
       {/* Detail section */}
