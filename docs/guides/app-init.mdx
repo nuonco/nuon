@@ -54,13 +54,7 @@ nuon apps init --prebuild-template aws-eks
 
 This generates a complete configuration optimized for deploying containerized applications to AWS Elastic Kubernetes Service (EKS).
 
-### AWS ECS Template
-
-```bash
-nuon apps init --prebuild-template aws-ecs
-```
-
-This generates a configuration optimized for deploying containerized applications to AWS Elastic Container Service (ECS).
+Additional templates coming soon...
 
 ## Configuration Options
 
@@ -310,6 +304,10 @@ app-config/
 ├── components/           # Component definitions
 │   ├── component1.toml
 │   └── component2.toml
+├── permissions /           # Permission definitions
+│   ├── provision.toml
+│   └── deprovision.toml
+│   └── maintenance.toml
 └── actions/              # Action workflows
     ├── action1.toml
     └── action2.toml
