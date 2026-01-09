@@ -64,57 +64,98 @@ interface IBranchWorkflowCanvas {
 // Mock data generator with sub-steps
 const getMockWorkflowStages = (): IWorkflowStage[] => {
   return [
+    // Stage 1: Fetch and Build Config
     {
       id: 'stage-1',
-      name: 'Looking for Changed Components',
-      description: 'Analyze repository changes and identify modified components',
+      name: 'Fetch & Build Config',
+      description: 'Clone repository and build configuration files',
       status: 'completed',
-      startedAt: new Date(Date.now() - 600000).toISOString(),
-      completedAt: new Date(Date.now() - 580000).toISOString(),
-      executionTime: 20000000000,
+      startedAt: new Date(Date.now() - 700000).toISOString(),
+      completedAt: new Date(Date.now() - 675000).toISOString(),
+      executionTime: 25000000000,
       metadata: {
-        componentsChanged: 4,
+        commitHash: 'a3f8d92',
       },
       steps: [
         {
           id: 'step-1-1',
-          name: 'Compare with base branch',
-          status: 'completed',
-          executionTime: 5000000000,
-        },
-        {
-          id: 'step-1-2',
-          name: 'Analyze file changes',
+          name: 'Clone repository from Git',
           status: 'completed',
           executionTime: 8000000000,
-        },
-        {
-          id: 'step-1-3',
-          name: 'Identify affected components',
-          status: 'completed',
-          executionTime: 7000000000,
           substeps: [
             {
-              id: 'step-1-3-1',
-              name: 'Detected: image',
+              id: 'step-1-1-1',
+              name: 'Authenticate with Git provider',
               status: 'completed',
               executionTime: 2000000000,
             },
             {
-              id: 'step-1-3-2',
-              name: 'Detected: chart',
+              id: 'step-1-1-2',
+              name: 'Fetch refs and branches',
               status: 'completed',
-              executionTime: 2500000000,
+              executionTime: 3000000000,
+            },
+            {
+              id: 'step-1-1-3',
+              name: 'Checkout branch',
+              status: 'completed',
+              executionTime: 3000000000,
+            },
+          ],
+          logs: [
+            '2024-01-08 10:20:00 INFO Authenticating with GitHub',
+            '2024-01-08 10:20:02 INFO Fetching repository refs',
+            '2024-01-08 10:20:05 INFO Checking out branch: feature/new-deployment',
+            '2024-01-08 10:20:08 INFO Repository cloned successfully',
+          ],
+        },
+        {
+          id: 'step-1-2',
+          name: 'Load app configuration',
+          status: 'completed',
+          executionTime: 7000000000,
+          substeps: [
+            {
+              id: 'step-1-2-1',
+              name: 'Read nuon.yaml',
+              status: 'completed',
+              executionTime: 2000000000,
+            },
+            {
+              id: 'step-1-2-2',
+              name: 'Validate schema',
+              status: 'completed',
+              executionTime: 2000000000,
+            },
+            {
+              id: 'step-1-2-3',
+              name: 'Parse component definitions',
+              status: 'completed',
+              executionTime: 3000000000,
+            },
+          ],
+        },
+        {
+          id: 'step-1-3',
+          name: 'Build configuration artifacts',
+          status: 'completed',
+          executionTime: 10000000000,
+          substeps: [
+            {
+              id: 'step-1-3-1',
+              name: 'Template variables',
+              status: 'completed',
+              executionTime: 3000000000,
+            },
+            {
+              id: 'step-1-3-2',
+              name: 'Generate manifests',
+              status: 'completed',
+              executionTime: 5000000000,
             },
             {
               id: 'step-1-3-3',
-              name: 'Detected: database',
-              status: 'completed',
-              executionTime: 2500000000,
-            },
-            {
-              id: 'step-1-3-4',
-              name: 'Detected: bucket',
+              name: 'Validate outputs',
               status: 'completed',
               executionTime: 2000000000,
             },
@@ -122,68 +163,99 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
         },
       ],
     },
+    // Stage 2: Looking for Changed Components
     {
       id: 'stage-2',
-      name: 'Building Changed Components',
-      description: 'Build and push artifacts for modified components',
-      status: 'running',
-      startedAt: new Date(Date.now() - 580000).toISOString(),
+      name: 'Detect Changed Components',
+      description: 'Analyze repository changes and identify modified components',
+      status: 'completed',
+      startedAt: new Date(Date.now() - 675000).toISOString(),
+      completedAt: new Date(Date.now() - 655000).toISOString(),
+      executionTime: 20000000000,
       metadata: {
-        componentsChanged: 4,
+        componentsChanged: 3,
       },
       steps: [
         {
           id: 'step-2-1',
-          name: 'Building image',
+          name: 'Compare with base branch',
           status: 'completed',
-          executionTime: 45000000000,
-          substeps: [
-            {
-              id: 'step-2-1-1',
-              name: 'Create build context',
-              status: 'completed',
-              executionTime: 5000000000,
-            },
-            {
-              id: 'step-2-1-2',
-              name: 'Build Docker image',
-              status: 'completed',
-              executionTime: 35000000000,
-            },
-            {
-              id: 'step-2-1-3',
-              name: 'Push to registry',
-              status: 'completed',
-              executionTime: 5000000000,
-            },
-          ],
+          executionTime: 5000000000,
           logs: [
-            '2024-01-08 10:24:00 INFO Starting build for image component',
-            '2024-01-08 10:24:05 INFO Base image pulled: node:20-alpine',
-            '2024-01-08 10:24:10 INFO Building production bundle...',
-            '2024-01-08 10:24:45 INFO Build complete, pushing to registry',
+            '2024-01-08 10:21:00 INFO Comparing with base branch: main',
+            '2024-01-08 10:21:02 INFO Found 47 changed files',
           ],
         },
         {
           id: 'step-2-2',
-          name: 'Building chart',
+          name: 'Analyze file changes',
           status: 'completed',
-          executionTime: 30000000000,
+          executionTime: 8000000000,
+        },
+        {
+          id: 'step-2-3',
+          name: 'Identify affected components',
+          status: 'completed',
+          executionTime: 7000000000,
           substeps: [
             {
-              id: 'step-2-2-1',
+              id: 'step-2-3-1',
+              name: 'Detected: helm-chart',
+              status: 'completed',
+              executionTime: 2000000000,
+            },
+            {
+              id: 'step-2-3-2',
+              name: 'Detected: database',
+              status: 'completed',
+              executionTime: 2500000000,
+            },
+            {
+              id: 'step-2-3-3',
+              name: 'Detected: ui',
+              status: 'completed',
+              executionTime: 2500000000,
+            },
+          ],
+        },
+      ],
+    },
+    // Stage 3: Building Components (3 in parallel)
+    {
+      id: 'stage-3',
+      name: 'Build Components',
+      description: 'Build 3 components in parallel',
+      status: 'completed',
+      startedAt: new Date(Date.now() - 655000).toISOString(),
+      completedAt: new Date(Date.now() - 595000).toISOString(),
+      executionTime: 60000000000,
+      metadata: {
+        componentsChanged: 3,
+      },
+      steps: [],
+      parallelInstalls: [
+        {
+          id: 'build-helm-chart',
+          installName: 'helm-chart',
+          status: 'completed',
+          startedAt: new Date(Date.now() - 655000).toISOString(),
+          completedAt: new Date(Date.now() - 625000).toISOString(),
+          executionTime: 30000000000,
+          steps: [
+            {
+              id: 'step-3-1-1',
               name: 'Validate chart structure',
               status: 'completed',
               executionTime: 3000000000,
             },
             {
-              id: 'step-2-2-2',
+              id: 'step-3-1-2',
               name: 'Package Helm chart',
               status: 'completed',
               executionTime: 20000000000,
             },
             {
-              id: 'step-2-2-3',
+              id: 'step-3-1-3',
               name: 'Push chart to registry',
               status: 'completed',
               executionTime: 7000000000,
@@ -191,52 +263,409 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
           ],
         },
         {
-          id: 'step-2-3',
-          name: 'Building database',
-          status: 'running',
-          message: 'Applying migrations...',
-          substeps: [
+          id: 'build-database',
+          installName: 'database',
+          status: 'completed',
+          startedAt: new Date(Date.now() - 655000).toISOString(),
+          completedAt: new Date(Date.now() - 615000).toISOString(),
+          executionTime: 40000000000,
+          steps: [
             {
-              id: 'step-2-3-1',
+              id: 'step-3-2-1',
               name: 'Validate schema',
               status: 'completed',
               executionTime: 2000000000,
             },
             {
-              id: 'step-2-3-2',
+              id: 'step-3-2-2',
               name: 'Apply migrations',
-              status: 'running',
+              status: 'completed',
+              executionTime: 30000000000,
+              logs: [
+                '2024-01-08 10:23:00 INFO Starting build for database component',
+                '2024-01-08 10:23:01 INFO Validating database schema...',
+                '2024-01-08 10:23:02 INFO Applying migrations...',
+                '2024-01-08 10:23:32 INFO Migrations applied successfully',
+              ],
             },
             {
-              id: 'step-2-3-3',
+              id: 'step-3-2-3',
               name: 'Push migration artifacts',
-              status: 'pending',
+              status: 'completed',
+              executionTime: 8000000000,
             },
-          ],
-          logs: [
-            '2024-01-08 10:25:30 INFO Starting build for database component',
-            '2024-01-08 10:25:31 INFO Validating database schema...',
-            '2024-01-08 10:25:32 INFO Applying migrations...',
           ],
         },
         {
-          id: 'step-2-4',
-          name: 'Building bucket',
-          status: 'pending',
+          id: 'build-ui',
+          installName: 'ui',
+          status: 'completed',
+          startedAt: new Date(Date.now() - 655000).toISOString(),
+          completedAt: new Date(Date.now() - 595000).toISOString(),
+          executionTime: 60000000000,
+          steps: [
+            {
+              id: 'step-3-3-1',
+              name: 'Install dependencies',
+              status: 'completed',
+              executionTime: 15000000000,
+            },
+            {
+              id: 'step-3-3-2',
+              name: 'Build production bundle',
+              status: 'completed',
+              executionTime: 35000000000,
+              logs: [
+                '2024-01-08 10:23:00 INFO Installing npm dependencies',
+                '2024-01-08 10:23:15 INFO Building React production bundle',
+                '2024-01-08 10:23:50 INFO Bundle size: 2.4MB',
+              ],
+            },
+            {
+              id: 'step-3-3-3',
+              name: 'Push Docker image',
+              status: 'completed',
+              executionTime: 10000000000,
+            },
+          ],
+        },
+      ],
+    },
+    // Stage 4: Pending Approval
+    {
+      id: 'stage-4',
+      name: 'Pending Approval',
+      description: 'Waiting for manual approval before deployment',
+      status: 'pending',
+      metadata: {
+        installsAffected: 10,
+      },
+      steps: [
+        {
+          id: 'step-4-1',
+          name: 'Generate deployment preview',
+          status: 'completed',
+          executionTime: 5000000000,
+          message: 'Preview available at /preview/abc123',
+        },
+        {
+          id: 'step-4-2',
+          name: 'Notify stakeholders',
+          status: 'completed',
+          executionTime: 2000000000,
           substeps: [
             {
-              id: 'step-2-4-1',
-              name: 'Validate bucket configuration',
+              id: 'step-4-2-1',
+              name: 'Email notification sent to 3 users',
+              status: 'completed',
+              executionTime: 1000000000,
+            },
+            {
+              id: 'step-4-2-2',
+              name: 'Slack notification posted',
+              status: 'completed',
+              executionTime: 1000000000,
+            },
+          ],
+        },
+        {
+          id: 'step-4-3',
+          name: 'Awaiting approval',
+          status: 'pending',
+          message: 'Waiting for manual approval from team lead',
+        },
+      ],
+    },
+    // Stage 5: Deploy to Installs (Batch 1-4)
+    {
+      id: 'stage-5',
+      name: 'Deploy Batch 1',
+      description: 'Deploy to first batch of 4 installs in parallel',
+      status: 'pending',
+      metadata: {
+        installsAffected: 4,
+      },
+      steps: [],
+      parallelInstalls: [
+        {
+          id: 'install-001',
+          installName: 'Production-US-East',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-5-1-1',
+              name: 'Pre-flight checks',
               status: 'pending',
             },
             {
-              id: 'step-2-4-2',
-              name: 'Package bucket artifacts',
+              id: 'step-5-1-2',
+              name: 'Apply Helm chart',
               status: 'pending',
             },
             {
-              id: 'step-2-4-3',
-              name: 'Push to storage',
+              id: 'step-5-1-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-1-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-002',
+          installName: 'Production-US-West',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-5-2-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-2-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-2-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-2-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-003',
+          installName: 'Production-EU-Central',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-5-3-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-3-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-3-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-3-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-004',
+          installName: 'Production-AP-Southeast',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-5-4-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-4-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-4-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-5-4-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+      ],
+    },
+    // Stage 6: Deploy to Installs (Batch 5-10)
+    {
+      id: 'stage-6',
+      name: 'Deploy Batch 2',
+      description: 'Deploy to second batch of 6 installs in parallel',
+      status: 'pending',
+      metadata: {
+        installsAffected: 6,
+      },
+      steps: [],
+      parallelInstalls: [
+        {
+          id: 'install-005',
+          installName: 'Staging-US-East',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-6-1-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-1-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-1-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-1-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-006',
+          installName: 'Staging-US-West',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-6-2-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-2-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-2-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-2-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-007',
+          installName: 'Staging-EU-Central',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-6-3-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-3-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-3-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-3-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-008',
+          installName: 'Development-US-East',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-6-4-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-4-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-4-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-4-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-009',
+          installName: 'Development-US-West',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-6-5-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-5-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-5-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-5-4',
+              name: 'Health check',
+              status: 'pending',
+            },
+          ],
+        },
+        {
+          id: 'install-010',
+          installName: 'Development-EU-Central',
+          status: 'pending',
+          steps: [
+            {
+              id: 'step-6-6-1',
+              name: 'Pre-flight checks',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-6-2',
+              name: 'Apply Helm chart',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-6-3',
+              name: 'Run migrations',
+              status: 'pending',
+            },
+            {
+              id: 'step-6-6-4',
+              name: 'Health check',
               status: 'pending',
             },
           ],
@@ -465,6 +894,11 @@ const WorkflowStageCard = ({
   onToggleExpand?: () => void
 }) => {
   const getStatusIcon = () => {
+    // Special icon for approval stage
+    if (stage.status === 'pending' && stage.name === 'Pending Approval') {
+      return { icon: 'Clock', color: 'text-amber-600 dark:text-amber-400' }
+    }
+    
     switch (stage.status) {
       case 'completed':
         return { icon: 'check', color: 'text-green-600 dark:text-green-400' }
@@ -486,8 +920,15 @@ const WorkflowStageCard = ({
   const COLLAPSE_THRESHOLD = 4
   const shouldShowExpandButton = hasParallelInstalls && stage.parallelInstalls!.length > COLLAPSE_THRESHOLD
 
-  // Special rendering for "Update Installs" stage with parallel installs
-  if (hasParallelInstalls && stage.name === 'Update Installs') {
+  // Special rendering for stages with parallel operations (builds or installs)
+  const isParallelStage = hasParallelInstalls && (
+    stage.name === 'Update Installs' || 
+    stage.name === 'Build Components' || 
+    stage.name === 'Deploy Batch 1' || 
+    stage.name === 'Deploy Batch 2'
+  )
+  
+  if (isParallelStage) {
     const visibleInstalls = isExpanded 
       ? stage.parallelInstalls! 
       : stage.parallelInstalls!.slice(0, COLLAPSE_THRESHOLD)
@@ -560,13 +1001,13 @@ const WorkflowStageCard = ({
                 })}
               />
 
-              {/* Install info */}
+              {/* Install/Build info */}
               <div className="flex flex-col items-start flex-1 min-w-0">
                 <Text variant="subtext" weight="normal" className="truncate">
-                  Update Installs
+                  {stage.name}
                 </Text>
                 <Text variant="caption" theme="neutral" className="font-mono text-xs truncate max-w-full">
-                  {install.id}
+                  {install.installName}
                 </Text>
               </div>
 
@@ -648,11 +1089,16 @@ const WorkflowStageCard = ({
             stage.status === 'failed' && !isSelected,
           'border-red-600 bg-red-100 dark:bg-red-900/40 shadow-lg ring-2 ring-red-500':
             stage.status === 'failed' && isSelected,
-          // Pending state
+          // Approval stage - special amber/yellow treatment
+          'border-amber-400 bg-amber-50 dark:bg-amber-950/20':
+            stage.status === 'pending' && stage.name === 'Pending Approval' && !isSelected,
+          'border-amber-500 bg-amber-100 dark:bg-amber-900/30 shadow-lg ring-2 ring-amber-500':
+            stage.status === 'pending' && stage.name === 'Pending Approval' && isSelected,
+          // Regular pending state
           'border-cool-grey-300 bg-cool-grey-50 dark:bg-dark-grey-800/50':
-            stage.status === 'pending' && !isSelected,
+            stage.status === 'pending' && stage.name !== 'Pending Approval' && !isSelected,
           'border-cool-grey-400 bg-cool-grey-100 dark:bg-dark-grey-700/60 shadow-lg ring-2 ring-cool-grey-400':
-            stage.status === 'pending' && isSelected,
+            stage.status === 'pending' && stage.name !== 'Pending Approval' && isSelected,
         }
       )}
     >
@@ -1578,7 +2024,7 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
   }
 
   return (
-    <div className="w-[90%] mt-8 flex flex-col gap-8">
+    <div className="w-full flex flex-col gap-8">
       {/* Side panel for step details */}
       <StepDetailSidePanel
         step={selectedStep}
@@ -1593,12 +2039,12 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
         </Text>
         <div>
           <Text variant="base" theme="neutral">
-            Drag the canvas to navigate.
+            6-stage deployment pipeline: Config → Detection → Build → Approval → Deploy (Batch 1) → Deploy (Batch 2)
           </Text>
         </div>
         <div>
           <Text variant="base" theme="neutral">
-            Click any stage to view details below. Click step arrows to view logs and details.
+            Drag the canvas to navigate. Click any stage to view details below. Click step arrows to view logs and details.
           </Text>
         </div>
       </div>

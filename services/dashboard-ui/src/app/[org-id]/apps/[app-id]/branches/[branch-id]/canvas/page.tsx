@@ -44,7 +44,7 @@ export default async function AppBranchCanvasPage({
 
   return (
     <PageSection isScrollable className="max-w-full overflow-x-hidden">
-      <div className="w-full max-w-full flex flex-col gap-4 md:gap-6">
+      <div className="w-[90%] flex flex-col gap-4 md:gap-6">
         <Breadcrumbs
           breadcrumbs={[
             {
@@ -83,7 +83,7 @@ export default async function AppBranchCanvasPage({
           </Text>
         </HeadingGroup>
 
-        <div className="w-full max-w-full overflow-x-hidden">
+        <div className="w-full overflow-x-hidden">
           <ErrorBoundary fallback={<>Error loading workflow canvas</>}>
             <Suspense fallback={<div>Loading canvas...</div>}>
               <BranchWorkflowCanvas branchId={branchId} />
