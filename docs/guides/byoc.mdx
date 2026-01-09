@@ -74,7 +74,7 @@ To use Google as your IdP, set up a client in Google Auth Platform. You will nee
 Nuon BYOC previously required Auth0 for authentication, but this dependency has been removed. This documentation is retained for anyone still using Auth0, but new Nuon BYOC installs should use the new IdP integration documented above.
 </Warning>
 
-To use Auth0 for authetnication, you will need to configure an API, applications, and a custom action in your Auth0 tenant.
+To use Auth0 for authentication, you will need to configure an API, applications, and a custom action in your Auth0 tenant.
 
 Nuon provides a Terraform module to automate Auth0 configuration. We recommend this over manual configuration. Apply the following Terraform to use it.
 
@@ -193,7 +193,7 @@ After configuring all dependencies, update your install inputs in the customer d
 | Auth Redirect URL  | `https://auth.<your-root-domain>/auth` |
 
 <Warning>
-If using the deprecated Auth0 integration, you will need to provide these inputs intead.
+If using the deprecated Auth0 integration, you will need to provide these inputs instead.
 
 | Input | Value |
 |-------|-------|
@@ -269,7 +269,7 @@ Create NS records in your domain's DNS pointing to the Route53 nameservers provi
 
 ## Verify Installation
 
-After successful provisioning, verify your installation is working by visiting these URLs:
+After successful provisioning, verify your installation is working by visiting these URLs.
 
 | Service    | URL                                 |
 | ---------- | ----------------------------------- |
@@ -277,7 +277,7 @@ After successful provisioning, verify your installation is working by visiting t
 | CTL API    | `https://api.<your-root-domain>`    |
 | Runner API | `https://runner.<your-root-domain>` |
 
-You can also verify the API is responding by curling it directly:
+You can also verify the API is responding by curling it directly.
 
 ```bash
 curl https://api.<your-root-domain>/health
