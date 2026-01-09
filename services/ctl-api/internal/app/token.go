@@ -12,6 +12,7 @@ import (
 type TokenType string
 
 const (
+	TokenTypeAuth        TokenType = "auth" // nuon auth service
 	TokenTypeAuth0       TokenType = "auth0"
 	TokenTypeAdmin       TokenType = "admin"
 	TokenTypeStatic      TokenType = "static"

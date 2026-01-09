@@ -1,0 +1,83 @@
+{{ define "auth/logout.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {{ template "auth/head.tmpl" . }}
+  <title>Signed Out | Nuon Auth</title>
+  <style>
+    main {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      text-align: center;
+    }
+    .logout-box {
+      padding: 1.5rem;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+    }
+    .logout-box h1 {
+      color: #333;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.5rem;
+    }
+    .logout-box p {
+      color: #666;
+      margin: 0.5rem 0 0 0;
+    }
+    .redirect-notice {
+      color: #888;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    .actions {
+      margin-top: 1.5rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #1976d2;
+      color: #fff;
+      border: none;
+    }
+    .btn:hover {
+      background: #1565c0;
+    }
+  </style>
+</head>
+<body>
+  {{ template "auth/header.tmpl" . }}
+  <main>
+    <div class="logout-box">
+      <h1>Signed Out</h1>
+      <p>{{ .Message }}</p>
+    </div>
+    <p class="redirect-notice">Redirecting to sign in page in <span id="countdown">5</span> seconds...</p>
+    <div class="actions">
+      <a href="/" class="btn">Sign In Now</a>
+    </div>
+  </main>
+  {{ template "auth/footer.tmpl" . }}
+  <script>
+    (function() {
+      var seconds = 5;
+      var countdown = document.getElementById('countdown');
+      var interval = setInterval(function() {
+        seconds--;
+        countdown.textContent = seconds;
+        if (seconds <= 0) {
+          clearInterval(interval);
+          window.location.href = '/';
+        }
+      }, 1000);
+    })();
+  </script>
+</body>
+</html>
+{{ end }}

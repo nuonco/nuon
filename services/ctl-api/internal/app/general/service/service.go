@@ -95,6 +95,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
+	return nil
+}
+
 type Params struct {
 	fx.In
 

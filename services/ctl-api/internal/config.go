@@ -72,6 +72,12 @@ func init() {
 
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
+
+	// Nuon Auth Service Configs
+	config.RegisterDefault("nuon_auth_domain", "http://localhost:8084")
+	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
+	config.RegisterDefault("nuon_auth_jwt_secret", "insecure-jtw-secret-for-devce4d3967724c25af9d5191dfe3e5bd27d70c4")
+
 }
 
 type Config struct {
@@ -86,6 +92,8 @@ type Config struct {
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
 	ServiceDeployment string `config:"service_deployment"`
+
+	RootDomain string `config:"root_domain"` // for all services
 
 	HTTPPort         string `config:"http_port" validate:"required"`
 	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
@@ -135,6 +143,19 @@ type Config struct {
 	Middlewares         []string `config:"middlewares"`
 	InternalMiddlewares []string `config:"internal_middlewares"`
 	RunnerMiddlewares   []string `config:"runner_middlewares"`
+	AuthMiddlewares     []string `config:"auth_middlewares"`
+
+	// Nuon Auth Config
+	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`
+	NuonAuthJWTSecret      string   `config:"nuon_auth_jwt_secret"`
+	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"`
+
+	// Nuon Auth: Default Provider ConfigS
+	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
+	NuonAuthClientID     string `config:"nuon_auth_client_id"`
+	NuonAuthClientSecret string `config:"nuon_auth_client_secret"`
+	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
+	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
 
 	// auth 0 config
 	Auth0IssuerURL string `config:"auth0_issuer_url" validate:"required"`

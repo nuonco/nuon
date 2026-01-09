@@ -54,6 +54,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
+	return nil
+}
+
 func New(params Params) *service {
 	return &service{
 		v:       params.V,
