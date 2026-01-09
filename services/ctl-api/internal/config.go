@@ -74,7 +74,6 @@ func init() {
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
 
 	// Nuon Auth Service Configs
-	config.RegisterDefault("nuon_auth_root_domain", "") // the domain at which both app.* and auth.* are served. e.g. byoc.org.nuon.co or nuon.co.
 	config.RegisterDefault("nuon_auth_domain", "http://localhost:8084")
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_jwt_secret", "insecure-jtw-secret-for-devce4d3967724c25af9d5191dfe3e5bd27d70c4")
@@ -93,6 +92,8 @@ type Config struct {
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
 	ServiceDeployment string `config:"service_deployment"`
+
+	RootDomain string `config:"root_domain"` // for all services
 
 	HTTPPort         string `config:"http_port" validate:"required"`
 	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
@@ -145,7 +146,6 @@ type Config struct {
 	AuthMiddlewares     []string `config:"auth_middlewares"`
 
 	// Nuon Auth Config
-	NuonAuthDomain     string `config:"nuon_auth_domain"` // NOTE: becomes required after auth is in GA
 	NuonAuthSessionKey string `config:"nuon_auth_session_key"`
 	NuonAuthJWTSecret  string `config:"nuon_auth_jwt_secret"`
 

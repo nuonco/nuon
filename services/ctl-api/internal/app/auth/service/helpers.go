@@ -86,7 +86,7 @@ func (s *service) clearCookie(c *gin.Context) {
 		Name:     NuonAuthCookieName,
 		Value:    "",
 		Path:     "/",
-		Domain:   s.cfg.NuonAuthDomain,
+		Domain:   s.domain,
 		MaxAge:   -1,
 		Expires:  time.Now().Add(-time.Hour),
 		Secure:   true,
@@ -97,12 +97,12 @@ func (s *service) clearCookie(c *gin.Context) {
 
 // setCookie sets the auth cookie with the given JWT token value.
 func (s *service) setCookie(c *gin.Context, token string) {
-	s.l.Debug("setting cookie", zap.String("service", "auth"), zap.String("domain", s.cfg.NuonAuthDomain))
+	s.l.Debug("setting cookie", zap.String("service", "auth"), zap.String("domain", s.domain))
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     NuonAuthCookieName,
 		Value:    token,
 		Path:     "/",
-		Domain:   s.cfg.NuonAuthDomain,
+		Domain:   s.domain,
 		MaxAge:   86400, // 24 hours
 		Expires:  time.Now().Add(24 * time.Hour),
 		Secure:   true,

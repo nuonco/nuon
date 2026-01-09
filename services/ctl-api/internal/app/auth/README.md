@@ -22,12 +22,12 @@ New env vars for auth.nuon.co
 
 TODO! determine if we can forego the NUON_AUTH_DOMAIN and make it implicit based on the NUON_AUTH_ROOT_DOMAIN
 
-| Env var               | Description                                             |
-| --------------------- | ------------------------------------------------------- |
-| NUON_AUTH_ROOT_DOMAIN | The root domain for all the services. e.g. byoc.org.co. |
-| NUON_AUTH_DOMAIN      | The domain where we're serving the auth service.        |
-| NUON_AUTH_SESSION_KEY | Session Key for nonce                                   |
-| NUON_AUTH_JWT_SECRET  | Secret for siging the jwt                               |
+| Env var               | Description                                             | Scope        |
+| --------------------- | ------------------------------------------------------- | ------------ |
+| ROOT_DOMAIN           | The root domain for all the services. e.g. byoc.org.co. | All Services |
+| NUON_AUTH_DOMAIN      | The domain where we're serving the auth service.        | Auth Service |
+| NUON_AUTH_SESSION_KEY | Session Key for nonce                                   | Auth Service |
+| NUON_AUTH_JWT_SECRET  | Secret for siging the jwt                               | Auth Service |
 
 ## Identity Providers
 
@@ -144,11 +144,11 @@ future-looking feature leaving room for the concept of roles and org access.
 
 ## TODO (now)
 
-- [ ] Add support for allowed_domains (email domains) or domain limitation.
-- [ ] Drop JTW in favor of simpler cookie w/ token
+- [x] use NuonRootDomain instead of NuonAuthDomain
 - [ ] Add `identity_provider` model (org_id + provider type are unique together) (consider default provider type as
       well).
-- [ ] use NuonRootDomain instead of NuonAuthDomain
+- [ ] Drop JTW in favor of simpler cookie w/ token
+- [ ] Add support for allowed_domains (email domains) or domain limitation.
 
 ## TODO (later)
 

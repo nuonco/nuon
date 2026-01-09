@@ -39,11 +39,12 @@ type Params struct {
 }
 
 type service struct {
-	v   *validator.Validate
-	l   *zap.Logger
-	db  *gorm.DB
-	mw  metrics.Writer
-	cfg *internal.Config
+	v      *validator.Validate
+	l      *zap.Logger
+	db     *gorm.DB
+	mw     metrics.Writer
+	cfg    *internal.Config
+	domain string
 }
 
 var _ api.Service = (*service)(nil)
@@ -89,12 +90,25 @@ func New(params Params) (*service, error) {
 		mw:  params.MW,
 	}
 
+	// Validate required configs
+	if s.cfg.RootDomain == "" {
+		return nil, fmt.Errorf("nuon_root_domain is required")
+	}
+
 	// Validate required secrets
 	if s.cfg.NuonAuthSessionKey == "" {
 		return nil, fmt.Errorf("nuon_auth_session_key is required")
 	}
 	if s.cfg.NuonAuthJWTSecret == "" {
 		return nil, fmt.Errorf("nuon_auth_jwt_secret is required")
+	}
+
+	// configure domain name for the auth service.
+	if s.cfg.RootDomain != "localhost" {
+		// TODO: consider returning an error if the NuonRootDomain is localhost but the env is not dev
+		s.domain = fmt.Sprintf("auth.%s", s.cfg.RootDomain)
+	} else {
+		s.domain = s.cfg.RootDomain
 	}
 
 	// Load and validate the default identity provider from env vars at startup.
