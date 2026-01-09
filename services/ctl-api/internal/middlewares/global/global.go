@@ -27,6 +27,7 @@ var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"PATCH", "/v1/account/user-journeys/:journey_name/steps/:step_name"}: {},
 	{"POST", "/v1/account/user-journeys/:journey_name/reset"}:             {},
 	{"POST", "/v1/account/user-journeys/:journey_name/complete"}:          {},
+	{"GET", "/v1/auth/me"}:                                                {},
 }
 
 type middleware struct {
