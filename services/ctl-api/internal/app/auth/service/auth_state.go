@@ -53,17 +53,19 @@ func (s *service) AuthState(c *gin.Context) {
 		return
 	}
 
-	// Get the provider ID from session (default to "default" for backward compatibility)
-	providerID := sessionData.ProviderID
-	if providerID == "" {
-		providerID = DefaultProviderID
+	// Get the provider type from session
+	providerType := sessionData.ProviderID
+	if providerType == "" {
+		s.l.Error("no provider type in session")
+		s.respondError(c, http.StatusBadRequest, fmt.Errorf("no provider type in session"))
+		return
 	}
 
-	// Look up and create the provider
-	identityProvider, err := s.getIdentityProviderByID(c.Request.Context(), providerID)
+	// Look up and create the provider by type
+	identityProvider, err := s.getIdentityProviderByType(c.Request.Context(), app.ProviderType(providerType))
 	if err != nil {
 		s.l.Error("failed to get identity provider",
-			zap.String("provider_id", providerID),
+			zap.String("provider_type", providerType),
 			zap.Error(err))
 		s.respondError(c, http.StatusBadRequest, fmt.Errorf("invalid provider"))
 		return
@@ -72,7 +74,7 @@ func (s *service) AuthState(c *gin.Context) {
 	provider, err := s.createProviderFromIdentityProvider(identityProvider)
 	if err != nil {
 		s.l.Error("failed to create provider",
-			zap.String("provider_id", providerID),
+			zap.String("provider_type", providerType),
 			zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("failed to initialize provider"))
 		return

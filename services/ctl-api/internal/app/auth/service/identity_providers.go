@@ -132,22 +132,6 @@ func (s *service) getIdentityProvidersFromDB(ctx context.Context) ([]*app.Identi
 	return dbProviders, nil
 }
 
-// getIdentityProviderByID returns a specific identity provider by ID.
-// It checks both the default provider and database providers.
-func (s *service) getIdentityProviderByID(ctx context.Context, providerType string) (*app.IdentityProvider, error) {
-	// Check if id matches default provider
-	if providerType == s.cfg.NuonAuthProviderType {
-		return s.getDefaultIdentityProvider()
-	}
-
-	// TODO: query database for provider by ID
-	// var provider app.IdentityProvider
-	// err := s.db.WithContext(ctx).
-	//     Where("id = ? AND enabled = ?", id, true).
-	//     First(&provider).Error
-	return nil, fmt.Errorf("identity provider not found: %s", providerType)
-}
-
 // getIdentityProviderByType returns the first enabled identity provider of the given type.
 // It checks the default provider first, then queries the database.
 func (s *service) getIdentityProviderByType(ctx context.Context, providerType app.ProviderType) (*app.IdentityProvider, error) {
@@ -157,14 +141,14 @@ func (s *service) getIdentityProviderByType(ctx context.Context, providerType ap
 		return defaultProvider, nil
 	}
 
-	// TODO: query database for provider by type
-	// var provider app.IdentityProvider
-	// err := s.db.WithContext(ctx).
-	//     Where("provider_type = ? AND enabled = ?", providerType, true).
-	//     First(&provider).Error
-	// if err == nil {
-	//     return &provider, nil
-	// }
+	// Query database for provider by type
+	var provider app.IdentityProvider
+	err = s.db.WithContext(ctx).
+		Where("provider_type = ? AND enabled = ?", providerType, true).
+		First(&provider).Error
+	if err == nil {
+		return &provider, nil
+	}
 
 	return nil, fmt.Errorf("no identity provider found for type: %s", providerType)
 }

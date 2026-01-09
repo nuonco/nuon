@@ -24,21 +24,21 @@ func (s *service) Login(c *gin.Context) {
 	s.clearCookie(c)
 
 	// Get the provider type from query params (required)
-	providerID := c.Query("provider")
-	if providerID == "" {
+	providerType := c.Query("provider")
+	if providerType == "" {
 		s.l.Warn("login attempt without provider type")
 		s.respondError(c, http.StatusBadRequest, fmt.Errorf("provider type is required"))
 		return
 	}
 
-	// Look up the identity provider
-	identityProvider, err := s.getIdentityProviderByID(c.Request.Context(), providerID)
+	// Look up the identity provider by type
+	identityProvider, err := s.getIdentityProviderByType(c.Request.Context(), app.ProviderType(providerType))
 	if err != nil {
 		s.l.Error("failed to get identity provider",
 			zap.String("service", "auth"),
-			zap.String("provider_id", providerID),
+			zap.String("provider_type", providerType),
 			zap.Error(err))
-		s.respondError(c, http.StatusBadRequest, fmt.Errorf("invalid provider: %s", providerID))
+		s.respondError(c, http.StatusBadRequest, fmt.Errorf("invalid provider: %s", providerType))
 		return
 	}
 
@@ -47,7 +47,7 @@ func (s *service) Login(c *gin.Context) {
 	if err != nil {
 		s.l.Error("failed to create provider",
 			zap.String("service", "auth"),
-			zap.String("provider_id", providerID),
+			zap.String("provider_id", providerType),
 			zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("failed to initialize provider"))
 		return
@@ -115,7 +115,7 @@ func (s *service) Login(c *gin.Context) {
 	// Create and save the session with provider ID
 	sessionData := &SessionData{
 		State:        state,
-		ProviderID:   providerID,
+		ProviderID:   providerType,
 		RequestedURL: requestedURL,
 		FailCount:    failCount,
 	}
@@ -129,7 +129,7 @@ func (s *service) Login(c *gin.Context) {
 	s.l.Debug("login session state",
 		zap.String("service", "auth"),
 		zap.String("state", state),
-		zap.String("provider_id", providerID),
+		zap.String("provider_id", providerType),
 		zap.String("requestedURL", requestedURL),
 		zap.Int("failCount", failCount))
 
@@ -138,7 +138,7 @@ func (s *service) Login(c *gin.Context) {
 	if err != nil {
 		s.l.Error("failed to build OAuth URL",
 			zap.String("service", "auth"),
-			zap.String("provider_id", providerID),
+			zap.String("provider_id", providerType),
 			zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("provider configuration error"))
 		return

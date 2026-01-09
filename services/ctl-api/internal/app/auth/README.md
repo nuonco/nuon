@@ -98,12 +98,12 @@ load and use.
 
 ### Provider Lookup
 
-| Function                                     | Purpose                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------ |
-| `getProviderByType(ctx, app.ProviderType)`   | Main entry point - returns configured `Provider` by type enum      |
-| `getIdentityProviderByID(ctx, providerType)` | Looks up `IdentityProvider` by provider type string (e.g., "oidc") |
-| `getDefaultIdentityProvider()`               | Builds `IdentityProvider` from env vars only                       |
-| `createProviderFromIdentityProvider(ip)`     | Converts `IdentityProvider` model to `Provider` interface          |
+| Function                                        | Purpose                                                              |
+| ----------------------------------------------- | -------------------------------------------------------------------- |
+| `getProviderByType(ctx, app.ProviderType)`      | Main entry point - returns configured `Provider` by type enum        |
+| `getIdentityProviderByType(ctx, ProviderType)`  | Looks up `IdentityProvider` by type (checks env first, then DB)      |
+| `getDefaultIdentityProvider()`                  | Builds `IdentityProvider` from env vars only                         |
+| `createProviderFromIdentityProvider(ip)`        | Converts `IdentityProvider` model to `Provider` interface            |
 
 ### Uniqueness
 
