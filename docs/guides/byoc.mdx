@@ -4,7 +4,8 @@ description: 'Run Nuon in your AWS account'
 icon: 'cloud'
 ---
 
-Nuon BYOC allows you to run a stand-alone, single-tenant instance of Nuon in your own AWS account. This gives you full control over your data, networking, and compliance requirements.
+Nuon BYOC allows you to run a stand-alone, single-tenant instance of Nuon in your own AWS account. This gives you full
+control over your data, networking, and compliance requirements.
 
 To get started, [contact sales](https://nuon.co/contact-sales)
 
@@ -12,11 +13,11 @@ To get started, [contact sales](https://nuon.co/contact-sales)
 
 ### AWS Account
 
-You will need an AWS account. A VPC and other network infrastructure will be created during the installation. Ensure your user has admin permissions, and that the account has not reached it's quota limits for VPCs, EIPs, and Internet Gateways.
+You will need an AWS account. A VPC and other network infrastructure will be created during the installation. Ensure
+your user has admin permissions, and that the account has not reached it's quota limits for VPCs, EIPs, and Internet
+Gateways.
 
-<Note>
-Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.
-</Note>
+<Note>Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.</Note>
 
 ### GitHub App
 
@@ -26,21 +27,22 @@ Create a GitHub App so Nuon can clone code for components from private repos.
 
 2. Configure the app with these settings:
 
-| Setting | Value |
-|---------|-------|
-| GitHub App name | Choose any name (e.g., "Nuon BYOC") |
-| Homepage URL | `https://app.<your-root-domain>` |
-| Setup URL | `https://app.<your-root-domain>/connect` |
-| Redirect on Update | Checked |
-| Webhook | Unchecked |
+| Setting            | Value                                    |
+| ------------------ | ---------------------------------------- |
+| GitHub App name    | Choose any name (e.g., "Nuon BYOC")      |
+| Homepage URL       | `https://app.<your-root-domain>`         |
+| Setup URL          | `https://app.<your-root-domain>/connect` |
+| Redirect on Update | Checked                                  |
+| Webhook            | Unchecked                                |
 
 3. Set permissions:
 
-| Permission | Access |
-|------------|--------|
-| Contents | Read-only |
+| Permission | Access    |
+| ---------- | --------- |
+| Contents   | Read-only |
 
-4. Under "Where can this GitHub App be installed?", select **Only on this account** (unless you need to access repos in other GitHub organizations)
+4. Under "Where can this GitHub App be installed?", select **Only on this account** (unless you need to access repos in
+   other GitHub organizations)
 
 5. Click **Create GitHub App**
 
@@ -53,7 +55,7 @@ Create a GitHub App so Nuon can clone code for components from private repos.
 Nuon must be configured to use your IdP for authentication.
 
 <Note>
-Nuon BYOC only supports Google as an IdP at this time. We will be adding support for more IdPs in the future.
+  Nuon BYOC only supports Google as an IdP at this time. We will be adding support for more IdPs in the future.
 </Note>
 
 #### Google
@@ -72,25 +74,25 @@ After configuring all dependencies, update your install inputs in the customer d
 
 ### Authentication Configuration
 
-| Input | Value |
-| ----- | ----- |
-| Auth Provider Type | `google` |
-| Auth Client ID     | `[secret]` |
-| Auth Client Secret | `[secret]` |
+| Input              | Value                                  |
+| ------------------ | -------------------------------------- |
+| Auth Provider Type | `google`                               |
+| Auth Client ID     | `[secret]`                             |
+| Auth Client Secret | `[secret]`                             |
 | Auth Redirect URL  | `https://auth.<your-root-domain>/auth` |
 
 ### GitHub Configuration
 
-| Input | Value |
-|-------|-------|
-| Github App Name | Name of your GitHub app |
-| Github App ID | ID of your GitHub app |
+| Input                | Value                          |
+| -------------------- | ------------------------------ |
+| Github App Name      | Name of your GitHub app        |
+| Github App ID        | ID of your GitHub app          |
 | Github App Client ID | Client ID from your GitHub app |
 
 ### DNS Configuration
 
-| Input | Value |
-|-------|-------|
+| Input       | Value                                                                        |
+| ----------- | ---------------------------------------------------------------------------- |
 | Root Domain | Your custom domain, or `<your-install-id>.nuon.run` for Nuon-provided domain |
 
 ### Database Configuration (Optional)
@@ -101,18 +103,20 @@ Adjust instance sizes for RDS, Temporal, and ClickHouse clusters if needed.
 
 When provisioning the CloudFormation stack, provide these secrets:
 
-| Secret | Value |
-|--------|-------|
-| `github_app_key` | Your base64-encoded GitHub App PEM key |
-| `auth_client_secret` | The client secret from your Auth0 SPA |
+| Secret               | Value                                  |
+| -------------------- | -------------------------------------- |
+| `github_app_key`     | Your base64-encoded GitHub App PEM key |
+| `auth_client_secret` | The client secret from your Auth0 SPA  |
 
 <Note>
 The GitHub App PEM key must be base64 encoded because AWS CloudFormation doesn't preserve newlines in text fields.
 
 To encode your PEM key:
+
 ```bash
 base64 -i your-github-app-key.pem
 ```
+
 </Note>
 
 ## Provision
@@ -125,26 +129,30 @@ Once all inputs and secrets are configured
 
 ## Configure DNS (Optional)
 
-To host your BYOC Nuon instance under a custom domain, configure DNS for your root domain to point to the Route53 Zone created in the sandbox.
+To host your BYOC Nuon instance under a custom domain, configure DNS for your root domain to point to the Route53 Zone
+created in the sandbox.
 
 After the sandbox provisions, you'll receive:
+
 - A **Zone ID** for your public domain
 - **Nameserver records** to add to your domain's DNS
 
 Create NS records in your domain's DNS pointing to the Route53 nameservers provided.
 
 <Tip>
-See [Creating a subdomain that uses Amazon Route 53 as the DNS service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html) for detailed instructions.
+  See [Creating a subdomain that uses Amazon Route 53 as the DNS
+  service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html) for detailed
+  instructions.
 </Tip>
 
 ## Verify Installation
 
 After successful provisioning, verify your installation is working by visiting these URLs:
 
-| Service | URL |
-|---------|-----|
-| Dashboard | `https://app.<your-root-domain>` |
-| CTL API | `https://api.<your-root-domain>` |
+| Service    | URL                                 |
+| ---------- | ----------------------------------- |
+| Dashboard  | `https://app.<your-root-domain>`    |
+| CTL API    | `https://api.<your-root-domain>`    |
 | Runner API | `https://runner.<your-root-domain>` |
 
 You can also verify the API is responding by curling it directly:
