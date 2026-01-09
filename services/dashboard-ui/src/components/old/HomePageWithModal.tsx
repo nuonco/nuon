@@ -1,12 +1,11 @@
-'use client'
-
 import React from 'react'
 import Image from 'next/image'
-import { ArrowUpRight } from '@phosphor-icons/react'
-import { Text } from '@/components/common/Text'
 import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { LogoLight } from '@/components/common/Logo/LogoLight'
 import { LogoDark } from '@/components/common/Logo/LogoDark'
+import { Text } from '@/components/common/Text'
+import { USE_AUTH_SERVICE, AUTH_SERVICE_URL, APP_URL } from '@/configs/auth'
 import ossHeroImage from '@/assets/oss-hero.png'
 
 interface HomePageWithModalProps {
@@ -16,6 +15,10 @@ interface HomePageWithModalProps {
 export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
   showModal,
 }) => {
+  const authUrl = USE_AUTH_SERVICE
+    ? `${AUTH_SERVICE_URL}/?url=${APP_URL}`
+    : '/api/auth/login?returnTo=/'
+
   return (
     <div className="flex h-screen w-full">
       {/* Left Side */}
@@ -45,7 +48,7 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
             <Button
               variant="primary"
               size="lg"
-              href="/api/auth/login?returnTo=/"
+              href={authUrl}
               className="w-full justify-center"
             >
               Sign up
@@ -65,7 +68,7 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
             <Button
               variant="secondary"
               size="lg"
-              href="/api/auth/login?returnTo=/"
+              href={authUrl}
               className="w-full justify-center"
             >
               Sign in
@@ -81,7 +84,7 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
           className="text-primary-600 dark:text-primary-500"
         >
           Learn more about how Nuon works
-          <ArrowUpRight size={16} weight="bold" />
+          <Icon variant="ArrowUpRightIcon" size={16} weight="bold" />
         </Button>
       </div>
 

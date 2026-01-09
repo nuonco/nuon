@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { BoxArrowDownIcon, CheckIcon } from '@phosphor-icons/react'
 import { deprovisionSandbox } from '@/actions/installs/deprovision-sandbox'
 import { Button } from '@/components/old/Button'
@@ -19,7 +19,7 @@ import { trackEvent } from '@/lib/segment-analytics'
 
 export const DeprovisionSandboxModal = () => {
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { install } = useInstall()
 

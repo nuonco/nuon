@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CheckIcon } from '@phosphor-icons/react'
 import { cancelRunnerJob } from '@/actions/runners/cancel-runner-job'
 import { Button, type IButton } from '@/components/old/Button'
@@ -99,7 +99,7 @@ export const CancelRunnerJobButton: FC<ICancelRunnerJobButton> = ({
   orgId,
   ...props
 }) => {
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const cancelJobData = cancelJobOptions[jobType]
   const path = usePathname()

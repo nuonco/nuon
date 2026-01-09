@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CheckIcon } from '@phosphor-icons/react'
 import { approveAllWorkflowSteps } from '@/actions/workflows/approve-all-workflow-steps'
 import { Badge } from '@/components/old/Badge'
@@ -31,7 +31,7 @@ export const WorkflowApproveAllModal: FC<IWorkflowApproveAllModal> = ({
   workflow,
 }) => {
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const path = usePathname()
 

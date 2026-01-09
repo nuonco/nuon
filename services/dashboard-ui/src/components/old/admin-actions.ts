@@ -1,7 +1,7 @@
 'use server'
 
 import type { TRunner } from '@/types'
-import { auth0 } from '@/lib/auth'
+import { getSession, getAccessToken } from '@/lib/auth-server'
 import { API_URL, ADMIN_API_URL } from '@/configs/api'
 
 async function adminAction(
@@ -10,7 +10,8 @@ async function adminAction(
   errMessage = 'Admin action failed',
   options: { usePublicAPI?: boolean } = { usePublicAPI: false }
 ) {
-  const { user } = await auth0.getSession()
+  const session = await getSession()
+  const { user } = session || {}
 
   try {
     const result = await fetch(
@@ -31,7 +32,7 @@ async function adminAction(
 }
 
 export async function getToken() {
-  const result = await auth0.getAccessToken()
+  const result = await getAccessToken()
   return { status: 200, result }
 }
 
@@ -106,7 +107,8 @@ export async function updateOrgFeature(
         acc[feat] = data.hasOwnProperty(feat)
         return acc
       }, {})
-  const { user } = await auth0.getSession()
+  const session = await getSession()
+  const { user } = session || {}
 
   try {
     const result = await fetch(

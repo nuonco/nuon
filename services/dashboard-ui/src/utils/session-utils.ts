@@ -1,5 +1,5 @@
-import type { User } from '@auth0/nextjs-auth0/types'
+import type { IUser } from '@/types/dashboard.types'
 
-export const isNuonSession = (user: User): boolean => {
+export const isNuonSession = (user: IUser): boolean => {
   return user?.email ? user?.email?.endsWith('@nuon.co') : false
 }
