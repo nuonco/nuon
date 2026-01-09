@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -44,7 +45,7 @@ export default async function AppBranchCanvasPage({
 
   return (
     <PageSection isScrollable className="max-w-full overflow-x-hidden">
-      <div className="w-[90%] flex flex-col gap-4 md:gap-6">
+      <div className="w-[80%] flex flex-col gap-4 md:gap-6">
         <Breadcrumbs
           breadcrumbs={[
             {
@@ -75,11 +76,14 @@ export default async function AppBranchCanvasPage({
         />
 
         <HeadingGroup>
-          <Text variant="h3" weight="stronger">
-            {branchName} - Workflow Canvas
-          </Text>
+          <div className="flex items-center gap-3">
+            <Icon variant="GitBranch" size={24} />
+            <Text variant="h3" weight="stronger">
+              {branchName} - App Branch Run
+            </Text>
+          </div>
           <Text variant="subtext" theme="neutral">
-            Horizontal visualization of the branch workflow pipeline
+            Workflow execution for app branch deployment
           </Text>
         </HeadingGroup>
 

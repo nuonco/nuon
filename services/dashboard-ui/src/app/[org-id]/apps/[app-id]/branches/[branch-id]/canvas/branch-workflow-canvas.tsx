@@ -1383,7 +1383,7 @@ const StageDetailSection = ({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Summary Card */}
+      {/* Current Group Overview */}
       <Card>
         <div className="flex flex-col gap-4">
           {/* Header with status */}
@@ -1391,12 +1391,12 @@ const StageDetailSection = ({
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <Text variant="h4" weight="strong">
-                  {stage.name}
+                  Current Group Overview
                 </Text>
                 <Status status={stage.status} variant="badge" />
               </div>
               <Text variant="base" theme="neutral">
-                {stage.description}
+                {stage.name} - {stage.description}
               </Text>
             </div>
           </div>
@@ -1508,7 +1508,7 @@ const StageDetailSection = ({
           {/* Steps header with counts */}
           <div className="flex items-center justify-between">
             <Text variant="base" weight="strong">
-              Detailed Steps ({stage.steps.length})
+              Steps ({stage.steps.length})
             </Text>
             <div className="flex items-center gap-4">
               {completedSteps > 0 && (
@@ -2007,16 +2007,76 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
         onClose={handleClosePanel}
       />
 
-      {/* Canvas section header */}
-      <div className="w-full flex flex-col gap-1">
-        <Text variant="h4" weight="stronger">
-          Workflow Pipeline
-        </Text>
-        <div>
-          <Text variant="base" theme="neutral">
-            6-stage deployment pipeline: Config → Detection → Build → Approval → Deploy (Batch 1) → Deploy (Batch 2)
-          </Text>
+      {/* Run summary card */}
+      <Card>
+        <div className="flex items-start justify-between gap-4">
+          {/* Stats - compact, top-left aligned */}
+          <div className="flex flex-col gap-2">
+            {/* Status badge */}
+            <div className="flex items-center gap-2">
+              <Badge variant="default" theme="info" size="sm">
+                In Flight
+              </Badge>
+            </div>
+            
+            {/* Stats grid */}
+            <div className="flex flex-col gap-1.5 text-sm">
+              <div className="flex items-center gap-2">
+                <Text variant="subtext" theme="neutral">Groups:</Text>
+                <Text variant="subtext" weight="strong">1 / 6</Text>
+              </div>
+              <div className="flex items-center gap-2">
+                <Text variant="subtext" theme="neutral">Steps:</Text>
+                <Text variant="subtext" weight="strong">3 / 20</Text>
+              </div>
+              <div className="flex items-center gap-2">
+                <Text variant="subtext" theme="neutral">Duration:</Text>
+                <Text variant="subtext" weight="strong">
+                  <Duration variant="subtext" nanoseconds={45000000000} />
+                </Text>
+              </div>
+            </div>
+          </div>
+          
+          {/* Commit info - GitHub style with message */}
+          <div className="flex flex-col items-end gap-2">
+            {/* Triggered by */}
+            <div className="flex items-center gap-2">
+              <Text variant="subtext" theme="neutral">Triggered by</Text>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                  JM
+                </div>
+                <Text variant="subtext" weight="strong">jonmorehouse</Text>
+              </div>
+            </div>
+            
+            {/* Commit with message */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-cool-grey-50 dark:bg-dark-grey-800 rounded border border-cool-grey-200 dark:border-dark-grey-700">
+              <Icon variant="GithubLogo" size={16} className="text-cool-grey-600 dark:text-cool-grey-400" />
+              <Badge variant="code" theme="neutral" size="sm">
+                a3f8d92
+              </Badge>
+              <Text variant="subtext" theme="neutral" className="max-w-[300px] truncate">
+                feat: add new deployment workflow
+              </Text>
+              <Text variant="subtext" theme="neutral">•</Text>
+              <a 
+                href="https://github.com/nuonco/nuon/pull/1234" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                <Text variant="subtext" weight="normal">PR #1234</Text>
+              </a>
+            </div>
+          </div>
         </div>
+      </Card>
+
+      {/* Canvas section label */}
+      <div className="flex items-center gap-2">
+        <Text variant="base" weight="strong">Canvas</Text>
       </div>
 
       {/* Draggable canvas with zoom controls - Fixed-size viewport container */}
