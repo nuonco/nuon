@@ -78,19 +78,15 @@ export default async function AppBranchesPage({
         <CreateBranchButton appId={appId} orgId={orgId} />
       </div>
 
-      {/* old layout stuff */}
-      <div className="flex flex-auto">
-        <ErrorBoundary fallback={<>Error loading branches</>}>
-          <Suspense fallback={<BranchesTableSkeleton />}>
-            <BranchesTable
-              appId={appId}
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-            />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
-      {/* old layout stuff */}
+      <ErrorBoundary fallback={<>Error loading branches</>}>
+        <Suspense fallback={<BranchesTableSkeleton />}>
+          <BranchesTable
+            appId={appId}
+            orgId={orgId}
+            offset={sp['offset'] || '0'}
+          />
+        </Suspense>
+      </ErrorBoundary>
     </PageSection>
   ) : (
     <DashboardContent

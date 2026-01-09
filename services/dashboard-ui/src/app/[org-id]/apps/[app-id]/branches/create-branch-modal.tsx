@@ -207,7 +207,7 @@ export const CreateBranchModal = ({
       onClose={handleClose}
       heading="Create App Branch"
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && <Banner theme="error">{error}</Banner>}
 
         <div className="flex flex-col gap-2">

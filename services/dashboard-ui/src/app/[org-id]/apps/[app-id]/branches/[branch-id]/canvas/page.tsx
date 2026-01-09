@@ -43,50 +43,54 @@ export default async function AppBranchCanvasPage({
   const branchName = branch?.name || branchId
 
   return (
-    <PageSection isScrollable>
-      <Breadcrumbs
-        breadcrumbs={[
-          {
-            path: `/${orgId}`,
-            text: org?.name,
-          },
-          {
-            path: `/${orgId}/apps`,
-            text: 'Apps',
-          },
-          {
-            path: `/${orgId}/apps/${appId}`,
-            text: app?.name,
-          },
-          {
-            path: `/${orgId}/apps/${appId}/branches`,
-            text: 'Branches',
-          },
-          {
-            path: `/${orgId}/apps/${appId}/branches/${branchId}`,
-            text: branchName,
-          },
-          {
-            path: `/${orgId}/apps/${appId}/branches/${branchId}/canvas`,
-            text: 'Canvas',
-          },
-        ]}
-      />
+    <PageSection isScrollable className="max-w-full overflow-x-hidden">
+      <div className="w-full max-w-full flex flex-col gap-4 md:gap-6">
+        <Breadcrumbs
+          breadcrumbs={[
+            {
+              path: `/${orgId}`,
+              text: org?.name,
+            },
+            {
+              path: `/${orgId}/apps`,
+              text: 'Apps',
+            },
+            {
+              path: `/${orgId}/apps/${appId}`,
+              text: app?.name,
+            },
+            {
+              path: `/${orgId}/apps/${appId}/branches`,
+              text: 'Branches',
+            },
+            {
+              path: `/${orgId}/apps/${appId}/branches/${branchId}`,
+              text: branchName,
+            },
+            {
+              path: `/${orgId}/apps/${appId}/branches/${branchId}/canvas`,
+              text: 'Canvas',
+            },
+          ]}
+        />
 
-      <HeadingGroup>
-        <Text variant="h3" weight="stronger">
-          {branchName} - Workflow Canvas
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Horizontal visualization of the branch workflow pipeline
-        </Text>
-      </HeadingGroup>
+        <HeadingGroup>
+          <Text variant="h3" weight="stronger">
+            {branchName} - Workflow Canvas
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Horizontal visualization of the branch workflow pipeline
+          </Text>
+        </HeadingGroup>
 
-      <ErrorBoundary fallback={<>Error loading workflow canvas</>}>
-        <Suspense fallback={<div>Loading canvas...</div>}>
-          <BranchWorkflowCanvas branchId={branchId} />
-        </Suspense>
-      </ErrorBoundary>
+        <div className="w-full max-w-full overflow-x-hidden">
+          <ErrorBoundary fallback={<>Error loading workflow canvas</>}>
+            <Suspense fallback={<div>Loading canvas...</div>}>
+              <BranchWorkflowCanvas branchId={branchId} />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
+      </div>
     </PageSection>
   )
 }

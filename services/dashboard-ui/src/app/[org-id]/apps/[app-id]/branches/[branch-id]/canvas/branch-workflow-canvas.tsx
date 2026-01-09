@@ -66,445 +66,177 @@ const getMockWorkflowStages = (): IWorkflowStage[] => {
   return [
     {
       id: 'stage-1',
-      name: 'Fetch Repository',
-      description: 'Clone repository and checkout branch',
+      name: 'Looking for Changed Components',
+      description: 'Analyze repository changes and identify modified components',
       status: 'completed',
       startedAt: new Date(Date.now() - 600000).toISOString(),
       completedAt: new Date(Date.now() - 580000).toISOString(),
       executionTime: 20000000000,
       metadata: {
-        commitHash: 'abc1234',
+        componentsChanged: 4,
       },
       steps: [
         {
           id: 'step-1-1',
-          name: 'Clone repository',
+          name: 'Compare with base branch',
+          status: 'completed',
+          executionTime: 5000000000,
+        },
+        {
+          id: 'step-1-2',
+          name: 'Analyze file changes',
           status: 'completed',
           executionTime: 8000000000,
         },
         {
-          id: 'step-1-2',
-          name: 'Checkout branch',
-          status: 'completed',
-          executionTime: 3000000000,
-        },
-        {
           id: 'step-1-3',
-          name: 'Fetch dependencies',
+          name: 'Identify affected components',
           status: 'completed',
-          executionTime: 9000000000,
+          executionTime: 7000000000,
+          substeps: [
+            {
+              id: 'step-1-3-1',
+              name: 'Detected: image',
+              status: 'completed',
+              executionTime: 2000000000,
+            },
+            {
+              id: 'step-1-3-2',
+              name: 'Detected: chart',
+              status: 'completed',
+              executionTime: 2500000000,
+            },
+            {
+              id: 'step-1-3-3',
+              name: 'Detected: database',
+              status: 'completed',
+              executionTime: 2500000000,
+            },
+            {
+              id: 'step-1-3-4',
+              name: 'Detected: bucket',
+              status: 'completed',
+              executionTime: 2000000000,
+            },
+          ],
         },
       ],
     },
     {
       id: 'stage-2',
-      name: 'Build Config',
-      description: 'Parse and validate application configuration',
-      status: 'completed',
+      name: 'Building Changed Components',
+      description: 'Build and push artifacts for modified components',
+      status: 'running',
       startedAt: new Date(Date.now() - 580000).toISOString(),
-      completedAt: new Date(Date.now() - 540000).toISOString(),
-      executionTime: 40000000000,
+      metadata: {
+        componentsChanged: 4,
+      },
       steps: [
         {
           id: 'step-2-1',
-          name: 'Parse nuon.yaml',
+          name: 'Building image',
           status: 'completed',
-          executionTime: 1000000000,
+          executionTime: 45000000000,
           substeps: [
             {
               id: 'step-2-1-1',
-              name: 'Load YAML file',
-              status: 'completed',
-              executionTime: 300000000,
-            },
-            {
-              id: 'step-2-1-2',
-              name: 'Validate YAML syntax',
-              status: 'completed',
-              executionTime: 200000000,
-            },
-            {
-              id: 'step-2-1-3',
-              name: 'Parse configuration structure',
-              status: 'completed',
-              executionTime: 500000000,
-            },
-          ],
-          logs: [
-            '2024-01-08 10:23:15 INFO Loading configuration from nuon.yaml',
-            '2024-01-08 10:23:15 INFO YAML syntax validation passed',
-            '2024-01-08 10:23:16 INFO Found 3 components in configuration',
-            '2024-01-08 10:23:16 INFO Configuration parsed successfully',
-          ],
-        },
-        {
-          id: 'step-2-2',
-          name: 'Validate configuration',
-          status: 'completed',
-          executionTime: 500000000,
-        },
-        {
-          id: 'step-2-3',
-          name: 'Resolve component dependencies',
-          status: 'completed',
-          executionTime: 2000000000,
-          substeps: [
-            {
-              id: 'step-2-3-1',
-              name: 'Build dependency graph',
-              status: 'completed',
-              executionTime: 800000000,
-            },
-            {
-              id: 'step-2-3-2',
-              name: 'Check for circular dependencies',
-              status: 'completed',
-              executionTime: 400000000,
-            },
-            {
-              id: 'step-2-3-3',
-              name: 'Resolve external dependencies',
-              status: 'completed',
-              executionTime: 800000000,
-            },
-          ],
-        },
-        {
-          id: 'step-2-4',
-          name: 'Create app config',
-          status: 'completed',
-          executionTime: 1500000000,
-        },
-      ],
-    },
-    {
-      id: 'stage-3',
-      name: 'Build Changed Components',
-      description: 'Build and push container images for modified components',
-      status: 'running',
-      startedAt: new Date(Date.now() - 540000).toISOString(),
-      metadata: {
-        componentsChanged: 3,
-      },
-      steps: [
-        {
-          id: 'step-3-1',
-          name: 'Detect changed components',
-          status: 'completed',
-          executionTime: 2000000000,
-        },
-        {
-          id: 'step-3-2',
-          name: 'Build component: api-service',
-          status: 'completed',
-          executionTime: 45000000000,
-        },
-        {
-          id: 'step-3-3',
-          name: 'Build component: web-frontend',
-          status: 'running',
-          message: 'Building Docker image...',
-          substeps: [
-            {
-              id: 'step-3-3-1',
               name: 'Create build context',
-              status: 'completed',
-              executionTime: 1000000000,
-            },
-            {
-              id: 'step-3-3-2',
-              name: 'Execute Dockerfile',
-              status: 'running',
-            },
-            {
-              id: 'step-3-3-3',
-              name: 'Tag image',
-              status: 'pending',
-            },
-          ],
-          logs: [
-            '2024-01-08 10:25:30 INFO Starting build for web-frontend',
-            '2024-01-08 10:25:31 INFO Base image pulled: node:20-alpine',
-            '2024-01-08 10:25:32 INFO Installing dependencies...',
-            '2024-01-08 10:25:45 INFO Building production bundle...',
-          ],
-        },
-        {
-          id: 'step-3-4',
-          name: 'Build component: worker-service',
-          status: 'pending',
-        },
-        {
-          id: 'step-3-5',
-          name: 'Push images to registry',
-          status: 'pending',
-        },
-      ],
-    },
-    {
-      id: 'stage-4',
-      name: 'Update Installs',
-      description: 'Deploy updated components to affected installs in parallel',
-      status: 'running',
-      startedAt: new Date(Date.now() - 120000).toISOString(),
-      metadata: {
-        installsAffected: 4,
-      },
-      steps: [
-        {
-          id: 'step-4-1',
-          name: 'Identify affected installs',
-          status: 'completed',
-          executionTime: 2000000000,
-        },
-      ],
-      parallelInstalls: [
-        {
-          id: 'install-1',
-          installName: 'Production Install',
-          status: 'running',
-          startedAt: new Date(Date.now() - 90000).toISOString(),
-          steps: [
-            {
-              id: 'install-1-step-1',
-              name: 'Generate deployment plan',
               status: 'completed',
               executionTime: 5000000000,
             },
             {
-              id: 'install-1-step-2',
-              name: 'Apply plan to cluster',
-              status: 'running',
-              message: 'Applying Kubernetes manifests...',
+              id: 'step-2-1-2',
+              name: 'Build Docker image',
+              status: 'completed',
+              executionTime: 35000000000,
             },
             {
-              id: 'install-1-step-3',
-              name: 'Verify deployment health',
-              status: 'pending',
+              id: 'step-2-1-3',
+              name: 'Push to registry',
+              status: 'completed',
+              executionTime: 5000000000,
             },
+          ],
+          logs: [
+            '2024-01-08 10:24:00 INFO Starting build for image component',
+            '2024-01-08 10:24:05 INFO Base image pulled: node:20-alpine',
+            '2024-01-08 10:24:10 INFO Building production bundle...',
+            '2024-01-08 10:24:45 INFO Build complete, pushing to registry',
           ],
         },
         {
-          id: 'install-2',
-          installName: 'Staging Install',
+          id: 'step-2-2',
+          name: 'Building chart',
           status: 'completed',
-          startedAt: new Date(Date.now() - 90000).toISOString(),
-          completedAt: new Date(Date.now() - 30000).toISOString(),
-          executionTime: 60000000000,
-          steps: [
+          executionTime: 30000000000,
+          substeps: [
             {
-              id: 'install-2-step-1',
-              name: 'Generate deployment plan',
-              status: 'completed',
-              executionTime: 4000000000,
-            },
-            {
-              id: 'install-2-step-2',
-              name: 'Apply plan to cluster',
-              status: 'completed',
-              executionTime: 45000000000,
-            },
-            {
-              id: 'install-2-step-3',
-              name: 'Verify deployment health',
-              status: 'completed',
-              executionTime: 11000000000,
-            },
-          ],
-        },
-        {
-          id: 'install-3',
-          installName: 'Dev Install',
-          status: 'running',
-          startedAt: new Date(Date.now() - 60000).toISOString(),
-          steps: [
-            {
-              id: 'install-3-step-1',
-              name: 'Generate deployment plan',
+              id: 'step-2-2-1',
+              name: 'Validate chart structure',
               status: 'completed',
               executionTime: 3000000000,
             },
             {
-              id: 'install-3-step-2',
-              name: 'Apply plan to cluster',
+              id: 'step-2-2-2',
+              name: 'Package Helm chart',
+              status: 'completed',
+              executionTime: 20000000000,
+            },
+            {
+              id: 'step-2-2-3',
+              name: 'Push chart to registry',
+              status: 'completed',
+              executionTime: 7000000000,
+            },
+          ],
+        },
+        {
+          id: 'step-2-3',
+          name: 'Building database',
+          status: 'running',
+          message: 'Applying migrations...',
+          substeps: [
+            {
+              id: 'step-2-3-1',
+              name: 'Validate schema',
+              status: 'completed',
+              executionTime: 2000000000,
+            },
+            {
+              id: 'step-2-3-2',
+              name: 'Apply migrations',
               status: 'running',
-              message: 'Waiting for pods to be ready...',
             },
             {
-              id: 'install-3-step-3',
-              name: 'Verify deployment health',
+              id: 'step-2-3-3',
+              name: 'Push migration artifacts',
               status: 'pending',
             },
           ],
-        },
-        {
-          id: 'install-4',
-          installName: 'QA Install',
-          status: 'pending',
-          steps: [
-            {
-              id: 'install-4-step-1',
-              name: 'Generate deployment plan',
-              status: 'pending',
-            },
-            {
-              id: 'install-4-step-2',
-              name: 'Apply plan to cluster',
-              status: 'pending',
-            },
-            {
-              id: 'install-4-step-3',
-              name: 'Verify deployment health',
-              status: 'pending',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'stage-5',
-      name: 'Update Installs',
-      description: 'Deploy updated components to additional installs in parallel',
-      status: 'pending',
-      metadata: {
-        installsAffected: 6,
-      },
-      steps: [
-        {
-          id: 'step-5-1',
-          name: 'Identify additional installs',
-          status: 'pending',
-        },
-      ],
-      parallelInstalls: [
-        {
-          id: 'install-5',
-          installName: 'Customer A Install',
-          status: 'pending',
-          steps: [
-            {
-              id: 'install-5-step-1',
-              name: 'Generate deployment plan',
-              status: 'pending',
-            },
-            {
-              id: 'install-5-step-2',
-              name: 'Apply plan to cluster',
-              status: 'pending',
-            },
-            {
-              id: 'install-5-step-3',
-              name: 'Verify deployment health',
-              status: 'pending',
-            },
+          logs: [
+            '2024-01-08 10:25:30 INFO Starting build for database component',
+            '2024-01-08 10:25:31 INFO Validating database schema...',
+            '2024-01-08 10:25:32 INFO Applying migrations...',
           ],
         },
         {
-          id: 'install-6',
-          installName: 'Customer B Install',
+          id: 'step-2-4',
+          name: 'Building bucket',
           status: 'pending',
-          steps: [
+          substeps: [
             {
-              id: 'install-6-step-1',
-              name: 'Generate deployment plan',
+              id: 'step-2-4-1',
+              name: 'Validate bucket configuration',
               status: 'pending',
             },
             {
-              id: 'install-6-step-2',
-              name: 'Apply plan to cluster',
+              id: 'step-2-4-2',
+              name: 'Package bucket artifacts',
               status: 'pending',
             },
             {
-              id: 'install-6-step-3',
-              name: 'Verify deployment health',
-              status: 'pending',
-            },
-          ],
-        },
-        {
-          id: 'install-7',
-          installName: 'Customer C Install',
-          status: 'pending',
-          steps: [
-            {
-              id: 'install-7-step-1',
-              name: 'Generate deployment plan',
-              status: 'pending',
-            },
-            {
-              id: 'install-7-step-2',
-              name: 'Apply plan to cluster',
-              status: 'pending',
-            },
-            {
-              id: 'install-7-step-3',
-              name: 'Verify deployment health',
-              status: 'pending',
-            },
-          ],
-        },
-        {
-          id: 'install-8',
-          installName: 'Customer D Install',
-          status: 'pending',
-          steps: [
-            {
-              id: 'install-8-step-1',
-              name: 'Generate deployment plan',
-              status: 'pending',
-            },
-            {
-              id: 'install-8-step-2',
-              name: 'Apply plan to cluster',
-              status: 'pending',
-            },
-            {
-              id: 'install-8-step-3',
-              name: 'Verify deployment health',
-              status: 'pending',
-            },
-          ],
-        },
-        {
-          id: 'install-9',
-          installName: 'Customer E Install',
-          status: 'pending',
-          steps: [
-            {
-              id: 'install-9-step-1',
-              name: 'Generate deployment plan',
-              status: 'pending',
-            },
-            {
-              id: 'install-9-step-2',
-              name: 'Apply plan to cluster',
-              status: 'pending',
-            },
-            {
-              id: 'install-9-step-3',
-              name: 'Verify deployment health',
-              status: 'pending',
-            },
-          ],
-        },
-        {
-          id: 'install-10',
-          installName: 'Customer F Install',
-          status: 'pending',
-          steps: [
-            {
-              id: 'install-10-step-1',
-              name: 'Generate deployment plan',
-              status: 'pending',
-            },
-            {
-              id: 'install-10-step-2',
-              name: 'Apply plan to cluster',
-              status: 'pending',
-            },
-            {
-              id: 'install-10-step-3',
-              name: 'Verify deployment health',
+              id: 'step-2-4-3',
+              name: 'Push to storage',
               status: 'pending',
             },
           ],
@@ -1721,7 +1453,7 @@ const DraggableCanvas = ({
       className={cn(
         'relative overflow-auto select-none', // overflow-auto is REQUIRED for drag-to-scroll functionality
         'bg-cool-grey-50 dark:bg-dark-grey-900 rounded-lg border-2 border-cool-grey-200 dark:border-dark-grey-700',
-        'h-[calc(100vh-450px)] min-h-[400px] w-1/2', // Viewport-based height with minimum, 50% width
+        'h-[calc(100vh-450px)] min-h-[400px] w-full', // Viewport-based height with minimum, full width
         {
           'cursor-grabbing': isDraggingVisual,
           'cursor-grab': !isDraggingVisual,
@@ -1741,7 +1473,7 @@ const DraggableCanvas = ({
 
       <div 
         ref={contentRef} 
-        className="inline-flex items-center gap-0 min-h-full min-w-full transition-transform duration-200 origin-center pointer-events-none p-12"
+        className="inline-flex items-center gap-0 min-h-full transition-transform duration-200 origin-center pointer-events-none p-12"
         style={{
           transform: `scale(${zoom})`,
           transformOrigin: 'center center',
@@ -1846,7 +1578,7 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
   }
 
   return (
-    <div className="w-full mt-8 flex flex-col gap-8">
+    <div className="w-[90%] mt-8 flex flex-col gap-8">
       {/* Side panel for step details */}
       <StepDetailSidePanel
         step={selectedStep}
@@ -1855,13 +1587,20 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
       />
 
       {/* Canvas section header */}
-      <div className="w-full">
-        <Text variant="h4" weight="strong">
+      <div className="w-full flex flex-col gap-1">
+        <Text variant="h4" weight="stronger">
           Workflow Pipeline
         </Text>
-        <Text variant="base" theme="neutral" className="mt-1">
-          Drag the canvas to navigate. Click any stage to view details below. Click step arrows to view logs and details.
-        </Text>
+        <div>
+          <Text variant="base" theme="neutral">
+            Drag the canvas to navigate.
+          </Text>
+        </div>
+        <div>
+          <Text variant="base" theme="neutral">
+            Click any stage to view details below. Click step arrows to view logs and details.
+          </Text>
+        </div>
       </div>
 
       {/* Draggable canvas with zoom controls - Fixed-size viewport container */}
@@ -1908,28 +1647,6 @@ export const BranchWorkflowCanvas = ({ branchId }: IBranchWorkflowCanvas) => {
         </div>
       )}
 
-      {/* Mock data notice */}
-      <div className="w-full max-w-full p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-400 dark:border-blue-500/40 rounded-md">
-        <div className="flex items-start gap-3">
-          <Icon
-            variant="info"
-            size={20}
-            className="text-blue-600 dark:text-blue-400 mt-0.5"
-          />
-          <div className="min-w-0 flex-1">
-            <Text variant="base" weight="strong" theme="info">
-              Mock Data Preview
-            </Text>
-            <Text variant="subtext" theme="info" className="mt-1">
-              This is a preview with mock workflow data. In production, this
-              will display real workflow stages and their status for branch{' '}
-              <Badge variant="code" size="sm" theme="info">
-                {branchId}
-              </Badge>
-            </Text>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

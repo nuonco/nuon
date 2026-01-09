@@ -42,9 +42,16 @@ export const BranchesTable = async ({
 export const BranchesTableSkeleton = () => {
   return (
     <div className="flex flex-col gap-4 w-full">
-      <div className="h-10 bg-gray-200 animate-pulse rounded" />
-      <div className="h-10 bg-gray-200 animate-pulse rounded" />
-      <div className="h-10 bg-gray-200 animate-pulse rounded" />
+      <div className="h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="h-12 bg-gray-100 dark:bg-gray-800 rounded-t-lg" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-16 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 animate-pulse"
+          />
+        ))}
+      </div>
     </div>
   )
 }
