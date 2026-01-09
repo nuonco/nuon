@@ -72,6 +72,13 @@ func init() {
 
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
+
+	// Nuon Auth Service Configs
+	config.RegisterDefault("nuon_auth_root_domain", "") // the domain at which both app.* and auth.* are served. e.g. byoc.org.nuon.co or nuon.co.
+	config.RegisterDefault("nuon_auth_domain", "http://localhost:8084")
+	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
+	config.RegisterDefault("nuon_auth_jwt_secret", "insecure-jtw-secret-for-devce4d3967724c25af9d5191dfe3e5bd27d70c4")
+
 }
 
 type Config struct {
@@ -135,6 +142,19 @@ type Config struct {
 	Middlewares         []string `config:"middlewares"`
 	InternalMiddlewares []string `config:"internal_middlewares"`
 	RunnerMiddlewares   []string `config:"runner_middlewares"`
+	AuthMiddlewares     []string `config:"auth_middlewares"`
+
+	// Nuon Auth Config
+	NuonAuthDomain     string `config:"nuon_auth_domain"` // NOTE: becomes required after auth is in GA
+	NuonAuthSessionKey string `config:"nuon_auth_session_key"`
+	NuonAuthJWTSecret  string `config:"nuon_auth_jwt_secret"`
+
+	// Nuon Auth: Default Provider ConfigS
+	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
+	NuonAuthClientID     string `config:"nuon_auth_client_id"`
+	NuonAuthClientSecret string `config:"nuon_auth_client_secret"`
+	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
+	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
 
 	// auth 0 config
 	Auth0IssuerURL string `config:"auth0_issuer_url" validate:"required"`
