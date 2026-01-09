@@ -53,11 +53,15 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
+	auth := api.Group("/v1/auth")
+	{
+		auth.POST("/identity-providers", s.AdminCreateIdentityProvider)
+	}
 	return nil
 }
 
