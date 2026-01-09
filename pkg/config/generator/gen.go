@@ -39,12 +39,6 @@ var (
 	}
 )
 
-/*
-todo(sk):
-- fix the structs where there are multiple oneofs eg, component, permission
-- fix jsonschema where some values are not required and are commented
-- fix jsonschema in root app config
-*/
 type ConfigGen struct {
 	EnableDefaults          bool
 	EnableInfoComments      bool
