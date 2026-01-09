@@ -28,7 +28,7 @@
             "group": "Resources",
             "pages": [
               "cli",
-	            "deployment-options",
+              "deployment-options",
               "dashboard",
               "configuration-files",
               "nuon-api",
@@ -224,7 +224,7 @@
   "navbar": {
     "primary": {
       "type": "button",
-      "label": "Log in",
+      "label": "Sign up",
       "href": "https://app.nuon.co/"
     }
   },
