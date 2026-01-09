@@ -291,3 +291,7 @@ export type TTerraformState = {
     }
   }
 }
+
+
+// auth
+export type TMe = components['schemas']['service.AuthMeResponse']

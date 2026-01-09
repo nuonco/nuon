@@ -1,10 +1,10 @@
-import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
 import { API_URL } from '@/configs/api'
-import { USE_AUTH_SERVICE } from '@/configs/auth'
+import { USE_AUTH_SERVICE, AUTH_SERVICE_URL } from '@/configs/auth'
+import { getUserProfile } from '@/lib/auth-server'
 import { InitDatadogLogs } from '@/lib/datadog-logs'
 import { InitDatadogRUM } from '@/lib/datadog-rum'
 import {
@@ -43,9 +43,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const cookiesList = await cookies()
-
-  console.log('auth cookie:', cookiesList.get('X-Nuon-Auth')?.value)
+  const initialUser = USE_AUTH_SERVICE ? await getUserProfile() : null
 
   return (
     <html
@@ -73,7 +71,11 @@ export default async function RootLayout({
             tfBackendUrl={API_URL}
           />
 
-          <AuthProvider useAuthService={USE_AUTH_SERVICE}>
+          <AuthProvider
+            useAuthService={USE_AUTH_SERVICE}
+            initialUser={initialUser}
+            authServiceUrl={AUTH_SERVICE_URL}
+          >
             <AccountProvider shouldPoll>
               <UserJourneyProvider>{children}</UserJourneyProvider>
             </AccountProvider>

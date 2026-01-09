@@ -22,7 +22,7 @@ export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {}
 
 export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
-  const { isAdmin, useAuthService } = useAuth()
+  const { isAdmin, useAuthService, authServiceUrl } = useAuth()
   const { addPanel } = useSurfaces()
   const { openOnboarding } = useUserJourney() || {}
 
@@ -66,13 +66,13 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
         ) : null}
         <hr />
         <Link
-          href={useAuthService ? "/auth/logout" : "/api/auth/logout"}
+          href={useAuthService ? `${authServiceUrl}/logout` : "/api/auth/logout"}
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
           isExternal
           target="_self"
         >
-          Log out <Icon variant="SignOut" />
+          Sign out <Icon variant="SignOut" />
         </Link>
       </Menu>
     </Dropdown>

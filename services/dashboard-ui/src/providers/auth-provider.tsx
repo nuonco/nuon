@@ -10,21 +10,20 @@ interface IAuthContext {
   isLoading: boolean
   isAdmin: boolean
   useAuthService: boolean
+  authServiceUrl?: string
 }
 
 export const AuthContext = createContext<IAuthContext | undefined>(undefined)
 
-export function AuthProvider({ 
+// Auth0-based auth provider
+function Auth0AuthProvider({ 
   children,
-  useAuthService = false
+  authServiceUrl,
 }: { 
   children: React.ReactNode
-  useAuthService?: boolean
+  authServiceUrl?: string
 }) {
-  // For now, we only use Auth0 - auth service implementation will come later
   const { user, error, isLoading } = useUser()
-
-  // Check if user is Nuon admin
   const isAdmin = user?.email?.endsWith('@nuon.co') ?? false
 
   return (
@@ -34,10 +33,69 @@ export function AuthProvider({
         error,
         isLoading,
         isAdmin,
-        useAuthService,
+        useAuthService: false,
+        authServiceUrl,
       }}
     >
       {children}
     </AuthContext.Provider>
   )
+}
+
+// Auth service-based auth provider  
+function AuthServiceAuthProvider({ 
+  children,
+  initialUser,
+  authServiceUrl,
+}: { 
+  children: React.ReactNode
+  initialUser: IUser | null
+  authServiceUrl?: string
+}) {
+  const isAdmin = initialUser?.email?.endsWith('@nuon.co') ?? false
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user: initialUser,
+        error: null,
+        isLoading: false,
+        isAdmin,
+        useAuthService: true,
+        authServiceUrl,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+// Main auth provider that chooses the right implementation
+export function AuthProvider({ 
+  children,
+  useAuthService = false,
+  initialUser = null,
+  authServiceUrl
+}: { 
+  children: React.ReactNode
+  useAuthService?: boolean
+  initialUser?: IUser | null
+  authServiceUrl?: string
+}) {
+  if (useAuthService) {
+    return (
+      <AuthServiceAuthProvider 
+        initialUser={initialUser} 
+        authServiceUrl={authServiceUrl}
+      >
+        {children}
+      </AuthServiceAuthProvider>
+    )
+  } else {
+    return (
+      <Auth0AuthProvider authServiceUrl={authServiceUrl}>
+        {children}
+      </Auth0AuthProvider>
+    )
+  }
 }
