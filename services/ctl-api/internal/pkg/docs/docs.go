@@ -108,6 +108,10 @@ func (r *Docs) RegisterRunnerRoutes(g *gin.Engine) error {
 	return nil
 }
 
+func (s *Docs) RegisterAuthRoutes(api *gin.Engine) error {
+	return nil
+}
+
 func New(cfg *internal.Config) *Docs {
 	return &Docs{
 		cfg: cfg,

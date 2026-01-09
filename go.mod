@@ -65,10 +65,10 @@ require (
 	github.com/getkin/kin-openapi v0.131.0
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/gin-contrib/size v1.0.1
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.11.0
 	github.com/go-faker/faker/v4 v4.5.0
 	github.com/go-git/go-git/v5 v5.16.2
-	github.com/go-playground/validator/v10 v10.23.0
+	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-swagger/go-swagger v0.33.0
 	github.com/go-toolsmith/astfmt v1.1.0
 	github.com/godbus/dbus/v5 v5.1.0
@@ -193,6 +193,7 @@ require (
 	github.com/extism/go-sdk v1.7.1 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250323135004-b31fac66206e // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gonvenience/idem v0.0.2 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
@@ -210,6 +211,8 @@ require (
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
+	github.com/quic-go/qpack v0.5.1 // indirect
+	github.com/quic-go/quic-go v0.54.0 // indirect
 	github.com/sahilm/fuzzy v0.1.1 // indirect
 	github.com/sasha-s/go-deadlock v0.3.6 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
@@ -235,6 +238,7 @@ require (
 	go.opentelemetry.io/collector/pdata/xpdata v0.131.0 // indirect
 	go.opentelemetry.io/collector/pipeline v0.131.0 // indirect
 	go.opentelemetry.io/collector/semconv v0.125.0 // indirect
+	go.uber.org/mock v0.5.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp/shiny v0.0.0-20250606033433-dcc06ee1d476 // indirect
@@ -275,11 +279,11 @@ require (
 	github.com/bodgit/windows v1.0.0 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/bytedance/sonic/loader v0.2.1 // indirect
+	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
-	github.com/cloudwego/base64x v0.1.4 // indirect
+	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
@@ -379,7 +383,7 @@ require (
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/twmb/murmur3 v1.1.5 // indirect
-	github.com/ugorji/go/codec v1.2.12 // indirect
+	github.com/ugorji/go/codec v1.3.0 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	github.com/x448/float16 v0.8.4 // indirect
@@ -450,7 +454,7 @@ require (
 	github.com/aws/smithy-go v1.23.2
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
-	github.com/bytedance/sonic v1.12.6 // indirect
+	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cheggaaa/pb/v3 v3.1.7 // indirect
@@ -472,9 +476,9 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.7 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gin-contrib/cors v1.5.0
-	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -522,7 +526,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -597,7 +601,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/arch v0.12.0 // indirect
+	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
