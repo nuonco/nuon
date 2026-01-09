@@ -21,8 +21,6 @@ type ProviderOption struct {
 // It displays a simple landing page with login options for each provider.
 // If a `url` query param is provided, it will be passed to the login handler.
 func (s *service) Index(c *gin.Context) {
-	s.l.Debug("/")
-
 	// Get the redirect URL from query params (to pass along to login)
 	// URL-encode it for safe inclusion in query strings
 	redirectURL := c.Query("url")
@@ -45,7 +43,7 @@ func (s *service) Index(c *gin.Context) {
 	// Get available identity providers
 	providers, err := s.getIdentityProviders(c.Request.Context())
 	if err != nil {
-		s.l.Error("failed to get identity providers", zap.Error(err))
+		s.l.Error("failed to get identity providers", zap.String("service", "auth"), zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, err)
 		return
 	}

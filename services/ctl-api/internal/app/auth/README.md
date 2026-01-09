@@ -83,6 +83,23 @@ install. As such, these are created via and admin api endpoint.
 Future: in the future we'll add support for org-specific IdPs. At that point, an org-specific endpont on the public api
 may be added.
 
+### Examples
+
+**Auth0** as a generic OIDC provider
+
+```json
+{
+  "enabled": true,
+  "openid_config": {
+    "client_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "client_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "issuer_url": "https://audience.auth0.com",
+    "redirect_url": "http://auth.byoc.org.co/auth"
+  },
+  "provider_type": "oidc"
+}
+```
+
 ### Loading Order
 
 The default provider is required for startup. this default provider is composed from the provider configs loaded from

@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
+	"go.uber.org/zap"
 )
 
 const (
@@ -29,15 +30,14 @@ func (s *service) getIdentityProviders(ctx context.Context) ([]*app.IdentityProv
 	}
 	allProviders = append(allProviders, defaultProvider)
 
-	// disabled until models are finished and migrations are applied
 	// 2. Get additional providers from database
-	// dbProviders, err := s.getIdentityProvidersFromDB(ctx)
-	// if err != nil {
-	// 	// Log but don't fail - default provider is sufficient
-	// 	s.l.Warn("failed to load identity providers from database", zap.Error(err))
-	// } else {
-	// 	allProviders = append(allProviders, dbProviders...)
-	// }
+	dbProviders, err := s.getIdentityProvidersFromDB(ctx)
+	if err != nil {
+		// Log but don't fail - default provider is sufficient
+		s.l.Warn("failed to load identity providers from database", zap.Error(err))
+	} else {
+		allProviders = append(allProviders, dbProviders...)
+	}
 
 	return allProviders, nil
 }
@@ -122,13 +122,16 @@ func (s *service) getDefaultIdentityProvider() (*app.IdentityProvider, error) {
 	return ip, nil
 }
 
-// getIdentityProvidersFromDB fetches all enabled identity providers from the database.
+// getIdentityProvidersFromDB fetches all enabled global identity providers from the database.
+// Global providers have no org_id (NULL) and are available to all users.
 func (s *service) getIdentityProvidersFromDB(ctx context.Context) ([]*app.IdentityProvider, error) {
-	// TODO: implement - query database for enabled providers
 	var dbProviders []*app.IdentityProvider
-	// err := s.db.WithContext(ctx).
-	//     Where("enabled = ?", true).
-	//     Find(&dbProviders).Error
+	err := s.db.WithContext(ctx).
+		Where("enabled = ? AND org_id IS NULL", true).
+		Find(&dbProviders).Error
+	if err != nil {
+		return nil, err
+	}
 	return dbProviders, nil
 }
 
