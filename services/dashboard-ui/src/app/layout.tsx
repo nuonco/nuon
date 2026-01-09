@@ -79,13 +79,16 @@ export default async function RootLayout({
             <AccountProvider shouldPoll>
               <UserJourneyProvider>{children}</UserJourneyProvider>
             </AccountProvider>
+
+            {process.env.SEGMENT_WRITE_KEY && (
+              <Suspense>
+                <InitSegmentAnalytics
+                  writeKey={process.env.SEGMENT_WRITE_KEY}
+                />
+                <SegmentAnalyticsIdentify />
+              </Suspense>
+            )}
           </AuthProvider>
-          {process.env.SEGMENT_WRITE_KEY && (
-            <Suspense>
-              <InitSegmentAnalytics writeKey={process.env.SEGMENT_WRITE_KEY} />
-              <SegmentAnalyticsIdentify />
-            </Suspense>
-          )}
         </body>
       </>
     </html>
