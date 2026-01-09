@@ -1,6 +1,6 @@
 'use client'
 
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 import { Link } from '@/components/old/Link'
 import { Text } from '@/components/old/Typography'
@@ -14,7 +14,7 @@ interface IInstallWorkflowActivity {
 export const InstallWorkflowActivity = ({
   installWorkflow,
 }: IInstallWorkflowActivity) => {
-  const { user, isLoading } = useUser()
+  const { user, isLoading } = useAuth()
   const temporalLinkParams = useQueryParams({
     query: `\`WorkflowId\`="${installWorkflow?.owner_id}-execute-workflow-${installWorkflow?.id}"`,
   })

@@ -1,10 +1,11 @@
 'use server'
 
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import { ADMIN_API_URL } from '@/configs/api'
 
 export async function enableOrgDebugMode(orgId: string) {
-  const { user } = await auth0.getSession()
+  const session = await getSession()
+  const { user } = session || {}
 
   try {
     const result = await fetch(

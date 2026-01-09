@@ -1,11 +1,12 @@
 'use server'
 
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import { ADMIN_API_URL } from '@/configs/api'
 import { getInstallRunner } from './get-install-runner'
 
 export async function invalidateInstallRunnerToken(installId: string) {
-  const { user } = await auth0.getSession()
+  const session = await getSession()
+  const { user } = session || {}
   const runner = await getInstallRunner(installId)
 
   try {

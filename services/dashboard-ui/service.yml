@@ -48,6 +48,8 @@ env:
   DISABLE_METRICS: true
   LOG_METRICS: true
   SF_TRIAL_ACCESS_ENDPOINT: null
+  NUON_AUTH_SERVICE_URL: # http://localhost:8084
+  NUON_APP_URL: http://localhost:4000
 
 env_secrets:
   AUTH0_CLIENT_SECRET:
@@ -106,3 +108,5 @@ docker_env:
   NUON_TEMPORAL_UI_URL: http://host.nuon.dev:8234
   NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING: false
   SF_TRIAL_ACCESS_ENDPOINT: null
+  NUON_AUTH_SERVICE_URL: # http://host.nuon.dev:8084
+  NUON_APP_URL: http://host.nuon.dev:4000

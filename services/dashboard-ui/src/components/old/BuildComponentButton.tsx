@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CheckIcon, HammerIcon } from '@phosphor-icons/react'
 import { buildComponent } from '@/actions/apps/build-component'
 import { Button } from '@/components/old/Button'
@@ -24,7 +24,7 @@ export const BuildComponentButton = ({
 }) => {
   const path = usePathname()
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { app } = useApp()
 

@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import React, { type FC, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CheckIcon, HammerIcon } from '@phosphor-icons/react'
 import { buildComponents } from '@/actions/apps/build-components'
 import { Button } from '@/components/old/Button'
@@ -18,7 +18,7 @@ import { trackEvent } from '@/lib/segment-analytics'
 
 export const BuildAllComponentsButton: FC = () => {
   const path = usePathname()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { app } = useApp()
   const [isOpen, setIsOpen] = useState(false)

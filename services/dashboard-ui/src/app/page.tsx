@@ -2,14 +2,14 @@ import { redirect } from 'next/navigation'
 import { getOrgIdFromCookie } from '@/actions/orgs/org-session-cookie'
 import { HomePageWithModal } from '@/components/old/HomePageWithModal'
 import { AppHomePage } from '@/components/old/AppHomePage'
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import { getOrgs, getOrg } from '@/lib'
 
 // Force dynamic rendering to always check fresh session state
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  const session = await auth0.getSession()
+  const session = await getSession()
 
   // If user doesn't have a session, show the HomePageWithModal
   if (!session) {

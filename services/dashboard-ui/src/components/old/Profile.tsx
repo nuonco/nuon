@@ -3,13 +3,13 @@
 import React, { type FC } from 'react'
 import { SignOut } from '@phosphor-icons/react'
 import Image from 'next/image'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { Text } from '@/components/old/Typography'
 
 export const Profile: FC<{ isSidebarOpen?: boolean }> = ({
   isSidebarOpen = true,
 }) => {
-  const { user, error, isLoading } = useUser()
+  const { user, error, isLoading } = useAuth()
 
   if (isLoading) return <div>Loading...</div>
   if (error) return <div>{error.message}</div>
@@ -42,7 +42,7 @@ export const Profile: FC<{ isSidebarOpen?: boolean }> = ({
 export const SignOutButton: FC<{ isSidebarOpen?: boolean }> = ({
   isSidebarOpen = true,
 }) => {
-  const { user } = useUser()
+  const { user } = useAuth()
   return (
     user && (
       <span className="flex items-center justify-between w-full gap-2 overflow-hidden">
