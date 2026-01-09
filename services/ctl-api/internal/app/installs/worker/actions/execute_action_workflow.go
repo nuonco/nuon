@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -32,6 +33,22 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 	install, err := activities.AwaitGetByInstallID(ctx, installActionWorkflow.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
+	}
+
+	// Skip cron-triggered actions if sandbox is not active
+	// This prevents workflow history bloat when installs are created but not fully provisioned
+	if req.InstallActionWorkflowTrigger.TriggerType == app.ActionWorkflowTriggerTypeCron {
+		if install.SandboxStatus != app.InstallSandboxStatusActive {
+			l, _ := log.WorkflowLogger(ctx)
+			if l != nil {
+				l.Info("skipping cron action execution - sandbox not active",
+					zap.String("install_id", installActionWorkflow.InstallID),
+					zap.String("action_workflow_name", installActionWorkflow.ActionWorkflow.Name),
+					zap.String("sandbox_status", string(install.SandboxStatus)),
+				)
+			}
+			return nil // Skip this cron execution
+		}
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
