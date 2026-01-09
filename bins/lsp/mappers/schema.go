@@ -51,7 +51,15 @@ func BuildPropertyMap(schema *jsonschema.Schema) map[string]map[string]*jsonsche
 // currentPath represents the dotted path to the current level (e.g., "public_repo" or "values_file")
 // defsLookup contains all schema definitions for $ref resolution
 func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hierarchicalMap map[string]map[string]*jsonschema.Schema, defsLookup map[string]*jsonschema.Schema) {
-	ignoredOneOffs := []string{"component_type"}
+	ignoredOneOffs := []string{
+		"component_type",
+		"docker_build",
+		"external_image",
+		"helm_chart",
+		"job",
+		"kubernetes_manifest",
+		"terraform_module",
+	}
 	if schema == nil {
 		return
 	}

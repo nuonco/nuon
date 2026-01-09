@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ func main() {
 	log.Printf("Generating config reference documentation to %s (format: %s)", *outputDir, *format)
 
 	// Create output directory
-	if err := os.MkdirAll(*outputDir, 0755); err != nil {
+	if err := os.MkdirAll(*outputDir, 0o755); err != nil {
 		log.Fatalf("Failed to create output directory: %v", err)
 	}
 
@@ -63,6 +64,15 @@ func main() {
 }
 
 func generateSchemaDoc(schemaName, outputDir, format string) error {
+	ignoredOneOffs := []string{
+		"component_type",
+		"docker_build",
+		"external_image",
+		"helm_chart",
+		"job",
+		"kubernetes_manifest",
+		"terraform_module",
+	}
 	log.Printf("[%s] Generating documentation...", schemaName)
 
 	// Lookup the schema using the same method as the API endpoint
@@ -93,7 +103,6 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 	// Find the target schema (handle $ref schemas like the API does)
 	targetSchema := resolveSchemaRef(s)
 
-
 	// Add properties table if schema has properties
 	if targetSchema.Properties != nil && targetSchema.Properties.Len() > 0 {
 		doc.AddHeading(2, "Properties")
@@ -120,7 +129,7 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 
 			// Skip component type properties (oneof_required=component_type)
 			if prop.Extras != nil {
-				if oneOfReq, ok := prop.Extras["oneof_required"].(string); ok && oneOfReq == "component_type" {
+				if oneOfReq, ok := prop.Extras["oneof_required"].(string); ok && slices.Contains(ignoredOneOffs, oneOfReq) {
 					continue
 				}
 			}
@@ -155,7 +164,7 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 
 	// Write to file
 	filename := filepath.Join(outputDir, schemaName+".mdx")
-	if err := os.WriteFile(filename, []byte(markdown), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(markdown), 0o644); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -212,7 +221,7 @@ func generateIndexPage(schemaNames []string, outputDir, format string) error {
 
 	// Write index file
 	filename := filepath.Join(outputDir, "index.mdx")
-	if err := os.WriteFile(filename, []byte(doc.Render()), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(doc.Render()), 0o644); err != nil {
 		return fmt.Errorf("failed to write index file: %w", err)
 	}
 

@@ -71,11 +71,6 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 				// Try with just property name for item extractors
 				simpleName := extractPropertyName(fullPath)
 				hasInstanceValue = extractor.HasValue(simpleName)
-				// If value is zero/empty but field exists, still consider it as having instance value
-				// This ensures fields from instance data are included even if empty
-				if !hasInstanceValue {
-					hasInstanceValue = extractor.HasField(simpleName)
-				}
 			}
 		}
 
@@ -230,7 +225,23 @@ func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema
 
 	fmt.Fprintf(output, "%s[%s]\n", commentPrefix, tableName)
 
-	g.recursivelyEncode(schema, nil, output, tableName, isOptional, writeComments, false, extractor)
+	// For nested objects, try to create a scoped extractor
+	nestedExtractor := extractor
+	if extractor != nil {
+		// Try to extract the nested object value
+		nestedValue, exists := extractor.GetFieldValue(propertyPath)
+		if !exists && strings.Contains(propertyPath, ".") {
+			// Fallback: try with just the property name
+			simpleName := extractPropertyName(propertyPath)
+			nestedValue, exists = extractor.GetFieldValue(simpleName)
+		}
+
+		if exists {
+			nestedExtractor = NewInstanceValueExtractor(nestedValue)
+		}
+	}
+
+	g.recursivelyEncode(schema, nil, output, tableName, isOptional, writeComments, false, nestedExtractor)
 	return nil
 }
 
@@ -289,13 +300,11 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 			fmt.Fprintf(output, "%s = []\n", arrayName)
 		}
 	default:
-		defaultValue := generateDefaultByType(itemSchema.Type)
-		arrayValue := fmt.Sprintf("[%s]", defaultValue)
-
+		// For primitive arrays, output empty array instead of array with default value
 		if isOptional {
 			output.WriteString("# ")
 		}
-		fmt.Fprintf(output, "%s = %s\n", arrayName, arrayValue)
+		fmt.Fprintf(output, "%s = []\n", arrayName)
 	}
 
 	return nil
@@ -416,13 +425,28 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 			if item.Kind() == reflect.Pointer && !item.IsNil() {
 				item = item.Elem()
 			}
-			if item.IsValid() {
-				formatted := formatTOMLValue(item.Interface(), itemSchema.Type)
-				items = append(items, formatted)
+
+			// Skip zero/empty values in arrays
+			if !item.IsValid() || item.IsZero() {
+				continue
 			}
+
+			// Additional check: skip empty strings explicitly
+			if item.Kind() == reflect.String && item.String() == "" {
+				continue
+			}
+
+			formatted := formatTOMLValue(item.Interface(), itemSchema.Type)
+			items = append(items, formatted)
 		}
 
-		fmt.Fprintf(output, "%s%s = [%s]\n", commentPrefix, arrayName, strings.Join(items, ", "))
+		// Only output the array if it has non-empty items
+		if len(items) > 0 {
+			fmt.Fprintf(output, "%s%s = [%s]\n", commentPrefix, arrayName, strings.Join(items, ", "))
+		} else {
+			// Output empty array or skip based on whether field is required
+			fmt.Fprintf(output, "%s%s = []\n", commentPrefix, arrayName)
+		}
 	}
 
 	return nil
