@@ -113,7 +113,7 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 	var otelLogRecords []app.OtelLogRecord
 
 	if order == "asc" {
-		// ASC: Standard forward pagination
+		// ASC: Forward pagination - get records newer than cursor
 		res := s.chDB.WithContext(ctx).
 			Where("org_id = ?", orgID).
 			Where("log_stream_id = ?", logStreamID)
@@ -122,7 +122,7 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 			res = res.Where("toUnixTimestamp64Nano(timestamp) > ?", cursor)
 		}
 
-		res.Order("timestamp ASC").
+		res = res.Order("timestamp ASC").
 			Limit(PageSize).
 			Find(&otelLogRecords)
 		if res.Error != nil {
@@ -139,39 +139,47 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 
 	} else {
 		// DESC: Reverse pagination using ASC query + offset calculation
-		var offset int64
+		// We use ASC ordering because ClickHouse is optimized for forward scans on time-series data
+		var recordCount int64
 
 		if cursor == 0 {
-			// First page - start from the end
-			offset = totalCount - int64(PageSize)
-			if offset < 0 {
-				offset = 0
-			}
+			// First page - use total count
+			recordCount = totalCount
 		} else {
-			// Subsequent pages - count records before cursor (timestamp < cursor)
-			var countBeforeCursor int64
+			// Subsequent pages - count records strictly before cursor (exclusive)
 			countRes := s.chDB.WithContext(ctx).
 				Model(&app.OtelLogRecord{}).
 				Where("org_id = ?", orgID).
 				Where("log_stream_id = ?", logStreamID).
 				Where("toUnixTimestamp64Nano(timestamp) < ?", cursor).
-				Count(&countBeforeCursor)
+				Count(&recordCount)
 			if countRes.Error != nil {
 				return nil, headers, errors.Wrap(countRes.Error, "unable to count remaining logs")
 			}
-
-			// Get the last PageSize records from what remains
-			offset = countBeforeCursor - int64(PageSize)
-			if offset < 0 {
-				offset = 0
-			}
 		}
 
-		// Query with ASC order and offset
+		// No more records
+		if recordCount == 0 {
+			headers["X-Nuon-API-Next"] = ""
+			return []app.OtelLogRecord{}, headers, nil
+		}
+
+		// Calculate offset to get the last PageSize records from the available set
+		offset := recordCount - int64(PageSize)
+		if offset < 0 {
+			offset = 0
+		}
+
+		// Query with ASC order, applying cursor filter and offset
 		res := s.chDB.WithContext(ctx).
 			Where("org_id = ?", orgID).
-			Where("log_stream_id = ?", logStreamID).
-			Order("timestamp ASC").
+			Where("log_stream_id = ?", logStreamID)
+
+		if cursor > 0 {
+			res = res.Where("toUnixTimestamp64Nano(timestamp) < ?", cursor)
+		}
+
+		res = res.Order("timestamp ASC").
 			Offset(int(offset)).
 			Limit(PageSize).
 			Find(&otelLogRecords)
@@ -179,15 +187,17 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 			return nil, headers, errors.Wrap(res.Error, "unable to retrieve logs")
 		}
 
-		// Reverse the results in memory
+		// Reverse the results in memory to get DESC order
 		for i, j := 0, len(otelLogRecords)-1; i < j; i, j = i+1, j-1 {
 			otelLogRecords[i], otelLogRecords[j] = otelLogRecords[j], otelLogRecords[i]
 		}
 
-		// Determine next cursor (last element after reversal = oldest timestamp)
-		if len(otelLogRecords) == 0 || offset == 0 {
+		// Determine next cursor
+		// If offset was 0, we've retrieved all remaining records
+		if offset == 0 {
 			headers["X-Nuon-API-Next"] = ""
 		} else {
+			// Last element after reversal is the oldest timestamp in this batch
 			last := otelLogRecords[len(otelLogRecords)-1]
 			headers["X-Nuon-API-Next"] = fmt.Sprintf("%d", last.Timestamp.UnixNano())
 		}
