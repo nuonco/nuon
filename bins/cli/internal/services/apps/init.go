@@ -847,7 +847,7 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 func BuildEKSSimpleConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
 	configStructure, err := ReadAndConvertConfig(ctx, ConfigReaderParams{
 		Folder: "eks-simple",
-	}, "test")
+	}, configName)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to build eks template app config")
 	}

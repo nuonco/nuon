@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/stretchr/testify/assert"
-	"gotest.tools/assert"
 )
 
 func NewTestingConfigStructure(name string) *ConfigStructure {
@@ -284,7 +283,7 @@ func TestGenerate(t *testing.T) {
 		true,
 		false,
 	)
-	err := generator.Gen("./test-config-init/", NewTestingConfigStructure("test-app-config"))
+	err := generator.Gen("./test-app-init/", NewTestingConfigStructure("test-app-config"))
 	assert.NoError(t, err, "generator existed with error")
 }
 

@@ -28,7 +28,15 @@ const (
 
 var (
 	StructTagOneOfRequiredGroups = []string{StructTagOneofRequiredGroupComponentType, StructTagOneofRequiredGroupGitRepository}
-	IgnoredProperties            = []string{"source"}
+	IgnoredProperties            = []string{
+		"source",
+		"helm_chart",
+		"terraform_module",
+		"docker_build",
+		"job",
+		"external_image",
+		"kubernetes_manifest",
+	}
 )
 
 /*

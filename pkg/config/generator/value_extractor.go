@@ -69,6 +69,38 @@ func (e *InstanceValueExtractor) HasValue(propertyPath string) bool {
 	return exists
 }
 
+// HasField checks if a field exists in the instance, regardless of whether it's zero/empty.
+// This is useful when processing instance data where we want to include all fields.
+func (e *InstanceValueExtractor) HasField(propertyPath string) bool {
+	if e != nil && !e.reflectValue.IsValid() {
+		return false
+	}
+
+	pathParts := strings.Split(propertyPath, ".")
+	current := e.reflectValue
+
+	for _, part := range pathParts {
+		if current.Kind() == reflect.Pointer {
+			if current.IsNil() {
+				return false
+			}
+			current = current.Elem()
+		}
+
+		if current.Kind() == reflect.Struct {
+			structField, ok := e.findFieldByMapstructureTag(current.Type(), part)
+			if !ok {
+				return false
+			}
+			current = current.FieldByIndex(structField.Index)
+		} else {
+			return false
+		}
+	}
+
+	return current.IsValid()
+}
+
 func (e *InstanceValueExtractor) findFieldByMapstructureTag(t reflect.Type, tagValue string) (reflect.StructField, bool) {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)

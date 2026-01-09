@@ -9,6 +9,17 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
+// extractPropertyName extracts the last component from a dotted path.
+// For item extractors scoped to array elements, this removes the parent context.
+// Examples: "role.policies.name" -> "name", "policies" -> "policies"
+func extractPropertyName(path string) string {
+	if !strings.Contains(path, ".") {
+		return path
+	}
+	lastDotIndex := strings.LastIndex(path, ".")
+	return path[lastDotIndex+1:]
+}
+
 // recursivelyEncode traverses a JSON schema and generates TOML configuration content.
 // It handles nested objects, arrays, and primitive fields while respecting optional/required field rules.
 //
@@ -51,7 +62,22 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 			fullPath = prefix + "." + propertyName
 		}
 
-		hasInstanceValue := extractor != nil && extractor.HasValue(fullPath)
+		// For value extraction, try fullPath first, then fall back to just propertyName
+		// This handles cases where extractor is scoped to an array item but fullPath includes parent context
+		hasInstanceValue := false
+		if extractor != nil {
+			hasInstanceValue = extractor.HasValue(fullPath)
+			if !hasInstanceValue && strings.Contains(fullPath, ".") {
+				// Try with just property name for item extractors
+				simpleName := extractPropertyName(fullPath)
+				hasInstanceValue = extractor.HasValue(simpleName)
+				// If value is zero/empty but field exists, still consider it as having instance value
+				// This ensures fields from instance data are included even if empty
+				if !hasInstanceValue {
+					hasInstanceValue = extractor.HasField(simpleName)
+				}
+			}
+		}
 
 		isOptional := skipNonRequired && (!isRequired || parentOptional) && !hasInstanceValue
 
@@ -165,7 +191,14 @@ func (g *ConfigGen) writePrimitiveField(fieldName string, schema *jsonschema.Sch
 func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string) error {
 	if schema.Properties == nil || schema.Properties.Len() == 0 {
 		if extractor != nil {
-			if mapValue, exists := extractor.GetMapValue(propertyPath); exists && len(mapValue) > 0 {
+			// Try with full path first, then fall back to just the property name
+			mapValue, exists := extractor.GetMapValue(propertyPath)
+			if !exists && strings.Contains(propertyPath, ".") {
+				simpleName := extractPropertyName(propertyPath)
+				mapValue, exists = extractor.GetMapValue(simpleName)
+			}
+
+			if exists && len(mapValue) > 0 {
 				commentPrefix := ""
 				if isOptional {
 					commentPrefix = "# "
@@ -219,7 +252,14 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 
 	// Try to get array values from instance
 	if extractor != nil {
-		if arrayValue, itemType, exists := extractor.GetArrayValue(propertyPath); exists && arrayValue.Len() > 0 {
+		// Try with full path first
+		arrayValue, itemType, exists := extractor.GetArrayValue(propertyPath)
+		// If fullPath doesn't work, try with just the property name (for item extractors)
+		if !exists && strings.Contains(propertyPath, ".") {
+			simpleName := extractPropertyName(propertyPath)
+			arrayValue, itemType, exists = extractor.GetArrayValue(simpleName)
+		}
+		if exists && arrayValue.Len() > 0 {
 			return g.formatInstanceArray(arrayName, arrayValue, itemType, itemSchema, output, isOptional, writeComments, extractor, propertyPath)
 		}
 	}
@@ -233,13 +273,21 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 			return g.recursivelyEncode(itemSchema, nil, output, arrayName, isOptional, writeComments, false, extractor)
 		}
 	case "array":
-		// nested array - rare but possible
-		// TOML doesn't handle nested arrays well, so we simplify
-		// we dont have this case in our app config as of now, will handle this seprately later on if needed
-		if isOptional {
-			output.WriteString("# ")
+		// Nested array (e.g., role containing policies array)
+		// Check if items are objects (array of arrays of objects)
+		if itemSchema.Items != nil && itemSchema.Items.Type == "object" {
+			// This is an array of arrays of objects - write the table syntax and recurse
+			fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
+			if itemSchema.Items.Properties != nil && itemSchema.Items.Properties.Len() > 0 {
+				return g.recursivelyEncode(itemSchema.Items, nil, output, arrayName, isOptional, writeComments, false, extractor)
+			}
+		} else {
+			// Simple nested array of primitives - write as empty array
+			if isOptional {
+				output.WriteString("# ")
+			}
+			fmt.Fprintf(output, "%s = []\n", arrayName)
 		}
-		fmt.Fprintf(output, "%s = [[]]\n", arrayName)
 	default:
 		defaultValue := generateDefaultByType(itemSchema.Type)
 		arrayValue := fmt.Sprintf("[%s]", defaultValue)
@@ -258,9 +306,18 @@ func (g *ConfigGen) generateFieldLine(fieldName string, schema *jsonschema.Schem
 
 	// try to get value from instance
 	if extractor != nil {
+		// Try with full path first
 		if instanceValue, exists := extractor.GetFieldValue(propertyPath); exists {
 			defaultValue = formatTOMLValue(instanceValue, schema.Type)
 			return fmt.Sprintf("%s = %s", fieldName, defaultValue)
+		}
+		// If fullPath doesn't work, try with just the property name (for item extractors)
+		if strings.Contains(propertyPath, ".") {
+			simpleName := extractPropertyName(propertyPath)
+			if instanceValue, exists := extractor.GetFieldValue(simpleName); exists {
+				defaultValue = formatTOMLValue(instanceValue, schema.Type)
+				return fmt.Sprintf("%s = %s", fieldName, defaultValue)
+			}
 		}
 	}
 
@@ -342,9 +399,8 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 			if item.IsValid() && !item.IsZero() {
 				itemExtractor := NewInstanceValueExtractor(item.Interface())
 				if itemSchema.Properties != nil && itemSchema.Properties.Len() > 0 {
-					// use empty prefix "" for array items since itemExtractor is scoped to the item
 					// use skipNonRequired=false to ensure all fields from instance are included
-					err := g.recursivelyEncode(itemSchema, nil, output, "", isOptional, false, false, itemExtractor)
+					err := g.recursivelyEncode(itemSchema, nil, output, arrayName, isOptional, false, false, itemExtractor)
 					if err != nil {
 						return err
 					}
