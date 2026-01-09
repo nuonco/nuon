@@ -36,7 +36,36 @@ func (s *service) getOrCreateAccountByIdentity(
 		First(&accountIdentity).Error
 
 	if err == nil {
-		// Found existing identity - return the linked account
+		// Found existing identity - check if profile needs update
+		needsUpdate := false
+
+		// Update if values have changed (including clearing when provider returns empty)
+		if accountIdentity.Name != userInfo.Name {
+			accountIdentity.Name = userInfo.Name
+			needsUpdate = true
+		}
+		if accountIdentity.Picture != userInfo.Picture {
+			accountIdentity.Picture = userInfo.Picture
+			needsUpdate = true
+		}
+
+		if needsUpdate {
+			if err := s.db.WithContext(ctx).
+				Model(&accountIdentity).
+				Select("name", "picture").
+				Updates(&accountIdentity).Error; err != nil {
+				s.l.Warn("failed to update identity profile",
+					zap.String("identity_id", accountIdentity.ID),
+					zap.Error(err))
+				// Don't fail the login - just log the warning
+			} else {
+				s.l.Debug("updated identity profile",
+					zap.String("identity_id", accountIdentity.ID),
+					zap.String("name", accountIdentity.Name),
+					zap.String("picture", accountIdentity.Picture))
+			}
+		}
+
 		s.l.Debug("found existing account identity",
 			zap.String("account_id", accountIdentity.AccountID),
 			zap.String("provider_type", string(providerType)),
@@ -132,6 +161,8 @@ func (s *service) createAccountWithIdentity(
 		IdentityProviderID: identityProviderID,
 		ProviderType:       providerType,
 		Sub:                userInfo.Subject,
+		Name:               userInfo.Name,
+		Picture:            userInfo.Picture,
 	}
 
 	if err := tx.Create(accountIdentity).Error; err != nil {
@@ -167,6 +198,8 @@ func (s *service) linkIdentityToAccount(
 		IdentityProviderID: identityProviderID,
 		ProviderType:       providerType,
 		Sub:                userInfo.Subject,
+		Name:               userInfo.Name,
+		Picture:            userInfo.Picture,
 	}
 
 	if err := s.db.WithContext(ctx).Create(accountIdentity).Error; err != nil {

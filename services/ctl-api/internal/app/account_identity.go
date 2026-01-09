@@ -31,6 +31,10 @@ type AccountIdentity struct {
 
 	// Subject identifier from the IdP - the canonical, stable user identifier
 	Sub string `gorm:"not null;index:idx_account_identity_provider_sub,unique" json:"sub,omitzero" temporaljson:"sub,omitzero,omitempty"`
+
+	// User profile information from the identity provider
+	Name    string `json:"name,omitempty" temporaljson:"name,omitempty"`
+	Picture string `json:"picture,omitempty" temporaljson:"picture,omitempty"`
 }
 
 func (a AccountIdentity) TableName() string {
