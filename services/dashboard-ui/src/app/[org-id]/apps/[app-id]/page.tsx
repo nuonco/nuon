@@ -1,16 +1,14 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Link } from '@/components/common/Link'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
+import { BackToTop } from '@/components/common/BackToTop'
+import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getApp, getAppConfigs, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
-import { InputsConfig } from './inputs-config'
-import { ReadmeConfig } from './readme-config'
-import { RunnerConfig } from './runner-config'
-import { SandboxConfig } from './sandbox-config'
+import { AppInputs, AppInputsError, AppInputsSkeleton } from './inputs-config'
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -22,6 +20,12 @@ import {
   Loading,
   Section,
 } from '@/components'
+import {
+  InputsConfig,
+  ReadmeConfig,
+  RunnerConfig,
+  SandboxConfig,
+} from './app-configs.old'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 
@@ -44,8 +48,9 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
     getOrg({ orgId }),
   ])
 
+  const containerId = 'app-overview-page'
   return org?.features?.['stratus-layout'] ? (
-    <PageSection className="!pt-0" isScrollable>
+    <>
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -62,48 +67,22 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
           },
         ]}
       />
-      {/* old page stuff */}
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto">
-        <div className="divide-y flex flex-col md:col-span-7">
-          <ErrorBoundary fallbackRender={ErrorFallback}>
-            <Suspense
-              fallback={
-                <Section className="border-r" heading="README">
-                  <Loading
-                    loadingText="Loading latest README config..."
-                    variant="stack"
-                  />
-                </Section>
-              }
-            >
-              <ReadmeConfig
-                appConfigId={configs?.at(0)?.id}
-                appId={appId}
-                orgId={orgId}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
+      <PageSection id={containerId} isScrollable>
+        <AsyncBoundary
+          errorFallback={<AppInputsError />}
+          loadingFallback={<AppInputsSkeleton />}
+        >
+          <AppInputs
+            appConfigId={configs?.at(0)?.id}
+            appId={appId}
+            orgId={orgId}
+          />
+        </AsyncBoundary>
+        {/* old page stuff */}
 
-        <div className="divide-y flex flex-col md:col-span-5">
-          <ErrorBoundary fallbackRender={ErrorFallback}>
-            <Suspense
-              fallback={
-                <Section className="flex-initial" heading="Inputs">
-                  <Loading loadingText="Loading latest input config..." />
-                </Section>
-              }
-            >
-              <InputsConfig
-                appConfigId={configs?.at(0)?.id}
-                appId={appId}
-                appName={app?.name}
-                orgId={orgId}
-              />
-            </Suspense>
-          </ErrorBoundary>
-
-          <Section className="flex-initial" heading="Sandbox">
+        <div className="flex gap-6">
+          <Card className="flex-auto">
+            <Text weight="strong">Sandbox config</Text>
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
@@ -117,9 +96,10 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
                 />
               </Suspense>
             </ErrorBoundary>
-          </Section>
+          </Card>
 
-          <Section heading="Runner">
+          <Card className="flex-auto">
+            <Text weight="strong">Runner config</Text>
             <ErrorBoundary fallbackRender={ErrorFallback}>
               <Suspense
                 fallback={
@@ -133,11 +113,13 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
                 />
               </Suspense>
             </ErrorBoundary>
-          </Section>
+          </Card>
         </div>
-      </div>
-      {/* old page stuff */}
-    </PageSection>
+
+        {/* old page stuff */}
+        <BackToTop containerId={containerId} />
+      </PageSection>
+    </>
   ) : (
     <DashboardContent
       breadcrumb={[

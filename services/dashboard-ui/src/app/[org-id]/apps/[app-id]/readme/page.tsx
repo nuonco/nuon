@@ -30,7 +30,7 @@ export default async function AppReadmePage({ params }: TAppPageProps) {
 
   const containerId = 'app-readme-page'
   return (
-    <PageSection className="!pb-6" isScrollable>
+    <PageSection id={containerId} className="!pb-6" isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           {
