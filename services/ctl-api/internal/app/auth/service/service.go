@@ -1,0 +1,115 @@
+package service
+
+import (
+	"embed"
+	"fmt"
+	"io/fs"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+)
+
+// Cookie and session names
+const (
+	NuonAuthCookieName  string = "X-Nuon-Auth"
+	NuonAuthSessionName string = "nuon-auth-session"
+
+	failCountLimit int = 6
+)
+
+//go:embed templates
+var tmplFS embed.FS
+
+type Params struct {
+	fx.In
+
+	V   *validator.Validate
+	Cfg *internal.Config
+	DB  *gorm.DB `name:"psql"`
+	MW  metrics.Writer
+	L   *zap.Logger
+}
+
+type service struct {
+	v   *validator.Validate
+	l   *zap.Logger
+	db  *gorm.DB
+	mw  metrics.Writer
+	cfg *internal.Config
+}
+
+var _ api.Service = (*service)(nil)
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
+	// Load HTML templates
+	sub, err := fs.Sub(tmplFS, "templates")
+	if err != nil {
+		return err
+	}
+	api.LoadHTMLFS(http.FS(sub), "*.tmpl")
+
+	// Register routes
+	// Session management is handled via signed cookies in session.go
+	api.GET("/login", s.Login)
+	api.GET("/auth", s.Auth)
+	api.GET("/auth/:state", s.AuthState)
+	api.GET("/logout", s.Logout)
+	api.GET("/validate", s.Validate)
+	api.GET("/", s.Index)
+
+	return nil
+}
+
+func New(params Params) (*service, error) {
+	s := &service{
+		cfg: params.Cfg,
+		l:   params.L,
+		v:   params.V,
+		db:  params.DB,
+		mw:  params.MW,
+	}
+
+	// Validate required secrets
+	if s.cfg.NuonAuthSessionKey == "" {
+		return nil, fmt.Errorf("nuon_auth_session_key is required")
+	}
+	if s.cfg.NuonAuthJWTSecret == "" {
+		return nil, fmt.Errorf("nuon_auth_jwt_secret is required")
+	}
+
+	// Load and validate the default identity provider from env vars at startup.
+	// This ensures the service won't start without valid provider configuration.
+	// The config is validated inside getDefaultIdentityProvider() via cfg.Validate().
+	// Providers are created dynamically at runtime via getProviderByType() or
+	// createProviderFromIdentityProvider() when handling requests.
+	defaultIP, err := s.getDefaultIdentityProvider()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load default identity provider: %w", err)
+	}
+
+	s.l.Info("auth service initialized",
+		zap.String("provider_type", string(defaultIP.ProviderType)),
+		zap.String("provider_id", defaultIP.ID))
+
+	return s, nil
+}

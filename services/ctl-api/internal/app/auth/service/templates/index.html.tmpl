@@ -1,0 +1,81 @@
+{{ define "auth/index.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {{ template "auth/head.tmpl" . }}
+  <title>Sign In | Nuon Auth</title>
+  <style>
+    main {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      text-align: center;
+    }
+    .login-options {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .login-btn {
+      display: block;
+      padding: 0.75rem 1.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      color: #333;
+      text-decoration: none;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .login-btn:hover {
+      background: #f5f5f5;
+    }
+    .login-btn.google { border-color: #4285f4; color: #4285f4; }
+    .login-btn.github { border-color: #333; color: #333; }
+    .login-btn.oidc { border-color: #6c757d; color: #6c757d; }
+    .authenticated {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #e8f5e9;
+      border-radius: 4px;
+    }
+    .logout-btn {
+      margin-top: 1rem;
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: #dc3545;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  {{ template "auth/header.tmpl" . }}
+  <main>
+    {{ if .IsAuthenticated }}
+      <div class="authenticated">
+        <p>Signed in as <strong>{{ .Email }}</strong></p>
+        <a href="/logout" class="logout-btn">Sign Out</a>
+      </div>
+    {{ else }}
+      <h1>Sign In</h1>
+      <p>Choose a login method:</p>
+      <div class="login-options">
+        {{ $redirectURL := .RedirectURL }}
+        {{ range .Providers }}
+          <a href="/login?provider={{ .ProviderType }}{{ if $redirectURL }}&url={{ $redirectURL }}{{ end }}" class="login-btn {{ .ProviderType }}">
+            Continue with {{ .Name }}
+          </a>
+        {{ else }}
+          <p>No login providers configured.</p>
+        {{ end }}
+      </div>
+    {{ end }}
+  </main>
+  {{ template "auth/footer.tmpl" . }}
+</body>
+</html>
+{{ end }}

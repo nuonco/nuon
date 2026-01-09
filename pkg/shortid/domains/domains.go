@@ -26,6 +26,10 @@ func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }
 
+func NewIdentityProviderID() string {
+	return shortid.NewNanoID("idp")
+}
+
 func NewAccountPolicyID() string {
 	return shortid.NewNanoID("acp")
 }

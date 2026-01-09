@@ -32,6 +32,10 @@ func (s *Service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return s.registerRoutes(api)
 }
 
+func (s *Service) RegisterAuthRoutes(api *gin.Engine) error {
+	return nil
+}
+
 func (s *Service) registerRoutes(api *gin.Engine) error {
 	if s.cfg.EnableHttpBinDebugEndpoints {
 		httpbinGroup := api.Group("/httpbin")

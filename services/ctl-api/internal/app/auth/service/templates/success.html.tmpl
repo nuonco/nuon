@@ -1,0 +1,86 @@
+{{ define "auth/success.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {{ template "auth/head.tmpl" . }}
+  <title>Success | Nuon Auth</title>
+  <style>
+    main {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      text-align: center;
+    }
+    .success-box {
+      padding: 1.5rem;
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+    }
+    .success-box h1 {
+      color: #2e7d32;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.5rem;
+    }
+    .user-info {
+      margin: 1rem 0;
+      color: #333;
+    }
+    .user-info strong {
+      display: block;
+      font-size: 1.1rem;
+      margin-top: 0.25rem;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .btn-primary {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background: #1565c0;
+    }
+    .btn-secondary {
+      background: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+    .btn-secondary:hover {
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  {{ template "auth/header.tmpl" . }}
+  <main>
+    <div class="success-box">
+      <h1>Authentication Successful</h1>
+      <div class="user-info">
+        Signed in as
+        <strong>{{ if .Email }}{{ .Email }}{{ else }}{{ .Username }}{{ end }}</strong>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="/" class="btn btn-primary">Continue</a>
+      <a href="/logout" class="btn btn-secondary">Sign Out</a>
+    </div>
+  </main>
+  {{ template "auth/footer.tmpl" . }}
+</body>
+</html>
+{{ end }}

@@ -1,0 +1,17 @@
+{{ define "auth/error.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {{ template "auth/head.tmpl" . }}
+  <title>Error | Nuon Auth</title>
+</head>
+<body>
+  {{ template "auth/header.tmpl" . }}
+  <main>
+    <h1>{{.Status}}</h1>
+    {{.Error}}
+  </main>
+  {{ template "auth/footer.tmpl" . }}
+</body>
+</html>
+{{ end }}

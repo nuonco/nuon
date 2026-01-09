@@ -55,6 +55,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
+	return nil
+}
+
 func (s *service) getAccount(ctx *gin.Context, accountID string) (*app.Account, error) {
 	var account app.Account
 
