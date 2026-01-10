@@ -4,29 +4,22 @@ description: 'Run Nuon in your AWS account'
 icon: 'cloud'
 ---
 
-Nuon BYOC allows you to run a stand-alone, single-tenant instance of Nuon in your own AWS account. This gives you full control over your data, networking, and compliance requirements.
+Nuon BYOC allows you to run a stand-alone, single-tenant instance of Nuon in your own AWS account. This gives you full
+control over your data, networking, and compliance requirements.
 
-<Note>
 To get started, [contact sales](https://nuon.co/contact-sales)
-</Note>
 
 ## Prerequisites
 
-### Install ID
+### AWS Account
 
-Before starting the BYOC installation, ask your Nuon engineer for your install ID. You will need this for various config values. 
+You will need an AWS account. A VPC and other network infrastructure will be created during the installation. Ensure
+your user has admin permissions, and that the account has not reached it's quota limits for VPCs, EIPs, and Internet
+Gateways.
 
-### Set up an AWS Account
+<Note>Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.</Note>
 
-If you do not have an account set up already, you will need an AWS account. Nuon will require a VPC, so ensure the account has not reached it's quota limits for VPS, EIPs, and Internet Gateways.
-
-<Note>
-Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.
-</Note>
-
-You will need a user with admin permissions to provision the install stack during the installation.
-
-### Configure a GitHub App
+### GitHub App
 
 Create a GitHub App so Nuon can clone code for components from private repos.
 
@@ -34,21 +27,22 @@ Create a GitHub App so Nuon can clone code for components from private repos.
 
 2. Configure the app with these settings:
 
-| Setting | Value |
-|---------|-------|
-| GitHub App name | Choose any name (e.g., "Nuon BYOC") |
-| Homepage URL | `https://app.<your-root-domain>` |
-| Setup URL | `https://app.<your-root-domain>/connect` |
-| Redirect on Update | Checked |
-| Webhook | Unchecked |
+| Setting            | Value                                    |
+| ------------------ | ---------------------------------------- |
+| GitHub App name    | Choose any name (e.g., "Nuon BYOC")      |
+| Homepage URL       | `https://app.<your-root-domain>`         |
+| Setup URL          | `https://app.<your-root-domain>/connect` |
+| Redirect on Update | Checked                                  |
+| Webhook            | Unchecked                                |
 
 3. Set permissions:
 
-| Permission | Access |
-|------------|--------|
-| Contents | Read-only |
+| Permission | Access    |
+| ---------- | --------- |
+| Contents   | Read-only |
 
-4. Under "Where can this GitHub App be installed?", select **Only on this account** (unless you need to access repos in other GitHub organizations)
+4. Under "Where can this GitHub App be installed?", select **Only on this account** (unless you need to access repos in
+   other GitHub organizations)
 
 5. Click **Create GitHub App**
 
@@ -56,45 +50,52 @@ Create a GitHub App so Nuon can clone code for components from private repos.
 
 7. Note your **App ID** and **Client ID** from the app settings page.
 
-### Configure Auth0
+### Identity Provider
+
+Nuon must be configured to use your IdP for authentication.
 
 <Note>
-We have plans to remove this dependency in the future, and make it easier to configure your own IdP directly.
+  Nuon BYOC only supports Google as an IdP at this time. We will be adding support for more IdPs in the future.
 </Note>
 
-Nuon uses Auth0 for authentication. You'll need to configure an API, applications, and a custom action in your Auth0 tenant.
+#### Google
 
-#### Using the Terraform Module (Recommended)
+To use Google as your IdP, set up a client in Google Auth Platform. You will need a Google Cloud Platform account.
 
-Nuon provides a Terraform module to automate Auth0 configuration:
+1. Log into your Google Cloud Platform console.
+1. Navigate to Google Auth Platform, and open the "Clients" tab.
+1. Create a new client named "Nuon BYOC".
+1. Save the client ID and secret.
+1. Add an authorized redirect URI with the value, `https://auth.<your-root-domain>/auth`.
+
+### Auth0 (DEPRECATED)
+
+<Warning>
+Nuon BYOC previously required Auth0 for authentication, but this dependency has been removed. This documentation is retained for anyone still using Auth0, but new Nuon BYOC installs should use the new IdP integration documented above.
+</Warning>
+
+To use Auth0 for authentication, you will need to configure an API, applications, and a custom action in your Auth0 tenant.
+
+Nuon provides a Terraform module to automate Auth0 configuration. We recommend this over manual configuration. Apply the following Terraform to use it.
 
 ```hcl
 module "byoc_auth0" {
   source = "github.com/nuonco/byoc-auth0"
-
   # Your Auth0 tenant domain
   auth0_domain = "your-tenant.auth0.com"
-
   # The root domain for your BYOC install
   public_domain = "<your-root-domain>"
-
   # Your Nuon install ID
   install_id   = "<your-install-id>"
   install_name = "<your-install-name>"
 }
 ```
 
-After applying, the module outputs the values you'll need for the install inputs.
+After applying, the module outputs the values you will need for the install inputs.
 
-#### Manual Configuration
+If you prefer to configure Auth0 manually, follow the steps below.
 
-If you prefer to configure Auth0 manually, follow these steps:
-
-<Accordion title="Manual Auth0 Setup">
-
-##### 1. Create a Custom Action
-
-Add an action to enrich the access token with the user's email:
+Add an action to enrich the access token with the user's email.
 
 1. Go to **Actions > Library** in your Auth0 dashboard
 2. Click **Create Action > Build from scratch**
@@ -112,9 +113,7 @@ exports.onExecutePostLogin = async (event, api) => {
 6. Go to **Actions > Triggers > Post Login**
 7. Drag the `AddScope` action into the flow and save
 
-##### 2. Create an API
-
-Create an API with these settings:
+Create an API with the following settings.
 
 | Setting | Value |
 |---------|-------|
@@ -128,9 +127,7 @@ Create an API with these settings:
 The Identifier must match your API URL exactly. It cannot be changed after creation.
 </Note>
 
-##### 3. Create a Single Page Application
-
-Create an SPA for the dashboard UI:
+Create a Single Page Application for the Dashboard UI.
 
 | Setting | Value |
 |---------|-------|
@@ -143,9 +140,7 @@ Create an SPA for the dashboard UI:
 | Allow Refresh Token Rotation | `true` |
 | Rotation Overlap Period | `0` |
 
-##### 4. Create a Native Application
-
-Create a native app for CLI authentication:
+Create a Native Application for CLI authentication.
 
 | Setting | Value |
 |---------|-------|
@@ -154,22 +149,18 @@ Create a native app for CLI authentication:
 | Allow Cross-Origin Authentication | `true` |
 | Device Code (Advanced > Grant Types) | Checked |
 
-</Accordion>
+Finally, you can optionally enable additional identity providers.
 
-#### Optional: Additional Identity Providers
+__Okta__
 
-Auth0 supports multiple identity providers. The default configuration enables Google authentication.
-
-<Accordion title="Okta Integration">
-
-##### Step 1: Create an OIDC Application in Okta
+Create an OIDC Application in Okta.
 
 1. In Okta, create a new OIDC application
 2. Set the **Sign In Redirect** to `<your-auth0-tenant>/login/callback`
 3. Set **Trusted Origins** to `<your-root-domain>`
 4. Note the **Client ID** and **Client Secret**
 
-##### Step 2: Create an Enterprise Connection in Auth0
+Create an Enterprise Connection in Auth0.
 
 1. Go to **Authentication > Enterprise > Okta Workforce > Create**
 2. Configure:
@@ -188,13 +179,21 @@ Auth0 supports multiple identity providers. The default configuration enables Go
 }
 ```
 
-</Accordion>
+## Inputs
 
-## Update Install Inputs
-
-After configuring all dependencies, update your install inputs in the Nuon dashboard.
+After configuring all dependencies, update your install inputs in the customer dashboard.
 
 ### Authentication Configuration
+
+| Input              | Value                                  |
+| ------------------ | -------------------------------------- |
+| Auth Provider Type | `google`                               |
+| Auth Client ID     | `[secret]`                             |
+| Auth Client Secret | `[secret]`                             |
+| Auth Redirect URL  | `https://auth.<your-root-domain>/auth` |
+
+<Warning>
+If using the deprecated Auth0 integration, you will need to provide these inputs instead.
 
 | Input | Value |
 |-------|-------|
@@ -202,46 +201,49 @@ After configuring all dependencies, update your install inputs in the Nuon dashb
 | Auth0 Audience | Your Auth0 API identifier |
 | Auth0 Client ID - CTL API | Your Auth0 native app client ID |
 | Auth0 Client ID - Dashboard UI | Your Auth0 SPA client ID |
+</Warning>
 
 ### GitHub Configuration
 
-| Input | Value |
-|-------|-------|
-| Github App Name | Name of your GitHub app |
-| Github App ID | ID of your GitHub app |
+| Input                | Value                          |
+| -------------------- | ------------------------------ |
+| Github App Name      | Name of your GitHub app        |
+| Github App ID        | ID of your GitHub app          |
 | Github App Client ID | Client ID from your GitHub app |
 
 ### DNS Configuration
 
-| Input | Value |
-|-------|-------|
+| Input       | Value                                                                        |
+| ----------- | ---------------------------------------------------------------------------- |
 | Root Domain | Your custom domain, or `<your-install-id>.nuon.run` for Nuon-provided domain |
 
 ### Database Configuration (Optional)
 
 Adjust instance sizes for RDS, Temporal, and ClickHouse clusters if needed.
 
-## Update Secrets
+## Secrets
 
 When provisioning the CloudFormation stack, provide these secrets:
 
-| Secret | Value |
-|--------|-------|
-| `github_app_key` | Your base64-encoded GitHub App PEM key |
-| `auth_client_secret` | The client secret from your Auth0 SPA |
+| Secret               | Value                                  |
+| -------------------- | -------------------------------------- |
+| `github_app_key`     | Your base64-encoded GitHub App PEM key |
+| `auth_client_secret` | The client secret from your Auth0 SPA  |
 
 <Note>
 The GitHub App PEM key must be base64 encoded because AWS CloudFormation doesn't preserve newlines in text fields.
 
 To encode your PEM key:
+
 ```bash
 base64 -i your-github-app-key.pem
 ```
+
 </Note>
 
-## Provision the Install
+## Provision
 
-Once all inputs and secrets are configured:
+Once all inputs and secrets are configured
 
 1. Return to your install in the Nuon dashboard
 2. Click **Reprovision Install** from the Manage menu
@@ -249,29 +251,33 @@ Once all inputs and secrets are configured:
 
 ## Configure DNS (Optional)
 
-To host your BYOC Nuon instance under a custom domain, configure DNS for your root domain to point to the Route53 Zone created in the sandbox.
+To host your BYOC Nuon instance under a custom domain, configure DNS for your root domain to point to the Route53 Zone
+created in the sandbox.
 
 After the sandbox provisions, you'll receive:
+
 - A **Zone ID** for your public domain
 - **Nameserver records** to add to your domain's DNS
 
 Create NS records in your domain's DNS pointing to the Route53 nameservers provided.
 
 <Tip>
-See [Creating a subdomain that uses Amazon Route 53 as the DNS service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html) for detailed instructions.
+  See [Creating a subdomain that uses Amazon Route 53 as the DNS
+  service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html) for detailed
+  instructions.
 </Tip>
 
 ## Verify Installation
 
-After successful provisioning, verify your installation is working:
+After successful provisioning, verify your installation is working by visiting these URLs.
 
-| Service | URL |
-|---------|-----|
-| Dashboard | `https://app.<your-root-domain>` |
-| CTL API | `https://api.<your-root-domain>` |
+| Service    | URL                                 |
+| ---------- | ----------------------------------- |
+| Dashboard  | `https://app.<your-root-domain>`    |
+| CTL API    | `https://api.<your-root-domain>`    |
 | Runner API | `https://runner.<your-root-domain>` |
 
-You can also verify the API is responding:
+You can also verify the API is responding by curling it directly.
 
 ```bash
 curl https://api.<your-root-domain>/health
