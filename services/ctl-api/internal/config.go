@@ -148,7 +148,7 @@ type Config struct {
 	// Nuon Auth Config
 	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`
 	NuonAuthJWTSecret      string   `config:"nuon_auth_jwt_secret"`
-	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"`
+	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 
 	// Nuon Auth: Default Provider ConfigS
 	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA

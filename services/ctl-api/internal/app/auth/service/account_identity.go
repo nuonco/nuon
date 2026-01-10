@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
 )
 
@@ -135,29 +136,16 @@ func (s *service) createAccountWithIdentity(
 	identityProviderID *string,
 	userInfo *providers.UserInfo,
 ) (*app.Account, error) {
-	// Start a transaction
-	tx := s.db.WithContext(ctx).Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	// Create the account
-	account := &app.Account{
-		Email:       userInfo.Email,
-		Subject:     userInfo.Subject,
-		AccountType: app.AccountTypeAuth0, // TODO: consider a new type for IdP accounts
-	}
-
-	if err := tx.Create(account).Error; err != nil {
-		tx.Rollback()
+	// Create the account using the account client
+	// NOTE: at this time, we are not enabling user journeys for users created through this flow.
+	acct, err := s.acctClient.CreateAuthAccount(ctx, userInfo.Email, userInfo.Subject, account.NoUserJourneys())
+	if err != nil {
 		return nil, fmt.Errorf("failed to create account: %w", err)
 	}
 
 	// Create the account identity
 	accountIdentity := &app.AccountIdentity{
-		AccountID:          account.ID,
+		AccountID:          acct.ID,
 		IdentityProviderID: identityProviderID,
 		ProviderType:       providerType,
 		Sub:                userInfo.Subject,
@@ -165,22 +153,17 @@ func (s *service) createAccountWithIdentity(
 		Picture:            userInfo.Picture,
 	}
 
-	if err := tx.Create(accountIdentity).Error; err != nil {
-		tx.Rollback()
+	if err := s.db.WithContext(ctx).Create(accountIdentity).Error; err != nil {
 		return nil, fmt.Errorf("failed to create account identity: %w", err)
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
 	s.l.Info("created new account with identity",
-		zap.String("account_id", account.ID),
+		zap.String("account_id", acct.ID),
 		zap.String("identity_id", accountIdentity.ID),
 		zap.String("provider_type", string(providerType)),
 		zap.String("email", userInfo.Email))
 
-	return account, nil
+	return acct, nil
 }
 
 // linkIdentityToAccount creates an account_identity record linking an existing account

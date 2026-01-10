@@ -10,10 +10,18 @@ import (
 )
 
 func (m *Client) CreateAccount(ctx context.Context, email, subject string, userJourneys app.UserJourneys) (*app.Account, error) {
+	return m.createAccount(ctx, email, subject, app.AccountTypeAuth0, userJourneys)
+}
+
+func (m *Client) CreateAuthAccount(ctx context.Context, email, subject string, userJourneys app.UserJourneys) (*app.Account, error) {
+	return m.createAccount(ctx, email, subject, app.AccountTypeAuth, userJourneys)
+}
+
+func (m *Client) createAccount(ctx context.Context, email, subject string, accountType app.AccountType, userJourneys app.UserJourneys) (*app.Account, error) {
 	acct := app.Account{
 		Email:        email,
 		Subject:      subject,
-		AccountType:  app.AccountTypeAuth0,
+		AccountType:  accountType,
 		UserJourneys: userJourneys,
 	}
 

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"slices"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 type AccountType string
 
 const (
+	AccountTypeAuth    AccountType = "auth"
 	AccountTypeAuth0   AccountType = "auth0"
 	AccountTypeService AccountType = "service"
 
@@ -75,7 +77,7 @@ func (a *Account) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *Account) AfterQuery(tx *gorm.DB) error {
-	a.IsEmployee = a.AccountType == AccountTypeAuth0 && strings.HasSuffix(a.Email, "@nuon.co")
+	a.IsEmployee = slices.Contains([]AccountType{AccountTypeAuth0, AccountTypeAuth}, a.AccountType) && strings.HasSuffix(a.Email, "@nuon.co")
 
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
