@@ -17,6 +17,10 @@ var (
 	// ErrAccountNotAuthorized is returned when a user tries to authenticate
 	// but has no existing account and no pending org invite.
 	ErrAccountNotAuthorized = errors.New("account not authorized: no existing account or pending invitation found")
+
+	// ErrEmailDomainNotAllowed is returned when a user tries to authenticate
+	// but their email domain is not in the allowed domains list.
+	ErrEmailDomainNotAllowed = errors.New("email domain not allowed")
 )
 
 // getOrCreateAccountByIdentityStrict looks up an account by (provider_type, sub).
@@ -125,6 +129,102 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 		zap.String("email", userInfo.Email),
 		zap.String("invite_id", pendingInvite.ID),
 		zap.String("org_id", pendingInvite.OrgID))
+
+	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo)
+}
+
+// getOrCreateAccountByIdentity looks up an account by (provider_type, sub).
+// If found, returns the existing account.
+// If not found by sub, checks for an existing account by email.
+// If no existing account, creates a new account if the email domain is allowed.
+func (s *service) getOrCreateAccountByIdentity(
+	ctx context.Context,
+	providerType app.ProviderType,
+	identityProviderID *string,
+	userInfo *providers.UserInfo,
+) (*app.Account, error) {
+	// 1. Look up existing account identity by (provider_type, sub)
+	var accountIdentity app.AccountIdentity
+	err := s.db.WithContext(ctx).
+		Preload("Account").
+		Where("provider_type = ? AND sub = ?", providerType, userInfo.Subject).
+		First(&accountIdentity).Error
+
+	if err == nil {
+		// Found existing identity - check if profile needs update
+		needsUpdate := false
+
+		if accountIdentity.Name != userInfo.Name {
+			accountIdentity.Name = userInfo.Name
+			needsUpdate = true
+		}
+		if accountIdentity.Picture != userInfo.Picture {
+			accountIdentity.Picture = userInfo.Picture
+			needsUpdate = true
+		}
+
+		if needsUpdate {
+			if err := s.db.WithContext(ctx).
+				Model(&accountIdentity).
+				Select("name", "picture").
+				Updates(&accountIdentity).Error; err != nil {
+				s.l.Warn("failed to update identity profile",
+					zap.String("identity_id", accountIdentity.ID),
+					zap.Error(err))
+			} else {
+				s.l.Debug("updated identity profile",
+					zap.String("identity_id", accountIdentity.ID),
+					zap.String("name", accountIdentity.Name),
+					zap.String("picture", accountIdentity.Picture))
+			}
+		}
+
+		s.l.Debug("found existing account identity",
+			zap.String("account_id", accountIdentity.AccountID),
+			zap.String("provider_type", string(providerType)),
+			zap.String("sub", userInfo.Subject))
+		return accountIdentity.Account, nil
+	}
+
+	if err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("failed to lookup account identity: %w", err)
+	}
+
+	// 2. No existing identity - check if there's an existing account with this email
+	var existingAccount app.Account
+	err = s.db.WithContext(ctx).
+		Where("email = ?", userInfo.Email).
+		First(&existingAccount).Error
+
+	if err == nil {
+		// Found existing account by email - link the new identity to it
+		s.l.Info("linking new identity to existing account",
+			zap.String("account_id", existingAccount.ID),
+			zap.String("provider_type", string(providerType)),
+			zap.String("sub", userInfo.Subject),
+			zap.String("email", userInfo.Email))
+
+		return s.linkIdentityToAccount(ctx, &existingAccount, providerType, identityProviderID, userInfo)
+	}
+
+	if err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("failed to lookup account by email: %w", err)
+	}
+
+	// 3. No existing account - check if email domain is allowed
+	if !s.isEmailDomainAllowed(userInfo.Email) {
+		s.l.Warn("authentication denied: email domain not allowed",
+			zap.String("email", userInfo.Email),
+			zap.String("provider_type", string(providerType)),
+			zap.String("sub", userInfo.Subject))
+		return nil, ErrEmailDomainNotAllowed
+	}
+
+	// 4. Email domain is allowed - create account and identity
+	s.l.Info("creating account for user with allowed domain",
+		zap.String("provider_type", string(providerType)),
+		zap.String("sub", userInfo.Subject),
+		zap.String("email", userInfo.Email))
 
 	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo)
 }
