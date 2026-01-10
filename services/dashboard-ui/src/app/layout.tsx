@@ -50,32 +50,32 @@ export default async function RootLayout({
       className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 overflow-hidden"
       lang="en"
     >
-      <>
-        {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
-        process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
-        process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local' ? (
-          <>
-            <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
-            <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
-          </>
-        ) : null}
-        <body
-          className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures antialiased`}
-        >
-          <div id="ui-version" className="hidden">
-            Version: {process.env.VERSION || 'development'}
-          </div>
-          <EnvScript
-            env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
-            githubAppName={process.env.GITHUB_APP_NAME}
-            tfBackendUrl={API_URL}
-          />
-
-          <AuthProvider
-            useAuthService={USE_AUTH_SERVICE}
-            initialUser={initialUser}
-            authServiceUrl={AUTH_SERVICE_URL}
+      <AuthProvider
+        useAuthService={USE_AUTH_SERVICE}
+        initialUser={initialUser}
+        authServiceUrl={AUTH_SERVICE_URL}
+      >
+        <>
+          {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
+          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
+          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local' ? (
+            <>
+              <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+              <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+            </>
+          ) : null}
+          <body
+            className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures antialiased`}
           >
+            <div id="ui-version" className="hidden">
+              Version: {process.env.VERSION || 'development'}
+            </div>
+            <EnvScript
+              env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
+              githubAppName={process.env.GITHUB_APP_NAME}
+              tfBackendUrl={API_URL}
+            />
+
             <AccountProvider shouldPoll>
               <UserJourneyProvider>{children}</UserJourneyProvider>
             </AccountProvider>
@@ -88,9 +88,9 @@ export default async function RootLayout({
                 <SegmentAnalyticsIdentify />
               </Suspense>
             )}
-          </AuthProvider>
-        </body>
-      </>
+          </body>
+        </>
+      </AuthProvider>
     </html>
   )
 }
