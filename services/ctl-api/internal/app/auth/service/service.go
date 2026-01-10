@@ -116,6 +116,11 @@ func New(params Params) (*service, error) {
 		return nil, fmt.Errorf("nuon_auth_session_key is required")
 	}
 
+	// Validate allowed domains (may not be empty)
+	if len(s.cfg.NuonAuthAllowedDomains) == 0 {
+		return nil, fmt.Errorf("nuon_auth_allowed_domains is required")
+	}
+
 	// configure domain name for the auth service.
 	if s.cfg.RootDomain != "localhost" {
 		// TODO: consider returning an error if the NuonRootDomain is localhost but the env is not dev
@@ -142,13 +147,8 @@ func New(params Params) (*service, error) {
 		}
 	}
 
-	if len(s.allowedDomains) == 0 {
-		s.l.Warn("no allowed domains configured - all email domains will be permitted",
-			zap.String("config_key", "nuon_auth_allowed_domains"))
-	} else {
-		s.l.Info("allowed domains configured",
-			zap.Strings("domains", s.allowedDomains))
-	}
+	s.l.Info("allowed domains configured",
+		zap.Strings("domains", s.allowedDomains))
 
 	s.l.Info("auth service initialized",
 		zap.String("provider_type", string(defaultIP.ProviderType)),
