@@ -19,11 +19,11 @@ var (
 	ErrAccountNotAuthorized = errors.New("account not authorized: no existing account or pending invitation found")
 )
 
-// getOrCreateAccountByIdentity looks up an account by (provider_type, sub).
+// getOrCreateAccountByIdentityStrict looks up an account by (provider_type, sub).
 // If found, returns the existing account.
 // If not found by sub, checks for an existing account by email or a pending OrgInvite.
 // Only creates a new account if there's an existing account (to link) or a pending invite.
-func (s *service) getOrCreateAccountByIdentity(
+func (s *service) getOrCreateAccountByIdentityStrict(
 	ctx context.Context,
 	providerType app.ProviderType,
 	identityProviderID *string,

@@ -104,7 +104,7 @@ func (s *service) AuthState(c *gin.Context) {
 	}
 
 	// Look up or create account by (provider_type, sub)
-	account, err := s.getOrCreateAccountByIdentity(
+	account, err := s.getOrCreateAccountByIdentityStrict(
 		c.Request.Context(),
 		identityProvider.ProviderType,
 		getIdentityProviderIDPtr(identityProvider),
