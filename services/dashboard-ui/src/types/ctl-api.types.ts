@@ -291,3 +291,16 @@ export type TTerraformState = {
     }
   }
 }
+
+// auth
+export type TMe = {
+  id: string
+  email: string
+  identities: Array<{
+    picture?: string
+    name?: string
+  }>
+  [key: string]: any
+}
+// TODO(nnnnat): use the generated type once it is ready
+// components['schemas']['service.AuthMeResponse']

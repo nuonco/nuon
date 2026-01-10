@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import React, { type FC, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { GearIcon } from '@phosphor-icons/react'
 import { AdminOrgActions } from '@/components/old/AdminOrgActions'
 import { AdminInstallActions } from '@/components/old/AdminInstallActions'
@@ -50,7 +50,7 @@ export const AdminModal: FC<{
   isSidebarOpen: boolean
   isModalOpen?: string
 }> = ({ isSidebarOpen, isModalOpen }) => {
-  const { user } = useUser()
+  const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(Boolean(isModalOpen))
 
   return user && /@nuon.co\s*$/.test(user?.email) ? (

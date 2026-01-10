@@ -1,12 +1,11 @@
 'use client'
 
-import { createContext, useEffect, type ReactNode } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { createContext, type ReactNode } from 'react'
+import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TAPIHealth } from '@/types'
-import { isNuonSession } from '@/utils/session-utils'
 
 type APIHealthContextValue = {
   health: TAPIHealth
@@ -25,7 +24,7 @@ export function APIHealthProvider({
 }: {
   children: ReactNode
 } & IPollingProps) {
-  const { user, isLoading: isUserLoading } = useUser()
+  const { isLoading: isUserLoading, isAdmin } = useAuth()
   const {
     data: health,
     error,
@@ -47,7 +46,7 @@ export function APIHealthProvider({
       {health?.status === 'degraded' && !isUserLoading ? (
         <Banner className="!rounded-none" theme="error">
           <div className="flex items-center gap-8">
-            {isNuonSession(user) ? (
+            {isAdmin ? (
               health?.degraded?.length ? (
                 health?.degraded?.map((d) => (
                   <DegradedBanner

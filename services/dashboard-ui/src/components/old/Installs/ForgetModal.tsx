@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CheckIcon, TrashIcon } from '@phosphor-icons/react'
 import { forgetInstall } from '@/actions/installs/forget-install'
 import { Button } from '@/components/old/Button'
@@ -18,7 +18,7 @@ import { useServerAction } from '@/hooks/use-server-action'
 import { trackEvent } from '@/lib/segment-analytics'
 
 export const ForgetModal = () => {
-  const { user } = useUser()
+  const { user } = useAuth()
   const router = useRouter()
   const { org } = useOrg()
   const { install } = useInstall()

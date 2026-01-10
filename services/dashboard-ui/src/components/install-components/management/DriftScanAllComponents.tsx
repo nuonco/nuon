@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { deployComponents } from '@/actions/installs/deploy-components'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -34,7 +34,7 @@ export const DriftScanAllComponentsButton = ({ ...props }: IButtonAsButton) => {
 export const DriftScanAllComponentsModal = ({ ...props }: IModal) => {
   const path = usePathname()
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { install } = useInstall()
   const { removeModal } = useSurfaces()

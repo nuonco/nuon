@@ -28,53 +28,17 @@ services: |
     - go.sum
     - pkg/**
 
-  nuonctl:
-    - bins/nuonctl/**
-
   dashboard-ui:
     - services/dashboard-ui/**
-  
-  wiki:
-    - services/wiki/**
-    - wiki/**
-
-  website:
-    - services/website/**
-
-  docs:
-    - docs/**
 
 disabled_services: |
-  dashboard-ui:
-    - services/dashboard-ui/**
-
-  workers-infra-tests:
-    - go.mod
-    - go.sum
-    - services/workers-infra-tests/**
-    - pkg/terraform/**
-
 
 # infra is managed via terraform cloud
 terraform-cloud: |
-  terraform:
-    infra/**
   ctl-api:
     services/ctl-api/infra/**
   dashboard-ui:
     services/dashboard-ui/infra/**
-  workers-canary:
-    services/workers-canary/infra/**
-  workers-infra-tests:
-    services/workers-infra-tests/infra/**
 
 # to add a new directory that triggers a CI run for an artifact, update the list entry
 artifacts: |
-  services/e2e:
-    - services/e2e/**
-
-  charts/demo:
-    - charts/demo/**
-  charts/temporal:
-    - charts/temporal/**
-

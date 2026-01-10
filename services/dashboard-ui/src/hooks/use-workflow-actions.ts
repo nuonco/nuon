@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import type { TWorkflow } from '@/types'
 
 export const useWorkflowActions = (workflow: TWorkflow, hasApprovals: boolean) => {
-  const { user, isLoading } = useUser()
+  const { user, isLoading } = useAuth()
   
   return useMemo(() => {
     const isFinished = workflow?.finished

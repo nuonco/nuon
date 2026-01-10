@@ -1,5 +1,6 @@
 export * from './ctl-api/accounts'
 export * from './ctl-api/apps'
+export * from './ctl-api/auth'
 export * from './ctl-api/orgs'
 export * from './ctl-api/installs'
 export * from './ctl-api/runners'

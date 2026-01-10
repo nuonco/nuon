@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { buildComponents } from '@/actions/apps/build-components'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -34,7 +34,7 @@ export const BuildAllComponentsButton = ({ ...props }: IButtonAsButton) => {
 
 export const BuildAllComponentsModal = ({ ...props }: IModal) => {
   const path = usePathname()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { app } = useApp()
   const { removeModal } = useSurfaces()

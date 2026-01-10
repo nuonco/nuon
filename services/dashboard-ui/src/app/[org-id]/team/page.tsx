@@ -13,7 +13,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { TeamTable, TeamTableSkeleton } from '@/components/team/TeamTable'
 import { InviteUserButton } from '@/components/team/InviteUserButton'
 import { getOrg, getOrgAccounts } from '@/lib'
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import type { TAccount, TInvite } from '@/types'
 import { isNuonSession } from '@/utils/session-utils'
 
@@ -170,7 +170,7 @@ const StratusOrgMembers: FC<{
   limit?: number
   offset?: string
 }> = async ({ orgId, limit = 5, offset }) => {
-  const session = await auth0.getSession()
+  const session = await getSession()
   const {
     data: members,
     error,
@@ -204,7 +204,7 @@ const OrgMembers: FC<{
   limit?: number
   offset?: string
 }> = async ({ orgId, limit = 10, offset }) => {
-  const session = await auth0.getSession()
+  const session = await getSession()
   const {
     data: members,
     error,
