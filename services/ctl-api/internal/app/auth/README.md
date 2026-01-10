@@ -4,18 +4,6 @@ This is technically a full stack app. We are building it to conform to the way w
 which are all APIs, to maintain our patterns. At a future date, we will refactor our fx deps and the `cmd`s. For now, we
 respect convention.
 
-**In Scope**
-
-- Allow BYOC Nuon customers to BYO-IdP.
-
-**Out of Scope**
-
-- Allow Cloud orgs to BYO-IdP. This is a future feature, not a today feature.
-
-**Plan for**
-
-- Allowing users to connect their account to multiple IdP providers.
-
 ## Prior Art
 
 This service borrows heavily from https://github.com/vouch/vouch-proxy.
@@ -24,13 +12,27 @@ This service borrows heavily from https://github.com/vouch/vouch-proxy.
 
 New env vars for auth.nuon.co
 
-| Env var               | Description                                             | Scope        |
-| --------------------- | ------------------------------------------------------- | ------------ |
-| ROOT_DOMAIN           | The root domain for all the services. e.g. byoc.org.co. | All Services |
-| NUON_AUTH_SESSION_KEY | Session Key for nonce                                   | Auth Service |
-| NUON_AUTH_JWT_SECRET  | Secret for siging the jwt                               | Auth Service |
+| Env var                   | Description                                                                                 | Scope        |
+| ------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
+| ROOT_DOMAIN               | The root domain for all the services. e.g. byoc.org.co.                                     | All Services |
+| NUON_AUTH_SESSION_KEY     | Session Key for nonce                                                                       | Auth Service |
+| NUON_AUTH_ALLOWED_DOMAINS | Domains from which any user can register. Usually the org email.                            | Auth Service |
+| NUON_AUTH_ALLOW_ALL_USERS | Whether or not any user with an email from an allowed domain should be allowed to register. | Auth Service |
 
-We construct a domain from the root domain by prefixing `auth` to it instead of using a NUON_AUTH_DOMAIN env var.
+We construct a domain from the root domain by prefixing `auth` to it. e.g. `app`.`byoc.org.co`. This becomes the service
+domain which the service understands itself to be available at .
+
+<!-- prettier-ignore-start -->
+> [!IMPORTANT]
+> These values are required. If they do are not present, the service will not start.
+
+> [!NOTE]
+> `NUON_AUTH_ALLOW_ALL_USERS` defaults to false.
+
+> [!NOTE]
+> `NUON_AUTH_ALLOWED_DOMAINS` cannot be empty.
+
+<!-- prettier-ignore-end -->
 
 ## Identity Providers
 
@@ -128,7 +130,8 @@ load and use.
 ### Uniqueness
 
 At the time of writing, only one of each type (google, github, oidc) provider can be provided. This limitation includes
-the provider configured via env vars.
+the provider configured via env vars. What this means is that if an oidc provider is configured for this service via env
+vars, only `google` or `github` oidc providers can be added via in-database configs.
 
 ## Internals
 
@@ -140,16 +143,18 @@ registered with this naming convention `auth/*.tmpl`. The files are all named `*
 ### Middleware
 
 This service does need or know about the Org or Auth middleware in use by the other API services. This service has only
-a few endpoints so it doesn't actually imlement an auth middleware for its own use.
+a few endpoints so it doesn't actually implement an auth middleware for its own use and instead relies on the session.
+
+### Session
+
+The auth service maintains a short lived session, `nuon-auth-session`, to store the next url (final destination) and the
+provider type. This session is deleted as soon as the auth flow is complete and is only ever available to the auth
+service itself. The service uses the `NUON_AUTH_SESSION_KEY` to sign the cookie for the session (HMAC-SHA256).
 
 ### Cookie
 
-This service uses a cookie `X-Nuon-Auth` for auth. The cookie is a JWT with the following keys:
-
-| attr  | desc |
-| ----- | ---- |
-| token |      |
-| email |      |
+When auth is complete, the auth provider sets a cross domain cookie `X-Nuon-Auth` that is accessible to any service on
+`ROOT_DOMAIN` (e.g. `byoc.org.co`). This cookie is invalidated when a user visits `/logout`.
 
 ## Forthcoming
 
@@ -171,46 +176,9 @@ future-looking feature leaving room for the concept of roles and org access.
 | groups | list of strings where each string is a group such as admin or developer |
 | orgs   | list of strings where each string is, ideally, an org id or an org slug |
 
-## TODO (now)
+## Caveats & Limitations
 
-- [x] use NuonRootDomain instead of NuonAuthDomain
-- [x] Add `identity_provider` model (org_id + provider type are unique together) (consider default provider type as
-      well).
-- [x] Drop JWT in favor of simpler cookie w/ token
-- [x] Add support for allowed_domains (email domains) or domain limitation.
+### Changing a Provider of a Given Type
 
-## \*Caveats
-
-- Changing an env-var provider to a different provider of the same type is likely to cause issues. At this time, this is
-  not supported.
-- Changing the provider, site-wide or for an org, of a given type to a different provider of the same type will cause
-  issues. At this point, this is unsupported until we develop a story for handling changes in `sub`. Theoretically,
-  email is enough to preserve the connectio to the account.
-- Users are not able to arbitrarily sign up for the service. Successful auth requires for the user to have an account or
-  an org invite.
-
-### Agents
-
-The following requirements were confirmed during implementation:
-
-1. **Provider Implementation**: Use [vouch-proxy](https://github.com/vouch/vouch-proxy/) as inspiration for implementing
-   Google, GitHub, and OpenID Connect providers in `internal/pkg/auth/providers`.
-
-2. **Session Management**: Use custom signed cookies (HMAC-SHA256) instead of gin-contrib/sessions. Set `SameSite=None`
-   because the auth cookie will be used across multiple domains.
-
-3. **Identity Provider Configuration**:
-
-   - Provider-specific config structs (`OpenIDConfig`, `GoogleConfig`, `GitHubConfig`) with validation based on
-     `ProviderType`
-   - Store configs in a JSONB column, `configs`, on the `IdentityProvider` model
-
-4. **Provider Loading Sources**:
-
-   - **Environment variables**: Default provider (required). Service will not start without valid config.
-   - **Database**: Additional `IdentityProvider` records (optional, loaded after migrations are applied)
-
-5. **Service Startup Validation**: Use service-level validation pattern - the `New()` function returns
-   `(*service, error)` and validates the default provider config. If required env vars (`nuon_auth_provider_type`,
-   `nuon_auth_client_id`, `nuon_auth_client_secret`, `nuon_auth_redirect_url`) are not provided or invalid, the service
-   fails to start via FX.
+Changing an env-var provider to a different provider of the same type is likely to cause issues. At this time, this is
+not explicitly supported. This applies to both, env-var based IdPs and in-database IdPs.
