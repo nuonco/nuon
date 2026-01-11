@@ -37,7 +37,8 @@ func (s *Helpers) ValidateInstallInputs(ctx context.Context, appInputCfg *app.Ap
 
 	// verify all of the inputs are set on the current sandbox config
 	for _, inp := range appInputCfg.AppInputs {
-		if !inp.Required {
+		if !inp.Required ||
+			inp.Source == app.AppInputSourceCustomer {
 			continue
 		}
 

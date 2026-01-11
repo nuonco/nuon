@@ -10,7 +10,6 @@ export default async function middleware(request: NextRequest) {
     console.log('using nuon auth service')
   } else {
     // eslint-disable-next-line no-console
-    console.log('using Auth0')
 
     const authResponse = await auth0.middleware(request)
     const reqCookieNames = request.cookies.getAll().map((cookie) => cookie.name)
