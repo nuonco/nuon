@@ -85,8 +85,9 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, insta
 
 	// Merge new values with existing values and track changes
 	if installInputs.Values == nil {
-		installInputs.Values = pgtype.Hstore{}
+		return errors.New("missing install inputs")
 	}
+
 	newInputMap := installInputs.Values
 	var changedInputs []string
 	for key, value := range filteredInputValues {
