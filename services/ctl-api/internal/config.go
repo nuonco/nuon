@@ -78,6 +78,7 @@ func init() {
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_jwt_secret", "insecure-jtw-secret-for-devce4d3967724c25af9d5191dfe3e5bd27d70c4")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
+	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
 }
 
 type Config struct {
@@ -147,7 +148,7 @@ type Config struct {
 
 	// Nuon Auth Config
 	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`
-	NuonAuthJWTSecret      string   `config:"nuon_auth_jwt_secret"`
+	NuonAuthSessionTTL     int      `config:"nuon_auth_session_ttl"`
 	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
 
