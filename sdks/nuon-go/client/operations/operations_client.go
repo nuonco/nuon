@@ -332,6 +332,8 @@ type ClientService interface {
 
 	GetApps(params *GetAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppsOK, error)
 
+	GetAuthMe(params *GetAuthMeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAuthMeOK, error)
+
 	GetBuild(params *GetBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBuildOK, error)
 
 	GetCLIConfig(params *GetCLIConfigParams, opts ...ClientOption) (*GetCLIConfigOK, error)
@@ -6143,6 +6145,52 @@ func (a *Client) GetApps(params *GetAppsParams, authInfo runtime.ClientAuthInfoW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetApps: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAuthMe gets current account with identity information
+
+Returns the authenticated account with identity profile information (provider_type, name, picture)
+*/
+func (a *Client) GetAuthMe(params *GetAuthMeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAuthMeOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAuthMeParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAuthMe",
+		Method:             "GET",
+		PathPattern:        "/v1/auth/me",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAuthMeReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAuthMeOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAuthMe: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
