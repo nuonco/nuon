@@ -15,6 +15,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 )
 
@@ -32,19 +33,22 @@ var tmplFS embed.FS
 type Params struct {
 	fx.In
 
-	V   *validator.Validate
-	Cfg *internal.Config
-	DB  *gorm.DB `name:"psql"`
-	MW  metrics.Writer
-	L   *zap.Logger
+	V          *validator.Validate
+	Cfg        *internal.Config
+	DB         *gorm.DB `name:"psql"`
+	MW         metrics.Writer
+	L          *zap.Logger
+	AcctClient *account.Client
 }
 
 type service struct {
-	v              *validator.Validate
-	l              *zap.Logger
-	db             *gorm.DB
-	mw             metrics.Writer
-	cfg            *internal.Config
+	v          *validator.Validate
+	l          *zap.Logger
+	db         *gorm.DB
+	mw         metrics.Writer
+	cfg        *internal.Config
+	acctClient *account.Client
+
 	domain         string   // domain the service is served at
 	allowedDomains []string // email domains that are allowed to use this service for auth
 }
@@ -94,11 +98,12 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 
 func New(params Params) (*service, error) {
 	s := &service{
-		cfg: params.Cfg,
-		l:   params.L,
-		v:   params.V,
-		db:  params.DB,
-		mw:  params.MW,
+		cfg:        params.Cfg,
+		l:          params.L,
+		v:          params.V,
+		db:         params.DB,
+		mw:         params.MW,
+		acctClient: params.AcctClient,
 	}
 
 	// Validate required configs
@@ -109,6 +114,11 @@ func New(params Params) (*service, error) {
 	// Validate required secrets
 	if s.cfg.NuonAuthSessionKey == "" {
 		return nil, fmt.Errorf("nuon_auth_session_key is required")
+	}
+
+	// Validate allowed domains (may not be empty)
+	if len(s.cfg.NuonAuthAllowedDomains) == 0 {
+		return nil, fmt.Errorf("nuon_auth_allowed_domains is required")
 	}
 
 	// configure domain name for the auth service.
@@ -137,13 +147,8 @@ func New(params Params) (*service, error) {
 		}
 	}
 
-	if len(s.allowedDomains) == 0 {
-		s.l.Warn("no allowed domains configured - all email domains will be permitted",
-			zap.String("config_key", "nuon_auth_allowed_domains"))
-	} else {
-		s.l.Info("allowed domains configured",
-			zap.Strings("domains", s.allowedDomains))
-	}
+	s.l.Info("allowed domains configured",
+		zap.Strings("domains", s.allowedDomains))
 
 	s.l.Info("auth service initialized",
 		zap.String("provider_type", string(defaultIP.ProviderType)),
