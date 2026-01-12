@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -75,6 +76,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, insta
 			InstallID:        installID,
 			AppInputConfigID: appInputConfig.ID,
 		}).
+		Attrs(app.InstallInputs{Values: pgtype.Hstore{}}).
 		FirstOrCreate(&installInputs)
 
 	if res.Error != nil {
@@ -82,6 +84,10 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, insta
 	}
 
 	// Merge new values with existing values and track changes
+	if installInputs.Values == nil {
+		return errors.New("missing install inputs")
+	}
+
 	newInputMap := installInputs.Values
 	var changedInputs []string
 	for key, value := range filteredInputValues {

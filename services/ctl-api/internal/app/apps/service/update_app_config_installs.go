@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -108,22 +108,66 @@ func (s *service) UpdateAppConfigInstalls(ctx *gin.Context) {
 }
 
 func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigID string, req *UpdateAppConfigInstallsRequest) error {
-	res := s.db.WithContext(ctx).
+	var affectedInstalls []app.Install
+	query := s.db.WithContext(ctx).
 		Model(&app.Install{}).
-		Where(app.Install{
-			AppID: appID,
-		})
+		Where(app.Install{AppID: appID})
 
-	// if "all" is false, filter by the provided install IDs
 	if !req.UpdateAll {
-		res.Where("id in ?", req.InstallIDs)
+		query = query.Where("id in ?", req.InstallIDs)
 	}
 
-	res.Updates(app.Install{
-		AppConfigID: appConfigID,
-	})
-	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update installations with new config")
+	if err := query.Find(&affectedInstalls).Error; err != nil {
+		return stderr.ErrSystem{
+			Err:         fmt.Errorf("unable to query affected installs: %w", err),
+			Description: "Failed to retrieve installs for migration",
+		}
+	}
+
+	// install ID -> old app_config_id
+	installConfigMap := make(map[string]string)
+	for _, install := range affectedInstalls {
+		installConfigMap[install.ID] = install.AppConfigID
+	}
+
+	tx := s.db.WithContext(ctx).Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// migrate install inputs BEFORE updating app_config_id
+	if err := s.installsHelpers.MigrateInstallInputsToNewConfig(ctx, tx, installConfigMap, appConfigID); err != nil {
+		tx.Rollback()
+		return stderr.ErrSystem{
+			Err:         fmt.Errorf("unable to migrate install inputs: %w", err),
+			Description: "Failed to migrate install inputs to new app config",
+		}
+	}
+
+	// update install app_config_id
+	res := tx.Model(&app.Install{}).
+		Where(app.Install{AppID: appID})
+
+	if !req.UpdateAll {
+		res = res.Where("id in ?", req.InstallIDs)
+	}
+
+	if err := res.Updates(app.Install{AppConfigID: appConfigID}).Error; err != nil {
+		tx.Rollback()
+		return stderr.ErrSystem{
+			Err:         fmt.Errorf("unable to update installs: %w", err),
+			Description: "Failed to update install app config references",
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		return stderr.ErrSystem{
+			Err:         fmt.Errorf("unable to commit transaction: %w", err),
+			Description: "Failed to commit install updates",
+		}
 	}
 
 	return nil

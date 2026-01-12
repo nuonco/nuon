@@ -45,9 +45,8 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	}
 
 	switch appCfg.RunnerConfig.Type {
-	case app.AppRunnerTypeAWS:
-		break
-	case app.AppRunnerTypeAzure:
+	// we only support these
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure:
 		break
 	default:
 		return nil
