@@ -35,10 +35,14 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	// Skip cron-triggered actions if sandbox is not active
-	// This prevents workflow history bloat when installs are created but not fully provisioned
+	// Skip cron-triggered actions if sandbox is not active to prevent workflow history size from growing.
 	if req.InstallActionWorkflowTrigger.TriggerType == app.ActionWorkflowTriggerTypeCron {
-		if install.SandboxStatus != app.InstallSandboxStatusActive {
+
+		switch install.SandboxStatus {
+		// We may want to add more cases here in the future.
+		case app.InstallSandboxStatusProvisioning,
+			app.InstallSandboxStatusDeprovisioning,
+			app.InstallSandboxStatusDeprovisioned:
 			l, _ := log.WorkflowLogger(ctx)
 			if l != nil {
 				l.Info("skipping cron action execution - sandbox not active",
