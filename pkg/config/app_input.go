@@ -39,7 +39,7 @@ func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("database_url").
 		Field("display_name").Short("display name of the input").Required().
 		Long("Human-readable name shown in the installer UI to customers").
-		Example("API Token").
+		Example("API token").
 		Example("Database URL").
 		Field("description").Short("input description").Required().
 		Long("Detailed explanation of what this input is for, rendered in the installer to guide users").
