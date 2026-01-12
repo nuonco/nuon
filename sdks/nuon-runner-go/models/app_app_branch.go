@@ -41,6 +41,9 @@ type AppAppBranch struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// queue
+	Queue *AppQueue `json:"queue,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
@@ -52,6 +55,10 @@ type AppAppBranch struct {
 func (m *AppAppBranch) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateQueue(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateWorkflows(formats); err != nil {
 		res = append(res, err)
 	}
@@ -59,6 +66,29 @@ func (m *AppAppBranch) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppAppBranch) validateQueue(formats strfmt.Registry) error {
+	if swag.IsZero(m.Queue) { // not required
+		return nil
+	}
+
+	if m.Queue != nil {
+		if err := m.Queue.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("queue")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("queue")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -96,6 +126,10 @@ func (m *AppAppBranch) validateWorkflows(formats strfmt.Registry) error {
 func (m *AppAppBranch) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateQueue(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateWorkflows(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -103,6 +137,31 @@ func (m *AppAppBranch) ContextValidate(ctx context.Context, formats strfmt.Regis
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppAppBranch) contextValidateQueue(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Queue != nil {
+
+		if swag.IsZero(m.Queue) { // not required
+			return nil
+		}
+
+		if err := m.Queue.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("queue")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("queue")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

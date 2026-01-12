@@ -30,9 +30,6 @@ func (m AppAccountType) Pointer() *AppAccountType {
 
 const (
 
-	// AppAccountTypeAuth captures enum value "auth"
-	AppAccountTypeAuth AppAccountType = "auth"
-
 	// AppAccountTypeAuth0 captures enum value "auth0"
 	AppAccountTypeAuth0 AppAccountType = "auth0"
 
@@ -51,7 +48,7 @@ var appAccountTypeEnum []any
 
 func init() {
 	var res []AppAccountType
-	if err := json.Unmarshal([]byte(`["auth","auth0","service","canary","integration"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["auth0","service","canary","integration"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
