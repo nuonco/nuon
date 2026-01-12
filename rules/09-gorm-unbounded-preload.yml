@@ -1,0 +1,17 @@
+id: gorm-unbounded-preload
+language: go
+message: "Unbounded GORM Preload detected. Consider adding a limit using Preload with a scoping function."
+severity: warning
+
+rule:
+  kind: call_expression
+  has:
+    kind: selector_expression
+    has:
+      kind: field_identifier
+      regex: ^Preload$
+    stopBy: end
+  not:
+    has:
+      kind: func_literal
+      stopBy: end

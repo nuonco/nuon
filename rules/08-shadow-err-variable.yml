@@ -1,0 +1,13 @@
+id: shadow-err-variable
+language: go
+message: "Error variable 'err' shadowed in inner scope; original error reference is lost"
+severity: warning
+
+rule:
+  pattern: 'err := $_'
+  inside:
+    any:
+      - kind: if_statement
+      - kind: for_statement
+      - kind: expression_switch_statement
+    stopBy: end

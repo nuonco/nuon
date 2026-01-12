@@ -1,0 +1,38 @@
+id: defer-in-loop
+snapshots:
+  ? |
+    for i := 0; i < 3; i++ {
+      defer fmt.Println(i)
+    }
+  : labels:
+    - source: |-
+        for i := 0; i < 3; i++ {
+          defer fmt.Println(i)
+        }
+      style: primary
+      start: 0
+      end: 0
+  ? |
+    for _, item := range items {
+      defer fmt.Println(item)
+    }
+  : labels:
+    - source: |-
+        for _, item := range items {
+          defer fmt.Println(item)
+        }
+      style: primary
+      start: 0
+      end: 0
+  ? |
+    for key, val := range data {
+      defer fmt.Printf("%s: %d\n", key, val)
+    }
+  : labels:
+    - source: |-
+        for key, val := range data {
+          defer fmt.Printf("%s: %d\n", key, val)
+        }
+      style: primary
+      start: 0
+      end: 0

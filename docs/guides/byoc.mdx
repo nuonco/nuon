@@ -19,6 +19,20 @@ Gateways.
 
 <Note>Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.</Note>
 
+### DNS (Optional)
+
+We can automatically provision a root domain for you at `<install-id>.nuon.run`. But you can also use your domain as the root instead, via DNS delegation. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the following steps.
+
+1. Before installation, create the DNS zone `my-domain.com` if it does not already exist.
+1. Provide `nuon.my-domain.com` as the value for the Root Domain input.
+1. Once Nuon BYOC has fully provisioned, the domains of DNS servers for the install will be available in the outputs.
+1. Create an NS record named `nuon.my-domain.com`, using the DNS server domains as the value.
+1. Once propagation is complete, the Nuon Dashboard should be reachable at `app.nuon.my-domain.com`.
+
+<Warning>
+The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
+</Warning>
+
 ### GitHub App
 
 Create a GitHub App so Nuon can clone code for components from private repos.
