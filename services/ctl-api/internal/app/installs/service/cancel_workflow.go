@@ -89,6 +89,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 		var notFoundErr *serviceerror.NotFound
 
 		if errors.As(err, &notFoundErr) {
+			// Don't throw an error if the temporal workflow is not found
 			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
 		} else {
 			ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
@@ -170,6 +171,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	if err != nil {
 		var notFoundErr *serviceerror.NotFound
 		if errors.As(err, &notFoundErr) {
+			// Don't throw an error if the temporal workflow is not found
 			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
 		} else {
 			ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
