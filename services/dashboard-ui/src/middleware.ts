@@ -1,16 +1,29 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { USE_AUTH_SERVICE } from '@/configs/auth'
+import { USE_AUTH_SERVICE, AUTH_SERVICE_URL, APP_URL } from '@/configs/auth'
 import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = new URL(request.url)
 
   if (USE_AUTH_SERVICE) {
-    // eslint-disable-next-line no-console
-    console.log('using nuon auth service')
-  } else {
-    // eslint-disable-next-line no-console
+    const session = await getSession()
 
+    if (session === null) {
+      return NextResponse.redirect(
+        new URL(`/?url=${APP_URL}`, AUTH_SERVICE_URL)
+      )
+    }
+
+    if (session) {
+      if (
+        pathname === '/admin/temporal' &&
+        !session?.user?.email?.endsWith('@nuon.co')
+      ) {
+        return NextResponse.redirect(new URL('/', request.url))
+      }
+    }
+  } else {
     const authResponse = await auth0.middleware(request)
     const reqCookieNames = request.cookies.getAll().map((cookie) => cookie.name)
 
