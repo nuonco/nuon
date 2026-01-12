@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { WorkflowContext } from '@/providers/WorkflowProvider'
+import { WorkflowContext } from '@/providers/workflow-provider'
 
 export const useWorkflow = () => {
   const context = useContext(WorkflowContext)
