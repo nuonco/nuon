@@ -17,8 +17,9 @@ import (
 // 2. Look up the identity provider from the session
 // 3. Exchange the authorization code for tokens
 // 4. Fetch user information from the provider
-// 5. Create and set the auth cookie with a JWT
-// 6. Redirect to the originally requested URL
+// 5. Relate the user to an account via account_identities
+// 6. Create a token and set the auth cookie
+// 7. Redirect to the originally requested URL
 func (s *service) AuthState(c *gin.Context) {
 	// Get the state from URL path
 	pathState := c.Param("state")
