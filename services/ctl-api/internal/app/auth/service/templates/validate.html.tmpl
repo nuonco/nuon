@@ -2,15 +2,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  {{ template "auth/head.tmpl" . }}
-  <title>Validate | Nuon Auth</title>
+    {{template "head.tmpl"}}
+    <title>Validating | Nuon</title>
 </head>
-<body>
-  {{ template "auth/header.tmpl" . }}
-  <main>
-    <h1>Validate</h1>
-  </main>
-  {{ template "auth/footer.tmpl" . }}
+<body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-[#121212] opacity-75"></div>
+    <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="mb-8 -mt-24">
+                {{template "logo.tmpl"}}
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-8">
+                <h2 class="text-xl font-normal text-gray-900 mb-2">Validating</h2>
+                <p class="text-sm text-gray-600">Please wait while we validate your session.</p>
+            </div>
+        </div>
+    </main>
+
+    {{template "footer.tmpl"}}
 </body>
 </html>
 {{ end }}
