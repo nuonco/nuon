@@ -15,8 +15,11 @@ replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playgro
 
 replace github.com/databus23/helm-diff/v3 v3.12.5 => github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9
 
-// Use in-tree nuon-go SDK instead of external module
-replace github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
+// Use in-tree SDKs instead of external module
+replace (
+github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
+github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
+)
 
 replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
 
