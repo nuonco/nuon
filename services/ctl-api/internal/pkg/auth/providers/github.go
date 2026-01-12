@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"go.uber.org/zap"
@@ -127,17 +128,8 @@ func (p *GitHubProvider) ConfigureWithTeams(cfg *GitHubProviderConfig) error {
 	}
 
 	// Add org scope if checking teams
-	if len(p.teamWhitelist) > 0 {
-		hasOrgScope := false
-		for _, scope := range p.oauth2Cfg.Scopes {
-			if scope == "read:org" {
-				hasOrgScope = true
-				break
-			}
-		}
-		if !hasOrgScope {
-			p.oauth2Cfg.Scopes = append(p.oauth2Cfg.Scopes, "read:org")
-		}
+	if len(p.teamWhitelist) > 0 && !slices.Contains(p.oauth2Cfg.Scopes, "read:org") {
+		p.oauth2Cfg.Scopes = append(p.oauth2Cfg.Scopes, "read:org")
 	}
 
 	return nil
