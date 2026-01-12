@@ -81,7 +81,7 @@ export const CreateInstallForm = forwardRef<
         </Banner>
       ) : null}
 
-      <div className="flex flex-col gap-8 max-w-4xl">
+      <div className="flex flex-col gap-8 max-w-4xl pb-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <span className="flex flex-col gap-0">
             <Text variant="body" weight="strong">
