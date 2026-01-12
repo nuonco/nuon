@@ -9,6 +9,16 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getApp, getAppConfigs, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { AppInputs, AppInputsError, AppInputsSkeleton } from './inputs-config'
+import {
+  AppRunner,
+  AppRunnerError,
+  AppRunnerSkeleton,
+} from './runner-config'
+import {
+  AppSandbox,
+  AppSandboxError,
+  AppSandboxSkeleton,
+} from './sandbox-config'
 
 // NOTE: old layout stuff
 import { ErrorBoundary } from 'react-error-boundary'
@@ -81,39 +91,27 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
         {/* old page stuff */}
 
         <div className="flex gap-6">
-          <Card className="flex-auto">
-            <Text weight="strong">Sandbox config</Text>
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading loadingText="Loading latest sandbox config..." />
-                }
-              >
-                <SandboxConfig
-                  appConfigId={configs?.at(0)?.id}
-                  appId={appId}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Card>
+          <AsyncBoundary
+            errorFallback={<AppSandboxError />}
+            loadingFallback={<AppSandboxSkeleton />}
+          >
+            <AppSandbox
+              appConfigId={configs?.at(0)?.id}
+              appId={appId}
+              orgId={orgId}
+            />
+          </AsyncBoundary>
 
-          <Card className="flex-auto">
-            <Text weight="strong">Runner config</Text>
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading loadingText="Loading latest runner config..." />
-                }
-              >
-                <RunnerConfig
-                  appConfigId={configs?.at(0)?.id}
-                  appId={appId}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Card>
+          <AsyncBoundary
+            errorFallback={<AppRunnerError />}
+            loadingFallback={<AppRunnerSkeleton />}
+          >
+            <AppRunner
+              appConfigId={configs?.at(0)?.id}
+              appId={appId}
+              orgId={orgId}
+            />
+          </AsyncBoundary>
         </div>
 
         {/* old page stuff */}

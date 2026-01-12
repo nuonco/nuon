@@ -48,7 +48,7 @@ export default async function OrgLayout({
       <APIHealthProvider shouldPoll>
         <AutoRefreshProvider
           refreshIntervalMs={REFRESH_PAGE_INTERVAL as number}
-          showWarning={REFRESH_PAGE_WARNING as boolean}
+          showWarning={false}
           warningTimeMs={30 * 1000} // 30 second warning
         >
           <OrgProvider initOrg={org} shouldPoll>
