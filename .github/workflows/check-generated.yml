@@ -35,6 +35,11 @@ jobs:
       - name: Setup nuonctl
         uses: ./actions/setup-nuonctl
 
+      - name: Setup scripts for nuonctl
+        run: |
+          mkdir -p bins/nuonctl/scripts
+          cp -r scripts/* bins/nuonctl/scripts/
+
       - name: Generate code
         run: |
           CI=true nuonctl scripts reset-generated-code
