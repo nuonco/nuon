@@ -168,6 +168,68 @@ const interval = useFastPolling ? 5000 : 20000
 const shouldPoll = isVisible && !isComplete
 ```
 
+## Component Directory Structure
+
+### File Organization Patterns
+
+**Flat Structure (Preferred)**: Most components should be created as flat files in their respective directories:
+
+```
+src/components/common/
+├── Button.tsx
+├── Button.stories.tsx
+├── Badge.tsx
+├── Badge.stories.tsx
+├── PropertyGrid.tsx
+├── PropertyGrid.stories.tsx
+└── Text.tsx
+```
+
+**Directory Structure (Only When Necessary)**: Create a component directory ONLY when you have multiple sub-components and need to expose only the parent component:
+
+```
+src/components/common/EmptyState/
+├── EmptyState.tsx          # Main component
+├── EmptyState.stories.tsx  # Stories file
+├── EmptyGraphic.tsx        # Internal sub-component
+└── index.ts               # Exports only EmptyState (hides EmptyGraphic)
+```
+
+### When to Use Each Pattern
+
+**Use Flat Structure When:**
+- Component is self-contained
+- No internal sub-components needed
+- Component + stories is all that's required
+- Most common case (90% of components)
+
+**Use Directory Structure When:**
+- Component has multiple internal sub-components
+- You need to hide internal implementation details
+- You want clean imports (e.g., `import { EmptyState } from './EmptyState'` instead of `import { EmptyState } from './EmptyState/EmptyState'`)
+- Component has complex internal architecture
+
+**Examples:**
+- ✅ `PropertyGrid.tsx` - Flat file (self-contained grid component)
+- ✅ `Button.tsx` - Flat file (simple button component)  
+- ✅ `EmptyState/` - Directory (has EmptyGraphic sub-component that users shouldn't import directly)
+- ❌ `PropertyGrid/PropertyGrid.tsx` - Unnecessary directory for simple component
+
+### Import Patterns
+
+**Flat Structure Imports:**
+```typescript
+import { PropertyGrid } from '@/components/common/PropertyGrid'
+import { Button } from '@/components/common/Button'
+```
+
+**Directory Structure Imports:**
+```typescript
+import { EmptyState } from '@/components/common/EmptyState'  # Clean thanks to index.ts
+```
+
+**Key Rule**: Only create component directories when you have legitimate architectural complexity, not just for organization.
+
 ## Code Quality & Development
 
 ### ESLint Configuration Impact
