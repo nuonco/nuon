@@ -39,6 +39,7 @@ jobs:
         run: |
           mkdir -p bins/nuonctl/scripts
           cp -r scripts/* bins/nuonctl/scripts/
+          chmod +x bins/nuonctl/scripts/*
 
       - name: Generate code
         run: |
