@@ -6,27 +6,27 @@
     <title>Sign In | Nuon</title>
 </head>
 <body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-    <div class="absolute inset-0 bg-[#121212] opacity-75"></div>
+    <div class="absolute inset-0 bg-cool-grey-100 opacity-50 dark:bg-dark-grey-950 dark:opacity-75"></div>
     <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
         <div class="w-full max-w-md">
             <div class="mb-8 -mt-24">
                 {{template "logo.tmpl"}}
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-8">
+            <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
                 {{ if .IsAuthenticated }}
-                    <h2 class="text-xl font-normal text-gray-900 mb-2">Signed in</h2>
-                    <p class="text-sm text-gray-600 mb-8">{{ .Email }}</p>
-                    <a href="/logout" class="flex items-center justify-center w-full py-3 px-4 bg-white border border-red-300 rounded-md hover:bg-red-50 text-red-600 font-semibold transition-colors">
+                    <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Signed in</h2>
+                    <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-8">{{ .Email }}</p>
+                    <a href="/logout" class="flex items-center justify-center w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-red-300 dark:border-red-700 rounded-md hover:bg-red-50 dark:hover:bg-red-950 text-red-600 dark:text-red-400 font-semibold transition-colors">
                         Sign out
                     </a>
                 {{ else }}
-                    <h2 class="text-xl font-normal text-gray-900 mb-8">Sign in to your account</h2>
+                    <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-8">Sign in to your account</h2>
 
                     <div class="space-y-3">
                         {{ $redirectURL := .RedirectURL }}
                         {{ range .Providers }}
                             <a href="/login?provider={{ .ProviderType }}{{ if $redirectURL }}&url={{ $redirectURL }}{{ end }}"
-                               class="flex items-center justify-center gap-3 w-full py-3 px-4 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-semibold transition-colors">
+                               class="flex items-center justify-center gap-3 w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
                                 {{if eq .ProviderType "google"}}
                                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M17.64 9.20443C17.64 8.56625 17.5827 7.95262 17.4764 7.36353H9V10.8449H13.8436C13.635 11.9699 13.0009 12.9231 12.0477 13.5613V15.8194H14.9564C16.6582 14.2526 17.64 11.9453 17.64 9.20443Z" fill="#4285F4"/>
@@ -42,7 +42,7 @@
                                 Continue with {{ .Name }}
                             </a>
                         {{ else }}
-                            <p class="text-gray-600 text-center">No login providers configured.</p>
+                            <p class="text-cool-grey-600 dark:text-cool-grey-400 text-center">No login providers configured.</p>
                         {{ end }}
                     </div>
                 {{ end }}
