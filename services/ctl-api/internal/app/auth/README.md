@@ -95,15 +95,42 @@ may be added.
 ```json
 {
   "enabled": true,
+  "provider_type": "oidc",
   "openid_config": {
     "client_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "client_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "issuer_url": "https://audience.auth0.com",
     "redirect_url": "http://auth.byoc.org.co/auth"
-  },
-  "provider_type": "oidc"
+  }
 }
 ```
+
+**Github**
+
+```json
+{
+  "enabled": true,
+  "provider_type": "github",
+  "github_config": {
+    "client_id": "XXXXXXXXXXXXXXXXXXXX",
+    "allowed_orgs": ["999999999"],
+    "redirect_url": "https://auth.byoc.org.co/auth",
+    "allowed_teams": ["1111111"],
+    "client_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }
+}
+```
+
+Default scopes are, `user:email` and `read:user`.
+
+<!-- prettier-ignore-start -->
+> [!IMPORTANT]
+> If a user does not have a public email, they will not be able to authenticate.
+
+> [!IMPORTANT]
+> If a user's primary email does not have an allowed domain, they will not be able to authenticate.
+
+<!-- prettier-ignore-end -->
 
 ### Loading Order
 

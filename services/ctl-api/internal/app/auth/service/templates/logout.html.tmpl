@@ -2,82 +2,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  {{ template "auth/head.tmpl" . }}
-  <title>Signed Out | Nuon Auth</title>
-  <style>
-    main {
-      max-width: 400px;
-      margin: 2rem auto;
-      padding: 2rem;
-      text-align: center;
-    }
-    .logout-box {
-      padding: 1.5rem;
-      background: #f5f5f5;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      margin-bottom: 1.5rem;
-    }
-    .logout-box h1 {
-      color: #333;
-      margin: 0 0 0.5rem 0;
-      font-size: 1.5rem;
-    }
-    .logout-box p {
-      color: #666;
-      margin: 0.5rem 0 0 0;
-    }
-    .redirect-notice {
-      color: #888;
-      font-size: 0.9rem;
-      margin-top: 1rem;
-    }
-    .actions {
-      margin-top: 1.5rem;
-    }
-    .btn {
-      display: inline-block;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      text-decoration: none;
-      font-size: 1rem;
-      cursor: pointer;
-      background: #1976d2;
-      color: #fff;
-      border: none;
-    }
-    .btn:hover {
-      background: #1565c0;
-    }
-  </style>
+    {{template "head.tmpl"}}
+    <title>Signed Out | Nuon</title>
 </head>
-<body>
-  {{ template "auth/header.tmpl" . }}
-  <main>
-    <div class="logout-box">
-      <h1>Signed Out</h1>
-      <p>{{ .Message }}</p>
-    </div>
-    <p class="redirect-notice">Redirecting to sign in page in <span id="countdown">5</span> seconds...</p>
-    <div class="actions">
-      <a href="/" class="btn">Sign In Now</a>
-    </div>
-  </main>
-  {{ template "auth/footer.tmpl" . }}
-  <script>
-    (function() {
-      var seconds = 5;
-      var countdown = document.getElementById('countdown');
-      var interval = setInterval(function() {
-        seconds--;
-        countdown.textContent = seconds;
-        if (seconds <= 0) {
-          clearInterval(interval);
-          window.location.href = '/';
+<body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-[#121212] opacity-75"></div>
+    <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="mb-8 -mt-24">
+                {{template "logo.tmpl"}}
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-8">
+                <h2 class="text-xl font-normal text-gray-900 mb-2">Signed out</h2>
+
+                {{if .Message}}
+                    <p class="text-sm text-gray-600 mb-6">{{.Message}}</p>
+                {{else}}
+                    <p class="text-sm text-gray-600 mb-6">You have been successfully signed out.</p>
+                {{end}}
+
+                <p class="text-sm text-gray-500 mb-8">Redirecting in <span id="countdown">5</span> seconds</p>
+
+                <a href="/" class="flex items-center justify-center w-full py-3 px-4 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-semibold transition-colors">
+                    Sign in again
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let seconds = 5;
+        const countdown = document.getElementById('countdown');
+
+        if (!countdown) {
+            console.error('Countdown element not found');
+            return;
         }
-      }, 1000);
-    })();
-  </script>
+
+        const interval = setInterval(() => {
+            seconds--;
+            countdown.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = '/';
+            }
+        }, 1000);
+    });
+    </script>
 </body>
 </html>
 {{ end }}

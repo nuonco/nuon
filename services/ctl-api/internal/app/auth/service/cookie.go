@@ -20,7 +20,7 @@ func (s *service) clearCookie(c *gin.Context) {
 		Expires:  time.Now().Add(-time.Hour),
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
@@ -32,10 +32,10 @@ func (s *service) setCookie(c *gin.Context, token string) {
 		Path:     "/",
 		Domain:   s.cfg.RootDomain, // this should be the root domain
 		MaxAge:   86400,            // 24 hours
-		Expires:  time.Now().Add(24 * time.Hour),
+		Expires:  time.Now().Add(time.Duration(s.cfg.NuonAuthSessionTTL) * time.Minute),
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 

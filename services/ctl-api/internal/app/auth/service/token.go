@@ -12,11 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-const (
-	// TokenDefaultExpiry is the default token lifetime.
-	TokenDefaultExpiry = 24 * time.Hour
-)
-
 var (
 	errTokenNotFound = errors.New("token not found")
 	errTokenExpired  = errors.New("token expired")
@@ -39,7 +34,7 @@ func (s *service) createToken(account *app.Account) (string, error) {
 		AccountID:   account.ID,
 		Token:       tokenValue,
 		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(TokenDefaultExpiry),
+		ExpiresAt:   now.Add(time.Duration(s.cfg.NuonAuthSessionTTL) * time.Minute),
 		IssuedAt:    now,
 		Issuer:      s.domain,
 	}

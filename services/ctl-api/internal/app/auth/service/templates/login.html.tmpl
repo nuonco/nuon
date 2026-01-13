@@ -2,15 +2,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  {{ template "auth/head.tmpl" . }}
-  <title>Login | Nuon Auth</title>
+    {{template "head.tmpl"}}
+    <title>Logging In | Nuon</title>
 </head>
-<body>
-  {{ template "auth/header.tmpl" . }}
-  <main>
-    <h1>Login</h1>
-  </main>
-  {{ template "auth/footer.tmpl" . }}
+<body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-[#121212] opacity-75"></div>
+    <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="mb-8 -mt-24">
+                {{template "logo.tmpl"}}
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <h2 class="text-2xl font-bold mb-4">Logging In...</h2>
+                <p class="text-gray-600">Redirecting to authentication provider...</p>
+            </div>
+        </div>
+    </main>
+
+    {{template "footer.tmpl"}}
 </body>
 </html>
 {{ end }}
