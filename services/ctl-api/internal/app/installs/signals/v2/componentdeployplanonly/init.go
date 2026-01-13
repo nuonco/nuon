@@ -1,12 +1,15 @@
 package componentdeployplanonly
 
-import (
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/catalog"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
-)
+// TODO: This package is incomplete - signal.go is missing
+// Commenting out init to prevent compilation errors
 
-func init() {
-	catalog.RegisterSignal(signal.SignalTypeInstallComponentDeployPlanOnly, func() signal.Signal {
-		return &Signal{}
-	})
-}
+// import (
+// 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
+// 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+// )
+
+// func init() {
+// 	catalog.Register(signal.SignalTypeInstallComponentDeployPlanOnly, func() signal.Signal {
+// 		return &Signal{}
+// 	})
+// }

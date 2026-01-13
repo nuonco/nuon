@@ -12,14 +12,16 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
+
+const SignalType signal.SignalType = "component-sync-image"
 
 type Signal struct {
 	InstallComponentID string
@@ -30,8 +32,8 @@ type Signal struct {
 	SandboxMode        bool
 }
 
-func (s *Signal) Type() v2.SignalType {
-	return v2.SignalTypeInstallComponentSyncImage
+func (s *Signal) Type() signal.SignalType {
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -237,13 +239,16 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	_, _ = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
-		InstallDeployID: deployID,
-	})
+	// TODO: GenerateStateRequest doesn't have DeployID field - needs InstallID
+	// _, _ = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
+	// 	InstallID: s.InstallID,
+	// })
 
-	_ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
+	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	_ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
+	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
 }

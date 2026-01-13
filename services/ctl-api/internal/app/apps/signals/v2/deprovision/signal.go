@@ -49,7 +49,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
 	// Update status - polling for children to deprovision
-	if err := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusActive,
 		StatusDescription: "polling for installs and components to be deprovisioned",
@@ -63,7 +63,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Update status to deprovisioning
-	if err := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusDeprovisioning,
 		StatusDescription: "deleting app resources",
@@ -74,7 +74,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Get current app
 	currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
-		if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			AppID:             s.AppID,
 			Status:            app.AppStatusError,
 			StatusDescription: "unable to get app from database",
@@ -105,7 +105,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Delete the app
 	if err := activities.AwaitDeleteByAppID(ctx, s.AppID); err != nil {
-		if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			AppID:             s.AppID,
 			Status:            app.AppStatusError,
 			StatusDescription: "unable to delete app",
@@ -124,7 +124,7 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 	for {
 		currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 		if err != nil {
-			if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+			if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 				AppID:             s.AppID,
 				Status:            app.AppStatusError,
 				StatusDescription: "unable to get app from database",
@@ -156,7 +156,7 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 		// Check timeout
 		if workflow.Now(ctx).After(deadline) {
 			err := fmt.Errorf("timeout waiting for installs and components to deprovision")
-			if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+			if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 				AppID:             s.AppID,
 				Status:            "error",
 				StatusDescription: err.Error(),

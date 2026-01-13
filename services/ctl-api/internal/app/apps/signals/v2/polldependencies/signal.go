@@ -47,7 +47,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	for {
 		currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 		if err != nil {
-			if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+			if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 				AppID:             s.AppID,
 				Status:            app.AppStatusError,
 				StatusDescription: "unable to get app from database",
@@ -66,7 +66,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		// If org is in error, propagate error status to app
 		if currentApp.Org.Status == "error" {
 			// TODO(sdboyer) remove transitive error status propagation
-			if err := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+			if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 				AppID:             s.AppID,
 				Status:            "error",
 				StatusDescription: "org is in error state",

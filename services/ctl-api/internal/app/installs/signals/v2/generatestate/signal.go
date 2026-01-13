@@ -8,8 +8,10 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
+
+const SignalType signal.SignalType = "generate-state"
 
 type Signal struct {
 	InstallID string
@@ -18,7 +20,7 @@ type Signal struct {
 var _ signal.Signal = &Signal{}
 
 func (s *Signal) Type() signal.SignalType {
-	return signal.SignalTypeInstallGenerateState
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

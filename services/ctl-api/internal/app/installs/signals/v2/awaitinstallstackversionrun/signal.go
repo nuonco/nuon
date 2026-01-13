@@ -16,13 +16,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
 	runnersignalsv2 "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/installstackversionrun"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+const SignalType signal.SignalType = "await-install-stack-version-run"
 
 type Signal struct {
 	InstallStackID string
@@ -32,7 +34,7 @@ type Signal struct {
 var _ signal.Signal = &Signal{}
 
 func (s *Signal) Type() signal.SignalType {
-	return signal.SignalTypeInstallAwaitInstallStackVersionRun
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

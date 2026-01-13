@@ -13,9 +13,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
+
+const SignalType signal.SignalType = "sync-secrets"
 
 type Signal struct {
 	InstallID      string
@@ -26,7 +28,7 @@ type Signal struct {
 var _ signal.Signal = &Signal{}
 
 func (s *Signal) Type() signal.SignalType {
-	return signal.SignalTypeInstallSyncSecrets
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

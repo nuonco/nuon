@@ -10,12 +10,14 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+const SignalType signal.SignalType = "generate-install-stack-version"
 
 const (
 	DefaultAzureRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#azure"
@@ -30,7 +32,7 @@ type Signal struct {
 var _ signal.Signal = &Signal{}
 
 func (s *Signal) Type() signal.SignalType {
-	return signal.SignalTypeInstallGenerateInstallStackVersion
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -184,7 +186,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 
 		// render the template
-		templates := cloudformation.NewTemplates()
+		// TODO: NewTemplates now requires Params with Cfg - signals don't have access to config
+		templates := cloudformation.NewTemplates(cloudformation.Params{
+			Cfg: nil,
+		})
 		tmpl, awsChecksum, err := templates.Template(inp)
 		if err != nil {
 			return errors.Wrap(err, "unable to create cloudformation template")

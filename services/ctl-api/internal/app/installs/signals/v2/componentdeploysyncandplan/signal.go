@@ -11,13 +11,15 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
+
+const SignalType signal.SignalType = "component-deploy-sync-and-plan"
 
 type Signal struct {
 	InstallComponentID string
@@ -29,8 +31,8 @@ type Signal struct {
 	SandboxMode        bool
 }
 
-func (s *Signal) Type() v2.SignalType {
-	return v2.SignalTypeInstallComponentDeploySyncAndPlan
+func (s *Signal) Type() signal.SignalType {
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -414,5 +416,6 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	_ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
+	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
 }

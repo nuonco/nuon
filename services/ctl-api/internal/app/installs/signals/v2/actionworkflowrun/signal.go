@@ -15,26 +15,27 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
+const SignalType signal.SignalType = "install-action-workflow-run"
+
 type Signal struct {
-	InstallID                      string
-	InstallWorkflowID              string
-	WorkflowStepID                 string
-	InstallActionWorkflowID        string
-	TriggerType                    app.ActionWorkflowTriggerType
-	TriggeredByID                  string
-	TriggeredByType                string
-	RunEnvVars                     map[string]string
+	InstallID               string
+	InstallWorkflowID       string
+	WorkflowStepID          string
+	InstallActionWorkflowID string
+	TriggerType             app.ActionWorkflowTriggerType
+	TriggeredByID           string
+	TriggeredByType         string
+	RunEnvVars              map[string]string
 }
 
 var _ signal.Signal = &Signal{}
 
 func (s *Signal) Type() signal.SignalType {
-	return signal.SignalTypeInstallActionWorkflowRun
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -53,7 +54,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
-	l.Info("executing action workflow run signal", 
+	l.Info("executing action workflow run signal",
 		zap.String("install_action_workflow_id", s.InstallActionWorkflowID))
 
 	installActionWorkflow, err := activities.AwaitGetInstallActionWorkflowByID(ctx, s.InstallActionWorkflowID)
@@ -228,10 +229,10 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	return nil
 }
 
-func (s *Signal) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionRunStatus, msg string) {
-	_ = activities.AwaitUpdateInstallWorkflowRunStatus(ctx, &activities.UpdateInstallWorkflowRunStatusRequest{
-		RunID:         runID,
-		Status:        status,
-		StatusMessage: msg,
+func (s *Signal) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, msg string) {
+	_ = activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: msg,
 	})
 }

@@ -14,22 +14,24 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
+const SignalType signal.SignalType = "reprovision-sandbox-apply-plan"
+
 type Signal struct {
-	InstallSandboxID  string
-	FlowID            string
-	FlowStepID        string
-	SandboxMode       bool
-	DNSRootDomain     string
+	InstallSandboxID string
+	FlowID           string
+	FlowStepID       string
+	SandboxMode      bool
+	DNSRootDomain    string
 }
 
 var _ signal.Signal = &Signal{}
 
 func (s *Signal) Type() signal.SignalType {
-	return signal.SignalTypeInstallReprovisionSandboxApplyPlan
+	return SignalType
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -76,7 +78,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
-	
+
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   sandboxRun.ID,

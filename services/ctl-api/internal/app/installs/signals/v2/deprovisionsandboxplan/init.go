@@ -1,12 +1,12 @@
 package deprovisionsandboxplan
 
 import (
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/catalog"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queues/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 func init() {
-	catalog.RegisterSignal(signal.SignalTypeInstallDeprovisionSandboxPlan, func() signal.Signal {
+	catalog.Register(SignalType, func() signal.Signal {
 		return &Signal{}
 	})
 }

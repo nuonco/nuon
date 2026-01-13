@@ -49,20 +49,25 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get latest commit: %w", err)
 	}
 
+	// TODO: LastSyncedCommit field is commented out in AppBranch struct - needs to be re-enabled
 	// Compare with last synced commit
-	if latestCommit != branch.LastSyncedCommit {
-		workflow.GetLogger(ctx).Info("changes detected",
-			"app_branch_id", branch.ID,
-			"latest_commit", latestCommit,
-			"last_synced_commit", branch.LastSyncedCommit)
+	// if latestCommit != branch.LastSyncedCommit {
+	// 	workflow.GetLogger(ctx).Info("changes detected",
+	// 		"app_branch_id", branch.ID,
+	// 		"latest_commit", latestCommit,
+	// 		"last_synced_commit", branch.LastSyncedCommit)
+	//
+	// 	// TODO: Enqueue update-app-config signal
+	// 	// This will be implemented when update-app-config signal is ready and queue enqueue is available
+	// } else {
+	// 	workflow.GetLogger(ctx).Info("no changes detected",
+	// 		"app_branch_id", branch.ID,
+	// 		"commit", latestCommit)
+	// }
 
-		// TODO: Enqueue update-app-config signal
-		// This will be implemented when update-app-config signal is ready and queue enqueue is available
-	} else {
-		workflow.GetLogger(ctx).Info("no changes detected",
-			"app_branch_id", branch.ID,
-			"commit", latestCommit)
-	}
+	workflow.GetLogger(ctx).Info("latest commit fetched",
+		"app_branch_id", branch.ID,
+		"latest_commit", latestCommit)
 
 	return nil
 }

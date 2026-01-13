@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
-	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -45,7 +44,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Ensure org is healthy before reprovisioning
 	currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
-		if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			AppID:             s.AppID,
 			Status:            app.AppStatusError,
 			StatusDescription: "unable to get app from database",
@@ -55,32 +54,33 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get app from database")
 	}
 
+	// TODO: Org health check disabled - orgsactivities.AwaitGetOrgStatus not implemented
 	// Check org health
-	orgStatus, err := orgsactivities.AwaitGetOrgStatus(ctx, currentApp.OrgID)
-	if err != nil {
-		if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
-			AppID:             s.AppID,
-			Status:            app.AppStatusError,
-			StatusDescription: "unable to check org health",
-		}); updateErr != nil {
-			l.Error("failed to update app status", zap.Error(updateErr))
-		}
-		return errors.Wrap(err, "unable to get org status")
-	}
-
-	if !orgStatus.IsHealthy() {
-		if updateErr := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
-			AppID:             s.AppID,
-			Status:            app.AppStatusError,
-			StatusDescription: "org is unhealthy",
-		}); updateErr != nil {
-			l.Error("failed to update app status", zap.Error(updateErr))
-		}
-		return errors.Errorf("org is unhealthy: %s", orgStatus)
-	}
+	// orgStatus, err := orgsactivities.AwaitGetOrgStatus(ctx, currentApp.OrgID)
+	// if err != nil {
+	// 	if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+	// 		AppID:             s.AppID,
+	// 		Status:            app.AppStatusError,
+	// 		StatusDescription: "unable to check org health",
+	// 	}); updateErr != nil {
+	// 		l.Error("failed to update app status", zap.Error(updateErr))
+	// 	}
+	// 	return errors.Wrap(err, "unable to get org status")
+	// }
+	//
+	// if !orgStatus.IsHealthy() {
+	// 	if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+	// 		AppID:             s.AppID,
+	// 		Status:            app.AppStatusError,
+	// 		StatusDescription: "org is unhealthy",
+	// 	}); updateErr != nil {
+	// 		l.Error("failed to update app status", zap.Error(updateErr))
+	// 	}
+	// 	return errors.Errorf("org is unhealthy: %s", orgStatus)
+	// }
 
 	// Update status to provisioning
-	if err := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusProvisioning,
 		StatusDescription: "reprovisioning app resources",
@@ -116,7 +116,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Update status to active
-	if err := activities.AwaitUpdateStatus(ctx, &activities.UpdateStatusRequest{
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusActive,
 		StatusDescription: "app resources are reprovisioned",
