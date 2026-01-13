@@ -27,7 +27,7 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
 	defer cancel()
 
-	multiSpinner := bubbles.NewMultiSpinnerView()
+	multiSpinner := bubbles.NewMultiSpinnerView(true)
 
 	// Add all spinners first
 	for _, cmp := range comps {
