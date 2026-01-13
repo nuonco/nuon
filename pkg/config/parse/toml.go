@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/pkg/config"
 )
@@ -15,7 +15,6 @@ type FileProcessor func(string, map[string]any) map[string]any
 func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcessor) error {
 
 	tomlDec := toml.NewDecoder(rw)
-	tomlDec.SetTagName("mapstructure")
 
 	obj := make(map[string]interface{})
 	err := tomlDec.Decode(&obj)
