@@ -74,9 +74,7 @@ func init() {
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
 
 	// Nuon Auth Service Configs
-	config.RegisterDefault("nuon_auth_domain", "http://localhost:8084")
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
-	config.RegisterDefault("nuon_auth_jwt_secret", "insecure-jtw-secret-for-devce4d3967724c25af9d5191dfe3e5bd27d70c4")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
 }
