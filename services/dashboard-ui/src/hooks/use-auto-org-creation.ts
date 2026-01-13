@@ -43,11 +43,12 @@ export const useAutoOrgCreation = ({
     setError(null)
 
     try {
+      const { name, ...restSfData } = sfData || {}
       const { data: newOrg, error: createError } = await createOrg({
         body: {
-          name: `${account.email}-trial`,
+          name: name || `${account.email}-trial`,
           use_sandbox_mode: false,
-          ...sfData,
+          ...restSfData,
         },
       })
 
