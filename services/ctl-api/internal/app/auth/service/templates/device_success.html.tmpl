@@ -1,0 +1,35 @@
+{{ define "auth/device_success.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{template "head.tmpl"}}
+    <title>CLI Authorized | Nuon</title>
+</head>
+<body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-cool-grey-100 opacity-50 dark:bg-dark-grey-950 dark:opacity-75"></div>
+    <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="mb-8 -mt-24">
+                {{template "logo.tmpl"}}
+            </div>
+            <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
+                <div class="flex items-center justify-center mb-4">
+                    <svg class="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2 text-center">CLI Authorized</h2>
+                <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-6 text-center">
+                    You can now close this window and return to your terminal.
+                </p>
+                {{ if .Email }}
+                <p class="text-sm text-cool-grey-500 dark:text-cool-grey-400 text-center">
+                    Signed in as {{ .Email }}
+                </p>
+                {{ end }}
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+{{ end }}
