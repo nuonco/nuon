@@ -130,7 +130,7 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 		zap.String("invite_id", pendingInvite.ID),
 		zap.String("org_id", pendingInvite.OrgID))
 
-	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo)
+	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo, true)
 }
 
 // getOrCreateAccountByIdentity looks up an account by (provider_type, sub).
@@ -226,19 +226,33 @@ func (s *service) getOrCreateAccountByIdentity(
 		zap.String("sub", userInfo.Subject),
 		zap.String("email", userInfo.Email))
 
-	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo)
+	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo, false)
 }
 
 // createAccountWithIdentity creates a new account and links it to the identity provider.
+// isInvitedUser indicates whether the user is signing up via an org invite (true) or self-signup (false).
 func (s *service) createAccountWithIdentity(
 	ctx context.Context,
 	providerType app.ProviderType,
 	identityProviderID *string,
 	userInfo *providers.UserInfo,
+	isInvitedUser bool,
 ) (*app.Account, error) {
+	// Determine appropriate user journey based on signup type
+	var userJourneys app.UserJourneys
+	if isInvitedUser {
+		// Invited users don't need onboarding journey
+		userJourneys = account.NoUserJourneys()
+	} else if s.cfg.EvaluationJourneyEnabled {
+		// Self-signup on multi-tenant deployment: enable evaluation journey
+		userJourneys = account.DefaultEvaluationJourney()
+	} else {
+		// Self-signup on BYOC deployment: skip evaluation journey
+		userJourneys = account.NoUserJourneys()
+	}
+
 	// Create the account using the account client
-	// NOTE: at this time, we are not enabling user journeys for users created through this flow.
-	acct, err := s.acctClient.CreateAuthAccount(ctx, userInfo.Email, userInfo.Subject, account.NoUserJourneys())
+	acct, err := s.acctClient.CreateAuthAccount(ctx, userInfo.Email, userInfo.Subject, userJourneys)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create account: %w", err)
 	}
