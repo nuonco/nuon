@@ -6,21 +6,21 @@
     <title>Success | Nuon</title>
 </head>
 <body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-    <div class="absolute inset-0 bg-[#121212] opacity-75"></div>
+    <div class="absolute inset-0 bg-cool-grey-100 opacity-50 dark:bg-dark-grey-950 dark:opacity-75"></div>
     <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
         <div class="w-full max-w-md">
             <div class="mb-8 -mt-24">
                 {{template "logo.tmpl"}}
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-8">
-                <h2 class="text-xl font-normal text-gray-900 mb-2">Authentication successful</h2>
-                <p class="text-sm text-gray-600 mb-8">{{ if .Email }}{{ .Email }}{{ else }}{{ .Username }}{{ end }}</p>
+            <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
+                <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Authentication successful</h2>
+                <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-8">{{ if .Email }}{{ .Email }}{{ else }}{{ .Username }}{{ end }}</p>
 
                 <div class="space-y-3">
-                    <a href="/" class="flex items-center justify-center w-full py-3 px-4 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-semibold transition-colors">
+                    <a href="/" class="flex items-center justify-center w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
                         Continue
                     </a>
-                    <a href="/logout" class="flex items-center justify-center w-full py-3 px-4 bg-white border border-red-300 rounded-md hover:bg-red-50 text-red-600 font-semibold transition-colors">
+                    <a href="/logout" class="flex items-center justify-center w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-red-300 dark:border-red-700 rounded-md hover:bg-red-50 dark:hover:bg-red-950 text-red-600 dark:text-red-400 font-semibold transition-colors">
                         Sign out
                     </a>
                 </div>
