@@ -63,7 +63,7 @@ func (s *service) setSession(c *gin.Context, data *SessionData) error {
 		Expires:  time.Now().Add(sessionCookieMaxAge * time.Second),
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 
 	return nil
@@ -80,7 +80,7 @@ func (s *service) clearSession(c *gin.Context) {
 		Expires:  time.Now().Add(-time.Hour),
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
