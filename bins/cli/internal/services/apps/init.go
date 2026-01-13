@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/generator"
@@ -48,7 +49,27 @@ func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *I
 			if err != nil {
 				return errors.Wrap(err, "unable to create config structure")
 			}
-		case "aws-ecs":
+		case "aws-ecs-breakglass":
+			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			if err != nil {
+				return errors.Wrap(err, "unable to create config structure")
+			}
+		case "aws-eks-auto":
+			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			if err != nil {
+				return errors.Wrap(err, "unable to create config structure")
+			}
+		case "clickhouse-aws-eks":
+			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			if err != nil {
+				return errors.Wrap(err, "unable to create config structure")
+			}
+		case "cockroachdb-aws-eks":
+			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			if err != nil {
+				return errors.Wrap(err, "unable to create config structure")
+			}
+		case "grafana-aws-eks":
 			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
 			if err != nil {
 				return errors.Wrap(err, "unable to create config structure")
@@ -844,22 +865,40 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 	return structure
 }
 
-func BuildEKSSimpleConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+func BuildNamedConfigStructure(ctx context.Context, configName, folderName string) (*generator.ConfigStructure, error) {
 	configStructure, err := ReadAndConvertConfig(ctx, ConfigReaderParams{
-		Folder: "eks-simple",
+		Folder: folderName,
 	}, configName)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to build eks template app config")
+		return nil, errors.Wrap(err, fmt.Sprintf("unable to build %s template app config structue", folderName))
 	}
 	return configStructure, nil
 }
 
+func BuildEKSSimpleConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	return BuildNamedConfigStructure(ctx, configName, "eks-simple")
+}
+
 func BuildECSSimpleConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
-	configStructure, err := ReadAndConvertConfig(ctx, ConfigReaderParams{
-		Folder: "ecs-simple",
-	}, configName)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to build ecs template app config")
-	}
-	return configStructure, nil
+	return BuildNamedConfigStructure(ctx, configName, "ecs-simple")
+}
+
+func BuildECSBreakglassConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	return BuildNamedConfigStructure(ctx, configName, "ecs-breakglass")
+}
+
+func BuildEKSAutoConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	return BuildNamedConfigStructure(ctx, configName, "eks-simple-auto")
+}
+
+func BuildGrafanaAWSEKSConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	return BuildNamedConfigStructure(ctx, configName, "grafana")
+}
+
+func BuildClickhouseAWSEKSConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	return BuildNamedConfigStructure(ctx, configName, "clickhouse")
+}
+
+func BuildCockroachdbAWSEKSConfigStructure(ctx context.Context, configName string) (*generator.ConfigStructure, error) {
+	return BuildNamedConfigStructure(ctx, configName, "cockroachdb")
 }

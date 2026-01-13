@@ -43,6 +43,7 @@ func (c *ConfigFileSchema) Schema() *jsonschema.Schema {
 }
 
 type ConfigFileDefinition struct {
+	Header      string
 	Name        string
 	Schemas     []ConfigFileSchema
 	TomlEncoded string
@@ -114,6 +115,36 @@ func (c *ConfigStructure) UpdateConfig(cfd ConfigFileDefinition) error {
 }
 
 func (c *ConfigStructure) AddComponent(cfd ConfigFileDefinition) error {
+	for _, schema := range cfd.Schemas {
+		var comp *config.Component
+		switch v := schema.Instance.(type) {
+		case *config.Component:
+			comp = v
+		case config.Component:
+			comp = &v
+		default:
+			continue
+		}
+
+		if comp != nil {
+			// map component type to schema header based on config/schema/types.go
+			switch comp.Type {
+			case config.TerraformModuleComponentType:
+				cfd.Header = "terraform"
+			case config.HelmChartComponentType:
+				cfd.Header = "helm"
+			case config.DockerBuildComponentType:
+				cfd.Header = "docker-build"
+			case config.ContainerImageComponentType, config.ExternalImageComponentType:
+				cfd.Header = "container-image"
+			case config.KubernetesManifestComponentType:
+				cfd.Header = "kubernetes-manifest"
+			case config.JobComponentType:
+				cfd.Header = "job"
+			}
+			break
+		}
+	}
 	return c.AddDirectoryFile("components", cfd)
 }
 
@@ -128,7 +159,8 @@ func (c *ConfigStructure) AddPermission(cfd ConfigFileDefinition) error {
 // UpdateInputs updates the inputs.toml configuration
 func (c *ConfigStructure) UpdateInputs(cfg *config.AppInputConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "inputs.toml",
+		Header: "inputs",
+		Name:   "inputs.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				SkipNonRequired: false,
@@ -141,7 +173,8 @@ func (c *ConfigStructure) UpdateInputs(cfg *config.AppInputConfig) error {
 // UpdateSandbox updates the sandbox.toml configuration
 func (c *ConfigStructure) UpdateSandbox(cfg *config.AppSandboxConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "sandbox.toml",
+		Header: "sandbox",
+		Name:   "sandbox.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				Instance: cfg,
@@ -153,7 +186,8 @@ func (c *ConfigStructure) UpdateSandbox(cfg *config.AppSandboxConfig) error {
 // UpdateStack updates the stack.toml configuration
 func (c *ConfigStructure) UpdateStack(cfg *config.StackConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "stack.toml",
+		Header: "stack",
+		Name:   "stack.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				Instance: cfg,
@@ -165,7 +199,8 @@ func (c *ConfigStructure) UpdateStack(cfg *config.StackConfig) error {
 // UpdateRunner updates the runner.toml configuration
 func (c *ConfigStructure) UpdateRunner(cfg *config.AppRunnerConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "runner.toml",
+		Header: "runner",
+		Name:   "runner.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				Instance: cfg,
@@ -177,7 +212,8 @@ func (c *ConfigStructure) UpdateRunner(cfg *config.AppRunnerConfig) error {
 // UpdatePolicies updates the policies.toml configuration
 func (c *ConfigStructure) UpdatePolicies(cfg *config.PoliciesConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "policies.toml",
+		Header: "policies",
+		Name:   "policies.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				SkipNonRequired: false,
@@ -190,7 +226,8 @@ func (c *ConfigStructure) UpdatePolicies(cfg *config.PoliciesConfig) error {
 // UpdateBreakGlass updates the break_glass.toml configuration
 func (c *ConfigStructure) UpdateBreakGlass(cfg *config.BreakGlass) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "break_glass.toml",
+		Header: "break-glass",
+		Name:   "break_glass.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				Instance: cfg,
@@ -202,7 +239,8 @@ func (c *ConfigStructure) UpdateBreakGlass(cfg *config.BreakGlass) error {
 // UpdateSecrets updates the secrets.toml configuration
 func (c *ConfigStructure) UpdateSecrets(cfg *config.SecretsConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "secrets.toml",
+		Header: "secrets",
+		Name:   "secrets.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				SkipNonRequired: false,
@@ -215,7 +253,8 @@ func (c *ConfigStructure) UpdateSecrets(cfg *config.SecretsConfig) error {
 // UpdateInstaller updates the installer.toml configuration
 func (c *ConfigStructure) UpdateInstaller(cfg *config.InstallerConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "installer.toml",
+		Header: "installer",
+		Name:   "installer.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				Instance: cfg,
@@ -227,7 +266,8 @@ func (c *ConfigStructure) UpdateInstaller(cfg *config.InstallerConfig) error {
 // UpdateMetadata updates the metadata.toml configuration
 func (c *ConfigStructure) UpdateMetadata(cfg *config.MetadataConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
-		Name: "metadata.toml",
+		Header: "metadata",
+		Name:   "metadata.toml",
 		Schemas: []ConfigFileSchema{
 			{
 				Instance: cfg,

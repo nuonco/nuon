@@ -149,7 +149,7 @@ func (g *ConfigGen) WriteConfigToDisk(c *ConfigStructure) error {
 
 func (g *ConfigGen) EncodeToTOML(cs *ConfigStructure) error {
 	for fi, f := range cs.Configs {
-		tomlEncoded, err := g.encodeConfigFile(f.Schemas, f.Name)
+		tomlEncoded, err := g.encodeConfigFile(f, f.Name)
 		if err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ func (g *ConfigGen) EncodeToTOML(cs *ConfigStructure) error {
 	}
 	for di, d := range cs.ConfigDirectories {
 		for fi, f := range d.Configs {
-			tomlEncoded, err := g.encodeConfigFile(f.Schemas, d.Name+"/"+f.Name)
+			tomlEncoded, err := g.encodeConfigFile(f, d.Name+"/"+f.Name)
 			if err != nil {
 				return err
 			}
@@ -168,9 +168,13 @@ func (g *ConfigGen) EncodeToTOML(cs *ConfigStructure) error {
 }
 
 // encodeConfigFile returns contents of a file
-func (g *ConfigGen) encodeConfigFile(configFileSchemas []ConfigFileSchema, name string) (*strings.Builder, error) {
+func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*strings.Builder, error) {
 	var output strings.Builder
-	for _, configFile := range configFileSchemas {
+
+	// write table header / schema name / schema url
+	output.WriteString(fmt.Sprintf("# %s\n\n", cfd.Header))
+
+	for _, configFile := range cfd.Schemas {
 		schema := configFile.Schema()
 		if schema == nil {
 			continue
@@ -186,6 +190,7 @@ func (g *ConfigGen) encodeConfigFile(configFileSchemas []ConfigFileSchema, name 
 				oneOfRequired[r] = true
 			}
 		}
+
 		g.recursivelyEncode(schema, oneOFGroups, &output, "", false, g.EnableInfoComments, configFile.SkipNonRequired, extractor)
 	}
 	return &output, nil

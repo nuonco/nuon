@@ -53,7 +53,13 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 					Description("Choose a prebuilt template for your app").
 					Options(
 						huh.NewOption("AWS EKS (Elastic Kubernetes Service)", "aws-eks"),
-						huh.NewOption("AWS ECS (Elastic Container Service)", "aws-ecs"),
+						huh.NewOption("AWS EKS (Elastic Kubernetes Service) with eks-auto", "aws-eks-auto"),
+						huh.NewOption("AWS ECS with break glass", "aws-ecs-breakglass"),
+						huh.NewOption("Clickhouse on AWS EKS", "clickhouse-aws-eks"),
+						huh.NewOption("Grafana on AWS EKS", "grafana-aws-eks"),
+						huh.NewOption("Cockroachdb on AWS EKS", "cockroachdb-aws-eks"),
+						// huh.NewOption("AWS ECS (Elastic Container Service)", "aws-ecs"),
+
 					).
 					Value(&prebuiltTemplate),
 			),
