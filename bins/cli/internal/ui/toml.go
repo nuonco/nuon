@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 )
 
 func PrintTOML(data interface{}) {
 	var buf bytes.Buffer
 	enc := toml.NewEncoder(&buf)
-	enc.SetTagName("mapstructure")
 
 	_ = enc.Encode(data)
 

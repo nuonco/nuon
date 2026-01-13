@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iancoleman/strcase"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -45,8 +45,6 @@ func (s *service) GenerateCLIInstallConfig(ctx *gin.Context) {
 
 	var response bytes.Buffer
 	enc := toml.NewEncoder(&response)
-	enc.SetTagName("mapstructure")
-	enc.Order(toml.OrderAlphabetical)
 
 	err = enc.Encode(installCfg)
 	if err != nil {
