@@ -23,10 +23,11 @@ type SpinnerState struct {
 
 // MultiSpinnerModel manages multiple concurrent spinners
 type MultiSpinnerModel struct {
-	spinners map[string]*SpinnerState
-	order    []string // Maintain display order
-	quitting bool
-	width    int
+	spinners        map[string]*SpinnerState
+	order           []string // Maintain display order
+	quitting        bool
+	width           int
+	renderCompleted bool
 }
 
 // SpinnerUpdateMsg is used to update spinner messages
@@ -50,11 +51,12 @@ type FinalRenderMsg struct{}
 type RenderCompleteMsg struct{}
 
 // NewMultiSpinner creates a new multi-spinner model
-func NewMultiSpinner() MultiSpinnerModel {
+func NewMultiSpinner(renderCompleted bool) MultiSpinnerModel {
 	return MultiSpinnerModel{
-		spinners: make(map[string]*SpinnerState),
-		order:    make([]string, 0),
-		width:    80,
+		spinners:        make(map[string]*SpinnerState),
+		order:           make([]string, 0),
+		width:           80,
+		renderCompleted: renderCompleted,
 	}
 }
 
@@ -164,12 +166,14 @@ func (m MultiSpinnerModel) View() string {
 
 	for _, id := range m.order {
 		state := m.spinners[id]
-		// Only show active (not completed) spinners in the live view
+		// Show completed components if enabled
 		// Completed spinners will be printed manually after program stops
-		if !state.completed {
-			line := m.renderSpinnerLine(state)
-			lines = append(lines, line)
+		if state.completed && !m.renderCompleted {
+			continue
 		}
+
+		line := m.renderSpinnerLine(state)
+		lines = append(lines, line)
 	}
 
 	return strings.Join(lines, "\n")
@@ -239,9 +243,9 @@ type MultiSpinnerView struct {
 }
 
 // NewMultiSpinnerView creates a new multi-spinner view
-func NewMultiSpinnerView() *MultiSpinnerView {
+func NewMultiSpinnerView(renderCompleted bool) *MultiSpinnerView {
 	return &MultiSpinnerView{
-		model: NewMultiSpinner(),
+		model: NewMultiSpinner(renderCompleted),
 		done:  make(chan struct{}),
 	}
 }
