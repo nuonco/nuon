@@ -4,7 +4,7 @@ import React, { type FC } from 'react'
 import { Text, Heading } from '@/components/old/Typography'
 import { TAccount } from '@/types/ctl-api.types'
 import { Profile } from '../Profile'
-import { Card, type ICard } from '@/components/common/Card'
+import { Card } from '@/components/common/Card'
 import { Input } from '@/components/common/form/Input'
 import { Textarea } from '@/components/common/form/Textarea'
 
@@ -41,6 +41,15 @@ export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
                 setSFData?.(formObject as Record<string, string>)
               }}
             >
+               <Input
+                className="font-sans"
+                labelProps={{
+                  labelText: 'Organization name',
+                }}
+                 name="name"
+                 defaultValue={`${account?.email}-trial`}
+                 placeholder="Organization name"
+              />
               <Input
                 className="font-sans"
                 labelProps={{
