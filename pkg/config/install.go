@@ -143,9 +143,9 @@ func (i *Install) FlattenedInputs() map[string]string {
 	return flattened
 }
 
-func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, error) {
+func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 	if i == nil {
-		return "", diff.DiffSummary{}, fmt.Errorf("cannot diff a nil install")
+		return nil, fmt.Errorf("cannot diff a nil install")
 	}
 
 	if upstreamInstall == nil {
@@ -201,5 +201,5 @@ func (i *Install) Diff(upstreamInstall *Install) (string, diff.DiffSummary, erro
 		diff.WithChildren(diffs...),
 	)
 
-	return installDiff.String(""), installDiff.Summary(), nil
+	return installDiff, nil
 }

@@ -7,10 +7,12 @@ import (
 )
 
 type CLIConfig struct {
-	AuthDomain   string `json:"auth_domain"`
-	AuthClientID string `json:"auth_client_id"`
-	AuthAudience string `json:"auth_audience"`
-	DashboardURL string `json:"dashboard_url"`
+	AuthDomain      string `json:"auth_domain"`
+	AuthClientID    string `json:"auth_client_id"`
+	AuthAudience    string `json:"auth_audience"`
+	DashboardURL    string `json:"dashboard_url"`
+	NuonAuthEnabled bool   `json:"nuon_auth_enabled"`
+	RootDomain      string `json:"root_domain"`
 }
 
 // @ID						GetCLIConfig
@@ -28,9 +30,11 @@ type CLIConfig struct {
 // @Router					/v1/general/cli-config [GET]
 func (s *service) GetCLIConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &CLIConfig{
-		AuthDomain:   s.cfg.Auth0IssuerURL,
-		AuthClientID: s.cfg.Auth0ClientID,
-		AuthAudience: s.cfg.Auth0Audience,
-		DashboardURL: s.cfg.AppURL,
+		AuthDomain:      s.cfg.Auth0IssuerURL,
+		AuthClientID:    s.cfg.Auth0ClientID,
+		AuthAudience:    s.cfg.Auth0Audience,
+		DashboardURL:    s.cfg.AppURL,
+		NuonAuthEnabled: s.cfg.NuonAuthProviderType != "",
+		RootDomain:      s.cfg.RootDomain,
 	})
 }

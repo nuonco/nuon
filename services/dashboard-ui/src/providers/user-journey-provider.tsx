@@ -10,6 +10,7 @@ import { getUserJourney } from '@/utils/user-journey-utils'
 interface UserJourneyContextValue {
   isViewOpen: boolean
   openOnboarding: () => void
+  isBYOC?: boolean
 }
 
 export const UserJourneyContext = createContext<
@@ -34,7 +35,13 @@ const incompleteSteps = (account: TAccount) => {
   return hasIncompleteSteps
 }
 
-export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
+export const UserJourneyProvider = ({
+  children,
+  isBYOC = false,
+}: {
+  children: ReactNode
+  isBYOC?: boolean
+}) => {
   const { account, refreshAccount } = useAccount()
   const [showJourneyView, setShowJourneyView] = useState(false)
   const [manuallyOpened, setManuallyOpened] = useState(false)
@@ -78,6 +85,7 @@ export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
   const contextValue: UserJourneyContextValue = {
     isViewOpen: showJourneyView,
     openOnboarding,
+    isBYOC,
   }
 
   const onboarding = (

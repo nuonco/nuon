@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/pkg/config"
 )
@@ -51,7 +51,6 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 	// go from toml -> map[string]interface{}
 	buf := bytes.NewReader(byts)
 	tomlDec := toml.NewDecoder(buf)
-	tomlDec.SetTagName("mapstructure")
 
 	obj := make(map[string]interface{})
 	err = tomlDec.Decode(&obj)

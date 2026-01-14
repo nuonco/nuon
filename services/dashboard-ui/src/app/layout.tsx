@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
+import { IS_BYOC } from '@/configs/app'
 import { API_URL } from '@/configs/api'
 import { USE_AUTH_SERVICE, AUTH_SERVICE_URL } from '@/configs/auth'
 import { getUserProfile } from '@/lib/auth-server'
@@ -77,7 +78,9 @@ export default async function RootLayout({
             />
 
             <AccountProvider shouldPoll>
-              <UserJourneyProvider>{children}</UserJourneyProvider>
+              <UserJourneyProvider isBYOC={IS_BYOC}>
+                {children}
+              </UserJourneyProvider>
             </AccountProvider>
 
             {process.env.SEGMENT_WRITE_KEY && (

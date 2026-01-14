@@ -95,15 +95,42 @@ may be added.
 ```json
 {
   "enabled": true,
+  "provider_type": "oidc",
   "openid_config": {
     "client_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "client_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "issuer_url": "https://audience.auth0.com",
     "redirect_url": "http://auth.byoc.org.co/auth"
-  },
-  "provider_type": "oidc"
+  }
 }
 ```
+
+**Github**
+
+```json
+{
+  "enabled": true,
+  "provider_type": "github",
+  "github_config": {
+    "client_id": "XXXXXXXXXXXXXXXXXXXX",
+    "allowed_orgs": ["999999999"],
+    "redirect_url": "https://auth.byoc.org.co/auth",
+    "allowed_teams": ["1111111"],
+    "client_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }
+}
+```
+
+Default scopes are, `user:email` and `read:user`.
+
+<!-- prettier-ignore-start -->
+> [!IMPORTANT]
+> If a user does not have a public email, they will not be able to authenticate.
+
+> [!IMPORTANT]
+> If a user's primary email does not have an allowed domain, they will not be able to authenticate.
+
+<!-- prettier-ignore-end -->
 
 ### Loading Order
 
@@ -182,3 +209,37 @@ future-looking feature leaving room for the concept of roles and org access.
 
 Changing an env-var provider to a different provider of the same type is likely to cause issues. At this time, this is
 not explicitly supported. This applies to both, env-var based IdPs and in-database IdPs.
+
+## CLI Flow
+
+To login via the CLI:
+
+```bash
+nuon auth login
+```
+
+This will pull down the cli configs from the api. If Nuon Auth is enabled, it will use the auth service for
+authentication.
+
+Once the flow starts, the CLI will open the `/device/code` endpoint. If the user is not authenticated, the endpoint will
+redirect the user to the index page with the `s.cfg.Domain` + `/device/code` as the `url` param. If the user _is_
+authenticated, the device code flow will start.
+
+> [!NOTE] The /device/code endpoint should be opened directly, otherwise the user may invalidate their session for the
+> browser.
+
+```
+ Flow
+
+ CLI                                 Browser                              Server
+  |                                     |                                      |
+  |-- Generate device_code locally ---->|                                      |
+  |-- Open browser /device/code?code=XXX ------------------------------------->|
+  |                                     |<-- Check X-Nuon-Auth cookie ---------|
+  |                                     |<-- Show "Approve CLI?" page ---------|
+  |                                     |-- User clicks Approve (POST) ------->|
+  |                                     |            (stores code → account_id)
+  |                                     |<-- Show success page ----------------|
+  |-- Poll GET /device/token?code=XXX ---------------------------------------->|
+  |<-- 200 {access_token: "tok..."} -------------------------------------------|
+```

@@ -94,6 +94,11 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	api.GET("/validate", s.Validate)
 	api.GET("/", s.Index)
 
+	// Device code flow for CLI authentication
+	api.GET("/device/code", s.DeviceCodePage)
+	api.POST("/device/code/approve", s.DeviceCodeApprove)
+	api.GET("/device/token", s.DeviceCodeToken)
+
 	return nil
 }
 
