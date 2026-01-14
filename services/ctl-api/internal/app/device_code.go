@@ -39,7 +39,7 @@ func (a *DeviceCode) BeforeCreate(tx *gorm.DB) error {
 func (a *DeviceCode) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name: indexes.Name(db, &AccountIdentity{}, "account_id"),
+			Name: indexes.Name(db, &DeviceCode{}, "account_id"),
 			Columns: []string{
 				"account_id",
 			},
