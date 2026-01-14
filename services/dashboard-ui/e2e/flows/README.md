@@ -10,7 +10,9 @@ This directory contains documented user flows for the Nuon dashboard. Each flow 
 
 ## Critical Flows (Priority: High)
 
-*No flows documented yet. Add your first flow by copying TEMPLATE.md!*
+- ✅ **[Create Install](./create-install.md)** - Provision a new install for an app
+  - Status: Automated with Playwright test
+  - Test File: [`tests/create-install.spec.ts`](../tests/create-install.spec.ts)
 
 ## Secondary Flows (Priority: Medium)
 
@@ -68,7 +70,6 @@ Claude can:
 
 Flows to consider documenting:
 
-- Create install
 - Deploy workflow approval
 - Component configuration
 - Runner health monitoring

@@ -1,4 +1,4 @@
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
 
 /**
  * Authentication fixture for Playwright E2E tests
@@ -18,7 +18,13 @@ import { test as base, expect } from '@playwright/test';
  *
  * Requires E2E_AUTH_TOKEN environment variable to be set.
  */
-export const test = base.extend({
+
+// Define the type for our custom fixtures
+type AuthFixtures = {
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<AuthFixtures>({
   authenticatedPage: async ({ page }, use) => {
     // Get auth token from environment
     const authToken = process.env.E2E_AUTH_TOKEN;

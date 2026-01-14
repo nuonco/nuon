@@ -25,16 +25,17 @@ export async function AppInputs({
     recurse: true,
   })
 
-  return !error && config?.input && config?.input?.input_groups?.length ? (
+  return (
     <div className="flex flex-col gap-4">
       <Text variant="h3" weight="strong">
         Inputs config
       </Text>
-
-      <Inputs appConfig={config} />
+      {!error && config?.input && config?.input?.input_groups?.length ? (
+        <Inputs appConfig={config} />
+      ) : (
+        <AppInputsError />
+      )}
     </div>
-  ) : (
-    <AppInputsError />
   )
 }
 
