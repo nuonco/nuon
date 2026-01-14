@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
@@ -103,11 +104,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		Inputs: finalInputs,
 	}}
 
-	diff, _, err := installCfg.Diff(nil)
+	diff, err := installCfg.Diff(nil)
 	if err != nil {
 		return nil, fmt.Errorf("error generating diff for new install %s: %w", installCfg.Name, err)
 	}
-	fmt.Println(diff)
+	s.printInstallDiff(diff)
 
 	if dryRun {
 		// Print diff and exit without making any changes if dry run is enabled.
@@ -196,19 +197,17 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error parsing current state for install %s: %w", appInstall.Name, err)
 	}
 
-	diff, diffRes, err := installCfg.Diff(upstreamConfig)
+	diff, err := installCfg.Diff(upstreamConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error generating diff for install %s: %w", installCfg.Name, err)
 	}
+	diffRes := diff.Summary()
 	if !diffRes.HasChanged {
 		ui.PrintSuccess(fmt.Sprintf("install %s is up to date, no changes needed", installCfg.Name))
 		return appInstall, nil
 	}
 
-	fmt.Printf(`[install diff]
-%s
-(added %d, removed %d, changed %d)
-`, diff, diffRes.Added, diffRes.Removed, diffRes.Changed)
+	s.printInstallDiff(diff)
 
 	if dryRun {
 		// Print diff and exit without making any changes if dry run is enabled.
@@ -350,4 +349,49 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 	}
 
 	return nil
+}
+
+func (s *appInstallSyncer) printInstallDiff(diff *diff.Diff) {
+	if diff == nil {
+		return
+	}
+	summary := diff.Summary()
+
+	if !summary.HasChanged {
+		ui.PrintLn("no changes detected")
+		return
+	}
+
+	ui.PrintRaw(fmt.Sprintf(`[install diff]
+%s
+(added %d, removed %d, changed %d)
+`, installDiffToString(diff, ""), summary.Added, summary.Removed, summary.Changed))
+}
+
+// installDiffToString converts the install diff to a string with color coding
+// for added, removed, and changed lines. This is similar to diff.Diff.String but with
+// CLI specific logic to add colors for better user experience.
+func installDiffToString(d *diff.Diff, indent string) string {
+	if d == nil {
+		return ""
+	}
+
+	if d.Diff != nil {
+		str := fmt.Sprintf("%s: %s", d.Key, d.Diff.Diff)
+		switch d.Diff.Op {
+		case diff.OpAdd:
+			str = bubbles.Green(str)
+		case diff.OpRemove:
+			str = bubbles.Red(str)
+		case diff.OpChange:
+			str = bubbles.Yellow(str)
+		}
+		return indent + str + "\n"
+	}
+
+	diff := indent + d.Key + ":\n"
+	for _, child := range d.Children {
+		diff = diff + installDiffToString(child, indent+"\t")
+	}
+	return diff
 }
