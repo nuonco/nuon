@@ -1350,6 +1350,111 @@ export type TEnhancedInstall = components['schemas']['app.Install'] & {
 
 **Component Interfaces** (`I` prefix): Manually defined in component files or shared in `/src/types/`
 
+## E2E User Flow Documentation System
+
+The dashboard uses a structured approach to documenting and testing user flows. This system enables non-technical team members (Product, Design, QA) to document critical user journeys that can be automated with Playwright.
+
+### Directory Structure
+
+- `/e2e/flows/` - User flow documentation (markdown files)
+- `/e2e/tests/` - Playwright test implementations
+- `/e2e/fixtures/` - Reusable test utilities (auth, helpers)
+
+### For Non-Technical Contributors
+
+**Writing a User Flow**:
+
+1. **Copy the template**: `/e2e/flows/TEMPLATE.md`
+2. **Name your flow**: Use kebab-case (e.g., `create-install.md`, `deploy-workflow.md`)
+3. **Fill in the sections**:
+   - **Prerequisites**: What needs to be true before starting
+   - **User Flow**: Step-by-step actions
+   - **Test Data**: Example data used in the flow
+   - **Edge Cases**: What could go wrong
+
+4. **For each step, document**:
+   - What the user does (click, type, select)
+   - What should happen (expected result)
+   - Visible text on buttons/links
+   - Form field names (if known)
+   - **Screenshots are optional** - only add if they help clarify complex UI
+
+5. **Submit for review**: Create PR with the markdown file
+
+### For Developers (Writing Tests)
+
+**Converting Flow to Test**:
+
+1. **Read the flow documentation**: `/e2e/flows/[flow-name].md`
+2. **Create test file**: `/e2e/tests/[flow-name].spec.ts`
+3. **Follow the documented steps**: Each step becomes a test action
+4. **Use documented selectors**: Form fields, buttons, text from the flow doc
+5. **Update flow status**: Mark as ✅ Automated in `/e2e/flows/README.md`
+
+**Test Patterns**:
+- Use `page.getByRole()` for accessibility-friendly selectors
+- Use `page.locator('[name="field"]')` for form fields
+- Use `page.getByText()` for visible text matching
+- Add `data-testid` attributes to components if needed
+
+**Using the Authentication Fixture**:
+```typescript
+import { test, expect } from '../fixtures/auth.fixture';
+
+test('my test', async ({ authenticatedPage }) => {
+  await authenticatedPage.goto('/installs');
+  // Already authenticated - no manual cookie setup needed!
+});
+```
+
+### Using Claude to Write Flows
+
+**Prompt Template for Claude**:
+```
+I want to document a user flow for E2E testing.
+
+Flow: [Name of the flow]
+Description: [What the user is trying to accomplish]
+
+Steps:
+1. [First action]
+2. [Second action]
+3. [etc...]
+
+Please create a user flow document following the template at /e2e/flows/TEMPLATE.md.
+For each step, describe:
+- What the user does
+- What they see on screen
+- Expected results
+- Any form fields, buttons, or interactive elements
+
+Also write a corresponding Playwright test in /e2e/tests/.
+
+[Optional: Attach screenshots if complex UI needs clarification]
+```
+
+**Claude can**:
+- Write flow documentation from step descriptions
+- Read screenshots to identify UI elements (if provided)
+- Explore component code to find selectors
+- Generate Playwright tests from flow docs
+- Suggest edge cases based on flow complexity
+
+### Example Workflows
+
+**Adding a New Flow**:
+1. Copy TEMPLATE.md → `your-flow-name.md`
+2. Fill in prerequisites, steps, test data, edge cases
+3. Add entry to `/e2e/flows/README.md` under appropriate priority
+4. Submit PR for review
+5. Developer writes corresponding test
+6. Update status from ❌ to ✅ when automated
+
+**Navigation Pattern**:
+- Tests use `/installs`, `/apps`, etc. (no org-id needed)
+- Dashboard automatically redirects to first org
+- Use `authenticatedPage` fixture to skip auth setup
+
 ## Important Notes
 
 - **Ignore `/old/` directories**: Contains deprecated components and utilities
