@@ -40,3 +40,9 @@ src/types/nuon-oapi-v3.d.ts
 NOTES.md
 compilation-analysis.json
 analyze.js
+
+# Playwright E2E testing
+/test-results/
+/playwright-report/
+/e2e-results/
+playwright/.cache/
