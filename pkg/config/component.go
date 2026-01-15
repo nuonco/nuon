@@ -179,17 +179,17 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("List of other components that must be deployed before this component. Automatically extracted from template references").
 		Example("database").
 		Example("infrastructure").
-		Field("helm_chart").Short("helm chart component configuration").OneOfRequired("component_type").
+		Field("helm_chart").Short("helm chart component configuration").OneOfRequired("helm_chart").
 		Long("Configuration for Helm chart deployments. Required when type is 'helm_chart'").
-		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("component_type").
+		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("terraform_module").
 		Long("Configuration for Terraform module deployments. Required when type is 'terraform_module'").
-		Field("docker_build").Short("docker build component configuration").OneOfRequired("component_type").
+		Field("docker_build").Short("docker build component configuration").OneOfRequired("docker_build").
 		Long("Configuration for building and pushing Docker images. Required when type is 'docker_build'").
-		Field("external_image").Short("container image component configuration").OneOfRequired("component_type").
+		Field("external_image").Short("container image component configuration").OneOfRequired("external_image").
 		Long("Configuration for external container images (e.g., from Docker Hub or ECR). Required when type is 'container_image' or 'external_image'").
-		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("component_type").
+		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("kubernetes_manifest").
 		Long("Configuration for Kubernetes manifest deployments. Required when type is 'kubernetes_manifest'").
-		Field("job").Short("job component configuration").OneOfRequired("component_type").Deprecated("").
+		Field("job").Short("job component configuration").OneOfRequired("job").Deprecated("").
 		Long("Configuration for job/batch components. Required when type is 'job'")
 }
 

@@ -14,7 +14,6 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	// please maintain a lexographical order here
 	"action":              ActionConfigSchema,
 	"break-glass":         BreakGlassConfigSchema,
-	"component-root":      ComponentRootSchema,
 	"container-image":     ContainerImageConfigSchema,
 	"docker-build":        DockerBuildConfigSchema,
 	"full":                AppConfigSchema,
@@ -92,58 +91,6 @@ func BreakGlassConfigSchema() (*jsonschema.Schema, error) {
 	return r.Reflect(config.AppAWSIAMRole{}), nil
 }
 
-func ComponentRootSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.Component{}); err != nil {
-		return nil, errors.Wrap(err, "Component validation failed")
-	}
-
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.Reflect(config.Component{}), nil
-}
-
-func ContainerImageConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.ExternalImageComponentConfig{}); err != nil {
-		return nil, errors.Wrap(err, "ExternalImageComponentConfig validation failed")
-	}
-
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.Reflect(config.ExternalImageComponentConfig{}), nil
-}
-
-func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.DockerBuildComponentConfig{}); err != nil {
-		return nil, errors.Wrap(err, "DockerBuildComponentConfig validation failed")
-	}
-
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.Reflect(config.DockerBuildComponentConfig{}), nil
-}
-
-func HelmConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.HelmChartComponentConfig{}); err != nil {
-		return nil, errors.Wrap(err, "HelmChartComponentConfig validation failed")
-	}
-
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.Reflect(config.HelmChartComponentConfig{}), nil
-}
-
 func InputGroupSchema() (*jsonschema.Schema, error) {
 	if err := ValidateJSONSchemaExtend(config.AppInputGroup{}); err != nil {
 		return nil, errors.Wrap(err, "AppInputGroup validation failed")
@@ -219,7 +166,92 @@ func KubernetesManifestConfigSchema() (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
-	return r.Reflect(config.KubernetesManifestComponentConfig{}), nil
+	schema := jsonschema.Schema{
+		AllOf: []*jsonschema.Schema{
+			r.Reflect(config.Component{}),
+			r.Reflect(config.KubernetesManifestComponentConfig{}),
+		},
+	}
+
+	return &schema, nil
+}
+
+func ContainerImageConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.ExternalImageComponentConfig{}); err != nil {
+		return nil, errors.Wrap(err, "ExternalImageComponentConfig validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	schema := jsonschema.Schema{
+		AllOf: []*jsonschema.Schema{
+			r.Reflect(config.Component{}),
+			r.Reflect(config.ExternalImageComponentConfig{}),
+		},
+	}
+
+	return &schema, nil
+}
+
+func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.DockerBuildComponentConfig{}); err != nil {
+		return nil, errors.Wrap(err, "DockerBuildComponentConfig validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	schema := jsonschema.Schema{
+		AllOf: []*jsonschema.Schema{
+			r.Reflect(config.Component{}),
+			r.Reflect(config.DockerBuildComponentConfig{}),
+		},
+	}
+
+	return &schema, nil
+}
+
+func HelmConfigSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+	schema := jsonschema.Schema{
+		AllOf: []*jsonschema.Schema{
+			r.Reflect(config.Component{}),
+			r.Reflect(config.HelmChartComponentConfig{}),
+		},
+	}
+
+	if err := ValidateJSONSchemaExtend(schema); err != nil {
+		return nil, errors.Wrap(err, "HelmChartComponentConfig validation failed")
+	}
+
+	return &schema, nil
+}
+
+func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+	schema := jsonschema.Schema{
+		AllOf: []*jsonschema.Schema{
+			r.Reflect(config.Component{}),
+			r.Reflect(config.TerraformModuleComponentConfig{}),
+		},
+	}
+
+	if err := ValidateJSONSchemaExtend(schema); err != nil {
+		return nil, errors.Wrap(err, "TerraformModuleComponentConfig validation failed")
+	}
+
+	return &schema, nil
 }
 
 func MetadataConfigSchema() (*jsonschema.Schema, error) {
@@ -339,19 +371,6 @@ func StackConfigSchema() (*jsonschema.Schema, error) {
 	return r.Reflect(config.StackConfig{}), nil
 }
 
-func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.TerraformModuleComponentConfig{}); err != nil {
-		return nil, errors.Wrap(err, "TerraformModuleComponentConfig validation failed")
-	}
-
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.Reflect(config.TerraformModuleComponentConfig{}), nil
-}
-
 // ValidateJSONSchemaExtend checks that a struct and all its nested struct fields
 // implement JSONSchemaExtend before being passed to reflection.
 // This ensures proper schema generation with custom extensions.
@@ -368,6 +387,11 @@ func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
 	// Handle slices and arrays
 	if t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
 		return validateStructHasJSONSchemaExtend(t.Elem(), fieldPath)
+	}
+
+	// Skip validation for jsonschema.Schema type (built-in exception)
+	if t == reflect.TypeOf(jsonschema.Schema{}) {
+		return nil
 	}
 
 	// Only validate struct types
