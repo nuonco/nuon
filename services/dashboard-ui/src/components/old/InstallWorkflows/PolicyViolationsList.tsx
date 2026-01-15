@@ -1,6 +1,6 @@
 import React from 'react'
-import { Notice } from '@/components/old/Notice'
-import { Text } from '@/components/old/Typography'
+import { Banner } from '@/components/common/Banner'
+import { Text } from '@/components/common/Text'
 
 export interface PolicyViolation {
   policy_id: string
@@ -27,40 +27,40 @@ export function PolicyViolationsList({
   return (
     <div className="flex flex-col gap-2 w-full">
       {denyViolations.length > 0 && (
-        <Notice variant="error" className="!p-4 w-full">
-          <Text variant="med-14" className="mb-2">
-            Policy Violations ({denyViolations.length})
-          </Text>
-          <ul className="list-disc list-inside space-y-2">
-            {denyViolations.map((violation, index) => (
-              <li
-                key={`deny-${violation.policy_id}-${index}`}
-                className="text-sm"
-              >
-                <Text as="span">
-                  {violation.message || 'Policy check failed'}
-                </Text>
-              </li>
-            ))}
-          </ul>
-        </Notice>
+        <Banner theme="error">
+          <div className="flex flex-col gap-2 w-full">
+            <Text weight="strong">
+              Policy Violations ({denyViolations.length})
+            </Text>
+            <ul className="list-disc list-inside space-y-1">
+              {denyViolations.map((violation, index) => (
+                <li key={`deny-${violation.policy_id}-${index}`}>
+                  <Text variant="subtext">
+                    {violation.message || 'Policy check failed'}
+                  </Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Banner>
       )}
       {warnViolations.length > 0 && (
-        <Notice variant="warning" className="!p-4 w-full">
-          <Text variant="med-14" className="mb-2">
-            Policy Warnings ({warnViolations.length})
-          </Text>
-          <ul className="list-disc list-inside space-y-2">
-            {warnViolations.map((violation, index) => (
-              <li
-                key={`warn-${violation.policy_id}-${index}`}
-                className="text-sm"
-              >
-                <Text as="span">{violation.message || 'Policy warning'}</Text>
-              </li>
-            ))}
-          </ul>
-        </Notice>
+        <Banner theme="warn">
+          <div className="flex flex-col gap-2 w-full">
+            <Text weight="strong">
+              Policy Warnings ({warnViolations.length})
+            </Text>
+            <ul className="list-disc list-inside space-y-1">
+              {warnViolations.map((violation, index) => (
+                <li key={`warn-${violation.policy_id}-${index}`}>
+                  <Text variant="subtext">
+                    {violation.message || 'Policy warning'}
+                  </Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Banner>
       )}
     </div>
   )
