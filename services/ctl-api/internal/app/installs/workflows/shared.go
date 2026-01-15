@@ -40,28 +40,28 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 
 	switch signal.Type {
 	case signals.OperationAwaitInstallStackVersionRun, signals.OperationGenerateInstallStackVersion, signals.OperationUpdateInstallStackOutputs:
-		targettype = "install_stack_versions"
+		targettype = string(app.WorkflowStepTargetTypeInstallStackVersions)
 		retryable = false
 	case signals.OperationAwaitRunnerHealthy:
-		targettype = "runners"
+		targettype = string(app.WorkflowStepTargetTypeRunners)
 		retryable = false
 	case signals.OperationExecuteDeployComponentApplyPlan,
 		signals.OperationExecuteDeployComponentSyncAndPlan,
 		signals.OperationExecuteDeployComponentSyncImage,
 		signals.OperationExecuteTeardownComponentSyncAndPlan,
 		signals.OperationExecuteTeardownComponentApplyPlan:
-		targettype = "install_deploys"
+		targettype = string(app.WorkflowStepTargetTypeInstallDeploys)
 	case signals.OperationProvisionSandboxPlan,
 		signals.OperationProvisionSandboxApplyPlan,
 		signals.OperationDeprovisionSandboxPlan,
 		signals.OperationDeprovisionSandboxApplyPlan,
 		signals.OperationReprovisionSandboxPlan,
 		signals.OperationReprovisionSandboxApplyPlan:
-		targettype = "install_sandbox_runs"
+		targettype = string(app.WorkflowStepTargetTypeInstallSandboxRuns)
 	case signals.OperationExecuteActionWorkflow:
-		targettype = "install_action_workflow_runs"
+		targettype = string(app.WorkflowStepTargetTypeInstallActionWorkflowRuns)
 	case signals.OperationGenerateState:
-		targettype = "install_states"
+		targettype = string(app.WorkflowStepTargetTypeInstallStates)
 	}
 
 	executionTyp := app.WorkflowStepExecutionTypeSystem

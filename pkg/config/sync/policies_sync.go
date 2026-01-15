@@ -3,17 +3,20 @@ package sync
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
-
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s sync) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyConfig {
 	pt := models.ConfigAppPolicyType(policy.Type)
+	pe := models.ConfigAppPolicyEngine(policy.Engine)
 	return &models.ServiceAppPolicyConfig{
-		Contents: generics.ToPtr(policy.Contents),
-		Type:     &pt,
+		Type:       &pt,
+		Engine:     pe,
+		Contents:   generics.ToPtr(policy.Contents),
+		Components: policy.Components,
 	}
 }
 

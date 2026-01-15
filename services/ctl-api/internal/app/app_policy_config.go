@@ -11,12 +11,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
-var AllPolicyTypes []config.AppPolicyType = []config.AppPolicyType{
-	config.AppPolicyTypeKubernetesClusterKyverno,
-	config.AppPolicyTypeTerraformDeployRunnerJobKyverno,
-	config.AppPolicyTypeHelmDeployRunnerJobKyverno,
-	config.AppPolicyTypeActionWorkflowRunnerJobKyverno,
-}
+var AllPolicyTypes = config.AllAppPolicyTypes
 
 type AppPolicyConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
@@ -33,8 +28,10 @@ type AppPolicyConfig struct {
 	AppPoliciesConfigID string            `json:"app_policies_config,omitzero" gorm:"notnull;default null" temporaljson:"app_policies_config_id,omitzero,omitempty"`
 	AppPoliciesConfig   AppPoliciesConfig `json:"-" temporaljson:"app_policies_config,omitzero,omitempty"`
 
-	Type     config.AppPolicyType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
-	Contents string               `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
+	Type       config.AppPolicyType   `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Engine     config.AppPolicyEngine `json:"engine,omitzero" temporaljson:"engine,omitzero,omitempty"`
+	Contents   string                 `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
+	Components []string               `json:"components,omitzero" gorm:"serializer:json" temporaljson:"components,omitzero,omitempty"`
 }
 
 func (a *AppPolicyConfig) Indexes(db *gorm.DB) []migrations.Index {

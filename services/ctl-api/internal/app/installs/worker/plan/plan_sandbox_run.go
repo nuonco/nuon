@@ -194,7 +194,7 @@ func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, er
 	obj := make(map[string]string, 0)
 
 	for idx, policy := range cfg.Policies {
-		if policy.Type != config.AppPolicyType(config.AppPolicyTypeKubernetesClusterKyverno) {
+		if policy.Type != config.AppPolicyTypeKubernetesCluster {
 			continue
 		}
 
