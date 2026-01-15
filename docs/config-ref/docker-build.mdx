@@ -11,17 +11,84 @@ title: 'Docker Build'
 
 | Property | Type | Required | Description | Default | Example |
 |----------|----------|----------|----------|----------|----------|
+| `type` | `string` | ✅ Yes | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | - | `"terraform_module"` |
+| `name` | `string` | ✅ Yes | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | - | `"database"` |
+| `var_name` | `string` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | `"db_endpoint"` |
+| `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
 | `dockerfile` | `string` | ✅ Yes | path to the Dockerfile Path to the Dockerfile to build. Supports external file sources: HTTP(S) URLs (https://example.com/Dockerfile), git repositories (git::https://github.com/org/repo//Dockerfile... | - | `"Dockerfile"` |
 | `env_vars` | `object` | No | build environment variables Map of environment variables to pass to the Docker build command. Available during the build process. Supports Go templating | - | `"GOLANG_VERSION"` |
 | `public_repo` | `PublicRepoConfig` | No | public repository containing Dockerfile Clone a public GitHub repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | - | - |
 | `connected_repo` | `ConnectedRepoConfig` | No | connected repository containing Dockerfile Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | - | - |
-| `source` | `object` | No | source path or URL Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.ya... | - | - |
-| `type` | `object` | No | component type | - | - |
-| `name` | `object` | No | component name | - | - |
-| `var_name` | `object` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | - |
-| `dependencies` | `object` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | - |
 
 ### Property Details
+
+#### `type`
+
+**Examples:**
+
+
+```yaml
+"terraform_module"
+```
+
+```yaml
+"helm_chart"
+```
+
+```yaml
+"docker_build"
+```
+
+```yaml
+"container_image"
+```
+
+```yaml
+"kubernetes_manifest"
+```
+
+#### `name`
+
+**Examples:**
+
+
+```yaml
+"database"
+```
+
+```yaml
+"api-server"
+```
+
+```yaml
+"frontend"
+```
+
+#### `var_name`
+
+**Examples:**
+
+
+```yaml
+"db_endpoint"
+```
+
+```yaml
+"api_host"
+```
+
+#### `dependencies`
+
+**Examples:**
+
+
+```yaml
+"database"
+```
+
+```yaml
+"infrastructure"
+```
 
 #### `dockerfile`
 

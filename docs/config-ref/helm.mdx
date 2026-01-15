@@ -11,6 +11,10 @@ title: 'Helm'
 
 | Property | Type | Required | Description | Default | Example |
 |----------|----------|----------|----------|----------|----------|
+| `type` | `string` | ✅ Yes | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | - | `"terraform_module"` |
+| `name` | `string` | ✅ Yes | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | - | `"database"` |
+| `var_name` | `string` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | `"db_endpoint"` |
+| `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
 | `chart_name` | `string` | ✅ Yes | chart name | - | - |
 | `values` | `object` | No | map of helm values | - | - |
 | `values_file` | `array` | No | - | - | - |
@@ -22,13 +26,76 @@ title: 'Helm'
 | `take_ownership` | `boolean` | No | - | - | - |
 | `drift_schedule` | `string` | No | - | - | - |
 | `value` | `array` | No | array of helm values (not recommended) | - | - |
-| `source` | `object` | No | source path or URL Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.ya... | - | - |
-| `type` | `object` | No | component type | - | - |
-| `name` | `object` | No | release name | - | - |
-| `var_name` | `object` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | - |
-| `dependencies` | `object` | No | additional component dependencies | - | - |
 
 ### Property Details
+
+#### `type`
+
+**Examples:**
+
+
+```yaml
+"terraform_module"
+```
+
+```yaml
+"helm_chart"
+```
+
+```yaml
+"docker_build"
+```
+
+```yaml
+"container_image"
+```
+
+```yaml
+"kubernetes_manifest"
+```
+
+#### `name`
+
+**Examples:**
+
+
+```yaml
+"database"
+```
+
+```yaml
+"api-server"
+```
+
+```yaml
+"frontend"
+```
+
+#### `var_name`
+
+**Examples:**
+
+
+```yaml
+"db_endpoint"
+```
+
+```yaml
+"api_host"
+```
+
+#### `dependencies`
+
+**Examples:**
+
+
+```yaml
+"database"
+```
+
+```yaml
+"infrastructure"
+```
 
 #### `storage_driver`
 

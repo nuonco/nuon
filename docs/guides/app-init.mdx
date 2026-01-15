@@ -1,0 +1,378 @@
+---
+title: 'App Initialization'
+description: "Initialize and scaffold Nuon application configuration files with the CLI."
+icon: 'code'
+---
+
+The `nuon apps init` command helps you quickly scaffold configuration files for your Nuon application. It generates the necessary TOML configuration files with proper structure and defaults, making it easy to get started with Nuon.
+
+## Basic Usage
+
+To initialize a new app configuration in the default directory (`./app-config`):
+
+```bash
+nuon apps init
+```
+
+This generates a complete app configuration structure with all core configuration files:
+- `inputs.toml` - Define customer-facing configuration options
+- `sandbox.toml` - Configure the infrastructure sandbox
+- `stack.toml` - Define the infrastructure stack (EKS/ECS/CloudFormation)
+- `runner.toml` - Configure the deployment runner
+- `secrets.toml` - Manage secrets configuration
+- `break_glass.toml` - Configure emergency access policies
+- `policies.toml` - Define organizational policies
+- `components/` - Directory for component configurations
+- `actions/` - Directory for action workflows
+
+## Interactive Mode
+
+For a guided setup experience, use interactive mode:
+
+```bash
+nuon apps init --interactive
+# or
+nuon apps init -i
+```
+
+Interactive mode walks you through:
+1. **Template Selection** - Choose a prebuilt template or start from scratch
+2. **Component Configuration** - Select which sample components to include
+3. **Generator Options** - Configure comment and default value preferences
+
+This is especially helpful when you're new to Nuon or want to explore available options.
+
+## Using Prebuilt Templates
+
+Nuon provides production-ready templates for common deployment scenarios. Use the `--prebuild-template` flag to bootstrap your configuration quickly:
+
+### AWS EKS Template
+
+```bash
+nuon apps init --prebuild-template aws-eks
+```
+
+This generates a complete configuration optimized for deploying containerized applications to AWS Elastic Kubernetes Service (EKS).
+
+Additional templates coming soon...
+
+## Configuration Options
+
+### Path Configuration
+
+Specify a custom output directory:
+
+```bash
+nuon apps init --path ./my-app-config
+```
+
+### Include Comments
+
+Add inline comments explaining each configuration field:
+
+```bash
+nuon apps init --enable-comments
+```
+
+This is helpful for learning and understanding configuration options.
+
+### Include Default Values
+
+Explicitly set all fields to their default values:
+
+```bash
+nuon apps init --enable-defaults
+```
+
+By default, only required fields are included. This flag shows all available options.
+
+### Skip Non-Required Fields
+
+Generate a minimal configuration with only required fields:
+
+```bash
+nuon apps init --skip-non-required
+```
+
+This creates a cleaner starting point when you know you'll customize extensively.
+
+### Overwrite Existing Files
+
+Force overwrite of existing configuration files:
+
+```bash
+nuon apps init --overwrite
+```
+
+<Note>
+Be careful with `--overwrite` as it will replace existing files without prompting. Always commit your changes to version control before using this flag.
+</Note>
+
+## Initializing Individual Configurations
+
+Instead of generating the entire configuration structure, you can initialize specific configuration files using subcommands.
+
+### Sandbox Configuration
+
+Generate only the sandbox configuration:
+
+```bash
+nuon apps init sandbox \
+  --terraform-version 1.11.3 \
+  --public-repo nuonco/aws-eks-sandbox \
+  --public-repo-dir terraform \
+  --public-repo-branch main \
+  --var region=us-west-2 \
+  --env-var LOG_LEVEL=info
+```
+
+Key flags:
+- `--terraform-version` - Terraform version to use
+- `--public-repo` - Public GitHub repository (e.g., `owner/repo`)
+- `--connected-repo` - Connected private repository
+- `--drift-schedule` - Cron expression for drift detection
+- `--var` - Terraform variable (can be specified multiple times)
+- `--env-var` - Environment variable (can be specified multiple times)
+
+### Stack Configuration
+
+Generate the infrastructure stack configuration:
+
+```bash
+nuon apps init stack \
+  --name my-app-stack \
+  --description "Production EKS cluster" \
+  --type aws-cloudformation \
+  --vpc-template-url https://s3.amazonaws.com/templates/vpc.yaml \
+  --runner-template-url https://s3.amazonaws.com/templates/runner.yaml
+```
+
+Required flags:
+- `--name` - Name of the CloudFormation stack
+- `--description` - Description of the stack
+
+### Runner Configuration
+
+Generate the runner configuration:
+
+```bash
+nuon apps init runner \
+  --runner-type kubernetes \
+  --helm-driver configmap \
+  --env-var NUON_LOG_LEVEL=debug
+```
+
+Required flags:
+- `--runner-type` - Type of runner: `kubernetes`, `docker`, or `vm`
+
+### Component Configurations
+
+Generate component configuration files for different component types.
+
+#### Terraform Module Component
+
+```bash
+nuon apps init component terraform-module \
+  --name database \
+  --var-name db \
+  --terraform-version 1.11.3 \
+  --connected-repo my-org/my-repo \
+  --connected-repo-dir terraform/database \
+  --var environment=production \
+  --dependency vpc
+```
+
+#### Helm Chart Component
+
+```bash
+nuon apps init component helm-chart \
+  --name postgresql \
+  --chart-name postgresql \
+  --helm-repo-url https://charts.bitnami.com/bitnami \
+  --helm-chart postgresql \
+  --helm-version 12.0.0 \
+  --namespace databases \
+  --value persistence.enabled=true \
+  --dependency vpc
+```
+
+#### Kubernetes Manifest Component
+
+```bash
+nuon apps init component kubernetes-manifest \
+  --name app-deployment \
+  --namespace default \
+  --manifest "apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 3"
+```
+
+### Action Configuration
+
+Generate an action workflow configuration:
+
+```bash
+nuon apps init action \
+  --name backup \
+  --trigger-type cron \
+  --cron-schedule "0 2 * * *" \
+  --step-name run-backup \
+  --step-command "./backup.sh" \
+  --connected-repo my-org/my-repo \
+  --connected-repo-dir scripts \
+  --env-var BACKUP_BUCKET=s3://backups
+```
+
+Common trigger types:
+- `manual` - Triggered manually from dashboard or CLI
+- `cron` - Scheduled using cron expression
+- `post-provision` - Runs after installation provisioning
+- `post-deploy` - Runs after component deployment
+
+## Common Workflows
+
+### Starting a New Application
+
+1. **Initialize with template:**
+   ```bash
+   nuon apps init --interactive --path ./my-app
+   ```
+
+2. **Review and edit generated files:**
+   ```bash
+   cd my-app
+   cat app.toml
+   ```
+
+3. **Customize components:**
+   ```bash
+   nuon apps init component helm-chart \
+     --name api \
+     --chart-name my-api-chart \
+     --connected-repo my-org/charts \
+     --connected-repo-dir api
+   ```
+
+4. **Sync to Nuon:**
+   ```bash
+   nuon apps sync
+   ```
+
+### Adding to an Existing Application
+
+If you already have some configuration files and want to add more:
+
+```bash
+# Add a new component without overwriting existing files
+nuon apps init component terraform-module \
+  --name new-service \
+  --path ./app-config
+```
+
+### Regenerating Configuration
+
+If you need to regenerate with different options:
+
+```bash
+# Backup first
+cp -r app-config app-config.backup
+
+# Regenerate with comments and defaults
+nuon apps init \
+  --path ./app-config \
+  --enable-comments \
+  --enable-defaults \
+  --overwrite
+```
+
+## Configuration File Structure
+
+After running `nuon apps init`, your directory will have this structure:
+
+```
+app-config/
+├── inputs.toml           # Customer-facing configuration
+├── sandbox.toml          # Infrastructure sandbox
+├── stack.toml            # Infrastructure stack definition
+├── runner.toml           # Runner configuration
+├── secrets.toml          # Secrets management
+├── break_glass.toml      # Emergency access
+├── policies.toml         # Organizational policies
+├── components/           # Component definitions
+│   ├── component1.toml
+│   └── component2.toml
+├── permissions /           # Permission definitions
+│   ├── provision.toml
+│   └── deprovision.toml
+│   └── maintenance.toml
+└── actions/              # Action workflows
+    ├── action1.toml
+    └── action2.toml
+```
+
+## Next Steps
+
+After initializing your app configuration:
+
+1. **Review Generated Files** - Open each TOML file and customize values for your application
+2. **Add Components** - Use `nuon apps init component` to add application-specific components
+3. **Configure Actions** - Set up automated workflows with `nuon apps init action`
+4. **Sync to Nuon** - Run `nuon apps sync` to create or update your app in Nuon
+5. **Test Locally** - Validate your configuration before deploying
+
+<br />
+
+<Note>
+The `nuon apps init` command is a local operation and does not require authentication. It only generates configuration files on your local machine. Use `nuon apps sync` to push your configuration to the Nuon platform.
+</Note>
+
+## Tips and Best Practices
+
+### Version Control
+
+Always commit generated configuration files to version control:
+
+```bash
+git add app-config/
+git commit -m "Initialize Nuon app configuration"
+```
+
+### Iterative Development
+
+Start minimal and add complexity as needed:
+
+```bash
+# Start with minimal config
+nuon apps init --skip-non-required
+
+# Add components incrementally
+nuon apps init component helm-chart --name api
+nuon apps init component terraform-module --name database
+```
+
+### Use Comments for Learning
+
+When learning Nuon, generate files with comments:
+
+```bash
+nuon apps init --enable-comments --enable-defaults
+```
+
+This creates well-documented configuration files that explain each option.
+
+### Template Customization
+
+After using a prebuilt template, customize it for your needs:
+
+```bash
+# Start with template
+nuon apps init --prebuild-template aws-eks
+
+# Customize sandbox
+nuon apps init sandbox --overwrite \
+  --var region=eu-west-1 \
+  --var instance_type=t3.large
+```
