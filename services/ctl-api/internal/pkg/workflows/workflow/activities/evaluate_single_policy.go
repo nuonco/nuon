@@ -31,7 +31,7 @@ func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSing
 
 	l.Info("evaluating policy")
 
-	var input interface{}
+	var input any
 	if err := json.Unmarshal(req.InputJSON, &input); err != nil {
 		l.Error("unable to parse input JSON", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to parse input JSON")
@@ -71,7 +71,7 @@ func (a *Activities) evaluateRule(
 	ctx context.Context,
 	l *zap.Logger,
 	contents string,
-	input interface{},
+	input any,
 	queryStr string,
 	severity string,
 ) ([]PolicyViolation, error) {
