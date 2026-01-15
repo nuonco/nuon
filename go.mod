@@ -17,8 +17,8 @@ replace github.com/databus23/helm-diff/v3 v3.12.5 => github.com/someshkoli/helm-
 
 // Use in-tree SDKs instead of external module
 replace (
-github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
-github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
+	github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
+	github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
 )
 
 replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
@@ -103,7 +103,6 @@ require (
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/pelletier/go-toml v1.9.5
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
@@ -287,11 +286,10 @@ require (
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
-	github.com/charmbracelet/bubbletea v1.3.4
-	github.com/charmbracelet/x/ansi v0.8.0 // indirect
+	github.com/charmbracelet/bubbletea v1.3.6
+	github.com/charmbracelet/x/ansi v0.9.3 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
