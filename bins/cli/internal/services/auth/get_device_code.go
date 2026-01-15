@@ -17,7 +17,7 @@ type DeviceCodeRes struct {
 	VerificationURL string `json:"verification_uri_complete"`
 }
 
-func (a *Service) getDeviceCode() (string, error) {
+func (a *Service) getAuth0DeviceCode() (string, error) {
 	reqURL := AuthDomain + "oauth/device/code/"
 	data := url.Values{}
 	data.Set("client_id", AuthClientID)
@@ -42,7 +42,7 @@ func (a *Service) getDeviceCode() (string, error) {
 		if err != nil {
 		}
 		bodyString := string(bodyBytes)
-		fmt.Println("We have encoutered an unexpected error.")
+		fmt.Println("We have encountered an unexpected error.")
 		return "", fmt.Errorf("%s", bodyString)
 	}
 

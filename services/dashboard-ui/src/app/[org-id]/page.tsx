@@ -14,7 +14,7 @@ import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getOrg, getOrgStats, getRunnerJobs } from '@/lib'
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import type { TPageProps } from '@/types'
 import announcementsData from '@/content/dashboard-announcements.json'
 
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
 export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
   const { ['org-id']: orgId } = await params
-  const session = await auth0.getSession()
+  const session = await getSession()
   const [{ data: org, error }, { data: stats }] = await Promise.all([
     getOrg({ orgId }),
     getOrgStats({ orgId }),
@@ -62,7 +62,7 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
   if (error && !org) {
     return (
       <main>
-        <h1>Welcome, {session.user.name}!</h1>
+        <h1>Welcome, {session?.user?.name}!</h1>
         <p>Could not load your organization.</p>
         <div className="flex items-center gap-4">
           <Link href="/">Return home</Link>{' '}
@@ -128,7 +128,7 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
         <PageHeader>
           <HeadingGroup>
             <Text variant="h3" weight="stronger" level={1} role="heading">
-              Welcome, {session.user.name?.split(' ')[0]}!
+              Welcome, {session?.user?.name?.split(' ')[0]}!
             </Text>
             <Text theme="neutral">
               Manage your applications and deployed installs.

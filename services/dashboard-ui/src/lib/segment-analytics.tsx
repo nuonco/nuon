@@ -4,13 +4,14 @@
 import React, { type FC, useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import Script from 'next/script'
-import { useUser, type UserProfile } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { AnalyticsBrowser } from '@segment/analytics-next'
 import type { TOrg } from '@/types'
+import type { IUser } from '@/types/dashboard.types'
 
 export const SegmentAnalyticsIdentify: FC = () => {
   // Identify user if we haven't already.
-  const { user, error, isLoading } = useUser()
+  const { user, error, isLoading } = useAuth()
 
   useEffect(() => {
     if (window['analytics'] && user && !isLoading) {
@@ -33,7 +34,7 @@ export const SegmentAnalyticsIdentify: FC = () => {
 }
 
 export const SegmentAnalyticsSetOrg: FC<{ org: TOrg }> = ({ org }) => {
-  const { user, isLoading } = useUser()
+  const { user, isLoading } = useAuth()
 
   useEffect(() => {
     if (window['analytics'] && user && !isLoading) {
@@ -64,7 +65,7 @@ interface ITrackEvent {
   event: string
   props?: Record<string, unknown>
   status: 'ok' | 'error'
-  user: UserProfile
+  user: IUser
 }
 
 export function trackEvent({ event, user, status, props = {} }: ITrackEvent) {

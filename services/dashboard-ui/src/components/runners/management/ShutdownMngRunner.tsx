@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { shutdownMngRunner } from '@/actions/runners/shutdown-mng-runner'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -42,7 +42,7 @@ export const ShutdownMngRunnerModal = ({
 }: IModal & {
   runnerId: string
 }) => {
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
 

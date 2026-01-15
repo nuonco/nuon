@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { API_URL } from '@/configs/api'
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import type { TRouteProps } from '@/types'
 
 // API route for downloading Terraform installer config
@@ -12,14 +12,14 @@ export async function GET(
   const { installId, orgId } = await params
 
   try {
-    const session = await auth0.getSession()
+    const session = await getSession()
 
     const response = await fetch(
       `${API_URL}/v1/installs/${installId}/generate-terraform-installer-config`,
       {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${session?.tokenSet?.accessToken}`,
+          Authorization: `Bearer ${session?.accessToken}`,
           'X-Nuon-Org-ID': orgId,
         },
       }

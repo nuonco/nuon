@@ -8,7 +8,6 @@ import { Button } from '@/components/old/Button'
 import { Logo } from '@/components/old/Logo'
 import { SignOutButton } from '@/components/old/Profile'
 import { NuonVersions, type TNuonVersions } from '@/components/old/NuonVersions'
-import { getAPIVersion } from '@/lib'
 import { VERSION } from '@/utils'
 
 const NoOrgs: FC = () => {
@@ -86,16 +85,7 @@ export const AppHomePage: FC = () => {
       .split('; ')
       .find((row) => row.startsWith('is-sidebar-open='))
     setIsSidebarOpen(sidebarCookie?.split('=')[1] === 'true')
-
-    // Get API version
-    /* getAPIVersion().then(({ data: apiVersion }) => {
-     *   if (apiVersion) {
-     *     setVersions({
-     *       api: apiVersion as any,
-     *       ui: { version: VERSION as any },
-     *     })
-     *   }
-     * }) */
+   
   }, [])
 
   return (

@@ -14,6 +14,12 @@ import (
 func init() {
 	config.RegisterDefault("http_address", "0.0.0.0")
 
+	// ports
+	config.RegisterDefault("http_port", "8081")
+	config.RegisterDefault("internal_http_port", "8082")
+	config.RegisterDefault("runner_http_port", "8083")
+	config.RegisterDefault("auth_http_port", "8084")
+
 	// defaults for psql database
 	config.RegisterDefault("db_region", "us-west-2")
 	config.RegisterDefault("db_port", 5432)
@@ -66,6 +72,11 @@ func init() {
 
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
+
+	// Nuon Auth Service Configs
+	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
+	config.RegisterDefault("nuon_auth_allow_all_users", false)
+	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
 }
 
 type Config struct {
@@ -77,12 +88,17 @@ type Config struct {
 	MetricsTags    []string `config:"metrics_tags"`
 	DisableMetrics bool     `config:"disable_metrics"`
 
-	ServiceName             string        `config:"service_name" validate:"required"`
-	ServiceType             string        `config:"service_type" validate:"required"`
-	ServiceDeployment       string        `config:"service_deployment"`
-	HTTPPort                string        `config:"http_port" validate:"required"`
-	InternalHTTPPort        string        `config:"internal_http_port" validate:"required"`
-	RunnerHTTPPort          string        `config:"runner_http_port" validate:"required"`
+	ServiceName       string `config:"service_name" validate:"required"`
+	ServiceType       string `config:"service_type" validate:"required"`
+	ServiceDeployment string `config:"service_deployment"`
+
+	RootDomain string `config:"root_domain"` // for all services
+
+	HTTPPort         string `config:"http_port" validate:"required"`
+	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
+	RunnerHTTPPort   string `config:"runner_http_port" validate:"required"`
+	AuthHTTPPort     string `config:"auth_http_port" validate:"required"`
+
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
@@ -126,6 +142,20 @@ type Config struct {
 	Middlewares         []string `config:"middlewares"`
 	InternalMiddlewares []string `config:"internal_middlewares"`
 	RunnerMiddlewares   []string `config:"runner_middlewares"`
+	AuthMiddlewares     []string `config:"auth_middlewares"`
+
+	// Nuon Auth Config
+	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`
+	NuonAuthSessionTTL     int      `config:"nuon_auth_session_ttl"`
+	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
+	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
+
+	// Nuon Auth: Default Provider ConfigS
+	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
+	NuonAuthClientID     string `config:"nuon_auth_client_id"`
+	NuonAuthClientSecret string `config:"nuon_auth_client_secret"`
+	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
+	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
 
 	// auth 0 config
 	Auth0IssuerURL string `config:"auth0_issuer_url" validate:"required"`

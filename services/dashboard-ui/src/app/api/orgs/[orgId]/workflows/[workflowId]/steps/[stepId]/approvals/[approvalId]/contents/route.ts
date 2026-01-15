@@ -3,7 +3,7 @@ export const runtime = 'nodejs'
 import https from 'https'
 import http from 'http'
 import { NextRequest } from 'next/server'
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import { API_URL } from '@/configs/api'
 import { TRouteProps } from '@/types'
 
@@ -11,7 +11,7 @@ export async function GET(
   request: NextRequest,
   { params }: TRouteProps<'orgId' | 'workflowId' | 'stepId' | 'approvalId'>
 ) {
-  const session = await auth0.getSession()
+  const session = await getSession()
   const { orgId, workflowId, stepId, approvalId } = await params
 
   // Parse API_URL for protocol, hostname, and port
@@ -30,7 +30,7 @@ export async function GET(
       path: `/v1/workflows/${workflowId}/steps/${stepId}/approvals/${approvalId}/contents`,
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${session?.tokenSet?.accessToken}`,
+        Authorization: `Bearer ${session?.accessToken}`,
         'Content-Type': 'application/json',
         'X-Nuon-Org-ID': orgId,
         'Accept-Encoding': 'gzip',

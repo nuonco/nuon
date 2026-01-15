@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { ArrowURightDownIcon, CheckIcon } from '@phosphor-icons/react'
 import { deprovisionInstall } from '@/actions/installs/deprovision-install'
 import { Button } from '@/components/old/Button'
@@ -19,7 +19,7 @@ import { trackEvent } from '@/lib/segment-analytics'
 
 export const DeleteInstallModal = () => {
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { install } = useInstall()
   const [confirm, setConfirm] = useState<string>()

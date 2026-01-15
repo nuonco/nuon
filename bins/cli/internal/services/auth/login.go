@@ -20,6 +20,12 @@ var (
 	AuthAudience string
 )
 
+// LoginResult contains the result of an authentication flow
+type LoginResult struct {
+	AccessToken string
+	DisplayName string
+}
+
 func (a *Service) Login(ctx context.Context) error {
 	view := ui.NewGetView()
 
@@ -43,36 +49,29 @@ func (a *Service) Login(ctx context.Context) error {
 		return view.Error(fmt.Errorf("couldn't get cli config: %w", err))
 	}
 
-	AuthAudience = cfg.AuthAudience
-	AuthClientID = cfg.AuthClientID
-	AuthDomain = cfg.AuthDomain
-
-	// get device code
-	deviceCode, err := a.getDeviceCode()
-	if err != nil {
-		return view.Error(fmt.Errorf("couldn't verify device code: %w", err))
+	// Determine which auth flow to use based on NuonAuthEnabled
+	var result *LoginResult
+	if cfg.NuonAuthEnabled {
+		result, err = a.loginWithNuonAuth(ctx, cfg)
+	} else {
+		result, err = a.loginWithAuth0(ctx, cfg)
 	}
-
-	tokens, err := a.getOAuthTokens(deviceCode)
-	if err != nil {
-		return view.Error(fmt.Errorf("couldn't get OAuth tokens: %w", err))
-	}
-
-	// add access token to config and write to the file
-	a.cfg.Set("api_token", tokens.AccessToken)
-	err = a.cfg.WriteConfig()
 	if err != nil {
 		return view.Error(err)
 	}
 
-	// get user info from ID token
-	user := a.getUserInfo(tokens.IDToken)
-	view.Print(fmt.Sprintf("Logged in as %s", user.Name))
+	// Save access token to config
+	a.cfg.Set("api_token", result.AccessToken)
+	if err := a.cfg.WriteConfig(); err != nil {
+		return view.Error(err)
+	}
 
-	// update apiClient with newly-fetched token so we can list orgs
+	view.Print(fmt.Sprintf("Logged in as %s", result.DisplayName))
+
+	// Update apiClient with newly-fetched token so we can list orgs
 	api, err := nuon.New(
 		nuon.WithValidator(validator.New()),
-		nuon.WithAuthToken(tokens.AccessToken),
+		nuon.WithAuthToken(result.AccessToken),
 		nuon.WithURL(a.cfg.APIURL),
 	)
 	if err != nil {
@@ -108,6 +107,33 @@ func (a *Service) Login(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// loginWithAuth0 performs the Auth0 device code flow
+func (a *Service) loginWithAuth0(ctx context.Context, cfg *models.ServiceCLIConfig) (*LoginResult, error) {
+	AuthAudience = cfg.AuthAudience
+	AuthClientID = cfg.AuthClientID
+	AuthDomain = cfg.AuthDomain
+
+	// Get device code
+	deviceCode, err := a.getAuth0DeviceCode()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get device code: %w", err)
+	}
+
+	// Poll for tokens
+	tokens, err := a.getOAuthTokens(deviceCode)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get OAuth tokens: %w", err)
+	}
+
+	// Get user info from ID token
+	user := a.getUserInfo(tokens.IDToken)
+
+	return &LoginResult{
+		AccessToken: tokens.AccessToken,
+		DisplayName: user.Name,
+	}, nil
 }
 
 // selectAPIURL prompts the user to select their deployment type and returns the appropriate API URL

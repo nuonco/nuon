@@ -21,9 +21,11 @@ This software category is called Bring Your Own Cloud (BYOC).
 
 ## What is Nuon?
 
-Historically there have been two ways to deploy any software vendor's product: SaaS (in the vendor's cloud) and self-hosted (the customer manually installs the vendor's software in their cloud). But some customers have compliance and regulatory reasons that require some or all of the vendor's software be installed in the customers' cloud accounts. Customers who self-host would also prefer if the software vendor installed and managed their software versus managing the complexity themselves.
+Historically there have been two ways to deploy any software vendor's product: SaaS (in the vendor's cloud) and self-hosted (the customer manually installs the vendor's software in their cloud).
 
-A new deployment alternative is called Bring Your Own Cloud (BYOC) where the software vendor installs and manages their software - in their customers' cloud accounts.
+But some customers have compliance and regulatory reasons that require some or all of the vendor's software be installed in the customers' cloud accounts. Customers who self-host would also prefer if the software vendor installed and managed their software versus managing the complexity themselves.
+
+There is an emerging deployment alternative called Bring Your Own Cloud (BYOC) where the software vendor installs and manages their software - in their customers' cloud accounts.
 
 Nuon is a platform that software vendors can use to quickly and securely offer BYOC to their customers.
 
@@ -35,7 +37,7 @@ The docs for creating your first app are [here](https://docs.nuon.co/get-started
 
 ## Deployment options
 
-For enterprise licensed customers, Nuon can be deployed either as Nuon Cloud, our SaaS offering, or managed self-hosted where Nuon BYOC deploys Nuon's control plane into a software vendor's AWS cloud account. If you're interested in the managed self-hosted approach, please [contact us](https://nuon.co/contact-sales) and review the Nuon BYOC app configuration [here](https://github.com/nuonco/byoc).
+For enterprise licensed customers, Nuon can be deployed either as Nuon Cloud, our SaaS offering, or managed self-hosted, our Nuon BYOC offering, where Nuon's control plane is automatically deployed into a software vendor's AWS cloud account. If you're interested in the managed self-hosted approach, please [contact us](https://nuon.co/contact-sales) and review the Nuon BYOC docs [here](https://docs.nuon.co/guides/byoc).
 
 Nuon engineering is currently working on removing cloud dependencies so that Nuon open source can be deployed standalone as a third option.
 

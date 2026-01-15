@@ -67,7 +67,7 @@ func generateAdminSchema(ctx context.Context) error {
 		"--parseInternal",
 		"-g", "admin.go",
 		"--markdownFiles", "docs/admin/descriptions",
-		"-t", "orgs/admin,actions/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,installers/admin,components/admin,runners/admin",
+		"-t", "orgs/admin,actions/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,installers/admin,components/admin,runners/admin,auth/admin",
 	}
 
 	cmd, err := command.New(v,
@@ -97,7 +97,7 @@ func generatePublicSchema(ctx context.Context) error {
 		"--parseInternal",
 		"-g", "public.go",
 		"--markdownFiles", "docs/public/descriptions",
-		"-t", "accounts,apps,actions,components,installs,installers,general,orgs,releases,sandboxes,vcs,runners",
+		"-t", "auth,accounts,apps,actions,components,installs,installers,general,orgs,releases,sandboxes,vcs,runners",
 	}
 
 	cmd, err := command.New(v,

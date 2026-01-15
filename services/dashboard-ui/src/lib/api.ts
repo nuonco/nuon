@@ -1,6 +1,6 @@
 import { API_URL } from '@/configs/api'
 import type { TAPIResponse } from '@/types'
-import { auth0 } from './auth'
+import { getSession } from './auth-server'
 
 interface IAPIData {
   abortTimeout?: number
@@ -23,13 +23,13 @@ export async function api<T>({
 }: IAPIData): Promise<TAPIResponse<T>> {
   let response: Response | undefined
   try {
-    const session = await auth0.getSession()
+    const session = await getSession()
     const fetchOpts: RequestInit = {
       cache: 'no-store',
       method,
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${session?.tokenSet?.accessToken}`,
+        Authorization: `Bearer ${session?.accessToken || session?.tokenSet?.accessToken}`,
         'Content-Type': 'application/json',
         'X-Nuon-Org-ID': orgId || '',
         'x-nuon-pagination-enabled': 'true',

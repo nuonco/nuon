@@ -1,0 +1,10 @@
+id: copying-loop-var
+snapshots:
+  ? |
+    placeholder
+  : labels:
+    - source: |-
+        placeholder
+      style: primary
+      start: 0
+      end: 0

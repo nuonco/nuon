@@ -11,7 +11,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -165,7 +165,6 @@ func parseInstallConfigFromFile(filePath string) (*config.Install, error) {
 
 func parseInstallConfig(raw io.Reader) (*config.Install, error) {
 	tomlDec := toml.NewDecoder(raw)
-	tomlDec.SetTagName("mapstructure")
 
 	obj := make(map[string]interface{})
 	err := tomlDec.Decode(&obj)

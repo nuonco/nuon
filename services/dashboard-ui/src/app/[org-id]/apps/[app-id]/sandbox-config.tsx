@@ -1,49 +1,70 @@
-import {
-  AppSandboxConfig,
-  AppSandboxVariables,
-  EmptyStateGraphic,
-  Link,
-  Text,
-} from '@/components'
+import { AppSandbox as Sandbox } from '@/components/apps/config/AppSandbox'
+import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState/EmptyState'
+import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
 import { getAppConfig } from '@/lib'
 
-export const SandboxConfig = async ({
+export async function AppSandbox({
   appConfigId,
   appId,
   orgId,
 }: {
-  appConfigId: string
+  appConfigId?: string
   appId: string
   orgId: string
-}) => {
+}) {
+  if (!appConfigId) {
+    return <AppSandboxError />
+  }
+
   const { data: config, error } = await getAppConfig({
     appConfigId,
     appId,
     orgId,
     recurse: true,
   })
-  return config && !error ? (
-    <div className="flex flex-col gap-8">
-      <AppSandboxConfig sandboxConfig={config?.sandbox} />
-      <AppSandboxVariables variables={config?.sandbox?.variables} />
-    </div>
+
+  return !error && config?.sandbox ? (
+    <Card className="flex-auto flex flex-col gap-4">
+      <Text weight="strong">Sandbox config</Text>
+      <Sandbox appConfig={config} />
+    </Card>
   ) : (
-    <div className="m-auto flex flex-col items-center max-w-[200px] my-6">
-      <EmptyStateGraphic variant="table" />
-      <Text className="mt-6" variant="med-14">
-        No app sandbox config
-      </Text>
-      <Text variant="reg-12" className="text-center !inline-block">
-        Read more about app sandbox configs{' '}
-        <Link
-          className="!inline-block"
-          href="https://docs.nuon.co/concepts/sandboxes"
-          target="_blank"
-        >
-          here
-        </Link>
-        .
-      </Text>
-    </div>
+    <AppSandboxError />
   )
 }
+
+export const AppSandboxError = () => (
+  <Card className="flex-auto">
+    <EmptyState
+      variant="diagram"
+      emptyTitle="No sandbox configuration"
+      emptyMessage="Configure a sandbox in your application configuration to see it here."
+    />
+  </Card>
+)
+
+export const AppSandboxSkeleton = () => (
+  <Card className="flex-auto flex flex-col gap-4">
+    <Skeleton height="20px" width="140px" />
+    <div className="grid gap-6" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+      <div className="flex flex-col gap-1">
+        <Skeleton height="14px" width="80px" />
+        <Skeleton height="16px" width="100%" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Skeleton height="14px" width="60px" />
+        <Skeleton height="16px" width="80px" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Skeleton height="14px" width="70px" />
+        <Skeleton height="16px" width="90px" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Skeleton height="14px" width="75px" />
+        <Skeleton height="16px" width="60px" />
+      </div>
+    </div>
+  </Card>
+)

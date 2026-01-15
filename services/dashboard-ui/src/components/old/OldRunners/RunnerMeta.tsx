@@ -1,7 +1,7 @@
 'use client'
 
 import { DateTime } from 'luxon'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { ArrowSquareOutIcon } from '@phosphor-icons/react'
 import { Link } from '@/components/old/Link'
 import { StatusBadge } from '@/components/old/Status'
@@ -32,7 +32,7 @@ export const RunnerMeta = ({
   initSettings,
   shouldPoll = false,
 }: IRunnerMeta) => {
-  const { user, isLoading } = useUser()
+  const { user, isLoading } = useAuth()
   const { org } = useOrg()
   const { data: runner } = usePolling<TRunner>({
     initData: initRunner,

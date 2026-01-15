@@ -31,8 +31,12 @@ export function useQueryApprovalPlan({ step }: IUseQueryApprovalPlan) {
     )
       .then((r) => r.json())
       .then((res) => {
-        setPlan(res)
         setIsLoading(false)
+        if (res?.error) {
+          setError(res)
+        } else {
+          setPlan(res)
+        }
       })
       .catch((err) => {
         setIsLoading(false)
