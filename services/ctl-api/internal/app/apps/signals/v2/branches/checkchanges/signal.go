@@ -37,14 +37,21 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get app branch
+	// Get app branch with latest config
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
-	// Get latest commit from VCS
-	latestCommit, err := activities.AwaitGetLatestCommitFromVCSByVcsConfigID(ctx, branch.ConnectedGithubVCSConfigID)
+	// Check if branch has a config with VCS settings
+	if len(branch.Configs) == 0 || branch.Configs[0].ConnectedGithubVCSConfig == nil {
+		workflow.GetLogger(ctx).Info("no VCS config found for app branch",
+			"app_branch_id", branch.ID)
+		return nil
+	}
+
+	// Get latest commit from VCS using the config's VCS config ID
+	latestCommit, err := activities.AwaitGetLatestCommitFromVCSByVcsConfigID(ctx, branch.Configs[0].ConnectedGithubVCSConfig.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get latest commit: %w", err)
 	}

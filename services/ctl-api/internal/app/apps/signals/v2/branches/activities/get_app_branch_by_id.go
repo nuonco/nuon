@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -15,8 +17,15 @@ func (a *Activities) getAppBranchByID(ctx context.Context, appBranchID string) (
 	res := a.db.WithContext(ctx).
 		Preload("Org").
 		Preload("App").
-		Preload("ConnectedGithubVCSConfig").
 		Preload("Queue").
+		Preload("Configs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_branch_configs.created_at DESC").Limit(1)
+		}).
+		Preload("Configs.ConnectedGithubVCSConfig").
+		Preload("Configs.PublicGitVCSConfig").
+		Preload("Configs.InstallGroups", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_branch_install_groups.order ASC")
+		}).
 		First(&branch, "id = ?", appBranchID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app branch: %w", res.Error)

@@ -26,11 +26,10 @@ type AppBranch struct {
 	AppID string `json:"app_id,omitzero" gorm:"not null;index:idx_app_app_branch;uniqueIndex:idx_app_branch_name_per_app" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
-	Name                       string                   `gorm:"uniqueIndex:idx_app_branch_name_per_app;not null" json:"name" temporaljson:"name"`
-	ConnectedGithubVCSConfigID string                   `json:"connected_github_vcs_config_id,omitzero" temporaljson:"connected_github_vcs_config_id,omitzero,omitempty"`
-	ConnectedGithubVCSConfig   ConnectedGithubVCSConfig `json:"-" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
+	Name string `gorm:"uniqueIndex:idx_app_branch_name_per_app;not null" json:"name" temporaljson:"name"`
 
-	Queue Queue `json:"queue,omitzero" gorm:"polymorphic:Owner;" temporaljson:"queue,omitzero,omitempty"`
+	Queue   Queue             `json:"queue,omitzero" gorm:"polymorphic:Owner;" temporaljson:"queue,omitzero,omitempty"`
+	Configs []AppBranchConfig `json:"configs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"configs,omitzero,omitempty"`
 
 	// LastSyncedCommit string `json:"last_synced_commit,omitzero" temporaljson:"last_synced_commit,omitzero,omitempty"`
 

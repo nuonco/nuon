@@ -26,21 +26,6 @@ func (h *Helpers) CreateAppBranch(
 		return nil, fmt.Errorf("unable to create app branch: %w", err)
 	}
 
-	// Set ownership on VCS config if connected GitHub config
-	if connectedGithubVCSConfig != nil {
-		connectedGithubVCSConfig.ComponentConfigID = branch.ID
-		connectedGithubVCSConfig.ComponentConfigType = plugins.TableName(h.db, app.AppBranch{})
-
-		if err := h.db.WithContext(ctx).Create(connectedGithubVCSConfig).Error; err != nil {
-			return nil, fmt.Errorf("unable to create connected github vcs config: %w", err)
-		}
-
-		branch.ConnectedGithubVCSConfigID = connectedGithubVCSConfig.ID
-		if err := h.db.WithContext(ctx).Save(&branch).Error; err != nil {
-			return nil, fmt.Errorf("unable to update branch with vcs config: %w", err)
-		}
-	}
-
 	// Create queue for app branch
 	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     branch.ID,

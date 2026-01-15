@@ -40,6 +40,8 @@ func AllModels() []any {
 		&app.AppRepository{},
 		&app.AppConfig{},
 		&app.AppBranch{},
+		&app.AppBranchConfig{},
+		&app.AppBranchInstallGroup{},
 		&app.AppSandboxConfig{},
 		&app.AppRunnerConfig{},
 		&app.AppInput{},

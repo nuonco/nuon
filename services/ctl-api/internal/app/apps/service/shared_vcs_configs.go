@@ -11,9 +11,10 @@ import (
 )
 
 type PublicGitVCSConfigRequest struct {
-	Repo      string `validate:"required"`
-	Directory string `validate:"required"`
-	Branch    string `validate:"required"`
+	Repo       string `validate:"required"`
+	Directory  string `validate:"required"`
+	Branch     string `validate:"required"`
+	PathFilter string
 }
 
 type ConnectedGithubVCSConfigRequest struct {
@@ -90,8 +91,9 @@ func (b *basicVCSConfigRequest) publicGitVCSConfig(
 	}
 
 	return &app.PublicGitVCSConfig{
-		Repo:      repo,
-		Directory: b.PublicGitVCSConfig.Directory,
-		Branch:    b.PublicGitVCSConfig.Branch,
+		Repo:       repo,
+		Directory:  b.PublicGitVCSConfig.Directory,
+		Branch:     b.PublicGitVCSConfig.Branch,
+		PathFilter: b.PublicGitVCSConfig.PathFilter,
 	}, nil
 }

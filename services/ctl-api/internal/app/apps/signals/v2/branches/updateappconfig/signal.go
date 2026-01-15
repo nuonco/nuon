@@ -41,15 +41,20 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get app branch
+	// Get app branch with latest config
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
-	// Parse nuon.yaml from repo at commit
+	// Check if branch has a config with VCS settings
+	if len(branch.Configs) == 0 || branch.Configs[0].ConnectedGithubVCSConfig == nil {
+		return fmt.Errorf("app branch has no VCS config")
+	}
+
+	// Parse nuon.yaml from repo at commit using the config's VCS config ID
 	config, err := activities.AwaitParseNuonYamlFromRepo(ctx, activities.ParseNuonYamlFromRepoRequest{
-		VcsConfigID: branch.ConnectedGithubVCSConfigID,
+		VcsConfigID: branch.Configs[0].ConnectedGithubVCSConfig.ID,
 		CommitSHA:   s.CommitSHA,
 	})
 	if err != nil {

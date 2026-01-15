@@ -63,7 +63,6 @@ func (s *service) getAppBranches(ctx *gin.Context, orgID, appID string) ([]app.A
 			OrgID: orgID,
 			AppID: appID,
 		}).
-		Preload("ConnectedGithubVCSConfig").
 		Order("created_at desc").
 		Find(&branches)
 	if res.Error != nil {

@@ -170,7 +170,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		{
 			branches.POST("", s.CreateAppBranch)
 			branches.GET("", s.GetAppBranches)
+			branches.GET("/:app_branch_id", s.GetAppBranch)
 			branches.GET("/:app_branch_id/configs", s.GetAppBranchAppConfigs)
+			branches.POST("/:app_branch_id/configs", s.CreateAppBranchConfig)
 		}
 
 		// TODO deprecate - latest config routes
