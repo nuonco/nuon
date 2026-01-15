@@ -51,7 +51,7 @@ func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("manifest").Short("Kubernetes manifest").Required().
+		Field("manifest").Short("Kubernetes manifest").
 		Long("YAML manifest content for Kubernetes resources. Supports templating with variables like {{.nuon.install.id}}").
 		Example("apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: app-config\ndata:\n  env: production").
 		OneOfRequired("manifest_source").
