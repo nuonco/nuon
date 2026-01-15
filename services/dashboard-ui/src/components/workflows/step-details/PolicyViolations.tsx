@@ -13,16 +13,15 @@ interface IPolicyViolations {
 }
 
 export const PolicyViolations = ({ step }: IPolicyViolations) => {
-  const violations = step?.status?.metadata?.policy_violations as
-    | PolicyViolation[]
-    | undefined
+  const denyViolations =
+    (step?.status?.metadata?.deny_violations as PolicyViolation[]) || []
+  const warnViolations =
+    (step?.status?.metadata?.warn_violations as PolicyViolation[]) || []
+  const violations = [...denyViolations, ...warnViolations]
 
-  if (!violations || violations.length === 0) {
+  if (violations.length === 0) {
     return null
   }
-
-  const denyViolations = violations.filter((v) => v.severity === 'deny')
-  const warnViolations = violations.filter((v) => v.severity === 'warn')
 
   return (
     <div className="flex flex-col gap-2">

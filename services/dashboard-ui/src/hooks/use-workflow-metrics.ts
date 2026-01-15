@@ -28,8 +28,8 @@ export const useWorkflowMetrics = (workflow: TWorkflow) => {
 
     const stepsWithPolicyViolations = workflowSteps.filter(
       (s) =>
-        s?.status?.metadata?.policy_violations &&
-        (s.status.metadata.policy_violations as unknown[]).length > 0
+        ((s?.status?.metadata?.deny_violations as unknown[])?.length || 0) > 0 ||
+        ((s?.status?.metadata?.warn_violations as unknown[])?.length || 0) > 0
     )
 
     return {

@@ -16,8 +16,8 @@ export const StepBanner = ({
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
   const hasPolicyViolations =
-    step?.status?.metadata?.policy_violations &&
-    (step.status.metadata.policy_violations as unknown[]).length > 0
+    ((step?.status?.metadata?.deny_violations as unknown[])?.length || 0) > 0 ||
+    ((step?.status?.metadata?.warn_violations as unknown[])?.length || 0) > 0
 
   return (
     <>

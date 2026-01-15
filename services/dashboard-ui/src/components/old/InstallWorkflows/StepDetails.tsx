@@ -125,11 +125,12 @@ export function getStepType(
             {sentanceCase(step?.status?.metadata?.err_step_message as string)}
           </Notice>
         ) : null}
-        {step?.status?.metadata?.policy_violations ? (
+        {(step?.status?.metadata?.deny_violations || step?.status?.metadata?.warn_violations) ? (
           <PolicyViolationsList
-            violations={
-              step.status.metadata.policy_violations as PolicyViolation[]
-            }
+            violations={[
+              ...(step?.status?.metadata?.deny_violations as PolicyViolation[] || []),
+              ...(step?.status?.metadata?.warn_violations as PolicyViolation[] || [])
+            ]}
           />
         ) : null}
         {step?.approval ? (
