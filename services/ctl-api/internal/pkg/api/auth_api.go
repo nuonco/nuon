@@ -14,7 +14,7 @@ func NewAuthAPI(params Params) (*API, error) {
 		l:                     params.L,
 		configuredMiddlewares: params.Cfg.AuthMiddlewares,
 		db:                    params.DB,
-		// endpointAudit:         params.EndpointAudit,
+		endpointAudit:         params.EndpointAudit,
 	}
 
 	if err := api.init(); err != nil {
