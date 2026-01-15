@@ -157,7 +157,7 @@ func (g *ConfigGen) writePropertyComments(schema *jsonschema.Schema, output *str
 			// Handle multiline examples by writing them on new commented lines
 			if strings.Contains(exampleStr, "\n") {
 				output.WriteString("\n")
-				for _, line := range strings.Split(exampleStr, "\n") {
+				for _, line := range strings.SplitSeq(exampleStr, "\n") {
 					output.WriteString("# ")
 					output.WriteString(line)
 					output.WriteString("\n")
