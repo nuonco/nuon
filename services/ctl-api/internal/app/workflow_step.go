@@ -33,11 +33,18 @@ type WorkflowStepTargetType string
 // install_deploy
 // install_action_workflow_run (can be many of these)
 const (
-	WorkflowStepTargetTypeInstallCloudformationStack = "install_cloudformation_stack"
-	WorkflowStepTargetTypeInstallSandboxRun          = "install_sandbox_run"
-	WorkflowStepTargetTypeInstallRunnerUpdate        = "install_runner_update"
-	WorkflowStepTargetTypeInstallDeploy              = "install_deploy"
-	WorkflowStepTargetTypeInstallActionWorkflowRun   = "install_action_workflow_run"
+	WorkflowStepTargetTypeInstallCloudformationStack WorkflowStepTargetType = "install_cloudformation_stack"
+	WorkflowStepTargetTypeInstallSandboxRun          WorkflowStepTargetType = "install_sandbox_run"
+	WorkflowStepTargetTypeInstallRunnerUpdate        WorkflowStepTargetType = "install_runner_update"
+	WorkflowStepTargetTypeInstallDeploy              WorkflowStepTargetType = "install_deploy"
+	WorkflowStepTargetTypeInstallActionWorkflowRun   WorkflowStepTargetType = "install_action_workflow_run"
+
+	WorkflowStepTargetTypeInstallDeploys            WorkflowStepTargetType = "install_deploys"
+	WorkflowStepTargetTypeInstallSandboxRuns        WorkflowStepTargetType = "install_sandbox_runs"
+	WorkflowStepTargetTypeInstallActionWorkflowRuns WorkflowStepTargetType = "install_action_workflow_runs"
+	WorkflowStepTargetTypeInstallStackVersions      WorkflowStepTargetType = "install_stack_versions"
+	WorkflowStepTargetTypeInstallStates             WorkflowStepTargetType = "install_states"
+	WorkflowStepTargetTypeRunners                   WorkflowStepTargetType = "runners"
 )
 
 type WorkflowStep struct {

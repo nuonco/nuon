@@ -33,14 +33,23 @@ const (
 	// ConfigAppPolicyTypeKubernetesCluster captures enum value "kubernetes_cluster"
 	ConfigAppPolicyTypeKubernetesCluster ConfigAppPolicyType = "kubernetes_cluster"
 
-	// ConfigAppPolicyTypeRunnerJobTerraformDeploy captures enum value "runner_job_terraform_deploy"
-	ConfigAppPolicyTypeRunnerJobTerraformDeploy ConfigAppPolicyType = "runner_job_terraform_deploy"
+	// ConfigAppPolicyTypeTerraformModule captures enum value "terraform_module"
+	ConfigAppPolicyTypeTerraformModule ConfigAppPolicyType = "terraform_module"
 
-	// ConfigAppPolicyTypeRunnerJobHelmDeploy captures enum value "runner_job_helm_deploy"
-	ConfigAppPolicyTypeRunnerJobHelmDeploy ConfigAppPolicyType = "runner_job_helm_deploy"
+	// ConfigAppPolicyTypeHelmChart captures enum value "helm_chart"
+	ConfigAppPolicyTypeHelmChart ConfigAppPolicyType = "helm_chart"
 
-	// ConfigAppPolicyTypeRunnerJobActionWorkflow captures enum value "runner_job_action_workflow"
-	ConfigAppPolicyTypeRunnerJobActionWorkflow ConfigAppPolicyType = "runner_job_action_workflow"
+	// ConfigAppPolicyTypeKubernetesManifest captures enum value "kubernetes_manifest"
+	ConfigAppPolicyTypeKubernetesManifest ConfigAppPolicyType = "kubernetes_manifest"
+
+	// ConfigAppPolicyTypeDockerBuild captures enum value "docker_build"
+	ConfigAppPolicyTypeDockerBuild ConfigAppPolicyType = "docker_build"
+
+	// ConfigAppPolicyTypeContainerImage captures enum value "container_image"
+	ConfigAppPolicyTypeContainerImage ConfigAppPolicyType = "container_image"
+
+	// ConfigAppPolicyTypeSandbox captures enum value "sandbox"
+	ConfigAppPolicyTypeSandbox ConfigAppPolicyType = "sandbox"
 )
 
 // for schema
@@ -48,7 +57,7 @@ var configAppPolicyTypeEnum []any
 
 func init() {
 	var res []ConfigAppPolicyType
-	if err := json.Unmarshal([]byte(`["kubernetes_cluster","runner_job_terraform_deploy","runner_job_helm_deploy","runner_job_action_workflow"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["kubernetes_cluster","terraform_module","helm_chart","kubernetes_manifest","docker_build","container_image","sandbox"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
