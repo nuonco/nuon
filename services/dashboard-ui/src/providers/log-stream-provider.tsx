@@ -33,13 +33,13 @@ export function LogStreamProvider({
     stopPolling,
   } = usePolling<TLogStream>({
     initData: initLogStream,
-    path: `/api/orgs/${org.id}/log-streams/${initLogStream.id}`,
+    path: `/api/orgs/${org.id}/log-streams/${initLogStream?.id}`,
     pollInterval,
     shouldPoll,
   })
 
   useEffect(() => {
-    if (!logStream.open) {
+    if (!logStream?.open) {
       stopPolling()
     }
   }, [logStream])
