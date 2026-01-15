@@ -6,7 +6,9 @@ import { Dropdown } from '@/components/old/Dropdown'
 import { RadioInput } from '@/components/old/Input'
 import { Text } from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
-import { IFormData, mockVCSConnections, mockRepos, mockBranches } from './page'
+import { IFormData } from './types'
+import { mockVCSConnections, mockRepos, mockBranches } from './mock-data'
+import { PathFilterValidator } from './path-filter-validator'
 
 interface IStepVCSConfigProps {
   formData: IFormData
@@ -18,6 +20,17 @@ export const StepVCSConfig = ({
   updateFormData,
 }: IStepVCSConfigProps) => {
   const [showMoreOptions, setShowMoreOptions] = useState(false)
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      // Optionally trigger Next button if all required fields are filled
+      if (formData.branchName.trim() && (formData.isManualOnly || (formData.vcsConnection && formData.repo && formData.gitBranch))) {
+        const nextButton = document.querySelector('[data-wizard-next]') as HTMLButtonElement
+        nextButton?.click()
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -38,6 +51,7 @@ export const StepVCSConfig = ({
           type="text"
           value={formData.branchName}
           onChange={(e) => updateFormData({ branchName: e.target.value })}
+          onKeyDown={handleKeyDown}
           placeholder="main"
           required
         />
@@ -216,6 +230,7 @@ export const StepVCSConfig = ({
               type="text"
               value={formData.directory}
               onChange={(e) => updateFormData({ directory: e.target.value })}
+              onKeyDown={handleKeyDown}
               placeholder="."
               disabled={!formData.repo}
             />
@@ -239,30 +254,12 @@ export const StepVCSConfig = ({
 
             {showMoreOptions && (
               <div className="mt-4 space-y-4 pl-6">
-                {/* Path Filter */}
-                <div className="space-y-2">
-                  <label className="block">
-                    <Text variant="sm" weight="strong">
-                      Path Filter (regex)
-                    </Text>
-                    <Text
-                      variant="xs"
-                      className="text-cool-grey-600 dark:text-cool-grey-400 mb-2"
-                    >
-                      Only trigger builds when files matching this pattern
-                      change
-                    </Text>
-                  </label>
-                  <Input
-                    type="text"
-                    value={formData.pathFilter}
-                    onChange={(e) =>
-                      updateFormData({ pathFilter: e.target.value })
-                    }
-                    placeholder="^(src/|config/)"
-                    disabled={!formData.repo}
-                  />
-                </div>
+                {/* Path Filter with Validator */}
+                <PathFilterValidator
+                  value={formData.pathFilter}
+                  onChange={(value) => updateFormData({ pathFilter: value })}
+                  disabled={!formData.repo}
+                />
               </div>
             )}
           </div>

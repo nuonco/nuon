@@ -16,9 +16,10 @@ export interface IInstall {
 
 interface IInstallCardProps {
   install: IInstall
-  onMoveToGroup?: (groupIndex: number) => void
+  onMoveToGroup?: (groupId: string) => void
   onMoveToUngrouped?: () => void
-  availableGroups?: number[]
+  availableGroups?: string[]
+  availableGroupNames?: string[]
   isInGroup?: boolean
   showActions?: boolean
 }
@@ -28,6 +29,7 @@ export const InstallCard = ({
   onMoveToGroup,
   onMoveToUngrouped,
   availableGroups = [],
+  availableGroupNames = [],
   isInGroup = false,
   showActions = true,
 }: IInstallCardProps) => {
@@ -90,16 +92,16 @@ export const InstallCard = ({
             </Button>
           ) : (
             <div className="flex items-center gap-1">
-              {availableGroups.map((groupIndex) => (
+              {availableGroups.map((groupId, index) => (
                 <Button
-                  key={groupIndex}
+                  key={groupId}
                   size="sm"
                   variant="ghost"
-                  onClick={() => onMoveToGroup?.(groupIndex)}
-                  title={`Move to Group ${groupIndex + 1}`}
+                  onClick={() => onMoveToGroup?.(groupId)}
+                  title={`Move to ${availableGroupNames[index] || `Group ${index + 1}`}`}
                 >
                   <Icon variant="ArrowRight" size={14} />
-                  <Text variant="xs">{groupIndex + 1}</Text>
+                  <Text variant="xs">{index + 1}</Text>
                 </Button>
               ))}
             </div>

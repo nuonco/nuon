@@ -1,114 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/common/Button'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { StepBasicInfo } from './step-basic-info'
 import { StepVCSConfig } from './step-vcs-config'
-import { StepDeploymentOrder } from './step-deployment-order'
+import { StepInstallGroups } from './step-install-groups'
 import { StepReview } from './step-review'
-
-// Mock data
-export const mockVCSConnections = [
-  { id: 'vcs1', name: 'github-org', type: 'github' },
-  { id: 'vcs2', name: 'github-personal', type: 'github' },
-]
-
-export const mockRepos = [
-  { id: 'repo1', name: 'nuonco/app-backend', private: true },
-  { id: 'repo2', name: 'nuonco/app-frontend', private: false },
-  { id: 'repo3', name: 'nuonco/infrastructure', private: true },
-]
-
-export const mockBranches = ['main', 'develop', 'staging', 'production']
-
-export const mockInstalls = [
-  {
-    id: 'ins1',
-    name: 'production-us-east',
-    region: 'us-east-1',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins2',
-    name: 'production-us-west',
-    region: 'us-west-2',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins3',
-    name: 'staging-us-east',
-    region: 'us-east-1',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins4',
-    name: 'staging-us-west',
-    region: 'us-west-2',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins5',
-    name: 'dev-environment',
-    region: 'us-east-1',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins6',
-    name: 'qa-environment',
-    region: 'eu-west-1',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins7',
-    name: 'demo-environment',
-    region: 'us-west-2',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins8',
-    name: 'sandbox-1',
-    region: 'us-east-1',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins9',
-    name: 'sandbox-2',
-    region: 'us-west-2',
-    status: 'active' as const,
-    platform: 'aws' as const,
-  },
-  {
-    id: 'ins10',
-    name: 'test-env',
-    region: 'us-east-1',
-    status: 'inactive' as const,
-    platform: 'aws' as const,
-  },
-]
-
-export interface IFormData {
-  branchName: string
-  isManualOnly: boolean
-  vcsConnection: string
-  repo: string
-  gitBranch: string
-  directory: string
-  pathFilter: string
-  deploymentGroups: string[][]
-  ungroupedInstalls: string[]
-}
+import { IFormData, IAppBranchConfig } from './types'
+import { getMockInstalls, saveConfigToLocalStorage } from './mock-data'
 
 interface INewBranchPageProps {
   params: Promise<{
@@ -120,15 +24,17 @@ interface INewBranchPageProps {
 export default function NewBranchPage({ params }: INewBranchPageProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
+  const mockInstalls = getMockInstalls()
   const [formData, setFormData] = useState<IFormData>({
     branchName: '',
+    description: '',
     isManualOnly: false,
     vcsConnection: '',
     repo: '',
     gitBranch: 'main',
     directory: '.',
     pathFilter: '',
-    deploymentGroups: [],
+    installGroups: [],
     ungroupedInstalls: mockInstalls.map((i) => i.id),
   })
 
@@ -137,19 +43,22 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
   const [appId, setAppId] = useState<string>('')
 
   // Unwrap params on mount
-  useState(() => {
+  useEffect(() => {
     params.then((p) => {
       setOrgId(p['org-id'])
       setAppId(p['app-id'])
     })
-  })
+  }, [params])
 
   const updateFormData = (updates: Partial<IFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
 
   const canProceedFromStep1 = () => {
-    if (!formData.branchName) return false
+    return Boolean(formData.branchName.trim())
+  }
+
+  const canProceedFromStep2 = () => {
     if (!formData.isManualOnly) {
       return Boolean(
         formData.vcsConnection && formData.repo && formData.gitBranch
@@ -158,9 +67,9 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
     return true
   }
 
-  const canProceedFromStep2 = () => {
+  const canProceedFromStep3 = () => {
     // At least one install must be in a group
-    return formData.deploymentGroups.some((group) => group.length > 0)
+    return formData.installGroups.some((group) => group.installIds.length > 0)
   }
 
   const handleNext = () => {
@@ -168,6 +77,8 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
       setCurrentStep(2)
     } else if (currentStep === 2 && canProceedFromStep2()) {
       setCurrentStep(3)
+    } else if (currentStep === 3 && canProceedFromStep3()) {
+      setCurrentStep(4)
     }
   }
 
@@ -183,18 +94,56 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
     }
   }
 
-  const handleCreate = () => {
-    console.log('Creating branch with data:', formData)
-    // Mock action - just log and navigate back
-    if (orgId && appId) {
-      router.push(`/${orgId}/apps/${appId}/branches`)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [createdBranchId, setCreatedBranchId] = useState<string | null>(null)
+
+  const handleCreate = async () => {
+    console.log('🚀 handleCreate called with formData:', formData)
+    console.log('📍 Current step:', currentStep)
+    
+    setIsSubmitting(true)
+
+    try {
+      // Simulate API delay for better UX (reduced to 300ms)
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      // Generate a mock branch ID
+      const branchId = `branch-${Date.now()}`
+
+      // Convert formData to IAppBranchConfig
+      const config: IAppBranchConfig = {
+        name: formData.branchName,
+        description: formData.description,
+        vcsEnabled: !formData.isManualOnly,
+        vcsConnectionId: formData.vcsConnection || undefined,
+        repository: formData.repo || undefined,
+        gitBranch: formData.gitBranch || undefined,
+        directory: formData.directory || undefined,
+        pathFilter: formData.pathFilter || undefined,
+        installGroups: formData.installGroups,
+      }
+
+      // Save to localStorage
+      saveConfigToLocalStorage(branchId, config)
+
+      console.log('✅ Created branch configuration (stub):', config)
+      console.log('📦 Saved to localStorage key:', `app-branch-config-${branchId}`)
+      console.log('🎉 Branch ID:', branchId)
+
+      // Set success state
+      setCreatedBranchId(branchId)
+    } catch (error) {
+      console.error('❌ Error creating branch (stub):', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const steps = [
-    { number: 1, title: 'VCS Configuration' },
-    { number: 2, title: 'Deployment Order' },
-    { number: 3, title: 'Review & Create' },
+    { number: 1, title: 'Basic Info' },
+    { number: 2, title: 'VCS Configuration' },
+    { number: 3, title: 'Install Groups' },
+    { number: 4, title: 'Review & Create' },
   ]
 
   return (
@@ -226,13 +175,23 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
         />
       )}
 
-      <div className="flex items-center gap-4 justify-between mb-8">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Create New Branch Configuration
-          </Text>
-        </HeadingGroup>
-      </div>
+      <form onSubmit={(e) => e.preventDefault()}>
+        <div className="flex items-center gap-4 justify-between mb-8">
+          <HeadingGroup>
+            <Text variant="base" weight="strong">
+              Create New Branch Configuration
+            </Text>
+          </HeadingGroup>
+        </div>
+
+        {/* Debug Info in Development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <Text variant="xs" className="font-mono">
+              Step: {currentStep}/4 | Manual: {formData.isManualOnly ? 'Yes' : 'No'} | Name: {formData.branchName || '(empty)'} | VCS: {formData.vcsConnection || '(none)'} | Repo: {formData.repo || '(none)'}
+            </Text>
+          </div>
+        )}
 
       {/* Step Indicator */}
       <div className="flex items-center gap-4 mb-8">
@@ -267,50 +226,89 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
       {/* Step Content */}
       <div className="mb-8">
         {currentStep === 1 && (
-          <StepVCSConfig formData={formData} updateFormData={updateFormData} />
+          <StepBasicInfo formData={formData} updateFormData={updateFormData} />
         )}
         {currentStep === 2 && (
-          <StepDeploymentOrder
+          <StepVCSConfig formData={formData} updateFormData={updateFormData} />
+        )}
+        {currentStep === 3 && (
+          <StepInstallGroups
             formData={formData}
             updateFormData={updateFormData}
           />
         )}
-        {currentStep === 3 && <StepReview formData={formData} />}
+        {currentStep === 4 && (
+          <StepReview
+            formData={formData}
+            isSuccess={!!createdBranchId}
+            branchId={createdBranchId || undefined}
+            orgId={orgId}
+            appId={appId}
+            onSubmit={handleCreate}
+            isSubmitting={isSubmitting}
+          />
+        )}
       </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex items-center gap-3 justify-between border-t pt-6">
-        <Button variant="ghost" onClick={handleCancel}>
-          Cancel
-        </Button>
-
-        <div className="flex items-center gap-3">
-          {currentStep > 1 && (
-            <Button variant="secondary" onClick={handleBack}>
-              Back
+        {/* Navigation Buttons */}
+        {!createdBranchId && (
+          <div className="flex items-center gap-3 justify-between border-t pt-6">
+            <Button variant="ghost" onClick={handleCancel} type="button">
+              Cancel
             </Button>
-          )}
 
-          {currentStep < 3 && (
+            <div className="flex items-center gap-3">
+              {currentStep > 1 && (
+                <Button variant="secondary" onClick={handleBack} type="button">
+                  Back
+                </Button>
+              )}
+
+              {currentStep < 4 && (
+                <Button
+                  variant="primary"
+                  onClick={handleNext}
+                  type="button"
+                  data-wizard-next
+                  disabled={
+                    (currentStep === 1 && !canProceedFromStep1()) ||
+                    (currentStep === 2 && !canProceedFromStep2()) ||
+                    (currentStep === 3 && !canProceedFromStep3())
+                  }
+                >
+                  Next
+                </Button>
+              )}
+
+              {currentStep === 4 && (
+                <Button
+                  variant="primary"
+                  onClick={handleCreate}
+                  type="button"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Branch'}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Quick Navigation for Development */}
+        {process.env.NODE_ENV === 'development' && currentStep < 3 && (
+          <div className="fixed bottom-4 right-4 z-50">
             <Button
-              variant="primary"
-              onClick={handleNext}
-              disabled={
-                (currentStep === 1 && !canProceedFromStep1()) ||
-                (currentStep === 2 && !canProceedFromStep2())
-              }
+              variant="secondary"
+              size="sm"
+              onClick={() => setCurrentStep(3)}
+              type="button"
+              className="shadow-lg"
             >
-              Next
+              Skip to Install Groups
             </Button>
-          )}
-
-          {currentStep === 3 && (
-            <Button variant="primary" onClick={handleCreate}>
-              Create Branch
-            </Button>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </form>
     </PageSection>
   )
 }
