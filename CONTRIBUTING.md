@@ -11,7 +11,7 @@ First, please check the official [Nuon documentation](https://docs.nuon.co).
 
 Have a technical question? Instead of opening a GitHub issue, please ask in
 [our Community Slack](https://join.slack.com/t/nuon-byoc/shared_invite/zt-3kzp3zpn4-0pHH4kGZ3OJul2p_y1Mzag)
-in particular the `03_help` channel.
+in particular the `help` channel.
 
 ## Providing Feedback
 
@@ -28,9 +28,7 @@ redirect these questions to Slack.
 [Nuon's Community Slack](https://join.slack.com/t/nuon-byoc/shared_invite/zt-3kzp3zpn4-0pHH4kGZ3OJul2p_y1Mzag)
 workspace is the preferred place to ask questions and provide feedback.
 
-Please ask techinical questions in the `03_help` channel. Look for announcements
-in the `01_community-general` channel and you're welcome to introduce yourself
-in the `02_welcomes-and-intros` channel.
+Please ask techinical questions in the `help` channel.
 
 ## Reporting Issues
 

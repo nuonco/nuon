@@ -25,7 +25,7 @@ Historically there have been two ways to deploy any software vendor's product: S
 
 But some customers have compliance and regulatory reasons that require some or all of the vendor's software be installed in the customers' cloud accounts. Customers who self-host would also prefer if the software vendor installed and managed their software versus managing the complexity themselves.
 
-There is an emerging deployment alternative called Bring Your Own Cloud (BYOC) where the software vendor installs and manages their software - in their customers' cloud accounts.
+Now there is an emerging deployment alternative called Bring Your Own Cloud (BYOC) where the software vendor installs and manages their software - in their customers' cloud accounts.
 
 Nuon is a platform that software vendors can use to quickly and securely offer BYOC to their customers.
 
@@ -56,7 +56,7 @@ Also browse the [Nuon blog](https://nuon.co/blog) for technical posts on specifi
 
 Have a technical question? Instead of opening a GitHub issue, please ask in
 [our Community Slack](https://join.slack.com/t/nuon-byoc/shared_invite/zt-3kzp3zpn4-0pHH4kGZ3OJul2p_y1Mzag)
-in particular the `03_help` channel.
+in particular the `help` channel.
 
 ## Enterprise
 
