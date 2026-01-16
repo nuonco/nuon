@@ -28,14 +28,15 @@ func main() {
 	commonlog.Configure(2, nil)
 
 	handler = protocol.Handler{
-		Initialize:             initialize,
-		Shutdown:               shutdown,
-		TextDocumentCompletion: handlers.TextDocumentCompletion,
-		TextDocumentDidOpen:    handlers.TextDocumentDidOpen,
-		TextDocumentDidChange:  handlers.TextDocumentDidChange,
-		TextDocumentDidClose:   handlers.TextDocumentDidClose,
-		TextDocumentHover:      handlers.TextDocumentHover,
-		TextDocumentDidSave:    handlers.TextDocumentDidSave,
+		Initialize:               initialize,
+		Shutdown:                 shutdown,
+		TextDocumentCompletion:   handlers.TextDocumentCompletion,
+		TextDocumentDidOpen:      handlers.TextDocumentDidOpen,
+		TextDocumentDidChange:    handlers.TextDocumentDidChange,
+		TextDocumentDidClose:     handlers.TextDocumentDidClose,
+		TextDocumentHover:        handlers.TextDocumentHover,
+		TextDocumentDidSave:      handlers.TextDocumentDidSave,
+		TextDocumentFoldingRange: handlers.TextDocumentFoldingRange,
 	}
 
 	server := server.NewServer(&handler, lsName, true)
@@ -79,6 +80,7 @@ func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, 
 			CompletionProvider: &protocol.CompletionOptions{
 				TriggerCharacters: []string{"=", " "},
 			},
+			FoldingRangeProvider: true,
 		},
 		ServerInfo: &protocol.InitializeResultServerInfo{
 			Name:    lsName,
