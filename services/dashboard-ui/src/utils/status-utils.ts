@@ -23,6 +23,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   unhealthy: 'error',
   'not connected': 'error',
   'not-connected': 'error',
+  'suspended': 'error',
 
   // Warn
   'approval-denied': 'warn',
