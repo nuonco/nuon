@@ -246,7 +246,7 @@ func (a *Activities) preparePolicyInputs(planContentsJSON []byte, componentType 
 	case app.ComponentTypeTerraformModule:
 		return [][]byte{planContentsJSON}, nil
 	case app.ComponentTypeHelmChart:
-		return [][]byte{planContentsJSON}, nil
+		return a.prepareHelmPolicyInputs(planContentsJSON)
 	case app.ComponentTypeKubernetesManifest:
 		return a.prepareKubernetesManifestPolicyInputs(planContentsJSON)
 	default:
@@ -263,6 +263,35 @@ func (a *Activities) prepareKubernetesManifestPolicyInputs(planContentsJSON []by
 	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(planContents.DryRunOutput)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse dry run output to admission reviews")
+	}
+
+	if len(admissionReviews) == 0 {
+		return [][]byte{planContentsJSON}, nil
+	}
+
+	inputs := make([][]byte, len(admissionReviews))
+	for i, review := range admissionReviews {
+		inputJSON, err := json.Marshal(review)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to marshal admission review %d", i)
+		}
+		inputs[i] = inputJSON
+	}
+
+	return inputs, nil
+}
+
+func (a *Activities) prepareHelmPolicyInputs(planContentsJSON []byte) ([][]byte, error) {
+	var planContents struct {
+		TemplateOutput string `json:"template_output"`
+	}
+	if err := json.Unmarshal(planContentsJSON, &planContents); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal helm plan contents")
+	}
+
+	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(planContents.TemplateOutput)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse template output to admission reviews")
 	}
 
 	if len(admissionReviews) == 0 {
