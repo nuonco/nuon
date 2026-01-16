@@ -147,6 +147,12 @@ export type TVCSConnection = components['schemas']['app.VCSConnection']
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']
 export type TVCSGit = components['schemas']['app.PublicGitVCSConfig']
 export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']
+export type TVCSConnectionStatus = components['schemas']['service.VCSConnectionStatusResponse'] & {
+  status: 'active' | 'suspended' | 'unknown'
+  repository_selection: 'all' | 'selected'
+}
+export type TVCSConnectionRepo = components['schemas']['service.VCSConnectionRepo']
+export type TVCSConnectionReposResponse = components['schemas']['service.VCSConnectionReposResponse']
 
 // OTEL logs
 export type TOTELLog = components['schemas']['app.OtelLogRecord']
