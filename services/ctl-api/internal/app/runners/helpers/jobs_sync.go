@@ -20,7 +20,7 @@ func (h *Helpers) CreateSyncJob(ctx context.Context,
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
 		QueueTimeout:      DefaultQueueTimeout,
-		ExecutionTimeout:  h.getExecutionTimeout(typ),
+		ExecutionTimeout:  h.getDefaultExecutionTimeout(typ),
 		AvailableTimeout:  DefaultAvailableTimeout,
 		MaxExecutions:     DefaultMaxExecutions,
 		Status:            app.RunnerJobStatusQueued,

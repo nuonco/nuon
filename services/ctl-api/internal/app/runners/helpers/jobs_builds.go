@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -17,13 +18,25 @@ func (h *Helpers) CreateBuildJob(ctx context.Context,
 	op app.RunnerJobOperationType,
 	logStreamID string,
 	metadata map[string]string,
+	customTimeout *time.Duration,
 ) (*app.RunnerJob, error) {
+	timeout := h.getDefaultExecutionTimeout(typ)
+	if customTimeout != nil && *customTimeout > 0 {
+		timeout = *customTimeout
+		if timeout < app.MinBuildTimeout {
+			timeout = app.MinBuildTimeout
+		}
+		if timeout > app.MaxBuildTimeout {
+			timeout = app.MaxBuildTimeout
+		}
+	}
+
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
 		OwnerType:         ownerType,
 		OwnerID:           ownerID,
 		QueueTimeout:      DefaultQueueTimeout,
-		ExecutionTimeout:  h.getExecutionTimeout(typ),
+		ExecutionTimeout:  timeout,
 		AvailableTimeout:  DefaultAvailableTimeout,
 		MaxExecutions:     DefaultMaxExecutions,
 		Status:            app.RunnerJobStatusQueued,

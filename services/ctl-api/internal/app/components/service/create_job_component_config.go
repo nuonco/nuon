@@ -16,11 +16,13 @@ import (
 )
 
 type CreateJobComponentConfigRequest struct {
-	ImageURL string             `json:"image_url" validate:"required"`
-	Tag      string             `json:"tag" validate:"required"`
-	Cmd      []string           `json:"cmd"`
-	EnvVars  map[string]*string `json:"env_vars"`
-	Args     []string           `json:"args"`
+	ImageURL      string             `json:"image_url" validate:"required"`
+	Tag           string             `json:"tag" validate:"required"`
+	Cmd           []string           `json:"cmd"`
+	EnvVars       map[string]*string `json:"env_vars"`
+	Args          []string           `json:"args"`
+	BuildTimeout  string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 
 	AppConfigID string   `json:"app_config_id"`
 	References  []string `json:"references"`
@@ -30,6 +32,16 @@ type CreateJobComponentConfigRequest struct {
 func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+	if c.BuildTimeout != "" {
+		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+			return err
+		}
+	}
+	if c.DeployTimeout != "" {
+		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -133,6 +145,8 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 		AppConfigID:        req.AppConfigID,
 		References:         pq.StringArray(req.References),
 		Checksum:           req.Checksum,
+		BuildTimeout:       req.BuildTimeout,
+		DeployTimeout:      req.DeployTimeout,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job component config connection: %w", res.Error)

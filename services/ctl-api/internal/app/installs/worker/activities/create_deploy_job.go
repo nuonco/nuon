@@ -3,18 +3,20 @@ package activities
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateDeployJobRequest struct {
-	RunnerID    string                     `validate:"required"`
-	DeployID    string                     `validate:"required"`
-	Op          app.RunnerJobOperationType `validate:"required"`
-	Type        app.RunnerJobType          `validate:"required"`
-	LogStreamID string                     `validate:"required"`
-	Metadata    map[string]string          `validate:"required"`
+	RunnerID        string                     `validate:"required"`
+	DeployID        string                     `validate:"required"`
+	Op              app.RunnerJobOperationType `validate:"required"`
+	Type            app.RunnerJobType          `validate:"required"`
+	LogStreamID     string                     `validate:"required"`
+	Metadata        map[string]string          `validate:"required"`
+	TimeoutDuration *time.Duration             // Optional custom timeout
 }
 
 // @temporal-gen activity
@@ -33,7 +35,8 @@ func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRe
 		req.Op,
 		req.DeployID,
 		req.LogStreamID,
-		req.Metadata)
+		req.Metadata,
+		req.TimeoutDuration)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create deploy job: %w", err)
 	}

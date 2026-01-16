@@ -62,11 +62,12 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 	jobTyp := build.ComponentConfigConnection.Type.DeployJobType()
 
 	runnerJob, err := activities.AwaitCreateDeployJob(ctx, &activities.CreateDeployJobRequest{
-		RunnerID:    install.RunnerID,
-		DeployID:    installDeploy.ID,
-		Op:          op,
-		Type:        jobTyp,
-		LogStreamID: logStreamID,
+		RunnerID:        install.RunnerID,
+		DeployID:        installDeploy.ID,
+		Op:              op,
+		Type:            jobTyp,
+		LogStreamID:     logStreamID,
+		TimeoutDuration: build.ComponentConfigConnection.GetDeployTimeout(),
 		Metadata: map[string]string{
 			"install_id":           install.ID,
 			"deploy_id":            installDeploy.ID,

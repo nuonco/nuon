@@ -18,8 +18,10 @@ func (s *sync) createKubernetesManifestComponentConfig(
 		Dependencies: comp.Dependencies,
 		Checksum:     comp.Checksum,
 
-		Namespace: comp.KubernetesManifest.Namespace,
-		Manifest:  comp.KubernetesManifest.Manifest,
+		Namespace:     comp.KubernetesManifest.Namespace,
+		Manifest:      comp.KubernetesManifest.Manifest,
+		BuildTimeout:  comp.KubernetesManifest.BuildTimeout,
+		DeployTimeout: comp.KubernetesManifest.DeployTimeout,
 	}
 
 	if comp.KubernetesManifest.Kustomize != nil {

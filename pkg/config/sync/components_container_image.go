@@ -13,8 +13,10 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 	containerImage := comp.ExternalImage
 
 	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{
-		AppConfigID:  s.appConfigID,
-		Dependencies: comp.Dependencies,
+		AppConfigID:   s.appConfigID,
+		Dependencies:  comp.Dependencies,
+		BuildTimeout:  containerImage.BuildTimeout,
+		DeployTimeout: containerImage.DeployTimeout,
 	}
 
 	for _, ref := range comp.References {
