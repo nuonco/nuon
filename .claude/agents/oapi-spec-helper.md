@@ -1,6 +1,6 @@
 ---
 name: oapi-spec-helper
-description: Use this agent when you are working on the api spec.</commentary>\n</example>
+description: Use this agent when you are working on the api spec.
 model: sonnet
 color: blue
 ---
