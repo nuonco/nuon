@@ -20,15 +20,12 @@ export const WorkflowDetails = () => {
 
       <WorkflowDetailsSection />
 
-      {failedSteps?.length > 0 && (
-        <>
-          {failedSteps.map((failedStep) => (
-            <div key={failedStep?.id} className="mt-2">
-              <StepBanner step={failedStep} planOnly />
-            </div>
-          ))}
-        </>
-      )}
+      {failedSteps?.length > 0 &&
+        failedSteps.map((failedStep) => (
+          <div key={failedStep?.id} className="flex flex-col gap-4 mt-2">
+            <StepBanner step={failedStep} planOnly />
+          </div>
+        ))}
     </>
   )
 }
