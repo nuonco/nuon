@@ -25,7 +25,13 @@ export const useWorkflowMetrics = (workflow: TWorkflow) => {
     )
     
     const completedSteps = workflowSteps.filter((s) => s?.finished)
-    
+
+    const stepsWithPolicyViolations = workflowSteps.filter(
+      (s) =>
+        ((s?.status?.metadata?.deny_violations as unknown[])?.length || 0) > 0 ||
+        ((s?.status?.metadata?.warn_violations as unknown[])?.length || 0) > 0
+    )
+
     return {
       workflowSteps,
       hasApprovals,
@@ -33,11 +39,13 @@ export const useWorkflowMetrics = (workflow: TWorkflow) => {
       pendingApprovals,
       discardedSteps,
       completedSteps,
+      stepsWithPolicyViolations,
       totalSteps: workflowSteps.length,
       pendingApprovalsCount: pendingApprovals.length,
       discardedStepsCount: discardedSteps.length,
       completedStepsCount: completedSteps.length,
       failedStepsCount: failedSteps.length,
+      policyViolationsCount: stepsWithPolicyViolations.length,
     }
   }, [workflow])
 }
