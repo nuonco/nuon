@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// VCSConnectionRepo represents a single repository accessible by the VCS connection
 type VCSConnectionRepo struct {
 	ID            int64  `json:"id"`
 	Name          string `json:"name"`
@@ -24,7 +23,6 @@ type VCSConnectionRepo struct {
 	UpdatedAt     string `json:"updated_at"`
 }
 
-// VCSConnectionReposResponse is the response for listing VCS connection repositories
 type VCSConnectionReposResponse struct {
 	Repositories []VCSConnectionRepo `json:"repositories"`
 	TotalCount   int                 `json:"total_count"`
@@ -49,21 +47,18 @@ type VCSConnectionReposResponse struct {
 func (s *service) ListConnectionRepos(ctx *gin.Context) {
 	connectionID := ctx.Param("connection_id")
 
-	// Extract org context
 	currentOrg, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// Get VCS connection from DB
 	vcsConn, err := s.getConnection(ctx, currentOrg.ID, connectionID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org vcs connection: %w", err))
 		return
 	}
 
-	// List repositories from GitHub
 	response, err := s.listGithubRepos(ctx, vcsConn)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to list repositories: %w", err))
@@ -74,18 +69,14 @@ func (s *service) ListConnectionRepos(ctx *gin.Context) {
 }
 
 func (s *service) listGithubRepos(ctx *gin.Context, vcsConn *app.VCSConnection) (*VCSConnectionReposResponse, error) {
-	// Get installation token client
 	ghClient, err := s.helpers.GetVCSConnectionClient(ctx, vcsConn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GitHub client: %w", err)
 	}
 
-	// Collect all repositories (handle pagination if needed)
 	var allRepos []*github.Repository
 	opts := &github.ListOptions{PerPage: 100}
 
-	// Method 1: Try Apps.ListRepos() (most likely for installation token)
-	// Note: Verify exact method during implementation
 	for {
 		repos, resp, err := ghClient.Apps.ListRepos(ctx, opts)
 		if err != nil {
@@ -100,7 +91,6 @@ func (s *service) listGithubRepos(ctx *gin.Context, vcsConn *app.VCSConnection) 
 		opts.Page = resp.NextPage
 	}
 
-	// Build response
 	return buildReposResponse(allRepos), nil
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// VCSConnectionStatusResponse represents the detailed status of a VCS connection
 type VCSConnectionStatusResponse struct {
 	Status              string                `json:"status"`
 	GithubInstallID     string                `json:"github_install_id"`
@@ -26,7 +25,6 @@ type VCSConnectionStatusResponse struct {
 	Error               string                `json:"error,omitempty"`
 }
 
-// VCSConnectionAccount represents the GitHub account associated with a VCS connection
 type VCSConnectionAccount struct {
 	Login string `json:"login"`
 	ID    int64  `json:"id"`
@@ -52,21 +50,18 @@ type VCSConnectionAccount struct {
 func (s *service) CheckConnectionStatus(ctx *gin.Context) {
 	vcsID := ctx.Param("connection_id")
 
-	// Extract org context
 	currentOrg, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// Get VCS connection from DB
 	vcsConn, err := s.getConnection(ctx, currentOrg.ID, vcsID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org vcs connection: %w", err))
 		return
 	}
 
-	// Check installation status via GitHub API
 	statusResp, err := s.checkGithubInstallationStatus(ctx, vcsConn)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to check installation status: %w", err))
@@ -76,29 +71,24 @@ func (s *service) CheckConnectionStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, statusResp)
 }
 
-// checkGithubInstallationStatus queries GitHub's API to get the current installation status
 func (s *service) checkGithubInstallationStatus(
 	ctx context.Context,
 	vcsConn *app.VCSConnection,
 ) (*VCSConnectionStatusResponse, error) {
 	checkedAt := time.Now().UTC()
 
-	// Get JWT GitHub client (App-level auth)
 	ghClient, err := s.helpers.GetJWTVCSConnectionClient()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create jwt vcs connection client: %w", err)
 	}
 
-	// Parse install ID
 	installID, err := strconv.ParseInt(vcsConn.GithubInstallID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert github install ID to int: %w", err)
 	}
 
-	// Call GitHub API to get installation details
 	installation, _, err := ghClient.Apps.GetInstallation(ctx, installID)
 	if err != nil {
-		// Graceful degradation: Return 'unknown' status with error
 		return &VCSConnectionStatusResponse{
 			Status:          "unknown",
 			GithubInstallID: vcsConn.GithubInstallID,
@@ -107,11 +97,9 @@ func (s *service) checkGithubInstallationStatus(
 		}, nil
 	}
 
-	// Build response from installation data
 	return buildStatusResponse(installation, vcsConn.GithubInstallID, checkedAt), nil
 }
 
-// buildStatusResponse constructs the response from GitHub Installation object
 func buildStatusResponse(
 	installation *github.Installation,
 	installIDStr string,
@@ -123,7 +111,6 @@ func buildStatusResponse(
 		RepositorySelection: installation.GetRepositorySelection(),
 	}
 
-	// Determine status based on suspension
 	if installation.SuspendedAt != nil {
 		resp.Status = "suspended"
 		resp.SuspendedAt = &installation.SuspendedAt.Time
@@ -134,7 +121,6 @@ func buildStatusResponse(
 		resp.Status = "active"
 	}
 
-	// Map account information
 	if installation.Account != nil {
 		resp.Account = &VCSConnectionAccount{
 			Login: installation.Account.GetLogin(),
@@ -143,13 +129,11 @@ func buildStatusResponse(
 		}
 	}
 
-	// Map permissions
 	resp.Permissions = convertInstallationPermissions(installation.Permissions)
 
 	return resp
 }
 
-// convertInstallationPermissions converts GitHub permissions to a simple string map
 func convertInstallationPermissions(perms *github.InstallationPermissions) map[string]string {
 	if perms == nil {
 		return make(map[string]string)
@@ -157,7 +141,6 @@ func convertInstallationPermissions(perms *github.InstallationPermissions) map[s
 
 	result := make(map[string]string)
 
-	// Map all available permission fields
 	if perms.Actions != nil {
 		result["actions"] = *perms.Actions
 	}
