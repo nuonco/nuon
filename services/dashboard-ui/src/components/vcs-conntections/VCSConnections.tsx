@@ -1,6 +1,16 @@
-import { FaGithub } from 'react-icons/fa'
-import { Text } from '@/components/old/Typography'
-import type { TVCSConnection } from '@/types'
+'use client'
+
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { useOrg } from '@/hooks/use-org'
+import { useQuery } from '@/hooks/use-query'
+import type { TVCSConnection, TVCSConnectionStatus } from '@/types'
+import { cn } from '@/utils/classnames'
+import { getStatusTheme } from '@/utils/vcs-connection-utils'
+import { VCSManagementDropdown } from './management/VCSManagementDropdown'
+import { VCSAccountLink } from './VCSAccountLink'
+
+// old component
 import { RemoveVCSConnection } from './RemoveVCSConnection'
 
 export const VCSConnections = ({
@@ -8,19 +18,46 @@ export const VCSConnections = ({
 }: {
   vcsConnections: TVCSConnection[]
 }) => {
+  const { org } = useOrg()
   return (
     <>
       {vcsConnections?.length &&
         vcsConnections?.map((vcs) => (
           <Text
             key={vcs?.id}
-            className="flex gap-2 items-center font-mono text-sm text-cool-grey-600 dark:text-cool-grey-500 w-full"
+            className="!flex gap-2 justify-between w-full"
+            variant="subtext"
           >
-            <FaGithub className="text-lg" />
-            {vcs?.github_account_name || vcs?.github_install_id}
-            <RemoveVCSConnection connection={vcs} />
+            <VCSConnection vcs_connection={vcs} />
+            <span className="self-end">
+              {org?.features['stratus-layout'] ? (
+                <VCSManagementDropdown vcs_connection={vcs} />
+              ) : (
+                <RemoveVCSConnection connection={vcs} />
+              )}
+            </span>
           </Text>
         ))}
     </>
+  )
+}
+
+const VCSConnection = ({
+  vcs_connection,
+}: {
+  vcs_connection: TVCSConnection
+}) => {
+  const { org } = useOrg()
+  const { data, isLoading } = useQuery<TVCSConnectionStatus>({
+    path: `/api/orgs/${org?.id}/vcs-connections/${vcs_connection?.id}/check-status`,
+  })
+
+  return (
+    <span className="!flex gap-2 items-center w-full">
+      <Text theme={getStatusTheme(data?.status)}>
+        <Icon className={cn({ 'animate-pulse': isLoading })} variant="GitHub" />
+      </Text>
+      <VCSAccountLink vcs_connection={vcs_connection} />
+    </span>
   )
 }
