@@ -16,7 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/helm"
 )
 
-func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, error) {
+func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, string, error) {
 	l.Info("fetching previous release")
 	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
 	if prevRel == nil {
@@ -28,14 +28,14 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to get chart")
+		return "", nil, "", errors.Wrap(err, "unable to get chart")
 	}
 
 	l.Info("found default chart values", zap.Any("values", chart.Values))
 	l.Info("loading provided values")
 	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
 	if err != nil {
-		return "", nil, fmt.Errorf("unable to load helm values: %w", err)
+		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
 	l.Info("rendered values", zap.Any("values", values))
 
@@ -60,12 +60,12 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	l.Info("calculating helm diff")
 	rel, err := client.RunWithContext(ctx, prevRel.Name, chart, values)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
+		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
 	l.Info("parsing previous and current release manifests")
 	diffH, diffReport, err := h.getDiff(l, kubeCfg, prevRel, rel, h.state.plan.HelmDeployPlan.Namespace)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
+		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
 
 	h.state.outputs = map[string]interface{}{"diff": diffH}
@@ -92,14 +92,14 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 		contentDiff = append(contentDiff, d)
 	}
 
-	return string(diffH), &contentDiff, nil
+	return string(diffH), &contentDiff, rel.Manifest, nil
 }
 
-func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, error) {
+func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config) (string, *[]diff.ResourceDiff, string, error) {
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to get chart")
+		return "", nil, "", errors.Wrap(err, "unable to get chart")
 	}
 
 	l.Info("found default chart values", zap.Any("values", chart.Values))
@@ -107,7 +107,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	l.Info("loading provided values")
 	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
 	if err != nil {
-		return "", nil, fmt.Errorf("unable to load helm values: %w", err)
+		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
 	l.Info("rendered values", zap.Any("values", values))
 
@@ -136,9 +136,12 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	l.Info("calculating helm diff", zap.String("operation", "diff"), zap.String("exec", "install"))
 	rel, err := client.RunWithContext(ctx, chart, values)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
+		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
 	diffH, diffReport, err := h.getDiff(l, kubeCfg, nil, rel, h.state.plan.HelmDeployPlan.Namespace)
+	if err != nil {
+		return "", nil, "", errors.Wrap(err, "unable to get diff")
+	}
 
 	h.state.outputs = map[string]interface{}{"diff": diffH}
 
@@ -164,15 +167,15 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 		contentDiff = append(contentDiff, d)
 	}
 
-	return string(diffH), &contentDiff, nil
+	return string(diffH), &contentDiff, rel.Manifest, nil
 }
 
-func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config, prevRel *release.Release) (string, *[]diff.ResourceDiff, error) {
+func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config, prevRel *release.Release) (string, *[]diff.ResourceDiff, string, error) {
 	// not functional atm (panics)
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to get chart")
+		return "", nil, "", errors.Wrap(err, "unable to get chart")
 	}
 
 	l.Info("found default chart values", zap.Any("values", chart.Values))
@@ -180,7 +183,7 @@ func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *a
 	l.Info("loading provided values")
 	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
 	if err != nil {
-		return "", nil, fmt.Errorf("unable to load helm values: %w", err)
+		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
 	l.Info("rendered values", zap.Any("values", values))
 
@@ -193,13 +196,13 @@ func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *a
 	l.Info("calculating helm diff", zap.String("operation", "diff"), zap.String("exec", "uninstall"))
 	resp, err := client.Run(prevRel.Name)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
+		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
 	l.Info(resp.Info)
 
 	diffH, diffReport, err := h.getDiff(l, kubeCfg, prevRel, nil, h.state.plan.HelmDeployPlan.Namespace)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "unable to execute with dry-run")
+		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
 
 	h.state.outputs = map[string]interface{}{"diff": diffH}
@@ -226,5 +229,5 @@ func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *a
 		contentDiff = append(contentDiff, d)
 	}
 
-	return string(diffH), &contentDiff, nil
+	return string(diffH), &contentDiff, prevRel.Manifest, nil
 }
