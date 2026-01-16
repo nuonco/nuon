@@ -48,10 +48,13 @@ func (o *logCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
 	kvs := make([]interface{}, 0)
 
 	for _, f := range fields {
-		val := fmt.Sprintf("%v", f)
+		// depening on the type, only one of String, Integer, Interface will be set
+		// we convert all to string to not miss any info in the default case.
+		val := fmt.Sprintf("%s %d %v", f.String, f.Integer, f.Interface)
 		if f.Interface != nil {
 			val = fmt.Sprintf("%v", f.Interface)
 		}
+		// Use String or Integer based on well known Field types
 		switch f.Type {
 		case zapcore.StringType:
 			val = f.String
