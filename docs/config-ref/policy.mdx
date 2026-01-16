@@ -12,28 +12,43 @@ title: 'Policy'
 | Property | Type | Required | Description | Default | Example |
 |----------|----------|----------|----------|----------|----------|
 | `type` | `string` | No | policy type Type of policy that determines where and how it is enforced | - | `"kubernetes_cluster"` |
+| `engine` | `string` | No | policy engine The policy engine used to evaluate the policy. Must be compatible with the policy type. | - | `"kyverno"` |
 | `contents` | `string` | No | policy document Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (g... | - | - |
+| `components` | `array` | No | target components List of component names this policy applies to. Use ["*"] to apply to all components of the specified type. If empty, doesn't apply to any component. Ignored when type is 'sandbox'. | - | `"*"` |
 
 ### Property Details
 
 #### `type`
 
+**Allowed values:**
+
+
+- `"kubernetes_cluster"`
+- `"terraform_module"`
+- `"helm_chart"`
+- `"kubernetes_manifest"`
+- `"sandbox"`
+
+
+#### `engine`
+
+**Allowed values:**
+
+
+- `"kyverno"`
+- `"opa"`
+
+
+#### `components`
+
 **Examples:**
 
 
 ```yaml
-"kubernetes_cluster"
+"*"
 ```
 
 ```yaml
-"runner_job_terraform_deploy"
-```
-
-```yaml
-"runner_job_helm_deploy"
-```
-
-```yaml
-"runner_job_action_workflow"
+"rds_cluster"
 ```
 
