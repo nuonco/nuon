@@ -260,25 +260,7 @@ func (a *Activities) prepareKubernetesManifestPolicyInputs(planContentsJSON []by
 		return nil, errors.Wrap(err, "failed to unmarshal kubernetes manifest plan contents")
 	}
 
-	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(planContents.DryRunOutput)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse dry run output to admission reviews")
-	}
-
-	if len(admissionReviews) == 0 {
-		return [][]byte{planContentsJSON}, nil
-	}
-
-	inputs := make([][]byte, len(admissionReviews))
-	for i, review := range admissionReviews {
-		inputJSON, err := json.Marshal(review)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to marshal admission review %d", i)
-		}
-		inputs[i] = inputJSON
-	}
-
-	return inputs, nil
+	return a.yamlToAdmissionReviewInputs(planContents.DryRunOutput, planContentsJSON)
 }
 
 func (a *Activities) prepareHelmPolicyInputs(planContentsJSON []byte) ([][]byte, error) {
@@ -289,13 +271,17 @@ func (a *Activities) prepareHelmPolicyInputs(planContentsJSON []byte) ([][]byte,
 		return nil, errors.Wrap(err, "failed to unmarshal helm plan contents")
 	}
 
-	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(planContents.TemplateOutput)
+	return a.yamlToAdmissionReviewInputs(planContents.TemplateOutput, planContentsJSON)
+}
+
+func (a *Activities) yamlToAdmissionReviewInputs(yamlManifests string, fallback []byte) ([][]byte, error) {
+	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(yamlManifests)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse template output to admission reviews")
+		return nil, errors.Wrap(err, "failed to parse manifests to admission reviews")
 	}
 
 	if len(admissionReviews) == 0 {
-		return [][]byte{planContentsJSON}, nil
+		return [][]byte{fallback}, nil
 	}
 
 	inputs := make([][]byte, len(admissionReviews))
