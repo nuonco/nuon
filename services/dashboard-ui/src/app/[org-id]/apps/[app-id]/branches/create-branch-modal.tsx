@@ -1,12 +1,15 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/form/Input'
+import { Text } from '@/components/common/Text'
 import { ModalBase } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
+import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import {
   getConnectionRepos,
   type Repo,
@@ -17,6 +20,7 @@ import {
 } from '@/lib/ctl-api/vcs/get-connection-branches'
 import { createAppBranch } from './create-branch-action'
 import { getMockRepositories, getMockBranches } from './new/mock-data'
+import type { TCreateAppBranchRequest } from '@/types'
 
 interface ICreateBranchModal {
   appId: string
@@ -32,6 +36,7 @@ export const CreateBranchModal = ({
   onClose,
 }: ICreateBranchModal) => {
   const router = useRouter()
+  const path = usePathname()
   const { org } = useOrg()
   const [name, setName] = useState('')
   const [useVcs, setUseVcs] = useState(true)
@@ -42,10 +47,33 @@ export const CreateBranchModal = ({
   const [selectedBranch, setSelectedBranch] = useState('main')
   const [directory, setDirectory] = useState('.')
   const [pathFilter, setPathFilter] = useState('')
-  const [loading, setLoading] = useState(false)
   const [loadingRepos, setLoadingRepos] = useState(false)
   const [loadingBranches, setLoadingBranches] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
+
+  const { data, error, isLoading, execute } = useServerAction({
+    action: createAppBranch,
+  })
+
+  useServerActionToast({
+    data,
+    error,
+    errorContent: (
+      <>
+        <Text>Failed to create app branch.</Text>
+        <Text>{error?.error || 'Unknown error occurred.'}</Text>
+      </>
+    ),
+    errorHeading: 'Branch creation failed',
+    onSuccess: () => {
+      if (data) {
+        handleClose()
+        router.push(`/${orgId}/apps/${appId}/branches/${data.id}`)
+      }
+    },
+    successContent: <Text>Created app branch: {name}</Text>,
+    successHeading: 'Branch created successfully',
+  })
 
   const vcsConnections = org?.vcs_connections || []
 
@@ -66,7 +94,7 @@ export const CreateBranchModal = ({
 
     const fetchRepos = async () => {
       setLoadingRepos(true)
-      setError(null)
+      setValidationError(null)
       try {
         const response = await getConnectionRepos(orgId, selectedVcsConnectionId)
         if (response.data) {
@@ -112,7 +140,7 @@ export const CreateBranchModal = ({
 
     const fetchBranches = async () => {
       setLoadingBranches(true)
-      setError(null)
+      setValidationError(null)
       try {
         const response = await getConnectionBranches(
           orgId,
@@ -152,35 +180,31 @@ export const CreateBranchModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-    setLoading(true)
+    setValidationError(null)
 
     if (!name.trim()) {
-      setError('Branch name is required')
-      setLoading(false)
+      setValidationError('Branch name is required')
       return
     }
 
     if (useVcs) {
       if (!selectedRepo) {
-        setError('Repository is required when using VCS')
-        setLoading(false)
+        setValidationError('Repository is required when using VCS')
         return
       }
 
       if (!selectedBranch) {
-        setError('Git branch is required when using VCS')
-        setLoading(false)
+        setValidationError('Git branch is required when using VCS')
         return
       }
     }
 
-    const payload: any = {
+    const body: TCreateAppBranchRequest = {
       name: name.trim(),
     }
 
     if (useVcs) {
-      payload.connected_github_vcs_config = {
+      body.connected_github_vcs_config = {
         repo: selectedRepo,
         branch: selectedBranch,
         directory: directory.trim(),
@@ -188,27 +212,11 @@ export const CreateBranchModal = ({
       
       // Only include path_filter if it's not empty
       if (pathFilter.trim()) {
-        payload.connected_github_vcs_config.path_filter = pathFilter.trim()
+        body.connected_github_vcs_config.path_filter = pathFilter.trim()
       }
     }
 
-    const result = await createAppBranch(orgId, appId, payload)
-
-    if (result.success && result.branch) {
-      setName('')
-      setUseVcs(true)
-      setSelectedRepo('')
-      setSelectedBranch('main')
-      setDirectory('.')
-      setPathFilter('')
-      onClose()
-      router.push(`/${orgId}/apps/${appId}/branches/${result.branch.id}`)
-      router.refresh()
-    } else {
-      setError(result.error || 'Failed to create branch')
-    }
-
-    setLoading(false)
+    await execute(orgId, appId, body)
   }
 
   const handleClose = () => {
@@ -218,7 +226,7 @@ export const CreateBranchModal = ({
     setSelectedBranch('main')
     setDirectory('.')
     setPathFilter('')
-    setError(null)
+    setValidationError(null)
     onClose()
   }
 
@@ -229,7 +237,7 @@ export const CreateBranchModal = ({
       heading="Create App Branch"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {error && <Banner theme="error">{error}</Banner>}
+        {validationError && <Banner theme="error">{validationError}</Banner>}
 
         <div className="flex flex-col gap-2">
           <label htmlFor="branch-name" className="text-sm font-medium">
@@ -242,7 +250,7 @@ export const CreateBranchModal = ({
             onChange={(e) => setName(e.target.value)}
             placeholder="production"
             required
-            disabled={loading}
+            disabled={isLoading}
           />
         </div>
 
@@ -252,7 +260,7 @@ export const CreateBranchModal = ({
             type="checkbox"
             checked={useVcs}
             onChange={(e) => setUseVcs(e.target.checked)}
-            disabled={loading}
+            disabled={isLoading}
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <label htmlFor="use-vcs" className="text-sm font-medium">
@@ -278,7 +286,7 @@ export const CreateBranchModal = ({
                       value={selectedVcsConnectionId}
                       onChange={(e) => setSelectedVcsConnectionId(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={loading || loadingRepos}
+                      disabled={isLoading || loadingRepos}
                     >
                       {vcsConnections.map((conn) => (
                         <option key={conn.id} value={conn.id}>
@@ -310,7 +318,7 @@ export const CreateBranchModal = ({
                       onChange={(e) => setSelectedRepo(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
-                      disabled={loading || loadingRepos || loadingBranches}
+                      disabled={isLoading || loadingRepos || loadingBranches}
                     >
                       {repos.map((repo) => (
                         <option key={repo.full_name} value={repo.full_name}>
@@ -338,7 +346,7 @@ export const CreateBranchModal = ({
                       onChange={(e) => setSelectedBranch(e.target.value)}
                       placeholder="main"
                       required
-                      disabled={loading}
+                      disabled={isLoading}
                     />
                   ) : (
                     <select
@@ -347,7 +355,7 @@ export const CreateBranchModal = ({
                       onChange={(e) => setSelectedBranch(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
-                      disabled={loading || loadingBranches}
+                      disabled={isLoading || loadingBranches}
                     >
                       {branches.map((branch) => (
                         <option key={branch.name} value={branch.name}>
@@ -369,7 +377,7 @@ export const CreateBranchModal = ({
                     onChange={(e) => setDirectory(e.target.value)}
                     placeholder="."
                     required
-                    disabled={loading}
+                    disabled={isLoading}
                   />
                   <p className="text-xs text-gray-500">
                     Path to your application config (use &quot;.&quot; for root)
@@ -386,7 +394,7 @@ export const CreateBranchModal = ({
                     value={pathFilter}
                     onChange={(e) => setPathFilter(e.target.value)}
                     placeholder="^(src/|config/).*"
-                    disabled={loading}
+                    disabled={isLoading}
                   />
                   <p className="text-xs text-gray-500">
                     Regex pattern to filter which file changes trigger workflow runs
@@ -402,7 +410,7 @@ export const CreateBranchModal = ({
             type="button"
             onClick={handleClose}
             variant="secondary"
-            disabled={loading}
+            disabled={isLoading}
           >
             Cancel
           </Button>
@@ -410,13 +418,13 @@ export const CreateBranchModal = ({
             type="submit"
             variant="primary"
             disabled={
-              loading ||
+              isLoading ||
               loadingRepos ||
               loadingBranches ||
               (useVcs && (vcsConnections.length === 0 || !selectedRepo || !selectedBranch))
             }
           >
-            {loading ? 'Creating...' : 'Create Branch'}
+            {isLoading ? 'Creating...' : 'Create Branch'}
           </Button>
         </div>
       </form>
