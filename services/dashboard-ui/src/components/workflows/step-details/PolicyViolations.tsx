@@ -34,7 +34,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
             <ul className="list-disc list-inside space-y-1">
               {denyViolations.map((violation, index) => (
                 <li key={`deny-${violation.policy_id}-${index}`}>
-                  <Text as="span" variant="subtext">
+                  <Text variant="subtext">
                     {violation.message || 'Policy check failed'}
                   </Text>
                 </li>
@@ -44,7 +44,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
         </Banner>
       )}
       {warnViolations.length > 0 && (
-        <Banner theme="warning">
+        <Banner theme="warn">
           <div className="flex flex-col gap-2 w-full">
             <Text weight="strong">
               Policy Warnings ({warnViolations.length})
@@ -52,7 +52,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
             <ul className="list-disc list-inside space-y-1">
               {warnViolations.map((violation, index) => (
                 <li key={`warn-${violation.policy_id}-${index}`}>
-                  <Text as="span" variant="subtext">
+                  <Text variant="subtext">
                     {violation.message || 'Policy warning'}
                   </Text>
                 </li>
