@@ -74,6 +74,9 @@ type AppComponentConfigConnection struct {
 	// terraform module
 	TerraformModule *AppTerraformModuleComponentConfig `json:"terraform_module,omitempty"`
 
+	// Duration string (e.g., "30m", "1h"). Max 1h.
+	Timeout string `json:"timeout,omitempty"`
+
 	// type
 	Type AppComponentType `json:"type,omitempty"`
 
