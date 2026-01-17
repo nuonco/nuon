@@ -33,7 +33,7 @@ func (c *cli) configCmd() *cobra.Command {
 		Long:  "Select your current org from a list or by org ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.Select(cmd.Context(), id, PrintJSON)
+			return svc.Select(cmd.Context(), id, 0, 50, PrintJSON)
 		}),
 	}
 	orgCmd.Flags().StringVar(&id, "org", "", "The ID of the org you want to use")
