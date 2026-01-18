@@ -10,10 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
-const (
-	defaultOrgRegion string = "us-west-2"
-)
-
 type OrgEventLoopRequest struct {
 	OrgID       string
 	SandboxMode bool
