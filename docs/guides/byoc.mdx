@@ -19,11 +19,33 @@ Gateways.
 
 <Note>Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.</Note>
 
-### DNS (Optional)
+### DNS
 
-We can automatically provision a root domain for you at `<install-id>.nuon.run`. But you can also use your domain as the
-root instead, via DNS delegation. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the
-following steps.
+BYOC Nuon deployments typically require two domains. The first is the `root_domain` under which all of the services
+(e.g. APIs & Frontend) are served. The second, `nuon_dns_root_domain`, is optional but it is used to automate the
+provisioning of Route53 zones for installs during creation.
+
+|                 | Description                                                                          |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Root Domain     | The root domain from which the nuon services are served.                             |
+| Nuon DNS Domain | The domain used to provision domains for installs managed by this BYOC Nuon Install. |
+
+We recommend hosting BYOC Nuon under a custom domain of your choice, for example:
+
+- `byoc.organization.com`
+
+Nuon DNS should be hosted under a separate domain or a dedicated subdomain, such as:
+
+- `installs.my-domain.com`
+- `hosted.my-domain.io`
+
+<Warning>
+  We strongly encourage you to choose `root_domain` and `nuon_dns_root_domain` values that do not overlap.
+</Warning>
+
+#### AWS Route53 Setup Instructions
+
+If you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the following steps.
 
 1. Before installation, create the DNS zone `my-domain.com` if it does not already exist.
 1. Provide `nuon.my-domain.com` as the value for the Root Domain input.
