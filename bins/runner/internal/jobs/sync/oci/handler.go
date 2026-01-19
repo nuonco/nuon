@@ -34,18 +34,20 @@ var _ jobs.JobHandler = (*handler)(nil)
 type HandlerParams struct {
 	fx.In
 
-	V         *validator.Validate
-	APIClient nuonrunner.Client
-	Config    *internal.Config
-	OCICopy   ocicopy.Copier
+	V           *validator.Validate
+	APIClient   nuonrunner.Client
+	ErrRecorder *errs.Recorder
+	Config      *internal.Config
+	OCICopy     ocicopy.Copier
 }
 
 func New(params HandlerParams) (*handler, error) {
 	return &handler{
-		v:         params.V,
-		apiClient: params.APIClient,
-		cfg:       params.Config,
-		ociCopy:   params.OCICopy,
+		v:           params.V,
+		apiClient:   params.APIClient,
+		errRecorder: params.ErrRecorder,
+		cfg:         params.Config,
+		ociCopy:     params.OCICopy,
 	}, nil
 }
 
