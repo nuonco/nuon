@@ -113,6 +113,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// app policies management
 		policiesConfigs := app.Group("/policies-configs")
 		{
+			policiesConfigs.GET("", s.GetAppPoliciesConfigs)
 			policiesConfigs.POST("", s.CreateAppPoliciesConfig)
 			policiesConfigs.GET("/:app_policies_config_id", s.GetAppPoliciesConfig)
 		}

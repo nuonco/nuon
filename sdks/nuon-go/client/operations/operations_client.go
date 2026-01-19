@@ -316,6 +316,8 @@ type ClientService interface {
 
 	GetAppPoliciesConfig(params *GetAppPoliciesConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppPoliciesConfigOK, error)
 
+	GetAppPoliciesConfigs(params *GetAppPoliciesConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppPoliciesConfigsOK, error)
+
 	GetAppReleases(params *GetAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleasesOK, error)
 
 	GetAppRunnerConfigs(params *GetAppRunnerConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppRunnerConfigsOK, error)
@@ -5812,6 +5814,52 @@ func (a *Client) GetAppPoliciesConfig(params *GetAppPoliciesConfigParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppPoliciesConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppPoliciesConfigs gets app policies configs
+
+Get all policies configs for an app.
+*/
+func (a *Client) GetAppPoliciesConfigs(params *GetAppPoliciesConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppPoliciesConfigsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppPoliciesConfigsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppPoliciesConfigs",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/policies-configs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppPoliciesConfigsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppPoliciesConfigsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppPoliciesConfigs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
