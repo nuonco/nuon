@@ -46,11 +46,15 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			}
 			return nil
 		},
-
 		// TBH, this does not really work
 		func() error {
 			// return ValidateVars(ctx, a)
 			return nil
+		},
+
+		// permissions cant be empty, required parameter
+		func() error {
+			return a.Permissions.Validate()
 		},
 	}
 

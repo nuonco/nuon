@@ -68,7 +68,9 @@ export const OrgSwitcher = ({}: IOrgSwitcher) => {
 
             <ConnectGithubModal />
           </div>
-          <VCSConnections vcsConnections={org?.vcs_connections} />
+          <div className="flex flex-col gap-2">
+            <VCSConnections vcsConnections={org?.vcs_connections} />
+          </div>
         </div>
         <hr className="border-dashed mx-4" />
         <div className="px-1 py-4 flex flex-col gap-1.5">

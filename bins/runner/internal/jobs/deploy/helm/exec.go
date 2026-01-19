@@ -20,9 +20,10 @@ import (
 
 // Use the common diff package for the plan contents
 type HelmPlanContents struct {
-	Diff        string              `json:"plan"`
-	Op          string              `json:"op"`
-	ContentDiff []diff.ResourceDiff `json:"helm_content_diff"`
+	Diff           string              `json:"plan"`
+	Op             string              `json:"op"`
+	ContentDiff    []diff.ResourceDiff `json:"helm_content_diff"`
+	TemplateOutput string              `json:"template_output,omitempty"`
 }
 
 // Modify Exec function to use the common diff package
@@ -82,13 +83,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		var contentDiff *[]diff.ResourceDiff
+		var templateOutput string
 		var err error
 		// in this case, the diff is generated so it is available to the createAPIResult method
 		if prevRel == nil {
-			diffStr, contentDiff, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
+			diffStr, contentDiff, templateOutput, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "install"
 		} else {
-			diffStr, contentDiff, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
+			diffStr, contentDiff, templateOutput, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "upgrade"
 		}
 		if err != nil {
@@ -101,13 +103,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 		helmPlan.Diff = diffStr
 		helmPlan.ContentDiff = *contentDiff
+		helmPlan.TemplateOutput = templateOutput
 
 		l.Debug("calculated helm diff", zap.String("diff", diffStr))
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		// TODO(fd): figure out the best way to get a plan for this
 		l.Info("executing helm uninstall plan")
 
-		diffStr, contentDiff, err := h.uninstallDiff(ctx, l, actionCfg, kubeCfg, prevRel)
+		diffStr, contentDiff, templateOutput, err := h.uninstallDiff(ctx, l, actionCfg, kubeCfg, prevRel)
 		if err != nil {
 			return err
 		}
@@ -115,6 +118,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		helmPlan.Op = "uninstall"
 		helmPlan.Diff = diffStr
 		helmPlan.ContentDiff = *contentDiff
+		helmPlan.TemplateOutput = templateOutput
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info(fmt.Sprintf("executing helm %s", helmPlan.Op))
 		switch helmPlan.Op {
