@@ -35,13 +35,6 @@ param privateSubnet3CIDR string = '10.128.134.0/24'
 @description('The location for all resources.')
 param location string = '{{.Install.AzureAccount.Location}}'
 
-@description('Admin username for the VM')
-param vmAdminUsername string = 'nuon_admin'
-
-@description('Admin password for the VM')
-@secure()
-param vmAdminPassword string = 'Password!123'
-
 @description('List of secrets to store in Azure Key Vault')
 param secrets array = []
 
@@ -422,11 +415,6 @@ RestartSec=5
 WantedBy=default.target
 EOF
 
-# Enable SSH password authentication
-sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
-systemctl restart sshd
-
 # Reload systemd and start the service (no SELinux on Ubuntu)
 systemctl daemon-reload
 systemctl enable --now nuon-runner
@@ -452,11 +440,10 @@ resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2023-03-01' = {
     virtualMachineProfile: {
       osProfile: {
         computerNamePrefix: nuonInstallID
-        adminUsername: vmAdminUsername
-        adminPassword: vmAdminPassword
+        adminUsername: 'nuon'  // Required by Azure but not used for authentication
         customData: base64(customData)
         linuxConfiguration: {
-          disablePasswordAuthentication: false
+          disablePasswordAuthentication: true
         }
       }
       storageProfile: {
