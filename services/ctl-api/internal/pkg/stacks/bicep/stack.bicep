@@ -698,6 +698,8 @@ resource phoneHomeScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
 
       PAYLOAD=$(cat << EOF
 {
+  "request_type": "Create",
+  "phone_home_type": "azure",
   "resource_group_id": "$RESOURCE_GROUP_ID",
   "resource_group_name": "$RESOURCE_GROUP_NAME",
   "resource_group_location": "$RESOURCE_GROUP_LOCATION",
