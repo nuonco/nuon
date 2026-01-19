@@ -21,7 +21,14 @@ export const PoliciesTable = async ({
   const { data: policiesConfigs, error, status } = policiesResult
   const { data: components } = componentsResult
 
-  const latestConfig = policiesConfigs?.at(0)
+  const latestConfig = policiesConfigs
+    ?.slice()
+    .sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
+      return dateB - dateA
+    })
+    .at(0)
   const policies = latestConfig?.policies || []
 
   const componentNameToId: Record<string, string> = {}

@@ -117,7 +117,7 @@ function ComponentsDropdown({
                   variant="subtext"
                   className="px-2 py-1.5 text-center italic"
                 >
-                  No components match "{search}"
+                  No components match &ldquo;{search}&rdquo;
                 </Text>
               )}
             </div>
