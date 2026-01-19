@@ -3,6 +3,7 @@ package temporalzap
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/log"
@@ -45,8 +46,27 @@ func (o *logCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
 
 	str := ent.Message
 	kvs := make([]interface{}, 0)
+
 	for _, f := range fields {
-		kvs = append(kvs, fmt.Sprintf("%v", f))
+		// depening on the type, only one of String, Integer, Interface will be set
+		// we convert all to string to not miss any info in the default case.
+		val := fmt.Sprintf("%s %d %v", f.String, f.Integer, f.Interface)
+		if f.Interface != nil {
+			val = fmt.Sprintf("%v", f.Interface)
+		}
+		// Use String or Integer based on well known Field types
+		switch f.Type {
+		case zapcore.StringType:
+			val = f.String
+		case zapcore.Int64Type, zapcore.Int32Type, zapcore.Int16Type, zapcore.Int8Type,
+			zapcore.Float64Type, zapcore.Float32Type:
+			val = fmt.Sprintf("%d", f.Integer)
+		case zapcore.BoolType:
+			val = fmt.Sprintf("%t", f.Integer == 1)
+		case zapcore.DurationType:
+			val = fmt.Sprintf("%d seconds", f.Integer/int64(time.Second))
+		}
+		kvs = append(kvs, f.Key, val)
 	}
 
 	fn(str, kvs...)
