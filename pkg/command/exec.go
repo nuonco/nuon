@@ -50,9 +50,11 @@ func (c *command) Exec(ctx context.Context) error {
 func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 	cmd := exec.CommandContext(ctx, c.Cmd, c.Args...)
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error {
-		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	if c.UseProcessGroup {
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Cancel = func() error {
+			return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		}
 	}
 
 	envVars := os.Environ()
