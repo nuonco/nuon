@@ -259,15 +259,11 @@ const CreateInstallFormContent = forwardRef<
       : []
   }
 
-  const getPlatform = (): 'aws' | 'azure' => {
-    return 'aws'
-  }
-
   return (
     <CreateInstallForm
       ref={ref}
       appId={app.id}
-      platform={getPlatform()}
+      platform={app?.runner_config?.app_runner_type as 'aws' | 'azure'}
       inputConfig={{
         ...config?.input,
         input_groups: nestInputsUnderGroups(
