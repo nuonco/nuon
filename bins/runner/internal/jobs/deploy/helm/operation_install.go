@@ -42,6 +42,20 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Timeout = h.state.timeout
 	client.DryRun = true
 
+	if needsIntervention, err := helm.ReleaseNeedsManualIntervention(h.state.prevRelease); needsIntervention {
+		return nil, err
+	}
+
+	if helm.ReleaseNeedsCleanup(h.state.prevRelease) {
+		l.Info("cleaning up stuck release", zap.String("status", string(h.state.prevRelease.Info.Status)))
+		if err := helm.UninstallRelease(actionCfg, h.state.plan.HelmDeployPlan.Name); err != nil {
+			return nil, fmt.Errorf("unable to cleanup stuck release: %w", err)
+		}
+	} else if helm.ReleaseNeedsReplace(h.state.prevRelease) {
+		l.Info("replacing failed release", zap.String("status", string(h.state.prevRelease.Info.Status)))
+		client.Replace = true
+	}
+
 	// determine if we're going to calculate the diff
 	crds := chart.CRDObjects()
 	if len(crds) > 0 {

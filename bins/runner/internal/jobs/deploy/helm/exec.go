@@ -57,6 +57,8 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to get previous helm release: %w", err)
 	}
 
+	h.state.prevRelease = prevRel
+
 	var (
 		rel      *release.Release
 		op       string
@@ -86,7 +88,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		var templateOutput string
 		var err error
 		// in this case, the diff is generated so it is available to the createAPIResult method
-		if prevRel == nil {
+		if !helm.IsReleaseDeployed(prevRel) {
 			diffStr, contentDiff, templateOutput, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "install"
 		} else {

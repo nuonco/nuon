@@ -62,9 +62,9 @@ func (a *Activities) InstallOrUpgrade(ctx context.Context, req *InstallOrUpgrade
 		rel *release.Release
 		op  string
 	)
-	if prevRel == nil {
+	if !helm.IsReleaseDeployed(prevRel) {
 		op = "install"
-		rel, err = a.install(ctx, helmClient, req)
+		rel, err = a.install(ctx, helmClient, req, prevRel)
 	} else {
 		op = "upgrade"
 		rel, err = a.upgrade(ctx, helmClient, req)

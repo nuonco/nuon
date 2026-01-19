@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon-runner-go/models"
+	release "helm.sh/helm/v4/pkg/release/v1"
 
 	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
 	"github.com/nuonco/nuon/pkg/kube"
@@ -32,4 +33,5 @@ type handlerState struct {
 	jobID          string
 	clusterInfo    *kube.ClusterInfo
 	outputs        map[string]interface{}
+	prevRelease    *release.Release
 }
