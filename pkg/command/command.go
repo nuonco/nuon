@@ -29,6 +29,8 @@ type command struct {
 	Stdout io.Writer
 	Stdin  io.Reader
 	Stderr io.Writer `validate:"required"`
+
+	UseProcessGroup bool
 }
 
 type commandOption func(*command) error
@@ -118,6 +120,13 @@ func WithStderr(fw io.Writer) commandOption {
 func WithCwd(cwd string) commandOption {
 	return func(l *command) error {
 		l.Cwd = cwd
+		return nil
+	}
+}
+
+func WithProcessGroup() commandOption {
+	return func(l *command) error {
+		l.UseProcessGroup = true
 		return nil
 	}
 }
