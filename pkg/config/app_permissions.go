@@ -72,3 +72,14 @@ func (a *PermissionsConfig) parse() error {
 
 	return nil
 }
+
+func (a *PermissionsConfig) Validate() error {
+	if a == nil {
+		return errors.New("permissions config is required")
+	}
+
+	if a.ProvisionRole == nil || a.DeprovisionRole == nil || a.MaintenanceRole == nil {
+		return errors.New("provision, deprovision and maintenance permissions are required")
+	}
+	return nil
+}
