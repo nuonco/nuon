@@ -21,7 +21,9 @@ Gateways.
 
 ### DNS (Optional)
 
-We can automatically provision a root domain for you at `<install-id>.nuon.run`. But you can also use your domain as the root instead, via DNS delegation. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the following steps.
+We can automatically provision a root domain for you at `<install-id>.nuon.run`. But you can also use your domain as the
+root instead, via DNS delegation. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the
+following steps.
 
 1. Before installation, create the DNS zone `my-domain.com` if it does not already exist.
 1. Provide `nuon.my-domain.com` as the value for the Root Domain input.
@@ -30,7 +32,8 @@ We can automatically provision a root domain for you at `<install-id>.nuon.run`.
 1. Once propagation is complete, the Nuon Dashboard should be reachable at `app.nuon.my-domain.com`.
 
 <Warning>
-The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
+  The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root
+  domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
 </Warning>
 
 ### GitHub App
@@ -85,12 +88,15 @@ To use Google as your IdP, set up a client in Google Auth Platform. You will nee
 ### Auth0 (DEPRECATED)
 
 <Warning>
-Nuon BYOC previously required Auth0 for authentication, but this dependency has been removed. This documentation is retained for anyone still using Auth0, but new Nuon BYOC installs should use the new IdP integration documented above.
+  Nuon BYOC previously required Auth0 for authentication, but this dependency has been removed. This documentation is
+  retained for anyone still using Auth0, but new Nuon BYOC installs should use the new IdP integration documented above.
 </Warning>
 
-To use Auth0 for authentication, you will need to configure an API, applications, and a custom action in your Auth0 tenant.
+To use Auth0 for authentication, you will need to configure an API, applications, and a custom action in your Auth0
+tenant.
 
-Nuon provides a Terraform module to automate Auth0 configuration. We recommend this over manual configuration. Apply the following Terraform to use it.
+Nuon provides a Terraform module to automate Auth0 configuration. We recommend this over manual configuration. Apply the
+following Terraform to use it.
 
 ```hcl
 module "byoc_auth0" {
@@ -129,43 +135,41 @@ exports.onExecutePostLogin = async (event, api) => {
 
 Create an API with the following settings.
 
-| Setting | Value |
-|---------|-------|
-| Name | `API Gateway <your-install-id>` |
-| Identifier | `api.<your-root-domain>` |
-| Maximum Access Token Lifetime | `2592000` |
-| Implicit/Hybrid Flow Access Token Lifetime | `86400` |
-| Allow Skipping User Consent | `true` |
+| Setting                                    | Value                           |
+| ------------------------------------------ | ------------------------------- |
+| Name                                       | `API Gateway <your-install-id>` |
+| Identifier                                 | `api.<your-root-domain>`        |
+| Maximum Access Token Lifetime              | `2592000`                       |
+| Implicit/Hybrid Flow Access Token Lifetime | `86400`                         |
+| Allow Skipping User Consent                | `true`                          |
 
-<Note>
-The Identifier must match your API URL exactly. It cannot be changed after creation.
-</Note>
+<Note>The Identifier must match your API URL exactly. It cannot be changed after creation.</Note>
 
 Create a Single Page Application for the Dashboard UI.
 
-| Setting | Value |
-|---------|-------|
-| Name | `Nuon App - <your-install-name>` |
-| Allowed Callback URLs | `https://app.<your-root-domain>/api/auth/callback` |
-| Allowed Logout URLs | `https://app.<your-root-domain>` |
-| Allowed Web Origins | `https://app.<your-root-domain>` |
-| Allow Cross-Origin Authentication | `true` |
-| Maximum Refresh Token Lifetime | `31557600` |
-| Allow Refresh Token Rotation | `true` |
-| Rotation Overlap Period | `0` |
+| Setting                           | Value                                              |
+| --------------------------------- | -------------------------------------------------- |
+| Name                              | `Nuon App - <your-install-name>`                   |
+| Allowed Callback URLs             | `https://app.<your-root-domain>/api/auth/callback` |
+| Allowed Logout URLs               | `https://app.<your-root-domain>`                   |
+| Allowed Web Origins               | `https://app.<your-root-domain>`                   |
+| Allow Cross-Origin Authentication | `true`                                             |
+| Maximum Refresh Token Lifetime    | `31557600`                                         |
+| Allow Refresh Token Rotation      | `true`                                             |
+| Rotation Overlap Period           | `0`                                                |
 
 Create a Native Application for CLI authentication.
 
-| Setting | Value |
-|---------|-------|
-| Name | `Nuon CTL API - <your-install-name>` |
-| Description | `For BYOC Nuon Install <your-install-id>` |
-| Allow Cross-Origin Authentication | `true` |
-| Device Code (Advanced > Grant Types) | Checked |
+| Setting                              | Value                                     |
+| ------------------------------------ | ----------------------------------------- |
+| Name                                 | `Nuon CTL API - <your-install-name>`      |
+| Description                          | `For BYOC Nuon Install <your-install-id>` |
+| Allow Cross-Origin Authentication    | `true`                                    |
+| Device Code (Advanced > Grant Types) | Checked                                   |
 
 Finally, you can optionally enable additional identity providers.
 
-__Okta__
+**Okta**
 
 Create an OIDC Application in Okta.
 
@@ -209,12 +213,13 @@ After configuring all dependencies, update your install inputs in the customer d
 <Warning>
 If using the deprecated Auth0 integration, you will need to provide these inputs instead.
 
-| Input | Value |
-|-------|-------|
-| Auth0 Issuer URL | Your Auth0 tenant URL |
-| Auth0 Audience | Your Auth0 API identifier |
-| Auth0 Client ID - CTL API | Your Auth0 native app client ID |
-| Auth0 Client ID - Dashboard UI | Your Auth0 SPA client ID |
+| Input                          | Value                           |
+| ------------------------------ | ------------------------------- |
+| Auth0 Issuer URL               | Your Auth0 tenant URL           |
+| Auth0 Audience                 | Your Auth0 API identifier       |
+| Auth0 Client ID - CTL API      | Your Auth0 native app client ID |
+| Auth0 Client ID - Dashboard UI | Your Auth0 SPA client ID        |
+
 </Warning>
 
 ### GitHub Configuration
