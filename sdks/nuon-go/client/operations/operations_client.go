@@ -96,6 +96,8 @@ type ClientService interface {
 
 	CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowAccepted, error)
 
+	CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckVCSConnectionStatusOK, error)
+
 	CompleteUserJourney(params *CompleteUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteUserJourneyOK, error)
 
 	CreateActionConfig(params *CreateActionConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateActionConfigCreated, error)
@@ -548,6 +550,8 @@ type ClientService interface {
 
 	GetVCSConnection(params *GetVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionOK, error)
 
+	GetVcsConnectionsConnectionIDRepos(params *GetVcsConnectionsConnectionIDReposParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVcsConnectionsConnectionIDReposOK, error)
+
 	GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowOK, error)
 
 	GetWorkflowStep(params *GetWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepOK, error)
@@ -854,6 +858,73 @@ func (a *Client) CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	CheckVCSConnectionStatus checks the real time status of a v c s connection
+
+	Check the real-time status of a VCS (GitHub App) connection.
+
+This endpoint queries GitHub's API directly to fetch the current installation status, including:
+- Active/Suspended state
+- Account information
+- Permissions
+- Suspension details (if applicable)
+
+**Important**: This endpoint always fetches fresh data from GitHub (no caching) to ensure accurate status information.
+
+## Response Status Values
+
+- `active`: The GitHub App installation is active and functioning
+- `suspended`: The installation has been suspended (see `suspended_at` and `suspended_by` for details)
+- `unknown`: Unable to determine status (GitHub API error - see `error` field)
+
+## Use Cases
+
+- Troubleshooting connection issues
+- Monitoring installation health
+- Detecting suspended or revoked installations
+- Validating permissions before operations
+*/
+func (a *Client) CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckVCSConnectionStatusOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCheckVCSConnectionStatusParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CheckVCSConnectionStatus",
+		Method:             "GET",
+		PathPattern:        "/v1/vcs/connections/{connection_id}/check-status",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CheckVCSConnectionStatusReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CheckVCSConnectionStatusOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CheckVCSConnectionStatus: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -11007,6 +11078,52 @@ func (a *Client) GetVCSConnection(params *GetVCSConnectionParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetVCSConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetVcsConnectionsConnectionIDRepos lists v c s connection repositories
+
+Lists all repositories accessible by a GitHub App installation (VCS connection)
+*/
+func (a *Client) GetVcsConnectionsConnectionIDRepos(params *GetVcsConnectionsConnectionIDReposParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVcsConnectionsConnectionIDReposOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetVcsConnectionsConnectionIDReposParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetVcsConnectionsConnectionIDRepos",
+		Method:             "GET",
+		PathPattern:        "/vcs/connections/{connection_id}/repos",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetVcsConnectionsConnectionIDReposReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetVcsConnectionsConnectionIDReposOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetVcsConnectionsConnectionIDRepos: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
