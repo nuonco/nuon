@@ -23,7 +23,7 @@ type AppPoliciesConfig struct {
 	AppID       string `json:"app_id,omitzero" gorm:"notnull;default null" temporaljson:"app_id,omitzero,omitempty"`
 	AppConfigID string `json:"app_config_id,omitzero" gorm:"notnull;default null" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	Policies []AppPolicyConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
+	Policies []AppPolicyConfig `json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
 }
 
 func (a *AppPoliciesConfig) Indexes(db *gorm.DB) []migrations.Index {
