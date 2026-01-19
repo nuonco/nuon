@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -35,17 +38,97 @@ type AppAppPoliciesConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// policies
+	Policies []*AppAppPolicyConfig `json:"policies"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
 
 // Validate validates this app app policies config
 func (m *AppAppPoliciesConfig) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validatePolicies(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app app policies config based on context it is used
+func (m *AppAppPoliciesConfig) validatePolicies(formats strfmt.Registry) error {
+	if swag.IsZero(m.Policies) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Policies); i++ {
+		if swag.IsZero(m.Policies[i]) { // not required
+			continue
+		}
+
+		if m.Policies[i] != nil {
+			if err := m.Policies[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("policies" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("policies" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app app policies config based on the context it is used
 func (m *AppAppPoliciesConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePolicies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppAppPoliciesConfig) contextValidatePolicies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Policies); i++ {
+
+		if m.Policies[i] != nil {
+
+			if swag.IsZero(m.Policies[i]) { // not required
+				return nil
+			}
+
+			if err := m.Policies[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("policies" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("policies" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
