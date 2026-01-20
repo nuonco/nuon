@@ -1,0 +1,1 @@
+Update an installer configuration.

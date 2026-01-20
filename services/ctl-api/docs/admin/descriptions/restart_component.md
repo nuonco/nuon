@@ -1,0 +1,1 @@
+Restart a component deployment.
