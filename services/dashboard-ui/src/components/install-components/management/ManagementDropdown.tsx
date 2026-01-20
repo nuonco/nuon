@@ -12,9 +12,11 @@ import type { TComponent } from '@/types'
 export const ManagementDropdown = ({
   component,
   currentBuildId,
+  currentDeployStatus,
 }: {
   component: TComponent
   currentBuildId?: string
+  currentDeployStatus?: string
 }) => {
   return (
     <Dropdown
@@ -37,6 +39,7 @@ export const ManagementDropdown = ({
         <DeployComponentButton
           component={component}
           currentBuildId={currentBuildId}
+          currentDeployStatus={currentDeployStatus}
           isMenuButton
         />
         <hr />
