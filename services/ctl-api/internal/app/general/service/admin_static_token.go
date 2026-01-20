@@ -34,7 +34,7 @@ type StaticTokenResponse struct {
 
 // @ID						AdminCreateStaticToken
 // @Summary				create a static token for a user.
-// @Description.markdown	create_static_token.md
+// @Description.markdown	admin_create_static_token.md
 // @Param					req	body	StaticTokenRequest	true	"Input"
 // @Tags					orgs/admin
 // @Security				AdminEmail

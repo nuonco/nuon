@@ -11,7 +11,7 @@ type AdminForgetOrgRequest struct{}
 
 // @ID						AdminForgetOrg
 // @Summary				forget an org and everything in it
-// @Description.markdown	forget_org.md
+// @Description.markdown	admin_forget_org.md
 // @Param					org_id	path	string	true	"org ID for your current org"
 // @Tags					orgs/admin
 // @Security				AdminEmail
