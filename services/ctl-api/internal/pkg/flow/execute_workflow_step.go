@@ -39,6 +39,12 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		return false, nil
 	}
 
+	// fetch fresh state for step
+	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to get step")
+	}
+
 	if step.Status.Status != app.StatusPending && step.Status.Status != app.StatusNotAttempted {
 		l.Debug("step status not pending or not-attempted, exiting",
 			zap.String("step_id", step.ID),
