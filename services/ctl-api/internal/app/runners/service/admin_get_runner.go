@@ -9,7 +9,7 @@ import (
 
 // @ID						AdminGetRunner
 // @Summary				get a runner
-// @Description.markdown	get_runner.md
+// @Description.markdown	admin_get_runner.md
 // @Tags					runners/admin
 // @Security				AdminEmail
 // @Accept					json

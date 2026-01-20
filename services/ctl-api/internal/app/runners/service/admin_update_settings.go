@@ -35,7 +35,7 @@ func (c *AdminUpdateRunnerSettingsRequest) Validate(v *validator.Validate) error
 
 // @ID						AdminUpdateRunnerSettings
 // @Summary				update a runner's settings
-// @Description.markdown	update_runner_settings.md
+// @Description.markdown	admin_update_runner_settings.md
 // @Param					runner_id	path	string								true	"runner ID"
 // @Param					req			body	AdminUpdateRunnerSettingsRequest	true	"Input"
 // @Tags					runners/admin
