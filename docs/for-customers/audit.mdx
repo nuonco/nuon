@@ -1,0 +1,150 @@
+---
+title: Audit & Compliance
+description: "Tracking what your vendor does in your cloud."
+---
+
+All operations performed by Nuon in your cloud account are logged and auditable. This guide explains how to access audit information and use it for compliance purposes.
+
+## What's logged
+
+Every operation includes:
+
+| Field | Description |
+|-------|-------------|
+| **Timestamp** | When the operation occurred |
+| **Operation type** | Deploy, update, action, etc. |
+| **Component** | Which part of the application was affected |
+| **Initiator** | Who triggered the operation |
+| **Status** | Success, failure, or in-progress |
+| **Details** | Specific changes made |
+
+## Accessing audit logs
+
+### From your vendor
+
+Ask your vendor for audit log exports. Most vendors can provide:
+
+- **CSV/JSON exports** of all operations on your install
+- **Filtered views** by date range, operation type, or component
+- **Regular delivery** on a schedule (daily, weekly)
+
+### From your cloud provider
+
+Your cloud's native logging also captures activity:
+
+<Tabs>
+  <Tab title="AWS">
+    **CloudTrail** logs all API calls made by the Nuon runner:
+
+    1. Open CloudTrail console
+    2. Go to "Event history"
+    3. Filter by username containing your install ID
+
+    Look for events from the IAM roles created by the CloudFormation stack.
+  </Tab>
+
+  <Tab title="Azure">
+    **Activity Log** tracks resource operations:
+
+    1. Open Azure Monitor
+    2. Select "Activity Log"
+    3. Filter by resource group
+
+    Operations are attributed to the managed identity used by the runner.
+  </Tab>
+
+  <Tab title="GCP">
+    **Cloud Audit Logs** capture admin activity:
+
+    1. Open Cloud Logging
+    2. Filter by service account
+    3. Select the service account created for the runner
+  </Tab>
+</Tabs>
+
+## Compliance considerations
+
+### SOC 2
+
+For SOC 2 compliance, document:
+
+- **Access controls**: IAM roles and permission boundaries
+- **Change management**: Approval workflows for updates
+- **Audit trails**: Operation logs from Nuon and CloudTrail/Activity Log
+
+### HIPAA
+
+For HIPAA-covered deployments:
+
+- Ensure BAA coverage with your vendor if PHI is involved
+- Document data flow (Nuon itself doesn't access application data)
+- Retain audit logs per your retention policy
+
+### Other frameworks
+
+Nuon's model supports various compliance frameworks:
+
+- **FedRAMP**: Data stays in your authorized cloud boundary
+- **PCI DSS**: Segment runner and application appropriately
+- **GDPR**: Data residency is controlled by your cloud region
+
+## Proving what happened
+
+If you need to demonstrate to auditors what occurred:
+
+1. **Request vendor audit export** for the time period in question
+2. **Cross-reference with CloudTrail** for additional detail
+3. **Document the permission model** (IAM roles and their policies)
+
+### Sample audit entry
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "install_id": "ins-abc123",
+  "operation": "deploy",
+  "component": "api-service",
+  "version": "v2.3.1",
+  "initiated_by": "vendor-user@example.com",
+  "status": "success",
+  "duration_seconds": 45,
+  "terraform_plan_changes": {
+    "add": 0,
+    "change": 2,
+    "destroy": 0
+  }
+}
+```
+
+## Incident response
+
+If you suspect unauthorized activity:
+
+1. **Stop the runner** immediately (EC2 stop/VM deallocate)
+2. **Export CloudTrail/Activity logs** for the relevant period
+3. **Contact your vendor** with specific timestamps and concerns
+4. **Request Nuon audit logs** for comparison
+
+<Warning>
+Stopping the runner cuts off all vendor access but also stops deployments and operations. Your application continues running, but updates are paused.
+</Warning>
+
+## Questions for your vendor
+
+<AccordionGroup>
+  <Accordion title="How long do you retain logs?">
+    Understand the vendor's log retention policy. Request longer retention if needed for compliance.
+  </Accordion>
+
+  <Accordion title="Can I get real-time log streaming?">
+    Some vendors offer real-time log delivery to your SIEM. Ask about integration options.
+  </Accordion>
+
+  <Accordion title="What's your incident response process?">
+    Know who to contact and expected response times if you identify suspicious activity.
+  </Accordion>
+
+  <Accordion title="Can you provide compliance documentation?">
+    Ask for vendor security documentation (SOC 2 report, penetration test results, etc.) to include in your compliance package.
+  </Accordion>
+</AccordionGroup>

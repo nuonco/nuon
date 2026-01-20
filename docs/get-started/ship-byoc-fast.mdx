@@ -1,0 +1,171 @@
+---
+title: Ship BYOC Fast
+description: "Deploy your first app to a customer cloud in 15 minutes."
+---
+
+This guide gets you from zero to a working BYOC deployment as quickly as possible. You'll clone a sample app, sync it to Nuon, and create your first install.
+
+<Info>
+**Time estimate:** 15 minutes
+
+**What you'll need:**
+- A [Nuon account](https://app.nuon.co/) (free trial)
+- An AWS account for testing
+- The Nuon CLI installed
+</Info>
+
+## Step 1: Install the CLI (2 min)
+
+```sh
+brew install nuonco/tap/nuon
+```
+
+Not using Homebrew? See [other installation options](/cli).
+
+## Step 2: Authenticate (1 min)
+
+```sh
+nuon auth login
+```
+
+Follow the browser prompts to log in. Then select your organization:
+
+```sh
+nuon orgs select
+```
+
+## Step 3: Clone a sample app (1 min)
+
+Choose a sample app based on what you're deploying:
+
+<Tabs>
+  <Tab title="Lambda (Serverless)">
+    Best for: APIs, webhooks, lightweight services
+
+    ```sh
+    git clone https://github.com/nuonco/example-app-configs
+    cd example-app-configs/aws-lambda
+    ```
+
+    This app deploys a Lambda function with DynamoDB and API Gateway.
+  </Tab>
+
+  <Tab title="EKS (Kubernetes)">
+    Best for: Containerized applications, microservices
+
+    ```sh
+    git clone https://github.com/nuonco/example-app-configs
+    cd example-app-configs/eks-simple
+    ```
+
+    This app deploys a simple web service on EKS with an ALB.
+  </Tab>
+</Tabs>
+
+## Step 4: Create and sync your app (2 min)
+
+```sh
+nuon apps create -n my-first-app
+nuon apps sync
+```
+
+You should see build output as Nuon packages each component. When complete, your app appears in the [dashboard](https://app.nuon.co).
+
+## Step 5: Create an install (3 min)
+
+1. Open the [Nuon dashboard](https://app.nuon.co)
+2. Select your app
+3. Click **Create Install**
+4. Enter a name and select your AWS region
+5. Accept the default inputs (you can customize later)
+6. Click **Create Install**
+
+Nuon generates a CloudFormation stack URL for your customer's AWS account.
+
+## Step 6: Run the CloudFormation stack (5 min)
+
+<Note>
+In this step, you're acting as "the customer" deploying the app in their AWS account.
+</Note>
+
+1. Click the CloudFormation link from the dashboard
+2. Log into your AWS account
+3. Scroll down and check the IAM acknowledgment box
+4. Click **Create Stack**
+
+The stack creates:
+- A VPC for the install
+- IAM roles with scoped permissions
+- A Nuon runner (an EC2 instance that executes deployments)
+
+Wait for the stack to complete (~3-5 minutes).
+
+## Step 7: Watch the deployment
+
+Back in the Nuon dashboard, watch as:
+1. The runner connects to Nuon
+2. The sandbox provisions (VPC, networking, EKS cluster if applicable)
+3. Components deploy in sequence
+4. Your app goes live
+
+<Tip>
+**Lambda apps** deploy in ~5 minutes. **EKS apps** take ~15-20 minutes (cluster provisioning).
+</Tip>
+
+## Step 8: Verify it works
+
+Once deployment completes, find the URL in your install's README (visible in the dashboard).
+
+<Tabs>
+  <Tab title="Lambda">
+    ```sh
+    # Create a record
+    curl -X POST https://api.<install-id>.nuon.run/widgets \
+         -H "Content-Type: application/json" \
+         -d '{"id":"1"}'
+
+    # Read it back
+    curl https://api.<install-id>.nuon.run/widgets/1
+    ```
+  </Tab>
+
+  <Tab title="EKS">
+    ```sh
+    curl https://whoami.<install-id>.nuon.run
+    ```
+
+    You should see hostname and request headers.
+  </Tab>
+</Tabs>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Understand the lifecycle" icon="arrows-rotate" href="/guides/app-install-life-cycle">
+    Learn how packaging, syncing, building, and deploying work together.
+  </Card>
+
+  <Card title="Build your own app" icon="hammer" href="/guides/terraform-components">
+    Start packaging your actual application with Terraform, Helm, or Kubernetes manifests.
+  </Card>
+
+  <Card title="Explore more samples" icon="folder-open" href="/get-started/sample-app-picker">
+    Find sample apps for ECS, Azure, GCP, and more.
+  </Card>
+
+  <Card title="Join the community" icon="slack" href="https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA">
+    Get help and share what you're building.
+  </Card>
+</CardGroup>
+
+## Clean up
+
+Don't forget to deprovision to avoid AWS charges:
+
+1. In the Nuon dashboard, select your install and click **Deprovision**
+2. Wait for deprovisioning to complete
+3. In AWS Console, delete the CloudFormation stack
+
+<Warning>
+The CloudFormation stack must be deleted manually after deprovisioning. It contains the runner VM and VPC.
+</Warning>

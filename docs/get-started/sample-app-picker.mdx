@@ -1,0 +1,209 @@
+---
+title: Find Your Sample App
+description: "Choose a sample app that matches your cloud and infrastructure."
+---
+
+Select your cloud provider and infrastructure type to find the right sample app for your use case. All sample apps are available in the [example-app-configs repository](https://github.com/nuonco/example-app-configs).
+
+## Choose Your Cloud
+
+<Tabs>
+  <Tab title="AWS">
+    ### AWS Sample Apps
+
+    <Tabs>
+      <Tab title="Kubernetes (EKS)">
+        #### EKS Simple
+        A Traefik whoami service on EKS with ALB and Route53 DNS.
+
+        **Best for:** Containerized apps, microservices, Helm-based deployments
+
+        **Components:** EKS cluster, ALB, Certificate, Helm chart
+
+        ```sh
+        git clone https://github.com/nuonco/example-app-configs
+        cd example-app-configs/eks-simple
+        nuon apps create -n eks-simple
+        nuon apps sync
+        ```
+
+        <Card title="Full tutorial" icon="book" href="/get-started/app-aws-k8s" />
+
+        ---
+
+        #### EKS with Karpenter
+        EKS with autoscaling via Karpenter for dynamic workloads.
+
+        **Best for:** Variable workloads, cost optimization
+
+        **Components:** EKS cluster, Karpenter, node pools
+
+        ```sh
+        cd example-app-configs/eks-karpenter
+        nuon apps create -n eks-karpenter
+        nuon apps sync
+        ```
+      </Tab>
+
+      <Tab title="Serverless (Lambda)">
+        #### AWS Lambda
+        A Lambda function with DynamoDB and API Gateway.
+
+        **Best for:** APIs, webhooks, event-driven apps, minimal infrastructure
+
+        **Components:** Lambda, DynamoDB, API Gateway, Certificate
+
+        ```sh
+        git clone https://github.com/nuonco/example-app-configs
+        cd example-app-configs/aws-lambda
+        nuon apps create -n aws-lambda
+        nuon apps sync
+        ```
+
+        <Card title="Full tutorial" icon="book" href="/get-started/app-aws-lambda" />
+      </Tab>
+
+      <Tab title="Containers (ECS)">
+        #### ECS Simple
+        A containerized service on ECS Fargate.
+
+        **Best for:** Container workloads without Kubernetes complexity
+
+        **Components:** ECS cluster, Fargate tasks, ALB
+
+        ```sh
+        git clone https://github.com/nuonco/example-app-configs
+        cd example-app-configs/ecs-simple
+        nuon apps create -n ecs-simple
+        nuon apps sync
+        ```
+      </Tab>
+
+      <Tab title="AI/ML">
+        #### AI Workload
+        ECS-based AI inference service with GPU support.
+
+        **Best for:** ML models, inference APIs
+
+        **Components:** ECS, GPU instances, model serving
+
+        ```sh
+        cd example-app-configs/ecs-ai
+        nuon apps create -n ecs-ai
+        nuon apps sync
+        ```
+      </Tab>
+    </Tabs>
+  </Tab>
+
+  <Tab title="Azure">
+    ### Azure Sample Apps
+
+    <Tabs>
+      <Tab title="Kubernetes (AKS)">
+        #### AKS Simple
+        A simple web service on Azure Kubernetes Service.
+
+        **Best for:** Containerized apps on Azure
+
+        **Components:** AKS cluster, Ingress, Azure DNS
+
+        ```sh
+        git clone https://github.com/nuonco/example-app-configs
+        cd example-app-configs/azure-aks
+        nuon apps create -n azure-aks
+        nuon apps sync
+        ```
+
+        <Note>
+        Azure support requires CLI-based install creation. Dashboard GUI install is coming soon.
+        </Note>
+      </Tab>
+    </Tabs>
+  </Tab>
+
+  <Tab title="GCP">
+    ### GCP Sample Apps
+
+    <Tabs>
+      <Tab title="Kubernetes (GKE)">
+        #### GKE Simple
+        A web service on Google Kubernetes Engine.
+
+        **Best for:** Containerized apps on GCP
+
+        **Components:** GKE cluster, Ingress, Cloud DNS
+
+        ```sh
+        git clone https://github.com/nuonco/example-app-configs
+        cd example-app-configs/gcp-gke
+        nuon apps create -n gcp-gke
+        nuon apps sync
+        ```
+
+        <Note>
+        GCP support requires CLI-based install creation.
+        </Note>
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+
+## All Sample Apps
+
+Complete list of sample apps in the [example-app-configs repository](https://github.com/nuonco/example-app-configs):
+
+| App | Cloud | Infrastructure | Description |
+|-----|-------|----------------|-------------|
+| `eks-simple` | AWS | EKS | Whoami service with ALB |
+| `eks-karpenter` | AWS | EKS + Karpenter | Autoscaling Kubernetes |
+| `aws-lambda` | AWS | Lambda | Serverless API with DynamoDB |
+| `ecs-simple` | AWS | ECS Fargate | Containerized service |
+| `ecs-ai` | AWS | ECS + GPU | AI inference workload |
+| `azure-aks` | Azure | AKS | Kubernetes on Azure |
+| `gcp-gke` | GCP | GKE | Kubernetes on GCP |
+
+## Building Your Own App
+
+Once you've explored a sample app, you're ready to package your own:
+
+<CardGroup cols={2}>
+  <Card title="Terraform Components" icon="cube" href="/guides/terraform-components">
+    Package existing Terraform modules.
+  </Card>
+
+  <Card title="Helm Charts" icon="dharmachakra" href="/guides/helm-chart-components">
+    Deploy Helm charts to customer clusters.
+  </Card>
+
+  <Card title="Kubernetes Manifests" icon="ship" href="/guides/kubernetes-manifest-components">
+    Deploy raw Kubernetes YAML.
+  </Card>
+
+  <Card title="Docker Builds" icon="docker" href="/guides/docker-build-components">
+    Build and deploy container images.
+  </Card>
+</CardGroup>
+
+## Need Help Choosing?
+
+<AccordionGroup>
+  <Accordion title="I'm not sure which infrastructure to use">
+    - **Lambda**: Best for APIs and event-driven workloads with minimal ops
+    - **ECS**: Good for containers without Kubernetes complexity
+    - **EKS/AKS/GKE**: Best for complex applications, microservices, or when you already use Kubernetes
+  </Accordion>
+
+  <Accordion title="My app uses multiple infrastructure types">
+    Nuon apps can combine components. For example, you might use:
+    - EKS for your main application
+    - RDS (via Terraform) for your database
+    - Lambda for background jobs
+
+    Each component type can be mixed in a single app.
+  </Accordion>
+
+  <Accordion title="I need to use existing customer infrastructure">
+    Check out the [Bring Your Own Network](/guides/bring-your-own-network) guide for deploying into existing VPCs and Kubernetes clusters.
+  </Accordion>
+</AccordionGroup>

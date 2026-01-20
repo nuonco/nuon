@@ -1,0 +1,129 @@
+---
+title: Understanding Permissions
+description: "What access your vendor gets and why."
+---
+
+When you run the installation stack, you're granting your vendor's runner specific permissions to deploy and manage their application. This guide explains what those permissions are and how they're scoped.
+
+## Permission model
+
+Nuon uses a **least-privilege model** with three distinct roles:
+
+| Role | When it's used | Typical permissions |
+|------|----------------|---------------------|
+| **Provision** | Initial deployment | Create resources (VPCs, clusters, databases) |
+| **Deprovision** | Removing the application | Delete resources |
+| **Maintenance** | Day-to-day operations | Read/update resources, view logs, restart services |
+
+Each role is defined by your vendor and visible in the CloudFormation/Bicep/Terraform template before you deploy.
+
+## Reviewing permissions before deployment
+
+### AWS CloudFormation
+
+Before creating the stack:
+
+1. In the CloudFormation console, click **View in Designer** or download the template
+2. Search for `AWS::IAM::Role` resources
+3. Review the `Policies` attached to each role
+
+Look for:
+- Resource ARNs: Should be scoped to specific resources, not `*`
+- Actions: Should match what the application actually needs
+- Conditions: May include additional restrictions
+
+### Example: Scoped permissions
+
+Good (scoped to specific resources):
+```json
+{
+  "Effect": "Allow",
+  "Action": ["eks:DescribeCluster"],
+  "Resource": "arn:aws:eks:us-west-2:*:cluster/n-*"
+}
+```
+
+Overly broad (avoid):
+```json
+{
+  "Effect": "Allow",
+  "Action": ["eks:*"],
+  "Resource": "*"
+}
+```
+
+## What the vendor CAN do
+
+With typical Nuon permissions, your vendor can:
+
+- **Deploy components**: Terraform modules, Helm charts, Kubernetes manifests
+- **Update configurations**: Apply new versions, change settings
+- **Run operations**: Health checks, log collection, restart services
+- **View metadata**: Resource names, status, basic metrics
+
+## What the vendor CANNOT do
+
+By design, Nuon restricts:
+
+- **Direct console access**: No AWS/Azure/GCP console login
+- **Credential access**: Cannot retrieve or export cloud credentials
+- **Data access**: Cannot read your application data (unless explicitly permissioned)
+- **Unscoped operations**: Only actions within defined permission boundaries
+
+## Break-glass access
+
+For emergencies, your vendor may request temporary elevated access:
+
+1. **Vendor requests break-glass** from their dashboard
+2. **You receive a stack update** with the additional permissions
+3. **You review and approve** (or reject) the update
+4. **Access expires** after the configured time window (typically hours)
+
+<Note>
+Break-glass access is disabled by default and requires your explicit approval via a stack update.
+</Note>
+
+## Auditing vendor activity
+
+All runner operations are logged. Your vendor can provide audit exports showing:
+
+- What actions were taken
+- When they occurred
+- Who initiated them
+- The outcome
+
+For sensitive environments, ask your vendor for regular audit log delivery.
+
+## Revoking access
+
+You can revoke vendor access at any time:
+
+### Immediate (emergency)
+Stop the runner EC2/VM instance. This immediately cuts off all vendor access.
+
+### Graceful (planned)
+1. Request deprovisioning from your vendor
+2. Wait for cleanup to complete
+3. Delete the CloudFormation stack
+
+## Questions to ask your vendor
+
+Before deployment, consider asking:
+
+<AccordionGroup>
+  <Accordion title="What's the minimum permission set?">
+    Ask your vendor to explain why each permission is needed. Good vendors will have documentation mapping permissions to functionality.
+  </Accordion>
+
+  <Accordion title="How are permissions updated?">
+    Changes to permissions require a stack update, which you must approve. Your vendor cannot unilaterally expand their access.
+  </Accordion>
+
+  <Accordion title="What data do you access?">
+    Clarify what application data, if any, the vendor needs to access for operations. This should be documented.
+  </Accordion>
+
+  <Accordion title="How long are audit logs retained?">
+    Understand the audit log retention policy and how to request exports for compliance purposes.
+  </Accordion>
+</AccordionGroup>

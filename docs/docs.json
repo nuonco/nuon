@@ -14,69 +14,24 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "Get Started",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Welcome",
             "pages": [
               "get-started/introduction",
-              "get-started/quickstart",
-              "get-started/create-your-first-app"
+              "get-started/ship-byoc-fast",
+              "get-started/byoc-at-scale",
+              "get-started/sample-app-picker"
             ]
           },
           {
-            "group": "Resources",
+            "group": "Tutorials",
             "pages": [
-              "cli",
-              "deployment-options",
-              "dashboard",
-              "configuration-files",
-              "nuon-api",
-              "sdks",
-              {
-                "group": "Config Reference",
-                "pages": [
-                  "config-ref/index",
-                  {
-                    "group": "Component Types",
-                    "pages": [
-                      "config-ref/component-root",
-                      "config-ref/container-image",
-                      "config-ref/docker-build",
-                      "config-ref/helm",
-                      "config-ref/kubernetes-manifest",
-                      "config-ref/terraform"
-                    ]
-                  },
-                  {
-                    "group": "Configuration Types",
-                    "pages": [
-                      "config-ref/inputs",
-                      "config-ref/metadata",
-                      "config-ref/permissions",
-                      "config-ref/policies",
-                      "config-ref/secrets"
-                    ]
-                  },
-                  {
-                    "group": "Other Types",
-                    "pages": [
-                      "config-ref/action",
-                      "config-ref/break-glass",
-                      "config-ref/full",
-                      "config-ref/input",
-                      "config-ref/input-group",
-                      "config-ref/install",
-                      "config-ref/installer",
-                      "config-ref/policy",
-                      "config-ref/runner",
-                      "config-ref/sandbox",
-                      "config-ref/secret",
-                      "config-ref/stack"
-                    ]
-                  }
-                ]
-              }
+              "get-started/quickstart",
+              "get-started/create-your-first-app",
+              "get-started/app-aws-lambda",
+              "get-started/app-aws-k8s"
             ]
           },
           {
@@ -91,7 +46,171 @@
         ]
       },
       {
-        "tab": "Changelog",
+        "tab": "How It Works",
+        "groups": [
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "runner-architecture",
+              "concepts/apps",
+              "concepts/sandboxes",
+              "concepts/components",
+              "concepts/installs"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "concepts/actions",
+              "concepts/workflows",
+              "concepts/runners"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "concepts/app-inputs",
+              "concepts/app-variables",
+              "concepts/app-secrets"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Essential",
+            "pages": [
+              "guides/app-install-life-cycle",
+              "guides/vcs"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "guides/terraform-components",
+              "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
+              "guides/docker-build-components",
+              "guides/container-image-components",
+              "guides/component-dependencies"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "guides/actions",
+              "guides/using-variables",
+              "guides/using-readmes",
+              "guides/install-access-permissions",
+              "guides/runner-management-mode"
+            ]
+          },
+          {
+            "group": "Architectures",
+            "pages": [
+              "guides/bring-your-own-network",
+              "guides/byoc",
+              "guides/custom-domains",
+              "guides/sandbox-orgs"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "guides/notifications",
+              "guides/github-actions"
+            ]
+          },
+          {
+            "group": "Team & Admin",
+            "pages": [
+              "guides/team-management"
+            ]
+          },
+          {
+            "group": "Production Readiness",
+            "pages": [
+              "production-readiness/introduction",
+              "production-readiness/package",
+              "production-readiness/deploy",
+              "production-readiness/monitor",
+              "production-readiness/debug",
+              "production-readiness/break-glass",
+              "production-readiness/customer-setup"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Tools",
+            "pages": [
+              "cli",
+              "nuon-api",
+              "sdks"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration-files",
+              "deployment-options",
+              "dashboard"
+            ]
+          },
+          {
+            "group": "Config Reference",
+            "pages": [
+              "config-ref/index",
+              {
+                "group": "Component Types",
+                "pages": [
+                  "config-ref/component-root",
+                  "config-ref/container-image",
+                  "config-ref/docker-build",
+                  "config-ref/helm",
+                  "config-ref/kubernetes-manifest",
+                  "config-ref/terraform"
+                ]
+              },
+              {
+                "group": "Configuration Types",
+                "pages": [
+                  "config-ref/inputs",
+                  "config-ref/metadata",
+                  "config-ref/permissions",
+                  "config-ref/policies",
+                  "config-ref/secrets"
+                ]
+              },
+              {
+                "group": "Other Types",
+                "pages": [
+                  "config-ref/action",
+                  "config-ref/break-glass",
+                  "config-ref/full",
+                  "config-ref/input",
+                  "config-ref/input-group",
+                  "config-ref/install",
+                  "config-ref/installer",
+                  "config-ref/policy",
+                  "config-ref/runner",
+                  "config-ref/sandbox",
+                  "config-ref/secret",
+                  "config-ref/stack"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "What's New",
         "pages": [
           "updates/updates",
           "updates/028-open-source",
@@ -125,75 +244,7 @@
         ]
       },
       {
-        "tab": "Architecture",
-        "pages": ["runner-architecture"]
-      },
-      {
-        "tab": "Concepts",
-        "pages": [
-          "concepts/overview",
-          "concepts/apps",
-          "concepts/sandboxes",
-          "concepts/components",
-          "concepts/installs",
-          "concepts/actions",
-          "concepts/workflows",
-          "concepts/runners",
-          "concepts/app-inputs",
-          "concepts/app-variables",
-          "concepts/app-secrets"
-        ]
-      },
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Configuration",
-            "pages": [
-              "guides/app-install-life-cycle",
-              "guides/vcs",
-              "guides/docker-build-components",
-              "guides/container-image-components",
-              "guides/terraform-components",
-              "guides/helm-chart-components",
-              "guides/kubernetes-manifest-components",
-              "guides/component-dependencies",
-              "guides/actions"
-            ]
-          },
-          {
-            "group": "How To",
-            "pages": [
-              "guides/byoc",
-              "guides/install-access-permissions",
-              "guides/using-variables",
-              "guides/using-readmes",
-              "guides/custom-domains",
-              "guides/sandbox-orgs",
-              "guides/team-management",
-              "guides/runner-management-mode"
-            ]
-          },
-          {
-            "group": "Integrations",
-            "pages": ["guides/notifications", "guides/github-actions"]
-          },
-          {
-            "group": "Production-Readiness Checklist",
-            "pages": [
-              "production-readiness/introduction",
-              "production-readiness/package",
-              "production-readiness/monitor",
-              "production-readiness/deploy",
-              "production-readiness/debug",
-              "production-readiness/break-glass",
-              "production-readiness/customer-setup"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Support",
+        "tab": "Community",
         "pages": ["support/support"]
       }
     ],
@@ -250,15 +301,15 @@
     },
     {
       "source": "/changelog",
-      "destination": "/updates/changelog"
+      "destination": "/updates/updates"
     },
     {
       "source": "/roadmap",
-      "destination": "/updates/roadmap"
+      "destination": "/updates/updates"
     },
     {
       "source": "/faq",
-      "destination": "/support/faq"
+      "destination": "/support/support"
     }
   ]
 }

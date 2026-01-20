@@ -1,0 +1,142 @@
+---
+title: Installing in Your Cloud
+description: "How to deploy a vendor's application using Nuon."
+---
+
+Your vendor has provided a link to install their application in your cloud account. This guide walks through the installation process.
+
+## Before you begin
+
+You'll need:
+- An AWS, Azure, or GCP account with administrator access
+- The installation link provided by your vendor
+- ~10-30 minutes depending on the complexity of the application
+
+## Installation steps
+
+<Tabs>
+  <Tab title="AWS">
+    ### AWS CloudFormation Installation
+
+    1. **Click the CloudFormation link** provided by your vendor
+    2. **Log into AWS Console** if prompted
+    3. **Review the stack parameters**
+       - Most parameters have sensible defaults
+       - Your vendor may have noted specific values to change
+    4. **Scroll to the bottom** and check the acknowledgment boxes
+       - "I acknowledge that AWS CloudFormation might create IAM resources"
+       - "I acknowledge that AWS CloudFormation might create IAM resources with custom names"
+    5. **Click "Create stack"**
+
+    The stack typically takes 5-10 minutes to create. It provisions:
+    - A VPC (or uses your existing VPC if configured)
+    - IAM roles with the permissions your vendor needs
+    - An EC2 instance running the Nuon runner
+
+    ### Monitoring progress
+
+    In the CloudFormation console:
+    1. Select your stack
+    2. Click the "Events" tab
+    3. Watch for `CREATE_COMPLETE` status
+
+    Once the stack completes, the vendor's dashboard will show your install as connected.
+  </Tab>
+
+  <Tab title="Azure">
+    ### Azure Bicep Installation
+
+    Your vendor will provide either a Bicep template or ARM template.
+
+    1. **Open Azure Portal** and navigate to "Deploy a custom template"
+    2. **Upload the template** provided by your vendor
+    3. **Fill in required parameters**
+    4. **Review and create**
+
+    The deployment creates:
+    - Resource group (if not existing)
+    - Managed identities with scoped permissions
+    - A VM running the Nuon runner
+  </Tab>
+
+  <Tab title="GCP">
+    ### GCP Terraform Installation
+
+    Your vendor will provide Terraform configuration.
+
+    1. **Clone or download** the provided Terraform files
+    2. **Configure your GCP credentials** (`gcloud auth application-default login`)
+    3. **Run Terraform**:
+       ```sh
+       terraform init
+       terraform plan
+       terraform apply
+       ```
+
+    The deployment creates:
+    - VPC and networking (if not using existing)
+    - Service accounts with scoped permissions
+    - A GCE instance running the Nuon runner
+  </Tab>
+</Tabs>
+
+## What happens next
+
+After installation:
+
+1. **Runner connects** to your vendor's control plane (outbound only)
+2. **Application deploys** according to your vendor's configuration
+3. **You receive access** to the deployed application (URL, credentials, etc.)
+
+Deployment time varies:
+- Serverless apps: ~5-10 minutes
+- Kubernetes apps: ~15-30 minutes
+- Complex applications: varies
+
+Your vendor will provide specific timelines.
+
+## Verifying the installation
+
+After the stack completes:
+
+1. **Check EC2/VM** for a running instance with your install ID in the name
+2. **Confirm with vendor** that they see your install as connected
+3. **Test the application** using the access details provided
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Stack creation failed">
+    Check the CloudFormation Events tab for specific error messages. Common issues:
+    - Insufficient IAM permissions to create the stack
+    - Service limits exceeded (e.g., VPC limit)
+    - Region-specific service availability
+
+    Share the error with your vendor for assistance.
+  </Accordion>
+
+  <Accordion title="Runner not connecting">
+    Ensure:
+    - The EC2/VM instance is running
+    - Outbound internet access is available
+    - No firewall is blocking HTTPS traffic
+
+    The runner needs to reach your vendor's control plane on port 443.
+  </Accordion>
+
+  <Accordion title="Application not working after deployment">
+    Contact your vendor's support. They can view deployment logs and troubleshoot from their dashboard.
+  </Accordion>
+</AccordionGroup>
+
+## Uninstalling
+
+To remove the installation:
+
+1. **Contact your vendor** and request deprovisioning from their dashboard
+2. **Wait for deprovisioning** to complete (this removes the application components)
+3. **Delete the CloudFormation stack** (this removes the runner and VPC)
+
+<Warning>
+Always deprovision through the vendor first. Deleting the CloudFormation stack directly may leave orphaned resources.
+</Warning>

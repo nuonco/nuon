@@ -1,43 +1,106 @@
 ---
 title: Introduction
-description: "Nuon is a platform for creating BYOC applications."
+description: "Ship to customer clouds without building a platform team."
 ---
 
 import { YoutubeEmbed } from '/snippets/youtube-embed.mdx'
-import { tutorials } from '/snippets/guides.mdx';
 
+Nuon enables SaaS vendors to deploy and continuously update applications in their customers' cloud accounts—securely, with every git push. You manage your app. Your customer controls their environment.
+
+## New to Nuon?
+
+Choose the path that matches where you are:
+
+<CardGroup cols={3}>
+  <Card title="Ship BYOC Fast" icon="rocket" href="/get-started/ship-byoc-fast">
+    **For startups and new users**
+
+    Deploy your first app to a customer cloud in 15 minutes. Clone a sample app, sync it, and create your first install.
+  </Card>
+
+  <Card title="BYOC at Scale" icon="building" href="/get-started/byoc-at-scale">
+    **For enterprise evaluation**
+
+    Evaluating Nuon for production? Understand the security model, architectures, and day-2 operations.
+  </Card>
+
+  <Card title="Find Your Sample App" icon="compass" href="/get-started/sample-app-picker">
+    **Know what you need?**
+
+    Jump straight to a sample app that matches your cloud and infrastructure requirements.
+  </Card>
+</CardGroup>
+
+## See Nuon in 90 Seconds
 
 <YoutubeEmbed src="https://www.youtube.com/embed/LXoczC247zg?t=1"/>
 
-<Note>
-If you are new to Nuon, we recommend understanding the life cycle of packaging your app, installing your app into customer clouds, and updating, monitoring and remediating the installs by reading our [App and Install Life Cycle guide](../guides/app-install-life-cycle).
-</Note>
+## What problems does Nuon solve?
 
-## Documentation
+<AccordionGroup>
+  <Accordion title="Deploy into different customer environments">
+    Every customer is different. Some want BYOVPC, others need BYOLLM or bring-your-own-bucket. Nuon lets you deploy the same app into diverse customer environments—turning pets into cattle.
+
+    One app. Many environments. Zero forks.
+  </Accordion>
+
+  <Accordion title="Continuously update every customer">
+    Push updates to all customer deployments from a single pipeline. Nuon handles approvals, drift detection, and rollbacks. You ship updates. Your customer approves them.
+  </Accordion>
+
+  <Accordion title="Give your customer control">
+    Your customers see exactly what's deployed in their cloud. They control update timing, approve changes, and maintain full audit trails. Managed by you, controlled by your customer.
+  </Accordion>
+</AccordionGroup>
+
+## Core Concepts
 
 <CardGroup cols={2}>
-
-  <Card title="Changelog" icon="check" href="/updates/updates">
-    Our changelog and public roadmap.
+  <Card title="How It Works" icon="diagram-project" href="/concepts/overview">
+    Understand apps, installs, sandboxes, and components.
   </Card>
 
-  <Card title="Concepts" icon="code" href="/concepts/overview">
-    Learn the basic concepts behind Nuon.
+  <Card title="Runner Architecture" icon="server" href="/runner-architecture">
+    Learn how Nuon's egress-only runner provides secure access to customer clouds.
   </Card>
 
-  <Card title="Architecture" icon="code" href="/runner-architecture">
-    Learn about the architecture of Nuon, and how it works with your cloud account.
+  <Card title="App & Install Lifecycle" icon="arrows-rotate" href="/guides/app-install-life-cycle">
+    Package, sync, install, update, monitor—the complete journey.
   </Card>
 
-  <Card title="Get Started" icon="code" href="/get-started/quickstart">
-    Learn how to create different BYOC applications.
+  <Card title="Production Readiness" icon="clipboard-check" href="/production-readiness/introduction">
+    Checklist for taking your BYOC offering to production.
+  </Card>
+</CardGroup>
+
+## Popular Guides
+
+<CardGroup cols={3}>
+  <Card title="Terraform Components" icon="cube" href="/guides/terraform-components">
+    Deploy Terraform modules as app components.
   </Card>
 
-  <Card title="Guides" icon="check" href="/guides">
-    Learn how to configure applications, integrate, and extend Nuon.
+  <Card title="Helm Charts" icon="dharmachakra" href="/guides/helm-chart-components">
+    Deploy Helm charts to customer Kubernetes clusters.
   </Card>
 
-  <Card title="Support" icon="headset" href="/support/support">
-    Get help with the Nuon platform through our community Slack or by directly booking a call.
+  <Card title="Actions" icon="play" href="/guides/actions">
+    Define operational tasks for monitoring and remediation.
+  </Card>
+</CardGroup>
+
+## Platform Support
+
+<CardGroup cols={3}>
+  <Card title="AWS" icon="aws" href="/platform-support/aws">
+    CloudFormation stacks, EKS, Lambda, and more.
+  </Card>
+
+  <Card title="Azure" icon="microsoft" href="/platform-support/azure">
+    Bicep templates and AKS support.
+  </Card>
+
+  <Card title="GCP" icon="google" href="/platform-support/gcp">
+    Terraform and Infrastructure Manager.
   </Card>
 </CardGroup>
