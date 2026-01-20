@@ -167,6 +167,8 @@ type ClientService interface {
 
 /*
 CreateHelmRelease creates helm release
+
+Create a Helm release in the install environment.
 */
 func (a *Client) CreateHelmRelease(params *CreateHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmReleaseOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -443,6 +445,8 @@ func (a *Client) CreateRunnerJobExecutionResult(params *CreateRunnerJobExecution
 
 /*
 CreateTerraformWorkspace creates terraform workspace
+
+Create a terraform workspace.
 */
 func (a *Client) CreateTerraformWorkspace(params *CreateTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -487,6 +491,8 @@ func (a *Client) CreateTerraformWorkspace(params *CreateTerraformWorkspaceParams
 
 /*
 CreateTerraformWorkspaceV2 creates terraform workspace
+
+Create a terraform workspace.
 */
 func (a *Client) CreateTerraformWorkspaceV2(params *CreateTerraformWorkspaceV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceV2Created, error) {
 	// NOTE: parameters are not validated before sending
@@ -531,6 +537,8 @@ func (a *Client) CreateTerraformWorkspaceV2(params *CreateTerraformWorkspaceV2Pa
 
 /*
 DeleteHelmRelease deletes helm release
+
+Delete a Helm release from the install environment.
 */
 func (a *Client) DeleteHelmRelease(params *DeleteHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteHelmReleaseOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -575,6 +583,8 @@ func (a *Client) DeleteHelmRelease(params *DeleteHelmReleaseParams, authInfo run
 
 /*
 DeleteTerraformState deletes terraform state
+
+Delete a terraform state.
 */
 func (a *Client) DeleteTerraformState(params *DeleteTerraformStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTerraformStateOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -619,6 +629,8 @@ func (a *Client) DeleteTerraformState(params *DeleteTerraformStateParams, authIn
 
 /*
 DeleteTerraformStateJSON deletes terraform state json
+
+Delete a terraform state using JSON format.
 */
 func (a *Client) DeleteTerraformStateJSON(params *DeleteTerraformStateJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTerraformStateJSONOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -663,6 +675,8 @@ func (a *Client) DeleteTerraformStateJSON(params *DeleteTerraformStateJSONParams
 
 /*
 DeleteTerraformWorkspace deletes terraform workspace
+
+Delete a terraform workspace.
 */
 func (a *Client) DeleteTerraformWorkspace(params *DeleteTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -891,6 +905,8 @@ func (a *Client) GetAppActionConfig(params *GetAppActionConfigParams, authInfo r
 
 /*
 GetHelmRelease gets helm release
+
+Return a Helm release by id.
 */
 func (a *Client) GetHelmRelease(params *GetHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetHelmReleaseOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -935,6 +951,8 @@ func (a *Client) GetHelmRelease(params *GetHelmReleaseParams, authInfo runtime.C
 
 /*
 GetHelmReleases gets helm releases
+
+Returns all Helm releases for an install.
 */
 func (a *Client) GetHelmReleases(params *GetHelmReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetHelmReleasesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1071,6 +1089,8 @@ func (a *Client) GetInstallActionWorkflowRun(params *GetInstallActionWorkflowRun
 
 /*
 GetInstallComponenetLastActivePlan gets an install component s previous config
+
+Returns the last active deployment plan for an install component.
 */
 func (a *Client) GetInstallComponenetLastActivePlan(params *GetInstallComponenetLastActivePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponenetLastActivePlanOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1621,6 +1641,8 @@ func (a *Client) GetRunnerSettings(params *GetRunnerSettingsParams, authInfo run
 
 /*
 GetTerraformCurrentStateData gets current terraform
+
+Returns the current terraform state.
 */
 func (a *Client) GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1665,6 +1687,8 @@ func (a *Client) GetTerraformCurrentStateData(params *GetTerraformCurrentStateDa
 
 /*
 GetTerraformStateJSON gets terraform state json
+
+Return a terraform state in JSON format.
 */
 func (a *Client) GetTerraformStateJSON(params *GetTerraformStateJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformStateJSONOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1709,6 +1733,8 @@ func (a *Client) GetTerraformStateJSON(params *GetTerraformStateJSONParams, auth
 
 /*
 GetTerraformStates gets terraform states
+
+Returns terraform states for an install.
 */
 func (a *Client) GetTerraformStates(params *GetTerraformStatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformStatesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1753,6 +1779,8 @@ func (a *Client) GetTerraformStates(params *GetTerraformStatesParams, authInfo r
 
 /*
 GetTerraformStatesV2 gets terraform states
+
+Returns terraform states for an install.
 */
 func (a *Client) GetTerraformStatesV2(params *GetTerraformStatesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformStatesV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1797,6 +1825,8 @@ func (a *Client) GetTerraformStatesV2(params *GetTerraformStatesV2Params, authIn
 
 /*
 GetTerraformWorkspace gets terraform workspace
+
+Return a terraform workspace by id.
 */
 func (a *Client) GetTerraformWorkspace(params *GetTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1841,6 +1871,8 @@ func (a *Client) GetTerraformWorkspace(params *GetTerraformWorkspaceParams, auth
 
 /*
 GetTerraformWorkspaceStateByID gets terraform state by ID
+
+Return a terraform state by id.
 */
 func (a *Client) GetTerraformWorkspaceStateByID(params *GetTerraformWorkspaceStateByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateByIDOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1885,6 +1917,8 @@ func (a *Client) GetTerraformWorkspaceStateByID(params *GetTerraformWorkspaceSta
 
 /*
 GetTerraformWorkspaceStateByIDV2 gets terraform state by ID
+
+Return a terraform state by id.
 */
 func (a *Client) GetTerraformWorkspaceStateByIDV2(params *GetTerraformWorkspaceStateByIDV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateByIDV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1929,6 +1963,8 @@ func (a *Client) GetTerraformWorkspaceStateByIDV2(params *GetTerraformWorkspaceS
 
 /*
 GetTerraformWorkspaceStateResources gets terraform state resources
+
+Returns resources within a terraform state.
 */
 func (a *Client) GetTerraformWorkspaceStateResources(params *GetTerraformWorkspaceStateResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateResourcesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -1973,6 +2009,8 @@ func (a *Client) GetTerraformWorkspaceStateResources(params *GetTerraformWorkspa
 
 /*
 GetTerraformWorkspaces gets terraform workspaces
+
+Returns all terraform workspaces.
 */
 func (a *Client) GetTerraformWorkspaces(params *GetTerraformWorkspacesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspacesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -2017,6 +2055,8 @@ func (a *Client) GetTerraformWorkspaces(params *GetTerraformWorkspacesParams, au
 
 /*
 LockTerraformWorkspace locks terraform state
+
+Lock a terraform workspace to prevent concurrent modifications.
 */
 func (a *Client) LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -2107,6 +2147,8 @@ func (a *Client) LogStreamWriteLogs(params *LogStreamWriteLogsParams, authInfo r
 
 /*
 PublishMetrics publishes a metric from different nuon clients for telemetry purposes
+
+Publish deployment metrics from the runner.
 */
 func (a *Client) PublishMetrics(params *PublishMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PublishMetricsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -2247,6 +2289,8 @@ func (a *Client) RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, auth
 
 /*
 UnlockTerraformWorkspace unlocks terraform workspace
+
+Unlock a terraform workspace.
 */
 func (a *Client) UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -2479,6 +2523,8 @@ func (a *Client) UpdateRunnerJobV2(params *UpdateRunnerJobV2Params, authInfo run
 
 /*
 UpdateTerraformState updates terraform state
+
+Update a terraform state.
 */
 func (a *Client) UpdateTerraformState(params *UpdateTerraformStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -2523,6 +2569,8 @@ func (a *Client) UpdateTerraformState(params *UpdateTerraformStateParams, authIn
 
 /*
 UpdateTerraformStateJSON updates terraform state json
+
+Update a terraform state using JSON format.
 */
 func (a *Client) UpdateTerraformStateJSON(params *UpdateTerraformStateJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateJSONOK, error) {
 	// NOTE: parameters are not validated before sending

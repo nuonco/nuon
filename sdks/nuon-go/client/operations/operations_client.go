@@ -643,6 +643,8 @@ type ClientService interface {
 
 /*
 AddUser adds a user to the current org
+
+Add a user to an organization.
 */
 func (a *Client) AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -687,6 +689,8 @@ func (a *Client) AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoW
 
 /*
 BuildAllComponents creates component build
+
+Build all components for an app.
 */
 func (a *Client) BuildAllComponents(params *BuildAllComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAllComponentsCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -731,6 +735,8 @@ func (a *Client) BuildAllComponents(params *BuildAllComponentsParams, authInfo r
 
 /*
 CancelInstallWorkflow cancels an ongoing install workflow
+
+Cancel a running workflow execution.
 */
 func (a *Client) CancelInstallWorkflow(params *CancelInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallWorkflowAccepted, error) {
 	// NOTE: parameters are not validated before sending
@@ -821,6 +827,8 @@ func (a *Client) CancelRunnerJob(params *CancelRunnerJobParams, authInfo runtime
 
 /*
 CancelWorkflow cancels an ongoing workflow
+
+Cancel a running workflow execution.
 */
 func (a *Client) CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowAccepted, error) {
 	// NOTE: parameters are not validated before sending
@@ -978,6 +986,8 @@ func (a *Client) CompleteUserJourney(params *CompleteUserJourneyParams, authInfo
 
 /*
 CreateActionConfig creates action config
+
+Create an action workflow configuration.
 */
 func (a *Client) CreateActionConfig(params *CreateActionConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateActionConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1022,6 +1032,8 @@ func (a *Client) CreateActionConfig(params *CreateActionConfigParams, authInfo r
 
 /*
 CreateActionWorkflowConfig creates action workflow config
+
+Create an action workflow configuration.
 */
 func (a *Client) CreateActionWorkflowConfig(params *CreateActionWorkflowConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateActionWorkflowConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1066,6 +1078,8 @@ func (a *Client) CreateActionWorkflowConfig(params *CreateActionWorkflowConfigPa
 
 /*
 CreateApp creates an app
+
+Create a new app.
 */
 func (a *Client) CreateApp(params *CreateAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1110,6 +1124,8 @@ func (a *Client) CreateApp(params *CreateAppParams, authInfo runtime.ClientAuthI
 
 /*
 CreateAppAction creates an app action
+
+Create an action workflow for an app.
 */
 func (a *Client) CreateAppAction(params *CreateAppActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppActionCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1154,6 +1170,8 @@ func (a *Client) CreateAppAction(params *CreateAppActionParams, authInfo runtime
 
 /*
 CreateAppActionWorkflow creates an app action workflow
+
+Create an action workflow for an app.
 */
 func (a *Client) CreateAppActionWorkflow(params *CreateAppActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppActionWorkflowCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1286,6 +1304,8 @@ func (a *Client) CreateAppBreakGlassConfig(params *CreateAppBreakGlassConfigPara
 
 /*
 CreateAppComponentBuild creates component build
+
+Create a build for a component.
 */
 func (a *Client) CreateAppComponentBuild(params *CreateAppComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppComponentBuildCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1422,6 +1442,8 @@ func (a *Client) CreateAppConfigV2(params *CreateAppConfigV2Params, authInfo run
 
 /*
 CreateAppDockerBuildComponentConfig creates a docker build component config
+
+Create a Docker build component config.
 */
 func (a *Client) CreateAppDockerBuildComponentConfig(params *CreateAppDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppDockerBuildComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1466,6 +1488,8 @@ func (a *Client) CreateAppDockerBuildComponentConfig(params *CreateAppDockerBuil
 
 /*
 CreateAppExternalImageComponentConfig creates an external image component config
+
+Create an external image component config.
 */
 func (a *Client) CreateAppExternalImageComponentConfig(params *CreateAppExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppExternalImageComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1602,6 +1626,8 @@ func (a *Client) CreateAppInputConfig(params *CreateAppInputConfigParams, authIn
 
 /*
 CreateAppJobComponentConfig creates a job component config
+
+Create a job component config.
 */
 func (a *Client) CreateAppJobComponentConfig(params *CreateAppJobComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppJobComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1646,6 +1672,8 @@ func (a *Client) CreateAppJobComponentConfig(params *CreateAppJobComponentConfig
 
 /*
 CreateAppKubernetesManifestComponentConfig creates a kubernetes manifest component config
+
+Create a Kubernetes manifest component config.
 */
 func (a *Client) CreateAppKubernetesManifestComponentConfig(params *CreateAppKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesManifestComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1778,6 +1806,8 @@ func (a *Client) CreateAppPoliciesConfig(params *CreateAppPoliciesConfigParams, 
 
 /*
 CreateAppRunnerConfig creates an app runner config
+
+Create a runner configuration for an app.
 */
 func (a *Client) CreateAppRunnerConfig(params *CreateAppRunnerConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppRunnerConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1822,6 +1852,8 @@ func (a *Client) CreateAppRunnerConfig(params *CreateAppRunnerConfigParams, auth
 
 /*
 CreateAppSandboxConfig creates an app sandbox config
+
+Create a sandbox configuration for an app.
 */
 func (a *Client) CreateAppSandboxConfig(params *CreateAppSandboxConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppSandboxConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -1866,6 +1898,8 @@ func (a *Client) CreateAppSandboxConfig(params *CreateAppSandboxConfigParams, au
 
 /*
 CreateAppSandboxConfigV2 creates an app sandbox config
+
+Create a sandbox configuration for an app.
 */
 func (a *Client) CreateAppSandboxConfigV2(params *CreateAppSandboxConfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppSandboxConfigV2Created, error) {
 	// NOTE: parameters are not validated before sending
@@ -2142,6 +2176,8 @@ func (a *Client) CreateAppTerraformModuleComponentConfig(params *CreateAppTerraf
 
 /*
 CreateComponent creates a component
+
+Create a new component for an app.
 */
 func (a *Client) CreateComponent(params *CreateComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2186,6 +2222,8 @@ func (a *Client) CreateComponent(params *CreateComponentParams, authInfo runtime
 
 /*
 CreateComponentBuild creates component build
+
+Create a build for a component.
 */
 func (a *Client) CreateComponentBuild(params *CreateComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentBuildCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2230,6 +2268,8 @@ func (a *Client) CreateComponentBuild(params *CreateComponentBuildParams, authIn
 
 /*
 CreateComponentRelease creates a release
+
+Create a release for a component.
 */
 func (a *Client) CreateComponentRelease(params *CreateComponentReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentReleaseCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2274,6 +2314,8 @@ func (a *Client) CreateComponentRelease(params *CreateComponentReleaseParams, au
 
 /*
 CreateDockerBuildComponentConfig creates a docker build component config
+
+Create a Docker build component config.
 */
 func (a *Client) CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2318,6 +2360,8 @@ func (a *Client) CreateDockerBuildComponentConfig(params *CreateDockerBuildCompo
 
 /*
 CreateExternalImageComponentConfig creates an external image component config
+
+Create an external image component config.
 */
 func (a *Client) CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2408,6 +2452,8 @@ func (a *Client) CreateHelmComponentConfig(params *CreateHelmComponentConfigPara
 
 /*
 CreateInstall creates an app install
+
+Create a new install for an app.
 */
 func (a *Client) CreateInstall(params *CreateInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2542,6 +2588,8 @@ func (a *Client) CreateInstallActionWorkflowRun(params *CreateInstallActionWorkf
 
 /*
 CreateInstallComponentDeploy deploys a build to an install
+
+Create a new deployment for an install.
 */
 func (a *Client) CreateInstallComponentDeploy(params *CreateInstallComponentDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallComponentDeployCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2586,6 +2634,8 @@ func (a *Client) CreateInstallComponentDeploy(params *CreateInstallComponentDepl
 
 /*
 CreateInstallConfig creates an install config
+
+Create a configuration for an install.
 */
 func (a *Client) CreateInstallConfig(params *CreateInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2630,6 +2680,8 @@ func (a *Client) CreateInstallConfig(params *CreateInstallConfigParams, authInfo
 
 /*
 CreateInstallDeploy deploys a build to an install
+
+Create a new deployment for an install.
 */
 func (a *Client) CreateInstallDeploy(params *CreateInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallDeployCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2674,6 +2726,8 @@ func (a *Client) CreateInstallDeploy(params *CreateInstallDeployParams, authInfo
 
 /*
 CreateInstallInputs creates install inputs
+
+Create input values for an install.
 */
 func (a *Client) CreateInstallInputs(params *CreateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallInputsCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2718,6 +2772,8 @@ func (a *Client) CreateInstallInputs(params *CreateInstallInputsParams, authInfo
 
 /*
 CreateInstallV2 creates an app install
+
+Create a new install for an app.
 */
 func (a *Client) CreateInstallV2(params *CreateInstallV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallV2Created, error) {
 	// NOTE: parameters are not validated before sending
@@ -2762,6 +2818,8 @@ func (a *Client) CreateInstallV2(params *CreateInstallV2Params, authInfo runtime
 
 /*
 CreateJobComponentConfig creates a job component config
+
+Create a job component config.
 */
 func (a *Client) CreateJobComponentConfig(params *CreateJobComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateJobComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2806,6 +2864,8 @@ func (a *Client) CreateJobComponentConfig(params *CreateJobComponentConfigParams
 
 /*
 CreateKubernetesManifestComponentConfig creates a kubernetes manifest component config
+
+Create a Kubernetes manifest component config.
 */
 func (a *Client) CreateKubernetesManifestComponentConfig(params *CreateKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateKubernetesManifestComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2850,6 +2910,8 @@ func (a *Client) CreateKubernetesManifestComponentConfig(params *CreateKubernete
 
 /*
 CreateOrg creates a new org
+
+Create a new organization.
 */
 func (a *Client) CreateOrg(params *CreateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -2988,6 +3050,8 @@ func (a *Client) CreateTerraformModuleComponentConfig(params *CreateTerraformMod
 
 /*
 CreateTerraformWorkspace creates terraform workspace
+
+Create a terraform workspace.
 */
 func (a *Client) CreateTerraformWorkspace(params *CreateTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -3032,6 +3096,8 @@ func (a *Client) CreateTerraformWorkspace(params *CreateTerraformWorkspaceParams
 
 /*
 CreateTerraformWorkspaceV2 creates terraform workspace
+
+Create a terraform workspace.
 */
 func (a *Client) CreateTerraformWorkspaceV2(params *CreateTerraformWorkspaceV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceV2Created, error) {
 	// NOTE: parameters are not validated before sending
@@ -3122,6 +3188,8 @@ func (a *Client) CreateUserJourney(params *CreateUserJourneyParams, authInfo run
 
 /*
 CreateVCSConnection creates a vcs connection for github
+
+Create a VCS connection for version control integration.
 */
 func (a *Client) CreateVCSConnection(params *CreateVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -3166,6 +3234,8 @@ func (a *Client) CreateVCSConnection(params *CreateVCSConnectionParams, authInfo
 
 /*
 CreateVCSConnectionCallback publics connection to create a vcs connection via a callback
+
+Handle VCS connection callback for OAuth flow.
 */
 func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -3209,6 +3279,8 @@ func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallback
 
 /*
 CreateWaitlist allows user to be added to an org waitlist
+
+Add an entry to the waitlist.
 */
 func (a *Client) CreateWaitlist(params *CreateWaitlistParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWaitlistOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3299,6 +3371,8 @@ func (a *Client) CreateWorkflowStepApprovalResponse(params *CreateWorkflowStepAp
 
 /*
 DeleteAction deletes an action
+
+Delete an action workflow.
 */
 func (a *Client) DeleteAction(params *DeleteActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteActionOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3343,6 +3417,8 @@ func (a *Client) DeleteAction(params *DeleteActionParams, authInfo runtime.Clien
 
 /*
 DeleteActionWorkflow deletes an action workflow
+
+Delete an action workflow.
 */
 func (a *Client) DeleteActionWorkflow(params *DeleteActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteActionWorkflowOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3387,6 +3463,8 @@ func (a *Client) DeleteActionWorkflow(params *DeleteActionWorkflowParams, authIn
 
 /*
 DeleteApp deletes an app
+
+Delete an app.
 */
 func (a *Client) DeleteApp(params *DeleteAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3431,6 +3509,8 @@ func (a *Client) DeleteApp(params *DeleteAppParams, authInfo runtime.ClientAuthI
 
 /*
 DeleteAppComponent deletes a component
+
+Delete a component.
 */
 func (a *Client) DeleteAppComponent(params *DeleteAppComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppComponentOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3567,6 +3647,8 @@ func (a *Client) DeleteAppSecretV2(params *DeleteAppSecretV2Params, authInfo run
 
 /*
 DeleteComponent deletes a component
+
+Delete a component.
 */
 func (a *Client) DeleteComponent(params *DeleteComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteComponentOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3611,6 +3693,8 @@ func (a *Client) DeleteComponent(params *DeleteComponentParams, authInfo runtime
 
 /*
 DeleteInstall deletes an install
+
+Delete an install.
 */
 func (a *Client) DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3655,6 +3739,8 @@ func (a *Client) DeleteInstall(params *DeleteInstallParams, authInfo runtime.Cli
 
 /*
 DeleteOrg deletes an org
+
+Delete an organization.
 */
 func (a *Client) DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrgOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3699,6 +3785,8 @@ func (a *Client) DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthI
 
 /*
 DeleteTerraformWorkspace deletes terraform workspace
+
+Delete a terraform workspace.
 */
 func (a *Client) DeleteTerraformWorkspace(params *DeleteTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -3743,6 +3831,8 @@ func (a *Client) DeleteTerraformWorkspace(params *DeleteTerraformWorkspaceParams
 
 /*
 DeleteVCSConnection deletes a v c s connection
+
+Delete a VCS connection.
 */
 func (a *Client) DeleteVCSConnection(params *DeleteVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteVCSConnectionNoContent, error) {
 	// NOTE: parameters are not validated before sending
@@ -3881,6 +3971,8 @@ func (a *Client) DeprovisionInstall(params *DeprovisionInstallParams, authInfo r
 
 /*
 DeprovisionInstallSandbox deprovisions an install
+
+Deprovision a sandbox environment for an install.
 */
 func (a *Client) DeprovisionInstallSandbox(params *DeprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallSandboxCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -4021,6 +4113,8 @@ func (a *Client) ForgetInstall(params *ForgetInstallParams, authInfo runtime.Cli
 
 /*
 GenerateCLIInstallConfig generates an install config to be used with c l i
+
+Generate CLI configuration for an install.
 */
 func (a *Client) GenerateCLIInstallConfig(params *GenerateCLIInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateCLIInstallConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4065,6 +4159,8 @@ func (a *Client) GenerateCLIInstallConfig(params *GenerateCLIInstallConfigParams
 
 /*
 GenerateTerraformInstallerConfig generates a terraform installer config
+
+Generate terraform configuration for an installer.
 */
 func (a *Client) GenerateTerraformInstallerConfig(params *GenerateTerraformInstallerConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateTerraformInstallerConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4155,6 +4251,8 @@ func (a *Client) GetActionLatestConfig(params *GetActionLatestConfigParams, auth
 
 /*
 GetActionWorkflow gets an app action workflow by action workflow id
+
+Return an app action workflow by id.
 */
 func (a *Client) GetActionWorkflow(params *GetActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4199,6 +4297,8 @@ func (a *Client) GetActionWorkflow(params *GetActionWorkflowParams, authInfo run
 
 /*
 GetActionWorkflowConfig gets an app action workflow config
+
+Return an action workflow configuration by id.
 */
 func (a *Client) GetActionWorkflowConfig(params *GetActionWorkflowConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4243,6 +4343,8 @@ func (a *Client) GetActionWorkflowConfig(params *GetActionWorkflowConfigParams, 
 
 /*
 GetActionWorkflowConfigs gets action workflow for an app
+
+Returns all action workflow configurations.
 */
 func (a *Client) GetActionWorkflowConfigs(params *GetActionWorkflowConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4333,6 +4435,8 @@ func (a *Client) GetActionWorkflowLatestConfig(params *GetActionWorkflowLatestCo
 
 /*
 GetActionWorkflows gets action workflows for an app
+
+Returns all action workflows for the provided app.
 */
 func (a *Client) GetActionWorkflows(params *GetActionWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4423,6 +4527,8 @@ func (a *Client) GetApp(params *GetAppParams, authInfo runtime.ClientAuthInfoWri
 
 /*
 GetAppAction gets an app action workflow by action workflow id
+
+Return an app action workflow by id.
 */
 func (a *Client) GetAppAction(params *GetAppActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppActionOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4467,6 +4573,8 @@ func (a *Client) GetAppAction(params *GetAppActionParams, authInfo runtime.Clien
 
 /*
 GetAppActionConfig gets an app action config
+
+Return an action workflow configuration by id.
 */
 func (a *Client) GetAppActionConfig(params *GetAppActionConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppActionConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4511,6 +4619,8 @@ func (a *Client) GetAppActionConfig(params *GetAppActionConfigParams, authInfo r
 
 /*
 GetAppActionConfigs gets action workflow for an app
+
+Returns all action workflow configurations.
 */
 func (a *Client) GetAppActionConfigs(params *GetAppActionConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppActionConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4555,6 +4665,8 @@ func (a *Client) GetAppActionConfigs(params *GetAppActionConfigsParams, authInfo
 
 /*
 GetAppActionWorkflow gets an app action workflow
+
+Return an app action workflow by id.
 */
 func (a *Client) GetAppActionWorkflow(params *GetAppActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppActionWorkflowOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4599,6 +4711,8 @@ func (a *Client) GetAppActionWorkflow(params *GetAppActionWorkflowParams, authIn
 
 /*
 GetAppActions gets action workflows for an app
+
+Returns all action workflows for the provided app.
 */
 func (a *Client) GetAppActions(params *GetAppActionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppActionsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4643,6 +4757,8 @@ func (a *Client) GetAppActions(params *GetAppActionsParams, authInfo runtime.Cli
 
 /*
 GetAppBranchAppConfigs gets app branch app configs
+
+Returns all branch configurations for the provided app.
 */
 func (a *Client) GetAppBranchAppConfigs(params *GetAppBranchAppConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchAppConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4687,6 +4803,8 @@ func (a *Client) GetAppBranchAppConfigs(params *GetAppBranchAppConfigsParams, au
 
 /*
 GetAppBranches gets app branches
+
+Returns all branches for the provided app.
 */
 func (a *Client) GetAppBranches(params *GetAppBranchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4869,6 +4987,8 @@ func (a *Client) GetAppComponentBuild(params *GetAppComponentBuildParams, authIn
 
 /*
 GetAppComponentBuilds gets builds for components
+
+Returns all builds for the provided component.
 */
 func (a *Client) GetAppComponentBuilds(params *GetAppComponentBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentBuildsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4913,6 +5033,8 @@ func (a *Client) GetAppComponentBuilds(params *GetAppComponentBuildsParams, auth
 
 /*
 GetAppComponentConfig gets a config for a component
+
+Return a component configuration by id.
 */
 func (a *Client) GetAppComponentConfig(params *GetAppComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -4957,6 +5079,8 @@ func (a *Client) GetAppComponentConfig(params *GetAppComponentConfigParams, auth
 
 /*
 GetAppComponentConfigs gets all configs for a component
+
+Returns all configurations for the provided component.
 */
 func (a *Client) GetAppComponentConfigs(params *GetAppComponentConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5001,6 +5125,8 @@ func (a *Client) GetAppComponentConfigs(params *GetAppComponentConfigsParams, au
 
 /*
 GetAppComponentDependencies gets a component s dependencies
+
+Returns all dependencies for the provided component.
 */
 func (a *Client) GetAppComponentDependencies(params *GetAppComponentDependenciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentDependenciesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5045,6 +5171,8 @@ func (a *Client) GetAppComponentDependencies(params *GetAppComponentDependencies
 
 /*
 GetAppComponentDependents gets a component s children
+
+Returns all components that depend on the provided component.
 */
 func (a *Client) GetAppComponentDependents(params *GetAppComponentDependentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentDependentsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5089,6 +5217,8 @@ func (a *Client) GetAppComponentDependents(params *GetAppComponentDependentsPara
 
 /*
 GetAppComponentLatestBuild gets latest build for a component
+
+Returns the most recent build for the provided component.
 */
 func (a *Client) GetAppComponentLatestBuild(params *GetAppComponentLatestBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentLatestBuildOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5133,6 +5263,8 @@ func (a *Client) GetAppComponentLatestBuild(params *GetAppComponentLatestBuildPa
 
 /*
 GetAppComponentLatestConfig gets latest config for a component
+
+Returns the most recent config for the provided component.
 */
 func (a *Client) GetAppComponentLatestConfig(params *GetAppComponentLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentLatestConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5177,6 +5309,8 @@ func (a *Client) GetAppComponentLatestConfig(params *GetAppComponentLatestConfig
 
 /*
 GetAppComponents gets all components for an app
+
+Returns all components for the provided app.
 */
 func (a *Client) GetAppComponents(params *GetAppComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5549,6 +5683,8 @@ func (a *Client) GetAppInputConfig(params *GetAppInputConfigParams, authInfo run
 
 /*
 GetAppInputConfigs gets app input configs
+
+Returns all input configurations for the provided app.
 */
 func (a *Client) GetAppInputConfigs(params *GetAppInputConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInputConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5593,6 +5729,8 @@ func (a *Client) GetAppInputConfigs(params *GetAppInputConfigsParams, authInfo r
 
 /*
 GetAppInputLatestConfig gets latest app input config
+
+Returns the most recent input config for the provided app.
 */
 func (a *Client) GetAppInputLatestConfig(params *GetAppInputLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInputLatestConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5637,6 +5775,8 @@ func (a *Client) GetAppInputLatestConfig(params *GetAppInputLatestConfigParams, 
 
 /*
 GetAppInstalls gets all installs for an app
+
+Returns all installs for the provided app.
 */
 func (a *Client) GetAppInstalls(params *GetAppInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInstallsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5865,6 +6005,8 @@ func (a *Client) GetAppPoliciesConfigs(params *GetAppPoliciesConfigsParams, auth
 
 /*
 GetAppReleases gets all releases for an app
+
+Returns all releases for the provided app.
 */
 func (a *Client) GetAppReleases(params *GetAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleasesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5909,6 +6051,8 @@ func (a *Client) GetAppReleases(params *GetAppReleasesParams, authInfo runtime.C
 
 /*
 GetAppRunnerConfigs gets app runner configs
+
+Returns all runner configurations for the provided app.
 */
 func (a *Client) GetAppRunnerConfigs(params *GetAppRunnerConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppRunnerConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5953,6 +6097,8 @@ func (a *Client) GetAppRunnerConfigs(params *GetAppRunnerConfigsParams, authInfo
 
 /*
 GetAppRunnerLatestConfig gets latest app runner config
+
+Returns the most recent runner config for the provided app.
 */
 func (a *Client) GetAppRunnerLatestConfig(params *GetAppRunnerLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppRunnerLatestConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5997,6 +6143,8 @@ func (a *Client) GetAppRunnerLatestConfig(params *GetAppRunnerLatestConfigParams
 
 /*
 GetAppSandboxConfigs gets app sandbox configs
+
+Returns all sandbox configurations for the provided app.
 */
 func (a *Client) GetAppSandboxConfigs(params *GetAppSandboxConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppSandboxConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6041,6 +6189,8 @@ func (a *Client) GetAppSandboxConfigs(params *GetAppSandboxConfigsParams, authIn
 
 /*
 GetAppSandboxLatestConfig gets latest app sandbox config
+
+Returns the most recent sandbox config for the provided app.
 */
 func (a *Client) GetAppSandboxLatestConfig(params *GetAppSandboxLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppSandboxLatestConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6225,6 +6375,8 @@ func (a *Client) GetAppStackConfig(params *GetAppStackConfigParams, authInfo run
 
 /*
 GetApps gets all apps for the current org
+
+Returns all apps for the authenticated user.
 */
 func (a *Client) GetApps(params *GetAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6361,6 +6513,8 @@ func (a *Client) GetBuild(params *GetBuildParams, authInfo runtime.ClientAuthInf
 
 /*
 GetCLIConfig gets config for cli
+
+Returns CLI configuration and settings.
 */
 func (a *Client) GetCLIConfig(params *GetCLIConfigParams, opts ...ClientOption) (*GetCLIConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6449,6 +6603,8 @@ func (a *Client) GetCloudPlatformRegions(params *GetCloudPlatformRegionsParams, 
 
 /*
 GetComponent gets a component
+
+Return a component by id.
 */
 func (a *Client) GetComponent(params *GetComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6539,6 +6695,8 @@ func (a *Client) GetComponentBuild(params *GetComponentBuildParams, authInfo run
 
 /*
 GetComponentBuilds gets builds for components
+
+Returns all builds for the provided component.
 */
 func (a *Client) GetComponentBuilds(params *GetComponentBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentBuildsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6583,6 +6741,8 @@ func (a *Client) GetComponentBuilds(params *GetComponentBuildsParams, authInfo r
 
 /*
 GetComponentConfig gets a config for a component
+
+Return a component configuration by id.
 */
 func (a *Client) GetComponentConfig(params *GetComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6627,6 +6787,8 @@ func (a *Client) GetComponentConfig(params *GetComponentConfigParams, authInfo r
 
 /*
 GetComponentConfigs gets all configs for a component
+
+Returns all configurations for the provided component.
 */
 func (a *Client) GetComponentConfigs(params *GetComponentConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentConfigsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6671,6 +6833,8 @@ func (a *Client) GetComponentConfigs(params *GetComponentConfigsParams, authInfo
 
 /*
 GetComponentDependencies gets a component s dependencies
+
+Returns all dependencies for the provided component.
 */
 func (a *Client) GetComponentDependencies(params *GetComponentDependenciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentDependenciesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6715,6 +6879,8 @@ func (a *Client) GetComponentDependencies(params *GetComponentDependenciesParams
 
 /*
 GetComponentDependents gets a component s children
+
+Returns all components that depend on the provided component.
 */
 func (a *Client) GetComponentDependents(params *GetComponentDependentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentDependentsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6759,6 +6925,8 @@ func (a *Client) GetComponentDependents(params *GetComponentDependentsParams, au
 
 /*
 GetComponentLatestBuild gets latest build for a component
+
+Returns the most recent build for the provided component.
 */
 func (a *Client) GetComponentLatestBuild(params *GetComponentLatestBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLatestBuildOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6803,6 +6971,8 @@ func (a *Client) GetComponentLatestBuild(params *GetComponentLatestBuildParams, 
 
 /*
 GetComponentLatestConfig gets latest config for a component
+
+Returns the most recent config for the provided component.
 */
 func (a *Client) GetComponentLatestConfig(params *GetComponentLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLatestConfigOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -6847,6 +7017,8 @@ func (a *Client) GetComponentLatestConfig(params *GetComponentLatestConfigParams
 
 /*
 GetComponentReleases gets all releases for a component
+
+Returns all releases for the provided component.
 */
 func (a *Client) GetComponentReleases(params *GetComponentReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentReleasesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7003,6 +7175,8 @@ func (a *Client) GetCurrentAccount(params *GetCurrentAccountParams, authInfo run
 
 /*
 GetCurrentInstallInputs gets an installs current inputs
+
+Returns input values for an install.
 */
 func (a *Client) GetCurrentInstallInputs(params *GetCurrentInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentInstallInputsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7047,6 +7221,8 @@ func (a *Client) GetCurrentInstallInputs(params *GetCurrentInstallInputsParams, 
 
 /*
 GetCurrentUser gets current user
+
+Returns the current authenticated user account.
 */
 func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7091,6 +7267,8 @@ func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.C
 
 /*
 GetDriftedObjects gets drifted objects for an install
+
+Returns all drifted objects for an install.
 */
 func (a *Client) GetDriftedObjects(params *GetDriftedObjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDriftedObjectsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7134,7 +7312,11 @@ func (a *Client) GetDriftedObjects(params *GetDriftedObjectsParams, authInfo run
 }
 
 /*
-GetInstall gets an install
+	GetInstall gets an install
+
+	Forget an install that has been deleted outside of nuon.
+
+This should only be used in cases where an install was broken in an unordinary way and needs to be manually deleted so the parent resources can be deleted.
 */
 func (a *Client) GetInstall(params *GetInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7225,6 +7407,8 @@ func (a *Client) GetInstallAction(params *GetInstallActionParams, authInfo runti
 
 /*
 GetInstallActionRecentRuns gets recent runs for an action workflow by install id
+
+Returns recent workflow runs for an install action workflow.
 */
 func (a *Client) GetInstallActionRecentRuns(params *GetInstallActionRecentRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionRecentRunsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7269,6 +7453,8 @@ func (a *Client) GetInstallActionRecentRuns(params *GetInstallActionRecentRunsPa
 
 /*
 GetInstallActionRun gets action workflow runs by install id and run id
+
+Return an install action workflow run by id.
 */
 func (a *Client) GetInstallActionRun(params *GetInstallActionRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionRunOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7359,6 +7545,8 @@ func (a *Client) GetInstallActionRunStep(params *GetInstallActionRunStepParams, 
 
 /*
 GetInstallActionRuns gets action workflow runs by install id
+
+Returns all action workflow runs for an install.
 */
 func (a *Client) GetInstallActionRuns(params *GetInstallActionRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionRunsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7449,6 +7637,8 @@ func (a *Client) GetInstallActionWorkflow(params *GetInstallActionWorkflowParams
 
 /*
 GetInstallActionWorkflowRecentRuns gets recent runs for an action workflow by install id
+
+Returns recent workflow runs for an install action workflow.
 */
 func (a *Client) GetInstallActionWorkflowRecentRuns(params *GetInstallActionWorkflowRecentRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowRecentRunsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7493,6 +7683,8 @@ func (a *Client) GetInstallActionWorkflowRecentRuns(params *GetInstallActionWork
 
 /*
 GetInstallActionWorkflowRun gets action workflow runs by install id and run id
+
+Return an install action workflow run by id.
 */
 func (a *Client) GetInstallActionWorkflowRun(params *GetInstallActionWorkflowRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowRunOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7583,6 +7775,8 @@ func (a *Client) GetInstallActionWorkflowRunStep(params *GetInstallActionWorkflo
 
 /*
 GetInstallActionWorkflowRuns gets action workflow runs by install id
+
+Returns all action workflow runs for an install.
 */
 func (a *Client) GetInstallActionWorkflowRuns(params *GetInstallActionWorkflowRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowRunsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7673,6 +7867,8 @@ func (a *Client) GetInstallActionWorkflows(params *GetInstallActionWorkflowsPara
 
 /*
 GetInstallActionWorkflowsLatestRuns gets latest runs for all action workflows by install id
+
+Returns the most recent workflow run for each install action workflow.
 */
 func (a *Client) GetInstallActionWorkflowsLatestRuns(params *GetInstallActionWorkflowsLatestRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowsLatestRunsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7763,6 +7959,8 @@ func (a *Client) GetInstallActions(params *GetInstallActionsParams, authInfo run
 
 /*
 GetInstallActionsLatestRuns gets latest runs for all action workflows by install id
+
+Returns the most recent workflow run for each install action workflow.
 */
 func (a *Client) GetInstallActionsLatestRuns(params *GetInstallActionsLatestRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionsLatestRunsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7807,6 +8005,8 @@ func (a *Client) GetInstallActionsLatestRuns(params *GetInstallActionsLatestRuns
 
 /*
 GetInstallAuditLogs gets install audit logs
+
+Returns audit logs for an install.
 */
 func (a *Client) GetInstallAuditLogs(params *GetInstallAuditLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAuditLogsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7851,6 +8051,8 @@ func (a *Client) GetInstallAuditLogs(params *GetInstallAuditLogsParams, authInfo
 
 /*
 GetInstallComponent gets an install component
+
+Return an install component by id.
 */
 func (a *Client) GetInstallComponent(params *GetInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7895,6 +8097,8 @@ func (a *Client) GetInstallComponent(params *GetInstallComponentParams, authInfo
 
 /*
 GetInstallComponentDeploy gets an install deploy
+
+Return a deployment for an install by id.
 */
 func (a *Client) GetInstallComponentDeploy(params *GetInstallComponentDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentDeployOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7939,6 +8143,8 @@ func (a *Client) GetInstallComponentDeploy(params *GetInstallComponentDeployPara
 
 /*
 GetInstallComponentDeploys gets an install components deploys
+
+Returns all deployments for an install component.
 */
 func (a *Client) GetInstallComponentDeploys(params *GetInstallComponentDeploysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentDeploysOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -7983,6 +8189,8 @@ func (a *Client) GetInstallComponentDeploys(params *GetInstallComponentDeploysPa
 
 /*
 GetInstallComponentLatestDeploy gets the latest deploy for an install component
+
+Returns the most recent deployment for an install component.
 */
 func (a *Client) GetInstallComponentLatestDeploy(params *GetInstallComponentLatestDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentLatestDeployOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8075,6 +8283,8 @@ func (a *Client) GetInstallComponentOutputs(params *GetInstallComponentOutputsPa
 
 /*
 GetInstallComponents gets an installs components
+
+Returns all components for an install.
 */
 func (a *Client) GetInstallComponents(params *GetInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8119,6 +8329,8 @@ func (a *Client) GetInstallComponents(params *GetInstallComponentsParams, authIn
 
 /*
 GetInstallComponentsDeploys gets all deploys to an install
+
+Returns all deployments for an install.
 */
 func (a *Client) GetInstallComponentsDeploys(params *GetInstallComponentsDeploysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentsDeploysOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8163,6 +8375,8 @@ func (a *Client) GetInstallComponentsDeploys(params *GetInstallComponentsDeploys
 
 /*
 GetInstallDeploy gets an install deploy
+
+Return a deployment for an install by id.
 */
 func (a *Client) GetInstallDeploy(params *GetInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeployOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8207,6 +8421,8 @@ func (a *Client) GetInstallDeploy(params *GetInstallDeployParams, authInfo runti
 
 /*
 GetInstallDeploys gets all deploys to an install
+
+Returns all deployments for an install.
 */
 func (a *Client) GetInstallDeploys(params *GetInstallDeploysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploysOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8345,6 +8561,8 @@ func (a *Client) GetInstallEvents(params *GetInstallEventsParams, authInfo runti
 
 /*
 GetInstallInputs gets an installs inputs
+
+Returns input values for an install.
 */
 func (a *Client) GetInstallInputs(params *GetInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallInputsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8389,6 +8607,8 @@ func (a *Client) GetInstallInputs(params *GetInstallInputsParams, authInfo runti
 
 /*
 GetInstallLatestDeploy gets an install s latest deploy
+
+Returns the most recent deployment for an install.
 */
 func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallLatestDeployOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8527,6 +8747,8 @@ func (a *Client) GetInstallRunnerGroup(params *GetInstallRunnerGroupParams, auth
 
 /*
 GetInstallSandboxRun gets an install sandbox run
+
+Return a sandbox run for an install by id.
 */
 func (a *Client) GetInstallSandboxRun(params *GetInstallSandboxRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8571,6 +8793,8 @@ func (a *Client) GetInstallSandboxRun(params *GetInstallSandboxRunParams, authIn
 
 /*
 GetInstallSandboxRunV2 gets an install sandbox run
+
+Return a sandbox run for an install by id.
 */
 func (a *Client) GetInstallSandboxRunV2(params *GetInstallSandboxRunV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8615,6 +8839,8 @@ func (a *Client) GetInstallSandboxRunV2(params *GetInstallSandboxRunV2Params, au
 
 /*
 GetInstallSandboxRuns gets an installs sandbox runs
+
+Returns all sandbox runs for an install.
 */
 func (a *Client) GetInstallSandboxRuns(params *GetInstallSandboxRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8659,6 +8885,8 @@ func (a *Client) GetInstallSandboxRuns(params *GetInstallSandboxRunsParams, auth
 
 /*
 GetInstallStack gets an install stack by stack ID
+
+Returns the deployment stack for an install.
 */
 func (a *Client) GetInstallStack(params *GetInstallStackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStackOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8703,6 +8931,8 @@ func (a *Client) GetInstallStack(params *GetInstallStackParams, authInfo runtime
 
 /*
 GetInstallStackByInstallID gets an install stack by install ID
+
+Returns the deployment stack for an install.
 */
 func (a *Client) GetInstallStackByInstallID(params *GetInstallStackByInstallIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStackByInstallIDOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8793,6 +9023,8 @@ func (a *Client) GetInstallStackRuns(params *GetInstallStackRunsParams, authInfo
 
 /*
 GetInstallState gets the current state of an install
+
+Returns the current state for an install.
 */
 func (a *Client) GetInstallState(params *GetInstallStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8837,6 +9069,8 @@ func (a *Client) GetInstallState(params *GetInstallStateParams, authInfo runtime
 
 /*
 GetInstallStateHistory gets install state history
+
+Returns the state history for an install.
 */
 func (a *Client) GetInstallStateHistory(params *GetInstallStateHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateHistoryOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -8973,6 +9207,8 @@ func (a *Client) GetInstallWorkflowStep(params *GetInstallWorkflowStepParams, au
 
 /*
 GetInstallWorkflowStepApproval gets an install workflow step approval
+
+Return a workflow step approval by id.
 */
 func (a *Client) GetInstallWorkflowStepApproval(params *GetInstallWorkflowStepApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowStepApprovalOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9337,6 +9573,8 @@ func (a *Client) GetLogStream(params *GetLogStreamParams, authInfo runtime.Clien
 
 /*
 GetOrg gets an org
+
+Return an organization by id.
 */
 func (a *Client) GetOrg(params *GetOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9381,6 +9619,8 @@ func (a *Client) GetOrg(params *GetOrgParams, authInfo runtime.ClientAuthInfoWri
 
 /*
 GetOrgAcounts gets user accounts for current org
+
+Return an organization by id.
 */
 func (a *Client) GetOrgAcounts(params *GetOrgAcountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgAcountsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9425,6 +9665,8 @@ func (a *Client) GetOrgAcounts(params *GetOrgAcountsParams, authInfo runtime.Cli
 
 /*
 GetOrgComponents gets all components for an org
+
+Returns all components for the provided organization.
 */
 func (a *Client) GetOrgComponents(params *GetOrgComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgComponentsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9469,6 +9711,8 @@ func (a *Client) GetOrgComponents(params *GetOrgComponentsParams, authInfo runti
 
 /*
 GetOrgInstalls gets all installs for an org
+
+Returns all installs for the provided organization.
 */
 func (a *Client) GetOrgInstalls(params *GetOrgInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgInstallsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9605,6 +9849,8 @@ func (a *Client) GetOrgRunnerGroup(params *GetOrgRunnerGroupParams, authInfo run
 
 /*
 GetOrgStats gets an org
+
+Returns statistics for the provided organization.
 */
 func (a *Client) GetOrgStats(params *GetOrgStatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgStatsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9649,6 +9895,8 @@ func (a *Client) GetOrgStats(params *GetOrgStatsParams, authInfo runtime.ClientA
 
 /*
 GetOrgVCSConnections gets vcs connection for an org
+
+Returns all VCS connections for the provided organization.
 */
 func (a *Client) GetOrgVCSConnections(params *GetOrgVCSConnectionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgVCSConnectionsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9693,6 +9941,8 @@ func (a *Client) GetOrgVCSConnections(params *GetOrgVCSConnectionsParams, authIn
 
 /*
 GetOrgs returns current user s orgs
+
+Returns all organizations for the authenticated user.
 */
 func (a *Client) GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9737,6 +9987,8 @@ func (a *Client) GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoW
 
 /*
 GetRelease gets a release
+
+Return a release by id.
 */
 func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9781,6 +10033,8 @@ func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAut
 
 /*
 GetReleaseSteps gets a release s steps
+
+Return a release by id.
 */
 func (a *Client) GetReleaseSteps(params *GetReleaseStepsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseStepsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -9825,6 +10079,8 @@ func (a *Client) GetReleaseSteps(params *GetReleaseStepsParams, authInfo runtime
 
 /*
 GetRunnerCardDetails gets runner card details
+
+Returns runner card details for monitoring and status.
 */
 func (a *Client) GetRunnerCardDetails(params *GetRunnerCardDetailsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerCardDetailsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10377,6 +10633,8 @@ func (a *Client) GetRunnerSettings(params *GetRunnerSettingsParams, authInfo run
 
 /*
 GetTerraformCurrentStateData gets current terraform
+
+Returns the current terraform state.
 */
 func (a *Client) GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10421,6 +10679,8 @@ func (a *Client) GetTerraformCurrentStateData(params *GetTerraformCurrentStateDa
 
 /*
 GetTerraformStates gets terraform states
+
+Returns terraform states for an install.
 */
 func (a *Client) GetTerraformStates(params *GetTerraformStatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformStatesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10465,6 +10725,8 @@ func (a *Client) GetTerraformStates(params *GetTerraformStatesParams, authInfo r
 
 /*
 GetTerraformStatesV2 gets terraform states
+
+Returns terraform states for an install.
 */
 func (a *Client) GetTerraformStatesV2(params *GetTerraformStatesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformStatesV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10509,6 +10771,8 @@ func (a *Client) GetTerraformStatesV2(params *GetTerraformStatesV2Params, authIn
 
 /*
 GetTerraformWorkspace gets terraform workspace
+
+Return a terraform workspace by id.
 */
 func (a *Client) GetTerraformWorkspace(params *GetTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10553,6 +10817,8 @@ func (a *Client) GetTerraformWorkspace(params *GetTerraformWorkspaceParams, auth
 
 /*
 GetTerraformWorkspaceLock gets terraform workspace lock
+
+Returns the lock status for a terraform workspace.
 */
 func (a *Client) GetTerraformWorkspaceLock(params *GetTerraformWorkspaceLockParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceLockOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10597,6 +10863,8 @@ func (a *Client) GetTerraformWorkspaceLock(params *GetTerraformWorkspaceLockPara
 
 /*
 GetTerraformWorkspaceStateByID gets terraform state by ID
+
+Return a terraform state by id.
 */
 func (a *Client) GetTerraformWorkspaceStateByID(params *GetTerraformWorkspaceStateByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateByIDOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10641,6 +10909,8 @@ func (a *Client) GetTerraformWorkspaceStateByID(params *GetTerraformWorkspaceSta
 
 /*
 GetTerraformWorkspaceStateByIDV2 gets terraform state by ID
+
+Return a terraform state by id.
 */
 func (a *Client) GetTerraformWorkspaceStateByIDV2(params *GetTerraformWorkspaceStateByIDV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateByIDV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10685,6 +10955,8 @@ func (a *Client) GetTerraformWorkspaceStateByIDV2(params *GetTerraformWorkspaceS
 
 /*
 GetTerraformWorkspaceStateJSONResources gets terraform state resources this output is similar to terraform state list
+
+Returns terraform state resources in JSON format.
 */
 func (a *Client) GetTerraformWorkspaceStateJSONResources(params *GetTerraformWorkspaceStateJSONResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateJSONResourcesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10729,6 +11001,8 @@ func (a *Client) GetTerraformWorkspaceStateJSONResources(params *GetTerraformWor
 
 /*
 GetTerraformWorkspaceStateJSONResourcesV2 gets terraform state resources this output is similar to terraform state list
+
+Returns terraform state resources in JSON format.
 */
 func (a *Client) GetTerraformWorkspaceStateJSONResourcesV2(params *GetTerraformWorkspaceStateJSONResourcesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateJSONResourcesV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10773,6 +11047,8 @@ func (a *Client) GetTerraformWorkspaceStateJSONResourcesV2(params *GetTerraformW
 
 /*
 GetTerraformWorkspaceStateResources gets terraform state resources
+
+Returns resources within a terraform state.
 */
 func (a *Client) GetTerraformWorkspaceStateResources(params *GetTerraformWorkspaceStateResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateResourcesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10817,6 +11093,8 @@ func (a *Client) GetTerraformWorkspaceStateResources(params *GetTerraformWorkspa
 
 /*
 GetTerraformWorkspaceStatesJSON gets terraform states json
+
+Returns terraform states in JSON format.
 */
 func (a *Client) GetTerraformWorkspaceStatesJSON(params *GetTerraformWorkspaceStatesJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStatesJSONOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10861,6 +11139,8 @@ func (a *Client) GetTerraformWorkspaceStatesJSON(params *GetTerraformWorkspaceSt
 
 /*
 GetTerraformWorkspaceStatesJSONByID gets terraform state json by id this output is same as terraform show json
+
+Return a terraform state in JSON format by id.
 */
 func (a *Client) GetTerraformWorkspaceStatesJSONByID(params *GetTerraformWorkspaceStatesJSONByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStatesJSONByIDOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10905,6 +11185,8 @@ func (a *Client) GetTerraformWorkspaceStatesJSONByID(params *GetTerraformWorkspa
 
 /*
 GetTerraformWorkspaceStatesJSONByIDV2 gets terraform state json by id this output is same as terraform show json
+
+Return a terraform state in JSON format by id.
 */
 func (a *Client) GetTerraformWorkspaceStatesJSONByIDV2(params *GetTerraformWorkspaceStatesJSONByIDV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStatesJSONByIDV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10949,6 +11231,8 @@ func (a *Client) GetTerraformWorkspaceStatesJSONByIDV2(params *GetTerraformWorks
 
 /*
 GetTerraformWorkspaceStatesJSONV2 gets terraform states json
+
+Returns terraform states in JSON format.
 */
 func (a *Client) GetTerraformWorkspaceStatesJSONV2(params *GetTerraformWorkspaceStatesJSONV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStatesJSONV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10993,6 +11277,8 @@ func (a *Client) GetTerraformWorkspaceStatesJSONV2(params *GetTerraformWorkspace
 
 /*
 GetTerraformWorkspaces gets terraform workspaces
+
+Returns all terraform workspaces.
 */
 func (a *Client) GetTerraformWorkspaces(params *GetTerraformWorkspacesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspacesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -11083,6 +11369,8 @@ func (a *Client) GetUserJourneys(params *GetUserJourneysParams, authInfo runtime
 
 /*
 GetVCSConnection returns a vcs connection for an org
+
+Return a VCS connection by id.
 */
 func (a *Client) GetVCSConnection(params *GetVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -11265,6 +11553,8 @@ func (a *Client) GetWorkflowStep(params *GetWorkflowStepParams, authInfo runtime
 
 /*
 GetWorkflowStepApproval gets an workflow step approval
+
+Return a workflow step approval by id.
 */
 func (a *Client) GetWorkflowStepApproval(params *GetWorkflowStepApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -11495,6 +11785,8 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 
 /*
 LockTerraformWorkspace locks terraform state
+
+Lock a terraform workspace to prevent concurrent modifications.
 */
 func (a *Client) LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -11859,6 +12151,8 @@ func (a *Client) ResetUserJourney(params *ResetUserJourneyParams, authInfo runti
 
 /*
 RetryOwnerWorkflowByID reruns the workflow steps starting from input step id can be used to retry a failed step
+
+Retry a workflow execution by id.
 */
 func (a *Client) RetryOwnerWorkflowByID(params *RetryOwnerWorkflowByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryOwnerWorkflowByIDCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -11903,6 +12197,8 @@ func (a *Client) RetryOwnerWorkflowByID(params *RetryOwnerWorkflowByIDParams, au
 
 /*
 RetryWorkflow reruns the workflow steps starting from input step id can be used to retry a failed step
+
+Retry a failed workflow execution.
 */
 func (a *Client) RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -11947,6 +12243,8 @@ func (a *Client) RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.Cli
 
 /*
 RetryWorkflowStep reruns the workflow steps starting from input step id can be used to retry a failed step
+
+Retry a workflow execution by id.
 */
 func (a *Client) RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -12081,6 +12379,8 @@ func (a *Client) SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientA
 
 /*
 TeardownInstallComponent teardowns an install component
+
+Teardown and remove an install component's resources.
 */
 func (a *Client) TeardownInstallComponent(params *TeardownInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -12171,6 +12471,8 @@ func (a *Client) TeardownInstallComponents(params *TeardownInstallComponentsPara
 
 /*
 UnlockTerraformWorkspace unlocks terraform workspace
+
+Unlock a terraform workspace.
 */
 func (a *Client) UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12215,6 +12517,8 @@ func (a *Client) UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams
 
 /*
 UpdateApp updates an app
+
+Update an app's configuration.
 */
 func (a *Client) UpdateApp(params *UpdateAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12259,6 +12563,8 @@ func (a *Client) UpdateApp(params *UpdateAppParams, authInfo runtime.ClientAuthI
 
 /*
 UpdateAppAction patches an app action
+
+Update an app action workflow configuration.
 */
 func (a *Client) UpdateAppAction(params *UpdateAppActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppActionCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -12303,6 +12609,8 @@ func (a *Client) UpdateAppAction(params *UpdateAppActionParams, authInfo runtime
 
 /*
 UpdateAppActionWorkflow patches an app
+
+Update an app action workflow configuration.
 */
 func (a *Client) UpdateAppActionWorkflow(params *UpdateAppActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppActionWorkflowCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -12347,6 +12655,8 @@ func (a *Client) UpdateAppActionWorkflow(params *UpdateAppActionWorkflowParams, 
 
 /*
 UpdateAppComponent updates a component
+
+Update a component's configuration.
 */
 func (a *Client) UpdateAppComponent(params *UpdateAppComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppComponentOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12434,7 +12744,7 @@ func (a *Client) UpdateAppConfig(params *UpdateAppConfigParams, authInfo runtime
 }
 
 /*
-UpdateAppConfigInstalls update app config installs API
+UpdateAppConfigInstalls Update app configuration across multiple installs.
 */
 func (a *Client) UpdateAppConfigInstalls(params *UpdateAppConfigInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppConfigInstallsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12478,7 +12788,7 @@ func (a *Client) UpdateAppConfigInstalls(params *UpdateAppConfigInstallsParams, 
 }
 
 /*
-UpdateAppConfigInstallsV2 update app config installs v2 API
+UpdateAppConfigInstallsV2 Update app configuration across multiple installs.
 */
 func (a *Client) UpdateAppConfigInstallsV2(params *UpdateAppConfigInstallsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppConfigInstallsV2OK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12567,6 +12877,8 @@ func (a *Client) UpdateAppConflgV2(params *UpdateAppConflgV2Params, authInfo run
 
 /*
 UpdateComponent updates a component
+
+Update a component's configuration.
 */
 func (a *Client) UpdateComponent(params *UpdateComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateComponentOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12611,6 +12923,8 @@ func (a *Client) UpdateComponent(params *UpdateComponentParams, authInfo runtime
 
 /*
 UpdateInstall updates an install
+
+Update an install's settings.
 */
 func (a *Client) UpdateInstall(params *UpdateInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12655,6 +12969,8 @@ func (a *Client) UpdateInstall(params *UpdateInstallParams, authInfo runtime.Cli
 
 /*
 UpdateInstallConfig updates an install config
+
+Update an install's configuration.
 */
 func (a *Client) UpdateInstallConfig(params *UpdateInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -12699,6 +13015,8 @@ func (a *Client) UpdateInstallConfig(params *UpdateInstallConfigParams, authInfo
 
 /*
 UpdateInstallInputs updates install input config for app
+
+Update input values for an install.
 */
 func (a *Client) UpdateInstallInputs(params *UpdateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallInputsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12743,6 +13061,8 @@ func (a *Client) UpdateInstallInputs(params *UpdateInstallInputsParams, authInfo
 
 /*
 UpdateInstallWorkflow updates an install workflow
+
+Update a workflow configuration.
 */
 func (a *Client) UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallWorkflowOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12787,6 +13107,8 @@ func (a *Client) UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, auth
 
 /*
 UpdateOrg updates current org
+
+Update an organization's settings.
 */
 func (a *Client) UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12875,6 +13197,8 @@ func (a *Client) UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime
 
 /*
 UpdateRunnerSettings updates a runner s settings via its runner settings group
+
+Update runner settings and configuration.
 */
 func (a *Client) UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerSettingsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12919,6 +13243,8 @@ func (a *Client) UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authIn
 
 /*
 UpdateTerraformState updates terraform state
+
+Update a terraform state.
 */
 func (a *Client) UpdateTerraformState(params *UpdateTerraformStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -13009,6 +13335,8 @@ func (a *Client) UpdateUserJourneyStep(params *UpdateUserJourneyStepParams, auth
 
 /*
 UpdateWorkflow updates a workflow
+
+Update a workflow configuration.
 */
 func (a *Client) UpdateWorkflow(params *UpdateWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowOK, error) {
 	// NOTE: parameters are not validated before sending
