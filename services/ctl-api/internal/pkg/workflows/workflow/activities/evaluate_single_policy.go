@@ -101,7 +101,7 @@ func (a *Activities) evaluateRule(
 		for _, expr := range result.Expressions {
 			ruleResults, ok := expr.Value.([]interface{})
 			if !ok {
-				l.Debug("expression value is not a slice, skipping", zap.String("query", queryStr))
+				l.Warn("expression value is not a slice, skipping", zap.String("query", queryStr))
 				continue
 			}
 			for _, item := range ruleResults {

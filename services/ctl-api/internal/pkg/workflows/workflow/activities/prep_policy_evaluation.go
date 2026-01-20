@@ -244,7 +244,7 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 func (a *Activities) preparePolicyInputs(planContentsJSON []byte, componentType app.ComponentType) ([][]byte, error) {
 	switch componentType {
 	case app.ComponentTypeTerraformModule:
-		return [][]byte{planContentsJSON}, nil
+		return a.prepareTerraformPolicyInputs(planContentsJSON)
 	case app.ComponentTypeHelmChart:
 		return a.prepareHelmPolicyInputs(planContentsJSON)
 	case app.ComponentTypeKubernetesManifest:
@@ -252,6 +252,20 @@ func (a *Activities) preparePolicyInputs(planContentsJSON []byte, componentType 
 	default:
 		return nil, fmt.Errorf("unsupported component type for policy input preparation: %s", componentType)
 	}
+}
+
+func (a *Activities) prepareTerraformPolicyInputs(planContentsJSON []byte) ([][]byte, error) {
+	plan, err := plan.ParseTerraformPlan(planContentsJSON)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse terraform plan")
+	}
+
+	planJSON, err := json.Marshal(plan)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal terraform plan for policy input")
+	}
+
+	return [][]byte{planJSON}, nil
 }
 
 func (a *Activities) prepareKubernetesManifestPolicyInputs(planContentsJSON []byte) ([][]byte, error) {
