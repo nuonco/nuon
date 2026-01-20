@@ -30,7 +30,6 @@ export function LogStreamProvider({
     data: logStream,
     error,
     isLoading,
-    stopPolling,
   } = usePolling<TLogStream>({
     initData: initLogStream,
     path: `/api/orgs/${org.id}/log-streams/${initLogStream?.id}`,
@@ -38,11 +37,8 @@ export function LogStreamProvider({
     shouldPoll,
   })
 
-  useEffect(() => {
-    if (!logStream?.open) {
-      stopPolling()
-    }
-  }, [logStream])
+  // Removed: useEffect that stopped polling when stream closed
+  // SSE server now controls completion via 'complete' event
 
   return (
     <LogStreamContext.Provider

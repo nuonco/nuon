@@ -39,10 +39,10 @@ const PanelBase = ({
   ...props
 }: Omit<IPanel, 'triggerButton'>) => {
   const [size, setSize] = useState(initSize)
-  const { removePanel } = useSurfaces()
+  const { removePanel, panels } = useSurfaces()
   const handleClose = () => {
     if (onClose) onClose?.()
-    removePanel(panelId, panelKey)
+    removePanel(panels?.at(-1)?.id)
   }
   const panelRef = useRef<HTMLDivElement>(null)
   // auto focus panel when in view

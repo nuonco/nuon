@@ -8,14 +8,6 @@ import { usePolling } from '@/hooks/use-polling'
 import { useQuery } from '@/hooks/use-query'
 import type { TOTELLog, TAPIError } from '@/types'
 
-/**
- * TEMP VERSION - Unified log data provider that switches between SSE and HTTP based on stream state
- * 
- * - When stream is open: Uses SSE for real-time logs (asc order)
- * - When stream is closed: Uses HTTP with desc order + pagination
- * - Provides consistent interface regardless of data source
- */
-
 const useUnifiedLogData = ({ 
   initLogs 
 }: { 
@@ -30,8 +22,7 @@ const useUnifiedLogData = ({
   const [staticTrigger, setStaticTrigger] = useState(0)
   const [needsPaginationCheck, setNeedsPaginationCheck] = useState(false)
   const [needsFinalFetch, setNeedsFinalFetch] = useState(false)
-  
-  // SSE-specific state
+
   const [connectionState, setConnectionState] = useState<'disconnected' | 'connecting' | 'connected' | 'reconnecting'>('disconnected')
   const [error, setError] = useState<TAPIError | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -41,7 +32,6 @@ const useUnifiedLogData = ({
   const isStreamOpen = logStream?.open || false
   const params = useQueryParams({ order: isStreamOpen ? 'asc' : 'desc' })
 
-  // SSE Connection Logic (from sse-logs-provider)
   const connectSSE = () => {
     if (!logStream?.id || eventSourceRef.current) return
 
@@ -57,7 +47,6 @@ const useUnifiedLogData = ({
         const newLogs: TOTELLog[] = JSON.parse(event.data)
         if (newLogs.length > 0) {
           setLogs(prev => {
-            // Deduplicate logs by ID, append new ones
             const logMap = new Map(prev.map(log => [log.id, log]))
             newLogs.forEach(log => logMap.set(log.id, log))
             return Array.from(logMap.values())
@@ -93,25 +82,13 @@ const useUnifiedLogData = ({
     })
 
     eventSource.onerror = () => {
-      // Clean up current connection
       eventSource.close()
       eventSourceRef.current = null
-      
-      // If stream is marked as closed, this is likely a natural close - don't reconnect
-      if (!logStream?.open) {
-        setConnectionState('disconnected')
-        // Stream has ended naturally, check if we should enable HTTP pagination
-        if (logs.length > 0) {
-          setNeedsFinalFetch(true)
-        }
-        return
-      }
-      
-      // Otherwise, attempt reconnection with exponential backoff
+
       setConnectionState('reconnecting')
       const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempt), 30000)
       setReconnectAttempt(prev => prev + 1)
-      
+
       reconnectTimeoutRef.current = setTimeout(() => {
         connectSSE()
       }, backoffDelay)
@@ -136,29 +113,24 @@ const useUnifiedLogData = ({
     setConnectionState('disconnected')
   }
 
-  // HTTP Loading Logic (from logs-provider)
   const loadMore = () => {
-    // Only load more for closed streams (HTTP pagination)
     if (!isStreamOpen) {
       if (!staticEnabled) {
         setStaticEnabled(true)
       }
       setStaticTrigger(prev => prev + 1)
     }
-    // For open streams (SSE), this is a no-op since logs stream automatically
   }
 
-  // Polling for open streams (fallback if SSE fails)
   const pollingResults = usePolling<TOTELLog[]>({
     path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs`,
     dependencies: [offset],
     headers: offset ? { 'X-Nuon-API-Offset': offset } : {},
     initData: initLogs,
     pollInterval: 2000,
-    shouldPoll: false, // We use SSE for open streams, not polling
+    shouldPoll: false,
   })
 
-  // Static loading for closed streams
   const staticResults = useQuery<TOTELLog[]>({
     dependencies: [staticTrigger],
     path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs${params}`,
@@ -168,27 +140,28 @@ const useUnifiedLogData = ({
     enabled: staticEnabled && !isStreamOpen,
   })
 
-  // Check if more logs exist when stream closes (using last log as offset)
   const paginationCheckResults = useQuery<TOTELLog[]>({
     dependencies: [needsPaginationCheck],
     path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs${params}`,
-    headers: logs.length > 0 ? { 'X-Nuon-API-Offset': logs[logs.length - 1]?.id } : {},
+    headers: logs.length > 0 ? {
+      'X-Nuon-API-Offset': String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000)
+    } : {},
     initData: [],
     initIsLoading: false,
     enabled: needsPaginationCheck && !isStreamOpen,
   })
 
-  // Final fetch to catch any logs missed when SSE closed
   const finalFetchResults = useQuery<TOTELLog[]>({
     dependencies: [needsFinalFetch],
     path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs`,
-    headers: logs.length > 0 ? { 'X-Nuon-API-Offset': logs[logs.length - 1]?.id } : {},
+    headers: logs.length > 0 ? {
+      'X-Nuon-API-Offset': String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000)
+    } : {},
     initData: [],
     initIsLoading: false,
     enabled: needsFinalFetch && !isStreamOpen,
   })
 
-  // Update logs and offset from HTTP responses
   useEffect(() => {
     if (!isStreamOpen && staticResults?.data) {
       setLogs((prev) => {
@@ -205,7 +178,6 @@ const useUnifiedLogData = ({
     }
   }, [staticResults?.data, staticResults?.headers, isStreamOpen])
 
-  // Handle final fetch results (logs missed when SSE closed)
   useEffect(() => {
     if (!isStreamOpen && finalFetchResults?.data && needsFinalFetch) {
       if (finalFetchResults.data.length > 0) {
@@ -215,8 +187,7 @@ const useUnifiedLogData = ({
           return Array.from(logMap.values())
         })
       }
-      
-      // After final fetch, check if there are more logs for pagination
+
       if (finalFetchResults?.headers) {
         const nextOffset = finalFetchResults?.headers?.['x-nuon-api-next']
         const hasMoreLogs = !!nextOffset
@@ -231,7 +202,6 @@ const useUnifiedLogData = ({
     }
   }, [finalFetchResults?.data, finalFetchResults?.headers, needsFinalFetch, isStreamOpen])
 
-  // Handle pagination check results (fallback if no final fetch needed)
   useEffect(() => {
     if (paginationCheckResults?.headers && needsPaginationCheck) {
       const nextOffset = paginationCheckResults?.headers?.['x-nuon-api-next']
@@ -244,39 +214,43 @@ const useUnifiedLogData = ({
     }
   }, [paginationCheckResults?.headers, paginationCheckResults?.data, needsPaginationCheck])
 
-  // Track previous stream state to detect transitions
+  const hasConnectedSSE = useRef(false)
   const prevIsStreamOpen = useRef(isStreamOpen)
-  
-  // Switch between SSE and HTTP based on stream state
+
   useEffect(() => {
     if (isStreamOpen) {
-      connectSSE()
-      setError(null) // Clear HTTP errors when switching to SSE
+      if (!hasConnectedSSE.current) {
+        connectSSE()
+        hasConnectedSSE.current = true
+      }
+      setError(null)
     } else {
-      // Don't disconnect SSE when stream shows as closed - let server decide when to close
-      // Only disconnect if we never had SSE logs (stream started closed)
-      if (!prevIsStreamOpen.current && !staticEnabled) {
-        // Initialize static loading for streams that started closed
+      if (hasConnectedSSE.current && prevIsStreamOpen.current && !staticEnabled && logs.length > 0) {
+        setNeedsPaginationCheck(true)
+      }
+
+      if (!hasConnectedSSE.current && !staticEnabled) {
         setStaticEnabled(true)
         setStaticTrigger(1)
       }
     }
-    
-    prevIsStreamOpen.current = isStreamOpen
 
+    prevIsStreamOpen.current = isStreamOpen
+  }, [logStream?.id, isStreamOpen, org.id, staticEnabled, logs.length])
+
+  useEffect(() => {
     return () => {
       disconnect()
+      hasConnectedSSE.current = false
     }
-  }, [logStream?.id, isStreamOpen, org.id])
+  }, [logStream?.id, org.id])
 
-  // Reset hasMore when switching to SSE mode
   useEffect(() => {
     if (isStreamOpen) {
-      setHasMore(false) // SSE streams continuously, no pagination
+      setHasMore(false)
     }
   }, [isStreamOpen])
 
-  // Determine loading state and error based on current mode
   const isLoading = isStreamOpen 
     ? connectionState === 'connecting' || connectionState === 'reconnecting'
     : staticResults?.isLoading || false
@@ -288,8 +262,8 @@ const useUnifiedLogData = ({
     isLoading,
     error: currentError,
     connectionState,
-    loadMore, // Always expose loadMore, but it only works for closed streams
-    hasMore: isStreamOpen ? false : hasMore, // SSE streams continuously
+    loadMore,
+    hasMore: isStreamOpen ? false : hasMore,
     isStreamOpen,
   }
 }
@@ -322,7 +296,6 @@ export function UnifiedLogsProvider({
   )
 }
 
-// Hook for consuming the unified log data
 export const useUnifiedLogs = () => {
   const context = UnifiedLogsContext
   if (context === undefined) {
