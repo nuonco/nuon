@@ -22,13 +22,21 @@ import { BuildSelect } from './BuildSelect'
 export const DeployComponentButton = ({
   component,
   currentBuildId,
+  currentDeployStatus,
   ...props
 }: IButtonAsButton & {
   component: TComponent
   currentBuildId?: string
+  currentDeployStatus?: string
 }) => {
   const { addModal } = useSurfaces()
-  const modal = <DeployComponentModal component={component} currentBuildId={currentBuildId} />
+  const modal = (
+    <DeployComponentModal
+      component={component}
+      currentBuildId={currentBuildId}
+      currentDeployStatus={currentDeployStatus}
+    />
+  )
   return (
     <Button
       onClick={() => {
@@ -46,10 +54,12 @@ export const DeployComponentButton = ({
 export const DeployComponentModal = ({
   component,
   currentBuildId,
+  currentDeployStatus,
   ...props
 }: IModal & {
   component: TComponent
   currentBuildId?: string
+  currentDeployStatus?: string
 }) => {
   const router = useRouter()
   const { user } = useAuth()
@@ -165,9 +175,10 @@ export const DeployComponentModal = ({
           checked={deployDependents}
           onChange={(e) => setDeployDependents(e.target.checked)}
           labelProps={{
-            className: "hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none",
-            labelText: "Deploy dependents",
-            labelTextProps: { variant: "base", weight: "stronger" }
+            className:
+              'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
+            labelText: 'Deploy dependents',
+            labelTextProps: { variant: 'base', weight: 'stronger' },
           }}
         />
         <Text variant="subtext" theme="neutral" className="ml-8 leading-none">
@@ -216,6 +227,7 @@ export const DeployComponentModal = ({
           componentId={component.id}
           selectedBuildId={buildId}
           currentBuildId={currentBuildId}
+          currentDeployStatus={currentDeployStatus}
           onSelectBuild={handleBuildSelect}
           onClose={handleClose}
         />

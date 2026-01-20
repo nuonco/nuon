@@ -138,6 +138,9 @@ export default async function InstallComponentPage({
           <ManagementDropdown
             component={installComponent?.component}
             currentBuildId={installComponent?.install_deploys?.at(0)?.build_id}
+            currentDeployStatus={
+              installComponent?.install_deploys?.at(0)?.status_v2?.status
+            }
           />
         </div>
       </div>
