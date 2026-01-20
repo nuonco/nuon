@@ -17,7 +17,7 @@ type AdminCreateServiceAccountRequest struct{}
 
 // @ID						AdminCreateServiceAccount
 // @Summary				create a service account for an org
-// @Description.markdown	create_org_service_account.md
+// @Description.markdown	admin_create_org_service_account.md
 // @Param					req		body	AdminCreateServiceAccountRequest	true	"Input"
 // @Param					org_id	path	string								true	"org ID or name"
 // @Security				AdminEmail
