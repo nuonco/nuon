@@ -1,20 +1,22 @@
 # Generate OpenAPI spec from ctl-api source
+# Sources are copied into the build context via service.yml:
+#   go.mod, go.sum, pkg/, ctl-api/ (from services/ctl-api)
 FROM golang:1.25.4-alpine AS openapi-gen
 
 WORKDIR /src
 
 RUN apk add --no-cache git
 
-# Copy go.mod/go.sum from monorepo root for dependency resolution
+# Copy go.mod/go.sum (copied to build context by sources)
 COPY go.mod go.sum ./
 
-# Copy pkg directory (required by ctl-api)
+# Copy pkg directory (copied to build context by sources)
 COPY pkg pkg
 
-# Copy ctl-api service for spec generation
-COPY services/ctl-api services/ctl-api
+# Copy ctl-api service (copied to build context as ctl-api/ by sources)
+COPY ctl-api ctl-api
 
-WORKDIR /src/services/ctl-api
+WORKDIR /src/ctl-api
 
 # Generate OpenAPI specs (public, admin, runner) including v3
 RUN go run cmd/gen/main.go
@@ -29,27 +31,28 @@ RUN apk add --no-cache build-base \
     py3-pip
 
 # Copy only package files first for better caching
-COPY services/dashboard-ui/.eslintrc.json .eslintrc.json
-COPY services/dashboard-ui/.prettierrc .prettierrc
-COPY services/dashboard-ui/vitest.config.ts vitest.config.ts
-COPY services/dashboard-ui/vitest.setup.ts vitest.setup.ts
-COPY services/dashboard-ui/package-lock.json package-lock.json
-COPY services/dashboard-ui/next.config.mjs next.config.mjs
-COPY services/dashboard-ui/postcss.config.js postcss.config.js
-COPY services/dashboard-ui/tailwind.config.ts tailwind.config.ts
-COPY services/dashboard-ui/package.json package.json
-COPY services/dashboard-ui/tsconfig.json tsconfig.json
-
+COPY \
+    .eslintrc.json \
+    .prettierrc \
+    vitest.config.ts \
+    vitest.setup.ts \
+    package-lock.json \
+    next.config.mjs \
+    postcss.config.js \
+    tailwind.config.ts \
+    package.json \
+    tsconfig.json \
+    ./
 RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
     npm install
 
-COPY services/dashboard-ui/test test
-COPY services/dashboard-ui/scripts scripts
-COPY services/dashboard-ui/public public
-COPY services/dashboard-ui/src src
+COPY test test
+COPY scripts scripts
+COPY public public
+COPY src src
 
 # Copy generated OpenAPI spec from openapi-gen stage
-COPY --from=openapi-gen /src/services/ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
+COPY --from=openapi-gen /src/ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
 FROM deps AS lint
 
