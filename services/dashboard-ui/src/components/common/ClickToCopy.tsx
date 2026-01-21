@@ -35,7 +35,7 @@ function CopiedNotice({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'bg-foreground text-background',
+        'bg-foreground text-background !w-[59px]',
         'text-xs leading-none px-2 py-1.5 rounded shadow-lg max-w-96 absolute z-10 -top-6 right-0',
         className
       )}

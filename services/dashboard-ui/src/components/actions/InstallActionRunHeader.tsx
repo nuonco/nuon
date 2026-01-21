@@ -1,5 +1,6 @@
 'use client'
 
+import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -17,6 +18,7 @@ import { useOrg } from '@/hooks/use-org'
 import type { TWorkflow } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { getWorkflowStep } from '@/utils/workflow-utils'
+import type { TActionConfigTriggerType } from '@/types'
 
 // NOTE: old components
 import { RunnerJobPlanModal } from '@/components/old/OldRunners'
@@ -40,18 +42,27 @@ export const InstallActionRunHeader = ({
     workflow,
     stepTargetId: installActionRun?.id,
   })
+  const basePath = `/${org?.id}/installs/${install?.id}`
 
   return (
     <header className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-4 justify-between w-full">
-        <HeadingGroup className="">
+        <HeadingGroup>
           <BackLink className="mb-4" />
           <Text
-            className="inline-flex items-center gap-4"
+            className="inline-flex items-center gap-4 mb-2"
             variant="h3"
             weight="strong"
           >
-            {actionName}
+            {actionName}{' '}
+            <ActionTriggerType
+              componentName={installActionRun?.run_env_vars?.COMPONENT_NAME}
+              componentPath={`${basePath}/components/${installActionRun?.run_env_vars?.COMPONENT_ID}`}
+              triggerType={
+                installActionRun?.triggered_by_type as TActionConfigTriggerType
+              }
+              size="sm"
+            />
           </Text>
           <ID>{actionId}</ID>
           <Time
