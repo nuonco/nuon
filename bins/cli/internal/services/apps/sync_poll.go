@@ -93,11 +93,10 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 
 		// Remove completed components from tracking
 		for _, cmp := range completedComponents {
-			multiSpinner.CompleteSpinner(cmp.ID, true, fmt.Sprintf("finished building component %s %s", cmp.ID, cmp.Name))
-			// delete(cmpByID, cmp.ID)
+			delete(cmpByID, cmp.ID)
 		}
 
-		if len(completedComponents) == len(comps) {
+		if len(cmpByID) == 0 {
 			multiSpinner.Stop()
 			return groupError
 		}
