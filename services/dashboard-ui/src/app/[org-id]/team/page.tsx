@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Status } from '@/components/common/Status'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
@@ -11,11 +11,16 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { TeamTable, TeamTableSkeleton } from '@/components/team/TeamTable'
-import { InviteUserButton } from '@/components/team/InviteUserButton'
+import { InviteUserButton } from '@/components/team/InviteUser'
 import { getOrg, getOrgAccounts } from '@/lib'
 import { getSession } from '@/lib/auth-server'
 import type { TAccount, TInvite } from '@/types'
 import { isNuonSession } from '@/utils/session-utils'
+import {
+  InvitedUser,
+  InvitedUserError,
+  InvitedUserSkeleton,
+} from './invited-user'
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -94,11 +99,33 @@ export default async function OrgTeam({ params, searchParams }) {
         </PageHeader>
         <PageContent>
           <PageSection>
-            <ErrorBoundary fallback={<Text theme="error">Error loading team members</Text>}>
-              <Suspense fallback={<TeamTableSkeleton />}>
-                <StratusOrgMembers orgId={orgId} offset={sp['offset'] || '0'} />
-              </Suspense>
-            </ErrorBoundary>
+            <div>
+              <Text variant="base" weight="strong">
+                Active memebers
+              </Text>
+              <ErrorBoundary
+                fallback={<Text theme="error">Error loading team members</Text>}
+              >
+                <Suspense fallback={<TeamTableSkeleton />}>
+                  <StratusOrgMembers
+                    orgId={orgId}
+                    offset={sp['offset'] || '0'}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <Text variant="base" weight="strong">
+                Active invites
+              </Text>
+              <AsyncBoundary
+                loadingFallback={<InvitedUserSkeleton />}
+                errorFallback={<InvitedUserError />}
+              >
+                <InvitedUser orgId={orgId} />
+              </AsyncBoundary>
+            </div>
           </PageSection>
         </PageContent>
       </PageLayout>
