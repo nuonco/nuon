@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
@@ -8,6 +7,7 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TAppPolicyConfig } from '@/types'
 import { PolicyModal } from './PolicyModal'
 
@@ -139,8 +139,7 @@ export const PoliciesTable = ({
   appId: string
   componentNameToId: Record<string, string>
 }) => {
-  const [selectedPolicy, setSelectedPolicy] = useState<TPolicyRow | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { addModal } = useSurfaces()
 
   const data = parsePolicyToTableData(policies)
 
@@ -153,8 +152,14 @@ export const PoliciesTable = ({
             variant="ghost"
             size="sm"
             onClick={() => {
-              setSelectedPolicy(info.row.original)
-              setIsModalOpen(true)
+              addModal(
+                <PolicyModal
+                  orgId={orgId}
+                  appId={appId}
+                  componentNameToId={componentNameToId}
+                  policy={info.row.original}
+                />
+              )
             }}
           >
             View <Icon variant="CaretRightIcon" />
@@ -166,33 +171,18 @@ export const PoliciesTable = ({
   })
 
   return (
-    <>
-      <Table<TPolicyRow>
-        columns={columns}
-        data={data}
-        emptyStateProps={{
-          emptyMessage: 'No policies configured for this app.',
-          emptyTitle: 'No policies',
-        }}
-        pagination={{
-          limit: data.length || 10,
-          offset: 0,
-          hasNext: false,
-        }}
-      />
-      {selectedPolicy && (
-        <PolicyModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-            setSelectedPolicy(null)
-          }}
-          orgId={orgId}
-          appId={appId}
-          componentNameToId={componentNameToId}
-          policy={selectedPolicy}
-        />
-      )}
-    </>
+    <Table<TPolicyRow>
+      columns={columns}
+      data={data}
+      emptyStateProps={{
+        emptyMessage: 'No policies configured for this app.',
+        emptyTitle: 'No policies',
+      }}
+      pagination={{
+        limit: data.length || 10,
+        offset: 0,
+        hasNext: false,
+      }}
+    />
   )
 }

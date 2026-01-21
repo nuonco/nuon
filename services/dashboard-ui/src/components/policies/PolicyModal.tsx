@@ -5,15 +5,14 @@ import Link from 'next/link'
 import { Badge } from '@/components/common/Badge'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { ModalBase } from '@/components/surfaces/Modal'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IPolicyModalProps {
-  isOpen: boolean
-  onClose: () => void
+interface IPolicyModalProps extends IModal {
   orgId: string
   appId: string
   componentNameToId: Record<string, string>
@@ -44,14 +43,15 @@ function ComponentsDropdown({
   orgId,
   appId,
   componentNameToId,
+  policyId,
 }: {
   components: string[]
   orgId: string
   appId: string
   componentNameToId: Record<string, string>
+  policyId: string
 }) {
   const [search, setSearch] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
 
   const filteredComponents = useMemo(() => {
     if (!search.trim()) return components
@@ -65,81 +65,71 @@ function ComponentsDropdown({
       <Text variant="subtext" weight="strong">
         Applied to components ({components.length}):
       </Text>
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex w-full items-center justify-between gap-2 rounded-md border border-grey-200 bg-white px-3 py-2 text-left text-sm dark:border-dark-grey-700 dark:bg-dark-grey-900"
-        >
-          <span className="text-grey-600 dark:text-grey-400">
-            Search {components.length} components...
-          </span>
-          <Icon variant={isOpen ? 'CaretUp' : 'CaretDown'} size="16" />
-        </button>
-
-        {isOpen && (
-          <div className="absolute z-50 mt-1 w-full rounded-md border border-grey-200 bg-white shadow-lg dark:border-dark-grey-700 dark:bg-dark-grey-900">
-            <div className="border-b border-grey-200 p-2 dark:border-dark-grey-700">
-              <Input
-                placeholder="Search components..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full"
-                autoFocus
-              />
-            </div>
-            <div className="max-h-48 overflow-y-auto p-2">
-              {filteredComponents.length > 0 ? (
-                <div className="flex flex-col gap-1">
-                  {filteredComponents.map((comp) => {
-                    const componentId = componentNameToId[comp]
-                    return componentId ? (
-                      <Link
-                        key={comp}
-                        href={`/${orgId}/apps/${appId}/components/${componentId}`}
-                        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-grey-700 hover:bg-grey-100 hover:text-grey-900 dark:text-grey-300 dark:hover:bg-dark-grey-800 dark:hover:text-grey-100"
-                      >
-                        <Icon variant="ArrowSquareOut" size="14" />
-                        {comp}
-                      </Link>
-                    ) : (
-                      <div
-                        key={comp}
-                        className="px-2 py-1.5 text-sm text-grey-600 dark:text-grey-400"
-                      >
-                        {comp}
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <Text
-                  variant="subtext"
-                  className="px-2 py-1.5 text-center italic"
-                >
-                  No components match &ldquo;{search}&rdquo;
-                </Text>
-              )}
-            </div>
+      <Dropdown
+        id={`policy-components-${policyId}`}
+        buttonText={`Search ${components.length} components...`}
+        className="w-full"
+        buttonClassName="w-full justify-between text-grey-600 dark:text-grey-400"
+        dropdownClassName="w-full"
+      >
+        <div className="min-w-64">
+          <div className="border-b border-grey-200 p-2 dark:border-dark-grey-700">
+            <Input
+              placeholder="Search components..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full"
+              autoFocus
+            />
           </div>
-        )}
-      </div>
+          <div className="max-h-48 overflow-y-auto p-2">
+            {filteredComponents.length > 0 ? (
+              <div className="flex flex-col gap-1">
+                {filteredComponents.map((comp) => {
+                  const componentId = componentNameToId[comp]
+                  return componentId ? (
+                    <Link
+                      key={comp}
+                      href={`/${orgId}/apps/${appId}/components/${componentId}`}
+                      className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-grey-700 hover:bg-grey-100 hover:text-grey-900 dark:text-grey-300 dark:hover:bg-dark-grey-800 dark:hover:text-grey-100"
+                    >
+                      <Icon variant="ArrowSquareOut" size="14" />
+                      {comp}
+                    </Link>
+                  ) : (
+                    <div
+                      key={comp}
+                      className="px-2 py-1.5 text-sm text-grey-600 dark:text-grey-400"
+                    >
+                      {comp}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <Text
+                variant="subtext"
+                className="px-2 py-1.5 text-center italic"
+              >
+                No components match &ldquo;{search}&rdquo;
+              </Text>
+            )}
+          </div>
+        </div>
+      </Dropdown>
     </div>
   )
 }
 
 export const PolicyModal = ({
-  isOpen,
-  onClose,
   orgId,
   appId,
   componentNameToId,
   policy,
+  ...props
 }: IPolicyModalProps) => {
   return (
-    <ModalBase
-      isVisible={isOpen}
-      onClose={onClose}
+    <Modal
       heading={
         <Text
           className="inline-flex gap-4 items-center"
@@ -152,6 +142,7 @@ export const PolicyModal = ({
       }
       className="!max-w-4xl"
       size="3/4"
+      {...props}
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -179,6 +170,7 @@ export const PolicyModal = ({
               orgId={orgId}
               appId={appId}
               componentNameToId={componentNameToId}
+              policyId={policy.id}
             />
           )}
 
@@ -201,6 +193,6 @@ export const PolicyModal = ({
           </CodeBlock>
         </div>
       </div>
-    </ModalBase>
+    </Modal>
   )
 }
