@@ -30,7 +30,9 @@ export const InviteUserModal = ({ ...props }: IModal) => {
     error,
     errorContent: (
       <>
-        <Text>There was an error while trying to invite {email} to {org.name}.</Text>
+        <Text>
+          There was an error while trying to invite {email} to {org.name}.
+        </Text>
         <Text>{error?.error || 'Unknown error occurred.'}</Text>
       </>
     ),
@@ -38,11 +40,7 @@ export const InviteUserModal = ({ ...props }: IModal) => {
     onSuccess: () => {
       removeModal(props.modalId)
     },
-    successContent: (
-      <Text>
-        An invitation has been sent to {email}.
-      </Text>
-    ),
+    successContent: <Text>An invitation has been sent to {email}.</Text>,
     successHeading: `Invitation sent`,
   })
 
@@ -109,7 +107,9 @@ export const InviteUserModal = ({ ...props }: IModal) => {
   )
 }
 
-export const InviteUserButton = ({ ...props }: Omit<IButtonAsButton, 'children'>) => {
+export const InviteUserButton = ({
+  ...props
+}: Omit<IButtonAsButton, 'children'>) => {
   const { addModal } = useSurfaces()
   const modal = <InviteUserModal />
 
@@ -121,8 +121,9 @@ export const InviteUserButton = ({ ...props }: Omit<IButtonAsButton, 'children'>
       }}
       {...props}
     >
-      <Icon variant="UserPlus" size={16} weight="bold" />
+      {!props?.isMenuButton ? <Icon variant="UserPlus" /> : null}
       Invite user
+      {props?.isMenuButton ? <Icon variant="UserPlus" /> : null}
     </Button>
   )
 }
