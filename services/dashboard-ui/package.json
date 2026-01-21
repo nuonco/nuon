@@ -8,7 +8,7 @@
     "dev:ladle": "ladle dev",
     "build": "cross-env NODE_ENV=production next build",
     "prebuild": "npm run generate-api-types",
-    "generate-api-types": "openapi-typescript ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
+    "generate-api-types": "node ./scripts/generate-api-types.js",
     "generate-api-mocks": "node ./scripts/generate-mocks-with-clean-spec.js",
     "start": "next start -p 4000",
     "start-mock-api": "tsx test/mock-express-api.ts",

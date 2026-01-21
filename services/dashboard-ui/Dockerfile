@@ -1,13 +1,24 @@
+FROM golang:1.25.4-alpine AS openapi-gen
+
+WORKDIR /src
+
+RUN apk add --no-cache git
+
+COPY go.mod go.sum ./
+COPY pkg pkg
+COPY sdks sdks
+COPY ctl-api services/ctl-api
+
+WORKDIR /src/services/ctl-api
+
+RUN go run cmd/gen/main.go
+
 FROM node:20-alpine AS deps
 
 WORKDIR /src
 
-RUN apk add --no-cache build-base \
-    make \
-    python3 \
-    py3-pip
+RUN apk add --no-cache build-base make python3 py3-pip
 
-# Copy only package files first for better caching
 COPY \
     .eslintrc.json \
     .prettierrc \
@@ -20,8 +31,8 @@ COPY \
     package.json \
     tsconfig.json \
     ./
-RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
-    npm install
+
+RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm install
 
 COPY test test
 COPY scripts scripts
@@ -30,7 +41,6 @@ COPY src src
 
 FROM deps AS lint
 
-# Run linting with node_modules from deps stage
 RUN npm run lint
 
 FROM deps AS test
@@ -45,8 +55,18 @@ ARG NUON_API_URL=https://api.stage.nuon.co
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
 ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 
-RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui \
-    npm run build -- --no-lint
+RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build -- --no-lint
+
+FROM deps AS lint-local-spec
+
+RUN npm run lint
+
+FROM deps AS test-local-spec
+
+COPY --from=openapi-gen /src/services/ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
+ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
+
+RUN npm run test -- -t=30000
 
 FROM build AS final
 

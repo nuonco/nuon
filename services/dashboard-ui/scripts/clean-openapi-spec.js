@@ -16,12 +16,37 @@ const http = require('http');
 const url = require('url');
 
 const API_URL = process.env.NUON_API_URL || 'https://api.nuon.co';
+const SPEC_FILE = process.env.NUON_OPENAPI_SPEC_FILE; // Local file path (optional)
 const OUTPUT_FILE = path.join(__dirname, 'cleaned-openapi-spec.json');
 
-console.log(`Downloading OpenAPI spec from ${API_URL}/oapi/v3...`);
+if (SPEC_FILE) {
+  console.log(`Loading OpenAPI spec from local file: ${SPEC_FILE}`);
+} else {
+  console.log(`Downloading OpenAPI spec from ${API_URL}/oapi/v3...`);
+}
+
+// Load the OpenAPI spec from local file
+const loadSpecFromFile = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      const data = fs.readFileSync(SPEC_FILE, 'utf8');
+      console.log(`Read ${data.length} bytes from ${SPEC_FILE}`);
+      const spec = JSON.parse(data);
+      console.log(`Parsed OpenAPI spec v${spec.openapi} with ${Object.keys(spec.components?.schemas || {}).length} schemas`);
+      resolve(spec);
+    } catch (err) {
+      reject(new Error(`Failed to load spec from file: ${err.message}`));
+    }
+  });
+};
 
 // Download the OpenAPI spec (supports both HTTP and HTTPS)
 const downloadSpec = () => {
+  // Use local file if specified
+  if (SPEC_FILE) {
+    return loadSpecFromFile();
+  }
+
   return new Promise((resolve, reject) => {
     const specUrl = `${API_URL}/oapi/v3`;
     const parsedUrl = url.parse(specUrl);
