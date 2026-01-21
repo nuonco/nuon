@@ -56,14 +56,16 @@ jobs:
         run: |
          CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
 
-      - name: 🔧 Enable local API types generation (dashboard-ui only)
-        if: ${{ inputs.service == 'dashboard-ui' && env.GEN_API_TYPES == 'true' }}
-        run: |
-          echo "Enabling local API types generation for dashboard-ui"
-          cd ../mono/services/dashboard-ui
-          yq -i '(.tests[] | select(.docker_target == "lint")).docker_target = "lint-local-spec"' service.yml
-          yq -i '(.tests[] | select(.docker_target == "test")).docker_target = "test-local-spec"' service.yml
-          yq '.tests' service.yml
+      # TODO: Re-enable after nuonctl with pull-service-configs is published
+      # - name: 🔧 Enable local API types generation (dashboard-ui only)
+      #   if: ${{ inputs.service == 'dashboard-ui' && env.GEN_API_TYPES == 'true' }}
+      #   run: |
+      #     echo "Pulling service configs and enabling local API types generation..."
+      #     CI=true nuonctl builds pull-service-configs
+      #     yq -i '(.tests[] | select(.docker_target == "lint")).docker_target = "lint-local-spec"' services/dashboard-ui/service.yml
+      #     yq -i '(.tests[] | select(.docker_target == "test")).docker_target = "test-local-spec"' services/dashboard-ui/service.yml
+      #     echo "Updated service.yml:"
+      #     yq '.tests' services/dashboard-ui/service.yml
 
       - name: 😎 Tests
         run: |
