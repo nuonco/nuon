@@ -28,6 +28,10 @@ bin/
 **/terraform.tfstate
 **/terraform.tfstate.*
 
+# Test output directories
+pkg/config/generator/test-app-config/
+pkg/config/generator/test-config-init/
+
 # Go files
 # update reset-generated-code when modifying this section
 # generated protobufs

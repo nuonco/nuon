@@ -25,7 +25,12 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	// create the job
+	if comp.Type == app.ComponentTypeExternalImage {
+		if err := w.evaluateExternalImagePolicy(ctx, buildID); err != nil {
+			return err
+		}
+	}
+
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
 		return err

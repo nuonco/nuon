@@ -571,7 +571,7 @@ require (
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v1.1.0 // indirect
-	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/go-digest v1.0.0
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
