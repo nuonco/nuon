@@ -30,11 +30,6 @@ services: |
 
   dashboard-ui:
     - services/dashboard-ui/**
-    - services/ctl-api/cmd/gen/**
-    - services/ctl-api/docs/public/descriptions/**
-    - pkg/**
-    - go.mod
-    - go.sum
 
 disabled_services: |
 

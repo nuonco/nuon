@@ -1,3 +1,4 @@
+# Generate OpenAPI spec from ctl-api source
 FROM golang:1.25.4-alpine AS openapi-gen
 
 WORKDIR /src
@@ -52,21 +53,17 @@ COPY --from=openapi-gen /src/services/ctl-api/docs/public/swagger-v3.json /opena
 
 FROM deps AS lint
 
-# Run linting with node_modules from deps stage
 RUN npm run lint
 
 FROM deps AS test
 
-# Use locally generated spec instead of fetching from staging
 ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
 
 RUN npm run test -- -t=30000
 
 FROM deps AS build
 
-# Use locally generated spec for type generation
 ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
-
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
 ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
 
