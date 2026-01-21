@@ -207,7 +207,15 @@ func NewTestingConfigStructure(name string) *ConfigStructure {
 
 // generates a  new config directory
 func TestGenerate(t *testing.T) {
-	// Test case 1: Basic generation
+	defer func() {
+		// cleanup
+		err := os.RemoveAll("./test-config-init")
+		if err != nil {
+			t.Errorf("Failed to clean generated config %v", err)
+		}
+	}()
+
+	// Basic generation
 	generator := NewConfigGen(
 		true,
 		true,
@@ -215,7 +223,7 @@ func TestGenerate(t *testing.T) {
 		true,
 		false,
 	)
-	err := generator.Gen("./test-app-init/", NewTestingConfigStructure("test-app-config"))
+	err := generator.Gen("./test-app-init/", NewTestingConfigStructure("test-app-init"))
 	assert.NoError(t, err, "generator existed with error")
 }
 
@@ -223,6 +231,14 @@ func TestGenerate(t *testing.T) {
 func TestGenerateWithInstanceValues(t *testing.T) {
 	// This test verifies that instance values are being used in the generated TOML
 	generator := NewConfigGen(true, true, false, true, false)
+
+	defer func() {
+		// cleanup
+		err := os.RemoveAll("./test-config-init")
+		if err != nil {
+			t.Errorf("Failed to clean generated config %v", err)
+		}
+	}()
 
 	// Generate the config files
 	err := generator.Gen("./test-config-init/", NewTestingConfigStructure("test-config-init"))
