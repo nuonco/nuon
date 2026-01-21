@@ -68,15 +68,6 @@ ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
 
 RUN npm run test -- -t=30000
 
-FROM deps AS build-local-spec
-
-COPY --from=openapi-gen /src/services/ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
-ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
-ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
-ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
-
-RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build -- --no-lint
-
 FROM build AS final
 
 ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
