@@ -274,4 +274,10 @@ func TestGenerateWithInstanceValues(t *testing.T) {
 	}
 
 	t.Logf("Successfully verified instance values in generated TOML files")
+
+	// cleanup
+	err = os.RemoveAll("./test-config-init")
+	if err != nil {
+		t.Errorf("Failed to clean generated config %v", err)
+	}
 }
