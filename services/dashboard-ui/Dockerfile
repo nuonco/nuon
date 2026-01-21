@@ -16,10 +16,10 @@ COPY pkg pkg
 # Copy sdks directory (required by go.mod replace directive)
 COPY sdks sdks
 
-# Copy ctl-api service (copied to build context as ctl-api/ by sources)
-COPY ctl-api ctl-api
+# Copy ctl-api service - maintain proper path for module resolution
+COPY ctl-api services/ctl-api
 
-WORKDIR /src/ctl-api
+WORKDIR /src/services/ctl-api
 
 # Generate OpenAPI specs (public, admin, runner) including v3
 RUN go run cmd/gen/main.go
@@ -62,7 +62,7 @@ COPY src src
 # =============================================================================
 FROM deps AS deps-local-spec
 
-COPY --from=openapi-gen /src/ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
+COPY --from=openapi-gen /src/services/ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
 # =============================================================================
 # Standard targets (default - fetch from staging)
