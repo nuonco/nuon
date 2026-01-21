@@ -89,6 +89,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   iconVariant: "BookOpen",
                   text: "README",
                 },
+                {
+                  path: `/policies`,
+                  iconVariant: 'ShieldCheck',
+                  text: 'Policies',
+                },
               ]}
             />
             {children}
