@@ -23,9 +23,6 @@ import { toSentenceCase } from '@/utils/string-utils'
 import { ActionTriggerType } from './ActionTriggerType'
 import { TriggeredByFilter } from './TriggeredByFilter'
 
-// NOTE: old stuff
-import { InstallActionTriggerFilter } from '@/components/old/InstallActionTriggerFilter'
-
 export type InstallActionRow = {
   actionId: string
   actionName: string

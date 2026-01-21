@@ -2,6 +2,7 @@ import React from 'react'
 import type { TKeyValue } from '@/types'
 import { cn } from '@/utils/classnames'
 import { JSONViewer } from './JSONViewer'
+import { ClickToCopy } from './ClickToCopy'
 import { EmptyState, type IEmptyState } from './EmptyState'
 import { Skeleton } from './Skeleton'
 import { Text } from './Text'
@@ -64,7 +65,9 @@ export const KeyValueList = ({
                     className="!border-0 !rounded-none"
                   />
                 ) : (
-                  value
+                  <ClickToCopy>
+                    {value}
+                  </ClickToCopy>
                 )
               ) : (
                 <Text variant="subtext" theme="neutral">
