@@ -8,15 +8,12 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-
+import { InviteUserButton } from "@/components/team/InviteUser"
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { useUserJourney } from '@/hooks/use-user-journey'
 import { cn } from '@/utils/classnames'
 import { UserProfile } from './UserProfile'
 
-// old components
-import { InvitePanel } from '../old/OrgInviteModal'
-
-import { useUserJourney } from '@/hooks/use-user-journey'
 
 export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {}
@@ -38,13 +35,7 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
         <Text variant="label" theme="neutral">
           Org settings
         </Text>
-        <Button
-          onClick={() => {
-            addPanel(<InvitePanel />)
-          }}
-        >
-          Invite team member <Icon variant="UserPlus" />
-        </Button>
+        <InviteUserButton isMenuButton />
         <Button
           onClick={() => {
             openOnboarding()
