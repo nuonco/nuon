@@ -1,10 +1,14 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
 func NewInternalAPI(params Params) (*API, error) {
+	fmt.Printf("DEBUG INTERNAL API - Configured Middlewares from params.Cfg.InternalMiddlewares (%d): %v\n", len(params.Cfg.InternalMiddlewares), params.Cfg.InternalMiddlewares)
+
 	api := &API{
 		cfg:                   params.Cfg,
 		port:                  params.Cfg.InternalHTTPPort,

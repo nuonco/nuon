@@ -1,10 +1,14 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
 func NewPublicAPI(params Params) (*API, error) {
+	fmt.Printf("DEBUG PUBLIC API - Configured Middlewares from params.Cfg.Middlewares (%d): %v\n", len(params.Cfg.Middlewares), params.Cfg.Middlewares)
+
 	api := &API{
 		configuredMiddlewares: params.Cfg.Middlewares,
 		cfg:                   params.Cfg,

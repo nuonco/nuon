@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -249,10 +250,22 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
+	// DEBUG: Print environment variables
+	fmt.Printf("DEBUG ENV - MIDDLEWARES: %q\n", os.Getenv("MIDDLEWARES"))
+	fmt.Printf("DEBUG ENV - RUNNER_MIDDLEWARES: %q\n", os.Getenv("RUNNER_MIDDLEWARES"))
+	fmt.Printf("DEBUG ENV - INTERNAL_MIDDLEWARES: %q\n", os.Getenv("INTERNAL_MIDDLEWARES"))
+	fmt.Printf("DEBUG ENV - AUTH_MIDDLEWARES: %q\n", os.Getenv("AUTH_MIDDLEWARES"))
+
 	var cfg Config
 	if err := config.LoadInto(nil, &cfg); err != nil {
 		return nil, fmt.Errorf("unable to load config: %w", err)
 	}
+
+	// DEBUG: Print middleware configurations after loading
+	fmt.Printf("DEBUG CONFIG - Public Middlewares (%d): %v\n", len(cfg.Middlewares), cfg.Middlewares)
+	fmt.Printf("DEBUG CONFIG - Runner Middlewares (%d): %v\n", len(cfg.RunnerMiddlewares), cfg.RunnerMiddlewares)
+	fmt.Printf("DEBUG CONFIG - Internal Middlewares (%d): %v\n", len(cfg.InternalMiddlewares), cfg.InternalMiddlewares)
+	fmt.Printf("DEBUG CONFIG - Auth Middlewares (%d): %v\n", len(cfg.AuthMiddlewares), cfg.AuthMiddlewares)
 
 	v := validator.New()
 	if err := v.Struct(cfg); err != nil {

@@ -1,10 +1,14 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
 func NewAuthAPI(params Params) (*API, error) {
+	fmt.Printf("DEBUG AUTH API - Configured Middlewares from params.Cfg.AuthMiddlewares (%d): %v\n", len(params.Cfg.AuthMiddlewares), params.Cfg.AuthMiddlewares)
+
 	api := &API{
 		cfg:                   params.Cfg,
 		port:                  params.Cfg.AuthHTTPPort,

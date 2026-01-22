@@ -59,6 +59,10 @@ func (a *API) registerMiddlewares() error {
 		middlewaresLookup[middleware.Name()] = middleware.Handler()
 	}
 
+	fmt.Printf("DEBUG %s API registerMiddlewares - Total available middlewares: %d\n", a.name, len(middlewaresLookup))
+	fmt.Printf("DEBUG %s API registerMiddlewares - Configured middlewares to register: %d\n", a.name, len(a.configuredMiddlewares))
+	fmt.Printf("DEBUG %s API registerMiddlewares - Configured list: %v\n", a.name, a.configuredMiddlewares)
+
 	for _, middleware := range a.configuredMiddlewares {
 		a.l.Info(fmt.Sprintf("registering middleware: %s", middleware), zap.String("name", middleware))
 		fn, ok := middlewaresLookup[middleware]
@@ -66,8 +70,10 @@ func (a *API) registerMiddlewares() error {
 			return fmt.Errorf("middleware not found: %s", middleware)
 		}
 		a.handler.Use(a.middlewareDebugWrapper(middleware, fn))
+		fmt.Printf("DEBUG %s API - Successfully registered middleware: %s\n", a.name, middleware)
 	}
 
+	fmt.Printf("DEBUG %s API registerMiddlewares - Finished registering %d middlewares\n", a.name, len(a.configuredMiddlewares))
 	return nil
 }
 

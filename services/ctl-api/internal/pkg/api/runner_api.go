@@ -1,10 +1,14 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
 func NewRunnerAPI(params Params) (*API, error) {
+	fmt.Printf("DEBUG RUNNER API - Configured Middlewares from params.Cfg.RunnerMiddlewares (%d): %v\n", len(params.Cfg.RunnerMiddlewares), params.Cfg.RunnerMiddlewares)
+
 	api := &API{
 		cfg:                   params.Cfg,
 		port:                  params.Cfg.RunnerHTTPPort,
