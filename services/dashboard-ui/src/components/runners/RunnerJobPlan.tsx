@@ -1,12 +1,12 @@
 'use client'
 
 import { Button, type IButtonAsButton } from '@/components/common/Button'
-import { CodeBlock } from '@/components/common/CodeBlock'
-import { Icon } from '@/components/common/Icon'
-import { Text } from '@/components/common/Text'
 import { Banner } from '@/components/common/Banner'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import { Icon } from '@/components/common/Icon'
+import { JSONViewer } from "@/components/common/JSONViewer"
 import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -62,7 +62,7 @@ export const RunnerJobPlanModal = ({
             <div className="flex justify-end">
               <Skeleton height="26px" width="26px" />
             </div>
-            <Skeleton height="600px" width="100%" />
+            <Skeleton height="350px" width="100%" />
           </div>
         ) : plan ? (
           <div className="flex flex-col gap-4">
@@ -72,9 +72,7 @@ export const RunnerJobPlanModal = ({
                 className="w-fit"
               />
             </div>
-            <CodeBlock language="json" className="max-h-[600px]">
-              {JSON.stringify(plan, null, 2)}
-            </CodeBlock>
+            <JSONViewer data={plan} />         
           </div>
         ) : (
           <div className="flex items-center justify-center p-8">

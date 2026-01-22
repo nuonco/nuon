@@ -28,8 +28,8 @@ export const InstallActionRunOutputs = () => {
         })
         .map((step) => {
           const outputs = installActionRun?.outputs?.steps?.[step?.name]
-          const outputCount = Object.keys(outputs)?.length
-          const quickRef = extractQuickReference(outputs)
+          const outputCount = Object.keys(outputs || {})?.length
+          const quickRef = extractQuickReference(outputs || {})
 
           return outputs ? (
             <Expand
@@ -96,9 +96,15 @@ export const InstallActionRunOutputs = () => {
               </div>
             </Expand>
           ) : (
-            <div className="flex flex-col items-start">
-              <Text className="!flex items-center gap-2" weight="strong">
-                <Status status={step?.status} isWithoutText />
+            <div
+              key={step?.id}
+              className="flex flex-col items-start border rounded-md w-full px-4 py-2"
+            >
+              <Text
+                className="!flex items-center gap-2"
+                weight="strong"
+                theme="neutral"
+              >
                 No outputs for {step?.name} step
               </Text>
               {step?.execution_duration ? (

@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { Time } from '@/components/common/Time'
 import { LogSeverity } from '@/components/log-stream/LogSeverity'
 import { LogFilters } from '@/components/log-stream/log-filters/LogFilters'
@@ -145,42 +144,10 @@ const LogsSkeleton = () => {
   ))
 }
 
-// Custom log viewer component that displays filtered logs with SSE-style animations
+// Custom log viewer component that displays filtered logs
 const StepAwareLogViewer = ({ logs }: { logs: TOTELLog[] }) => {
   const { loadMore, hasMore, isLoading, isStreamOpen } = useUnifiedLogData()
   const { activeLog, handleActiveLog, filters } = useLogViewer()
-  const [animatingLogs, setAnimatingLogs] = useState<Set<string>>(new Set())
-  const [logTimestamps, setLogTimestamps] = useState<Map<string, number>>(new Map())
-
-  // Animate new logs when they appear
-  useEffect(() => {
-    if (!logs) return
-
-    const newLogs = logs.filter((log) => !logTimestamps.has(log.id))
-
-    if (newLogs.length > 0) {
-      const now = Date.now()
-      const newTimestamps = new Map(logTimestamps)
-
-      if (isStreamOpen) {
-        // Only stagger animations when SSE is enabled
-        newLogs.forEach((log, index) => {
-          newTimestamps.set(log.id, now + index * 50)
-          setTimeout(() => {
-            setAnimatingLogs((prev) => new Set(prev).add(log.id))
-          }, index * 50)
-        })
-      } else {
-        // Show all logs immediately without staggering
-        newLogs.forEach((log) => {
-          newTimestamps.set(log.id, now)
-          setAnimatingLogs((prev) => new Set(prev).add(log.id))
-        })
-      }
-
-      setLogTimestamps(newTimestamps)
-    }
-  }, [logs, logTimestamps, isStreamOpen])
 
   return (
     <div className="flex flex-col gap-4">
@@ -209,16 +176,7 @@ const StepAwareLogViewer = ({ logs }: { logs: TOTELLog[] }) => {
           ) : null}
 
           {logs?.map((logLine) => (
-            <TransitionDiv
-              key={logLine?.id}
-              isVisible={animatingLogs.has(logLine.id)}
-              className={cn({
-                'slide-in': isStreamOpen,
-                fade: !isStreamOpen,
-              })}
-            >
-              <LogLine log={logLine} />
-            </TransitionDiv>
+            <LogLine key={logLine?.id} log={logLine} />
           ))}
 
           {!isStreamOpen && hasMore ? (
