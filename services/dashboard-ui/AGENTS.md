@@ -230,6 +230,169 @@ import { EmptyState } from '@/components/common/EmptyState'  # Clean thanks to i
 
 **Key Rule**: Only create component directories when you have legitimate architectural complexity, not just for organization.
 
+## Modal and Panel Components
+
+### Always Use Modal and Panel (Not ModalBase or PanelBase)
+
+**CRITICAL**: When working with modal dialogs or side panels, always use the `Modal` and `Panel` components from `/components/surfaces/`. Never use `ModalBase` or `PanelBase` directly.
+
+**Before Implementation**: Check `Modal.stories.tsx` and `Panel.stories.tsx` for usage examples! The stories show the exact patterns you should follow.
+
+**Why This Matters**:
+- `Modal` and `Panel` are wrapper components that provide additional features
+- They handle URL search param integration automatically
+- They can optionally render trigger buttons
+- They're the public API - `ModalBase` and `PanelBase` are internal implementation details
+
+**Correct Usage Pattern**:
+
+The standard pattern is to create TWO components - a Modal component and a Button component:
+
+```typescript
+// ✅ CORRECT - Modal component pattern
+import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { useSurfaces } from '@/hooks/use-surfaces'
+
+// 1. Create modal component that extends IModal
+interface IMyModal extends IModal {
+  item: TItem
+}
+
+export const MyModal = ({ item, ...props }: IMyModal) => {
+  const { removeModal } = useSurfaces()
+  const { data, error, isLoading, execute } = useServerAction({
+    action: deleteItem,
+  })
+
+  useServerActionToast({
+    data,
+    error,
+    successHeading: 'Item deleted',
+    onSuccess: () => {
+      removeModal(props.modalId)  // Close modal on success
+    },
+  })
+
+  return (
+    <Modal
+      heading="Delete Item"
+      primaryActionTrigger={{
+        children: isLoading ? 'Deleting...' : 'Delete',
+        onClick: () => execute({ itemId: item.id }),
+        disabled: isLoading,
+        variant: 'danger',
+      }}
+      {...props}  // CRITICAL: Spread props to pass modalId, isVisible, onClose, etc.
+    >
+      <Text>Are you sure you want to delete {item.name}?</Text>
+    </Modal>
+  )
+}
+
+// 2. Create button component that triggers the modal
+interface IMyButton extends IButtonAsButton {
+  item: TItem
+}
+
+export const MyButton = ({ item, ...props }: IMyButton) => {
+  const { addModal } = useSurfaces()
+  const modal = <MyModal item={item} />
+
+  return (
+    <Button
+      onClick={() => {
+        addModal(modal)
+      }}
+      {...props}
+    >
+      Delete Item
+    </Button>
+  )
+}
+```
+
+**Panel Usage** (same pattern):
+
+```typescript
+// ✅ CORRECT - Panel component pattern
+import { Panel, type IPanel } from '@/components/surfaces/Panel'
+
+interface IMyPanel extends IPanel {
+  data: TData
+}
+
+export const MyPanel = ({ data, ...props }: IMyPanel) => {
+  return (
+    <Panel
+      heading="Details"
+      size="half"
+      {...props}  // Spread props to pass panelId, isVisible, onClose, etc.
+    >
+      <Text>Panel content here</Text>
+    </Panel>
+  )
+}
+
+export const MyPanelButton = ({ data, ...props }: IButtonAsButton & { data: TData }) => {
+  const { addPanel } = useSurfaces()
+  const panel = <MyPanel data={data} />
+
+  return (
+    <Button onClick={() => addPanel(panel)} {...props}>
+      View Details
+    </Button>
+  )
+}
+```
+
+**CRITICAL MISTAKES TO AVOID**:
+
+```typescript
+// ❌ WRONG - Don't import or use ModalBase/PanelBase
+import { ModalBase } from '@/components/surfaces/Modal'  // Never do this!
+import { PanelBase } from '@/components/surfaces/Panel'  // Never do this!
+
+// ❌ WRONG - Don't destructure IModal props manually
+export const MyModal = ({
+  item,
+  isVisible,     // Don't do this
+  modalId,       // Don't do this
+  onClose,       // Don't do this
+  modalKey,      // Don't do this
+  ...props
+}: IMyModal) => {
+  return (
+    <Modal
+      isVisible={isVisible}   // Don't pass explicitly
+      modalId={modalId}       // Don't pass explicitly
+      {...props}
+    >
+  )
+}
+
+// ✅ CORRECT - Just spread all props
+export const MyModal = ({ item, ...props }: IMyModal) => {
+  return <Modal {...props}>  {/* Let Modal handle all its own props */}
+}
+
+// ❌ WRONG - Don't call addModal inline
+<Button onClick={() => addModal(<MyModal item={item} />)}>
+
+// ✅ CORRECT - Create modal instance first
+const modal = <MyModal item={item} />
+return <Button onClick={() => addModal(modal)}>
+```
+```
+
+**Best Practices**:
+- **Always use `Modal` and `Panel`** - never import `ModalBase` or `PanelBase`
+- **Create two components**: Modal/Panel component + Button component
+- **Spread props**: Always use `{...props}` to pass IModal/IPanel props to the component
+- **Don't destructure surface props**: Let Modal/Panel handle `isVisible`, `modalId`, `onClose`, etc.
+- **Create modal instance first**: `const modal = <MyModal />` then `addModal(modal)`
+- **Close modals on success**: Use `removeModal(props.modalId)` in success callbacks
+
 ## Code Quality & Development
 
 ### ESLint Configuration Impact
@@ -245,12 +408,241 @@ console.log('Debug info')  // ❌ ESLint error
 - Use browser DevTools for runtime debugging
 - Implement proper error boundaries for user-facing error handling
 
+### Component Usage Discovery
+
+**CRITICAL FIRST STEP**: Before implementing any component, always look for `.stories.tsx` files to see real usage examples.
+
+**Why Stories Files Are Essential**:
+- Stories show the **intended usage patterns** for components
+- They demonstrate **real-world examples** of prop combinations
+- They reveal **hidden features** and optional props you might miss
+- They show **correct patterns** used by the component authors
+- They prevent you from **guessing or inventing** incorrect APIs
+
+**Discovery Process** (follow this order):
+
+1. **Check for .stories.tsx file FIRST**
+   ```bash
+   # If using Button component, look for:
+   src/components/common/Button.stories.tsx
+
+   # If using Modal component, look for:
+   src/components/surfaces/Modal.stories.tsx
+   ```
+
+2. **Read the stories to see usage examples**
+   - Look at how props are passed
+   - See what values are used for enums/unions
+   - Observe patterns like spreading props (`{...props}`)
+   - Notice integration with hooks (`useSurfaces`, `useServerAction`)
+
+3. **Only then read the component source** to verify prop types
+
+**Example Discovery Flow**:
+
+```typescript
+// Step 1: Find the stories file
+// src/components/surfaces/Modal.stories.tsx
+
+// Step 2: Read the stories to see actual usage
+const openModal = () => {
+  addModal(
+    <Modal
+      heading="Create New Project"
+      primaryActionTrigger={{
+        children: 'Create Project',
+        onClick: () => alert('Project created!'),
+      }}
+    >
+      <div className="p-6">
+        {/* Modal content */}
+      </div>
+    </Modal>
+  )
+}
+
+// Step 3: Now you understand the pattern - Modal is passed to addModal()
+// Step 4: Verify prop types in Modal.tsx if needed
+```
+
+**Benefits of Stories-First Approach**:
+- ✅ See multiple usage examples in one place
+- ✅ Understand integration patterns (hooks, state management)
+- ✅ Learn component conventions (two-component patterns, prop spreading)
+- ✅ Avoid guessing prop names or values
+- ✅ Copy proven patterns from real examples
+
+**Files to Check** (in order of priority):
+1. `ComponentName.stories.tsx` - Storybook stories (PRIMARY SOURCE)
+2. Other components using it - Real codebase usage
+3. `ComponentName.tsx` - Component source (for prop verification)
+
+### Component Props Validation
+
+**After checking stories**, verify component prop types before using them. Do not guess or assume prop values exist.
+
+**Pattern to Follow**:
+1. **Check .stories.tsx file** for usage examples (FIRST!)
+2. **Read the component file** to verify available props
+3. **Check TypeScript interfaces** for valid prop values (enums, unions, etc.)
+4. **Use only documented props** - don't invent prop names or values
+
+**Common Mistakes to Avoid**:
+
+```typescript
+// ❌ BAD - Guessing prop values without checking
+<Text variant="caption" weight="medium">Label</Text>
+// "caption" and "medium" don't exist in Text component!
+
+// ✅ GOOD - Verified valid props from Text.tsx
+<Text variant="label" weight="strong">Label</Text>
+// Valid variants: 'h1' | 'h2' | 'h3' | 'base' | 'body' | 'subtext' | 'label'
+// Valid weights: 'normal' | 'strong' | 'stronger'
+
+// ❌ BAD - Inventing a prop that doesn't exist
+<Button size="large">Click me</Button>
+// Button component doesn't have a "size" prop!
+
+// ✅ GOOD - Using actual Button props
+<Button variant="primary">Click me</Button>
+```
+
+**How to Verify Props**:
+```typescript
+// 1. Read the component file
+// services/dashboard-ui/src/components/common/Text.tsx
+
+// 2. Find the interface/type definition
+export interface IText extends HTMLAttributes<HTMLSpanElement> {
+  family?: TTextFamily
+  variant?: TTextVariant  // ← Check this type
+  weight?: TTextWeight    // ← Check this type
+}
+
+// 3. Find the valid values
+export type TTextVariant =
+  | 'h1' | 'h2' | 'h3'
+  | 'base' | 'body'
+  | 'subtext' | 'label'  // ← These are the ONLY valid values
+
+export type TTextWeight = 'normal' | 'strong' | 'stronger'  // ← Only these!
+```
+
+**Best Practice**: When using any component for the first time, follow this process:
+1. **Check for `.stories.tsx` file FIRST** - See real usage examples
+2. **Read the component source** - Verify prop types and interfaces
+3. **Look at other usage** - Search codebase for similar patterns
+
+This discovery process prevents TypeScript errors, incorrect usage patterns, and wasted time guessing APIs.
+
 ### Key Scripts
 - `npm run dev` - Development server with Turbo
 - `npm run generate-api-types` - Generate types from OpenAPI spec
 - `npm run generate-api-mocks` - Generate MSW mocks from API spec
 - `npm run test` - Run tests with Vitest
 - `npm run lint` - ESLint validation (must show zero errors)
+
+### Code Comments - Write Less, Not More
+
+**CRITICAL**: Avoid writing unnecessary comments. Code should be self-documenting through clear naming and structure.
+
+**When NOT to Write Comments** (most common cases):
+
+```typescript
+// ❌ BAD - Stating the obvious
+// Track success
+trackEvent({ event: 'action_run', status: 'ok' })
+
+// Close modal
+removeModal(modalId)
+
+// Get form data
+const formData = new FormData(form)
+
+// Loop through items
+items.forEach(item => { ... })
+
+// ✅ GOOD - No comments needed, code is clear
+trackEvent({ event: 'action_run', status: 'ok' })
+removeModal(modalId)
+const formData = new FormData(form)
+items.forEach(item => { ... })
+```
+
+**JSDoc Comments - Rarely Needed**:
+
+```typescript
+// ❌ BAD - Obvious from function name
+/**
+ * Button component that opens the InstallActionManualRunModal
+ * Use this to trigger manual action workflow runs
+ */
+export const InstallActionManualRunButton = ({ ... }) => { ... }
+
+// ✅ GOOD - No JSDoc needed, name is self-explanatory
+export const InstallActionManualRunButton = ({ ... }) => { ... }
+
+// ❌ BAD - Obvious from function name
+/**
+ * Normalize environment variables from action config steps
+ * Merges env vars from all steps, with first occurrence taking precedence
+ */
+function normalizeEnvVars(steps) { ... }
+
+// ✅ GOOD - No comment needed, function name describes what it does
+function normalizeEnvVars(steps) { ... }
+```
+
+**When Comments ARE Useful** (rare cases):
+
+```typescript
+// ✅ GOOD - Explains non-obvious business logic
+// Use double-equals to match both null and undefined from form data
+if (overwrite[key] == envVars[key]) return acc
+
+// ✅ GOOD - Warns about important constraint
+// Don't use Array.at() here - not supported in Safari < 15.4
+const firstItem = items[0]
+
+// ✅ GOOD - Explains workaround for obscure bug
+// Force re-render to fix React 18 hydration issue with SSR
+useEffect(() => setMounted(true), [])
+
+// ✅ GOOD - Documents complex algorithm
+// Boyer-Moore string search for O(n/m) performance
+function search(text, pattern) { ... }
+```
+
+**Best Practices**:
+- **Default to NO comments** - Let the code speak for itself
+- **Use clear naming** instead of comments to explain intent
+- **Extract functions** with descriptive names instead of commenting code blocks
+- **Remove obvious comments** like "// Track success", "// Close modal", "// Get data"
+- **Avoid JSDoc** on simple/obvious functions and components
+- **Only comment** when explaining WHY, not WHAT (and only if the "why" isn't obvious)
+
+**Examples of Self-Documenting Code**:
+
+```typescript
+// ❌ BAD - Comment explains what code does
+// Filter out unchanged variables before sending to API
+const changedVars = allVars.filter(v => v.value !== v.originalValue)
+
+// ✅ GOOD - Function name explains what it does
+const changedVars = filterUnchangedVariables(allVars)
+
+// ❌ BAD - Comment describes the logic
+// Custom env vars are prefixed with "custom:" and we need to extract the name/value pairs
+if (key.startsWith('custom:')) { ... }
+
+// ✅ GOOD - Function name describes the logic
+if (isCustomEnvVar(key)) {
+  const { name, value } = parseCustomEnvVar(key, formData)
+  ...
+}
+```
+
+**Remember**: If you feel the need to write a comment, first ask: "Can I make the code clearer instead?" The answer is usually yes.
 
 ## React Server Components (RSC) Architecture
 
