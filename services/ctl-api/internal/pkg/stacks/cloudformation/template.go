@@ -14,7 +14,7 @@ import (
 func (t *Templates) Template(inputs *stacks.TemplateInput) (*cloudformation.Template, string, error) {
 	tmpl, err := t.getAWSTemplate(inputs)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "unable to create aws-eks template")
+		return nil, "", errors.Wrap(err, "unable to create aws template")
 	}
 
 	// Marshal the template to JSON
