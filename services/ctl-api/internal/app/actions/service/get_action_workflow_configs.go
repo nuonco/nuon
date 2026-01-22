@@ -15,7 +15,7 @@ import (
 
 // @ID						GetAppActionConfigs
 // @Summary				get action workflow for an app
-// @Description.markdown	get_action_workflow_configs.md
+// @Description.markdown	action_workflow_configs_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					action_id			path	string	true	"action workflow ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
@@ -52,7 +52,7 @@ func (s *service) GetAppActionConfigs(ctx *gin.Context) {
 
 // @ID						GetActionWorkflowConfigs
 // @Summary				get action workflow for an app
-// @Description.markdown	get_action_workflow_configs.md
+// @Description.markdown	action_workflow_configs_get.md
 // @Param					action_workflow_id			path	string	true	"action workflow ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

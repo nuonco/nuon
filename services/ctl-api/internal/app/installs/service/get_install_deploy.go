@@ -15,7 +15,7 @@ import (
 
 // @ID						GetInstallComponentDeploy
 // @Summary				get an install deploy
-// @Description.markdown	get_install_deploy.md
+// @Description.markdown	install_deploy_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Param					deploy_id	path	string	true	"deploy ID"
@@ -56,7 +56,7 @@ func (s *service) GetInstallComponentDeploy(ctx *gin.Context) {
 
 // @ID						GetInstallDeploy
 // @Summary				get an install deploy
-// @Description.markdown	get_install_deploy.md
+// @Description.markdown	install_deploy_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					deploy_id	path	string	true	"deploy ID"
 // @Tags					installs

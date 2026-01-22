@@ -13,7 +13,7 @@ import (
 
 // @ID						GetOrgRunnerGroup
 // @Summary				Get an org's runner group
-// @Description.markdown	get_org_runner_group.md
+// @Description.markdown	org_runner_group_get.md
 // @Tags					orgs
 // @Accept					json
 // @Produce				json

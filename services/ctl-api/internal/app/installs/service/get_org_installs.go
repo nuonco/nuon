@@ -16,7 +16,7 @@ import (
 
 // @ID						GetOrgInstalls
 // @Summary				get all installs for an org
-// @Description.markdown	get_org_installs.md
+// @Description.markdown	org_installs_get.md
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param         q								 query	string	false	"search query to filter installs by name"
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

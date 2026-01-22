@@ -14,7 +14,7 @@ import (
 
 // @ID						GetApps
 // @Summary				get all apps for the current org
-// @Description.markdown	get_apps.md
+// @Description.markdown	apps_get.md
 // @Param					offset						query	int		false	"offset of jobs to return"	Default(0)
 // @Param					q							query	string	false	"search query to filter apps by name"
 // @Param					limit						query	int		false	"limit of jobs to return"	Default(10)

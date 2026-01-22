@@ -13,7 +13,7 @@ import (
 
 // @ID						GetInstallState
 // @Summary				Get the current state of an install.
-// @Description.markdown	get_install_state.md
+// @Description.markdown	install_state_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json

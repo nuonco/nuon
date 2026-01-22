@@ -15,7 +15,7 @@ import (
 
 // @ID                     GetOrgs
 // @Summary                Return current user's orgs
-// @Description.markdown   get_orgs.md
+// @Description.markdown	orgs_get.md
 // @Param                  q                           query   string  false   "search query"
 // @Param                  offset                      query   int     false   "offset of results to return"   Default(0)
 // @Param                  limit                       query   int     false   "limit of results to return"    Default(10)

@@ -15,7 +15,7 @@ import (
 
 // @ID						GetInstallActions
 // @Summary				get an installs action workflows
-// @Description.markdown	get_install_action_workflows.md
+// @Description.markdown	install_action_workflows_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -45,7 +45,7 @@ func (s *service) GetInstallActions(ctx *gin.Context) {
 
 // @ID						GetInstallActionWorkflows
 // @Summary				get an installs action workflows
-// @Description.markdown	get_install_action_workflows.md
+// @Description.markdown	install_action_workflows_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

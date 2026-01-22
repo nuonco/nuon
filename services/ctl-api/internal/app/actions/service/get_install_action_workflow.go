@@ -13,7 +13,7 @@ import (
 
 // @ID						GetInstallAction
 // @Summary				get an install action
-// @Description.markdown	get_install_action_workflow.md
+// @Description.markdown	install_action_workflow_get.md
 // @Param					install_id			path	string	true	"install ID"
 // @Param					action_id	path	string	true	"action ID"
 // @Tags					installs
@@ -43,7 +43,7 @@ func (s *service) GetInstallAction(ctx *gin.Context) {
 
 // @ID						GetInstallActionWorkflow
 // @Summary				get an install action workflow
-// @Description.markdown	get_install_action_workflow.md
+// @Description.markdown	install_action_workflow_get.md
 // @Param					install_id			path	string	true	"install ID"
 // @Param					action_workflow_id	path	string	true	"workflow ID"
 // @Tags					installs

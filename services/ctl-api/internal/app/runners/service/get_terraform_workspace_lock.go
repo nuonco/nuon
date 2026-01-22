@@ -13,7 +13,7 @@ import (
 
 // @ID						GetTerraformWorkspaceLock
 // @Summary				get terraform workspace lock
-// @Description.markdown	get_terraform_workspace_lock.md
+// @Description.markdown	terraform_workspace_lock_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Tags					runners
 // @Accept					json

@@ -17,7 +17,7 @@ import (
 
 // @ID						GetAppComponentBuilds
 // @Summary				get builds for components
-// @Description.markdown	get_component_builds.md
+// @Description.markdown	component_builds_get.md
 // @Param					app_id						path	string	true	"app id to filter by"
 // @Param					component_id				path	string	true	"component id to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
@@ -69,7 +69,7 @@ func (s *service) GetAppComponentBuilds(ctx *gin.Context) {
 
 // @ID						GetComponentBuilds
 // @Summary				get builds for components
-// @Description.markdown	get_component_builds.md
+// @Description.markdown	component_builds_get.md
 // @Param					component_id				query	string	false	"component id to filter by"
 // @Param					app_id						query	string	false	"app id to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)

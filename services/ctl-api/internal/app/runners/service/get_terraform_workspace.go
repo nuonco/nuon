@@ -11,7 +11,7 @@ import (
 
 // @ID						GetTerraformWorkspace
 // @Summary				get  terraform workspace
-// @Description.markdown	get_terraform_workspace.md
+// @Description.markdown	terraform_workspace_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Tags					runners,runners/runner
 // @Accept					json

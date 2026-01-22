@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppStackConfig
 // @Summary				get app stack config
-// @Description.markdown	get_app_stack_config.md
+// @Description.markdown	app_stack_config_get.md
 // @Param		app_id	path	string	true	"app ID"
 // @Param config_id path string	true	"app stack config ID"
 // @Tags					apps

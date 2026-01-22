@@ -8,7 +8,7 @@ import (
 
 // @ID						GetRunnerAppConfig
 // @Summary				get an app config in the runner context
-// @Description.markdown	get_app_config.md
+// @Description.markdown	app_config_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					app_config_id	path	string	true	"app config ID"
 // @Tags apps/runner

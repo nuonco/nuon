@@ -16,7 +16,7 @@ import (
 
 // @ID						GetAppActions
 // @Summary				get action workflows for an app
-// @Description.markdown	get_app_action_workflows.md
+// @Description.markdown	app_action_workflows_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param         q 						query	string	false	"search query to filter action workflows by name"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
@@ -40,7 +40,7 @@ func (s *service) GetAppActions(ctx *gin.Context) {
 
 // @ID						GetActionWorkflows
 // @Summary				get action workflows for an app
-// @Description.markdown	get_app_action_workflows.md
+// @Description.markdown	app_action_workflows_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param         q 						query	string	false	"search query to filter action workflows by name"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)

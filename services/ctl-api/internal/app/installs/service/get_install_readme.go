@@ -23,7 +23,7 @@ type Readme struct {
 
 // @ID						GetInstallReadme
 // @Summary				get install readme rendered with
-// @Description.markdown	get_install_readme.md
+// @Description.markdown	install_readme_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json

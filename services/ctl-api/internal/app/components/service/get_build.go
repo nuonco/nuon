@@ -15,7 +15,7 @@ import (
 
 // @ID						GetBuild
 // @Summary				get a build
-// @Description.markdown	get_component_build.md
+// @Description.markdown	component_build_get.md
 // @Param					build_id	path	string	true	"build ID"
 // @Tags					components
 // @Accept					json

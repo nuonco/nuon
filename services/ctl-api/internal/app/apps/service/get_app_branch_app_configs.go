@@ -15,7 +15,7 @@ import (
 
 // @ID						GetAppBranchAppConfigs
 // @Summary				    get app branch app configs
-// @Description.markdown	get_app_branch_configs.md
+// @Description.markdown	app_branch_configs_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					app_branch_id				path	string	true	"app branch ID"
 // @Param					offset						query	int		false	"offset of branches to return"	Default(0)

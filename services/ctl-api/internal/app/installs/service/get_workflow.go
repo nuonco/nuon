@@ -13,7 +13,7 @@ import (
 
 // @ID						GetWorkflow
 // @Summary					get a workflow
-// @Description.markdown	get_workflow.md
+// @Description.markdown	workflow_get.md
 // @Param					workflow_id path	string	true	"workflow ID"
 // @Tags					installs
 // @Accept					json
@@ -48,7 +48,7 @@ func (s *service) GetWorkflow(ctx *gin.Context) {
 // TODO: Remove. Deprecated.
 // @ID						GetInstallWorkflow
 // @Summary					get an install workflow
-// @Description.markdown	get_workflow.md
+// @Description.markdown	workflow_get.md
 // @Param					install_workflow_id path	string	true	"install workflow ID"
 // @Tags					installs
 // @Accept					json

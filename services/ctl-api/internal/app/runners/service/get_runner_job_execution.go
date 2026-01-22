@@ -12,7 +12,7 @@ import (
 
 // @ID                        GetRunnerJobExecution
 // @Summary                   Get runner job execution
-// @Description.markdown      get_runner_job_execution.md
+// @Description.markdown	runner_job_execution_get.md
 // @Param                     runner_job_id            path    string  true    "Runner job ID"
 // @Param                     runner_job_execution_id  path    string  true    "Runner job execution ID"
 // @Tags                      runners/runner

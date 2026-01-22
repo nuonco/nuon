@@ -17,7 +17,7 @@ type AuditLogs []app.InstallAuditLog
 
 // @ID										GetInstallAuditLogs
 // @Summary								get install audit logs
-// @Description.markdown	get_install_audit_logs.md
+// @Description.markdown	install_audit_logs_get.md
 // @Param									install_id	path	string	true	"install ID"
 // @Param									start	query	string	true	"start timestamp for audit log range"
 // @Param									end	query	string	true	"end timestamp for audit log range"

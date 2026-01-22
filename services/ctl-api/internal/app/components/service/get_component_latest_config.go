@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppComponentLatestConfig
 // @Summary				get latest config for a component
-// @Description.markdown	get_component_latest_config.md
+// @Description.markdown	component_latest_config_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
@@ -59,7 +59,7 @@ func (s *service) GetAppComponentLatestConfig(ctx *gin.Context) {
 
 // @ID						GetComponentLatestConfig
 // @Summary				get latest config for a component
-// @Description.markdown	get_component_latest_config.md
+// @Description.markdown	component_latest_config_get.md
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
 // @Security				APIKey

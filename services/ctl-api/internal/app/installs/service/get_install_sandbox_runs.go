@@ -14,7 +14,7 @@ import (
 
 // @ID						GetInstallSandboxRuns
 // @Summary				get an installs sandbox runs
-// @Description.markdown	get_install_sandbox_runs.md
+// @Description.markdown	install_sandbox_runs_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

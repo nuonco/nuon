@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppReleases
 // @Summary				get all releases for an app
-// @Description.markdown	get_app_releases.md
+// @Description.markdown	app_releases_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

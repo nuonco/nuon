@@ -14,7 +14,7 @@ import (
 
 // @ID						GetComponent
 // @Summary				get a component
-// @Description.markdown	get_component.md
+// @Description.markdown	component_get.md
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
 // @Accept					json

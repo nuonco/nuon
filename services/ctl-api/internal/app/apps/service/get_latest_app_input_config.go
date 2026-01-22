@@ -11,7 +11,7 @@ import (
 
 // @ID						GetAppInputLatestConfig
 // @Summary				get latest app input config
-// @Description.markdown	get_app_input_latest_config.md
+// @Description.markdown	app_input_latest_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Tags					apps
 // @Accept					json

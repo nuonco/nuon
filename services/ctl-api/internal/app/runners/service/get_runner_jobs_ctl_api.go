@@ -16,7 +16,7 @@ import (
 
 // @ID						GetRunnerJobs
 // @Summary				get runner jobs
-// @Description.markdown	get_runner_jobs.md
+// @Description.markdown	runner_jobs_get.md
 // @Param					group						query	string	false	"job group"
 // @Param					groups						query	string	false	"job groups"
 // @Param					status						query	string	false	"job status"

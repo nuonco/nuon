@@ -12,7 +12,7 @@ import (
 
 // @ID						GetInstallSandboxRunV2
 // @Summary				get an install sandbox run
-// @Description.markdown	get_install_sandbox_run.md
+// @Description.markdown	install_sandbox_run_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					run_id	path	string	true	"run ID"
 // @Tags					installs
@@ -33,7 +33,7 @@ func (s *service) GetInstallSandboxRunV2(ctx *gin.Context) {
 
 // @ID						GetInstallSandboxRun
 // @Summary				get an install sandbox run
-// @Description.markdown	get_install_sandbox_run.md
+// @Description.markdown	install_sandbox_run_get.md
 // @Param					run_id	path	string	true	"run ID"
 // @Tags					installs
 // @Accept					json

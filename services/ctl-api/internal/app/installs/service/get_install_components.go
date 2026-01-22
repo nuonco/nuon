@@ -15,7 +15,7 @@ import (
 
 // @ID						GetInstallComponents
 // @Summary				get an installs components
-// @Description.markdown	get_install_components.md
+// @Description.markdown	install_components_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					types						query	string	false	"component types to filter by"
 // @Param         q					query	string	false	"search query for component name"

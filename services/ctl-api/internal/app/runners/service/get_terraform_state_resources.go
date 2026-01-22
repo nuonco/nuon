@@ -17,7 +17,7 @@ import (
 
 // @ID						GetTerraformWorkspaceStateJSONResourcesV2
 // @Summary				get terraform state resources. This output is similar to "terraform state list"
-// @Description.markdown	get_terraform_state_json_resources.md
+// @Description.markdown	terraform_state_json_resources_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id 		path	string	true	"state ID"
 // @Tags					runners
@@ -38,7 +38,7 @@ func (s *service) GetTerraformWorkspaceStateResourcesV2(ctx *gin.Context) {
 
 // @ID						GetTerraformWorkspaceStateJSONResources
 // @Summary				get terraform state resources. This output is similar to "terraform state list"
-// @Description.markdown	get_terraform_state_json_resources.md
+// @Description.markdown	terraform_state_json_resources_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id 		path	string	true	"state ID"
 // @Tags					runners

@@ -12,7 +12,7 @@ import (
 
 // @ID						GetLatestAppBreakGlassConfig
 // @Summary				get latest app break glass config
-// @Description.markdown	get_latest_app_break_glass_config.md
+// @Description.markdown	latest_app_break_glass_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Tags					apps
 // @Accept					json

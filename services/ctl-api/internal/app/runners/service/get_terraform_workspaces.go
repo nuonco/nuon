@@ -11,7 +11,7 @@ import (
 
 // @ID						GetTerraformWorkspaces
 // @Summary				get  terraform workspaces
-// @Description.markdown	get_terraform_workspaces.md
+// @Description.markdown	terraform_workspaces_get.md
 // @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json

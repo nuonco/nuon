@@ -12,7 +12,7 @@ import (
 
 // @ID							GetWorkflowSteps
 // @Summary						get all of the steps for a given workflow
-// @Description.markdown		get_workflow_steps.md
+// @Description.markdown	workflow_steps_get.md
 // @Param workflow_id	path	string true "workflow ID"
 // @Tags						installs
 // @Accept						json
@@ -41,7 +41,7 @@ func (s *service) GetWorkflowSteps(ctx *gin.Context) {
 // TODO: Remove. Deprecated.
 // @ID							GetInstallWorkflowSteps
 // @Summary						get all of the steps for a given install workflow
-// @Description.markdown		get_workflow_steps.md
+// @Description.markdown	workflow_steps_get.md
 // @Param install_workflow_id	path	string true "install workflow ID"
 // @Tags						installs
 // @Accept						json

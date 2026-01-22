@@ -15,7 +15,7 @@ import (
 
 // @ID						GetAppAction
 // @Summary				get an app action workflow by action workflow id
-// @Description.markdown	get_app_action_workflow.md
+// @Description.markdown	app_action_workflow_get.md
 // @Param					app_id		path	string	true	"app ID"
 // @Param					action_id	path	string	true	"action ID or name"
 // @Tags					actions
@@ -49,7 +49,7 @@ func (s *service) GetAppAction(ctx *gin.Context) {
 
 // @ID						GetActionWorkflow
 // @Summary				get an app action workflow by action workflow id
-// @Description.markdown	get_app_action_workflow.md
+// @Description.markdown	app_action_workflow_get.md
 // @Param					action_workflow_id	path	string	true	"action workflow ID or name"
 // @Tags					actions
 // @Accept					json

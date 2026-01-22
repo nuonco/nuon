@@ -15,7 +15,7 @@ import (
 
 // @ID						GetAppComponentBuild
 // @Summary				get a build for a component
-// @Description.markdown	get_component_build.md
+// @Description.markdown	component_build_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Param					build_id		path	string	true	"build ID"
@@ -52,7 +52,7 @@ func (s *service) GetAppComponentBuild(ctx *gin.Context) {
 
 // @ID						GetComponentBuild
 // @Summary				get a build for a component
-// @Description.markdown	get_component_build.md
+// @Description.markdown	component_build_get.md
 // @Param					component_id	path	string	true	"component ID"
 // @Param					build_id		path	string	true	"build ID"
 // @Tags					components

@@ -10,7 +10,7 @@ import (
 
 // @ID						GetCurrentInstallInputs
 // @Summary				get an installs current inputs
-// @Description.markdown	get_install_inputs.md
+// @Description.markdown	install_inputs_get.md
 // @Tags					installs
 // @Accept					json
 // @Produce				json

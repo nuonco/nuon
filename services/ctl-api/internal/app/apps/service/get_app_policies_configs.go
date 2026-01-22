@@ -13,7 +13,7 @@ import (
 
 // @ID						GetAppPoliciesConfigs
 // @Summary				get app policies configs
-// @Description.markdown	get_app_policies_configs.md
+// @Description.markdown	app_policies_configs_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Param					offset	query	int		false	"offset of results to return"	Default(0)
 // @Param					limit	query	int		false	"limit of results to return"	Default(10)

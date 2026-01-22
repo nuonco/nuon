@@ -12,7 +12,7 @@ import (
 
 // @ID						GetRunner
 // @Summary				get a runner by id
-// @Description.markdown	get_runner.md
+// @Description.markdown	runner_get.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Tags					runner
 // @Accept					json

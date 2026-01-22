@@ -15,7 +15,7 @@ import (
 
 // @ID						GetOrgComponents
 // @Summary				get all components for an org
-// @Description.markdown	get_org_components.md
+// @Description.markdown	org_components_get.md
 // @Param 				component_ids		query	string	false	"comma-separated list of component IDs to filter by"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

@@ -14,7 +14,7 @@ import (
 
 // @ID						GetAppConflgV2
 // @Summary				get an app config
-// @Description.markdown	get_app_config.md
+// @Description.markdown	app_config_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					config_id	path	string	true	"app config ID"
 // @Param recurse query bool false "load all children configs" Default(false)
@@ -67,7 +67,7 @@ func (s *service) GetAppConfigV2(ctx *gin.Context) {
 
 // @ID						GetAppConfig
 // @Summary				get an app config
-// @Description.markdown	get_app_config.md
+// @Description.markdown	app_config_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					app_config_id	path	string	true	"app config ID"
 // @Param recurse query bool false "load all children configs" Default(false)

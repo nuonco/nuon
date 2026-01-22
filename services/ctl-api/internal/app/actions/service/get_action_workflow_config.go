@@ -14,7 +14,7 @@ import (
 
 // @ID						GetAppActionConfig
 // @Summary				get an app action config
-// @Description.markdown	get_action_workflow_config.md
+// @Description.markdown	action_workflow_config_get.md
 // @Param					app_id				path	string	true	"app ID"
 // @Param					action_id			path	string	true	"action ID"
 // @Param					action_config_id	path	string	true	"action config ID"
@@ -49,7 +49,7 @@ func (s *service) GetAppActionConfig(ctx *gin.Context) {
 
 // @ID						GetActionWorkflowConfig
 // @Summary				get an app action workflow config
-// @Description.markdown	get_action_workflow_config.md
+// @Description.markdown	action_workflow_config_get.md
 // @Param					action_workflow_config_id	path	string	true	"action workflow config ID"
 // @Tags					actions,actions/runner
 // @Accept					json

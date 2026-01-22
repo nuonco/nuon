@@ -16,7 +16,7 @@ import (
 
 // @ID						GetWorkflows
 // @Summary					get workflows
-// @Description.markdown	get_workflows.md
+// @Description.markdown	workflows_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

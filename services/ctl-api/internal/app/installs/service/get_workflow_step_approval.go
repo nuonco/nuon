@@ -12,7 +12,7 @@ import (
 
 // @ID									GetWorkflowStepApproval
 // @Summary								get an workflow step approval
-// @Description.markdown				get_workflow_step_approval.md
+// @Description.markdown	workflow_step_approval_get.md
 // @Param	workflow_id			path	string	true	"workflow id"
 // @Param	step_id	path	string	true	"step id"
 // @Param	approval_id					path	string	true	"approval id"
@@ -57,7 +57,7 @@ func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 // TODO: Remove. Deprecated.
 // @ID									GetInstallWorkflowStepApproval
 // @Summary								get an install workflow step approval
-// @Description.markdown				get_workflow_step_approval.md
+// @Description.markdown	workflow_step_approval_get.md
 // @Param	install_workflow_id			path	string	true	"workflow id"
 // @Param	install_workflow_step_id	path	string	true	"step id"
 // @Param	approval_id					path	string	true	"approval id"

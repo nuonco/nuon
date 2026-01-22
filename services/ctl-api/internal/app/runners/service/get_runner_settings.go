@@ -8,7 +8,7 @@ import (
 
 // @ID						GetRunnerSettings
 // @Summary				get runner settings
-// @Description.markdown	get_runner_settings.md
+// @Description.markdown	runner_settings_get.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Tags					runners/runner
 // @Accept					json

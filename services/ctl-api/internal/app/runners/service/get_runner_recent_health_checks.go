@@ -15,7 +15,7 @@ import (
 
 // @ID						GetRunnerRecentHealthChecks
 // @Summary				get recent health checks
-// @Description.markdown	get_runner_recent_health_checks.md
+// @Description.markdown	runner_recent_health_checks_get.md
 // @Param					runner_id					path	string	true	"runner ID"
 // @Param					window						query	string	false	"window of health checks to return"	Default(1h)
 // @Param					offset						query	int		false	"offset of results to return"		Default(0)

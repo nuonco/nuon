@@ -11,7 +11,7 @@ import (
 
 // @ID						GetRelease
 // @Summary				get a release
-// @Description.markdown	get_release.md
+// @Description.markdown	release_get.md
 // @Param					release_id	path	string	true	"release ID"
 // @Tags					releases
 // @Accept					json

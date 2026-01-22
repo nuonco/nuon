@@ -13,7 +13,7 @@ import (
 
 // @ID						GetWorkflowStepApprovalContents
 // @Summary				get a workflow step approval contents
-// @Description.markdown	get_workflow_step_approval_contents.md
+// @Description.markdown	workflow_step_approval_contents_get.md
 // @Param					workflow_id			path	string	true	"workflow id"
 // @Param					step_id	path	string	true	"step id"
 // @Param					approval_id			path	string	true	"approval id"

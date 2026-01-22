@@ -14,7 +14,7 @@ import (
 
 // @ID                       GetInstallStateHistory
 // @Summary                  Get install state history.
-// @Description.markdown     get_install_state_history.md
+// @Description.markdown	install_state_history_get.md
 // @Param                    install_id                 path    string  true  "install ID"
 // @Param                    offset                     query   int     false "offset of results to return"    Default(0)
 // @Param                    limit                      query   int     false "limit of results to return"     Default(10)

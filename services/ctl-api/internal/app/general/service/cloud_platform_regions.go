@@ -10,7 +10,7 @@ import (
 
 // @ID						GetCloudPlatformRegions
 // @Summary				Get regions for a cloud platform
-// @Description.markdown	get_cloud_platform_regions.md
+// @Description.markdown	cloud_platform_regions_get.md
 // @Tags					general
 // @Accept					json
 // @Param					cloud_platform	path	string	true	"cloud platform"

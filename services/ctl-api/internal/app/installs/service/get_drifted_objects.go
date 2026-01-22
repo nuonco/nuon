@@ -13,7 +13,7 @@ import (
 
 // @ID						GetDriftedObjects
 // @Summary				get drifted objects for an install
-// @Description.markdown	get_drifted_objects.md
+// @Description.markdown	drifted_objects_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json

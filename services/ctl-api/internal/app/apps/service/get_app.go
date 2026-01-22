@@ -16,7 +16,7 @@ import (
 
 // @ID						GetApp
 // @Summary				get an app
-// @Description.markdown	get_app.md
+// @Description.markdown	app_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Tags					apps
 // @Accept					json

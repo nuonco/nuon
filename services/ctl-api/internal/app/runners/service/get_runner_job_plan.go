@@ -12,7 +12,7 @@ import (
 
 // @ID						GetRunnerJobPlan
 // @Summary				get runner job plan
-// @Description.markdown	get_runner_job_plan.md
+// @Description.markdown	runner_job_plan_get.md
 // @Param					runner_job_id	path	string	true	"runner job ID"
 // @Tags					runners,runners/runner
 // @Accept					json
@@ -54,7 +54,7 @@ func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (str
 
 // @ID						GetRunnerJobPlanV2
 // @Summary				get runner job plan
-// @Description.markdown	get_runner_job_plan.md
+// @Description.markdown	runner_job_plan_get.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Param					job_id	path	string	true	"runner job ID"
 // @Tags					runners,runners/runner

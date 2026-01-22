@@ -10,7 +10,7 @@ import (
 
 // @ID						GetTerraformWorkspaceStateByIDV2
 // @Summary				get terraform state by ID
-// @Description.markdown	get_terraform_state_by_id.md
+// @Description.markdown	terraform_state_by_id_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id 		path	string	true	"state ID"
 // @Tags					runners,runners/runner
@@ -31,7 +31,7 @@ func (s *service) GetTerraformWorkspaceStateByIDV2(ctx *gin.Context) {
 
 // @ID						GetTerraformWorkspaceStateByID
 // @Summary				get terraform state by ID
-// @Description.markdown	get_terraform_state_by_id.md
+// @Description.markdown	terraform_state_by_id_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id 		path	string	true	"state ID"
 // @Tags					runners,runners/runner

@@ -19,7 +19,7 @@ type OrgStatsResponse struct {
 
 // @ID                     GetOrgStats
 // @Summary				Get an org
-// @Description.markdown	get_org_stats.md
+// @Description.markdown	org_stats_get.md
 // @Tags					orgs
 // @Accept					json
 // @Produce				json

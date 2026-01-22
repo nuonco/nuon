@@ -17,7 +17,7 @@ import (
 
 // @ID						GetTerraformWorkspaceStatesJSONByIDV2
 // @Summary				get terraform state json by id. This output is same as "terraform show --json"
-// @Description.markdown	get_terraform_states_json_by_id.md
+// @Description.markdown	terraform_states_json_by_id_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id					path	string	true	"terraform state ID"
 // @Tags					runners
@@ -38,7 +38,7 @@ func (s *service) GetTerraformWorkspaceStatesJSONByIDV2(ctx *gin.Context) {
 
 // @ID						GetTerraformWorkspaceStatesJSONByID
 // @Summary				get terraform state json by id. This output is same as "terraform show --json"
-// @Description.markdown	get_terraform_states_json_by_id.md
+// @Description.markdown	terraform_states_json_by_id_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id					path	string	true	"terraform state ID"
 // @Tags					runners

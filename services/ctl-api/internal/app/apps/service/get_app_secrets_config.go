@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppSecretsConfig
 // @Summary				get app secrets config
-// @Description.markdown	get_app_secrets_config.md
+// @Description.markdown	app_secrets_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Param app_secrets_config_id path string	true	"app secrets config ID"
 // @Tags					apps

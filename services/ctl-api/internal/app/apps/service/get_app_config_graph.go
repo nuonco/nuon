@@ -10,7 +10,7 @@ import (
 
 // @ID						GetAppConfigGraphV2
 // @Summary				get an app config graph
-// @Description.markdown	get_app_config_graph.md
+// @Description.markdown	app_config_graph_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					config_id	path	string	true	"app config ID"
 // @Tags					apps
@@ -51,7 +51,7 @@ func (s *service) GetAppConfigGraphV2(ctx *gin.Context) {
 
 // @ID						GetAppConfigGraph
 // @Summary				get an app config graph
-// @Description.markdown	get_app_config_graph.md
+// @Description.markdown	app_config_graph_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					app_config_id	path	string	true	"app config ID"
 // @Tags					apps

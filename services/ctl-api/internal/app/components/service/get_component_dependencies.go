@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppComponentDependencies
 // @Summary				get a component's dependencies
-// @Description.markdown	get_component_dependencies.md
+// @Description.markdown	component_dependencies_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
@@ -69,7 +69,7 @@ func (s *service) GetAppComponentDependencies(ctx *gin.Context) {
 
 // @ID						GetComponentDependencies
 // @Summary				get a component's dependencies
-// @Description.markdown	get_component_dependencies.md
+// @Description.markdown	component_dependencies_get.md
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
 // @Accept					json

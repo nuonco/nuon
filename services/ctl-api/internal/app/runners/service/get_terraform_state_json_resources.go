@@ -10,7 +10,7 @@ import (
 
 // @ID						GetTerraformWorkspaceStateResources
 // @Summary				get terraform state resources
-// @Description.markdown	get_terraform_state_resources.md
+// @Description.markdown	terraform_state_resources_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id 		path	string	true	"state ID"
 // @Tags					runners,runners/runner

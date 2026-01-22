@@ -13,7 +13,7 @@ import (
 
 // @ID						GetAppComponentLatestBuild
 // @Summary				get latest build for a component
-// @Description.markdown	get_component_latest_build.md
+// @Description.markdown	component_latest_build_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
@@ -48,7 +48,7 @@ func (s *service) GetAppComponentLatestBuild(ctx *gin.Context) {
 
 // @ID						GetComponentLatestBuild
 // @Summary				get latest build for a component
-// @Description.markdown	get_component_latest_build.md
+// @Description.markdown	component_latest_build_get.md
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
 // @Accept					json

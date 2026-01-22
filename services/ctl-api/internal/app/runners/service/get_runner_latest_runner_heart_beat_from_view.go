@@ -13,7 +13,7 @@ type LatestRunnerHeartBeats map[string]*app.LatestRunnerHeartBeat
 
 // @ID						GetLatestRunnerHeartBeat
 // @Summary				get a runner
-// @Description.markdown	get_runner_latest_heart_beat.md
+// @Description.markdown	runner_latest_heart_beat_get.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Tags					runners
 // @Accept					json

@@ -17,7 +17,7 @@ type CLIConfig struct {
 
 // @ID						GetCLIConfig
 // @Summary				Get config for cli
-// @Description.markdown	get_cli_config.md
+// @Description.markdown	cli_config_get.md
 // @Tags					general
 // @Accept					json
 // @Produce				json

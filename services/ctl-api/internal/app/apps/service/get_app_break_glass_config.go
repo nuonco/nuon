@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppBreakGlassConfig
 // @Summary				get app break_glass config
-// @Description.markdown	get_app_break_glass_config.md
+// @Description.markdown	app_break_glass_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Param break_glass_config_id path string	true	"app break glass config ID"
 // @Tags					apps

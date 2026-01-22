@@ -14,7 +14,7 @@ import (
 
 // @ID						GetInstallComponentDeploys
 // @Summary				get an install components deploys
-// @Description.markdown	get_install_component_deploys.md
+// @Description.markdown	install_component_deploys_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					component_id				path	string	true	"component ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)

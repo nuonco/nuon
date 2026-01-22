@@ -17,7 +17,7 @@ import (
 
 // @ID						GetAppComponents
 // @Summary				get all components for an app
-// @Description.markdown	get_app_components.md
+// @Description.markdown	app_components_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param         q                 query	string	false	"search query to filter components by name"
 // @Param         types					    query	string	false	"comma-separated list of component types to filter by (e.g., terraform_module, helm_chart)"

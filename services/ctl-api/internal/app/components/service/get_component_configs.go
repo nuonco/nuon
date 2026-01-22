@@ -14,7 +14,7 @@ import (
 
 // @ID						GetAppComponentConfigs
 // @Summary				get all configs for a component
-// @Description.markdown	get_component_configs.md
+// @Description.markdown	component_configs_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					component_id				path	string	true	"component ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
@@ -46,7 +46,7 @@ func (s *service) GetAppComponentConfigs(ctx *gin.Context) {
 
 // @ID						GetComponentConfigs
 // @Summary				get all configs for a component
-// @Description.markdown	get_component_configs.md
+// @Description.markdown	component_configs_get.md
 // @Param					component_id				path	string	true	"component ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

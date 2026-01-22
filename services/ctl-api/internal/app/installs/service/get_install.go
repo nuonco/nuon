@@ -15,7 +15,7 @@ import (
 
 // @ID						GetInstall
 // @Summary				get an install
-// @Description.markdown	get_install.md
+// @Description.markdown	install_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					include_drifted_objects	query	bool	false	"whether to include drifted objects" Default(false)
 // @Tags					installs

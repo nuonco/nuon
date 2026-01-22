@@ -13,7 +13,7 @@ import (
 
 // @ID						GetOrg
 // @Summary				Get an org
-// @Description.markdown	get_org.md
+// @Description.markdown	org_get.md
 // @Tags					orgs
 // @Accept					json
 // @Produce				json

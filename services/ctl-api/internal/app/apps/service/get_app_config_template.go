@@ -48,7 +48,7 @@ type AppConfigTemplate struct {
 
 // @ID						GetAppConfigTemplate
 // @Summary				get an app config template
-// @Description.markdown	get_app_config_template.md
+// @Description.markdown	app_config_template_get.md
 // @Tags					apps
 // @Accept					json
 // @Produce				json

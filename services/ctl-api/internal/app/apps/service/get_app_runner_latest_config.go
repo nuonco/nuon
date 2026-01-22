@@ -11,7 +11,7 @@ import (
 
 // @ID						GetAppRunnerLatestConfig
 // @Summary				get latest app runner config
-// @Description.markdown	get_app_runner_latest_config.md
+// @Description.markdown	app_runner_latest_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Tags					apps
 // @Accept					json

@@ -13,7 +13,7 @@ import (
 // @ID						GetComponentReleases
 // @BasePath				/v1/components
 // @Summary				get all releases for a component
-// @Description.markdown	get_component_releases.md
+// @Description.markdown	component_releases_get.md
 // @Param					component_id				path	string	true	"component ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

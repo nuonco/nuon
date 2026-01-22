@@ -11,7 +11,7 @@ import (
 
 // @ID						GetAppLatestConfig
 // @Summary				get latest app config
-// @Description.markdown	get_app_latest_config.md
+// @Description.markdown	app_latest_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Param recurse query bool false "load all children configs" Default(false)
 // @Tags					apps

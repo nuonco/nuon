@@ -15,7 +15,7 @@ type RunnerCardDetailsResponse struct {
 
 // @ID						GetRunnerCardDetails
 // @Summary				get runner card details
-// @Description.markdown	get_runner_card_details.md
+// @Description.markdown	runner_card_details_get.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Tags					runners
 // @Accept					json

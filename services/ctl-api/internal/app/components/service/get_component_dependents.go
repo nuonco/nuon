@@ -18,7 +18,7 @@ type ComponentChildren struct {
 
 // @ID						GetAppComponentDependents
 // @Summary					get a component's children
-// @Description.markdown	get_component_dependents.md
+// @Description.markdown	component_dependents_get.md
 // @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
@@ -81,7 +81,7 @@ func (s *service) GetAppComponentDependents(ctx *gin.Context) {
 
 // @ID						GetComponentDependents
 // @Summary					get a component's children
-// @Description.markdown	get_component_dependents.md
+// @Description.markdown	component_dependents_get.md
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
 // @Accept					json

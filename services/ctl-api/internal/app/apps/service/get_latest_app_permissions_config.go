@@ -12,7 +12,7 @@ import (
 
 // @ID						GetLatestAppPermissionsConfig
 // @Summary				get latest app permissions config
-// @Description.markdown	get_latest_app_permissions_config.md
+// @Description.markdown	latest_app_permissions_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Tags					apps
 // @Accept					json

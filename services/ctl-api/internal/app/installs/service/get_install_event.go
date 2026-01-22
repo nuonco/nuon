@@ -11,7 +11,7 @@ import (
 
 // @ID						GetInstallEvent
 // @Summary				get an install event
-// @Description.markdown	get_install_event.md
+// @Description.markdown	install_event_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					event_id	path	string	true	"event ID"
 // @Tags					installs

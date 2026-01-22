@@ -13,7 +13,7 @@ import (
 
 // @ID						GetInstallActionRun
 // @Summary				get action workflow runs by install id and run id
-// @Description.markdown	get_install_action_workflow_run.md
+// @Description.markdown	install_action_workflow_run_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					run_id		path	string	true	"run ID"
 // @Tags					actions, actions/runner
@@ -34,7 +34,7 @@ func (s *service) GetInstallActionRun(ctx *gin.Context) {
 
 //		@ID						GetInstallActionWorkflowRun
 //		@Summary				get action workflow runs by install id and run id
-//		@Description.markdown	get_install_action_workflow_run.md
+//		@Description.markdown	install_action_workflow_run_get.md
 //		@Param					install_id	path	string	true	"install ID"
 //		@Param					run_id		path	string	true	"run ID"
 //		@Tags					actions, actions/runner

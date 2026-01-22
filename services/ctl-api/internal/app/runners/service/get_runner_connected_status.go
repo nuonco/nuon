@@ -18,7 +18,7 @@ type RunnerConnectionStatus struct {
 
 // @ID						GetRunnerConnectStatus
 // @Summary					get a runner connection satus based on heartbeat
-// @Description.markdown	get_runner_connect_status.md
+// @Description.markdown	runner_connect_status_get.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Tags					runners
 // @Accept					json

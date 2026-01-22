@@ -9,7 +9,7 @@ import (
 
 // @ID						GetCurrentUser
 // @Summary				Get current user
-// @Description.markdown	get_current_user.md
+// @Description.markdown	current_user_get.md
 // @Tags					general
 // @Accept					json
 // @Produce				json

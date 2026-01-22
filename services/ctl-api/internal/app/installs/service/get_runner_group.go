@@ -12,7 +12,7 @@ import (
 
 // @ID						GetInstallRunnerGroup
 // @Summary				Get an install's runner group
-// @Description.markdown	get_install_runner_group.md
+// @Description.markdown	install_runner_group_get.md
 // @Tags					installs
 // @Accept					json
 // @Produce				json

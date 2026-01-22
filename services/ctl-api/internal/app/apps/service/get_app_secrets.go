@@ -14,7 +14,7 @@ import (
 
 // @ID						GetAppSecrets
 // @Summary				get app secrets
-// @Description.markdown	get_app_secrets.md
+// @Description.markdown	app_secrets_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					offset						query	int		false	"offset of jobs to return"	Default(0)
 // @Param					limit						query	int		false	"limit of jobs to return"	Default(10)

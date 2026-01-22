@@ -15,7 +15,7 @@ import (
 
 // @ID						GetAppInstalls
 // @Summary				get all installs for an app
-// @Description.markdown	get_app_installs.md
+// @Description.markdown	app_installs_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					q							query	string	false	"search query"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)

@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppInputConfig
 // @Summary				get app input config
-// @Description.markdown	get_app_input_config.md
+// @Description.markdown	app_input_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Param					input_config_id	path	string	true	"input config ID"
 // @Tags					apps

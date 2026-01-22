@@ -14,7 +14,7 @@ import (
 
 // @ID						GetAppBranches
 // @Summary				get app branches
-// @Description.markdown	get_app_branches.md
+// @Description.markdown	app_branches_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					offset						query	int		false	"offset of branches to return"	Default(0)
 // @Param					limit						query	int		false	"limit of branches to return"	Default(10)

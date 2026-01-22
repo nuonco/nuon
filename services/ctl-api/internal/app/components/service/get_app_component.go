@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppComponent
 // @Summary				get a components for a specific app
-// @Description.markdown	get_app_component.md
+// @Description.markdown	app_component_get.md
 // @Param					app_id					path	string	true	"app ID"
 // @Param					component_name_or_id	path	string	true	"name or ID"
 // @Tags					components

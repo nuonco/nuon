@@ -13,7 +13,7 @@ import (
 
 // @ID						GetReleaseSteps
 // @Summary				get a release's steps
-// @Description.markdown	get_release.md
+// @Description.markdown	release_get.md
 // @Param					release_id					path	string	true	"release ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

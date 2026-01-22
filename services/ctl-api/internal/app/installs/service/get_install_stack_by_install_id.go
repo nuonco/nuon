@@ -13,7 +13,7 @@ import (
 
 // @ID						GetInstallStackByInstallID
 // @Summary				get an install stack by install ID
-// @Description.markdown	get_install_stack.md
+// @Description.markdown	install_stack_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json

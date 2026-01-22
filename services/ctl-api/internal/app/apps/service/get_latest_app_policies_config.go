@@ -12,7 +12,7 @@ import (
 
 // @ID						GetLatestAppPoliciesConfig
 // @Summary				get latest app policies config
-// @Description.markdown	get_latest_app_policies_config.md
+// @Description.markdown	latest_app_policies_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Tags					apps
 // @Accept					json

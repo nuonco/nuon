@@ -14,7 +14,7 @@ import (
 
 // @ID						GetRunnerJobCompositePlan
 // @Summary				get runner job composite plan
-// @Description.markdown	get_runner_job_composite_plan.md
+// @Description.markdown	runner_job_composite_plan_get.md
 // @Param					runner_job_id	path	string	true	"runner job ID"
 // @Tags					runners,runners/runner
 // @Accept					json

@@ -13,7 +13,7 @@ import (
 
 // @ID						GetInstallComponentsDeploys
 // @Summary				get all deploys to an install
-// @Description.markdown	get_install_deploys.md
+// @Description.markdown	install_deploys_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -45,7 +45,7 @@ func (s *service) GetInstallComponentsDeploys(ctx *gin.Context) {
 
 // @ID						GetInstallDeploys
 // @Summary				get all deploys to an install
-// @Description.markdown	get_install_deploys.md
+// @Description.markdown	install_deploys_get.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

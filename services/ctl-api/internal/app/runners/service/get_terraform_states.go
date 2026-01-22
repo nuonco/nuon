@@ -13,7 +13,7 @@ import (
 
 // @ID						GetTerraformStatesV2
 // @Summary				get terraform states
-// @Description.markdown	get_terraform_states.md
+// @Description.markdown	terraform_states_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -36,7 +36,7 @@ func (s *service) GetTerraformWorkspaceStatesV2(ctx *gin.Context) {
 
 // @ID						GetTerraformStates
 // @Summary				get terraform states
-// @Description.markdown	get_terraform_states.md
+// @Description.markdown	terraform_states_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)

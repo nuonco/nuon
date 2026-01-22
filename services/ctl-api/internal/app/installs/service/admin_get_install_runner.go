@@ -9,7 +9,7 @@ import (
 
 // @ID						AdminGetInstallRunner
 // @Summary				get an install runner
-// @Description.markdown	get_install_runner_group.md
+// @Description.markdown	install_runner_group_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs/admin
 // @Security				AdminEmail

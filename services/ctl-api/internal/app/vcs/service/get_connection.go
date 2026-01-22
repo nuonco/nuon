@@ -12,7 +12,7 @@ import (
 
 // @ID						GetVCSConnection
 // @Summary				returns a vcs connection for an org
-// @Description.markdown	get_vcs_connection.md
+// @Description.markdown	vcs_connection_get.md
 // @Param					connection_id	path	string	true	"connection ID"
 // @Tags					vcs
 // @Accept					json

@@ -15,7 +15,7 @@ import (
 
 // @ID						GetInstallActionsLatestRuns
 // @Summary					get latest runs for all action workflows by install id
-// @Description.markdown	get_install_action_workflows_latest_run.md
+// @Description.markdown	install_action_workflows_latest_run_get.md
 // @Param					install_id	path			string	true	"install ID"
 // @Param					trigger_types				query	string	false	"filter by action workflow trigger by types"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
@@ -40,7 +40,7 @@ func (s *service) GetInstallActionsLatestRuns(ctx *gin.Context) {
 
 // @ID						GetInstallActionWorkflowsLatestRuns
 // @Summary					get latest runs for all action workflows by install id
-// @Description.markdown	get_install_action_workflows_latest_run.md
+// @Description.markdown	install_action_workflows_latest_run_get.md
 // @Param					install_id	path			string	true	"install ID"
 // @Param					trigger_types				query	string	false	"filter by action workflow trigger by types"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)

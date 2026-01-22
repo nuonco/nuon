@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAppPermissionsConfig
 // @Summary				get app permissions config
-// @Description.markdown	get_app_permissions_config.md
+// @Description.markdown	app_permissions_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Param permissions_config_id path string	true	"input config ID"
 // @Tags					apps

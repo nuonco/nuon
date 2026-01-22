@@ -12,7 +12,7 @@ import (
 
 // @ID						GetLogStream
 // @Summary				get a log stream
-// @Description.markdown	get_log_stream.md
+// @Description.markdown	log_stream_get.md
 // @Param					log_stream_id	path	string	true	"log stream ID"
 // @Tags					runners
 // @Accept					json

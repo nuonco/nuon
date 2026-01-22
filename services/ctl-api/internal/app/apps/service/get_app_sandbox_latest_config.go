@@ -11,7 +11,7 @@ import (
 
 // @ID						GetAppSandboxLatestConfig
 // @Summary				get latest app sandbox config
-// @Description.markdown	get_app_sandbox_latest_config.md
+// @Description.markdown	app_sandbox_latest_config_get.md
 // @Param					app_id	path	string	true	"app ID"
 // @Tags					apps
 // @Accept					json

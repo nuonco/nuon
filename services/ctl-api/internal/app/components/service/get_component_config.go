@@ -10,7 +10,7 @@ import (
 
 // @ID						GetAppComponentConfig
 // @Summary					get a config for a component
-// @Description.markdown	get_component_config.md
+// @Description.markdown	component_config_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					component_id				path	string	true	"component ID"
 // @Param					config_id					path	string	true	"config ID"
@@ -41,7 +41,7 @@ func (s *service) GetAppComponentConfig(ctx *gin.Context) {
 
 // @ID						GetComponentConfig
 // @Summary					get a config for a component
-// @Description.markdown	get_component_config.md
+// @Description.markdown	component_config_get.md
 // @Param					component_id				path	string	true	"component ID"
 // @Param					config_id					path	string	true	"config ID"
 // @Tags					components

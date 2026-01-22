@@ -13,7 +13,7 @@ import (
 
 // @ID						GetInstallComponent
 // @Summary				get an install component
-// @Description.markdown	get_install_component.md
+// @Description.markdown	install_component_get.md
 // @Param					install_id		path	string	true	"install ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					installs

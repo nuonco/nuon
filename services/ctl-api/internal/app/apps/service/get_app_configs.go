@@ -14,7 +14,7 @@ import (
 
 // @ID						GetAppConfigs
 // @Summary				get app configs
-// @Description.markdown	get_app_configs.md
+// @Description.markdown	app_configs_get.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					offset						query	int		false	"offset of jobs to return"	Default(0)
 // @Param					limit						query	int		false	"limit of jobs to return"	Default(10)
