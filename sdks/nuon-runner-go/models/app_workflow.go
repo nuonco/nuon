@@ -78,9 +78,7 @@ type AppWorkflow struct {
 	Status *AppCompositeStatus `json:"status,omitempty"`
 
 	// DEPRECATED: for now we always abort on step errors
-	StepErrorBehavior struct {
-		AppStepErrorBehavior
-	} `json:"step_error_behavior,omitempty"`
+	StepErrorBehavior string `json:"step_error_behavior,omitempty"`
 
 	// steps represent each piece of the workflow
 	Steps []*AppWorkflowStep `json:"steps"`
@@ -117,10 +115,6 @@ func (m *AppWorkflow) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStatus(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateStepErrorBehavior(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -295,14 +289,6 @@ func (m *AppWorkflow) validateStatus(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppWorkflow) validateStepErrorBehavior(formats strfmt.Registry) error {
-	if swag.IsZero(m.StepErrorBehavior) { // not required
-		return nil
-	}
-
-	return nil
-}
-
 func (m *AppWorkflow) validateSteps(formats strfmt.Registry) error {
 	if swag.IsZero(m.Steps) { // not required
 		return nil
@@ -379,10 +365,6 @@ func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateStepErrorBehavior(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -555,11 +537,6 @@ func (m *AppWorkflow) contextValidateStatus(ctx context.Context, formats strfmt.
 			return err
 		}
 	}
-
-	return nil
-}
-
-func (m *AppWorkflow) contextValidateStepErrorBehavior(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
