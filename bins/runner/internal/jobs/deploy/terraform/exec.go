@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -36,6 +36,18 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 	} else {
 		planBytes = []byte{}
+	}
+
+	// Check if workspace is locked before proceeding
+	workspaceID := p.state.plan.TerraformDeployPlan.TerraformBackend.WorkspaceID
+	lock, err := p.apiClient.GetTerraformWorkspaceLock(ctx, workspaceID)
+	if err != nil {
+		return fmt.Errorf("failed to check workspace lock: %w", err)
+	}
+
+	if lock != nil {
+		return fmt.Errorf("workspace is locked by job %s (locked at %s) - cannot proceed with deployment",
+			lock.RunnerJobID, lock.CreatedAt)
 	}
 
 	// get the right workspace

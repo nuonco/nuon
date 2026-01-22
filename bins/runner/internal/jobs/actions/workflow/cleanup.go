@@ -7,7 +7,7 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

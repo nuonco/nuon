@@ -53,6 +53,8 @@ type Client interface {
 	// get an app config
 	GetAppConfig(ctx context.Context, appID, appConfigID string) (*models.AppAppConfig, error)
 
+	GetTerraformWorkspaceLock(ctx context.Context, workspaceID string) (*models.AppTerraformWorkspaceLock, error)
+
 	// installs
 	GetInstallComponenetLastActivePlan(ctx context.Context, installId, componentId string) (*models.ServiceGetInstallComponenetLastActivePlanResponse, error)
 

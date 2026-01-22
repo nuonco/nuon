@@ -1,7 +1,7 @@
 package noop
 
 import (
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func (h *handler) Name() string {

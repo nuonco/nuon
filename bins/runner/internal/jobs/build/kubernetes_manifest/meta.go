@@ -1,6 +1,6 @@
 package kubernetes_manifest
 
-import "github.com/nuonco/nuon-runner-go/models"
+import "github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 // TODO: Once nuon-runner-go is regenerated from the updated ctl-api swagger spec,
 // replace this with models.AppRunnerJobTypeKubernetesDashManifestDashBuild

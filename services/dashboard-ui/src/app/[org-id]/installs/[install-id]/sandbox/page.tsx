@@ -6,6 +6,7 @@ import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { ManagementDropdown } from "@/components/sandbox/management/ManagementDropdown"
+import { TerraformLockBanner } from '@/components/Installs/TerraformLockBanner'
 import { getInstall, getInstallDriftedObjects, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
@@ -92,6 +93,14 @@ export default async function InstallSandboxPage({
           {driftedObject ? (
             <Section className="!border-b-0 !pb-0">
               <DriftedBanner drifted={driftedObject} />
+            </Section>
+          ) : null}
+          {install?.sandbox?.terraform_workspace?.id ? (
+            <Section className="!border-b-0 !pb-0">
+              <TerraformLockBanner
+                workspaceId={install.sandbox.terraform_workspace.id}
+                sandboxRuns={install.install_sandbox_runs}
+              />
             </Section>
           ) : null}
           <Section
@@ -223,6 +232,14 @@ export default async function InstallSandboxPage({
           {driftedObject ? (
             <Section className="!border-b-0 !pb-0">
               <DriftedBanner drifted={driftedObject} />
+            </Section>
+          ) : null}
+          {install?.sandbox?.terraform_workspace?.id ? (
+            <Section className="!border-b-0 !pb-0">
+              <TerraformLockBanner
+                workspaceId={install.sandbox.terraform_workspace.id}
+                sandboxRuns={install.install_sandbox_runs}
+              />
             </Section>
           ) : null}
           <Section

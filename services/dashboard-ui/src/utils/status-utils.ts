@@ -32,6 +32,8 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   outdated: 'warn',
   warn: 'warn',
   drifted: 'warn',
+  locked: 'warn',
+  unlocked: 'success',
 
   // Info
   executing: 'info',
@@ -93,6 +95,8 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   cancelled: 'Warning',
   outdated: 'Warning',
   warn: 'Warning',
+  locked: 'LockKey',
+  unlocked: 'LockKeyOpen',
 
   // Info
   executing: 'Loading',
