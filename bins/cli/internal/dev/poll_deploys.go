@@ -26,7 +26,7 @@ func (s *Service) pollDeploys(ctx context.Context, installID string, deploys []*
 	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
 	defer cancel()
 
-	multiSpinner := bubbles.NewMultiSpinnerView(true)
+	multiSpinner := bubbles.NewMultiSpinnerView()
 
 	// Add all spinners first
 	for _, dep := range deploys {
