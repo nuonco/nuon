@@ -44,8 +44,12 @@ export const SSELogs = ({
       const now = Date.now()
       const newTimestamps = new Map(logTimestamps)
 
-      if (isStreamOpen) {
-        // Only stagger animations when SSE is enabled
+      // Smart animation: bulk show large batches, stagger small batches
+      const ANIMATION_THRESHOLD = 40
+      const shouldStagger = isStreamOpen && newLogs.length < ANIMATION_THRESHOLD
+
+      if (shouldStagger) {
+        // Stagger animations for small batches (smooth real-time effect)
         newLogs.forEach((log, index) => {
           newTimestamps.set(log.id, now + index * 50) // 50ms between each log
 
@@ -55,7 +59,7 @@ export const SSELogs = ({
           }, index * 50)
         })
       } else {
-        // When SSE is not active, show all logs immediately without staggering
+        // Show all logs immediately for large batches or static mode
         newLogs.forEach((log) => {
           newTimestamps.set(log.id, now)
           setAnimatingLogs((prev) => new Set(prev).add(log.id))
@@ -64,7 +68,7 @@ export const SSELogs = ({
 
       setLogTimestamps(newTimestamps)
     }
-  }, [filteredLogs, logTimestamps, isStreamOpen])
+  }, [filteredLogs, isStreamOpen])
 
   return (
     <div className="flex flex-col gap-4">
