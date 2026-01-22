@@ -1,11 +1,10 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, memo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { Time } from '@/components/common/Time'
 import { useLogViewer, useUnifiedLogData } from '@/hooks/use-logs-temp'
 import type { TOTELLog } from '@/types'
@@ -28,43 +27,7 @@ export const SSELogs = ({
 }) => {
   const { loadMore, hasMore, isLoading, isStreamOpen, connectionState } =
     useUnifiedLogData()
-  const { filteredLogs, filters } = useLogViewer()
-  const [animatingLogs, setAnimatingLogs] = useState<Set<string>>(new Set())
-  const [logTimestamps, setLogTimestamps] = useState<Map<string, number>>(
-    new Map()
-  )
-
-  useEffect(() => {
-    if (!filteredLogs) return
-
-    // Find new filteredLogs that don't have timestamps yet
-    const newLogs = filteredLogs.filter((log) => !logTimestamps.has(log.id))
-
-    if (newLogs.length > 0) {
-      const now = Date.now()
-      const newTimestamps = new Map(logTimestamps)
-
-      if (isStreamOpen) {
-        // Only stagger animations when SSE is enabled
-        newLogs.forEach((log, index) => {
-          newTimestamps.set(log.id, now + index * 50) // 50ms between each log
-
-          // Trigger animation after the delay
-          setTimeout(() => {
-            setAnimatingLogs((prev) => new Set(prev).add(log.id))
-          }, index * 50)
-        })
-      } else {
-        // When SSE is not active, show all logs immediately without staggering
-        newLogs.forEach((log) => {
-          newTimestamps.set(log.id, now)
-          setAnimatingLogs((prev) => new Set(prev).add(log.id))
-        })
-      }
-
-      setLogTimestamps(newTimestamps)
-    }
-  }, [filteredLogs, logTimestamps, isStreamOpen])
+  const { filteredLogs, filters, activeLog, handleActiveLog } = useLogViewer()
 
   return (
     <div className="flex flex-col gap-4">
@@ -94,17 +57,13 @@ export const SSELogs = ({
             <LogsSkeleton />
           ) : null}
 
-          {filteredLogs?.slice().map((logLine) => (
-            <TransitionDiv
+          {filteredLogs?.map((logLine) => (
+            <LogLine
               key={logLine?.id}
-              isVisible={animatingLogs.has(logLine.id)}
-              className={cn({
-                'slide-in': isStreamOpen,
-                fade: !isStreamOpen,
-              })}
-            >
-              <LogLine log={logLine} />
-            </TransitionDiv>
+              log={logLine}
+              activeLogId={activeLog?.id}
+              onActivate={handleActiveLog}
+            />
           ))}
 
           {!isStreamOpen && hasMore ? (
@@ -131,17 +90,20 @@ export const SSELogs = ({
 
 interface ILogLine {
   log: TOTELLog
+  activeLogId?: string
+  onActivate: (logId: string) => void
 }
 
-export const LogLine = ({ log }: ILogLine) => {
+const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
   const searchParams = useSearchParams()
-  const { activeLog, handleActiveLog } = useLogViewer()
 
   useEffect(() => {
     if (log.id && log.id === searchParams?.get('panel')) {
-      handleActiveLog(log.id)
+      onActivate(log.id)
     }
   }, [])
+
+  const isActive = activeLogId === log.id
 
   return (
     <div>
@@ -152,12 +114,11 @@ export const LogLine = ({ log }: ILogLine) => {
           {
             '!bg-cool-grey-100 dark:!bg-dark-grey-800':
               log.service_name === 'runner',
-            '!bg-primary-600/40 dark:!bg-primary-600/30':
-              activeLog?.id === log?.id,
+            '!bg-primary-600/40 dark:!bg-primary-600/30': isActive,
           }
         )}
         onClick={() => {
-          handleActiveLog(log.id)
+          onActivate(log.id)
         }}
         variant="ghost"
       >
@@ -190,3 +151,14 @@ export const LogLine = ({ log }: ILogLine) => {
     </div>
   )
 }
+
+export const LogLine = memo(LogLineComponent, (prev, next) => {
+  return (
+    prev.log.id === next.log.id &&
+    prev.activeLogId === next.activeLogId &&
+    prev.log.body === next.log.body &&
+    prev.log.timestamp === next.log.timestamp
+  )
+})
+
+LogLine.displayName = 'LogLine'
