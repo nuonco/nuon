@@ -12,6 +12,8 @@ import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
+import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
 import { useOrg } from '@/hooks/use-org'
@@ -19,10 +21,6 @@ import type { TWorkflow } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { getWorkflowStep } from '@/utils/workflow-utils'
 import type { TActionConfigTriggerType } from '@/types'
-
-// NOTE: old components
-import { RunnerJobPlanModal } from '@/components/old/OldRunners'
-import { InstallWorkflowCancelModal } from '@/components/old/InstallWorkflows'
 
 interface IInstallActionRunHeader {
   actionId: string
@@ -74,8 +72,12 @@ export const InstallActionRunHeader = ({
         </HeadingGroup>
 
         <div className="flex items-center gap-4">
-          <InstallWorkflowCancelModal installWorkflow={workflow} />
-          <RunnerJobPlanModal runnerJobId={installActionRun?.runner_job?.id} />
+          <CancelWorkflowButton workflow={workflow} />
+          {installActionRun?.runner_job?.id ? (
+            <RunnerJobPlanButton
+              runnerJobId={installActionRun?.runner_job?.id}
+            />
+          ) : null}
         </div>
       </div>
 
