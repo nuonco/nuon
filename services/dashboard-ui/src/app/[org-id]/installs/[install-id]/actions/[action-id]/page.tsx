@@ -21,7 +21,6 @@ import { Runs, RunsError, RunsSkeleton } from './runs'
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
-  ActionTriggerButton,
   ActionTriggerType,
   ClickToCopy,
   CodeViewer,
@@ -38,6 +37,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
+import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { ActionRuns } from './action-runs'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id' | 'action-id'>
@@ -175,7 +175,7 @@ export default async function InstallActionPage({
           {installAction?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
           ) ? (
-            <ActionTriggerButton
+            <InstallActionManualRunButton
               action={installAction?.action_workflow}
               actionConfigId={installAction.action_workflow?.configs?.[0]?.id}
             />
@@ -387,7 +387,7 @@ export default async function InstallActionPage({
           {installAction?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
           ) ? (
-            <ActionTriggerButton
+            <InstallActionManualRunButton
               action={installAction?.action_workflow}
               actionConfigId={installAction.action_workflow?.configs?.[0]?.id}
             />
