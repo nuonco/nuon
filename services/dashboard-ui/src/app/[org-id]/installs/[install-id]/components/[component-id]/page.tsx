@@ -9,6 +9,7 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
+import { TerraformLockStatusBadge } from '@/components/Installs/TerraformLockStatusBadge'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstall, getInstallComponent, getOrg } from '@/lib'
@@ -131,6 +132,12 @@ export default async function InstallComponentPage({
         </HeadingGroup>
 
         <div className="flex items-center gap-4">
+          {installComponent?.terraform_workspace?.id &&
+          component?.type === 'terraform_module' ? (
+            <TerraformLockStatusBadge
+              workspaceId={installComponent.terraform_workspace.id}
+            />
+          ) : null}
           <TemporalLink
             namespace="installs"
             eventLoopId={`${installId}-component-${installComponent?.id}`}
@@ -291,6 +298,12 @@ export default async function InstallComponentPage({
       headingUnderline={component.id}
       statues={
         <div className="flex gap-8">
+          {installComponent?.terraform_workspace?.id &&
+          component?.type === 'terraform_module' ? (
+            <TerraformLockStatusBadge
+              workspaceId={installComponent.terraform_workspace.id}
+            />
+          ) : null}
           <InstallComponentManagementDropdown
             componentId={installComponent?.component_id}
             componentName={installComponent?.component?.name}

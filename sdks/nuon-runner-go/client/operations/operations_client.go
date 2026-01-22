@@ -130,6 +130,8 @@ type ClientService interface {
 
 	GetTerraformWorkspace(params *GetTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceOK, error)
 
+	GetTerraformWorkspaceLock(params *GetTerraformWorkspaceLockParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceLockOK, error)
+
 	GetTerraformWorkspaceStateByID(params *GetTerraformWorkspaceStateByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateByIDOK, error)
 
 	GetTerraformWorkspaceStateByIDV2(params *GetTerraformWorkspaceStateByIDV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceStateByIDV2OK, error)
@@ -1866,6 +1868,52 @@ func (a *Client) GetTerraformWorkspace(params *GetTerraformWorkspaceParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetTerraformWorkspace: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetTerraformWorkspaceLock gets terraform workspace lock
+
+Returns the lock status for a terraform workspace.
+*/
+func (a *Client) GetTerraformWorkspaceLock(params *GetTerraformWorkspaceLockParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformWorkspaceLockOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetTerraformWorkspaceLockParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetTerraformWorkspaceLock",
+		Method:             "GET",
+		PathPattern:        "/v1/terraform-workspaces/{workspace_id}/lock",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetTerraformWorkspaceLockReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetTerraformWorkspaceLockOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetTerraformWorkspaceLock: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

@@ -15,7 +15,7 @@ import (
 // @Summary				get terraform workspace lock
 // @Description.markdown	get_terraform_workspace_lock.md
 // @Param					workspace_id	path	string	true	"workspace ID"
-// @Tags					runners
+// @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
