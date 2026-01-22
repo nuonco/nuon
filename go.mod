@@ -117,7 +117,7 @@ require (
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/files v1.0.1
-	github.com/swaggo/swag v1.16.3
+	github.com/swaggo/swag v1.16.6
 	github.com/tidwall/gjson v1.17.1
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/glsp v0.2.2
