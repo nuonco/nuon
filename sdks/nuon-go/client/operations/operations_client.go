@@ -7312,11 +7312,9 @@ func (a *Client) GetDriftedObjects(params *GetDriftedObjectsParams, authInfo run
 }
 
 /*
-	GetInstall gets an install
+GetInstall gets an install
 
-	Forget an install that has been deleted outside of nuon.
-
-This should only be used in cases where an install was broken in an unordinary way and needs to be manually deleted so the parent resources can be deleted.
+Return an install by id.
 */
 func (a *Client) GetInstall(params *GetInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOK, error) {
 	// NOTE: parameters are not validated before sending
