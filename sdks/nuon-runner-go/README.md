@@ -17,13 +17,13 @@ All endpoints in the API follow REST conventions and standard HTTP methods. You 
 In your project, you can install the package directly using `go get`:
 
 ```bash
-go get github.com/nuonco/nuon-runner-go
+go get github.com/nuonco/nuon/sdks/nuon-runner-go
 ```
 
 In your code, add the following import:
 
 ```
-import nuonrunner "github.com/nuonco/nuon-runner-go"
+import nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 ```
 
 ## Create a client

@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/git"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 // parse command returns a command that could be either a local script, or an inline command.

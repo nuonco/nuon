@@ -3,7 +3,7 @@ package helm
 import (
 	"time"
 
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
 	"github.com/nuonco/nuon/pkg/kube"

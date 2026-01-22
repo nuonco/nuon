@@ -7,7 +7,7 @@ import (
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

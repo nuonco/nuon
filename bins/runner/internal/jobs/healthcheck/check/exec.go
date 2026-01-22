@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
