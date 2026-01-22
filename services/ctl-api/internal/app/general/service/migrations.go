@@ -12,7 +12,7 @@ import (
 
 // @ID						GetMigrations
 // @Summary				get all migrations
-// @Description.markdown	get_migrations.md
+// @Description.markdown	migrations_get.md
 // @Tags					general/admin
 // @Accept					json
 // @Produce				json

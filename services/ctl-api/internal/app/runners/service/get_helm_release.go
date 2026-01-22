@@ -13,7 +13,7 @@ import (
 
 // @ID						GetHelmRelease
 // @Summary				get  helm release
-// @Description.markdown	get_helm_release.md
+// @Description.markdown	helm_release_get.md
 // @Tags					runners/runner
 // @Param					helm_chart_id	path	string					true	"helm chart ID"
 // @Param					namespace	path	string					true	"namespace"

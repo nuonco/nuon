@@ -12,7 +12,7 @@ import (
 
 // @ID						AdminGetRunnerGroup
 // @Summary				get a runner group
-// @Description.markdown	get_runner_group.md
+// @Description.markdown	runner_group_get.md
 // @Tags					runners/admin
 // @Security				AdminEmail
 // @Accept					json

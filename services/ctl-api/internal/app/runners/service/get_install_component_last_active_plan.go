@@ -23,7 +23,7 @@ type GetInstallComponenetLastActivePlanResponse struct {
 
 // @ID						GetInstallComponenetLastActivePlan
 // @Summary					get an install component's previous config
-// @Description.markdown	get_install_component_last_active_plan.md
+// @Description.markdown	install_component_last_active_plan_get.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					runners/runner

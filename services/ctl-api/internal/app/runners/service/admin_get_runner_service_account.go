@@ -11,7 +11,7 @@ import (
 
 // @ID						AdminGetRunnerServiceAccount
 // @Summary				get a runner service account
-// @Description.markdown	get_runner_service_account.md
+// @Description.markdown	runner_service_account_get.md
 // @Tags					runners/admin
 // @Security				AdminEmail
 // @Accept					json

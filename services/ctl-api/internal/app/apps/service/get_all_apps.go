@@ -12,7 +12,7 @@ import (
 
 // @ID						GetAllApps
 // @Summary				get all apps for all orgs
-// @Description.markdown	get_all_apps.md
+// @Description.markdown	all_apps_get.md
 // @Tags					apps/admin
 // @Security				AdminEmail
 // @Accept					json

@@ -10,7 +10,7 @@ import (
 
 // @ID						GetTerraformStateJSON
 // @Summary				get terraform state json
-// @Description.markdown	get_terraform_state_json.md
+// @Description.markdown	terraform_state_json_get.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Tags					runners/runner
 // @Accept					json

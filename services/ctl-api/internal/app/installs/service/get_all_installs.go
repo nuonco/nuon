@@ -17,7 +17,7 @@ import (
 
 // @ID						GetAllInstalls
 // @Summary				get all installs for all orgs
-// @Description.markdown	get_all_installs.md
+// @Description.markdown	all_installs_get.md
 // @Tags					installs/admin
 // @Security				AdminEmail
 // @Accept					json
