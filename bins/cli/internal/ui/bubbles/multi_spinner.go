@@ -23,11 +23,10 @@ type SpinnerState struct {
 
 // MultiSpinnerModel manages multiple concurrent spinners
 type MultiSpinnerModel struct {
-	spinners        map[string]*SpinnerState
-	order           []string // Maintain display order
-	quitting        bool
-	width           int
-	renderCompleted bool
+	spinners map[string]*SpinnerState
+	order    []string // Maintain display order
+	quitting bool
+	width    int
 }
 
 // SpinnerUpdateMsg is used to update spinner messages
@@ -51,12 +50,11 @@ type FinalRenderMsg struct{}
 type RenderCompleteMsg struct{}
 
 // NewMultiSpinner creates a new multi-spinner model
-func NewMultiSpinner(renderCompleted bool) MultiSpinnerModel {
+func NewMultiSpinner() MultiSpinnerModel {
 	return MultiSpinnerModel{
-		spinners:        make(map[string]*SpinnerState),
-		order:           make([]string, 0),
-		width:           80,
-		renderCompleted: renderCompleted,
+		spinners: make(map[string]*SpinnerState),
+		order:    make([]string, 0),
+		width:    80,
 	}
 }
 
@@ -136,7 +134,6 @@ func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	default:
-		// Update all active spinners
 		var cmds []tea.Cmd
 		for _, state := range m.spinners {
 			if !state.completed {
@@ -166,15 +163,11 @@ func (m MultiSpinnerModel) View() string {
 
 	for _, id := range m.order {
 		state := m.spinners[id]
-		// Show completed components if enabled
-		// Completed spinners will be printed manually after program stops
-		if state.completed && !m.renderCompleted {
-			continue
-		}
-
 		line := m.renderSpinnerLine(state)
 		lines = append(lines, line)
 	}
+	// empty new line for proper message rendering
+	lines = append(lines, "")
 
 	return strings.Join(lines, "\n")
 }
@@ -243,9 +236,9 @@ type MultiSpinnerView struct {
 }
 
 // NewMultiSpinnerView creates a new multi-spinner view
-func NewMultiSpinnerView(renderCompleted bool) *MultiSpinnerView {
+func NewMultiSpinnerView() *MultiSpinnerView {
 	return &MultiSpinnerView{
-		model: NewMultiSpinner(renderCompleted),
+		model: NewMultiSpinner(),
 		done:  make(chan struct{}),
 	}
 }
@@ -318,16 +311,6 @@ func (v *MultiSpinnerView) Stop() {
 		return
 	}
 
-	// Collect completed states before stopping program
-	var completedLines []string
-	for _, id := range v.model.order {
-		state := v.model.spinners[id]
-		if state.completed {
-			line := v.model.renderSpinnerLine(state)
-			completedLines = append(completedLines, line)
-		}
-	}
-
 	v.program.Quit()
 
 	// Wait for completion with timeout
@@ -339,12 +322,6 @@ func (v *MultiSpinnerView) Stop() {
 		v.program.Kill()
 	}
 
-	// Print the completed states to ensure they persist
-	for _, line := range completedLines {
-		fmt.Println(line)
-	}
-
-	// Reset state
 	v.program = nil
 	v.started = false
 }
