@@ -11,6 +11,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
+import { useWorkflowActions } from '@/hooks/use-workflow-actions'
 import type { TWorkflow } from '@/types'
 
 interface ICancelWorkflow {
@@ -102,8 +103,9 @@ export const CancelWorkflowButton = ({
 }: ICancelWorkflow & IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <CancelWorkflowModal workflow={workflow} />
+  const { canShowCancel } = useWorkflowActions(workflow, false)
 
-  return (
+  return canShowCancel ? (
     <Button
       variant="danger"
       onClick={() => {
@@ -114,5 +116,5 @@ export const CancelWorkflowButton = ({
       Cancel workflow
       {props?.isMenuButton ? <Icon variant="StopCircle" /> : null}
     </Button>
-  )
+  ) : null
 }
