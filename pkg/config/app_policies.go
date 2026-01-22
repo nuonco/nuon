@@ -3,7 +3,7 @@ package config
 import (
 	"bufio"
 	"os"
-	"strings"
+	"regexp"
 
 	"github.com/invopop/jsonschema"
 )
@@ -64,12 +64,12 @@ func extractPolicyLineNumbers(sourceFile string) []int {
 	defer file.Close()
 
 	var lineNumbers []int
+	policyHeaderRegex := regexp.MustCompile(`^\s*\[\[\s*policy\s*\]\]\s*$`)
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
 	for scanner.Scan() {
 		lineNum++
-		line := strings.TrimSpace(scanner.Text())
-		if line == "[[policy]]" {
+		if policyHeaderRegex.MatchString(scanner.Text()) {
 			lineNumbers = append(lineNumbers, lineNum)
 		}
 	}

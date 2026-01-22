@@ -8,13 +8,17 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"golang.org/x/sync/errgroup"
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/retry"
+
+	"github.com/nuonco/nuon/pkg/oci/dockerhub"
 )
 
 const (
@@ -38,6 +42,9 @@ const (
 	MediaTypeInToto = "application/vnd.in-toto+json"
 )
 
+// ErrNotIndex is returned when the descriptor is not an image index.
+var ErrNotIndex = errors.New("not an image index")
+
 type RegistryAuth struct {
 	ServerAddress string
 	Username      string
@@ -55,7 +62,7 @@ type FetchGuardrails struct {
 // DefaultGuardrails returns sensible default limits for attestation fetching.
 func DefaultGuardrails() FetchGuardrails {
 	return FetchGuardrails{
-		MaxBlobBytes:         1 * 1024 * 1024,  // 1MB per blob
+		MaxBlobBytes:         10 * 1024 * 1024, // 10MB per blob
 		MaxTotalBytes:        10 * 1024 * 1024, // 10MB total
 		MaxAttestations:      10,
 		MaxLayersPerManifest: 5,
@@ -81,7 +88,8 @@ type FetchOptions struct {
 }
 
 func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata, error) {
-	repo, err := remote.NewRepository(opts.Image)
+	normalizedImage := dockerhub.NormalizeReference(opts.Image)
+	repo, err := remote.NewRepository(normalizedImage)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create repository client: %w", err)
 	}
@@ -132,7 +140,7 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 	if opts.IncludeIndex || opts.IncludeAttestationManifests {
 		index, err := fetchImageIndex(ctx, repo, desc)
 		if err != nil {
-			if !errors.Is(err, errdef.ErrNotFound) && !isNotIndexError(err) {
+			if !errors.Is(err, errdef.ErrNotFound) && !errors.Is(err, ErrNotIndex) {
 				return nil, fmt.Errorf("unable to fetch image index: %w", err)
 			}
 		} else {
@@ -178,18 +186,21 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 		}
 	}
 
-	return result, nil
-}
+	// Auto-detect SBOM from attestation layers if not found via referrers
+	if result.SBOM == nil {
+		if sbom := detectSBOMFromAttestationManifests(result.AttestationManifests); sbom != nil {
+			result.SBOM = sbom
+		}
+	}
 
-func isNotIndexError(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "not an image index")
+	return result, nil
 }
 
 // fetchImageIndex fetches and parses the image index (manifest list).
 func fetchImageIndex(ctx context.Context, repo *remote.Repository, desc v1.Descriptor) (*ImageIndex, error) {
 	// Check if this is an index media type
 	if !isIndexMediaType(desc.MediaType) {
-		return nil, fmt.Errorf("not an image index: media type is %s", desc.MediaType)
+		return nil, fmt.Errorf("%w: media type is %s", ErrNotIndex, desc.MediaType)
 	}
 
 	rc, err := repo.Fetch(ctx, desc)
@@ -219,6 +230,7 @@ func fetchImageIndex(ctx context.Context, repo *remote.Repository, desc v1.Descr
 		entry := ManifestEntry{
 			Digest:      m.Digest.String(),
 			MediaType:   m.MediaType,
+			Size:        m.Size,
 			Annotations: m.Annotations,
 		}
 
@@ -337,6 +349,7 @@ func fetchAttestationManifest(
 	desc := v1.Descriptor{
 		Digest:    digestFromString(entry.Digest),
 		MediaType: entry.MediaType,
+		Size:      entry.Size,
 	}
 
 	rc, err := repo.Fetch(ctx, desc)
@@ -399,7 +412,7 @@ func fetchAttestationManifest(
 	return manifest, bytesRead, nil
 }
 
-// fetchAttestationLayers fetches and decodes attestation layer blobs.
+// fetchAttestationLayers fetches and decodes attestation layer blobs in parallel.
 func fetchAttestationLayers(
 	ctx context.Context,
 	repo *remote.Repository,
@@ -407,38 +420,72 @@ func fetchAttestationLayers(
 	guardrails *FetchGuardrails,
 	currentTotalBytes int64,
 ) ([]AttestationLayer, int64, error) {
-	var result []AttestationLayer
-	var bytesRead int64
-
-	for i, l := range layers {
-		if i >= guardrails.MaxLayersPerManifest {
-			break
-		}
-
-		if currentTotalBytes+bytesRead+l.Size > guardrails.MaxTotalBytes {
-			layer := AttestationLayer{
-				Digest:    l.Digest.String(),
-				MediaType: l.MediaType,
-				Size:      l.Size,
-				Truncated: true,
-			}
-			if predicateType, ok := l.Annotations[AnnotationPredicateType]; ok {
-				layer.PredicateType = predicateType
-			}
-			result = append(result, layer)
-			continue
-		}
-
-		layer, layerBytes, err := fetchAttestationLayer(ctx, repo, l, guardrails)
-		if err != nil {
-			return nil, bytesRead, fmt.Errorf("unable to fetch layer %s: %w", l.Digest.String(), err)
-		}
-
-		bytesRead += layerBytes
-		result = append(result, *layer)
+	if len(layers) == 0 {
+		return nil, 0, nil
 	}
 
-	return result, bytesRead, nil
+	numLayers := len(layers)
+	if numLayers > guardrails.MaxLayersPerManifest {
+		numLayers = guardrails.MaxLayersPerManifest
+	}
+
+	results := make([]AttestationLayer, numLayers)
+	bytesReadPerLayer := make([]int64, numLayers)
+
+	g, gCtx := errgroup.WithContext(ctx)
+	var mu sync.Mutex
+	var estimatedBytes int64
+
+	for i := 0; i < numLayers; i++ {
+		i := i
+		l := layers[i]
+
+		g.Go(func() error {
+			mu.Lock()
+			wouldExceedLimit := currentTotalBytes+estimatedBytes+l.Size > guardrails.MaxTotalBytes
+			if !wouldExceedLimit {
+				estimatedBytes += l.Size
+			}
+			mu.Unlock()
+
+			if wouldExceedLimit {
+				layer := AttestationLayer{
+					Digest:    l.Digest.String(),
+					MediaType: l.MediaType,
+					Size:      l.Size,
+					Truncated: true,
+				}
+				if predicateType, ok := l.Annotations[AnnotationPredicateType]; ok {
+					layer.PredicateType = predicateType
+				}
+				results[i] = layer
+				return nil
+			}
+
+			layer, layerBytes, err := fetchAttestationLayer(gCtx, repo, l, guardrails)
+			if err != nil {
+				mu.Lock()
+				estimatedBytes -= l.Size
+				mu.Unlock()
+				return fmt.Errorf("unable to fetch layer %s: %w", l.Digest.String(), err)
+			}
+
+			bytesReadPerLayer[i] = layerBytes
+			results[i] = *layer
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, 0, err
+	}
+
+	var totalBytesRead int64
+	for _, b := range bytesReadPerLayer {
+		totalBytesRead += b
+	}
+
+	return results, totalBytesRead, nil
 }
 
 // fetchAttestationLayer fetches a single attestation layer and decodes its content.
@@ -579,4 +626,33 @@ func detectSBOMFormat(artifactType, mediaType string) string {
 		return "cyclonedx"
 	}
 	return "unknown"
+}
+
+// detectSBOMFromAttestationManifests scans attestation layers for SBOM predicate types.
+// This handles images like nginx:latest that store SBOMs as attestation manifest layers
+// rather than as OCI referrers.
+func detectSBOMFromAttestationManifests(manifests []AttestationManifest) *SBOM {
+	for _, manifest := range manifests {
+		for _, layer := range manifest.Layers {
+			if format := detectSBOMPredicateType(layer.PredicateType); format != "" {
+				return &SBOM{
+					Present: true,
+					Format:  format,
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// detectSBOMPredicateType checks if a predicate type indicates an SBOM.
+func detectSBOMPredicateType(predicateType string) string {
+	switch {
+	case strings.Contains(predicateType, "spdx.dev"):
+		return "spdx"
+	case strings.Contains(predicateType, "cyclonedx.org"):
+		return "cyclonedx"
+	default:
+		return ""
+	}
 }

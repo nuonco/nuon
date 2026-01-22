@@ -51,8 +51,11 @@ func (a *Activities) FetchImageMetadata(ctx context.Context, req *FetchImageMeta
 	)
 
 	fetchOpts := &metadata.FetchOptions{
-		Image: extImgCfg.ImageURL,
-		Tag:   extImgCfg.Tag,
+		Image:                       extImgCfg.ImageURL,
+		Tag:                         extImgCfg.Tag,
+		IncludeIndex:                true,
+		IncludeAttestationManifests: true,
+		IncludeAttestationLayers:    true,
 	}
 
 	if extImgCfg.AWSECRImageConfig != nil {

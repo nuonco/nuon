@@ -3,7 +3,9 @@ package worker
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -35,18 +37,32 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID st
 		return nil
 	}
 
-	var allViolations []sharedactivities.PolicyViolation
+	// Execute all policy evaluations in parallel using futures
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout:    1*time.Minute + 30*time.Second,
+		ScheduleToCloseTimeout: 2 * time.Minute,
+		RetryPolicy:            &temporal.RetryPolicy{MaximumAttempts: 1},
+	}
+	policyCtx := workflow.WithActivityOptions(ctx, ao)
+
+	var futures []workflow.Future
 	for _, policy := range prepResult.Policies {
-		result, err := sharedactivities.AwaitEvaluateSinglePolicy(ctx, &sharedactivities.EvaluateSinglePolicyRequest{
+		fut := workflow.ExecuteActivity(policyCtx, (&sharedactivities.Activities{}).EvaluateSinglePolicy, &sharedactivities.EvaluateSinglePolicyRequest{
 			PolicyID:  policy.PolicyID,
 			Contents:  policy.Contents,
 			InputJSON: policy.InputJSON,
 		})
-		if err != nil {
-			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage(fmt.Sprintf("policy evaluation failed for policy %s", policy.PolicyID), err))
+		futures = append(futures, fut)
+	}
+
+	// Collect all violations from parallel evaluations
+	var allViolations []sharedactivities.PolicyViolation
+	for _, fut := range futures {
+		var result sharedactivities.EvaluateSinglePolicyResult
+		if err := fut.Get(ctx, &result); err != nil {
+			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("policy evaluation failed", err))
 			return fmt.Errorf("policy evaluation failed: %w", err)
 		}
-
 		allViolations = append(allViolations, result.Violations...)
 	}
 
