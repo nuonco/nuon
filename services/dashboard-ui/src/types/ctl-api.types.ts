@@ -6,6 +6,43 @@ export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+// Policy types - manually defined as API schema may not be deployed yet
+export type TAppPolicyType =
+  | 'kubernetes_cluster'
+  | 'terraform_module'
+  | 'helm_chart'
+  | 'kubernetes_manifest'
+  | 'docker_build'
+  | 'container_image'
+  | 'sandbox'
+
+export type TAppPolicyEngine = 'kyverno' | 'opa'
+
+export type TAppPolicyConfig = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  app_config_id?: string
+  app_policies_config?: string
+  type?: TAppPolicyType
+  engine?: TAppPolicyEngine
+  contents?: string
+  components?: string[]
+}
+
+export type TAppPoliciesConfig = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  app_config_id?: string
+  policies?: TAppPolicyConfig[]
+}
 
 // component
 export type TComponent = components['schemas']['app.Component']

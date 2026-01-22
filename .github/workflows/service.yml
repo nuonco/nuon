@@ -41,6 +41,7 @@ jobs:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
       NO_REMOTE_BUILDKIT: ${{ github.repository == 'nuonco/nuon' || contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
       DISABLE_GITHUB_OIDC: ${{ inputs.disable_github_oidc }}
+      GEN_API_TYPES: ${{ contains(github.event.pull_request.labels.*.name, 'gen-api-types') }}
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
 
@@ -54,6 +55,16 @@ jobs:
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
         run: |
          CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
+
+      - name: 🔧 Enable local API types generation (dashboard-ui only)
+        if: ${{ inputs.service == 'dashboard-ui' && env.GEN_API_TYPES == 'true' }}
+        run: |
+          echo "Pulling service configs and enabling local API types generation..."
+          CI=true nuonctl builds pull-service-configs
+          yq -i '(.tests[] | select(.docker_target == "lint")).docker_target = "lint-local-spec"' services/dashboard-ui/service.yml
+          yq -i '(.tests[] | select(.docker_target == "test")).docker_target = "test-local-spec"' services/dashboard-ui/service.yml
+          echo "Updated service.yml:"
+          yq '.tests' services/dashboard-ui/service.yml
 
       - name: 😎 Tests
         run: |
