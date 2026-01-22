@@ -56,11 +56,25 @@ func (a *API) registerMiddlewares() error {
 	// register middlewares
 	middlewaresLookup := make(map[string]gin.HandlerFunc, 0)
 	for _, middleware := range a.middlewares {
-		middlewaresLookup[middleware.Name()] = middleware.Handler()
+		name := middleware.Name()
+		if _, exists := middlewaresLookup[name]; exists {
+			return fmt.Errorf("duplicate middleware name detected: %s (this indicates multiple fx.Provide calls for the same middleware)", name)
+		}
+		middlewaresLookup[name] = middleware.Handler()
 	}
 
-	for _, middleware := range a.configuredMiddlewares {
-		a.l.Info(fmt.Sprintf("registering middleware: %s", middleware), zap.String("name", middleware))
+	// log all middlewares that will be registered for this API
+	a.l.Info(fmt.Sprintf("rb - %s API registering middlewares: %v", a.name, a.configuredMiddlewares))
+
+	// validate no duplicates in configured middlewares
+	seenConfigured := make(map[string]bool)
+	for i, middleware := range a.configuredMiddlewares {
+		if seenConfigured[middleware] {
+			return fmt.Errorf("duplicate middleware in configuration for %s API: %s", a.name, middleware)
+		}
+		seenConfigured[middleware] = true
+
+		a.l.Info(fmt.Sprintf("rb - %s API [%d/%d] registering middleware: %s", a.name, i+1, len(a.configuredMiddlewares), middleware))
 		fn, ok := middlewaresLookup[middleware]
 		if !ok {
 			return fmt.Errorf("middleware not found: %s", middleware)
@@ -68,6 +82,7 @@ func (a *API) registerMiddlewares() error {
 		a.handler.Use(a.middlewareDebugWrapper(middleware, fn))
 	}
 
+	a.l.Info(fmt.Sprintf("rb - %s API successfully registered %d middlewares", a.name, len(a.configuredMiddlewares)))
 	return nil
 }
 

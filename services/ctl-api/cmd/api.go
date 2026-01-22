@@ -83,7 +83,6 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(middlewares.AsMiddleware(invites.New)),
 		fx.Provide(middlewares.AsMiddleware(admin.New)),
 		fx.Provide(middlewares.AsMiddleware(log.New)),
-		fx.Provide(middlewares.AsMiddleware(log.New)),
 		fx.Provide(middlewares.AsMiddleware(size.New)),
 		fx.Provide(middlewares.AsMiddleware(timeout.New)),
 		fx.Provide(middlewares.AsMiddleware(audit.NewPublic)),
