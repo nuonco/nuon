@@ -5,9 +5,8 @@ import {
   CaretLeftIcon,
   TimerIcon,
 } from '@phosphor-icons/react/dist/ssr'
-
 import { ActionStepGraph } from '@/components/actions/ActionStepsGraph'
-import { CodeBlock } from '@/components/common/CodeBlock'
+import { InstallActionRunOutputs } from '@/components/actions/InstallActionRunOutputs'
 import { Text } from '@/components/common/Text'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import {
@@ -149,9 +148,7 @@ export default async function InstallActionRunPage({ params }) {
           <Text variant="body" weight="strong">
             Outputs
           </Text>
-          <CodeBlock language="json">
-            {JSON.stringify(installActionRun?.runner_job?.outputs, null, 2)}
-          </CodeBlock>
+          <InstallActionRunOutputs />
         </div>
       ) : (
         <DashboardContent

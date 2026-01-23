@@ -13,6 +13,7 @@ import {
 import dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
 import { Duration } from '@/components/common/Duration'
+import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { useSystemTheme } from '@/hooks/use-system-theme'
@@ -72,7 +73,7 @@ export const ActionStepGraph = ({
                     className="!inline-flex items-center gap-1"
                     variant="label"
                   >
-                    Finished in
+                    <Icon variant="Timer" size="13" />
                     <Duration
                       nanoseconds={s?.execution_duration}
                       variant="label"

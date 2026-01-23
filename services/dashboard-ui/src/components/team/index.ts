@@ -1,3 +1,3 @@
 export * from './TeamTable'
-export * from './InviteUserButton'
+export * from './InviteUser'
 

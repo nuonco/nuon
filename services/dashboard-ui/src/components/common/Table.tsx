@@ -30,6 +30,7 @@ export interface ITable<TData extends object> {
   emptyMessage?: string
   emptyStateProps?: Omit<IEmptyState, 'variant'>
   enableSorting?: boolean
+  enableSearch?: boolean
   filterActions?: ReactNode
   isLoading?: boolean
   pagination: Omit<IPagination, 'position'>
@@ -44,6 +45,7 @@ export function TableBase<TData extends object>({
   emptyMessage = 'No data found',
   emptyStateProps = { emptyMessage: 'No data found' },
   enableSorting = true,
+  enableSearch = true,
   filterActions,
   isLoading = false, // default isLoading to false
   pagination,
@@ -80,7 +82,7 @@ export function TableBase<TData extends object>({
   return (
     <div className="flex flex-col gap-4 md:gap-6 w-full">
       <div className="flex flex-row flex-wrap items-center justify-between">
-        <DebouncedSearchInput placeholder={searchPlaceholder} />
+        {enableSearch ? <DebouncedSearchInput placeholder={searchPlaceholder} /> : null}
         {filterActions ? (
           <div className="flex gap-4 md:gap-6">{filterActions}</div>
         ) : null}

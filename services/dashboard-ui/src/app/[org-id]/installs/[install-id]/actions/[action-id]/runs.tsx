@@ -35,7 +35,7 @@ export const Runs = async ({
 
   return error ? (
     <RunsError />
-  ) : action ? (
+  ) : action && action?.runs?.length ? (
     <>
       <InstallActionRunTimeline
         initInstallAction={action}
