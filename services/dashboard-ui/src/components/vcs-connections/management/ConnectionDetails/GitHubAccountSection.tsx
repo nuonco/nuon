@@ -3,7 +3,7 @@ import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { VCSAccountLink } from '@/components/vcs-conntections/VCSAccountLink'
+import { VCSAccountLink } from '@/components/vcs-connections/VCSAccountLink'
 import type { TVCSConnection } from '@/types'
 
 interface IGitHubAccountSection {
