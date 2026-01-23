@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getIsSidebarOpenFromCookie } from '@/actions/layout/main-sidebar-cookie'
-import { VCSConnectionSuccess } from '@/components/vcs-conntections/VCSConnectionSuccess'
+import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
 import { MainLayout } from '@/components/layout/MainLayout'
 import {
   REFRESH_PAGE_INTERVAL,
