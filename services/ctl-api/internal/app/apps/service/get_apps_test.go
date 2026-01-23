@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,10 +22,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/pagination"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -78,7 +86,7 @@ func (s *AppsTestSuite) SetupSuite() {
 
 	s.app = fxtest.New(
 		s.T(),
-		fx.Provide(internal.NewConfig),
+		fx.Provide(internal.NewTestConfig),
 
 		// logging
 		fx.Provide(log.New),
@@ -86,7 +94,7 @@ func (s *AppsTestSuite) SetupSuite() {
 
 		// external services
 		fx.Provide(loops.New),
-		fx.Provide(github.New),
+		fx.Provide(github.NewMock), // Use mock GitHub client for tests
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
 		fx.Provide(eventloop.NewMockClient),
@@ -98,11 +106,19 @@ func (s *AppsTestSuite) SetupSuite() {
 		// validator
 		fx.Provide(validator.New),
 
-		// helpers
-		fx.Provide(vcshelpers.New),
-		fx.Provide(appshelpers.New),
-		fx.Provide(installshelpers.New),
+		// clients and dependencies for account client
+		fx.Provide(authz.New),
+		fx.Provide(analytics.New),
+		fx.Provide(account.New),
+
+		// helpers (order matters due to dependencies)
 		fx.Provide(accountshelpers.New),
+		fx.Provide(vcshelpers.New),
+		fx.Provide(actionshelpers.New),
+		fx.Provide(componentshelpers.New),
+		fx.Provide(appshelpers.New),
+		fx.Provide(runnershelpers.New),
+		fx.Provide(installshelpers.New),
 
 		// endpoint audit
 		fx.Provide(api.NewEndpointAudit),
@@ -124,16 +140,21 @@ func (s *AppsTestSuite) SetupSuite() {
 	// Create test router and register routes
 	s.router = gin.New()
 
+	// Add pagination middleware to parse query parameters
+	paginationMW := pagination.New(pagination.Params{
+		L:  s.service.L,
+		DB: s.service.DB,
+	})
+	s.router.Use(paginationMW.Handler())
+
 	// Add test middleware to inject org and account context
 	s.router.Use(func(c *gin.Context) {
-		ctx := c.Request.Context()
 		if s.testOrg != nil {
-			ctx = cctx.SetOrgContext(ctx, s.testOrg)
+			cctx.SetOrgGinContext(c, s.testOrg)
 		}
 		if s.testAcc != nil {
-			ctx = cctx.SetAccountContext(ctx, s.testAcc)
+			cctx.SetAccountGinContext(c, s.testAcc)
 		}
-		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	})
 
@@ -147,21 +168,29 @@ func (s *AppsTestSuite) TearDownSuite() {
 }
 
 func (s *AppsTestSuite) setupTestData() {
+	// Clean up any existing test data first
+	s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
+	s.service.DB.Unscoped().Where("name LIKE ?", "test-org-%").Delete(&app.Org{})
+
 	// Create test account
 	testAcc := &app.Account{
+		ID:      "acc" + domains.NewAccountID(), // Explicitly set ID
 		Email:   "test@example.com",
 		Subject: "test-subject",
 	}
 	err := s.service.DB.Create(testAcc).Error
 	require.NoError(s.T(), err)
+	require.NotEmpty(s.T(), testAcc.ID, "Account ID should be set after creation")
 	s.testAcc = testAcc
 
-	// Create test org
+	// Create test org with account context (required by BeforeCreate hook)
+	ctx := context.Background()
+	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		Name:        "test-org-" + domains.NewOrgID(),
-		CreatedByID: testAcc.ID,
+		ID:   domains.NewOrgID(), // ID will get prefix from BeforeCreate
+		Name: "test-org-" + domains.NewOrgID(),
 	}
-	err = s.service.DB.Create(testOrg).Error
+	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
 }
@@ -187,6 +216,9 @@ func (s *AppsTestSuite) makeRequest(method, path string) *httptest.ResponseRecor
 func (s *AppsTestSuite) TestGetAppsReturnsEmptyArrayWhenNoApps() {
 	rr := s.makeRequest(http.MethodGet, "/v1/apps")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
 	var response []app.App
@@ -197,16 +229,16 @@ func (s *AppsTestSuite) TestGetAppsReturnsEmptyArrayWhenNoApps() {
 }
 
 func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
-	// Create test apps
+	// Create test apps (BeforeCreate hook adds "app" prefix automatically)
 	app1 := &app.App{
-		ID:          "app" + domains.NewAppID(),
+		ID:          domains.NewAppID(),
 		Name:        "test-app-1",
 		OrgID:       s.testOrg.ID,
 		CreatedByID: s.testAcc.ID,
 		Status:      app.AppStatusProvisioning,
 	}
 	app2 := &app.App{
-		ID:          "app" + domains.NewAppID(),
+		ID:          domains.NewAppID(),
 		Name:        "test-app-2",
 		OrgID:       s.testOrg.ID,
 		CreatedByID: s.testAcc.ID,
@@ -236,16 +268,16 @@ func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
 }
 
 func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
-	// Create test apps with different names
+	// Create test apps with different names (BeforeCreate hook adds "app" prefix automatically)
 	app1 := &app.App{
-		ID:          "app" + domains.NewAppID(),
+		ID:          domains.NewAppID(),
 		Name:        "frontend-app",
 		OrgID:       s.testOrg.ID,
 		CreatedByID: s.testAcc.ID,
 		Status:      app.AppStatusProvisioning,
 	}
 	app2 := &app.App{
-		ID:          "app" + domains.NewAppID(),
+		ID:          domains.NewAppID(),
 		Name:        "backend-service",
 		OrgID:       s.testOrg.ID,
 		CreatedByID: s.testAcc.ID,
@@ -273,10 +305,10 @@ func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
 }
 
 func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
-	// Create multiple test apps
+	// Create multiple test apps (BeforeCreate hook adds "app" prefix automatically)
 	for i := 0; i < 15; i++ {
 		testApp := &app.App{
-			ID:          "app" + domains.NewAppID(),
+			ID:          domains.NewAppID(),
 			Name:        fmt.Sprintf("test-app-%02d", i),
 			OrgID:       s.testOrg.ID,
 			CreatedByID: s.testAcc.ID,
@@ -299,19 +331,20 @@ func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
 }
 
 func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
-	// Create another org
+	// Create another org with account context (required by BeforeCreate hook)
+	ctx := context.Background()
+	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	otherOrg := &app.Org{
-		ID:          "org" + domains.NewAppID(),
-		Name:        "other-org-" + domains.NewAppID(),
-		CreatedByID: s.testAcc.ID,
+		ID:   domains.NewOrgID(), // BeforeCreate adds "org" prefix
+		Name: "other-org-" + domains.NewOrgID(),
 	}
-	err := s.service.DB.Create(otherOrg).Error
+	err := s.service.DB.WithContext(ctx).Create(otherOrg).Error
 	require.NoError(s.T(), err)
 	defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrg.ID)
 
-	// Create app in test org
+	// Create app in test org (BeforeCreate hook adds "app" prefix automatically)
 	app1 := &app.App{
-		ID:          "app" + domains.NewAppID(),
+		ID:          domains.NewAppID(),
 		Name:        "my-app",
 		OrgID:       s.testOrg.ID,
 		CreatedByID: s.testAcc.ID,
@@ -321,9 +354,9 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 	require.NoError(s.T(), err)
 	defer s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", app1.ID)
 
-	// Create app in other org
+	// Create app in other org (BeforeCreate hook adds "app" prefix automatically)
 	app2 := &app.App{
-		ID:          "app" + domains.NewAppID(),
+		ID:          domains.NewAppID(),
 		Name:        "other-app",
 		OrgID:       otherOrg.ID,
 		CreatedByID: s.testAcc.ID,
