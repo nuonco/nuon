@@ -6,6 +6,7 @@ import { Icon } from '@/components/common/Icon'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { useQueryParams } from '@/hooks/use-query-params'
 import { CancelWorkflowButton } from '../CancelWorkflow'
+import { CustomerShareButton } from "../CustomerShare"
 import { useWorkflowActions } from '@/hooks/use-workflow-actions'
 
 export const WorkflowActionButtons = () => {
@@ -17,7 +18,8 @@ export const WorkflowActionButtons = () => {
   
   const { 
     canShowApproveAll, 
-    canShowCancel, 
+    canShowCancel,
+    canShowCustomerShare,
     canShowTemporalLink 
   } = useWorkflowActions(workflow, hasApprovals)
 
@@ -29,6 +31,10 @@ export const WorkflowActionButtons = () => {
       
       {canShowCancel && (
         <CancelWorkflowButton workflow={workflow} />
+      )}
+
+      {canShowCustomerShare && (
+        <CustomerShareButton workflow={workflow} />
       )}
       
       {canShowTemporalLink && (
