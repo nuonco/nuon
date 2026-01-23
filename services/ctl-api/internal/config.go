@@ -2,9 +2,12 @@ package internal
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
@@ -260,4 +263,126 @@ func NewConfig() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// serviceYAML represents the structure of the service.yml file
+type serviceYAML struct {
+	Env map[string]interface{} `yaml:"env"`
+}
+
+// NewTestConfig returns a configuration suitable for integration tests.
+// It loads sensible defaults from the config system, then merges values from
+// ~/nuonco/mono/services/ctl-api/service.yml if available.
+// Environment variables take precedence over service.yml values.
+func NewTestConfig() (*Config, error) {
+	// Try to load and merge from service.yml in mono repo
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		serviceYMLPath := filepath.Join(homeDir, "nuonco", "mono", "services", "ctl-api", "service.yml")
+		if err := loadServiceYAMLEnv(serviceYMLPath); err != nil {
+			// Non-fatal: log but continue with defaults
+			fmt.Printf("Note: Could not load %s: %v\n", serviceYMLPath, err)
+		} else {
+			fmt.Printf("Loaded test config from %s\n", serviceYMLPath)
+		}
+	}
+
+	// Now load config normally - this will use:
+	// 1. Registered defaults (from init())
+	// 2. service.yml values (loaded above as env vars)
+	// 3. Environment variables (highest priority)
+	var cfg Config
+	if err := config.LoadInto(nil, &cfg); err != nil {
+		return nil, fmt.Errorf("unable to load test config: %w", err)
+	}
+
+	// Validate the resulting config
+	v := validator.New()
+	if err := v.Struct(cfg); err != nil {
+		return nil, fmt.Errorf("unable to validate test config: %w", err)
+	}
+
+	return &cfg, nil
+}
+
+// loadServiceYAMLEnv reads the service.yml file and sets environment variables
+// from its env: section. Only sets vars that aren't already set.
+// Also provides test defaults for values that come from env_secrets.
+func loadServiceYAMLEnv(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read file: %w", err)
+	}
+
+	var svc serviceYAML
+	if err := yaml.Unmarshal(data, &svc); err != nil {
+		return fmt.Errorf("parse yaml: %w", err)
+	}
+
+	// Set environment variables from service.yml (only if not already set)
+	for key, value := range svc.Env {
+		if os.Getenv(key) == "" {
+			// Convert value to string
+			var strValue string
+			switch v := value.(type) {
+			case string:
+				strValue = v
+			case int, int32, int64, float32, float64:
+				strValue = fmt.Sprintf("%v", v)
+			case bool:
+				strValue = fmt.Sprintf("%t", v)
+			default:
+				strValue = fmt.Sprintf("%v", v)
+			}
+			os.Setenv(key, strValue)
+		}
+	}
+
+	// Provide test defaults for values that come from env_secrets (AWS Secrets Manager)
+	// These won't be in the env: section and need fallback values for testing
+	testSecretDefaults := map[string]string{
+		"GITHUB_APP_KEY":                     "test-github-app-key",
+		"LOOPS_API_KEY":                      "test-loops-api-key",
+		"SEGMENT_WRITE_KEY":                  "test-segment-key",
+		"AUTH0_CLIENT_ID":                    "test-auth0-client-id",
+		"NUON_AUTH_CLIENT_ID":                "test-nuon-auth-client-id",
+		"NUON_AUTH_CLIENT_SECRET":            "test-nuon-auth-client-secret",
+		"ENV":                                "test",
+		"SERVICE_NAME":                       "ctl-api-test",
+		"HOST_IP":                            "127.0.0.1",
+		"VERSION":                            "test",
+		"TEMPORAL_TASK_QUEUE":                "ctl-api",
+		"TEMPORAL_HOST":                      "localhost:7233",
+		"TEMPORAL_MAX_CONCURRENT_ACTIVITIES": "100",
+		"RUNNER_CONTAINER_IMAGE_TAG":         "latest",
+
+		// Management account defaults (not in service.yml)
+		"MANAGEMENT_IAM_ROLE_ARN":     "arn:aws:iam::766121324316:role/management-test",
+		"MANAGEMENT_ACCOUNT_ID":       "766121324316",
+		"MANAGEMENT_ECR_REGISTRY_ID":  "766121324316",
+		"MANAGEMENT_ECR_REGISTRY_ARN": "arn:aws:ecr:us-west-2:766121324316:registry/test",
+
+		// Org runner defaults (not in service.yml)
+		"ORG_RUNNER_K8S_CLUSTER_ID":      "test-cluster",
+		"ORG_RUNNER_K8S_PUBLIC_ENDPOINT": "https://test.eks.amazonaws.com",
+		"ORG_RUNNER_K8S_CA_DATA":         "test-ca-data",
+		"ORG_RUNNER_OIDC_PROVIDER_URL":   "https://oidc.eks.us-west-2.amazonaws.com/id/test",
+		"ORG_RUNNER_OIDC_PROVIDER_ARN":   "arn:aws:iam::766121324316:oidc-provider/test",
+		"ORG_RUNNER_REGION":              "us-west-2",
+		"ORG_RUNNER_SUPPORT_ROLE_ARN":    "arn:aws:iam::766121324316:role/org-runner-support",
+		"ORG_RUNNER_K8S_IAM_ROLE_ARN":    "arn:aws:iam::766121324316:role/org-runner-k8s",
+
+		// DNS defaults (not in service.yml)
+		"DNS_MANAGEMENT_IAM_ROLE_ARN": "arn:aws:iam::766121324316:role/dns-management",
+		"DNS_ZONE_ID":                 "Z1234567890ABC",
+		"DNS_ROOT_DOMAIN":             "test.nuon.co",
+	}
+
+	for key, defaultValue := range testSecretDefaults {
+		if os.Getenv(key) == "" {
+			os.Setenv(key, defaultValue)
+		}
+	}
+
+	return nil
 }

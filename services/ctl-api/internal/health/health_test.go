@@ -67,7 +67,7 @@ func (s *HealthTestSuite) SetupSuite() {
 
 	s.app = fxtest.New(
 		s.T(),
-		fx.Provide(internal.NewConfig),
+		fx.Provide(internal.NewTestConfig),
 
 		// logging
 		fx.Provide(log.New),
