@@ -16,21 +16,21 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/cctx/propagator"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/ch"
-	dblog "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/psql"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/github"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/metrics"
-	signaldb "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/queue/signal/db"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal/dataconverter"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
+	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
 )
 
 // TestService holds all fx-injected dependencies for health endpoint tests.
@@ -67,7 +67,7 @@ func (s *HealthTestSuite) SetupSuite() {
 
 	s.app = fxtest.New(
 		s.T(),
-		fx.Provide(internal.NewTestConfig),
+		fx.Provide(internal.NewConfig),
 
 		// logging
 		fx.Provide(log.New),
