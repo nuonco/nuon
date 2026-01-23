@@ -9,12 +9,8 @@ import { Code } from '@/components/common/Code'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import {
-  getInstallAction,
-  getInstall,
-  getInstallState,
-  getOrg,
-} from '@/lib'
+import { getInstallAction, getInstall, getInstallState, getOrg } from '@/lib'
+import { getSession } from '@/lib/auth-server'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
 
@@ -70,6 +66,7 @@ export default async function InstallActionPage({
     ['action-id']: actionId,
   } = await params
   const sp = await searchParams
+  const session = await getSession()
   const [
     { data: install },
     { data: installAction },
@@ -118,7 +115,12 @@ export default async function InstallActionPage({
           <Text variant="base" weight="strong">
             {installAction.action_workflow?.name}
           </Text>
-          <ID>{actionId}</ID>
+          <span className="flex items-center gap-4">
+            <ID>{actionId}</ID>{' '}
+            {session?.user?.email?.endsWith('@nuon.co') ? (
+              <ID>{installAction?.id}</ID>
+            ) : null}
+          </span>
         </HeadingGroup>
 
         <div className="flex gap-6 items-start justify-start">
