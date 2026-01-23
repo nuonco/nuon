@@ -6,6 +6,43 @@ export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+// Policy types - manually defined as API schema may not be deployed yet
+export type TAppPolicyType =
+  | 'kubernetes_cluster'
+  | 'terraform_module'
+  | 'helm_chart'
+  | 'kubernetes_manifest'
+  | 'docker_build'
+  | 'container_image'
+  | 'sandbox'
+
+export type TAppPolicyEngine = 'kyverno' | 'opa'
+
+export type TAppPolicyConfig = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  app_config_id?: string
+  app_policies_config?: string
+  type?: TAppPolicyType
+  engine?: TAppPolicyEngine
+  contents?: string
+  components?: string[]
+}
+
+export type TAppPoliciesConfig = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  app_config_id?: string
+  policies?: TAppPolicyConfig[]
+}
 
 // component
 export type TComponent = components['schemas']['app.Component']
@@ -147,6 +184,39 @@ export type TVCSConnection = components['schemas']['app.VCSConnection']
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']
 export type TVCSGit = components['schemas']['app.PublicGitVCSConfig']
 export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']
+export type TVCSConnectionStatus = {
+  status: 'active' | 'suspended' | 'unknown'
+  github_install_id: string
+  account: {
+    login: string
+    id: number
+    type: string
+  } | null
+  suspended_at: string | null
+  suspended_by: {
+    login: string
+    id: number
+  } | null
+  permissions: Record<string, string>
+  repository_selection: 'all' | 'selected'
+  checked_at: string
+  error?: string
+}
+export type TVCSConnectionRepo = {
+  id: number
+  name: string
+  full_name: string
+  description?: string
+  private: boolean
+  fork: boolean
+  html_url: string
+  default_branch: string
+  updated_at: string
+}
+export type TVCSConnectionReposResponse = {
+  repositories: TVCSConnectionRepo[]
+  total_count: number
+}
 
 // OTEL logs
 export type TOTELLog = components['schemas']['app.OtelLogRecord']
@@ -291,3 +361,16 @@ export type TTerraformState = {
     }
   }
 }
+
+// auth
+export type TMe = {
+  id: string
+  email: string
+  identities: Array<{
+    picture?: string
+    name?: string
+  }>
+  [key: string]: any
+}
+// TODO(nnnnat): use the generated type once it is ready
+// components['schemas']['service.AuthMeResponse']

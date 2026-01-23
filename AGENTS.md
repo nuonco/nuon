@@ -740,6 +740,91 @@ dashboard-ui:
 
 This development system provides powerful flexibility while maintaining team consistency. It allows for rapid iteration and testing without requiring changes to shared configuration files.
 
+## Verifying OCI Artifacts from Local Development
+
+When running locally, build artifacts (OCI images) are pushed to the **orgs-stage** AWS account ECR registry. This section documents how to verify artifacts without running the install runner.
+
+### ECR Configuration for Local Development
+
+- **AWS Account**: `766121324316` (orgs-stage) - *loaded from config, not hardcoded*
+- **Region**: `us-west-2`
+- **Repository Pattern**: `<org_id>/<app_id>`
+- **Tag**: Build ID (e.g., `bldq7fplr1up5atx5zpxotbabm`)
+
+The configuration is loaded from the Kubernetes ConfigMap `ctl-api-stage` in the stage cluster. To check current values:
+```bash
+kubectl get configmap ctl-api-stage -n ctl-api -o jsonpath='{.data}' | jq -r 'to_entries[] | select(.key | contains("MANAGEMENT")) | "\(.key): \(.value)"'
+```
+
+Key config values:
+- `MANAGEMENT_ACCOUNT_ID`: AWS account ID for ECR (currently `766121324316`)
+- `MANAGEMENT_ECR_REGISTRY_ID`: ECR registry ID (currently `766121324316`)
+- `MANAGEMENT_IAM_ROLE_ARN`: Role to assume for ECR access
+
+### Verifying Build Artifacts
+
+**1. Login to orgs-stage ECR:**
+```bash
+# Using orgs-stage.NuonAdmin profile directly
+aws ecr get-login-password --region us-west-2 --profile orgs-stage.NuonAdmin | \
+  docker login --username AWS --password-stdin 766121324316.dkr.ecr.us-west-2.amazonaws.com
+```
+
+**2. List images in a repository:**
+```bash
+aws ecr list-images --region us-west-2 --profile orgs-stage.NuonAdmin \
+  --repository-name "<org_id>/<app_id>"
+```
+
+**3. Pull and inspect artifact with ORAS:**
+```bash
+# Pull the artifact
+oras pull 766121324316.dkr.ecr.us-west-2.amazonaws.com/<org_id>/<app_id>:<build_id> \
+  -o /tmp/artifact-verify
+
+# View contents
+ls /tmp/artifact-verify
+cat /tmp/artifact-verify/manifest.yaml  # For Kubernetes manifest builds
+```
+
+### Artifact Contents by Component Type
+
+| Component Type | Artifact Contents |
+|----------------|-------------------|
+| Kubernetes Manifest | `manifest.yaml` - Rendered YAML (kustomize output or inline manifest) |
+| Terraform Module | `*.tf` files - Terraform configuration files |
+| Helm Chart | Chart archive with templates |
+| Docker Build | Container image layers |
+
+### Example: Verifying a Kubernetes Manifest Build
+
+```bash
+# Given:
+# - org_id: orgrok933tcyzji01s7us3aeo3
+# - app_id: app98e2wpzdxwoey393edtqj45
+# - build_id: bldq7fplr1up5atx5zpxotbabm
+
+# Pull the artifact
+oras pull 766121324316.dkr.ecr.us-west-2.amazonaws.com/orgrok933tcyzji01s7us3aeo3/app98e2wpzdxwoey393edtqj45:bldq7fplr1up5atx5zpxotbabm -o /tmp/verify
+
+# View the rendered manifest
+cat /tmp/verify/manifest.yaml
+```
+
+### Troubleshooting
+
+**Repository not found:**
+- Ensure you're in the correct AWS account (766121324316, not the stage account 676549690856)
+- Check that the app creation workflow completed successfully (ECR repo is created during app provisioning)
+
+**Authentication errors:**
+- Refresh your AWS SSO session: `aws sso login --profile stage.NuonAdmin`
+- Re-assume the support role
+
+**Empty repository:**
+- Build workflow may have failed - check Temporal UI for workflow status
+- Check runner logs for build errors
+
 ## Project Status
 
 Main branch: `main`

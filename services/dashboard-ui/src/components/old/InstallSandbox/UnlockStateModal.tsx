@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { LockKeyOpenIcon } from '@phosphor-icons/react'
 import { unlockTerraformWorkspace } from '@/actions/runners/unlock-terraform-workspace'
 import { Button } from '@/components/old/Button'
@@ -24,7 +24,7 @@ interface IUnlockModal {
 
 export const UnlockModal = ({ workspace, lock }: IUnlockModal) => {
   const path = usePathname()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const [isOpen, setIsOpen] = useState(false)
 

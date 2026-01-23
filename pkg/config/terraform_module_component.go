@@ -16,32 +16,24 @@ func (t TerraformVariablesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
-	TerraformVersion string `mapstructure:"terraform_version" jsonschema:"required"`
+	TerraformVersion string `mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
 
-	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty"`
-	VarsMap        map[string]string        `mapstructure:"vars,omitempty"`
-	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty"`
+	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	VarsMap        map[string]string        `mapstructure:"vars,omitempty" toml:"vars,omitempty"`
+	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
 
-	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
 	// deprecated
-	Variables []TerraformVariable   `mapstructure:"var,omitempty" `
-	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty"`
+	Variables []TerraformVariable   `mapstructure:"var,omitempty" toml:"var,omitempty"`
+	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }
 
 func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("source").Short("source path or URL").
-		Long("Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.yaml, git::https://github.com/org/repo//config.yaml, file:///path/to/config.yaml, ./local/config.yaml").
-		Field("type").Short("component type").
-		Field("name").Short("component name").
-		Field("var_name").Short("variable name for component output").
-		Long("Optional name to use when storing component outputs as variables. If not specified, uses the component name").
-		Field("dependencies").Short("component dependencies").
-		Long("List of other components that must be deployed before this component. Automatically extracted from template references").
 		Field("terraform_version").Short("Terraform version").Required().
 		Long("Version of Terraform to use for deployments").
 		Example("1.5.0").

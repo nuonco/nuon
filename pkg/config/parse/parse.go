@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/pkg/config"
 )
@@ -31,6 +31,7 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 
 		if len(string(byts)) == 0 {
 			return nil, ParseErr{
+				Filename:    parseCfg.Filename,
 				Description: "config file is empty",
 			}
 		}
@@ -41,6 +42,7 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 	byts, err := Template(parseCfg.Bytes)
 	if err != nil {
 		return nil, ParseErr{
+			Filename:    parseCfg.Filename,
 			Description: "unable to template values in config file",
 			Err:         err,
 		}
@@ -49,12 +51,12 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 	// go from toml -> map[string]interface{}
 	buf := bytes.NewReader(byts)
 	tomlDec := toml.NewDecoder(buf)
-	tomlDec.SetTagName("mapstructure")
 
 	obj := make(map[string]interface{})
 	err = tomlDec.Decode(&obj)
 	if err != nil {
 		return nil, ParseErr{
+			Filename:    parseCfg.Filename,
 			Description: "unable to parse configuration file",
 		}
 	}
@@ -71,6 +73,7 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 	err = mapDec.Decode(obj)
 	if err != nil {
 		return nil, ParseErr{
+			Filename:    parseCfg.Filename,
 			Description: "error decoding config",
 			Err:         err,
 		}
@@ -79,6 +82,7 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 	err = cfg.Parse()
 	if err != nil {
 		return nil, ParseErr{
+			Filename:    parseCfg.Filename,
 			Description: "error parsing config",
 			Err:         err,
 		}

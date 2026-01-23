@@ -5,7 +5,9 @@ import (
 
 	"github.com/nuonco/nuon-runner-go/models"
 
+	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 type handlerState struct {
@@ -23,4 +25,9 @@ type handlerState struct {
 
 	// add validated manifest here
 	kubeClient *kubernetesClient
+
+	// OCI artifact archive (for pulling manifest from registry)
+	arch   ociarchive.Archive
+	srcCfg *configs.OCIRegistryRepository
+	srcTag string
 }

@@ -1,0 +1,10 @@
+id: new-slice-instead-of-make
+snapshots:
+  ? |
+    placeholder
+  : labels:
+    - source: |-
+        placeholder
+      style: primary
+      start: 0
+      end: 0

@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -23,17 +25,28 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
+	// connected github vcs config
+	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
 
-	// manifest
+	// Kustomize configuration (mutually exclusive with Manifest)
+	Kustomize struct {
+		ServiceKustomizeConfigRequest
+	} `json:"kustomize,omitempty"`
+
+	// Inline manifest (mutually exclusive with Kustomize)
 	Manifest string `json:"manifest,omitempty"`
 
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
+
+	// public git vcs config
+	PublicGitVcsConfig *ServicePublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 
 	// references
 	References []string `json:"references"`
@@ -41,11 +54,154 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 
 // Validate validates this service create kubernetes manifest component config request
 func (m *ServiceCreateKubernetesManifestComponentConfigRequest) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateConnectedGithubVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKustomize(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePublicGitVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this service create kubernetes manifest component config request based on context it is used
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) validateConnectedGithubVcsConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.ConnectedGithubVcsConfig) { // not required
+		return nil
+	}
+
+	if m.ConnectedGithubVcsConfig != nil {
+		if err := m.ConnectedGithubVcsConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("connected_github_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("connected_github_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) validateKustomize(formats strfmt.Registry) error {
+	if swag.IsZero(m.Kustomize) { // not required
+		return nil
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) validatePublicGitVcsConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.PublicGitVcsConfig) { // not required
+		return nil
+	}
+
+	if m.PublicGitVcsConfig != nil {
+		if err := m.PublicGitVcsConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("public_git_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service create kubernetes manifest component config request based on the context it is used
 func (m *ServiceCreateKubernetesManifestComponentConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateConnectedGithubVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateKustomize(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePublicGitVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidateConnectedGithubVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ConnectedGithubVcsConfig != nil {
+
+		if swag.IsZero(m.ConnectedGithubVcsConfig) { // not required
+			return nil
+		}
+
+		if err := m.ConnectedGithubVcsConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("connected_github_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("connected_github_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidateKustomize(ctx context.Context, formats strfmt.Registry) error {
+
+	return nil
+}
+
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidatePublicGitVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PublicGitVcsConfig != nil {
+
+		if swag.IsZero(m.PublicGitVcsConfig) { // not required
+			return nil
+		}
+
+		if err := m.PublicGitVcsConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("public_git_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

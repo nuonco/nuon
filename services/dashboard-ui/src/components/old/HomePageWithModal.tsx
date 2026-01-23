@@ -1,11 +1,11 @@
-'use client'
-
+import React from 'react'
 import Image from 'next/image'
-import { Text } from '@/components/common/Text'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { LogoLight } from '@/components/common/Logo/LogoLight'
 import { LogoDark } from '@/components/common/Logo/LogoDark'
+import { Text } from '@/components/common/Text'
+import { USE_AUTH_SERVICE, AUTH_SERVICE_URL, APP_URL } from '@/configs/auth'
 import ossHeroImage from '@/assets/oss-hero.png'
 
 interface HomePageWithModalProps {
@@ -15,12 +15,16 @@ interface HomePageWithModalProps {
 export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
   showModal,
 }) => {
+  const authUrl = USE_AUTH_SERVICE
+    ? `${AUTH_SERVICE_URL}/?url=${APP_URL}`
+    : '/api/auth/login?returnTo=/'
+
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full">
       {/* Left Side */}
-      <div className="flex flex-col gap-10 justify-center w-full sm:w-[70vw] lg:w-[60vw] lg:max-w-[840px] bg-cool-grey-50 dark:bg-dark-grey-950 px-8 md:px-20 py-16">
+      <div className="flex flex-col gap-10 justify-center w-full lg:w-[840px] bg-cool-grey-50 dark:bg-dark-grey-950 px-8 md:px-20 py-16">
         {/* Card */}
-        <div className="bg-white dark:bg-dark-grey-800 border border-cool-grey-500/25 dark:border-dark-grey-500 rounded-lg shadow-sm px-8 md:px-[70px] lg:px-12 py-16 md:py-16 w-full flex flex-col gap-10">
+        <div className="bg-white dark:bg-dark-grey-800 border border-cool-grey-500/25 dark:border-dark-grey-500 rounded-lg shadow-sm px-8 md:px-[70px] py-16 md:py-20 w-full flex flex-col gap-10">
           {/* Logo */}
           <a href="https://nuon.co" className="w-fit">
             <span className="sr-only">Nuon</span>
@@ -44,9 +48,8 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
             <Button
               variant="primary"
               size="lg"
-              href="/api/auth/login?returnTo=/"
+              href={authUrl}
               className="w-full justify-center"
-              isAnchorTag
             >
               Sign up
             </Button>
@@ -65,9 +68,8 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
             <Button
               variant="secondary"
               size="lg"
-              href="/api/auth/login?returnTo=/"
+              href={authUrl}
               className="w-full justify-center"
-              isAnchorTag
             >
               Sign in
             </Button>
@@ -82,12 +84,12 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
           className="text-primary-600 dark:text-primary-500"
         >
           Learn more about how Nuon works
-          <Icon variant="ArrowUpRight" size={16} weight="bold" />
+          <Icon variant="ArrowUpRightIcon" size={16} weight="bold" />
         </Button>
       </div>
 
       {/* Right Side - Branded Background */}
-      <div className="hidden sm:flex relative flex-1 overflow-hidden">
+      <div className="hidden lg:flex relative flex-1 overflow-hidden">
         <Image
           src={ossHeroImage}
           alt="Nuon branded background"

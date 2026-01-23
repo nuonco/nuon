@@ -2,21 +2,27 @@ import { type NextRequest } from 'next/server'
 import { getLogStreamLogs } from '@/lib'
 import type { TRouteProps } from '@/types'
 
+// Configuration constants for log streaming behavior
+const STREAMING_THRESHOLD = 40
+const STREAMING_DELAY_MS = 200
+const POLL_INTERVAL_MS = 1000
+const ERROR_RETRY_DELAY_MS = 5000
+
 export async function GET(
   request: NextRequest,
   { params }: TRouteProps<'orgId' | 'logStreamId'>
 ) {
   const { logStreamId, orgId } = await params
 
-  // Set up SSE response headers
   const encoder = new TextEncoder()
-  
+
   const stream = new ReadableStream({
     start(controller) {
       let currentOffset: string | undefined = undefined
       let isActive = true
+      let isCatchingUp = false
+      let hasSeenFirstBatch = false
 
-      // Polling function
       const pollLogs = async () => {
         if (!isActive) return
 
@@ -28,67 +34,67 @@ export async function GET(
             order: 'asc',
           })
 
-          if (response.data && response.data.length > 0) {
-            // Send each log individually with small delays
-            const sendLogWithDelay = (logIndex: number) => {
-              if (!isActive || logIndex >= response.data.length) {
-                // Update offset after all logs are sent
-                const nextOffset = response.headers?.['x-nuon-api-next']
-                if (nextOffset) {
-                  currentOffset = nextOffset
-                }
-                return
-              }
+          const nextOffset = response.headers?.['x-nuon-api-next']
+          if (nextOffset) {
+            currentOffset = nextOffset
+          }
 
-              // Send single log
-              const singleLog = [response.data[logIndex]]
-              const eventData = `data: ${JSON.stringify(singleLog)}\n\n`
+          if (response.data && response.data.length > 0) {
+            if (!hasSeenFirstBatch) {
+              isCatchingUp = response.data.length >= STREAMING_THRESHOLD
+              hasSeenFirstBatch = true
+            }
+
+            const paginationComplete = !nextOffset
+
+            if (isCatchingUp) {
+              const eventData = `data: ${JSON.stringify(response.data)}\n\n`
               controller.enqueue(encoder.encode(eventData))
 
-              // Send next log after delay
-              setTimeout(() => sendLogWithDelay(logIndex + 1), 200) // 200ms between logs
-            }
+              if (paginationComplete) {
+                isCatchingUp = false
+              }
+            } else {
+              await new Promise<void>((resolve) => {
+                let logIndex = 0
+                const sendNextLog = () => {
+                  if (logIndex >= response.data.length) {
+                    resolve()
+                    return
+                  }
 
-            // Start sending logs one by one
-            sendLogWithDelay(0)
-          } else {
-            // No new logs, update offset anyway
-            const nextOffset = response.headers?.['x-nuon-api-next']
-            if (nextOffset) {
-              currentOffset = nextOffset
+                  const singleLog = [response.data[logIndex]]
+                  const eventData = `data: ${JSON.stringify(singleLog)}\n\n`
+                  controller.enqueue(encoder.encode(eventData))
+
+                  logIndex++
+                  setTimeout(sendNextLog, STREAMING_DELAY_MS)
+                }
+                sendNextLog()
+              })
             }
           }
 
-          // Continue polling if still active
           if (isActive) {
-            setTimeout(pollLogs, 1000) // Poll every 2 seconds
+            setTimeout(pollLogs, POLL_INTERVAL_MS)
           }
         } catch (error) {
-          console.error('SSE polling error:', error)
-          // Send error event to client
           const errorEvent = `event: error\ndata: ${JSON.stringify({ error: 'Polling failed' })}\n\n`
           controller.enqueue(encoder.encode(errorEvent))
-          
-          // Retry after longer delay on error
+
           if (isActive) {
-            setTimeout(pollLogs, 5000)
+            setTimeout(pollLogs, ERROR_RETRY_DELAY_MS)
           }
         }
       }
 
-      // Start initial poll
       pollLogs()
 
-      // Cleanup function
       return () => {
         isActive = false
       }
     },
-    cancel() {
-      // Client disconnected
-      // eslint-disable-next-line
-      console.log(`SSE connection closed for log stream: ${logStreamId}`)
-    }
+    cancel() {},
   })
 
   return new Response(stream, {

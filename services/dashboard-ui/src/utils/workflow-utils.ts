@@ -14,6 +14,7 @@ const WORKFLOW_BADGE_MAP: Record<
   'user-skipped': { children: 'Skipped' },
   discarded: { children: 'Discarded' },
   success: { children: 'Completed', theme: 'success' },
+  'auto-approved': { children: 'Auto approved', theme: 'neutral' },
   approved: { children: 'Plan approved', theme: 'success' },
   'approval-awaiting': { children: 'Awaiting approval', theme: 'warn' },
   'approval-denied': { children: 'Plan denied', theme: 'warn' },
@@ -41,12 +42,16 @@ export function getStepBadge(
     return { children: 'Skipped' }
   }
 
-   if (step?.status?.status === 'auto-skipped') {
+  if (step?.status?.status === 'auto-skipped') {
     return { children: 'Auto skipped' }
   }
-  
+
   if (step?.execution_type === 'approval' && !isApprovalPrompt) {
-    return WORKFLOW_BADGE_MAP['approved']
+    if (step?.status?.status === 'approved') {
+      return WORKFLOW_BADGE_MAP['approved']
+    } else if (step?.status?.status === 'pending') {
+      return WORKFLOW_BADGE_MAP['auto-approved']
+    }
   }
   const status = step?.status?.status
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}

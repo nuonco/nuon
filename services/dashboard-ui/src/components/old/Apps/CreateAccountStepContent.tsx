@@ -4,9 +4,10 @@ import React, { type FC } from 'react'
 import { Text, Heading } from '@/components/old/Typography'
 import { TAccount } from '@/types/ctl-api.types'
 import { Profile } from '../Profile'
-import { Card, type ICard } from '@/components/common/Card'
+import { Card } from '@/components/common/Card'
 import { Input } from '@/components/common/form/Input'
 import { Textarea } from '@/components/common/form/Textarea'
+import { useUserJourney } from '@/hooks/use-user-journey'
 
 interface CreateAppStepContentProps {
   stepComplete: boolean
@@ -19,6 +20,7 @@ export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
   account,
   setSFData,
 }) => {
+  const { isBYOC } = useUserJourney()
   return (
     <div className="space-y-6">
       <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
@@ -41,6 +43,17 @@ export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
                 setSFData?.(formObject as Record<string, string>)
               }}
             >
+              {isBYOC ? (
+                <Input
+                  className="font-sans"
+                  labelProps={{
+                    labelText: 'Organization name',
+                  }}
+                  name="name"
+                  defaultValue={`${account?.email}-trial`}
+                  placeholder="Organization name"
+                />
+              ) : null}
               <Input
                 className="font-sans"
                 labelProps={{

@@ -9,19 +9,14 @@ import { Code } from '@/components/common/Code'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import {
-  getInstallAction,
-  getInstall,
-  getInstallState,
-  getOrg,
-} from '@/lib'
+import { getInstallAction, getInstall, getInstallState, getOrg } from '@/lib'
+import { getSession } from '@/lib/auth-server'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
-  ActionTriggerButton,
   ActionTriggerType,
   ClickToCopy,
   CodeViewer,
@@ -38,6 +33,7 @@ import {
   ToolTip,
   Truncate,
 } from '@/components'
+import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { ActionRuns } from './action-runs'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id' | 'action-id'>
@@ -70,6 +66,7 @@ export default async function InstallActionPage({
     ['action-id']: actionId,
   } = await params
   const sp = await searchParams
+  const session = await getSession()
   const [
     { data: install },
     { data: installAction },
@@ -118,7 +115,12 @@ export default async function InstallActionPage({
           <Text variant="base" weight="strong">
             {installAction.action_workflow?.name}
           </Text>
-          <ID>{actionId}</ID>
+          <span className="flex items-center gap-4">
+            <ID>{actionId}</ID>{' '}
+            {session?.user?.email?.endsWith('@nuon.co') ? (
+              <ID>{installAction?.id}</ID>
+            ) : null}
+          </span>
         </HeadingGroup>
 
         <div className="flex gap-6 items-start justify-start">
@@ -175,7 +177,7 @@ export default async function InstallActionPage({
           {installAction?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
           ) ? (
-            <ActionTriggerButton
+            <InstallActionManualRunButton
               action={installAction?.action_workflow}
               actionConfigId={installAction.action_workflow?.configs?.[0]?.id}
             />
@@ -387,7 +389,7 @@ export default async function InstallActionPage({
           {installAction?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
           ) ? (
-            <ActionTriggerButton
+            <InstallActionManualRunButton
               action={installAction?.action_workflow}
               actionConfigId={installAction.action_workflow?.configs?.[0]?.id}
             />

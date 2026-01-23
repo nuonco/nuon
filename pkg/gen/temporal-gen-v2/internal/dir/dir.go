@@ -63,4 +63,3 @@ func LoadPackage(ctx context.Context, path string) (*Package, error) {
 
 	return &Package{Pkg: pkg}, nil
 }
-

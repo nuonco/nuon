@@ -12,32 +12,32 @@ import (
 )
 
 type ActionConfig struct {
-	Name     string                 `mapstructure:"name" jsonschema:"required"`
-	Timeout  string                 `mapstructure:"timeout,omitempty"`
-	Triggers []*ActionTriggerConfig `mapstructure:"triggers" jsonschema:"required"`
-	Steps    []*ActionStepConfig    `mapstructure:"steps" jsonschema:"required"`
+	Name     string                 `mapstructure:"name" toml:"name" jsonschema:"required"`
+	Timeout  string                 `mapstructure:"timeout,omitempty" toml:"timeout,omitempty"`
+	Triggers []*ActionTriggerConfig `mapstructure:"triggers" toml:"triggers" jsonschema:"required"`
+	Steps    []*ActionStepConfig    `mapstructure:"steps" toml:"steps" jsonschema:"required"`
 
 	References     []refs.Ref `mapstructure:"-" jsonschema:"-"`
-	Dependencies   []string   `mapstructure:"dependencies,omitempty"`
-	BreakGlassRole string     `mapstructure:"break_glass_role,omitempty"`
+	Dependencies   []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
+	BreakGlassRole string     `mapstructure:"break_glass_role,omitempty" toml:"break_glass_role,omitempty"`
 }
 
 type ActionTriggerConfig struct {
-	Type string `mapstructure:"type" jsonschema:"required"`
+	Type string `mapstructure:"type" toml:"type" jsonschema:"required"`
 
-	Index         int64  `mapstructure:"index,omitempty"`
-	CronSchedule  string `mapstructure:"cron_schedule,omitempty"`
-	ComponentName string `mapstructure:"component_name,omitempty"`
+	Index         int64  `mapstructure:"index,omitempty" toml:"index,omitempty"`
+	CronSchedule  string `mapstructure:"cron_schedule,omitempty" toml:"cron_schedule,omitempty"`
+	ComponentName string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
 }
 
 type ActionStepConfig struct {
-	Name          string               `mapstructure:"name" jsonschema:"required"`
-	EnvVarMap     map[string]string    `mapstructure:"env_vars,omitempty"`
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"`
+	Name          string               `mapstructure:"name" toml:"name" jsonschema:"required"`
+	EnvVarMap     map[string]string    `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
-	Command        string `mapstructure:"command" features:"template"`
-	InlineContents string `mapstructure:"inline_contents" features:"get,template"`
+	Command        string `mapstructure:"command" toml:"command" features:"template"`
+	InlineContents string `mapstructure:"inline_contents" toml:"inline_contents" features:"get,template"`
 
 	// created during parsing
 	References []refs.Ref `mapstructure:"-" jsonschema:"-"`

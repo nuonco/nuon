@@ -20,9 +20,15 @@ import (
 // swagger:model service.AppPolicyConfig
 type ServiceAppPolicyConfig struct {
 
+	// components
+	Components []string `json:"components"`
+
 	// contents
 	// Required: true
 	Contents *string `json:"contents"`
+
+	// engine
+	Engine ConfigAppPolicyEngine `json:"engine,omitempty"`
 
 	// type
 	// Required: true
@@ -34,6 +40,10 @@ func (m *ServiceAppPolicyConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateContents(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEngine(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -50,6 +60,27 @@ func (m *ServiceAppPolicyConfig) Validate(formats strfmt.Registry) error {
 func (m *ServiceAppPolicyConfig) validateContents(formats strfmt.Registry) error {
 
 	if err := validate.Required("contents", "body", m.Contents); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceAppPolicyConfig) validateEngine(formats strfmt.Registry) error {
+	if swag.IsZero(m.Engine) { // not required
+		return nil
+	}
+
+	if err := m.Engine.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("engine")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("engine")
+		}
+
 		return err
 	}
 
@@ -88,6 +119,10 @@ func (m *ServiceAppPolicyConfig) validateType(formats strfmt.Registry) error {
 func (m *ServiceAppPolicyConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateEngine(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -95,6 +130,28 @@ func (m *ServiceAppPolicyConfig) ContextValidate(ctx context.Context, formats st
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceAppPolicyConfig) contextValidateEngine(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Engine) { // not required
+		return nil
+	}
+
+	if err := m.Engine.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("engine")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("engine")
+		}
+
+		return err
+	}
+
 	return nil
 }
 

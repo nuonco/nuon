@@ -2,7 +2,10 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
+import { IS_BYOC } from '@/configs/app'
 import { API_URL } from '@/configs/api'
+import { USE_AUTH_SERVICE, AUTH_SERVICE_URL } from '@/configs/auth'
+import { getUserProfile } from '@/lib/auth-server'
 import { InitDatadogLogs } from '@/lib/datadog-logs'
 import { InitDatadogRUM } from '@/lib/datadog-rum'
 import {
@@ -10,6 +13,7 @@ import {
   SegmentAnalyticsIdentify,
 } from '@/lib/segment-analytics'
 import { AccountProvider } from '@/providers/account-provider'
+import { AuthProvider } from '@/providers/auth-provider'
 import { UserJourneyProvider } from '@/providers/user-journey-provider'
 import './old-styles.css'
 import './globals.css'
@@ -35,48 +39,61 @@ export const metadata: Metadata = {
   description: 'Bring your own cloud with Nuon',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const initialUser = USE_AUTH_SERVICE ? await getUserProfile() : null
+
   return (
     <html
       className="bg-light text-cool-grey-950 dark:bg-dark-grey-100 dark:text-cool-grey-50 overflow-hidden"
       lang="en"
     >
-      <>
-        {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
-        process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
-        process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local' ? (
-          <>
-            <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
-            <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
-          </>
-        ) : null}
-        <body
-          className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures antialiased`}
-        >
-          <div id="ui-version" className="hidden">
-            Version: {process.env.VERSION || 'development'}
-          </div>
-          <EnvScript
-            env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
-            githubAppName={process.env.GITHUB_APP_NAME}
-            tfBackendUrl={API_URL}
-          />
+      <AuthProvider
+        useAuthService={USE_AUTH_SERVICE}
+        initialUser={initialUser}
+        authServiceUrl={AUTH_SERVICE_URL}
+      >
+        <>
+          {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
+          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'stage' ||
+          process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'local' ? (
+            <>
+              <InitDatadogLogs env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+              <InitDatadogRUM env={process?.env?.NEXT_PUBLIC_DATADOG_ENV} />
+            </>
+          ) : null}
+          <body
+            className={`${inter.variable} ${hack.variable} font-sans overflow-hidden disable-ligatures antialiased`}
+          >
+            <div id="ui-version" className="hidden">
+              Version: {process.env.VERSION || 'development'}
+            </div>
+            <EnvScript
+              env={process?.env?.NEXT_PUBLIC_DATADOG_ENV}
+              githubAppName={process.env.GITHUB_APP_NAME}
+              tfBackendUrl={API_URL}
+            />
 
-          <AccountProvider shouldPoll>
-            <UserJourneyProvider>{children}</UserJourneyProvider>
-          </AccountProvider>
-          {process.env.SEGMENT_WRITE_KEY && (
-            <Suspense>
-              <InitSegmentAnalytics writeKey={process.env.SEGMENT_WRITE_KEY} />
-              <SegmentAnalyticsIdentify />
-            </Suspense>
-          )}
-        </body>
-      </>
+            <AccountProvider shouldPoll>
+              <UserJourneyProvider isBYOC={IS_BYOC}>
+                {children}
+              </UserJourneyProvider>
+            </AccountProvider>
+
+            {process.env.SEGMENT_WRITE_KEY && (
+              <Suspense>
+                <InitSegmentAnalytics
+                  writeKey={process.env.SEGMENT_WRITE_KEY}
+                />
+                <SegmentAnalyticsIdentify />
+              </Suspense>
+            )}
+          </body>
+        </>
+      </AuthProvider>
     </html>
   )
 }

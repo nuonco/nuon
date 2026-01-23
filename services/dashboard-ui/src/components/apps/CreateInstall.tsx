@@ -23,7 +23,7 @@ interface ICreateInstall {}
 
 const FormSkeleton = () => {
   return (
-    <div className="flex flex-col gap-8 max-w-3xl">
+    <div className="flex flex-col gap-8 max-w-4xl">
       {/* Install name section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <span className="flex flex-col gap-1">
@@ -259,15 +259,11 @@ const CreateInstallFormContent = forwardRef<
       : []
   }
 
-  const getPlatform = (): 'aws' | 'azure' => {
-    return 'aws'
-  }
-
   return (
     <CreateInstallForm
       ref={ref}
       appId={app.id}
-      platform={getPlatform()}
+      platform={app?.runner_config?.app_runner_type as 'aws' | 'azure'}
       inputConfig={{
         ...config?.input,
         input_groups: nestInputsUnderGroups(

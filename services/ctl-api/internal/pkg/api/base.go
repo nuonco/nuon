@@ -78,6 +78,7 @@ func (a *API) registerServices() error {
 			"runner":   svc.RegisterRunnerRoutes,
 			"public":   svc.RegisterPublicRoutes,
 			"internal": svc.RegisterInternalRoutes,
+			"auth":     svc.RegisterAuthRoutes,
 		}[a.name]
 		if !ok {
 			return fmt.Errorf("%s", "invalid name "+a.name)

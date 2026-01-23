@@ -28,7 +28,7 @@
             "group": "Resources",
             "pages": [
               "cli",
-	      "install",
+              "deployment-options",
               "dashboard",
               "configuration-files",
               "nuon-api",
@@ -164,6 +164,7 @@
           {
             "group": "How To",
             "pages": [
+              "guides/byoc",
               "guides/install-access-permissions",
               "guides/using-variables",
               "guides/using-readmes",
@@ -223,7 +224,7 @@
   "navbar": {
     "primary": {
       "type": "button",
-      "label": "Log in",
+      "label": "Sign up",
       "href": "https://app.nuon.co/"
     }
   },

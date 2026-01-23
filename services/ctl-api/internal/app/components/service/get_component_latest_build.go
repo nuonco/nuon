@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetAppComponentLatestBuild
@@ -82,7 +82,7 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 	// via the double join.
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
+			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_builds.created_at DESC").Limit(1)

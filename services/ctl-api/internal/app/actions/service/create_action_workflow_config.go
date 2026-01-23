@@ -172,6 +172,43 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
+	//validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
+	for _, step := range c.Steps {
+		// Check if multiple VCS configs are set
+		vcsConfigCount := 0
+		if step.PublicGitVCSConfig != nil {
+			vcsConfigCount++
+		}
+		if step.ConnectedGithubVCSConfig != nil {
+			vcsConfigCount++
+		}
+
+		if vcsConfigCount > 1 {
+			return stderr.ErrUser{
+				Err:         errors.New("only one VCS config can be set: choose either public_git_vcs_config or connected_github_vcs_config"),
+				Description: "only one VCS config can be set: choose either public_git_vcs_config or connected_github_vcs_config",
+			}
+		}
+
+		// If inline_contents is set, it must be the only execution method
+		if step.InlineContents != "" {
+			if step.Command != "" || step.PublicGitVCSConfig != nil || step.ConnectedGithubVCSConfig != nil {
+				return stderr.ErrUser{
+					Err:         errors.New("inline_contents cannot be combined with command or VCS configs"),
+					Description: "inline_contents cannot be combined with command or VCS configs",
+				}
+			}
+		} else {
+			// If inline_contents is not set, at least one of command or VCS must be set
+			if step.Command == "" && step.PublicGitVCSConfig == nil && step.ConnectedGithubVCSConfig == nil {
+				return stderr.ErrUser{
+					Err:         errors.New("one of inline_contents, command, or VCS config must be set"),
+					Description: "one of inline_contents, command, or VCS config (public_git_vcs_config or connected_github_vcs_config) must be set",
+				}
+			}
+		}
+	}
+
 	return nil
 }
 

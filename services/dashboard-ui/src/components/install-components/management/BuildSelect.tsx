@@ -17,6 +17,7 @@ interface BuildSelectProps {
   componentId: string
   selectedBuildId?: string
   currentBuildId?: string
+  currentDeployStatus?: string
   onSelectBuild: (buildId: string) => void
   onClose: () => void
 }
@@ -25,6 +26,7 @@ export const BuildSelect = ({
   componentId,
   selectedBuildId,
   currentBuildId,
+  currentDeployStatus,
   onSelectBuild,
   onClose,
 }: BuildSelectProps) => {
@@ -72,7 +74,9 @@ export const BuildSelect = ({
   useEffect(() => {
     if (!selectedBuildId && allBuilds.length > 0 && currentPage === 0) {
       // Find the most recent active build (API returns in descending order by created_at)
-      const mostRecentActiveBuild = allBuilds.find(build => build?.status_v2?.status === 'active')
+      const mostRecentActiveBuild = allBuilds.find(
+        (build) => build?.status_v2?.status === 'active'
+      )
       if (mostRecentActiveBuild) {
         onSelectBuild(mostRecentActiveBuild.id)
       }
@@ -99,10 +103,7 @@ export const BuildSelect = ({
       return (
         <div className="flex flex-col gap-1">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 p-3 border rounded"
-            >
+            <div key={i} className="flex items-start gap-3 p-3 border rounded">
               <Skeleton
                 width="16px"
                 height="16px"
@@ -121,8 +122,16 @@ export const BuildSelect = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Skeleton width="60px" height="20px" className="rounded-full" />
-                  <Skeleton width="50px" height="20px" className="rounded-full" />
+                  <Skeleton
+                    width="60px"
+                    height="20px"
+                    className="rounded-full"
+                  />
+                  <Skeleton
+                    width="50px"
+                    height="20px"
+                    className="rounded-full"
+                  />
                 </div>
               </div>
             </div>
@@ -153,7 +162,8 @@ export const BuildSelect = ({
         <div className="flex flex-col gap-1">
           {allBuilds.map((build) => {
             const isActive = build?.status_v2?.status === 'active'
-            const isCurrentDeployment = currentBuildId && build.id === currentBuildId
+            const isCurrentDeployment =
+              currentBuildId && build.id === currentBuildId
             return (
               <RadioInput
                 key={build.id}
@@ -207,11 +217,17 @@ export const BuildSelect = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {isCurrentDeployment && (
-                          <Badge size="sm" theme="info">
-                            Current deployment
-                          </Badge>
-                        )}
+                        {isCurrentDeployment ? (
+                          currentDeployStatus === 'active' ? (
+                            <Badge size="sm" theme="info">
+                              Current deployment
+                            </Badge>
+                          ) : currentDeployStatus === 'inactive' ? (
+                            <Badge size="sm" theme="neutral">
+                              Previously deployed
+                            </Badge>
+                          ) : null
+                        ) : null}
                         {build?.status_v2?.status && (
                           <Status
                             status={build.status_v2.status}
@@ -257,8 +273,16 @@ export const BuildSelect = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Skeleton width="60px" height="20px" className="rounded-full" />
-                    <Skeleton width="50px" height="20px" className="rounded-full" />
+                    <Skeleton
+                      width="60px"
+                      height="20px"
+                      className="rounded-full"
+                    />
+                    <Skeleton
+                      width="50px"
+                      height="20px"
+                      className="rounded-full"
+                    />
                   </div>
                 </div>
               </div>

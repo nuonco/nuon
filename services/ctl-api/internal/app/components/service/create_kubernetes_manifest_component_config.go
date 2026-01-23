@@ -23,15 +23,65 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	Checksum     string   `json:"checksum"`
 	Dependencies []string `json:"dependencies"`
 
-	Manifest      string  `json:"manifest"`
+	// Inline manifest (mutually exclusive with Kustomize)
+	Manifest      string  `json:"manifest,omitempty"`
 	Namespace     string  `json:"namespace"`
 	DriftSchedule *string `json:"drift_schedule,omitempty"`
+
+	// Kustomize configuration (mutually exclusive with Manifest)
+	Kustomize *KustomizeConfigRequest `json:"kustomize,omitempty"`
+
+	// VCS configuration for kustomize sources
+	basicVCSConfigRequest
+}
+
+// KustomizeConfigRequest defines kustomize options in API requests
+type KustomizeConfigRequest struct {
+	Path           string   `json:"path"`
+	Patches        []string `json:"patches,omitempty"`
+	EnableHelm     bool     `json:"enable_helm,omitempty"`
+	LoadRestrictor string   `json:"load_restrictor,omitempty"`
 }
 
 func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.Validate) error {
+	// Normalize: treat kustomize with empty path as nil
+	// This handles the case where go-swagger client sends {"kustomize": {"path": null}}
+	if c.Kustomize != nil && c.Kustomize.Path == "" {
+		c.Kustomize = nil
+	}
+
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
+
+	// Exactly one of manifest or kustomize must be set
+	hasManifest := c.Manifest != ""
+	hasKustomize := c.Kustomize != nil
+
+	if !hasManifest && !hasKustomize {
+		return errors.New("one of 'manifest' or 'kustomize' must be specified")
+	}
+	if hasManifest && hasKustomize {
+		return errors.New("only one of 'manifest' or 'kustomize' can be specified")
+	}
+
+	// Validate kustomize.path is set when kustomize is used
+	if c.Kustomize != nil && c.Kustomize.Path == "" {
+		return errors.New("kustomize.path is required")
+	}
+
+	// Validate VCS config: required for kustomize, not allowed for inline manifest
+	if c.Kustomize != nil {
+		if err := c.basicVCSConfigRequest.Validate(); err != nil {
+			return errors.Wrap(err, "kustomize requires a git source")
+		}
+	} else {
+		// Inline manifest should not have VCS config
+		if c.PublicGitVCSConfig != nil || c.ConnectedGithubVCSConfig != nil {
+			return errors.New("VCS config is only valid for kustomize sources, not inline manifests")
+		}
+	}
+
 	return nil
 }
 
@@ -127,10 +177,33 @@ func (s *service) createKubernetesManifestComponentConfig(
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
+	// Build VCS configs for kustomize sources
+	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(ctx, parentCmp, s.vcsHelpers)
+	if err != nil {
+		return nil, fmt.Errorf("invalid connected github vcs config: %w", err)
+	}
+
+	publicGitVCSConfig, err := req.publicGitVCSConfig(ctx, parentCmp, s.vcsHelpers)
+	if err != nil {
+		return nil, fmt.Errorf("invalid public vcs config: %w", err)
+	}
+
 	// build component config
 	cfg := app.KubernetesManifestComponentConfig{
-		Manifest:  req.Manifest,
-		Namespace: req.Namespace,
+		Manifest:                 req.Manifest, // Empty for kustomize sources
+		Namespace:                req.Namespace,
+		PublicGitVCSConfig:       publicGitVCSConfig,
+		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
+	}
+
+	// Populate kustomize config (mutually exclusive with Manifest)
+	if req.Kustomize != nil {
+		cfg.Kustomize = &app.KustomizeConfig{
+			Path:           req.Kustomize.Path,
+			Patches:        req.Kustomize.Patches,
+			EnableHelm:     req.Kustomize.EnableHelm,
+			LoadRestrictor: req.Kustomize.LoadRestrictor,
+		}
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{

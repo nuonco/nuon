@@ -25,8 +25,27 @@ type ConnectedGithubVCSSandboxConfigRequest struct {
 }
 
 type basicVCSConfigRequest struct {
-	PublicGitVCSConfig       *PublicGitVCSSandboxConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
+	PublicGitVCSConfig       *PublicGitVCSSandboxConfigRequest       `json:"public_git_vcs_config"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSSandboxConfigRequest `json:"connected_github_vcs_config" `
+}
+
+func (b basicVCSConfigRequest) Validate() error {
+	if b.PublicGitVCSConfig != nil && b.ConnectedGithubVCSConfig != nil {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("both public and connected github config set"),
+			Description: "only one of connected github or public git configs can be set",
+		}
+	}
+
+	if b.PublicGitVCSConfig == nil && b.ConnectedGithubVCSConfig == nil {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("one of public and connected github config set"),
+			Description: "one of connected github or public git configs must be set",
+			Code:        "vcs_config_required",
+		}
+	}
+
+	return nil
 }
 
 func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, parentApp *app.App, vcsHelpers *vcshelpers.Helpers) (*app.ConnectedGithubVCSConfig, error) {

@@ -1,0 +1,49 @@
+{{ define "auth/device_approve.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{template "head.tmpl"}}
+    <title>Approve CLI Access | Nuon</title>
+</head>
+<body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-cool-grey-100 opacity-50 dark:bg-dark-grey-950 dark:opacity-75"></div>
+    <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="mb-8 -mt-24">
+                {{template "logo.tmpl"}}
+            </div>
+            <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
+                <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Authorize CLI Access</h2>
+                <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-6">
+                    The Nuon CLI is requesting access to your account.
+                </p>
+
+                <div class="bg-cool-grey-50 dark:bg-dark-grey-800 rounded-md p-4 mb-6">
+                    <p class="text-sm text-cool-grey-700 dark:text-cool-grey-300">
+                        <span class="font-semibold">Signed in as:</span><br>
+                        {{ if .Email }}{{ .Email }}{{ else }}{{ .Username }}{{ end }}
+                    </p>
+                </div>
+
+                <p class="text-sm text-cool-grey-500 dark:text-cool-grey-400 mb-6">
+                    By clicking Approve, you allow the CLI to access your Nuon account and perform actions on your behalf.
+                </p>
+
+                <form action="/device/code/approve" method="POST">
+                    <input type="hidden" name="code" value="{{ .Code }}">
+
+                    <div class="space-y-3">
+                        <button type="submit" class="flex items-center justify-center w-full py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold transition-colors">
+                            Approve
+                        </button>
+                        <a href="/" class="flex items-center justify-center w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+{{ end }}

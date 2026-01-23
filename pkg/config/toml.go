@@ -3,13 +3,12 @@ package config
 import (
 	"bytes"
 
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 )
 
 func ToTOML(a interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := toml.NewEncoder(&buf)
-	enc.SetTagName("mapstructure")
 
 	err := enc.Encode(a)
 	if err != nil {

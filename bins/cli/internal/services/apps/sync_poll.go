@@ -56,7 +56,7 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 		}
 
 		var groupError error
-		completedComponents := make([]string, 0)
+		completedComponents := make([]sync.ComponentState, 0)
 
 		for cmpID := range cmpByID {
 			cmp := cmpByID[cmpID]
@@ -64,7 +64,7 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 			if err != nil {
 				if nuon.IsServerError(err) {
 					multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
-					completedComponents = append(completedComponents, cmpID)
+					completedComponents = append(completedComponents, cmp)
 					continue
 				}
 				// in case we didn't wait long enough for an initial build record, ignore and loop again
@@ -79,21 +79,21 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 			}
 			if cmpBuild.Status == componentBuildStatusError {
 				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
-				completedComponents = append(completedComponents, cmpID)
+				completedComponents = append(completedComponents, cmp)
 				groupError = errors.New("at least one build failed")
 				continue
 			}
 
 			if cmpBuild.Status == componentBuildStatusActive {
 				multiSpinner.CompleteSpinner(cmp.ID, true, fmt.Sprintf("finished building component %s %s", cmp.ID, cmp.Name))
-				completedComponents = append(completedComponents, cmpID)
+				completedComponents = append(completedComponents, cmp)
 				continue
 			}
 		}
 
 		// Remove completed components from tracking
-		for _, cmpID := range completedComponents {
-			delete(cmpByID, cmpID)
+		for _, cmp := range completedComponents {
+			delete(cmpByID, cmp.ID)
 		}
 
 		if len(cmpByID) == 0 {

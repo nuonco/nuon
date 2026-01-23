@@ -10,11 +10,17 @@ import { getUserJourney } from '@/utils/user-journey-utils'
 interface UserJourneyContextValue {
   isViewOpen: boolean
   openOnboarding: () => void
+  isBYOC?: boolean
 }
 
 export const UserJourneyContext = createContext<
   UserJourneyContextValue | undefined
 >(undefined)
+
+const isOnboardingEnabled =
+  typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING !== 'false'
+    : true
 
 // check if any journey steps are incomplete
 const incompleteSteps = (account: TAccount) => {
@@ -29,7 +35,13 @@ const incompleteSteps = (account: TAccount) => {
   return hasIncompleteSteps
 }
 
-export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
+export const UserJourneyProvider = ({
+  children,
+  isBYOC = false,
+}: {
+  children: ReactNode
+  isBYOC?: boolean
+}) => {
   const { account, refreshAccount } = useAccount()
   const [showJourneyView, setShowJourneyView] = useState(false)
   const [manuallyOpened, setManuallyOpened] = useState(false)
@@ -42,7 +54,7 @@ export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
-    setShowJourneyView(incompleteSteps(account))
+    setShowJourneyView(isOnboardingEnabled && incompleteSteps(account))
   }, [account, manuallyOpened])
 
   // Add method to manually open onboarding (without affecting journey state)
@@ -73,6 +85,7 @@ export const UserJourneyProvider = ({ children }: { children: ReactNode }) => {
   const contextValue: UserJourneyContextValue = {
     isViewOpen: showJourneyView,
     openOnboarding,
+    isBYOC,
   }
 
   const onboarding = (

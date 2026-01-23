@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { buildComponent } from '@/actions/apps/build-component'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -47,7 +47,7 @@ export const BuildComponentModal = ({
 }) => {
   const path = usePathname()
   const router = useRouter()
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const { app } = useApp()
   const { removeModal } = useSurfaces()

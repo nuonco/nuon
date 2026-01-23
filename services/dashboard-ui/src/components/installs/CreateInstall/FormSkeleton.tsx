@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 
 export const FormSkeleton = () => {
   return (
-    <div className="flex flex-col gap-8 max-w-3xl">
+    <div className="flex flex-col gap-8 max-w-4xl">
       {/* Install name section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <span className="flex flex-col gap-1">

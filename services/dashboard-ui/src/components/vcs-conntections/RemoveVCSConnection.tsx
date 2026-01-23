@@ -48,7 +48,7 @@ export const RemoveVCSConnection = ({
     <>
       <Button
         aria-label="Remove GitHub connection"
-        className="ml-auto !p-1 text-red-600 dark:text-red-400"
+        className="ml-auto !p-1 hover:text-red-600 dark:hover:text-red-400"
         variant="ghost"
         onClick={() => {
           setIsOpen(true)

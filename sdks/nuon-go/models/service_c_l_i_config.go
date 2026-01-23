@@ -28,6 +28,12 @@ type ServiceCLIConfig struct {
 
 	// dashboard url
 	DashboardURL string `json:"dashboard_url,omitempty"`
+
+	// nuon auth enabled
+	NuonAuthEnabled bool `json:"nuon_auth_enabled,omitempty"`
+
+	// root domain
+	RootDomain string `json:"root_domain,omitempty"`
 }
 
 // Validate validates this service c l i config

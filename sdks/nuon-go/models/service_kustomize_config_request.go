@@ -8,10 +8,8 @@ package models
 import (
 	"context"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // ServiceKustomizeConfigRequest service kustomize config request
@@ -29,30 +27,11 @@ type ServiceKustomizeConfigRequest struct {
 	Patches []string `json:"patches"`
 
 	// path
-	// Required: true
-	Path *string `json:"path"`
+	Path string `json:"path,omitempty"`
 }
 
 // Validate validates this service kustomize config request
 func (m *ServiceKustomizeConfigRequest) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validatePath(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *ServiceKustomizeConfigRequest) validatePath(formats strfmt.Registry) error {
-
-	if err := validate.Required("path", "body", m.Path); err != nil {
-		return err
-	}
-
 	return nil
 }
 

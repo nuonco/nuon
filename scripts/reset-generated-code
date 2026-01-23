@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" == 1 && "$1" == "--help" ]]; then
+  cat << EOF
+  This script will reset your local generated code for both mono and nuon repositories.
+EOF
+  exit 0
+fi
+
+if [[ "$#" == 1 && "$1" == "--usage" ]]; then
+  cat << EOF
+usage: nuonctl scripts exec reset-generated-code
+EOF
+  exit 0
+fi
+
+generate_repo() {
+  local repo_dir="$1"
+  local repo_name="$2"
+
+  echo >&2 "========================================"
+  echo >&2 "Processing $repo_name repo..."
+  echo >&2 "========================================"
+
+  cd "$repo_dir"
+  echo >&2 "root: $(pwd)"
+
+  echo >&2 "Deleting generated files..."
+  SEARCH_DIRS=()
+  for dir in ./bins ./pkg ./services/ctl-api ./services/workers-executors; do
+    if [ -d "$dir" ]; then
+      SEARCH_DIRS+=("$dir")
+    fi
+  done
+
+  if [ ${#SEARCH_DIRS[@]} -gt 0 ]; then
+    find "${SEARCH_DIRS[@]}" \
+      -type f \( \
+        -path "services/ctl-api/docs/public/docs.go" -o \
+        -path "pkg/types/**/*pb.go" -o \
+        -path "pkg/types/**/*pb.validate.go" -o \
+        -path "pkg/types/**/*connect.go" -o \
+        -name "*mock*.go" -o \
+        -name "*_gen.go" -o \
+        -name "*.gen" \
+      \) -delete
+  fi
+
+  echo >&2 "Ensuring dependencies are downloaded..."
+  go mod download
+
+  echo >&2 "Running go generate..."
+  grep -r --include="*.go" -l "//go:generate" . | grep -v "sdks/nuon-go" | grep -v "sdks/nuon-runner-go" | xargs -n 1 -P 10 go generate
+
+  echo >&2 "Done with $repo_name!"
+}
+
+# Generate for mono repo
+generate_repo "$MONO_DIR" "mono"
+
+# Generate for nuon repo
+generate_repo "$NUON_DIR" "nuon"
+
+# Generate for nuon-go repo (must be last as it depends on types from other repos)
+if [ -d "$NUON_DIR/sdks/nuon-go" ]; then
+  echo >&2 "========================================"
+  echo >&2 "Processing nuon-go repo..."
+  echo >&2 "========================================"
+  cd "$NUON_DIR/sdks/nuon-go"
+  echo >&2 "root: $(pwd)"
+  echo >&2 "Running go generate..."
+  grep -r --include="*.go" -l "//go:generate" . | xargs -n 1 -P 10 go generate
+  echo >&2 "Done with nuon-go!"
+else
+  echo >&2 "Skipping nuon-go (directory not found: $NUON_DIR/sdks/nuon-go)"
+fi
+
+# Generate for nuon-runner-go (must be after other repos as it may depend on types)
+if [ -d "$NUON_DIR/sdks/nuon-runner-go" ]; then
+  echo >&2 "========================================"
+  echo >&2 "Processing nuon-runner-go repo..."
+  echo >&2 "========================================"
+  cd "$NUON_DIR/sdks/nuon-runner-go"
+  echo >&2 "root: $(pwd)"
+  echo >&2 "Running go generate..."
+  grep -r --include="*.go" -l "//go:generate" . | xargs -n 1 -P 10 go generate
+  echo >&2 "Done with nuon-runner-go!"
+else
+  echo >&2 "Skipping nuon-runner-go (directory not found: $NUON_DIR/sdks/nuon-runner-go)"
+fi
+
+echo >&2 ""
+echo >&2 "========================================"
+echo >&2 "All repositories processed successfully!"
+echo >&2 "========================================"

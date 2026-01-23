@@ -45,6 +45,13 @@ func (s *Service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *Service) RegisterAuthRoutes(api *gin.Engine) error {
+	api.GET("/livez", s.GetLivezHandler)
+	api.GET("/readyz", s.GetReadyzHandler)
+	api.GET("/version", s.GetVersionHandler)
+	return nil
+}
+
 type Params struct {
 	fx.In
 

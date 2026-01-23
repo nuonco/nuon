@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getIsSidebarOpenFromCookie } from '@/actions/layout/main-sidebar-cookie'
+import { VCSConnectionSuccess } from '@/components/vcs-conntections/VCSConnectionSuccess'
 import { MainLayout } from '@/components/layout/MainLayout'
 import {
   REFRESH_PAGE_INTERVAL,
@@ -67,6 +68,7 @@ export default async function OrgLayout({
                       >
                         {children}
                       </MainLayout>
+                      <VCSConnectionSuccess />
                     </SurfacesProvider>
                   </ToastProvider>
                 </SidebarProvider>

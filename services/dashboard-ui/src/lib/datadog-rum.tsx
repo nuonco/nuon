@@ -1,7 +1,8 @@
 'use client'
 
+import { useParams } from 'next/navigation'
 import { type FC, useEffect } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { datadogRum } from '@datadog/browser-rum'
 
 let isDatadogRUMInitialized = false
@@ -36,7 +37,9 @@ const initDatadogRUM = (env: 'local' | 'stage' | 'prod') => {
 export const InitDatadogRUM: FC<{ env?: 'local' | 'stage' | 'prod' }> = ({
   env = 'local',
 }) => {
-  const { user } = useUser()
+  const params = useParams()
+  const orgId = params?.['org-id']
+  const { user } = useAuth()
 
   useEffect(() => {
     initDatadogRUM(env)
@@ -48,7 +51,7 @@ export const InitDatadogRUM: FC<{ env?: 'local' | 'stage' | 'prod' }> = ({
         id: user.sub,
         name: user.name,
         email: user.email,
-        org_id: user.org_id,
+        org_id: orgId,
       })
     }
   }, [user])

@@ -25,11 +25,11 @@ var AllPermissionsRoleTypes []PermissionsRoleType = []PermissionsRoleType{
 }
 
 type PermissionsConfig struct {
-	ProvisionRole   *AppAWSIAMRole `mapstructure:"provision_role,omitempty"`
-	DeprovisionRole *AppAWSIAMRole `mapstructure:"deprovision_role,omitempty"`
-	MaintenanceRole *AppAWSIAMRole `mapstructure:"maintenance_role,omitempty"`
+	ProvisionRole   *AppAWSIAMRole `mapstructure:"provision_role,omitempty" toml:"provision_role,omitempty"`
+	DeprovisionRole *AppAWSIAMRole `mapstructure:"deprovision_role,omitempty" toml:"deprovision_role,omitempty"`
+	MaintenanceRole *AppAWSIAMRole `mapstructure:"maintenance_role,omitempty" toml:"maintenance_role,omitempty"`
 
-	Roles []*AppAWSIAMRole `mapstructure:"roles,omitempty"`
+	Roles []*AppAWSIAMRole `mapstructure:"roles,omitempty" toml:"roles,omitempty"`
 }
 
 func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -70,5 +70,16 @@ func (a *PermissionsConfig) parse() error {
 		}
 	}
 
+	return nil
+}
+
+func (a *PermissionsConfig) Validate() error {
+	if a == nil {
+		return errors.New("permissions config is required")
+	}
+
+	if a.ProvisionRole == nil || a.DeprovisionRole == nil || a.MaintenanceRole == nil {
+		return errors.New("provision, deprovision and maintenance permissions are required")
+	}
 	return nil
 }

@@ -11,14 +11,14 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
-	"github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, autoApprove, wait bool) error {
+func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, autoApprove, wait, dryRun bool) error {
 	if fileOrDir == "" {
 		return ui.PrintError(fmt.Errorf("file or directory path is required"))
 	}
@@ -59,7 +59,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 			}
 		}
 
-		_, err = is.syncInstall(ctx, installCfg, installID, autoApprove, wait)
+		_, err = is.syncInstall(ctx, installCfg, installID, autoApprove, wait, dryRun)
 		if err != nil {
 			return ui.PrintError(fmt.Errorf("error syncing install %s: %w", installCfg.Name, err))
 		}
@@ -165,7 +165,6 @@ func parseInstallConfigFromFile(filePath string) (*config.Install, error) {
 
 func parseInstallConfig(raw io.Reader) (*config.Install, error) {
 	tomlDec := toml.NewDecoder(raw)
-	tomlDec.SetTagName("mapstructure")
 
 	obj := make(map[string]interface{})
 	err := tomlDec.Decode(&obj)

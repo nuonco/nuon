@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
@@ -26,6 +27,7 @@ type Params struct {
 	Cfg             *internal.Config
 	VcsHelpers      *vcshelpers.Helpers
 	Helpers         *appshelpers.Helpers
+	InstallsHelpers *installshelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	EvClient        eventloop.Client
 	EndpointAudit   *api.EndpointAudit
@@ -40,6 +42,7 @@ type service struct {
 	cfg             *internal.Config
 	vcsHelpers      *vcshelpers.Helpers
 	helpers         *appshelpers.Helpers
+	installsHelpers *installshelpers.Helpers
 	accountsHelpers *accountshelpers.Helpers
 	evClient        eventloop.Client
 }
@@ -110,6 +113,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// app policies management
 		policiesConfigs := app.Group("/policies-configs")
 		{
+			policiesConfigs.GET("", s.GetAppPoliciesConfigs)
 			policiesConfigs.POST("", s.CreateAppPoliciesConfig)
 			policiesConfigs.GET("/:app_policies_config_id", s.GetAppPoliciesConfig)
 		}
@@ -210,6 +214,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
+	return nil
+}
+
 func New(params Params) *service {
 	return &service{
 		RouteRegister: api.RouteRegister{
@@ -222,6 +230,7 @@ func New(params Params) *service {
 		l:               params.L,
 		vcsHelpers:      params.VcsHelpers,
 		helpers:         params.Helpers,
+		installsHelpers: params.InstallsHelpers,
 		accountsHelpers: params.AccountsHelpers,
 		evClient:        params.EvClient,
 	}

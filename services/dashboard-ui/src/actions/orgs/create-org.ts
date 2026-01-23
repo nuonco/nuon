@@ -1,6 +1,6 @@
 'use server'
 
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import { executeServerAction } from '@/actions/execute-server-action'
 import { SF_TRIAL_ACCESS_ENDPOINT } from '@/configs/app'
 import { createOrg as create, type TCreateOrgBody } from '@/lib'
@@ -16,7 +16,7 @@ export async function createOrg({
   }
   path?: string
 }) {
-  const session = await auth0.getSession()
+  const session = await getSession()
 
   if (SF_TRIAL_ACCESS_ENDPOINT) {
     await fetch(SF_TRIAL_ACCESS_ENDPOINT, {

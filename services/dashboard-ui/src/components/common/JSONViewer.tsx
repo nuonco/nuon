@@ -1,18 +1,15 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { Skeleton } from '@/components/common/Skeleton'
 import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
 
 const JsonViewer = dynamic(
   () => import('@andypf/json-viewer/dist/esm/react/JsonViewer'),
   {
-    loading: () => (
-      <div className="border rounded-md overflow-auto p-4 animate-pulse">
-        <div className="h-20 bg-cool-grey-200 dark:bg-dark-grey-700 rounded"></div>
-      </div>
-    ),
+    loading: () => <Skeleton height="450px" width="100%" />,
     ssr: false,
   }
 ) as typeof import('@andypf/json-viewer/dist/esm/react/JsonViewer')
@@ -42,7 +39,7 @@ export const JSONViewer = ({
 }: IJSONViewer) => {
   const colorScheme = useSystemTheme()
   const containerRef = useRef<HTMLDivElement>(null)
-  
+
   // Custom dark theme with correct JSONViewer Base16 mapping
   const customDarkTheme = {
     base00: '#19171C', // Default Background (bg-code dark)
@@ -90,10 +87,11 @@ export const JSONViewer = ({
   useEffect(() => {
     const injectShadowCSS = () => {
       if (!containerRef.current) return
-      
-      const jsonViewer = containerRef.current.querySelector('andypf-json-viewer')
+
+      const jsonViewer =
+        containerRef.current.querySelector('andypf-json-viewer')
       if (!jsonViewer || !jsonViewer.shadowRoot) return
-      
+
       // Create a new stylesheet
       const sheet = new CSSStyleSheet()
       const css = `
@@ -112,31 +110,28 @@ export const JSONViewer = ({
           font-size: 0.875rem !important;
         }
       `
-      
+
       sheet.replaceSync(css)
-      
+
       // Add the stylesheet to the shadow root
       if (jsonViewer.shadowRoot.adoptedStyleSheets) {
         jsonViewer.shadowRoot.adoptedStyleSheets = [
           ...jsonViewer.shadowRoot.adoptedStyleSheets,
-          sheet
+          sheet,
         ]
       }
     }
-    
+
     // Try injecting after a short delay to ensure the component is rendered
     const timer = setTimeout(injectShadowCSS, 100)
-    
+
     return () => clearTimeout(timer)
   }, [data, colorScheme])
 
   return (
     <div
       ref={containerRef}
-      className={cn(
-        'border rounded-md overflow-auto',
-        className
-      )}
+      className={cn('border rounded-md overflow-auto', className)}
       {...props}
     >
       <style jsx>{`

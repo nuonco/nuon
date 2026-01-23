@@ -1,0 +1,12 @@
+rules:
+  - ./rules/01-loop-var-capture.yml
+  - ./rules/02-defer-in-loop.yml
+  - ./rules/03-nil-map-assignment.yml
+  - ./rules/04-string-concat-in-loop.yml
+  - ./rules/05-mutex-unlock-mismatch.yml
+  - ./rules/06-unlock-in-loop.yml
+  - ./rules/07-waitgroup-done-scope.yml
+  - ./rules/08-shadow-err-variable.yml
+  - ./rules/09-gorm-unbounded-preload.yml
+  - ./rules/10-gorm-find-without-where.yml
+  - ./rules/11-gorm-n-plus-one.yml

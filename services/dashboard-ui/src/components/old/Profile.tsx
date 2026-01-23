@@ -1,15 +1,15 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { SignOut } from '@phosphor-icons/react'
+import { SignOutIcon } from '@phosphor-icons/react'
 import Image from 'next/image'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { Text } from '@/components/old/Typography'
 
 export const Profile: FC<{ isSidebarOpen?: boolean }> = ({
   isSidebarOpen = true,
 }) => {
-  const { user, error, isLoading } = useUser()
+  const { user, error, isLoading } = useAuth()
 
   if (isLoading) return <div>Loading...</div>
   if (error) return <div>{error.message}</div>
@@ -42,18 +42,20 @@ export const Profile: FC<{ isSidebarOpen?: boolean }> = ({
 export const SignOutButton: FC<{ isSidebarOpen?: boolean }> = ({
   isSidebarOpen = true,
 }) => {
-  const { user } = useUser()
+  const { user, useAuthService, authServiceUrl } = useAuth()
   return (
     user && (
       <span className="flex items-center justify-between w-full gap-2 overflow-hidden">
         <Profile isSidebarOpen={isSidebarOpen} />
         {isSidebarOpen ? (
           <a
-            href="/api/auth/logout"
+            href={
+              useAuthService ? `${authServiceUrl}/logout` : '/api/auth/logout'
+            }
             className="hover:bg-black/5 dark:hover:bg-white/5 w-[48px] h-[48px] p-1 flex text-sm leading-5 text-left rounded-lg"
             title="Sign out"
           >
-            <SignOut className="m-auto" size={16} />
+            <SignOutIcon className="m-auto" size={16} />
           </a>
         ) : null}
       </span>

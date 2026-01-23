@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -106,8 +107,8 @@ func (s *service) createApp(ctx context.Context, acct *app.Account, org *app.Org
 		DisplayName:       generics.NewNullString(req.DisplayName),
 	}
 	newApp.NotificationsConfig = app.NotificationsConfig{
-		EnableSlackNotifications: acct.AccountType == app.AccountTypeAuth0,
-		EnableEmailNotifications: acct.AccountType == app.AccountTypeAuth0,
+		EnableSlackNotifications: slices.Contains([]app.AccountType{app.AccountTypeAuth0, app.AccountTypeAuth}, acct.AccountType),
+		EnableEmailNotifications: slices.Contains([]app.AccountType{app.AccountTypeAuth0, app.AccountTypeAuth}, acct.AccountType),
 		InternalSlackWebhookURL:  org.NotificationsConfig.InternalSlackWebhookURL,
 		SlackWebhookURL:          req.SlackWebhookURL,
 	}

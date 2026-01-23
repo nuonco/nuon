@@ -1,6 +1,6 @@
 'use client'
 
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { AdminPanel } from '@/components/admin/AdminPanel'
 import { Button } from '@/components/common/Button'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
@@ -8,21 +8,18 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-
+import { InviteUserButton } from "@/components/team/InviteUser"
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { useUserJourney } from '@/hooks/use-user-journey'
 import { cn } from '@/utils/classnames'
 import { UserProfile } from './UserProfile'
 
-// old components
-import { InvitePanel } from '../old/OrgInviteModal'
-
-import { useUserJourney } from '@/hooks/use-user-journey'
 
 export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {}
 
 export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
-  const { user } = useUser()
+  const { isAdmin, useAuthService, authServiceUrl } = useAuth()
   const { addPanel } = useSurfaces()
   const { openOnboarding } = useUserJourney() || {}
 
@@ -38,13 +35,7 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
         <Text variant="label" theme="neutral">
           Org settings
         </Text>
-        <Button
-          onClick={() => {
-            addPanel(<InvitePanel />)
-          }}
-        >
-          Invite team member <Icon variant="UserPlus" />
-        </Button>
+        <InviteUserButton isMenuButton />
         <Button
           onClick={() => {
             openOnboarding()
@@ -55,7 +46,7 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
         {/* <Link href="/settings">
             Report bug <Icon variant="Bug" />
             </Link> */}
-        {user?.email?.endsWith('@nuon.co') ? (
+        {isAdmin ? (
           <Button
             onClick={() => {
               addPanel(<AdminPanel />)
@@ -66,13 +57,13 @@ export const UserDropdown = ({ buttonClassName, ...props }: IUserDropdown) => {
         ) : null}
         <hr />
         <Link
-          href="/api/auth/logout"
+          href={useAuthService ? `${authServiceUrl}/logout` : "/api/auth/logout"}
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
           isExternal
           target="_self"
         >
-          Log out <Icon variant="SignOut" />
+          Sign out <Icon variant="SignOut" />
         </Link>
       </Menu>
     </Dropdown>

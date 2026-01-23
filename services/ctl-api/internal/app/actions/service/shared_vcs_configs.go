@@ -25,7 +25,7 @@ type ConnectedGithubVCSActionWorkflowConfigRequest struct {
 }
 
 type basicVCSConfigRequest struct {
-	PublicGitVCSConfig       *PublicGitVCSActionWorkflowConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
+	PublicGitVCSConfig       *PublicGitVCSActionWorkflowConfigRequest       `json:"public_git_vcs_config"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSActionWorkflowConfigRequest `json:"connected_github_vcs_config" `
 }
 

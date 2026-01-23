@@ -5,21 +5,21 @@ import (
 )
 
 type AWSECRConfig struct {
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" jsonschema:"required"`
-	AWSRegion  string `mapstructure:"region,omitempty" jsonschema:"required"`
-	ImageURL   string `mapstructure:"image_url,omitempty" jsonschema:"required"`
-	Tag        string `mapstructure:"tag,omitempty" jsonschema:"required"`
+	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
+	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty" jsonschema:"required"`
 }
 
 type PublicImageConfig struct {
-	ImageURL string `mapstructure:"image_url,omitempty" jsonschema:"required" `
-	Tag      string `mapstructure:"tag,omitempty" jsonschema:"required"`
+	ImageURL string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required" `
+	Tag      string `mapstructure:"tag,omitempty" toml:"tag,omitempty" jsonschema:"required"`
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type ExternalImageComponentConfig struct {
-	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" jsonschema:"oneof_required=public"`
-	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" jsonschema:"oneof_required=aws_ecr"`
+	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=public"`
+	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=aws_ecr"`
 }
 
 func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -60,14 +60,6 @@ func (p PublicImageConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("source").Short("source path or URL").
-		Long("Optional source path or URL for the component configuration. Supports HTTP(S) URLs, git repositories, file paths, and relative paths (./). Examples: https://example.com/config.yaml, git::https://github.com/org/repo//config.yaml, file:///path/to/config.yaml, ./local/config.yaml").
-		Field("type").Short("component type").
-		Field("name").Short("component name").
-		Field("var_name").Short("variable name for component output").
-		Long("Optional name to use when storing component outputs as variables. If not specified, uses the component name").
-		Field("dependencies").Short("component dependencies").
-		Long("List of other components that must be deployed before this component. Automatically extracted from template references").
 		Field("aws_ecr").Short("AWS ECR image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories").
 		Field("public").Short("public registry image configuration").OneOfRequired("image_source").

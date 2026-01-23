@@ -8,13 +8,13 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) error {
+func (s *Service) Select(ctx context.Context, orgID string, offset, limit int, asJSON bool) error {
 	view := ui.NewGetView()
 
 	if orgID != "" {
 		s.SetCurrent(ctx, orgID, asJSON)
 	} else {
-		orgs, _, err := s.list(ctx, 0, 50)
+		orgs, _, err := s.list(ctx, offset, limit)
 		if err != nil {
 			return view.Error(err)
 		}

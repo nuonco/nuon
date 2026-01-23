@@ -52,20 +52,23 @@ func (c ComponentType) APIType() models.AppComponentType {
 
 // Component is a flattened configuration type that allows us to define components using a `type: type` field.
 type Component struct {
-	Source string `mapstructure:"source,omitempty"`
+	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	Type         ComponentType `mapstructure:"type,omitempty" jsonschema:"required"`
-	Name         string        `mapstructure:"name" jsonschema:"required"`
-	VarName      string        `mapstructure:"var_name,omitempty"`
-	Dependencies []string      `mapstructure:"dependencies,omitempty"`
+	Type ComponentType `mapstructure:"type,omitempty" toml:"type,omitempty" jsonschema:"required"`
+	Name string        `mapstructure:"name" toml:"name" jsonschema:"required"`
+
+	// SourceFile is the file path this component was parsed from (set during parsing, not serialized)
+	SourceFile   string   `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" nuonhash:"-"`
+	VarName      string   `mapstructure:"var_name,omitempty" toml:"var_name,omitempty"`
+	Dependencies []string `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 
 	// WARNING: properties below should be ignored by nuonhash when empty
-	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
-	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
-	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
-	Job                *JobComponentConfig                `mapstructure:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
-	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
-	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
+	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
+	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" toml:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
+	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" toml:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
+	Job                *JobComponentConfig                `mapstructure:"job,omitempty" toml:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
+	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" toml:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
+	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
 
 	// created during parsing
 	// WARNING: properties below should not be hashed with nuonhash
@@ -176,17 +179,17 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("List of other components that must be deployed before this component. Automatically extracted from template references").
 		Example("database").
 		Example("infrastructure").
-		Field("helm_chart").Short("helm chart component configuration").OneOfRequired("component_type").
+		Field("helm_chart").Short("helm chart component configuration").OneOfRequired("helm_chart").
 		Long("Configuration for Helm chart deployments. Required when type is 'helm_chart'").
-		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("component_type").
+		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("terraform_module").
 		Long("Configuration for Terraform module deployments. Required when type is 'terraform_module'").
-		Field("docker_build").Short("docker build component configuration").OneOfRequired("component_type").
+		Field("docker_build").Short("docker build component configuration").OneOfRequired("docker_build").
 		Long("Configuration for building and pushing Docker images. Required when type is 'docker_build'").
-		Field("external_image").Short("container image component configuration").OneOfRequired("component_type").
+		Field("external_image").Short("container image component configuration").OneOfRequired("external_image").
 		Long("Configuration for external container images (e.g., from Docker Hub or ECR). Required when type is 'container_image' or 'external_image'").
-		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("component_type").
+		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("kubernetes_manifest").
 		Long("Configuration for Kubernetes manifest deployments. Required when type is 'kubernetes_manifest'").
-		Field("job").Short("job component configuration").OneOfRequired("component_type").Deprecated("").
+		Field("job").Short("job component configuration").OneOfRequired("job").Deprecated("").
 		Long("Configuration for job/batch components. Required when type is 'job'")
 }
 
@@ -220,4 +223,12 @@ func (c *Component) AllVars() []string {
 	}
 
 	return vars
+}
+
+func (c *Component) SetSourceFile(path string) {
+	c.SourceFile = path
+}
+
+func (c *Component) GetSourceFile() string {
+	return c.SourceFile
 }

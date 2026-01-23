@@ -2,7 +2,7 @@
 
 import classNames from 'classnames'
 import React, { type FC, type FormEvent, useRef, useState } from 'react'
-import { useUser } from '@auth0/nextjs-auth0'
+import { useAuth } from '@/hooks/use-auth'
 import { CheckCircleIcon, CubeIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/old/Button'
 import { CodeViewer } from '@/components/old/Code'
@@ -41,7 +41,7 @@ export const InstallForm: FC<IInstallForm> = ({
   platform,
   ...props
 }) => {
-  const { user } = useUser()
+  const { user } = useAuth()
   const { org } = useOrg()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)

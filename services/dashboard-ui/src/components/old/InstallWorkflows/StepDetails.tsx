@@ -13,6 +13,10 @@ import { SandboxStepDetails } from './SandboxStepDetails'
 import { StackStep } from './StackStepDetails'
 import { RunnerStepDetails } from './RunnerStepDetails'
 import { RetryButtons } from './RetryButtons'
+import {
+  PolicyViolationsList,
+  type PolicyViolation,
+} from './PolicyViolationsList'
 
 export function getStepType(
   step: TInstallWorkflowStep,
@@ -120,6 +124,14 @@ export function getStepType(
           <Notice variant="warn">
             {sentanceCase(step?.status?.metadata?.err_step_message as string)}
           </Notice>
+        ) : null}
+        {(step?.status?.metadata?.deny_violations || step?.status?.metadata?.warn_violations) ? (
+          <PolicyViolationsList
+            violations={[
+              ...(step?.status?.metadata?.deny_violations as PolicyViolation[] || []),
+              ...(step?.status?.metadata?.warn_violations as PolicyViolation[] || [])
+            ]}
+          />
         ) : null}
         {step?.approval ? (
           <ApprovalStep

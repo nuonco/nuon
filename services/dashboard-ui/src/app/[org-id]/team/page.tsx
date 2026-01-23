@@ -3,17 +3,24 @@ import { redirect } from 'next/navigation'
 import { Suspense, type FC } from 'react'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Link } from '@/components/common/Link'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { TeamTable, TeamTableSkeleton } from '@/components/team/TeamTable'
+import { InviteUserButton } from '@/components/team/InviteUser'
 import { getOrg, getOrgAccounts } from '@/lib'
-import { auth0 } from '@/lib/auth'
+import { getSession } from '@/lib/auth-server'
 import type { TAccount, TInvite } from '@/types'
 import { isNuonSession } from '@/utils/session-utils'
+import {
+  InvitedUser,
+  InvitedUserError,
+  InvitedUserSkeleton,
+} from './invited-user'
 
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
@@ -79,54 +86,46 @@ export default async function OrgTeam({ params, searchParams }) {
             },
           ]}
         />
-        <PageHeader>
+        <PageHeader className="flex items-center justify-between">
           <HeadingGroup>
             <Text variant="h3" weight="stronger" level={1}>
               Team
             </Text>
-            <Text theme="neutral">Manage your organization team here.</Text>
+            <Text theme="neutral">
+              Manage your team members and permissions.
+            </Text>
           </HeadingGroup>
+          <InviteUserButton />
         </PageHeader>
         <PageContent>
-          <PageSection className="border-t !pt-0 !pb-0 h-full">
-            {/* old team component, needs updated */}
-
-            <div className="flex-auto h-full md:grid md:grid-cols-12 divide-x">
-              <div className="divide-y h-full flex flex-col flex-auto col-span-8">
-                <Section heading="Members">
-                  <OldErrorBoundary fallbackRender={ErrorFallback}>
-                    <Suspense
-                      fallback={
-                        <Loading
-                          variant="stack"
-                          loadingText="Loading org members..."
-                        />
-                      }
-                    >
-                      <OrgMembers orgId={orgId} offset={sp['offset'] || '0'} />
-                    </Suspense>
-                  </OldErrorBoundary>
-                </Section>
-              </div>
-              <div className="divide-y flex flex-col flex-auto col-span-4">
-                <Section heading="Invites">
-                  <OldErrorBoundary fallbackRender={ErrorFallback}>
-                    <Suspense
-                      fallback={
-                        <Loading
-                          variant="stack"
-                          loadingText="Loading org invites..."
-                        />
-                      }
-                    >
-                      <OrgInvites orgId={orgId} />
-                    </Suspense>
-                  </OldErrorBoundary>
-                </Section>
-              </div>
+          <PageSection>
+            <div>
+              <Text variant="base" weight="strong">
+                Active memebers
+              </Text>
+              <ErrorBoundary
+                fallback={<Text theme="error">Error loading team members</Text>}
+              >
+                <Suspense fallback={<TeamTableSkeleton />}>
+                  <StratusOrgMembers
+                    orgId={orgId}
+                    offset={sp['offset'] || '0'}
+                  />
+                </Suspense>
+              </ErrorBoundary>
             </div>
 
-            {/* old team component, needs updated */}
+            <div className="flex flex-col gap-4">
+              <Text variant="base" weight="strong">
+                Active invites
+              </Text>
+              <AsyncBoundary
+                loadingFallback={<InvitedUserSkeleton />}
+                errorFallback={<InvitedUserError />}
+              >
+                <InvitedUser orgId={orgId} />
+              </AsyncBoundary>
+            </div>
           </PageSection>
         </PageContent>
       </PageLayout>
@@ -192,12 +191,47 @@ export default async function OrgTeam({ params, searchParams }) {
   }
 }
 
+// New Stratus team members component
+const StratusOrgMembers: FC<{
+  orgId: string
+  limit?: number
+  offset?: string
+}> = async ({ orgId, limit = 5, offset }) => {
+  const session = await getSession()
+  const {
+    data: members,
+    error,
+    headers,
+  } = await getOrgAccounts({
+    orgId,
+    limit,
+    offset,
+  })
+
+  const pagination = {
+    limit: Number(headers?.['x-nuon-page-limit'] ?? limit),
+    hasNext: headers?.['x-nuon-page-next'] === 'true',
+    offset: Number(headers?.['x-nuon-page-offset'] ?? '0'),
+  }
+
+  if (error || !members) {
+    return <Text theme="error">Failed to load team members</Text>
+  }
+
+  const filteredMembers = isNuonSession(session?.user)
+    ? members
+    : members.filter((member) => !member?.email?.endsWith('nuon.co'))
+
+  return <TeamTable members={filteredMembers} pagination={pagination} />
+}
+
+// Old team members component (for non-stratus layout)
 const OrgMembers: FC<{
   orgId: string
   limit?: number
   offset?: string
 }> = async ({ orgId, limit = 10, offset }) => {
-  const session = await auth0.getSession()
+  const session = await getSession()
   const {
     data: members,
     error,

@@ -46,11 +46,11 @@ func (c ComponentType) SyncJobType() RunnerJobType {
 	case ComponentTypeTerraformModule,
 		ComponentTypeDockerBuild,
 		ComponentTypeExternalImage,
-		ComponentTypeHelmChart:
+		ComponentTypeHelmChart,
+		ComponentTypeKubernetesManifest:
 		return RunnerJobTypeOCISync
 
-	case ComponentTypeJob,
-		ComponentTypeKubernetesManifest:
+	case ComponentTypeJob:
 		return RunnerJobTypeNOOPSync
 	default:
 	}
@@ -107,7 +107,9 @@ func (c ComponentType) BuildJobType() RunnerJobType {
 		return RunnerJobTypeDockerBuild
 	case ComponentTypeExternalImage:
 		return RunnerJobTypeContainerImageBuild
-	case ComponentTypeJob, ComponentTypeKubernetesManifest:
+	case ComponentTypeKubernetesManifest:
+		return RunnerJobTypeKubernetesManifestBuild
+	case ComponentTypeJob:
 		return RunnerJobTypeNOOPBuild
 	default:
 	}
@@ -150,6 +152,7 @@ type Component struct {
 
 	Type            ComponentType              `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	LatestConfig    *ComponentConfigConnection `gorm:"-" json:"-" temporaljson:"latest_config,omitzero,omitempty"`
+	LatestBuild     *ComponentBuild            `gorm:"-" json:"latest_build,omitzero" temporaljson:"latest_build,omitzero,omitempty"`
 	ResolvedVarName string                     `json:"resolved_var_name,omitzero" gorm:"-" temporaljson:"resolved_var_name,omitzero,omitempty"`
 }
 
@@ -182,6 +185,14 @@ func (c *Component) AfterQuery(tx *gorm.DB) error {
 
 	// parse the latest config
 	c.LatestConfig = &c.ComponentConfigs[0]
+
+	// parse the latest build if config builds are preloaded
+	for _, cfg := range c.ComponentConfigs {
+		if len(cfg.ComponentBuilds) > 0 {
+			c.LatestBuild = &cfg.ComponentBuilds[0]
+			break
+		}
+	}
 
 	return nil
 }

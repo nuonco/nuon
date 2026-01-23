@@ -82,7 +82,7 @@ func PrintError(err error) error {
 
 	var parseErr parse.ParseErr
 	if errors.As(err, &parseErr) {
-		fmt.Println(bubbles.ErrorStyle.Render(parseErr.Description))
+		fmt.Println(bubbles.ErrorStyle.Render(parseErr.Error()))
 		if parseErr.Err != nil {
 			fmt.Println(bubbles.ErrorStyle.Render(parseErr.Err.Error()))
 		}

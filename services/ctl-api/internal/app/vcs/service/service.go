@@ -41,6 +41,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			connections.GET("", s.GetConnections)
 			connections.GET("/:connection_id", s.GetConnection)
 			connections.DELETE("/:connection_id", s.DeleteConnection)
+			connections.GET("/:connection_id/check-status", s.CheckConnectionStatus)
+			connections.GET("/:connection_id/repos", s.ListConnectionRepos)
 		}
 	}
 	return nil
@@ -51,6 +53,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
+	return nil
+}
+
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	return nil
 }
 
