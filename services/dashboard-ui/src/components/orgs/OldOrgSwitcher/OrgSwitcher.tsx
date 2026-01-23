@@ -9,8 +9,8 @@ import { ClickToCopy } from '@/components/old/ClickToCopy'
 import { Dropdown } from '@/components/old/Dropdown'
 import { OrgStatus } from '@/components/old/OrgStatus'
 import { Text } from '@/components/old/Typography'
-import { ConnectGithubModal } from '@/components/vcs-conntections/ConnectGithubModal'
-import { VCSConnections } from '@/components/vcs-conntections/VCSConnections'
+import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
+import { VCSConnections } from '@/components/vcs-connections/VCSConnections'
 import { useOrg } from '@/hooks/use-org'
 import type { TOrg } from '@/types'
 import { OrgAvatar } from './OrgAvatar'
@@ -65,7 +65,7 @@ export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
     <div className="flex flex-col gap-4 mx-4 py-4 border-cool-grey-600 dark:border-cool-grey-500 border-b border-dotted ">
       <div className="flex items-center justify-between">
         <Text variant="med-14">GitHub connections</Text>
-        <ConnectGithubModal />
+        <ConnectGithubButton />
       </div>
 
       <div>

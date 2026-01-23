@@ -21,9 +21,8 @@ import type { TOrg } from '@/types'
 import { cn } from '@/utils/classnames'
 import './OrgAvatar.css'
 
-// old components need refactored to stratus
-import { ConnectGithubModal } from '@/components/vcs-conntections/ConnectGithubModal'
-import { VCSConnections } from '@/components/vcs-conntections/VCSConnections'
+import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
+import { VCSConnections } from '@/components/vcs-connections/VCSConnections'
 
 interface IOrgSwitcher
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id'> {}
@@ -66,7 +65,7 @@ export const OrgSwitcher = ({}: IOrgSwitcher) => {
               GitHub connections
             </Text>
 
-            <ConnectGithubModal />
+            <ConnectGithubButton />
           </div>
           <div className="flex flex-col gap-2">
             <VCSConnections vcsConnections={org?.vcs_connections} />
