@@ -17,6 +17,7 @@ import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
 import { useOrg } from '@/hooks/use-org'
+import { useAuth } from '@/hooks/use-auth'
 import type { TWorkflow } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { getWorkflowStep } from '@/utils/workflow-utils'
@@ -36,6 +37,7 @@ export const InstallActionRunHeader = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const { installActionRun } = useInstallActionRun()
+  const { isAdmin } = useAuth()
   const step = getWorkflowStep({
     workflow,
     stepTargetId: installActionRun?.id,
@@ -62,7 +64,12 @@ export const InstallActionRunHeader = ({
               size="sm"
             />
           </Text>
-          <ID>{actionId}</ID>
+          <span className="flex items-center gap-4">
+            <ID>{actionId}</ID>{' '}
+            {isAdmin ? (
+              <ID>{installActionRun?.install_action_workflow_id}</ID>
+            ) : null}
+          </span>
           <Time
             time={installActionRun?.updated_at}
             format="relative"
