@@ -3,7 +3,7 @@
   "theme": "mint",
   "name": "Nuon documentation",
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude", "mcp", "cursor"]
+    "options": ["copy", "view", "chatgpt", "claude"]
   },
   "colors": {
     "primary": "#8040BF",
@@ -18,11 +18,7 @@
         "groups": [
           {
             "group": "Get Started",
-            "pages": [
-              "get-started/introduction",
-              "get-started/quickstart",
-              "get-started/create-your-first-app"
-            ]
+            "pages": ["get-started/introduction", "get-started/quickstart", "get-started/create-your-first-app"]
           },
           {
             "group": "Resources",
@@ -94,6 +90,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/029-auth-inputs-better-nested-templates",
           "updates/028-open-source",
           "updates/027-install-config-toggle",
           "updates/026-helm-repository-support",
