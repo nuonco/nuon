@@ -20,11 +20,13 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	}
 
 	// build nested resources
-	tmpl.Resources["VPC"] = t.getVPCNestedStack(inp, tb)
-	vpcParams := t.getVPCNestedStackParams()
+	stack, vpcParams := t.getVPCNestedStack(inp, tb)
+	tmpl.Resources["VPC"] = stack
+	// vpcParams := t.getVPCNestedStackParams(inp)
 	maps.Copy(tmpl.Parameters, vpcParams)
 
-	// NOTE(fd): this uses the configurable neste runner asg cf stack
+	// NOTE(fd): we branch here to choose the cf stack based on
+	// NOTE(fd): this uses the configurable nested runner asg cf stack
 	tmpl.Resources["RunnerAutoScalingGroup"] = t.getRunnerASGNestedStack(inp, tb)
 
 	// runner ASG and launch template
@@ -76,7 +78,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			"Label": map[string]any{
 				"default": "VPC Configuration",
 			},
-			"Parameters": pkggenerics.MapToKeys(t.getVPCNestedStackParams()),
+			"Parameters": pkggenerics.MapToKeys(vpcParams),
 		},
 		{
 			"Label": map[string]any{
