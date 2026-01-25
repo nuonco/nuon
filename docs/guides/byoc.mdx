@@ -17,21 +17,43 @@ You will need an AWS account. A VPC and other network infrastructure will be cre
 your user has admin permissions, and that the account has not reached it's quota limits for VPCs, EIPs, and Internet
 Gateways.
 
+The following regions have been tested and confirmed to support Nuon BYOC.
+
+- us-east-1
+- eu-west-1
+
 <Note>Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.</Note>
 
-### DNS (Optional)
+### DNS
 
-We can automatically provision a root domain for you at `<install-id>.nuon.run`. But you can also use your domain as the root instead, via DNS delegation. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the following steps.
+#### Root DNS
+
+You will need to expose the Nuon APIs and Dasboard to be able to able to use is, which requires settings up DNS. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the following steps.
 
 1. Before installation, create the DNS zone `my-domain.com` if it does not already exist.
 1. Provide `nuon.my-domain.com` as the value for the Root Domain input.
-1. Once Nuon BYOC has fully provisioned, the domains of DNS servers for the install will be available in the outputs.
+1. Once Nuon BYOC has fully provisioned, the domains of the DNS servers for the install will be available in the outputs.
 1. Create an NS record named `nuon.my-domain.com`, using the DNS server domains as the value.
 1. Once propagation is complete, the Nuon Dashboard should be reachable at `app.nuon.my-domain.com`.
+
+Nuon will provision the following subdomains under the domain you configure. Only the runner API needs to be exposed to the Internet. The rest of the subdomains can all be private to your network.
+
+| Subdomain | Service | Public |
+| --------- | ------- | ------ |
+| app       | The vendor dashboard | |
+| api       | The control plane API, used by the Vendor Dashboard and the CLI | |
+| admin     | The admin API. Exposes functionality for administration of the control plane | |
+| runner    | The API used by runners to communicate with the control plane. | true |
 
 <Warning>
 The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
 </Warning>
+
+#### Delegation DNS
+
+If you do not want your users to have to have to set up DNS when installing your app, you can optionally configure your apps to use DNS delegation. A unique subdomain will be created for each install under a shared subdomain. In Nuon Cloud, for example, we use `nuon.run`. Installs created in Cloud will can given a subdomain based on their install ID, such as `inl160z2xmng8w1jnq0xxhelln.nuon.run`.
+
+You don't need to use this feature, but the control plane does require you to configure a domain it can use in the event that you do.
 
 ### GitHub App
 
