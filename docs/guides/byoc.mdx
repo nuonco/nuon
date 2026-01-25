@@ -26,6 +26,8 @@ The following regions have been tested and confirmed to support Nuon BYOC.
 
 ### DNS
 
+#### Root DNS
+
 You will need to expose the Nuon APIs and Dasboard to be able to able to use is, which requires settings up DNS. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the following steps.
 
 1. Before installation, create the DNS zone `my-domain.com` if it does not already exist.
@@ -46,6 +48,12 @@ Nuon will provision the following subdomains under the domain you configure. Onl
 <Warning>
 The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
 </Warning>
+
+#### Delegation DNS
+
+If you do not want your users to have to have to set up DNS when installing your app, you can optionally configure your apps to use DNS delegation. A unique subdomain will be created for each install under a shared subdomain. In Nuon Cloud, for example, we use `nuon.run`. Installs created in Cloud will can given a subdomain based on their install ID, such as `inl160z2xmng8w1jnq0xxhelln.nuon.run`.
+
+You don't need to use this feature, but the control plane does require you to configure a domain it can use in the event that you do.
 
 ### GitHub App
 
