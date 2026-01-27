@@ -7,18 +7,17 @@ import { Duration } from '@/components/common/Duration'
 import { useWorkflow } from '@/hooks/use-workflow'
 
 export const WorkflowMetrics = () => {
-  const { 
+  const {
     workflow,
     pendingApprovalsCount,
     policyViolationsCount,
-    discardedStepsCount, 
-    completedStepsCount, 
-    totalSteps 
+    discardedStepsCount,
+    completedStepsCount,
+    totalSteps,
   } = useWorkflow()
 
-  const showPendingApprovals = 
-    workflow.approval_option === 'prompt' && 
-    !workflow?.plan_only
+  const showPendingApprovals =
+    workflow.approval_option === 'prompt' && !workflow?.plan_only
 
   return (
     <div className="flex flex-col md:flex-row gap-2 md:items-center justify-between">
@@ -36,8 +35,8 @@ export const WorkflowMetrics = () => {
                 <span className="flex flex-col w-66">
                   <Text weight="strong">Drift scan</Text>
                   <Text variant="subtext" className="text-nowrap">
-                    Generate the workflow script without executing to detect
-                    any drift between the app configuration and this install.
+                    Generate the workflow script without executing to detect any
+                    drift between the app configuration and this install.
                   </Text>
                 </span>
               }
