@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	nuonrunner "github.com/nuonco/nuon-runner-go"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
 	"go.uber.org/zap"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	nuonrunner "github.com/nuonco/nuon-runner-go"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/pkg/errors"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
