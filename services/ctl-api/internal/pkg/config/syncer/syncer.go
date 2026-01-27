@@ -6,11 +6,14 @@ import (
 	"fmt"
 
 	"github.com/lib/pq"
+	"go.uber.org/fx"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type SyncResult struct {
@@ -37,6 +40,116 @@ func New(db *gorm.DB, appID string, appBranchID string, cfg *config.AppConfig) *
 		cfg:          cfg,
 		componentIDs: make([]string, 0),
 	}
+}
+
+// syncer implements sync.Syncer using direct database access.
+// This implementation is used by workflows within ctl-api to sync configs
+// without going through HTTP endpoints.
+type syncer struct {
+	db  *gorm.DB
+	cfg *config.AppConfig
+
+	appID       string
+	appConfigID string
+	orgID       string
+
+	state     *sync.State
+	prevState *sync.State
+
+	cmpBuildsScheduled []string
+}
+
+// Params defines the dependencies required by the syncer.
+// This follows the FX dependency injection pattern used in ctl-api.
+type Params struct {
+	fx.In
+
+	DB *gorm.DB `name:"psql"`
+}
+
+// New creates a new database-based syncer that directly accesses the database.
+// This is used by Temporal workflows within ctl-api.
+//
+// The context must contain org and account information set via:
+//   - cctx.SetOrgContext()
+//   - cctx.SetAccountContext()
+//
+// Parameters:
+//   - p: FX Params struct containing gorm.DB dependency
+//   - appID: ID of the app to sync
+//   - cfg: parsed app configuration to sync
+//
+// Returns a sync.Syncer interface that can be used to perform the sync operation.
+func New(p Params, appID string, cfg *config.AppConfig) sync.Syncer {
+	return &syncer{
+		db:    p.DB,
+		cfg:   cfg,
+		appID: appID,
+		state: &sync.State{
+			Version: sync.DefaultStateVersion,
+			AppID:   appID,
+		},
+		prevState:          &sync.State{},
+		cmpBuildsScheduled: make([]string, 0),
+	}
+}
+
+// Sync implements sync.Syncer
+func (s *syncer) Sync(ctx context.Context) error {
+	s.cmpBuildsScheduled = make([]string, 0)
+
+	if s.cfg == nil {
+		return sync.SyncInternalErr{
+			Description: "nil config",
+			Err:         fmt.Errorf("config is nil"),
+		}
+	}
+
+	// Extract org ID from context
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		return sync.SyncInternalErr{
+			Description: "missing org context",
+			Err:         err,
+		}
+	}
+	s.orgID = org.ID
+
+	// Fetch previous state
+	if err := s.fetchState(ctx); err != nil {
+		return sync.SyncInternalErr{
+			Description: "unable to fetch state",
+			Err:         err,
+		}
+	}
+
+	// Create app config
+	if err := s.start(ctx); err != nil {
+		return sync.SyncInternalErr{
+			Description: "unable to start sync",
+			Err:         err,
+		}
+	}
+
+	// Build sync steps
+	steps := s.syncSteps()
+
+	// Execute sync steps
+	for _, step := range steps {
+		if err := step.Method(ctx); err != nil {
+			return err
+		}
+	}
+
+	// Mark config as complete
+	if err := s.finish(ctx); err != nil {
+		return sync.SyncInternalErr{
+			Description: "unable to finish sync",
+			Err:         err,
+		}
+	}
+
+	return nil
 }
 
 type syncStep struct {
@@ -70,30 +183,55 @@ func (s *Syncer) Sync(ctx context.Context, appConfigID string) (*SyncResult, err
 }
 
 func (s *Syncer) syncSteps() []syncStep {
-	steps := []syncStep{}
+	steps := []syncStep{
+		{
+			Resource: "app",
+			Method:   s.syncApp,
+		},
+		{
+			Resource: "app-inputs",
+			Method:   s.syncAppInput,
+		},
+		{
+			Resource: "app-sandbox",
+			Method:   s.syncAppSandbox,
+		},
+		{
+			Resource: "app-runner",
+			Method:   s.syncAppRunner,
+		},
+		{
+			Resource: "app-permissions",
+			Method:   s.syncAppPermissions,
+		},
+		{
+			Resource: "app-policies",
+			Method:   s.syncAppPolicies,
+		},
+		{
+			Resource: "app-secrets",
+			Method:   s.syncAppSecrets,
+		},
+		{
+			Resource: "app-break-glass",
+			Method:   s.syncAppBreakGlass,
+		},
+		{
+			Resource: "app-cloudformation-stack",
+			Method:   s.syncAppCloudFormationStack,
+		},
+	}
 
-	// Sync components - ensure they exist and create/update configs
+	// Ensure all components exist
 	for _, comp := range s.cfg.Components {
-		comp := comp
-		resourceName := fmt.Sprintf("component-%s", comp.Name)
+		c := comp // Capture loop variable
 		steps = append(steps, syncStep{
-			Resource: resourceName,
+			Resource: fmt.Sprintf("component-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return s.syncComponent(ctx, comp)
+				return s.ensureComponent(ctx, c)
 			},
 		})
 	}
-
-	// TODO: Add remaining sync steps as needed:
-	// - inputs
-	// - sandbox
-	// - runner
-	// - permissions
-	// - policies
-	// - secrets
-	// - break-glass
-	// - stack
-	// - actions
 
 	return steps
 }

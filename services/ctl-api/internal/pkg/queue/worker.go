@@ -21,7 +21,6 @@ func (q *queue) startWorkers(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	l.Error("here hello")
 	queue, err := activities.AwaitGetQueueByQueueID(ctx, q.queueID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue")

@@ -86,7 +86,7 @@ func (b Blob) GormDataType() string {
 }
 
 // BeforeSave implements GORM hook for automatic S3 upload
-func (b *Blob) BeforeSave(tx *gorm.DB) error {
+func (b Blob) BeforeCreate(tx *gorm.DB) error {
 	// Skip if not dirty (no changes)
 	if !b.dirty {
 		return nil
