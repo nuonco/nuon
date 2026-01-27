@@ -1,0 +1,30 @@
+package apisyncer
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
+)
+
+func (s *syncer) syncStep(ctx context.Context, step syncStep) error {
+	stepErr := step.Method(ctx)
+	if stepErr == nil {
+		return nil
+	}
+	s.reconcileStates()
+
+	stateJSON, err := json.Marshal(s.state)
+	if err != nil {
+		return fmt.Errorf("unable to convert state to json: %w", err)
+	}
+
+	_, _ = s.apiClient.UpdateAppConfig(ctx, s.appID, s.state.CfgID, &models.ServiceUpdateAppConfigRequest{
+		State:             string(stateJSON),
+		Status:            models.AppAppConfigStatusError,
+		StatusDescription: fmt.Sprintf("error updating %s", step.Resource),
+	})
+
+	return stepErr
+}

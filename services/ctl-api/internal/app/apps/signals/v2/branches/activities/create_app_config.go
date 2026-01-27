@@ -28,7 +28,7 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	appConfig := app.AppConfig{
+	appConfig := &app.AppConfig{
 		AppID:             req.AppID,
 		OrgID:             req.OrgID,
 		CreatedByID:       req.CreatedByID,
@@ -38,7 +38,7 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 	}
 	appConfig.IntermediateConfig.Set(req.IntermediateConfigJSON)
 
-	if res := a.db.WithContext(ctx).Create(&appConfig); res.Error != nil {
+	if res := a.db.WithContext(ctx).Create(appConfig); res.Error != nil {
 		return nil, fmt.Errorf("unable to create app config: %w", res.Error)
 	}
 

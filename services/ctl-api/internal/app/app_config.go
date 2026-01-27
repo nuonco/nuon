@@ -65,6 +65,7 @@ type AppConfig struct {
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	IntermediateConfig blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
+
 	// OwnerID            string         `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	// OwnerType          string         `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
@@ -91,8 +92,8 @@ type AppConfig struct {
 	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index:idx_app_app_branch" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   *AppBranch          `json:"app_branch" temporaljson:"app_branch,omitzero,omitempty"`
 
-	VCSConnectionCommitID generics.NullString `json:"-"  swaggertype:"string" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
-	VCSConnectionCommit   *VCSConnectionCommit          `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
+	VCSConnectionCommitID generics.NullString  `json:"-"  swaggertype:"string" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
+	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 }
 
 func (a *AppConfig) Indexes(db *gorm.DB) []migrations.Index {
@@ -139,5 +140,11 @@ func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {
 	if a.OrgID == "" {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+
+	// NOTE(JM): this will eventually be moved, so we can have hooks on specific nested types
+	if err := a.IntermediateConfig.BeforeCreate(tx); err != nil {
+		return err
+	}
+
 	return nil
 }

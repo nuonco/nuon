@@ -44,6 +44,8 @@ type Workspace struct {
 	id         string `validate:"required"`
 
 	l *zap.Logger `validate:"required"`
+
+	cleanupBeforeInit bool // Remove existing directory before Init()
 }
 
 // Option configures a Workspace.
@@ -96,8 +98,42 @@ func WithLogger(l *zap.Logger) Option {
 	}
 }
 
+// WithCleanup configures whether to remove the workspace directory before initialization.
+// If true, Init() will delete any existing directory at the workspace path before creating it.
+// This is useful when re-using workspace IDs or recovering from failed clones.
+func WithCleanup(cleanup bool) Option {
+	return func(w *Workspace) {
+		w.cleanupBeforeInit = cleanup
+	}
+}
+
+// cleanupExistingDir removes the workspace directory if it exists.
+// This is called by Init() when cleanupBeforeInit is true.
+func (w *Workspace) cleanupExistingDir() error {
+	rootDir := w.rootDir()
+	if _, err := os.Stat(rootDir); err == nil {
+		// Directory exists, remove it
+		w.l.Info("removing existing workspace directory",
+			zap.String("path", rootDir))
+		if err := os.RemoveAll(rootDir); err != nil {
+			w.l.Error("unable to remove existing directory",
+				zap.String("path", rootDir),
+				zap.Error(err))
+			return fmt.Errorf("unable to remove existing directory: %w", err)
+		}
+	}
+	return nil
+}
+
 // Init creates the workspace directory and clones the git source if configured.
 func (w *Workspace) Init(ctx context.Context) error {
+	// Check if cleanup is requested
+	if w.cleanupBeforeInit {
+		if err := w.cleanupExistingDir(); err != nil {
+			return err
+		}
+	}
+
 	if err := os.MkdirAll(w.rootDir(), defaultDirPermissions); err != nil {
 		w.l.Error("unable to initialize root dir", zap.Error(err))
 		return fmt.Errorf("unable to initialize root dir: %w", err)
