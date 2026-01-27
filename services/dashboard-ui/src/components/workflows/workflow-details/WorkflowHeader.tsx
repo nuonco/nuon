@@ -29,7 +29,7 @@ export const WorkflowHeader = () => {
               (d) => d?.install_workflow_id === workflow?.id
             ) ? (
               <Badge variant="code" theme="warn" size="sm">
-                drif detected
+                drift detected
               </Badge>
             ) : null}
           </Text>
