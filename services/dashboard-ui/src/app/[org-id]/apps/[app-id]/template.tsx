@@ -25,7 +25,49 @@ export default function Template({ children }: { children: React.ReactNode }) {
   return org?.features?.['stratus-layout'] ? (
     <PageLayout>
       {isThirdLevel ? (
-        children
+        <PageContent className="border-t" isScrollable variant="secondary">
+          <SubNav
+            basePath={`/${org?.id}/apps/${app?.id}`}
+            links={[
+              {
+                path: `/`,
+                iconVariant: 'HouseSimple',
+                text: 'Overview',
+              },
+              {
+                path: `/components`,
+                iconVariant: 'Cards',
+                text: 'Components',
+              },
+              {
+                path: `/actions`,
+                iconVariant: 'TerminalWindow',
+                text: 'Actions',
+              },
+              {
+                path: `/roles`,
+                iconVariant: 'FileLock',
+                text: 'Roles',
+              },
+              {
+                path: `/policies`,
+                iconVariant: 'ShieldCheck',
+                text: 'Policies',
+              },
+              {
+                path: `/installs`,
+                iconVariant: 'Cube',
+                text: 'Installs',
+              },
+              {
+                path: `/readme`,
+                iconVariant: 'BookOpen',
+                text: 'README',
+              },
+            ]}
+          />
+          <div className="flex flex-col w-full">{children}</div>
+        </PageContent>
       ) : (
         <>
           <PageHeader>
@@ -86,8 +128,8 @@ export default function Template({ children }: { children: React.ReactNode }) {
                 },
                 {
                   path: `/readme`,
-                  iconVariant: "BookOpen",
-                  text: "README",
+                  iconVariant: 'BookOpen',
+                  text: 'README',
                 },
                 {
                   path: `/policies`,
