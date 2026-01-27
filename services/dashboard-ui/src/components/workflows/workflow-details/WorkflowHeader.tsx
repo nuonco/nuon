@@ -1,13 +1,16 @@
 'use client'
 
 import { BackLink } from '@/components/common/BackLink'
+import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { useInstall } from '@/hooks/use-install'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { WorkflowActionButtons } from './WorkflowActionButtons'
 
 export const WorkflowHeader = () => {
+  const { install } = useInstall()
   const { workflow } = useWorkflow()
   return (
     <div className="flex flex-wrap items-center gap-3 justify-between w-full">
@@ -20,6 +23,15 @@ export const WorkflowHeader = () => {
             weight="strong"
           >
             {workflow.name || toSentenceCase(snakeToWords(workflow.type))}
+
+            {install?.drifted_objects?.length &&
+            install?.drifted_objects?.find(
+              (d) => d?.install_workflow_id === workflow?.id
+            ) ? (
+              <Badge variant="code" theme="warn" size="sm">
+                drif detected
+              </Badge>
+            ) : null}
           </Text>
           <Text theme="neutral">
             Watch your app get updated here and provide needed approvals.

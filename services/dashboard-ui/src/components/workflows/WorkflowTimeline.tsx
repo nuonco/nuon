@@ -7,6 +7,7 @@ import { Link } from '@/components/common/Link'
 import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
@@ -36,6 +37,7 @@ export const WorkflowTimeline = ({
   type = '',
 }: IWorkflowTimeline) => {
   const { org } = useOrg()
+  const { install } = useInstall()
   const queryParams = useQueryParams({
     offset: pagination?.offset,
     limit: 10,
@@ -77,9 +79,19 @@ export const WorkflowTimeline = ({
             additionalCaption={
               <span className="flex items-center gap-2">
                 {workflow.plan_only ? (
-                  <Badge variant="code" size="sm">
-                    drift scan
-                  </Badge>
+                  <>
+                    <Badge variant="code" size="sm">
+                      drift scan
+                    </Badge>
+                    {install?.drifted_objects &&
+                    install?.drifted_objects?.find(
+                      (d) => d?.install_workflow_id === workflow?.id
+                    ) ? (
+                      <Badge size="sm" variant="code" theme="warn">
+                        drift detected
+                      </Badge>
+                    ) : null}
+                  </>
                 ) : null}
                 {workflow?.type === 'drift_run_reprovision_sandbox' ||
                 workflow.type === 'drift_run' ? (
