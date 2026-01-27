@@ -86,6 +86,59 @@ export const InstallStatuses = ({
   tooltipPosition = 'bottom',
   ...props
 }: IInstallStatuses) => {
+  const driftContent = (
+    <ContextTooltip
+      title="Drift detection"
+      position={tooltipPosition}
+      items={
+        install?.drifted_objects?.length
+          ? install?.drifted_objects?.map((drift) => ({
+              href: `/${install.org_id}/installs/${install.id}/workflows/${drift?.install_workflow_id}`,
+              id: drift?.target_id,
+              title:
+                drift?.target_type === 'install_deploy'
+                  ? drift?.component_name
+                  : 'Sandbox',
+              subtitle: 'Drift detected',
+              leftContent: (
+                <Status
+                  status="warn"
+                  isWithoutText
+                  variant="timeline"
+                  iconSize={16}
+                />
+              ),
+            }))
+          : [
+              {
+                id: install?.runner_id,
+                title: 'No drift',
+                subtitle: 'Install has detected no drift',
+                leftContent: (
+                  <Status
+                    status={install?.runner_status}
+                    isWithoutText
+                    variant="timeline"
+                    iconSize={16}
+                  />
+                ),
+              },
+            ]
+      }
+    >
+      <Status
+        status={install.drifted_objects?.length ? 'warn' : 'active'}
+        variant="badge"
+      >
+        {isLabelHidden
+          ? 'Drift'
+          : install.drifted_objects?.length
+            ? 'Drifted'
+            : 'No drift'}
+      </Status>
+    </ContextTooltip>
+  )
+
   const runnerContent = (
     <ContextTooltip
       title="Install runner"
@@ -166,6 +219,14 @@ export const InstallStatuses = ({
 
   return (
     <div className={cn('flex items-center gap-4', className)} {...props}>
+      {install?.drifted_objects ? (
+        isLabelHidden ? (
+          driftContent
+        ) : (
+          <LabeledValue label="Drift detection">{driftContent}</LabeledValue>
+        )
+      ) : null}
+
       {isLabelHidden ? (
         runnerContent
       ) : (

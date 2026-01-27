@@ -50,6 +50,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'pending-approval': 'info',
   info: 'info',
   retried: 'info',
+  applying: 'info',
 
   // Neutral
   noop: 'neutral',

@@ -68,7 +68,7 @@ export default async function Install({ params }) {
           },
         ]}
       />
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">       
         <Section
           heading="README"
           className="md:col-span-8 !p-0"

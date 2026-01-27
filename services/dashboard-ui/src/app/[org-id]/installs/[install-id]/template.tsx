@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { TemporalLink } from '@/components/admin/TemporalLink'
+import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Icon } from '@/components/common/Icon'
@@ -10,7 +11,7 @@ import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
-import { InstallManagementDropdown } from "@/components/installs/management/InstallManagementDropdown"
+import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -33,42 +34,69 @@ export default function Template({ children }: { children: React.ReactNode }) {
       ) : (
         <>
           <PageHeader>
-            <HeadingGroup>
-              <Text variant="h3" weight="stronger" level={1}>
-                {install.name}
-              </Text>
-              <ID>{install.id}</ID>
-              <Text variant="subtext" theme="info">
-                Last updated{' '}
-                <Time
-                  variant="subtext"
-                  time={install?.updated_at}
-                  format="relative"
-                />
-              </Text>
-            </HeadingGroup>
+            <div className="flex justify-between w-full">
+              <HeadingGroup>
+                <Text variant="h3" weight="stronger" level={1}>
+                  {install.name}
+                </Text>
+                <ID>{install.id}</ID>
+                <Text variant="subtext" theme="info">
+                  Last updated{' '}
+                  <Time
+                    variant="subtext"
+                    time={install?.updated_at}
+                    format="relative"
+                  />
+                </Text>
+              </HeadingGroup>
 
-            <div className="flex flex-wrap gap-4 md:gap-8">
-              <TemporalLink namespace="installs" eventLoopId={install?.id} />
-              {isManagedByConfig && (
-                <LabeledValue label="Managed By">
+              <div className="flex flex-wrap gap-4 md:gap-8">
+                <TemporalLink namespace="installs" eventLoopId={install?.id} />
+                {isManagedByConfig && (
+                  <LabeledValue label="Managed By">
+                    <Text variant="subtext">
+                      <span className="flex items-center gap-1">
+                        <Icon variant="FileCodeIcon" /> Install Config
+                      </span>
+                    </Text>
+                  </LabeledValue>
+                )}
+                <LabeledValue label="App">
                   <Text variant="subtext">
-                    <span className="flex items-center gap-1">
-                      <Icon variant="FileCodeIcon" /> Install Config
-                    </span>
+                    <Link href={`/${org.id}/apps/${install.app_id}`}>
+                      {install?.app?.name}
+                    </Link>
                   </Text>
                 </LabeledValue>
-              )}
-              <LabeledValue label="App">
-                <Text variant="subtext">
-                  <Link href={`/${org.id}/apps/${install.app_id}`}>
-                    {install?.app?.name}
-                  </Link>
-                </Text>
-              </LabeledValue>
-              <InstallStatusesContainer />
-              <InstallManagementDropdown />
+                <InstallStatusesContainer />
+                <InstallManagementDropdown />
+              </div>
             </div>
+            {install?.drifted_objects?.length ? (
+              <div className="self-center flex flex-col gap-2">
+                <Text theme="warn">
+                  <span className="flex items-center gap-2">
+                    <Icon variant="WarningIcon" weight="bold" />
+                    Drift detected
+                  </span>
+                </Text>
+                <div className="self-center flex items-center gap-6">
+                  {install?.drifted_objects?.map((drift) => (
+                    <Badge size="sm" theme="warn" key={drift?.target_id}>
+                      Drifted:{' '}
+                      <Link
+                        href={`/${org.id}/installs/${install?.id}/workflows/${drift?.install_workflow_id}`}
+                        className="!leading-none"
+                      >
+                        {drift?.target_type === 'install_deploy'
+                          ? drift?.component_name
+                          : 'Sandbox'}
+                      </Link>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </PageHeader>
           <PageContent className="border-t" isScrollable variant="secondary">
             <SubNav
