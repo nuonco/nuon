@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	nuonrunner "github.com/nuonco/nuon-runner-go"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/pkg/errors"
 
 	awsassumerole "github.com/nuonco/nuon/pkg/aws/assume-role"

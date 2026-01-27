@@ -1,7 +1,7 @@
 package jobloop
 
 import (
-	nuonrunner "github.com/nuonco/nuon-runner-go"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 

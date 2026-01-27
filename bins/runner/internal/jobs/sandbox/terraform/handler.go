@@ -2,7 +2,7 @@ package terraform
 
 import (
 	"github.com/go-playground/validator/v10"
-	nuonrunner "github.com/nuonco/nuon-runner-go"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/bins/runner/internal"

@@ -10,7 +10,7 @@ import (
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func (h *handler) updateStepStatus(ctx context.Context, stepID string, startTS time.Time, status models.AppInstallActionWorkflowRunStepStatus) error {

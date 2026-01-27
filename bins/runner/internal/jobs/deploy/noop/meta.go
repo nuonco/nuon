@@ -1,6 +1,6 @@
 package noop
 
-import "github.com/nuonco/nuon-runner-go/models"
+import "github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 func (h *handler) Name() string {
 	return "noop-deploy"

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/nuonco/nuon-runner-go/models"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 )
 

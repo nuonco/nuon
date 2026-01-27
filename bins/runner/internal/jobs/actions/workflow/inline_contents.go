@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon-runner-go/models"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func (h *handler) prepareInlineContentsCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig) (string, error) {
