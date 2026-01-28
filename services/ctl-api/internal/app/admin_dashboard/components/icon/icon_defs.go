@@ -1,6 +1,7 @@
 // templui component icon - version: v1.3.0 installed by templui v1.3.0
 // 📚 Documentation: https://templui.io/docs/components/icon
 package icon
+
 // This file is auto generated
 // Using Lucide icons version 0.544.0
 var AlarmClockOff = Icon("alarm-clock-off")

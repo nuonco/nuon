@@ -8,7 +8,6 @@ import (
 
 func (s *service) Livez(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status":    "healthy",
-		"new-thing": "changes?",
+		"status": "healthy",
 	})
 }

@@ -13,8 +13,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/nuonco/nuon/components/button"
-	"github.com/nuonco/nuon/components/icon"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/button"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/icon"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/utils"
 )
 

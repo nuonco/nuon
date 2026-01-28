@@ -54,6 +54,11 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	// Register routes - templ components will be rendered directly in handlers
 	api.GET("/", s.Index)
 	api.GET("/livez", s.Livez)
+	api.GET("/orgs", s.Orgs)
+	api.GET("/orgs/table", s.OrgsTable)
+	api.GET("/orgs/:id", s.OrgDetail)
+	api.GET("/orgs/:id/status", s.OrgStatus)
+	api.GET("/orgs/:id/installs/table", s.InstallsTable)
 
 	s.l.Info("admin-dashboard routes registered")
 	return nil
