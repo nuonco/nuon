@@ -228,6 +228,40 @@ func (h *Monitor) ensureRunnerServiceIsActive(ctx context.Context) error {
 	return nil
 }
 
+// WriteRunnerTokenFile writes the runner token to the token file using the token template
+func WriteRunnerTokenFile(token string) error {
+	// Ensure the directory exists
+	dir := filepath.Dir(RunnerTokenFilename)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return errors.Wrap(err, "unable to create token directory")
+	}
+
+	// Create and render the template
+	tmpl := template.Must(template.New("").Parse(runnerTokenTemplate))
+	f, err := os.Create(RunnerTokenFilename)
+	if err != nil {
+		return errors.Wrap(err, "unable to create token file")
+	}
+	defer f.Close()
+
+	// Set restrictive permissions
+	if err := os.Chmod(RunnerTokenFilename, 0600); err != nil {
+		return errors.Wrap(err, "unable to set token file permissions")
+	}
+
+	// Execute the template with the token
+	data := struct {
+		RunnerAPIToken string
+	}{
+		RunnerAPIToken: token,
+	}
+	if err := tmpl.Execute(f, data); err != nil {
+		return errors.Wrap(err, "unable to execute template for token file")
+	}
+
+	return nil
+}
+
 func EnsureImageConfigFile(ctx context.Context, l *zap.Logger, settings *settings.Settings) error {
 	// NOTE(fd): this method just writes the settings no matter what
 	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
