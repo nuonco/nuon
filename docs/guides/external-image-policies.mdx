@@ -203,7 +203,7 @@ allow if {
 
 has_slsa_provenance if {
     some att in input.metadata.attestations
-    contains(att.type, "slsa")
+    contains(att.type, "slsa.dev/provenance")
 }
 
 has_slsa_provenance if {

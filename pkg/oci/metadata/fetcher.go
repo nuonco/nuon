@@ -40,6 +40,12 @@ const (
 	ReferenceTypeAttestation  = "attestation-manifest"
 
 	MediaTypeInToto = "application/vnd.in-toto+json"
+
+	// Cosign tag-based storage media types
+	MediaTypeCosignSignature   = "application/vnd.dev.cosign.simplesigning.v1+json"
+	MediaTypeDSSEEnvelope      = "application/vnd.dsse.envelope.v1+json"
+	MediaTypeOCIImageManifest  = "application/vnd.oci.image.manifest.v1+json"
+	MediaTypeDockerImageConfig = "application/vnd.oci.image.config.v1+json"
 )
 
 // ErrNotIndex is returned when the descriptor is not an image index.
@@ -160,10 +166,9 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 	// Continue with referrers-based metadata (signatures, SBOMs, etc.)
 	referrers, err := fetchReferrers(ctx, repo, desc)
 	if err != nil {
-		if errors.Is(err, errdef.ErrNotFound) {
-			return result, nil
+		if !errors.Is(err, errdef.ErrNotFound) {
+			return nil, fmt.Errorf("unable to fetch referrers: %w", err)
 		}
-		return nil, fmt.Errorf("unable to fetch referrers: %w", err)
 	}
 
 	for _, ref := range referrers {
@@ -183,6 +188,24 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 			result.Attestations = append(result.Attestations, Attestation{
 				Type: ref.ArtifactType,
 			})
+		}
+	}
+
+	// Fallback: Try Cosign tag-based discovery if no signatures/attestations found via referrers
+	// This handles registries like GHCR that don't support the OCI 1.1 Referrers API
+	if !result.Signed && len(result.Attestations) == 0 {
+		cosignResult, err := fetchCosignTagBasedArtifacts(ctx, repo, desc, guardrails)
+		if err == nil && cosignResult != nil {
+			if cosignResult.Signed {
+				result.Signed = true
+				result.Signatures = append(result.Signatures, cosignResult.Signatures...)
+			}
+			if len(cosignResult.Attestations) > 0 {
+				result.Attestations = append(result.Attestations, cosignResult.Attestations...)
+			}
+			if cosignResult.SBOM != nil && result.SBOM == nil {
+				result.SBOM = cosignResult.SBOM
+			}
 		}
 	}
 
@@ -655,4 +678,189 @@ func detectSBOMPredicateType(predicateType string) string {
 	default:
 		return ""
 	}
+}
+
+// CosignTagResult holds the results of Cosign tag-based artifact discovery.
+type CosignTagResult struct {
+	Signed       bool
+	Signatures   []Signature
+	Attestations []Attestation
+	SBOM         *SBOM
+}
+
+// fetchCosignTagBasedArtifacts attempts to discover signatures and attestations
+// using Cosign's tag-based storage format (sha256-<digest>.sig and sha256-<digest>.att).
+// This is a fallback for registries that don't support the OCI 1.1 Referrers API.
+func fetchCosignTagBasedArtifacts(
+	ctx context.Context,
+	repo *remote.Repository,
+	desc v1.Descriptor,
+	guardrails *FetchGuardrails,
+) (*CosignTagResult, error) {
+	result := &CosignTagResult{}
+
+	// Convert digest to Cosign tag format: sha256:abc123... -> sha256-abc123...
+	digestStr := desc.Digest.String()
+	cosignTagBase := strings.Replace(digestStr, ":", "-", 1)
+
+	// Try to fetch signature tag (.sig)
+	sigTag := cosignTagBase + ".sig"
+	hasSig, err := fetchCosignSignatureTag(ctx, repo, sigTag)
+	if err != nil && (ctx.Err() != nil) {
+		return nil, ctx.Err()
+	}
+	if hasSig {
+		result.Signed = true
+		result.Signatures = append(result.Signatures, Signature{
+			Algorithm: MediaTypeCosignSignature,
+		})
+	}
+
+	// Try to fetch attestation tag (.att)
+	attTag := cosignTagBase + ".att"
+	attestations, sbom, err := fetchCosignAttestationTag(ctx, repo, attTag, guardrails)
+	if err != nil && (ctx.Err() != nil) {
+		return nil, ctx.Err()
+	}
+	if err == nil {
+		result.Attestations = attestations
+		result.SBOM = sbom
+	}
+
+	return result, nil
+}
+
+// fetchCosignSignatureTag checks if a Cosign signature tag exists and contains valid signature layers.
+func fetchCosignSignatureTag(ctx context.Context, repo *remote.Repository, tag string) (bool, error) {
+	desc, err := repo.Resolve(ctx, tag)
+	if err != nil {
+		return false, err
+	}
+
+	// Fetch the manifest to verify it contains signature layers
+	rc, err := repo.Fetch(ctx, desc)
+	if err != nil {
+		return false, err
+	}
+	defer rc.Close()
+
+	rawJSON, err := io.ReadAll(rc)
+	if err != nil {
+		return false, err
+	}
+
+	var manifest v1.Manifest
+	if err := json.Unmarshal(rawJSON, &manifest); err != nil {
+		return false, err
+	}
+
+	// Check if any layer has a Cosign signature media type
+	for _, layer := range manifest.Layers {
+		if layer.MediaType == MediaTypeCosignSignature {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// fetchCosignAttestationTag fetches a Cosign attestation tag and extracts attestation types.
+func fetchCosignAttestationTag(
+	ctx context.Context,
+	repo *remote.Repository,
+	tag string,
+	guardrails *FetchGuardrails,
+) ([]Attestation, *SBOM, error) {
+	desc, err := repo.Resolve(ctx, tag)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Fetch the manifest
+	rc, err := repo.Fetch(ctx, desc)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rc.Close()
+
+	rawJSON, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var manifest v1.Manifest
+	if err := json.Unmarshal(rawJSON, &manifest); err != nil {
+		return nil, nil, err
+	}
+
+	var attestations []Attestation
+	var sbom *SBOM
+
+	// Process attestation layers
+	for i, layer := range manifest.Layers {
+		if i >= guardrails.MaxLayersPerManifest {
+			break
+		}
+
+		// Check for DSSE envelope media type
+		if layer.MediaType != MediaTypeDSSEEnvelope && layer.MediaType != MediaTypeInToto {
+			continue
+		}
+
+		// Extract predicate type from annotations if available
+		// Cosign uses "predicateType" directly, while OCI standard uses "in-toto.io/predicate-type"
+		predicateType := ""
+		if pt, ok := layer.Annotations["predicateType"]; ok {
+			predicateType = pt
+		} else if pt, ok := layer.Annotations[AnnotationPredicateType]; ok {
+			predicateType = pt
+		}
+
+		// If no annotation, try to fetch and decode the layer to get predicate type
+		if predicateType == "" && layer.Size <= guardrails.MaxBlobBytes {
+			if decoded, err := fetchAndDecodeDSSELayer(ctx, repo, layer, guardrails); err == nil && decoded != nil {
+				predicateType = decoded.PredicateType
+			}
+		}
+
+		// Add attestation
+		attestations = append(attestations, Attestation{
+			Type: predicateType,
+		})
+
+		// Check if this is an SBOM
+		if format := detectSBOMPredicateType(predicateType); format != "" && sbom == nil {
+			sbom = &SBOM{
+				Present: true,
+				Format:  format,
+			}
+		}
+	}
+
+	return attestations, sbom, nil
+}
+
+// fetchAndDecodeDSSELayer fetches a layer and decodes it as a DSSE envelope.
+func fetchAndDecodeDSSELayer(
+	ctx context.Context,
+	repo *remote.Repository,
+	layer v1.Descriptor,
+	guardrails *FetchGuardrails,
+) (*InTotoStatement, error) {
+	if layer.Size > guardrails.MaxBlobBytes {
+		return nil, fmt.Errorf("layer too large: %d > %d", layer.Size, guardrails.MaxBlobBytes)
+	}
+
+	rc, err := repo.Fetch(ctx, layer)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	rawJSON, err := io.ReadAll(io.LimitReader(rc, guardrails.MaxBlobBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	return decodeDSSEEnvelope(rawJSON)
 }
