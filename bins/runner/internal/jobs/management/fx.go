@@ -5,6 +5,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
 
+	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/management/noop"
 	shutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/management/shutdown"
 	update "github.com/nuonco/nuon/bins/runner/internal/jobs/management/update"
@@ -15,6 +16,7 @@ import (
 func GetJobs() []fx.Option {
 	return []fx.Option{
 		fx.Provide(monitor.New),
+		fx.Provide(jobs.AsJobHandler("management", fetchtoken.New)),
 		fx.Provide(jobs.AsJobHandler("management", noop.New)),
 		fx.Provide(jobs.AsJobHandler("management", update.New)),
 		fx.Provide(jobs.AsJobHandler("management", shutdown.New)),
@@ -23,5 +25,4 @@ func GetJobs() []fx.Option {
 		fx.Invoke(jobloop.WithManagementJobLoops(func([]jobloop.JobLoop) {})),
 		fx.Invoke(func(*monitor.Monitor) {}),
 	}
-
 }
