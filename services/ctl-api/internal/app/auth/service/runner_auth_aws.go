@@ -200,7 +200,7 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.validateRunnerAWSIdentity(reqCtx, runner, callerIdentity.Result.Account); err != nil {
+	if err := s.validateRunnerAWSIdentity(reqCtx, runner, callerIdentity.Result.Account, callerIdentity.Result.Arn); err != nil {
 		s.l.Warn("runner auth: AWS identity validation failed",
 			zap.String("runner_id", runnerID),
 			zap.String("caller_account", callerIdentity.Result.Account),
@@ -241,8 +241,9 @@ const (
 
 // validatePresignedRequest validates a presigned AWS request to prevent SSRF attacks
 func validatePresignedRequest(presignedReq *awstypes.PresignedRequest, reqType presignedRequestType) error {
-	if presignedReq.Method != http.MethodGet && presignedReq.Method != http.MethodPost {
-		return errors.New("only GET and POST methods are allowed")
+	// NOTE(fd): at this time we only support GET requests
+	if presignedReq.Method != http.MethodGet {
+		return errors.New("only GET methods are allowed")
 	}
 
 	u, err := url.Parse(presignedReq.URL)
@@ -290,6 +291,7 @@ func validatePresignedRequest(presignedReq *awstypes.PresignedRequest, reqType p
 	return nil
 }
 
+// TODO(fd): we likely need a way to validate
 // validateNotIPAddress rejects any IP address - only FQDNs are allowed since we only reach AWS
 func validateNotIPAddress(host string) error {
 	if net.ParseIP(host) != nil {
@@ -378,7 +380,7 @@ func (s *service) getInstallByRunnerGroup(ctx context.Context, runnerGroup *app.
 }
 
 // validateRunnerAWSIdentity validates the caller's AWS identity against the expected install configuration
-func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string) error {
+func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string, callerArn string) error {
 	// Get the install associated with this runner
 	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
 	if err != nil {
@@ -405,6 +407,9 @@ func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Run
 	if callerAccountID != expectedAccountID {
 		return fmt.Errorf("AWS account ID mismatch: got %s, expected %s", callerAccountID, expectedAccountID)
 	}
+
+	// ARN validation: compare to stack output runner_iam_role_arn
+	// we only store the name of the role so we must trim the account info
 
 	return nil
 }
