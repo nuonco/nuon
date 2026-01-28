@@ -83,6 +83,12 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 				groupError = errors.New("at least one build failed")
 				continue
 			}
+			if cmpBuild.Status == componentBuildStatusPolicyFailed {
+				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("policy violation for component %s %s", cmp.ID, cmp.Name))
+				completedComponents = append(completedComponents, cmpID)
+				groupError = errors.New("at least one build failed due to policy violation")
+				continue
+			}
 
 			if cmpBuild.Status == componentBuildStatusActive {
 				multiSpinner.CompleteSpinner(cmp.ID, true, fmt.Sprintf("finished building component %s %s", cmp.ID, cmp.Name))

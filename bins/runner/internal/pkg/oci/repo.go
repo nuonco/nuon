@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/acr"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/docker"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/ecr"
+	"github.com/nuonco/nuon/pkg/oci/dockerhub"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
@@ -46,26 +47,25 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (registry.
 		return nil, err
 	}
 
-	repo, err := remote.NewRepository(accessInfo.RepositoryURI())
+	// Normalize Docker Hub references (e.g., "nginx" -> "docker.io/library/nginx")
+	repoRef := dockerhub.NormalizeReference(accessInfo.RepositoryURI())
+	repo, err := remote.NewRepository(repoRef)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get repository: %w", err)
 	}
 
-	var (
-		username string
-		password string
-	)
-	if accessInfo.Auth != nil {
-		username = accessInfo.Auth.Username
-		password = accessInfo.Auth.Password
-	}
-	repo.Client = &auth.Client{
-		Client: retry.DefaultClient,
-		Cache:  auth.DefaultCache,
-		Credential: auth.StaticCredential(strings.TrimPrefix(accessInfo.Auth.ServerAddress, "https://"), auth.Credential{
-			Username: username,
-			Password: password,
-		}),
+	// Only configure static credentials if we actually have them.
+	// For anonymous pulls (empty credentials), rely on oras-go's default
+	// anonymous bearer token flow which handles the 401 challenge properly.
+	if accessInfo.Auth != nil && accessInfo.Auth.Username != "" {
+		repo.Client = &auth.Client{
+			Client: retry.DefaultClient,
+			Cache:  auth.DefaultCache,
+			Credential: auth.StaticCredential(strings.TrimPrefix(accessInfo.Auth.ServerAddress, "https://"), auth.Credential{
+				Username: accessInfo.Auth.Username,
+				Password: accessInfo.Auth.Password,
+			}),
+		}
 	}
 
 	return repo, nil

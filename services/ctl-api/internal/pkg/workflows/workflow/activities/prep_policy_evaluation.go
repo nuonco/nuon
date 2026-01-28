@@ -63,7 +63,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		zap.Bool("is_sandbox", policyContext.IsSandbox),
 	)
 
-	policiesConfig, err := a.getPoliciesConfigByAppConfigID(ctx, policyContext.AppConfigID)
+	policiesConfig, err := a.appsHelpers.GetPoliciesConfigByAppConfigID(ctx, policyContext.AppConfigID)
 	if err != nil {
 		l.Error("unable to get policies config", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get policies config")
@@ -163,19 +163,6 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 		ComponentName: "",
 		IsSandbox:     true,
 	}, nil
-}
-
-func (a *Activities) getPoliciesConfigByAppConfigID(ctx context.Context, appConfigID string) (*app.AppPoliciesConfig, error) {
-	var policiesConfig app.AppPoliciesConfig
-	res := a.db.WithContext(ctx).
-		Where("app_config_id = ?", appConfigID).
-		Preload("Policies").
-		Order("created_at DESC").
-		First(&policiesConfig)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get policies config")
-	}
-	return &policiesConfig, nil
 }
 
 func (a *Activities) filterApplicablePolicies(

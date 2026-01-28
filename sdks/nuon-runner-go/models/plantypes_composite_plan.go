@@ -28,6 +28,9 @@ type PlantypesCompositePlan struct {
 	// deploy plan
 	DeployPlan *PlantypesDeployPlan `json:"deploy_plan,omitempty"`
 
+	// fetch image metadata plan
+	FetchImageMetadataPlan *PlantypesFetchImageMetadataPlan `json:"fetch_image_metadata_plan,omitempty"`
+
 	// sandbox run plan
 	SandboxRunPlan *PlantypesSandboxRunPlan `json:"sandbox_run_plan,omitempty"`
 
@@ -51,6 +54,10 @@ func (m *PlantypesCompositePlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDeployPlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateFetchImageMetadataPlan(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -132,6 +139,29 @@ func (m *PlantypesCompositePlan) validateDeployPlan(formats strfmt.Registry) err
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("deploy_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesCompositePlan) validateFetchImageMetadataPlan(formats strfmt.Registry) error {
+	if swag.IsZero(m.FetchImageMetadataPlan) { // not required
+		return nil
+	}
+
+	if m.FetchImageMetadataPlan != nil {
+		if err := m.FetchImageMetadataPlan.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("fetch_image_metadata_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("fetch_image_metadata_plan")
 			}
 
 			return err
@@ -226,6 +256,10 @@ func (m *PlantypesCompositePlan) ContextValidate(ctx context.Context, formats st
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateFetchImageMetadataPlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSandboxRunPlan(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -310,6 +344,31 @@ func (m *PlantypesCompositePlan) contextValidateDeployPlan(ctx context.Context, 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("deploy_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesCompositePlan) contextValidateFetchImageMetadataPlan(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.FetchImageMetadataPlan != nil {
+
+		if swag.IsZero(m.FetchImageMetadataPlan) { // not required
+			return nil
+		}
+
+		if err := m.FetchImageMetadataPlan.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("fetch_image_metadata_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("fetch_image_metadata_plan")
 			}
 
 			return err

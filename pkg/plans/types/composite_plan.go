@@ -10,12 +10,13 @@ import (
 )
 
 type CompositePlan struct {
-	BuildPlan             *BuildPlan             `json:"build_plan,omitempty"`
-	DeployPlan            *DeployPlan            `json:"deploy_plan,omitempty"`
-	ActionWorkflowRunPlan *ActionWorkflowRunPlan `json:"action_workflow_run_plan,omitempty"`
-	SyncSecretsPlan       *SyncSecretsPlan       `json:"sync_secrets_plan,omitempty"`
-	SyncOCIPlan           *SyncOCIPlan           `json:"sync_oci_plan,omitempty"`
-	SandboxRunPlan        *SandboxRunPlan        `json:"sandbox_run_plan,omitempty"`
+	BuildPlan              *BuildPlan              `json:"build_plan,omitempty"`
+	DeployPlan             *DeployPlan             `json:"deploy_plan,omitempty"`
+	ActionWorkflowRunPlan  *ActionWorkflowRunPlan  `json:"action_workflow_run_plan,omitempty"`
+	SyncSecretsPlan        *SyncSecretsPlan        `json:"sync_secrets_plan,omitempty"`
+	SyncOCIPlan            *SyncOCIPlan            `json:"sync_oci_plan,omitempty"`
+	FetchImageMetadataPlan *FetchImageMetadataPlan `json:"fetch_image_metadata_plan,omitempty"`
+	SandboxRunPlan         *SandboxRunPlan         `json:"sandbox_run_plan,omitempty"`
 }
 
 func (cp CompositePlan) Value() (driver.Value, error) {
@@ -31,6 +32,7 @@ func (cp CompositePlan) IsEmpty() bool {
 		cp.ActionWorkflowRunPlan == nil &&
 		cp.SyncSecretsPlan == nil &&
 		cp.SyncOCIPlan == nil &&
+		cp.FetchImageMetadataPlan == nil &&
 		cp.SandboxRunPlan == nil
 }
 
