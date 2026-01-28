@@ -14,13 +14,15 @@ import (
 // @execution-timeout 10m
 // @task-timeout 5m
 func (w *Workflows) MngFetchToken(ctx workflow.Context, sreq signals.RequestSignal) error {
+	// NOTE(fd): platform will need to be set dynamically when we add support for other clouds
 	runnerJob, err := w.createMngJob(ctx, sreq.ID, app.RunnerJobTypeMngFetchToken, map[string]string{
-		"fetch_type": "aws",
+		"platform": "aws",
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner job")
 	}
 
+	// NOTE(fd): this one does not have to become available immediately btw
 	// automatically set the job status to available, so it is picked up, regardless of what else is in flight.
 	if err := activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
 		JobID:             runnerJob.ID,
