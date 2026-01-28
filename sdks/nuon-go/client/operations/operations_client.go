@@ -370,6 +370,8 @@ type ClientService interface {
 
 	GetCurrentInstallInputs(params *GetCurrentInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentInstallInputsOK, error)
 
+	GetCurrentOrgFeatures(params *GetCurrentOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOrgFeaturesOK, error)
+
 	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error)
 
 	GetDriftedObjects(params *GetDriftedObjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDriftedObjectsOK, error)
@@ -477,6 +479,8 @@ type ClientService interface {
 	GetOrgAcounts(params *GetOrgAcountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgAcountsOK, error)
 
 	GetOrgComponents(params *GetOrgComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgComponentsOK, error)
+
+	GetOrgFeatures(params *GetOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgFeaturesOK, error)
 
 	GetOrgInstalls(params *GetOrgInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgInstallsOK, error)
 
@@ -627,6 +631,8 @@ type ClientService interface {
 	UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallWorkflowOK, error)
 
 	UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgOK, error)
+
+	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
 
 	UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error)
 
@@ -7220,6 +7226,69 @@ func (a *Client) GetCurrentInstallInputs(params *GetCurrentInstallInputsParams, 
 }
 
 /*
+	GetCurrentOrgFeatures gets current org s feature flags
+
+	Get the current organization's feature flag values.
+
+Returns a map of feature flag names to their enabled/disabled status for the authenticated organization.
+
+This endpoint shows which features are currently enabled or disabled for your organization, unlike `/v1/orgs/features` which returns all available features with their descriptions.
+
+Example response:
+```json
+
+	{
+	  "api-pagination": true,
+	  "org-dashboard": false,
+	  "org-runner": true,
+	  "stratus-layout": true,
+	  "user-managed-features": false
+	}
+
+```
+*/
+func (a *Client) GetCurrentOrgFeatures(params *GetCurrentOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOrgFeaturesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetCurrentOrgFeaturesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetCurrentOrgFeatures",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/current/features",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCurrentOrgFeaturesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetCurrentOrgFeaturesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetCurrentOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetCurrentUser gets current user
 
 Returns the current authenticated user account.
@@ -9704,6 +9773,56 @@ func (a *Client) GetOrgComponents(params *GetOrgComponentsParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetOrgComponents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetOrgFeatures gets available org features
+
+	Get all available organization feature flags with their descriptions.
+
+This endpoint returns a list of all feature flags that can be enabled or disabled for organizations, along with detailed descriptions of what each feature provides.
+
+Feature flags control access to specific platform capabilities and can be managed by administrators through the admin API endpoints.
+*/
+func (a *Client) GetOrgFeatures(params *GetOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgFeaturesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetOrgFeaturesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetOrgFeatures",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/features",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetOrgFeaturesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetOrgFeaturesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -13146,6 +13265,72 @@ func (a *Client) UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateOrg: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	UpdateOrgFeatures updates org features requires user managed features flag
+
+	Update feature flags for your current organization.
+
+This endpoint allows organization users to manage feature flags, but requires the `user-managed-features` flag to be enabled for the organization. The `user-managed-features` flag itself cannot be modified through this endpoint and can only be enabled/disabled by administrators.
+
+**Requirements:**
+- The `user-managed-features` flag must be enabled for your organization
+- You cannot toggle the `user-managed-features` flag through this endpoint (admin-only)
+
+**Example Request:**
+```json
+
+	{
+	  "features": {
+	    "api-pagination": true,
+	    "install-delete": false
+	  }
+	}
+
+```
+
+The request will update only the specified feature flags. Features not included in the request will retain their current values.
+*/
+func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateOrgFeaturesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateOrgFeatures",
+		Method:             "PATCH",
+		PathPattern:        "/v1/orgs/current/features",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateOrgFeaturesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateOrgFeaturesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

@@ -65,6 +65,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	{
 		orgs.POST("", s.CreateOrg)
 		orgs.GET("", s.GetCurrentUserOrgs)
+		orgs.GET("/features", s.GetOrgFeatures)
 
 		// update your current org
 		current := orgs.Group("/current")
@@ -89,6 +90,10 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			current.GET("/runner-group", s.GetOrgRunnerGroup)
 
 			current.GET("/stats", s.GetOrgStats)
+
+			// features
+			current.GET("/features", s.GetCurrentOrgFeatures)
+			current.PATCH("/features", s.UpdateOrgFeatures) // requires user-managed-features flag
 		}
 	}
 
