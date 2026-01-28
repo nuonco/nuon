@@ -60,7 +60,11 @@ func newMockGitHubClient() (*ghclient.Client, error) {
 type mockEventLoopClient struct{}
 
 func (m *mockEventLoopClient) Send(ctx context.Context, id string, signal eventloop.Signal) {}
-func (m *mockEventLoopClient) Cancel(ctx context.Context, namespace, id string) error { return nil }
+
+func (m *mockEventLoopClient) Cancel(ctx context.Context, namespace, id string) error {
+	return nil
+}
+
 func (m *mockEventLoopClient) GetWorkflowStatus(ctx context.Context, namespace string, workflowID string) (enumsv1.WorkflowExecutionStatus, error) {
 	return enumsv1.WORKFLOW_EXECUTION_STATUS_RUNNING, nil
 }
