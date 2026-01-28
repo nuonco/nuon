@@ -25,16 +25,12 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	if comp.Type == app.ComponentTypeExternalImage {
-		if err := w.evaluateExternalImagePolicy(ctx, buildID); err != nil {
-			return err
-		}
-	}
-
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
 		return err
 	}
+
+	// Create the runner job early so it appears in the dashboard even if policy evaluation fails
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
 		RunnerID:    comp.Org.RunnerGroup.Runners[0].ID,
 		BuildID:     buildID,
@@ -51,6 +47,12 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return fmt.Errorf("unable to create job: %w", err)
+	}
+
+	if comp.Type == app.ComponentTypeExternalImage {
+		if err := w.evaluateExternalImagePolicy(ctx, buildID, runnerJob.ID); err != nil {
+			return err
+		}
 	}
 
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
