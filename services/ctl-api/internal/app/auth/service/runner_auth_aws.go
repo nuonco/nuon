@@ -409,15 +409,22 @@ func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Run
 	return nil
 }
 
-// getInstallStackWithOutputs retrieves an install stack with its outputs preloaded
+// getInstallStackWithOutputs retrieves the install stack that has the most recent active version
 func (s *service) getInstallStackWithOutputs(ctx context.Context, installID string) (*app.InstallStack, error) {
-	var installStack app.InstallStack
+	var version app.InstallStackVersion
 	res := s.db.WithContext(ctx).
+		Where("install_id = ?", installID).
+		Where("status->>'status' = ?", app.InstallStackVersionStatusActive).
+		Order("created_at DESC").
+		First(&version)
+	if res.Error != nil {
+		return nil, fmt.Errorf("no active install stack version found: %w", res.Error)
+	}
+
+	var installStack app.InstallStack
+	res = s.db.WithContext(ctx).
 		Preload("InstallStackOutputs").
-		Where(app.InstallStack{
-			InstallID: installID,
-		}).
-		First(&installStack)
+		First(&installStack, "id = ?", version.InstallStackID)
 	if res.Error != nil {
 		return nil, res.Error
 	}
