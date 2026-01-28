@@ -12,6 +12,7 @@ type Service interface {
 	RegisterRunnerRoutes(*gin.Engine) error
 	RegisterInternalRoutes(*gin.Engine) error
 	RegisterAuthRoutes(*gin.Engine) error
+	RegisterAdminDashboardRoutes(*gin.Engine) error
 }
 
 func AsService(f any) any {

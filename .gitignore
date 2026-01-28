@@ -84,3 +84,4 @@ bins/nuonctl/nuonctl
 # LSP binary and VS Code extension
 bins/lsp/lsp
 *.vsix
+.grepai/
