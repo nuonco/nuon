@@ -232,6 +232,8 @@ type ClientService interface {
 
 	DeprovisionInstallSandbox(params *DeprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallSandboxCreated, error)
 
+	FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FetchRunnerTokenMngCreated, error)
+
 	ForceShutDownRunner(params *ForceShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForceShutDownRunnerCreated, error)
 
 	ForgetInstall(params *ForgetInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForgetInstallOK, error)
@@ -4018,6 +4020,50 @@ func (a *Client) DeprovisionInstallSandbox(params *DeprovisionInstallSandboxPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeprovisionInstallSandbox: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+FetchRunnerTokenMng fetches authentication token for an install runner via the mng process
+*/
+func (a *Client) FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FetchRunnerTokenMngCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewFetchRunnerTokenMngParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "FetchRunnerTokenMng",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/mng/fetch-token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &FetchRunnerTokenMngReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*FetchRunnerTokenMngCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for FetchRunnerTokenMng: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

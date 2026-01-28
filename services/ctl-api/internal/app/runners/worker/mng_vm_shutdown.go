@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -59,6 +61,7 @@ func (w *Workflows) createMngJob(ctx workflow.Context, runnerID string, jobType 
 
 	runnerJob, err := activities.AwaitCreateMngJob(ctx, &activities.CreateMngJobRequest{
 		RunnerID:    runner.ID,
+		OwnerID:     runner.RunnerGroup.OwnerID,
 		LogStreamID: logStream.ID,
 		JobType:     jobType,
 		Metadata:    metadata,
@@ -67,7 +70,7 @@ func (w *Workflows) createMngJob(ctx workflow.Context, runnerID string, jobType 
 		return nil, errors.Wrap(err, "unable to create job")
 	}
 
-	l.Info("dispatching vm shutdown job to runner mng",
+	l.Info(fmt.Sprintf("dispatching %s", jobType),
 		zap.String("runner_id", runner.ID),
 		zap.String("runner_type", string(runner.RunnerGroup.Type)),
 	)
