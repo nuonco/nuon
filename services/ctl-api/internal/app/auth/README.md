@@ -193,6 +193,16 @@ SAML support will be built into this service.
 
 SCIM support will be built into this service.
 
+#### Runner Auth
+
+We have a method to identify the runner via a presigned sts get caller identity call.
+
+1. Runner creates a presigned STS GetCallerIdentity request (doesn't send it)
+2. Runner sends the presigned request details to your service
+3. Your service makes the actual STS call using those headers
+4. AWS validates the signature and returns the caller identity
+5. Your service validates the identity matches expected runner
+
 ### Additional Claims
 
 We'd like to add support for additional claims so the IdP can provide additional details about the user. This is a

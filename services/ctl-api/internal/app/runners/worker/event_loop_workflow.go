@@ -43,6 +43,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationMngVMShutDown: AwaitMngVMShutdown,
 		signals.OperationMngShutDown:   AwaitMngShutdown,
 		signals.OperationMngUpdate:     AwaitMngUpdate,
+		signals.OperationMngFetchToken: AwaitMngFetchToken,
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
