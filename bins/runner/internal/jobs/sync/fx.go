@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/sync/imagemetadata"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/sync/noop"
 	oci "github.com/nuonco/nuon/bins/runner/internal/jobs/sync/oci"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -14,5 +15,6 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobloop.AsJobLoop(NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("sync", oci.New)),
 		fx.Provide(jobs.AsJobHandler("sync", noop.New)),
+		fx.Provide(jobs.AsJobHandler("sync", imagemetadata.New)),
 	}
 }

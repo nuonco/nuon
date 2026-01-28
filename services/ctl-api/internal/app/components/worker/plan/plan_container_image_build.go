@@ -42,9 +42,10 @@ func (b *Planner) normalizeRepository(repo string) (string, error) {
 	host := reference.Domain(named)
 	if host == "docker.io" {
 		// The normalized name parse above will turn short names like "foo/bar"
-		// into "docker.io/foo/bar" but the actual registry host for these
-		// is "index.docker.io".
-		return "index.docker.io", nil
+		// into "docker.io/foo/bar". We return "docker.io" and let oras-go
+		// handle the mapping to "registry-1.docker.io" internally.
+		// Using "index.docker.io" breaks the anonymous bearer token flow.
+		return "docker.io", nil
 	}
 
 	// by default, if a reference is fully resolved, we just use the repository name

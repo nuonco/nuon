@@ -19,12 +19,13 @@ import (
 )
 
 const (
-	defaultSyncTimeout           time.Duration = time.Minute * 12
-	defaultSyncSleep             time.Duration = time.Second * 20
-	componentBuildStatusError                  = "error"
-	componentBuildStatusBuilding               = "building"
-	componentBuildStatusActive                 = "active"
-	componentStatusQueued                      = "queued"
+	defaultSyncTimeout               time.Duration = time.Minute * 12
+	defaultSyncSleep                 time.Duration = time.Second * 20
+	componentBuildStatusError                      = "error"
+	componentBuildStatusPolicyFailed               = "policy_failed"
+	componentBuildStatusBuilding                   = "building"
+	componentBuildStatusActive                     = "active"
+	componentStatusQueued                          = "queued"
 )
 
 // Dev syncs, buids, and deploys app changes to a dev install.

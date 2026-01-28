@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	statusError  = "error"
-	statusActive = "active"
+	statusError        = "error"
+	statusActive       = "active"
+	statusPolicyFailed = "policy_failed"
 )
 
 func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool) error {
@@ -58,9 +59,11 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 		build, err := s.api.GetComponentBuild(ctx, compID, newBuild.ID)
 		switch {
 		case err != nil:
-			view.Fail(err)
+			return view.Fail(err)
 		case build.Status == statusError:
 			return view.Fail(errs.NewUserFacing("component build encountered an error: %s", build.StatusDescription))
+		case build.Status == statusPolicyFailed:
+			return view.Fail(errs.NewUserFacing("component build failed policy check: %s", build.StatusDescription))
 		case build.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created component build %s", build.ID))
 			return nil

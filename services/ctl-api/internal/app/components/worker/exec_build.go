@@ -25,13 +25,20 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	// create the job
+	if len(comp.Org.RunnerGroup.Runners) == 0 {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
+		return fmt.Errorf("no runners available in runner group for org %s", comp.Org.ID)
+	}
+	runnerID := comp.Org.RunnerGroup.Runners[0].ID
+
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
 		return err
 	}
+
+	// Create the runner job early so it appears in the dashboard even if policy evaluation fails
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
-		RunnerID:    comp.Org.RunnerGroup.Runners[0].ID,
+		RunnerID:    runnerID,
 		BuildID:     buildID,
 		Op:          app.RunnerJobOperationTypeBuild,
 		Type:        comp.Type.BuildJobType(),
@@ -46,6 +53,12 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return fmt.Errorf("unable to create job: %w", err)
+	}
+
+	if comp.Type == app.ComponentTypeExternalImage {
+		if err := w.evaluateExternalImagePolicy(ctx, buildID, runnerJob.ID, runnerID, comp.Name); err != nil {
+			return err
+		}
 	}
 
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
@@ -81,7 +94,7 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	// wait for the job
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   comp.Org.RunnerGroup.Runners[0].ID,
+		RunnerID:   runnerID,
 		JobID:      runnerJob.ID,
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})

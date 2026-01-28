@@ -1,0 +1,702 @@
+---
+title: 'External Image Policies'
+description: 'Write OPA policies to enforce security requirements on external container images'
+icon: 'shield-check'
+---
+
+External image policies allow you to enforce security requirements on container images pulled from public or private registries before they are deployed to customer installs.
+
+Nuon automatically fetches rich metadata about container images including SBOMs, signatures, attestations, and in-toto statements, making this data available to your OPA policies.
+
+## Policy Input Structure
+
+When evaluating external image policies, Nuon provides the following input structure:
+
+```json
+{
+  "image": "nginx",
+  "tag": "latest",
+  "digest": "sha256:abc123...",
+  "metadata": {
+    "image": "nginx",
+    "tag": "latest",
+    "digest": "sha256:abc123...",
+    "signed": true,
+    "sbom": {
+      "present": true,
+      "format": "spdx"
+    },
+    "signatures": [...],
+    "attestations": [...],
+    "index": {...},
+    "attestation_manifests": [...]
+  }
+}
+```
+
+## Quick Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `input.image` | string | Image name (e.g., `nginx`, `gcr.io/project/app`) |
+| `input.tag` | string | Image tag (e.g., `latest`, `v1.2.3`) |
+| `input.digest` | string | Image digest (e.g., `sha256:abc...`) |
+| `input.metadata.signed` | bool | Whether the image has signatures |
+| `input.metadata.sbom.present` | bool | Whether an SBOM is present |
+| `input.metadata.sbom.format` | string | SBOM format: `spdx`, `cyclonedx`, or `unknown` |
+| `input.metadata.signatures` | array | List of signature details |
+| `input.metadata.attestations` | array | List of attestation types from OCI referrers |
+| `input.metadata.index` | object | Raw OCI image index (manifest list) |
+| `input.metadata.attestation_manifests` | array | Full attestation manifest data with layers |
+
+---
+
+## Basic Image Requirements
+
+### Require Image Signing
+
+Ensure all images are cryptographically signed:
+
+```rego
+package nuon
+
+default allow := false
+
+allow if {
+    input.metadata.signed == true
+}
+
+deny contains msg if {
+    not input.metadata.signed
+    msg := sprintf("Image %s:%s must be signed", [input.image, input.tag])
+}
+```
+
+### Require SBOM Presence
+
+Ensure all images include a Software Bill of Materials:
+
+```rego
+package nuon
+
+default allow := false
+
+allow if {
+    input.metadata.sbom.present == true
+}
+
+deny contains msg if {
+    not input.metadata.sbom.present
+    msg := sprintf("Image %s:%s must include an SBOM", [input.image, input.tag])
+}
+```
+
+### Require Specific SBOM Format
+
+Enforce a specific SBOM format (SPDX or CycloneDX):
+
+```rego
+package nuon
+
+default allow := false
+
+allow if {
+    input.metadata.sbom.present == true
+    input.metadata.sbom.format == "spdx"
+}
+
+deny contains msg if {
+    input.metadata.sbom.present
+    input.metadata.sbom.format != "spdx"
+    msg := sprintf("Image %s:%s has SBOM format '%s', but 'spdx' is required", 
+        [input.image, input.tag, input.metadata.sbom.format])
+}
+
+deny contains msg if {
+    not input.metadata.sbom.present
+    msg := sprintf("Image %s:%s must include an SPDX SBOM", [input.image, input.tag])
+}
+```
+
+---
+
+## Signature Inspection
+
+### Check Signature Algorithm
+
+Require a specific signing algorithm:
+
+```rego
+package nuon
+
+default allow := false
+
+allow if {
+    some sig in input.metadata.signatures
+    contains(sig.algorithm, "cosign")
+}
+
+deny contains msg if {
+    count(input.metadata.signatures) == 0
+    msg := sprintf("Image %s:%s has no signatures", [input.image, input.tag])
+}
+
+deny contains msg if {
+    count(input.metadata.signatures) > 0
+    not has_cosign_signature
+    msg := sprintf("Image %s:%s must be signed with cosign", [input.image, input.tag])
+}
+
+has_cosign_signature if {
+    some sig in input.metadata.signatures
+    contains(sig.algorithm, "cosign")
+}
+```
+
+### Require Signature from Trusted Issuer
+
+Validate signature issuer for keyless signing (e.g., Sigstore):
+
+```rego
+package nuon
+
+default allow := false
+
+trusted_issuers := {
+    "https://accounts.google.com",
+    "https://token.actions.githubusercontent.com"
+}
+
+allow if {
+    some sig in input.metadata.signatures
+    sig.issuer in trusted_issuers
+}
+
+deny contains msg if {
+    not has_trusted_signature
+    msg := sprintf("Image %s:%s must be signed by a trusted issuer: %v", 
+        [input.image, input.tag, trusted_issuers])
+}
+
+has_trusted_signature if {
+    some sig in input.metadata.signatures
+    sig.issuer in trusted_issuers
+}
+```
+
+---
+
+## Attestation Policies
+
+### Require SLSA Provenance
+
+Ensure images have SLSA provenance attestations:
+
+```rego
+package nuon
+
+default allow := false
+
+allow if {
+    has_slsa_provenance
+}
+
+has_slsa_provenance if {
+    some att in input.metadata.attestations
+    contains(att.type, "slsa.dev/provenance")
+}
+
+has_slsa_provenance if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    contains(layer.predicate_type, "slsa.dev/provenance")
+}
+
+deny contains msg if {
+    not has_slsa_provenance
+    msg := sprintf("Image %s:%s must have SLSA provenance attestation", 
+        [input.image, input.tag])
+}
+```
+
+### Check Specific Predicate Types
+
+Inspect attestation layers for specific predicate types:
+
+```rego
+package nuon
+
+default allow := false
+
+required_predicates := {
+    "https://slsa.dev/provenance/v1",
+    "https://spdx.dev/Document"
+}
+
+allow if {
+    found_predicates := {p |
+        some manifest in input.metadata.attestation_manifests
+        some layer in manifest.layers
+        p := layer.predicate_type
+    }
+    count(required_predicates - found_predicates) == 0
+}
+
+deny contains msg if {
+    found_predicates := {p |
+        some manifest in input.metadata.attestation_manifests
+        some layer in manifest.layers
+        p := layer.predicate_type
+    }
+    missing := required_predicates - found_predicates
+    count(missing) > 0
+    msg := sprintf("Image %s:%s missing required attestations: %v", 
+        [input.image, input.tag, missing])
+}
+```
+
+---
+
+## Advanced: Decoded Attestation Content
+
+When attestation layers are fetched with content decoding enabled, you can inspect the decoded in-toto statements.
+
+### Validate In-Toto Statement Type
+
+```rego
+package nuon
+
+default allow := false
+
+allow if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    layer.decoded._type == "https://in-toto.io/Statement/v1"
+}
+
+deny contains msg if {
+    not has_valid_intoto
+    msg := sprintf("Image %s:%s must have valid in-toto v1 statements", 
+        [input.image, input.tag])
+}
+
+has_valid_intoto if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    layer.decoded._type == "https://in-toto.io/Statement/v1"
+}
+```
+
+### Verify Subject Digest Matches Image
+
+Ensure attestation subjects match the image being validated:
+
+```rego
+package nuon
+
+default allow := false
+
+allow if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    some subject in layer.decoded.subject
+    subject.digest.sha256 == trim_prefix(input.digest, "sha256:")
+}
+
+deny contains msg if {
+    not subject_matches_image
+    msg := sprintf("Image %s:%s attestation subjects do not match image digest", 
+        [input.image, input.tag])
+}
+
+subject_matches_image if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    some subject in layer.decoded.subject
+    subject.digest.sha256 == trim_prefix(input.digest, "sha256:")
+}
+```
+
+### Inspect SLSA Provenance Predicate
+
+Access the full provenance predicate for advanced validation:
+
+```rego
+package nuon
+
+default allow := false
+
+# Require builds from a specific GitHub repository
+allowed_repos := {"github.com/myorg/myapp"}
+
+allow if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    contains(layer.predicate_type, "slsa.dev/provenance")
+    
+    # Access the predicate content
+    predicate := layer.decoded.predicate
+    
+    # Check build source (structure varies by SLSA version)
+    some repo in allowed_repos
+    contains(predicate.buildDefinition.externalParameters.source.uri, repo)
+}
+
+deny contains msg if {
+    has_provenance
+    not from_allowed_repo
+    msg := sprintf("Image %s:%s must be built from allowed repositories: %v", 
+        [input.image, input.tag, allowed_repos])
+}
+
+has_provenance if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    contains(layer.predicate_type, "slsa.dev/provenance")
+}
+
+from_allowed_repo if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    contains(layer.predicate_type, "slsa.dev/provenance")
+    predicate := layer.decoded.predicate
+    some repo in allowed_repos
+    contains(predicate.buildDefinition.externalParameters.source.uri, repo)
+}
+```
+
+---
+
+## Platform-Specific Policies
+
+### Require Multi-Architecture Support
+
+Ensure images support specific platforms:
+
+```rego
+package nuon
+
+default allow := false
+
+required_platforms := {
+    {"os": "linux", "architecture": "amd64"},
+    {"os": "linux", "architecture": "arm64"}
+}
+
+allow if {
+    input.metadata.index != null
+    platforms := {{"os": m.platform.os, "architecture": m.platform.architecture} |
+        some m in input.metadata.index.manifests
+        m.platform != null
+        not m.is_attestation
+    }
+    count(required_platforms - platforms) == 0
+}
+
+deny contains msg if {
+    input.metadata.index == null
+    msg := sprintf("Image %s:%s must be a multi-platform image", [input.image, input.tag])
+}
+
+deny contains msg if {
+    input.metadata.index != null
+    platforms := {{"os": m.platform.os, "architecture": m.platform.architecture} |
+        some m in input.metadata.index.manifests
+        m.platform != null
+        not m.is_attestation
+    }
+    missing := required_platforms - platforms
+    count(missing) > 0
+    msg := sprintf("Image %s:%s missing required platforms: %v", 
+        [input.image, input.tag, missing])
+}
+```
+
+---
+
+## Image Registry Policies
+
+### Allowlist Trusted Registries
+
+Only allow images from approved registries:
+
+```rego
+package nuon
+
+default allow := false
+
+trusted_registries := {
+    "gcr.io/myproject",
+    "us-docker.pkg.dev/myproject",
+    "123456789.dkr.ecr.us-west-2.amazonaws.com"
+}
+
+allow if {
+    some registry in trusted_registries
+    startswith(input.image, registry)
+}
+
+# Allow Docker Hub official images
+allow if {
+    not contains(input.image, "/")  # Single-name images like "nginx"
+}
+
+allow if {
+    startswith(input.image, "library/")
+}
+
+deny contains msg if {
+    not from_trusted_registry
+    msg := sprintf("Image %s is not from a trusted registry. Allowed: %v", 
+        [input.image, trusted_registries])
+}
+
+from_trusted_registry if {
+    some registry in trusted_registries
+    startswith(input.image, registry)
+}
+
+from_trusted_registry if {
+    not contains(input.image, "/")
+}
+
+from_trusted_registry if {
+    startswith(input.image, "library/")
+}
+```
+
+### Block Latest Tag
+
+Prevent use of mutable tags:
+
+```rego
+package nuon
+
+default allow := false
+
+blocked_tags := {"latest", "main", "master", "dev", "develop"}
+
+allow if {
+    not input.tag in blocked_tags
+}
+
+deny contains msg if {
+    input.tag in blocked_tags
+    msg := sprintf("Image %s uses blocked tag '%s'. Use immutable version tags.", 
+        [input.image, input.tag])
+}
+```
+
+---
+
+## Combining Multiple Requirements
+
+### Production-Ready Image Policy
+
+A comprehensive policy combining multiple security requirements:
+
+```rego
+package nuon
+
+default allow := false
+
+# Image must meet ALL requirements
+allow if {
+    is_signed
+    has_sbom
+    has_provenance
+    not uses_blocked_tag
+}
+
+# Check if image is signed
+is_signed if {
+    input.metadata.signed == true
+}
+
+# Check for SBOM (via referrers or attestation layers)
+has_sbom if {
+    input.metadata.sbom.present == true
+}
+
+# Check for provenance attestation
+has_provenance if {
+    some manifest in input.metadata.attestation_manifests
+    some layer in manifest.layers
+    contains(layer.predicate_type, "slsa.dev/provenance")
+}
+
+has_provenance if {
+    some att in input.metadata.attestations
+    contains(att.type, "provenance")
+}
+
+# Block mutable tags
+blocked_tags := {"latest", "main", "master"}
+
+uses_blocked_tag if {
+    input.tag in blocked_tags
+}
+
+# Generate specific denial messages
+deny contains msg if {
+    not is_signed
+    msg := sprintf("Image %s:%s must be signed", [input.image, input.tag])
+}
+
+deny contains msg if {
+    not has_sbom
+    msg := sprintf("Image %s:%s must include an SBOM", [input.image, input.tag])
+}
+
+deny contains msg if {
+    not has_provenance
+    msg := sprintf("Image %s:%s must have SLSA provenance", [input.image, input.tag])
+}
+
+deny contains msg if {
+    uses_blocked_tag
+    msg := sprintf("Image %s uses blocked tag '%s'", [input.image, input.tag])
+}
+```
+
+---
+
+## Configuring Image Policies
+
+Add external image policies to your Nuon configuration:
+
+```toml policies/external-images.toml
+[[policy]]
+type   = "container_image"
+engine = "opa"
+
+# Apply to specific components
+components = ["app_image", "sidecar_image"]
+
+# Or apply to all container image components
+# components = ["*"]
+
+contents = """
+package nuon
+
+default allow := false
+
+allow if {
+    input.metadata.signed == true
+    input.metadata.sbom.present == true
+}
+
+deny contains msg if {
+    not input.metadata.signed
+    msg := sprintf("Image %s:%s must be signed", [input.image, input.tag])
+}
+
+deny contains msg if {
+    not input.metadata.sbom.present  
+    msg := sprintf("Image %s:%s must include an SBOM", [input.image, input.tag])
+}
+"""
+```
+
+### Using External Policy Files
+
+Reference policies from your repository:
+
+```toml policies/external-images.toml
+[[policy]]
+type       = "container_image"
+engine     = "opa"
+components = ["*"]
+contents   = "file://policies/rego/container-image.rego"
+```
+
+---
+
+## Metadata Field Reference
+
+### `input.metadata.sbom`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `present` | bool | `true` if SBOM detected via OCI referrers or attestation layers |
+| `format` | string | `spdx`, `cyclonedx`, or `unknown` |
+| `uri` | string | URI to SBOM artifact (when available) |
+
+**SBOM Detection**: Nuon detects SBOMs from two sources:
+1. OCI referrers with SBOM artifact types
+2. Attestation layers with predicate types:
+   - `https://spdx.dev/Document` → format: `spdx`
+   - `https://cyclonedx.org/bom` → format: `cyclonedx`
+
+### `input.metadata.signatures`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key_id` | string | Key identifier (for keyed signing) |
+| `issuer` | string | OIDC issuer (for keyless signing) |
+| `subject` | string | OIDC subject identity |
+| `algorithm` | string | Signature algorithm/media type |
+
+### `input.metadata.attestations`
+
+Attestations discovered via OCI referrers:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | Attestation artifact type |
+| `predicate` | string | Predicate type (when available) |
+
+### `input.metadata.attestation_manifests`
+
+Full attestation manifest data including layers:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `digest` | string | Manifest digest |
+| `media_type` | string | Manifest media type |
+| `platform` | object | Platform spec (`os`, `architecture`, `variant`) |
+| `ref_digest` | string | Referenced image digest |
+| `annotations` | object | OCI annotations |
+| `layers` | array | Attestation layer blobs |
+
+### `input.metadata.attestation_manifests[].layers`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `digest` | string | Layer blob digest |
+| `media_type` | string | Layer media type |
+| `size` | int | Layer size in bytes |
+| `predicate_type` | string | In-toto predicate type |
+| `decoded` | object | Decoded in-toto statement (when available) |
+| `truncated` | bool | `true` if layer was too large to fetch |
+
+### `input.metadata.attestation_manifests[].layers[].decoded`
+
+Decoded in-toto statement:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_type` | string | Statement type (e.g., `https://in-toto.io/Statement/v1`) |
+| `subject` | array | Statement subjects with name and digest |
+| `predicateType` | string | Predicate type URI |
+| `predicate` | object | Full predicate content (format varies by type) |
+
+### `input.metadata.index`
+
+OCI image index (manifest list):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `digest` | string | Index digest |
+| `media_type` | string | Index media type |
+| `manifests` | array | List of manifest entries |
+
+### `input.metadata.index.manifests`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `digest` | string | Manifest digest |
+| `media_type` | string | Manifest media type |
+| `platform` | object | Platform spec |
+| `annotations` | object | OCI annotations |
+| `is_attestation` | bool | `true` if this is an attestation manifest |
