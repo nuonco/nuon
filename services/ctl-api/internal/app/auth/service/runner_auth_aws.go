@@ -40,6 +40,8 @@ var (
 	awsSTSHostPattern = regexp.MustCompile(`^sts(\.([a-z]{2}-[a-z]+-\d|us-gov-[a-z]+-\d|cn-[a-z]+-\d))?\.amazonaws\.com$`)
 	// awsEC2HostPattern matches valid AWS EC2 regional endpoints
 	awsEC2HostPattern = regexp.MustCompile(`^ec2\.([a-z]{2}-[a-z]+-\d|us-gov-[a-z]+-\d|cn-[a-z]+-\d)\.amazonaws\.com$`)
+	// ec2InstanceIDPattern validates EC2 instance ID format (i- followed by 8 or 17 hex chars)
+	ec2InstanceIDPattern = regexp.MustCompile(`^i-[0-9a-f]{8}([0-9a-f]{9})?$`)
 
 	// allowedPresignedHeaders is the set of headers allowed in presigned requests
 	allowedPresignedHeaders = map[string]struct{}{
@@ -107,13 +109,63 @@ type GetCallerIdentityResponse struct {
 type DescribeTagsResponse struct {
 	XMLName xml.Name `xml:"DescribeTagsResponse"`
 	TagSet  struct {
-		Items []struct {
-			Key          string `xml:"key"`
-			Value        string `xml:"value"`
-			ResourceId   string `xml:"resourceId"`
-			ResourceType string `xml:"resourceType"`
-		} `xml:"item"`
+		Items []DescribeTagsItem `xml:"item"`
 	} `xml:"tagSet"`
+}
+
+// DescribeTagsItem represents a single tag item in the EC2 DescribeTags response
+type DescribeTagsItem struct {
+	Key          string `xml:"key"`
+	Value        string `xml:"value"`
+	ResourceId   string `xml:"resourceId"`
+	ResourceType string `xml:"resourceType"`
+}
+
+// validateTagResponse validates the EC2 DescribeTags response and extracts instance info.
+// It ensures all tags are from a single EC2 instance and returns the instance ID and tag map.
+func validateTagResponse(items []DescribeTagsItem) (instanceID string, tags map[string]string, err error) {
+	if len(items) == 0 {
+		return "", nil, errors.New("no tags returned from instance")
+	}
+
+	tags = make(map[string]string, len(items))
+
+	for _, item := range items {
+		if item.ResourceType != "instance" {
+			return "", nil, fmt.Errorf("unexpected resource type %q, expected instance", item.ResourceType)
+		}
+
+		if instanceID == "" {
+			instanceID = item.ResourceId
+		} else if item.ResourceId != instanceID {
+			return "", nil, fmt.Errorf("tags from multiple resources: %s and %s", instanceID, item.ResourceId)
+		}
+
+		tags[item.Key] = item.Value
+	}
+
+	if !ec2InstanceIDPattern.MatchString(instanceID) {
+		return "", nil, fmt.Errorf("invalid instance ID format: %s", instanceID)
+	}
+
+	return instanceID, tags, nil
+}
+
+// extractInstanceIDFromSTSUserId extracts the EC2 instance ID from the STS GetCallerIdentity UserId.
+// For EC2 instance roles, the UserId format is: AROAXXXXXXXXXXXXXXXXX:i-1234567890abcdef0
+// Returns empty string if not an EC2 instance session.
+func extractInstanceIDFromSTSUserId(userId string) string {
+	parts := strings.Split(userId, ":")
+	if len(parts) != 2 {
+		return ""
+	}
+
+	instanceID := parts[1]
+	if ec2InstanceIDPattern.MatchString(instanceID) {
+		return instanceID
+	}
+
+	return ""
 }
 
 // @ID						RunnerAuthAWS
@@ -190,13 +242,30 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		return
 	}
 
-	tags := make(map[string]string)
-	var instanceID string
-	for _, tag := range describeTags.TagSet.Items {
-		tags[tag.Key] = tag.Value
-		if instanceID == "" {
-			instanceID = tag.ResourceId
-		}
+	// Validate tag response: ensure all tags are from a single EC2 instance
+	instanceID, tags, err := validateTagResponse(describeTags.TagSet.Items)
+	if err != nil {
+		s.l.Warn("runner auth: tag validation failed", zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "invalid instance tag data",
+		})
+		ctx.Abort()
+		return
+	}
+
+	// Cross-validate: ensure the STS caller is the same instance that owns the tags
+	stsInstanceID := extractInstanceIDFromSTSUserId(callerIdentity.Result.UserId)
+	if stsInstanceID != "" && stsInstanceID != instanceID {
+		s.l.Warn("runner auth: instance ID mismatch between STS and tags",
+			zap.String("sts_instance_id", stsInstanceID),
+			zap.String("tags_instance_id", instanceID))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "instance identity mismatch",
+		})
+		ctx.Abort()
+		return
 	}
 
 	runnerID, ok := tags[runnerIDTagKey]
