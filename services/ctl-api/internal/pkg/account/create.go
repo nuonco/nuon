@@ -35,7 +35,8 @@ func (m *Client) createAccount(ctx context.Context, email, subject string, accou
 	return &acct, nil
 }
 
-// DefaultEvaluationJourney returns the evaluation journey for self-signup users without auto-org creation
+// DefaultEvaluationJourney returns the evaluation journey for self-signup users
+// This is the simplified 4-step journey: account_created, org_created, app_created, install_created
 func DefaultEvaluationJourney() app.UserJourneys {
 	now := time.Now().UTC()
 
@@ -63,26 +64,8 @@ func DefaultEvaluationJourney() app.UserJourneys {
 					Metadata:         make(map[string]interface{}),
 				},
 				{
-					Name:             "cli_installed",
-					Title:            "Install the Nuon CLI",
-					Complete:         false,
-					CompletedAt:      nil,
-					CompletionMethod: "",
-					CompletionSource: "",
-					Metadata:         make(map[string]interface{}),
-				},
-				{
 					Name:             "app_created",
 					Title:            "Create an app",
-					Complete:         false,
-					CompletedAt:      nil,
-					CompletionMethod: "",
-					CompletionSource: "",
-					Metadata:         make(map[string]interface{}),
-				},
-				{
-					Name:             "app_synced",
-					Title:            "Sync the app config",
 					Complete:         false,
 					CompletedAt:      nil,
 					CompletionMethod: "",

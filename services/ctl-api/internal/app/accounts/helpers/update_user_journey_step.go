@@ -113,7 +113,7 @@ func (h *Helpers) updateUserJourneyStepIfIncomplete(ctx context.Context, params 
 
 	updated := h.updateJourneyStepIfIncomplete(account, params.JourneyName, params.StepName, update)
 	if !updated {
-		return nil // No changes needed
+		return nil // No changes needed (step already complete or step doesn't exist in this journey version)
 	}
 
 	// 4. Save changes
@@ -151,20 +151,6 @@ func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountI
 	})
 }
 
-// UpdateUserJourneyStepForCLIInstalled updates the cli_installed step when user installs the CLI
-func (h *Helpers) UpdateUserJourneyStepForCLIInstalled(ctx context.Context, accountID string) error {
-	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
-		AccountID:        accountID,
-		JourneyName:      "evaluation",
-		StepName:         "cli_installed",
-		Complete:         true,
-		CompletionMethod: "auto",
-		CompletionSource: "cli", // Detected when CLI makes first API call
-		Metadata:         buildNavigationMetadata(nil, nil, nil),
-		NeedsRoleData:    false,
-	})
-}
-
 // UpdateUserJourneyStepForFirstAppCreate updates the app_created step when user creates their first app
 func (h *Helpers) UpdateUserJourneyStepForFirstAppCreate(ctx context.Context, accountID, appID string) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
@@ -174,20 +160,6 @@ func (h *Helpers) UpdateUserJourneyStepForFirstAppCreate(ctx context.Context, ac
 		Complete:         true,
 		CompletionMethod: "auto",
 		CompletionSource: "api", // Triggered by app creation API
-		Metadata:         buildNavigationMetadata(&appID, nil, nil),
-		NeedsRoleData:    false,
-	})
-}
-
-// UpdateUserJourneyStepForFirstAppSync updates the app_synced step when user syncs their first app config
-func (h *Helpers) UpdateUserJourneyStepForFirstAppSync(ctx context.Context, accountID, appID string) error {
-	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
-		AccountID:        accountID,
-		JourneyName:      "evaluation",
-		StepName:         "app_synced",
-		Complete:         true,
-		CompletionMethod: "auto",
-		CompletionSource: "cli", // Triggered by `nuon apps sync`
 		Metadata:         buildNavigationMetadata(&appID, nil, nil),
 		NeedsRoleData:    false,
 	})

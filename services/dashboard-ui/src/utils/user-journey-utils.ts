@@ -1,6 +1,6 @@
 import type { TAccount, TUserJourney, TUserJourneyStep } from '@/types'
 
-// Get evaluation journey from account
+// Get user journey by exact name match
 export const getUserJourney = (account: TAccount, journeyName: string) => {
   const accountWithJourneys = account as any
   if (!accountWithJourneys?.user_journeys) return null
