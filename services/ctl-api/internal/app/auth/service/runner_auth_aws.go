@@ -19,6 +19,7 @@ import (
 
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
@@ -131,13 +132,15 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 	var req RunnerAuthAWSRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		s.l.Warn("runner auth: failed to parse request", zap.Error(err))
-		ctx.Error(errors.New("invalid request"))
+		ctx.Error(stderr.ErrInvalidRequest{Err: errors.New("invalid request format")})
+		ctx.Abort()
 		return
 	}
 
 	if err := s.v.Struct(req); err != nil {
 		s.l.Warn("runner auth: request validation failed", zap.Error(err))
-		ctx.Error(errors.New("invalid request"))
+		ctx.Error(stderr.ErrInvalidRequest{Err: errors.New("invalid request: missing required fields")})
+		ctx.Abort()
 		return
 	}
 
@@ -146,28 +149,44 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 	stsResponse, err := s.executePresignedRequest(reqCtx, req.STSRequest, presignedRequestTypeSTS)
 	if err != nil {
 		s.l.Warn("runner auth: STS request failed", zap.Error(err))
-		ctx.Error(errors.New("authentication failed"))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "failed to verify AWS identity",
+		})
+		ctx.Abort()
 		return
 	}
 
 	var callerIdentity GetCallerIdentityResponse
 	if err := xml.Unmarshal(stsResponse, &callerIdentity); err != nil {
 		s.l.Warn("runner auth: failed to parse STS response", zap.Error(err))
-		ctx.Error(errors.New("authentication failed"))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "invalid AWS identity response",
+		})
+		ctx.Abort()
 		return
 	}
 
 	tagsResponse, err := s.executePresignedRequest(reqCtx, req.TagsRequest, presignedRequestTypeEC2)
 	if err != nil {
 		s.l.Warn("runner auth: EC2 tags request failed", zap.Error(err))
-		ctx.Error(errors.New("authentication failed"))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "failed to verify instance tags",
+		})
+		ctx.Abort()
 		return
 	}
 
 	var describeTags DescribeTagsResponse
 	if err := xml.Unmarshal(tagsResponse, &describeTags); err != nil {
 		s.l.Warn("runner auth: failed to parse EC2 tags response", zap.Error(err))
-		ctx.Error(errors.New("authentication failed"))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "invalid instance tags response",
+		})
+		ctx.Abort()
 		return
 	}
 
@@ -185,7 +204,11 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		s.l.Warn("runner auth: missing runner ID tag",
 			zap.String("instance_id", instanceID),
 			zap.String("expected_tag", runnerIDTagKey))
-		ctx.Error(errors.New("authentication failed"))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "instance is not a registered runner",
+		})
+		ctx.Abort()
 		return
 	}
 
@@ -196,7 +219,11 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		} else {
 			s.l.Error("runner auth: failed to get runner", zap.String("runner_id", runnerID), zap.Error(err))
 		}
-		ctx.Error(errors.New("authentication failed"))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not recognized",
+		})
+		ctx.Abort()
 		return
 	}
 
@@ -204,15 +231,24 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		s.l.Warn("runner auth: AWS identity validation failed",
 			zap.String("runner_id", runnerID),
 			zap.String("caller_account", callerIdentity.Result.Account),
+			zap.String("caller_arn", callerIdentity.Result.Arn),
 			zap.Error(err))
-		ctx.Error(errors.New("authentication failed"))
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         errors.New("authorization failed"),
+			Description: "runner identity does not match expected configuration",
+		})
+		ctx.Abort()
 		return
 	}
 
 	token, err := s.createRunnerToken(reqCtx, runner.ID)
 	if err != nil {
 		s.l.Error("runner auth: failed to create token", zap.String("runner_id", runnerID), zap.Error(err))
-		ctx.Error(errors.New("internal error"))
+		ctx.Error(stderr.ErrSystem{
+			Err:         errors.New("internal error"),
+			Description: "failed to issue authentication token",
+		})
+		ctx.Abort()
 		return
 	}
 
@@ -291,7 +327,6 @@ func validatePresignedRequest(presignedReq *awstypes.PresignedRequest, reqType p
 	return nil
 }
 
-// TODO(fd): we likely need a way to validate
 // validateNotIPAddress rejects any IP address - only FQDNs are allowed since we only reach AWS
 func validateNotIPAddress(host string) error {
 	if net.ParseIP(host) != nil {
@@ -380,38 +415,100 @@ func (s *service) getInstallByRunnerGroup(ctx context.Context, runnerGroup *app.
 }
 
 // validateRunnerAWSIdentity validates the caller's AWS identity against the expected install configuration
-func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string, callerArn string) error {
-	// Get the install associated with this runner
+func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string, callerARN string) error {
 	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
 	if err != nil {
 		return fmt.Errorf("failed to get install for runner: %w", err)
 	}
 
-	// Get the install stack with outputs to retrieve the expected AWS account ID
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)
 	}
 
-	// Verify the install stack has AWS outputs with account ID
 	if installStack.InstallStackOutputs.AWSStackOutputs == nil {
 		return fmt.Errorf("install %s does not have AWS stack outputs configured", install.ID)
 	}
 
-	expectedAccountID := installStack.InstallStackOutputs.AWSStackOutputs.AccountID
+	awsOutputs := installStack.InstallStackOutputs.AWSStackOutputs
+
+	expectedAccountID := awsOutputs.AccountID
 	if expectedAccountID == "" {
 		return fmt.Errorf("install %s does not have an AWS account ID in stack outputs", install.ID)
 	}
 
-	// Verify the caller's AWS account ID matches
 	if callerAccountID != expectedAccountID {
 		return fmt.Errorf("AWS account ID mismatch: got %s, expected %s", callerAccountID, expectedAccountID)
 	}
 
-	// ARN validation: compare to stack output runner_iam_role_arn
-	// we only store the name of the role so we must trim the account info
+	expectedRunnerRoleARN := awsOutputs.RunnerIAMRoleARN
+	if expectedRunnerRoleARN == "" {
+		return fmt.Errorf("install %s does not have a runner IAM role ARN in stack outputs", install.ID)
+	}
+
+	// Extract role names and compare
+	// Caller ARN format (assumed role): arn:aws:sts::123456789012:assumed-role/role-name/session-name
+	// Expected ARN format (IAM role):   arn:aws:iam::123456789012:role/role-name
+	callerRoleName, err := extractRoleNameFromAssumedRoleARN(callerARN)
+	if err != nil {
+		return fmt.Errorf("failed to parse caller ARN: %w", err)
+	}
+
+	expectedRoleName, err := extractRoleNameFromIAMRoleARN(expectedRunnerRoleARN)
+	if err != nil {
+		return fmt.Errorf("failed to parse expected role ARN: %w", err)
+	}
+
+	if callerRoleName != expectedRoleName {
+		return fmt.Errorf("IAM role mismatch: caller role %q does not match expected role %q", callerRoleName, expectedRoleName)
+	}
 
 	return nil
+}
+
+// extractRoleNameFromAssumedRoleARN extracts the role name from an STS assumed-role ARN
+// Format: arn:aws:sts::123456789012:assumed-role/role-name/session-name
+func extractRoleNameFromAssumedRoleARN(arn string) (string, error) {
+	parts := strings.Split(arn, ":")
+	if len(parts) < 6 {
+		return "", fmt.Errorf("invalid ARN format: %s", arn)
+	}
+
+	resource := parts[5]
+	if !strings.HasPrefix(resource, "assumed-role/") {
+		return "", fmt.Errorf("ARN is not an assumed-role: %s", arn)
+	}
+
+	// resource is "assumed-role/role-name/session-name"
+	resourceParts := strings.Split(resource, "/")
+	if len(resourceParts) < 2 {
+		return "", fmt.Errorf("invalid assumed-role resource format: %s", resource)
+	}
+
+	return resourceParts[1], nil
+}
+
+// extractRoleNameFromIAMRoleARN extracts the role name from an IAM role ARN
+// Format: arn:aws:iam::123456789012:role/role-name or arn:aws:iam::123456789012:role/path/role-name
+func extractRoleNameFromIAMRoleARN(arn string) (string, error) {
+	parts := strings.Split(arn, ":")
+	if len(parts) < 6 {
+		return "", fmt.Errorf("invalid ARN format: %s", arn)
+	}
+
+	resource := parts[5]
+	if !strings.HasPrefix(resource, "role/") {
+		return "", fmt.Errorf("ARN is not an IAM role: %s", arn)
+	}
+
+	// resource is "role/role-name" or "role/path/to/role-name"
+	// The role name is always the last segment
+	resourceParts := strings.Split(resource, "/")
+	if len(resourceParts) < 2 {
+		return "", fmt.Errorf("invalid role resource format: %s", resource)
+	}
+
+	return resourceParts[len(resourceParts)-1], nil
 }
 
 // getInstallStackWithOutputs retrieves the install stack that has the most recent active version
