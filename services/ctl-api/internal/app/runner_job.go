@@ -108,6 +108,7 @@ const (
 	RunnerJobTypeMngShutDown            RunnerJobType = "mng-shut-down"             // shutdown the runner mng process (usually triggers restart)
 	RunnerJobTypeMngRunnerUpdateVersion RunnerJobType = "mng-runner-update-version" // update the runner image/version (check for changes and update)
 	RunnerJobTypeMngRunnerRestart       RunnerJobType = "mng-runner-restart"        // restart the runner systemctl service (technically, a duplicate. runner can restart self.)
+	RunnerJobTypeMngFetchToken          RunnerJobType = "mng-fetch-token"           // fetch authentication token via AWS presigned requests
 
 	// sandbox job types
 	RunnerJobTypeSandboxTerraform     RunnerJobType = "sandbox-terraform"
@@ -171,7 +172,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		return RunnerJobGroupOperations
 
 		// management
-	case RunnerJobTypeMngVMShutDown, RunnerJobTypeMngShutDown, RunnerJobTypeMngRunnerUpdateVersion, RunnerJobTypeMngRunnerRestart:
+	case RunnerJobTypeMngVMShutDown, RunnerJobTypeMngShutDown, RunnerJobTypeMngRunnerUpdateVersion, RunnerJobTypeMngRunnerRestart, RunnerJobTypeMngFetchToken:
 		return RunnerJobGroupManagement
 
 	case RunnerJobTypeActionsWorkflowRun:

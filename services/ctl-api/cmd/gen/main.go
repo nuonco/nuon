@@ -36,7 +36,7 @@ func generateRunnerSchema(ctx context.Context) error {
 		"--parseDependency",
 		"--parseInternal", "-g", "runner.go",
 		"--markdownFiles", "docs/runner/descriptions",
-		"-t", "orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner,actions/runner",
+		"-t", "orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner,runners/auth,actions/runner",
 	}
 
 	cmd, err := command.New(v,
