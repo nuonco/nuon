@@ -50,7 +50,16 @@ export function getJobName(job: TRunnerJob): string {
     case 'operations':
       return type ?? 'Unknown'
     case 'management':
-      return type === 'mng-shut-down' ? 'Runner shutdown' : 'Instance shutdown'
+      switch (type) {
+        case 'mng-shut-down':
+          return 'Runner shutdown'
+        case 'mng-vm-shut-down':
+          return 'Instance shutdown'
+        case 'mng-fetch-token':
+          return 'Token refresh'
+        default:
+          return 'Instance shutdown'
+      }
     default:
       return 'Unknown'
   }
