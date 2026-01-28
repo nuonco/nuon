@@ -19,11 +19,32 @@ import (
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
 )
 
+// getRegionFromIMDS fetches the current region from EC2 instance metadata.
+func getRegionFromIMDS(ctx context.Context) (string, error) {
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	imdsClient := imds.NewFromConfig(cfg)
+	regionOutput, err := imdsClient.GetRegion(ctx, &imds.GetRegionInput{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get region from IMDS: %w", err)
+	}
+
+	return regionOutput.Region, nil
+}
+
 // GetPresignedSTSRequest creates a presigned STS GetCallerIdentity request.
 // The presigned request can be sent to another service which will make the actual
 // STS call to validate the caller's identity.
 func GetPresignedSTSRequest(ctx context.Context) (*awstypes.PresignedRequest, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	region, err := getRegionFromIMDS(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
@@ -60,6 +81,7 @@ func GetPresignedInstanceTagsRequest(ctx context.Context) (*awstypes.PresignedRe
 	}
 
 	imdsClient := imds.NewFromConfig(cfg)
+
 	instanceIDOutput, err := imdsClient.GetMetadata(ctx, &imds.GetMetadataInput{
 		Path: "instance-id",
 	})
