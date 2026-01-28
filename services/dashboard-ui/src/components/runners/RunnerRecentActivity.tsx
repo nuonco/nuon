@@ -25,6 +25,7 @@ export const RECENT_ACTIVITY_GROUPS: TJobGroup[] = [
   'sandbox',
   'sync',
 ]
+const HIDDEN_JOB_TYPES = ['fetch-image-metadata']
 
 interface IRunnerRecentActivity
   extends Omit<ITimeline<TRunnerJob>, 'events' | 'renderEvent'>,
@@ -53,9 +54,13 @@ export const RunnerRecentActivity = ({
     pollInterval,
   })
 
+  const visibleJobs = jobs?.filter(
+    (job) => !HIDDEN_JOB_TYPES.includes(job.type)
+  )
+
   return (
     <Timeline<TRunnerJob>
-      events={jobs}
+      events={visibleJobs}
       pagination={pagination}
       renderEvent={(job) => {
         const jobHref = getJobHref(job)

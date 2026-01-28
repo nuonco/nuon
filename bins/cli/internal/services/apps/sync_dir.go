@@ -19,13 +19,13 @@ import (
 )
 
 const (
-	defaultSyncTimeout        time.Duration = time.Minute * 20
-	defaultSyncSleep          time.Duration = time.Second * 20
-	componentBuildStatusError               = "error"
-
-	componentBuildStatusBuilding = "building"
-	componentBuildStatusActive   = "active"
-	componentStatusQueued        = "queued"
+	defaultSyncTimeout               time.Duration = time.Minute * 20
+	defaultSyncSleep                 time.Duration = time.Second * 20
+	componentBuildStatusError                      = "error"
+	componentBuildStatusPolicyFailed               = "policy_failed"
+	componentBuildStatusBuilding                   = "building"
+	componentBuildStatusActive                     = "active"
+	componentStatusQueued                          = "queued"
 )
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string) error {

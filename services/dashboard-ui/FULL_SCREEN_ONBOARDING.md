@@ -123,7 +123,7 @@ The full-screen onboarding provides a focused, distraction-free experience for n
    dashboard-ui:
      NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING: true
    ```
-2. Restart services with `./run-nuonctl.sh services dev --dev dashboard-ui`
+2. Restart services with `nctl services dev --dev dashboard-ui`
 
 #### For Production Deployment
 

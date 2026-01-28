@@ -154,6 +154,7 @@
               "guides/vcs",
               "guides/docker-build-components",
               "guides/container-image-components",
+              "guides/external-image-policies",
               "guides/terraform-components",
               "guides/helm-chart-components",
               "guides/kubernetes-manifest-components",
