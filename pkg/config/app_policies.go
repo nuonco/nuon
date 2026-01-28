@@ -1,11 +1,26 @@
 package config
 
 import (
+	"bufio"
+	"os"
+	"regexp"
+
 	"github.com/invopop/jsonschema"
 )
 
 type PoliciesConfig struct {
 	Policies []AppPolicy `mapstructure:"policy,omitempty" toml:"policy,omitempty"`
+
+	// SourceFile is the file path this config was parsed from (set during parsing, not serialized)
+	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
+}
+
+func (a *PoliciesConfig) SetSourceFile(path string) {
+	a.SourceFile = path
+}
+
+func (a *PoliciesConfig) GetSourceFile() string {
+	return a.SourceFile
 }
 
 func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -15,13 +30,51 @@ func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 func (a *PoliciesConfig) parse() error {
+	// Extract line numbers from the source file if available
+	policyLineNumbers := extractPolicyLineNumbers(a.SourceFile)
+
 	for i := range a.Policies {
 		// to maintain backwards compatibility, default engine based on type
 		if a.Policies[i].Engine == "" {
 			a.Policies[i].Engine = AppPolicyEngineKyverno
 		}
+		// propagate source file to individual policies if not already set
+		if a.Policies[i].SourceFile == "" && a.SourceFile != "" {
+			a.Policies[i].SourceFile = a.SourceFile
+		}
+		// set source line if we have it
+		if i < len(policyLineNumbers) {
+			a.Policies[i].SourceLine = policyLineNumbers[i]
+		}
 	}
 	return nil
+}
+
+// extractPolicyLineNumbers reads the source file and returns the 1-indexed line numbers
+// of each [[policy]] table header. Returns nil if the file cannot be read.
+func extractPolicyLineNumbers(sourceFile string) []int {
+	if sourceFile == "" {
+		return nil
+	}
+
+	file, err := os.Open(sourceFile)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+
+	var lineNumbers []int
+	policyHeaderRegex := regexp.MustCompile(`^\s*\[\[\s*policy\s*\]\]\s*$`)
+	scanner := bufio.NewScanner(file)
+	lineNum := 0
+	for scanner.Scan() {
+		lineNum++
+		if policyHeaderRegex.MatchString(scanner.Text()) {
+			lineNumbers = append(lineNumbers, lineNum)
+		}
+	}
+
+	return lineNumbers
 }
 
 type AppPolicyType string
@@ -72,6 +125,27 @@ type AppPolicy struct {
 	Engine     AppPolicyEngine `mapstructure:"engine,omitempty"`
 	Contents   string          `mapstructure:"contents" features:"get,template"`
 	Components []string        `mapstructure:"components,omitempty"`
+
+	// SourceFile is the file path this policy was parsed from (set during parsing, not serialized)
+	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
+	// SourceLine is the line number in the source file where this policy starts (1-indexed)
+	SourceLine int `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
+}
+
+func (a *AppPolicy) SetSourceFile(path string) {
+	a.SourceFile = path
+}
+
+func (a *AppPolicy) GetSourceFile() string {
+	return a.SourceFile
+}
+
+func (a *AppPolicy) SetSourceLine(line int) {
+	a.SourceLine = line
+}
+
+func (a *AppPolicy) GetSourceLine() int {
+	return a.SourceLine
 }
 
 func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -83,6 +157,7 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 			string(AppPolicyTypeTerraformModule),
 			string(AppPolicyTypeHelmChart),
 			string(AppPolicyTypeKubernetesManifest),
+			string(AppPolicyTypeContainerImage),
 			string(AppPolicyTypeSandbox),
 		).
 		Field("engine").Short("policy engine").
