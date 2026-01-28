@@ -3,7 +3,7 @@ package bubbles
 import (
 	"context"
 	"fmt"
-	"time"
+	"sync"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -115,14 +115,14 @@ func (m SpinnerModel) View() string {
 func (m SpinnerModel) renderResult() string {
 	if m.result.Success {
 		style := lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
-		return style.Render(fmt.Sprintf("✓ %s", m.formatText(m.result.Message)))
+		return style.Render(fmt.Sprintf("✓ %s", m.result.Message))
 	}
 
 	// Handle error display
 	if m.result.Error != nil {
-		errorMsg := m.formatErrorMessage(m.result.Error)
+		errorMsg := formatErrorMessage(m.result.Error)
 		style := lipgloss.NewStyle().Foreground(styles.ErrorColor).Bold(true)
-		return style.Render(fmt.Sprintf("✗ %s", m.formatText(errorMsg)))
+		return style.Render(fmt.Sprintf("✗ %s", errorMsg))
 	}
 
 	return ""
@@ -144,7 +144,7 @@ func (m SpinnerModel) formatText(text string) string {
 }
 
 // formatErrorMessage formats error messages similar to the original pterm logic
-func (m SpinnerModel) formatErrorMessage(err error) string {
+func formatErrorMessage(err error) string {
 	if hints := errors.FlattenHints(err); hints != "" {
 		return hints
 	}
@@ -162,9 +162,14 @@ func (m SpinnerModel) formatErrorMessage(err error) string {
 
 // SpinnerView provides a high-level interface similar to the original spinner_view
 type SpinnerView struct {
-	json    bool
-	program *tea.Program
-	model   SpinnerModel
+	json       bool
+	program    *tea.Program
+	model      SpinnerModel
+	wg         sync.WaitGroup
+	mu         sync.Mutex
+	noTTY      bool
+	programErr error // stores the error from program.Run() if any
+	lastUpdate string
 }
 
 // NewSpinnerView creates a new spinner view
@@ -180,15 +185,22 @@ func (v *SpinnerView) Start(text string) {
 		return
 	}
 
+	v.lastUpdate = text
 	v.model = NewSpinnerModel(v.json)
 	v.model.message = text
 
 	v.program = tea.NewProgram(v.model)
 
 	// Run in background
+	v.wg.Add(1)
 	go func() {
+		defer v.wg.Done()
 		if _, err := v.program.Run(); err != nil {
-			// Handle error if needed
+			// If bubbletea fails (no TTY), fall back to simple mode
+			v.mu.Lock()
+			v.noTTY = true
+			v.programErr = err
+			v.mu.Unlock()
 		}
 	}()
 }
@@ -219,8 +231,19 @@ func (v *SpinnerView) Success(text string) {
 		Message: text,
 	})
 
-	// Give the UI time to render the result
-	time.Sleep(100 * time.Millisecond)
+	// Wait for the program to finish
+	v.wg.Wait()
+
+	// Check if program failed (no TTY) after waiting for it to complete.
+	// If so, the program didn't render the success, so print it directly.
+	v.mu.Lock()
+	noTTY := v.noTTY
+	v.mu.Unlock()
+
+	if noTTY {
+		style := lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
+		fmt.Println(style.Render(fmt.Sprintf("✓ %s", text)))
+	}
 }
 
 // Fail completes the spinner with an error message
@@ -235,13 +258,26 @@ func (v *SpinnerView) Fail(err error) {
 		return
 	}
 
+	// Send the result message to the program
 	v.program.Send(SpinnerResultMsg{
 		Success: false,
 		Error:   err,
 	})
 
-	// Give the UI time to render the result
-	time.Sleep(100 * time.Millisecond)
+	// Wait for the program to finish
+	v.wg.Wait()
+
+	// Check if program failed (no TTY) after waiting for it to complete.
+	// If so, the program didn't render the error, so print it directly.
+	v.mu.Lock()
+	noTTY := v.noTTY
+	v.mu.Unlock()
+
+	if noTTY {
+		errorMsg := formatErrorMessage(err)
+		style := lipgloss.NewStyle().Foreground(styles.ErrorColor).Bold(true)
+		fmt.Println(style.Render(fmt.Sprintf("✗ %s", errorMsg)))
+	}
 }
 
 // RunSpinnerWithContext runs a spinner for the duration of a context operation

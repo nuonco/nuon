@@ -125,7 +125,7 @@ cd services/dashboard-ui && npm test
 ```bash
 # IMPORTANT: Run this after making changes to Go types, temporal activities, 
 # or any other code that has generated counterparts
-./run-nuonctl.sh scripts reset-generated-code
+nctl scripts reset-generated-code
 ```
 
 **When to run code generation:**
@@ -144,18 +144,18 @@ The Nuon monorepo provides a sophisticated orchestration system for running the 
 **Run all services (RECOMMENDED):**
 ```bash
 # First regenerate all code (Go types, temporal activities, swagger docs)
-./run-nuonctl.sh scripts reset-generated-code
+nctl scripts reset-generated-code
 
 # Start infrastructure dependencies
-./run-nuonctl.sh scripts exec reset-dependencies
+nctl scripts exec reset-dependencies
 
 # Then start all application services - SIMPLIFIED COMMAND
-./run-nuonctl.sh dev --dev-all
+nctl dev --dev-all
 ```
 
 **Alternative service-specific orchestration (if needed):**
 ```bash
-./run-nuonctl.sh services dev --dev-all --skip cli,runner
+nctl services dev --dev-all --skip cli,runner
 ```
 
 > **⚠️ Important**: The simplified `dev --dev-all` command is more reliable than the service-specific `services dev --dev-all` variant. It properly handles service startup orchestration and dependencies, especially for the ctl-api's critical code generation phase.
@@ -182,23 +182,23 @@ When running the full stack, you get:
 
 1. **Regenerate Code:**
    ```bash
-   ./run-nuonctl.sh scripts reset-generated-code
+   nctl scripts reset-generated-code
    ```
    This ensures all Go types, Temporal activities, and Swagger documentation are up-to-date.
 
 2. **Start Infrastructure Dependencies:**
    ```bash
-   ./run-nuonctl.sh scripts exec reset-dependencies
+   nctl scripts exec reset-dependencies
    ```
    This runs `docker-compose up` with all required databases and supporting services.
 
 3. **Start Application Services:**
    ```bash
    # RECOMMENDED: Simplified orchestration
-   ./run-nuonctl.sh dev --dev-all
+   nctl dev --dev-all
 
    # Alternative: Service-specific orchestration
-   ./run-nuonctl.sh services dev --dev-all --skip cli,runner
+   nctl services dev --dev-all --skip cli,runner
    ```
 
 4. **Verify Services:**
@@ -232,17 +232,17 @@ Infrastructure:
 
 **Backend-focused development:**
 ```bash
-./run-nuonctl.sh services dev --dev ctl-api
+nctl services dev --dev ctl-api
 ```
 
 **Frontend-focused development:**
 ```bash
-./run-nuonctl.sh services dev --dev dashboard-ui,ctl-api
+nctl services dev --dev dashboard-ui,ctl-api
 ```
 
 **Debug mode:**
 ```bash
-./run-nuonctl.sh services dev --dev-all --debug
+nctl services dev --dev-all --debug
 ```
 
 ### Prerequisites for Full Stack
@@ -256,7 +256,7 @@ Infrastructure:
 ### Troubleshooting Full Stack
 
 **Command Selection Issues:**
-- **Use simplified command**: `./run-nuonctl.sh dev --dev-all` is more reliable than `services dev --dev-all`
+- **Use simplified command**: `nctl dev --dev-all` is more reliable than `services dev --dev-all`
 - **CTL-API startup problems**: The simplified command properly handles ctl-api's code generation dependencies
 - **Service orchestration**: Simplified command manages startup sequence and service dependencies automatically
 
@@ -524,22 +524,22 @@ The Nuon monorepo uses a sophisticated development orchestration system built ar
 
 **Primary Development Command:**
 ```bash
-./run-nuonctl.sh services dev --dev <service-name>
+nctl services dev --dev <service-name>
 ```
 
 **Common Usage Examples:**
 ```bash
 # Run dashboard UI locally
-./run-nuonctl.sh services dev --dev dashboard-ui
+nctl services dev --dev dashboard-ui
 
 # Run multiple services
-./run-nuonctl.sh services dev --dev dashboard-ui,ctl-api
+nctl services dev --dev dashboard-ui,ctl-api
 
 # Run all services in development mode
-./run-nuonctl.sh services dev --dev-all
+nctl services dev --dev-all
 
 # Skip specific services
-./run-nuonctl.sh services dev --dev-all --skip cli,runner
+nctl services dev --dev-all --skip cli,runner
 ```
 
 ### Configuration Architecture
@@ -633,7 +633,7 @@ service-name:
 **Service Discovery:**
 ```bash
 # List all available services
-./run-nuonctl.sh services --help
+nctl services --help
 
 # Available services: ctl-api, dashboard-ui, cli, runner, wiki, docs, website
 ```
@@ -641,32 +641,32 @@ service-name:
 **Development Modes:**
 ```bash
 # Local development (runs npm/go commands directly)
-./run-nuonctl.sh services dev --dev dashboard-ui --dev-type local
+nctl services dev --dev dashboard-ui --dev-type local
 
 # Docker development (runs services in containers)
-./run-nuonctl.sh services dev --dev dashboard-ui --dev-type docker
+nctl services dev --dev dashboard-ui --dev-type docker
 ```
 
 **Service Control:**
 ```bash
 # Watch for file changes and auto-restart (default: enabled)
-./run-nuonctl.sh services dev --dev dashboard-ui --watch
+nctl services dev --dev dashboard-ui --watch
 
 # Disable file watching
-./run-nuonctl.sh services dev --dev dashboard-ui --watch=false
+nctl services dev --dev dashboard-ui --watch=false
 
 # Pull latest images instead of building locally
-./run-nuonctl.sh services dev --dev dashboard-ui --pull
+nctl services dev --dev dashboard-ui --pull
 
 # Build images locally instead of pulling
-./run-nuonctl.sh services dev --dev dashboard-ui --pull=false
+nctl services dev --dev dashboard-ui --pull=false
 ```
 
 ### Environment Variable Debugging
 
 **Enable Debug Mode:**
 ```bash
-./run-nuonctl.sh services dev --dev dashboard-ui --debug
+nctl services dev --dev dashboard-ui --debug
 ```
 
 This will show:
@@ -696,7 +696,7 @@ dashboard-ui:
 #### Multi-Service Development
 ```bash
 # Run API and UI together with custom configs
-./run-nuonctl.sh services dev --dev ctl-api,dashboard-ui
+nctl services dev --dev ctl-api,dashboard-ui
 ```
 
 ### Troubleshooting Development Issues
@@ -722,7 +722,7 @@ dashboard-ui:
 
 ```bash
 # Reset and regenerate all code
-./run-nuonctl.sh scripts reset-generated-code
+nctl scripts reset-generated-code
 
 # This is required after:
 # - Adding/modifying Go struct types

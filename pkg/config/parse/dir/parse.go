@@ -68,6 +68,7 @@ func (p *parser) parse(ctx context.Context) error {
 			}
 
 			obj := reflect.New(elemType).Interface()
+			filePath := fieldOpts.Name + p.opts.Ext
 			parsed, err := p.parseFile(fieldOpts.Name, obj)
 			if err != nil {
 				return errors.Wrap(err, "unable to load file for "+fieldOpts.Name)
@@ -75,9 +76,14 @@ func (p *parser) parse(ctx context.Context) error {
 
 			if !parsed {
 				if fieldOpts.Required {
-					return fmt.Errorf("missing required file %s", fieldOpts.Name+p.opts.Ext)
+					return fmt.Errorf("missing required file %s", filePath)
 				}
 				continue
+			}
+
+			// Set the source file if the object implements sourceFileSetter
+			if setter, ok := obj.(sourceFileSetter); ok {
+				setter.SetSourceFile(filePath)
 			}
 
 			if fieldValue.CanSet() && !reflect.ValueOf(obj).IsZero() {

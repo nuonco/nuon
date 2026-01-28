@@ -123,3 +123,93 @@ func TestFormatValidationErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatValidationErrors_Policies(t *testing.T) {
+	tests := []struct {
+		name     string
+		errors   []gojsonschema.ResultError
+		policies *config.PoliciesConfig
+		expected []string
+	}{
+		{
+			name: "policy error with source file and line number",
+			errors: []gojsonschema.ResultError{
+				newMockError("policies.policy.0.type", "must be one of the following: kubernetes_cluster, terraform_module"),
+			},
+			policies: &config.PoliciesConfig{
+				Policies: []config.AppPolicy{
+					{Type: "invalid", SourceFile: "policies/my-policy.toml", SourceLine: 15},
+				},
+			},
+			expected: []string{"policies/my-policy.toml:L15.type: must be one of the following: kubernetes_cluster, terraform_module"},
+		},
+		{
+			name: "policy error with source file but no line number falls back to policy number",
+			errors: []gojsonschema.ResultError{
+				newMockError("policies.policy.0.type", "must be one of the following: kubernetes_cluster, terraform_module"),
+			},
+			policies: &config.PoliciesConfig{
+				Policies: []config.AppPolicy{
+					{Type: "invalid", SourceFile: "policies/my-policy.toml"},
+				},
+			},
+			expected: []string{"policies/my-policy.toml (policy 1).type: must be one of the following: kubernetes_cluster, terraform_module"},
+		},
+		{
+			name: "policy error without source file falls back to index",
+			errors: []gojsonschema.ResultError{
+				newMockError("policies.policy.0.type", "is required"),
+			},
+			policies: &config.PoliciesConfig{
+				Policies: []config.AppPolicy{
+					{Type: "kubernetes_cluster", SourceFile: ""},
+				},
+			},
+			expected: []string{"policies.policy.0.type: is required"},
+		},
+		{
+			name: "policy nested error with source file and line number",
+			errors: []gojsonschema.ResultError{
+				newMockError("policies.policy.2.engine", "must be one of the following: kyverno, opa"),
+			},
+			policies: &config.PoliciesConfig{
+				Policies: []config.AppPolicy{
+					{Type: "kubernetes_cluster", SourceFile: "policies/first.toml", SourceLine: 1},
+					{Type: "terraform_module", SourceFile: "policies/second.toml", SourceLine: 10},
+					{Type: "helm_chart", SourceFile: "policies/third.toml", SourceLine: 25},
+				},
+			},
+			expected: []string{"policies/third.toml:L25.engine: must be one of the following: kyverno, opa"},
+		},
+		{
+			name: "policy error with out-of-range index falls back to index",
+			errors: []gojsonschema.ResultError{
+				newMockError("policies.policy.10.type", "Invalid type"),
+			},
+			policies: &config.PoliciesConfig{
+				Policies: []config.AppPolicy{
+					{Type: "kubernetes_cluster", SourceFile: "policies/first.toml"},
+				},
+			},
+			expected: []string{"policies.policy.10.type: Invalid type"},
+		},
+		{
+			name: "policy error with nil policies config falls back to index",
+			errors: []gojsonschema.ResultError{
+				newMockError("policies.policy.0.type", "Invalid type"),
+			},
+			policies: nil,
+			expected: []string{"policies.policy.0.type: Invalid type"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.AppConfig{
+				Policies: tt.policies,
+			}
+			result := formatValidationErrors(tt.errors, cfg)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

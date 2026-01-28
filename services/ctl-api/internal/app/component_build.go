@@ -14,11 +14,12 @@ import (
 type ComponentBuildStatus string
 
 const (
-	ComponentBuildStatusPlanning ComponentBuildStatus = "planning"
-	ComponentBuildStatusError    ComponentBuildStatus = "error"
-	ComponentBuildStatusBuilding ComponentBuildStatus = "building"
-	ComponentBuildStatusActive   ComponentBuildStatus = "active"
-	ComponentBuildStatusDeleting ComponentBuildStatus = "deleting"
+	ComponentBuildStatusPlanning     ComponentBuildStatus = "planning"
+	ComponentBuildStatusError        ComponentBuildStatus = "error"
+	ComponentBuildStatusBuilding     ComponentBuildStatus = "building"
+	ComponentBuildStatusActive       ComponentBuildStatus = "active"
+	ComponentBuildStatusDeleting     ComponentBuildStatus = "deleting"
+	ComponentBuildStatusPolicyFailed ComponentBuildStatus = "policy_failed"
 )
 
 type ComponentBuild struct {
