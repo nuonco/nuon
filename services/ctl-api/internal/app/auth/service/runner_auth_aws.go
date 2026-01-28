@@ -6,10 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
@@ -22,6 +27,45 @@ const (
 	runnerIDTagKey = "runner.nuon.co/id"
 	// defaultRunnerTokenTimeout is the default expiration time for runner tokens
 	defaultRunnerTokenTimeout = time.Hour * 24 * 90
+
+	// presignedRequestTimeout is the timeout for executing presigned AWS requests
+	presignedRequestTimeout = 10 * time.Second
+	// maxPresignedResponseSize is the maximum response body size (64KB - AWS XML responses are small)
+	maxPresignedResponseSize = 64 * 1024
+)
+
+var (
+	// awsSTSHostPattern matches valid AWS STS endpoints (global and regional)
+	awsSTSHostPattern = regexp.MustCompile(`^sts(\.([a-z]{2}-[a-z]+-\d|us-gov-[a-z]+-\d|cn-[a-z]+-\d))?\.amazonaws\.com$`)
+	// awsEC2HostPattern matches valid AWS EC2 regional endpoints
+	awsEC2HostPattern = regexp.MustCompile(`^ec2\.([a-z]{2}-[a-z]+-\d|us-gov-[a-z]+-\d|cn-[a-z]+-\d)\.amazonaws\.com$`)
+
+	// allowedPresignedHeaders is the set of headers allowed in presigned requests
+	allowedPresignedHeaders = map[string]struct{}{
+		"host":                 {},
+		"x-amz-date":           {},
+		"x-amz-security-token": {},
+		"x-amz-content-sha256": {},
+		"authorization":        {},
+		"x-amz-algorithm":      {},
+		"x-amz-credential":     {},
+		"x-amz-signedheaders":  {},
+		"x-amz-signature":      {},
+		"x-amz-expires":        {},
+	}
+
+	// presignedHTTPClient is a shared HTTP client configured for security
+	presignedHTTPClient = &http.Client{
+		Timeout: presignedRequestTimeout,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse // don't follow redirects
+		},
+		Transport: &http.Transport{
+			TLSHandshakeTimeout:   5 * time.Second,
+			ResponseHeaderTimeout: 5 * time.Second,
+			DisableKeepAlives:     true,
+		},
+	}
 )
 
 // RunnerAuthAWSRequest contains the presigned AWS requests from a runner
@@ -86,44 +130,47 @@ type DescribeTagsResponse struct {
 func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 	var req RunnerAuthAWSRequest
 	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		s.l.Warn("runner auth: failed to parse request", zap.Error(err))
+		ctx.Error(errors.New("invalid request"))
 		return
 	}
 
 	if err := s.v.Struct(req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		s.l.Warn("runner auth: request validation failed", zap.Error(err))
+		ctx.Error(errors.New("invalid request"))
 		return
 	}
 
-	// Execute the presigned STS GetCallerIdentity request
-	stsResponse, err := s.executePresignedRequest(ctx, req.STSRequest)
+	reqCtx := ctx.Request.Context()
+
+	stsResponse, err := s.executePresignedRequest(reqCtx, req.STSRequest, presignedRequestTypeSTS)
 	if err != nil {
-		ctx.Error(fmt.Errorf("failed to execute STS request: %w", err))
+		s.l.Warn("runner auth: STS request failed", zap.Error(err))
+		ctx.Error(errors.New("authentication failed"))
 		return
 	}
 
-	// Parse the STS response
 	var callerIdentity GetCallerIdentityResponse
 	if err := xml.Unmarshal(stsResponse, &callerIdentity); err != nil {
-		ctx.Error(fmt.Errorf("failed to parse STS response: %w", err))
+		s.l.Warn("runner auth: failed to parse STS response", zap.Error(err))
+		ctx.Error(errors.New("authentication failed"))
 		return
 	}
 
-	// Execute the presigned EC2 DescribeTags request
-	tagsResponse, err := s.executePresignedRequest(ctx, req.TagsRequest)
+	tagsResponse, err := s.executePresignedRequest(reqCtx, req.TagsRequest, presignedRequestTypeEC2)
 	if err != nil {
-		ctx.Error(fmt.Errorf("failed to execute EC2 tags request: %w", err))
+		s.l.Warn("runner auth: EC2 tags request failed", zap.Error(err))
+		ctx.Error(errors.New("authentication failed"))
 		return
 	}
 
-	// Parse the EC2 tags response
 	var describeTags DescribeTagsResponse
 	if err := xml.Unmarshal(tagsResponse, &describeTags); err != nil {
-		ctx.Error(fmt.Errorf("failed to parse EC2 tags response: %w", err))
+		s.l.Warn("runner auth: failed to parse EC2 tags response", zap.Error(err))
+		ctx.Error(errors.New("authentication failed"))
 		return
 	}
 
-	// Extract tags into a map
 	tags := make(map[string]string)
 	var instanceID string
 	for _, tag := range describeTags.TagSet.Items {
@@ -133,75 +180,170 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		}
 	}
 
-	// Get the runner ID from the instance tags
 	runnerID, ok := tags[runnerIDTagKey]
 	if !ok || runnerID == "" {
-		ctx.Error(fmt.Errorf("missing required tag %s on instance %s", runnerIDTagKey, instanceID))
+		s.l.Warn("runner auth: missing runner ID tag",
+			zap.String("instance_id", instanceID),
+			zap.String("expected_tag", runnerIDTagKey))
+		ctx.Error(errors.New("authentication failed"))
 		return
 	}
 
-	// Look up the runner with its runner group in the database
-	runner, err := s.getRunnerWithGroup(ctx, runnerID)
+	runner, err := s.getRunnerWithGroup(reqCtx, runnerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.Error(fmt.Errorf("runner not found: %s", runnerID))
-			return
+			s.l.Warn("runner auth: runner not found", zap.String("runner_id", runnerID))
+		} else {
+			s.l.Error("runner auth: failed to get runner", zap.String("runner_id", runnerID), zap.Error(err))
 		}
-		ctx.Error(fmt.Errorf("failed to get runner: %w", err))
+		ctx.Error(errors.New("authentication failed"))
 		return
 	}
 
-	// Validate the caller's AWS account against the install's expected account
-	if err := s.validateRunnerAWSIdentity(ctx, runner, callerIdentity.Result.Account, callerIdentity.Result.Arn); err != nil {
-		ctx.Error(fmt.Errorf("AWS identity validation failed: %w", err))
+	if err := s.validateRunnerAWSIdentity(reqCtx, runner, callerIdentity.Result.Account); err != nil {
+		s.l.Warn("runner auth: AWS identity validation failed",
+			zap.String("runner_id", runnerID),
+			zap.String("caller_account", callerIdentity.Result.Account),
+			zap.Error(err))
+		ctx.Error(errors.New("authentication failed"))
 		return
 	}
 
-	// Generate authentication token for the runner
-	token, err := s.createRunnerToken(ctx, runner.ID)
+	token, err := s.createRunnerToken(reqCtx, runner.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("failed to create runner token: %w", err))
+		s.l.Error("runner auth: failed to create token", zap.String("runner_id", runnerID), zap.Error(err))
+		ctx.Error(errors.New("internal error"))
 		return
 	}
 
-	response := RunnerAuthAWSResponse{
+	s.l.Info("runner auth: authentication successful",
+		zap.String("runner_id", runner.ID),
+		zap.String("instance_id", instanceID),
+		zap.String("account_id", callerIdentity.Result.Account))
+
+	ctx.JSON(http.StatusOK, RunnerAuthAWSResponse{
 		Authenticated: true,
 		AccountID:     callerIdentity.Result.Account,
 		ARN:           callerIdentity.Result.Arn,
 		InstanceID:    instanceID,
 		RunnerID:      runner.ID,
 		Token:         token,
+	})
+}
+
+// presignedRequestType identifies the type of presigned request for validation
+type presignedRequestType int
+
+const (
+	presignedRequestTypeSTS presignedRequestType = iota
+	presignedRequestTypeEC2
+)
+
+// validatePresignedRequest validates a presigned AWS request to prevent SSRF attacks
+func validatePresignedRequest(presignedReq *awstypes.PresignedRequest, reqType presignedRequestType) error {
+	if presignedReq.Method != http.MethodGet && presignedReq.Method != http.MethodPost {
+		return errors.New("only GET and POST methods are allowed")
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	u, err := url.Parse(presignedReq.URL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	if u.Scheme != "https" {
+		return errors.New("only HTTPS scheme is allowed")
+	}
+
+	if u.User != nil {
+		return errors.New("URL must not contain userinfo")
+	}
+
+	host := strings.ToLower(u.Hostname())
+
+	if err := validateNotIPAddress(host); err != nil {
+		return err
+	}
+
+	switch reqType {
+	case presignedRequestTypeSTS:
+		if !awsSTSHostPattern.MatchString(host) {
+			return fmt.Errorf("invalid STS host: %s", host)
+		}
+		if err := validateSTSAction(u.Query()); err != nil {
+			return err
+		}
+	case presignedRequestTypeEC2:
+		if !awsEC2HostPattern.MatchString(host) {
+			return fmt.Errorf("invalid EC2 host: %s", host)
+		}
+		if err := validateEC2Action(u.Query()); err != nil {
+			return err
+		}
+	}
+
+	for key := range presignedReq.Headers {
+		if _, ok := allowedPresignedHeaders[strings.ToLower(key)]; !ok {
+			return fmt.Errorf("header not allowed: %s", key)
+		}
+	}
+
+	return nil
+}
+
+// validateNotIPAddress rejects any IP address - only FQDNs are allowed since we only reach AWS
+func validateNotIPAddress(host string) error {
+	if net.ParseIP(host) != nil {
+		return errors.New("IP addresses are not allowed, only FQDNs")
+	}
+	return nil
+}
+
+// validateSTSAction ensures the STS request is only for GetCallerIdentity
+func validateSTSAction(query url.Values) error {
+	action := query.Get("Action")
+	if action != "GetCallerIdentity" {
+		return fmt.Errorf("only GetCallerIdentity action is allowed, got: %s", action)
+	}
+	return nil
+}
+
+// validateEC2Action ensures the EC2 request is only for DescribeTags
+func validateEC2Action(query url.Values) error {
+	action := query.Get("Action")
+	if action != "DescribeTags" {
+		return fmt.Errorf("only DescribeTags action is allowed, got: %s", action)
+	}
+	return nil
 }
 
 // executePresignedRequest executes a presigned AWS request and returns the response body
-func (s *service) executePresignedRequest(ctx context.Context, presignedReq *awstypes.PresignedRequest) ([]byte, error) {
+func (s *service) executePresignedRequest(ctx context.Context, presignedReq *awstypes.PresignedRequest, reqType presignedRequestType) ([]byte, error) {
+	if err := validatePresignedRequest(presignedReq, reqType); err != nil {
+		return nil, fmt.Errorf("presigned request validation failed: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, presignedReq.Method, presignedReq.URL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Set the presigned headers
 	for key, value := range presignedReq.Headers {
 		req.Header.Set(key, value)
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := presignedHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxPresignedResponseSize))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("AWS request failed with status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("AWS request failed with status %d", resp.StatusCode)
 	}
 
 	return body, nil
@@ -235,9 +377,8 @@ func (s *service) getInstallByRunnerGroup(ctx context.Context, runnerGroup *app.
 	return &install, nil
 }
 
-// TODO(fd): remove the caller ARN
 // validateRunnerAWSIdentity validates the caller's AWS identity against the expected install configuration
-func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID, callerARN string) error {
+func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string) error {
 	// Get the install associated with this runner
 	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
 	if err != nil {
@@ -264,11 +405,6 @@ func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Run
 	if callerAccountID != expectedAccountID {
 		return fmt.Errorf("AWS account ID mismatch: got %s, expected %s", callerAccountID, expectedAccountID)
 	}
-
-	// Optionally verify the caller's ARN matches the expected pattern
-	// The runner should be using an IAM role in the customer's account
-	// For now, we just verify the account ID matches
-	_ = callerARN
 
 	return nil
 }
