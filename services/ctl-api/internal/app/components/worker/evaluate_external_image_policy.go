@@ -11,11 +11,13 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, jobID string) error {
+func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, buildJobID, runnerID, componentName string) error {
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "evaluating image policies")
 
 	l, err := log.WorkflowLogger(ctx)
@@ -25,13 +27,60 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, j
 
 	l.Info("starting policy evaluation", zap.String("build_id", buildID))
 
-	metadataResult, err := activities.AwaitFetchImageMetadata(ctx, &activities.FetchImageMetadataRequest{
+	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get log stream ID", err))
+		return fmt.Errorf("unable to get log stream ID: %w", err)
+	}
+
+	// Create a fetch-image-metadata job on the runner
+	metadataJob, err := activities.AwaitCreateFetchImageMetadataJob(ctx, &activities.CreateFetchImageMetadataJobRequest{
+		BuildID:     buildID,
+		RunnerID:    runnerID,
+		LogStreamID: logStreamID,
+		Metadata: map[string]string{
+			"component_build_id": buildID,
+			"build_job_id":       buildJobID,
+			"component_name":     componentName,
+		},
+	})
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to create metadata job", err))
+		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to create metadata job")
+		return fmt.Errorf("unable to create metadata job: %w", err)
+	}
+
+	// Save the job plan
+	if err := activities.AwaitSaveFetchImageMetadataPlan(ctx, &activities.SaveFetchImageMetadataPlanRequest{
+		JobID:   metadataJob.ID,
 		BuildID: buildID,
+	}); err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to save metadata job plan", err))
+		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to save metadata job plan")
+		return fmt.Errorf("unable to save metadata job plan: %w", err)
+	}
+
+	// Execute the job (queue and poll for completion)
+	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "fetching image metadata")
+	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   runnerID,
+		JobID:      metadataJob.ID,
+		WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to fetch image metadata", err))
-		w.updateJobStatusForPolicyFailure(ctx, jobID, "unable to fetch image metadata")
+		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to fetch image metadata")
 		return fmt.Errorf("unable to fetch image metadata: %w", err)
+	}
+
+	// Get the metadata from the job result
+	metadataResult, err := activities.AwaitGetImageMetadataFromJobResult(ctx, &activities.GetImageMetadataFromJobResultRequest{
+		JobID: metadataJob.ID,
+	})
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get image metadata", err))
+		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to get image metadata")
+		return fmt.Errorf("unable to get image metadata: %w", err)
 	}
 
 	prepResult, err := activities.AwaitPrepExternalImagePolicy(ctx, &activities.PrepExternalImagePolicyRequest{
@@ -40,7 +89,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, j
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to prepare policy evaluation", err))
-		w.updateJobStatusForPolicyFailure(ctx, jobID, "unable to prepare policy evaluation")
+		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to prepare policy evaluation")
 		return fmt.Errorf("unable to prepare policy evaluation: %w", err)
 	}
 
@@ -75,7 +124,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, j
 		var result sharedactivities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
 			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("policy evaluation failed", err))
-			w.updateJobStatusForPolicyFailure(ctx, jobID, "policy evaluation failed")
+			w.updateJobStatusForPolicyFailure(ctx, buildJobID, "policy evaluation failed")
 			return fmt.Errorf("policy evaluation failed: %w", err)
 		}
 		allViolations = append(allViolations, result.Violations...)
@@ -99,7 +148,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, j
 		description := formatPolicyViolations("policy violations", denyViolations)
 		l.Error("policy evaluation failed", zap.Int("deny_count", len(denyViolations)))
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPolicyFailed, description)
-		w.updateJobStatusForPolicyFailure(ctx, jobID, description)
+		w.updateJobStatusForPolicyFailure(ctx, buildJobID, description)
 		return fmt.Errorf("image policy check failed: %s", description)
 	}
 

@@ -80,6 +80,11 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 			if err != nil {
 				return nil, fmt.Errorf("unable to unmarshal sync secret plan: %w", err)
 			}
+		case app.RunnerJobTypeFetchImageMetadata:
+			err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.FetchImageMetadataPlan)
+			if err != nil {
+				return nil, fmt.Errorf("unable to unmarshal fetch image metadata plan: %w", err)
+			}
 		default:
 			return nil, fmt.Errorf("unknown sync job type: %s", runnerJob.Type)
 		}
