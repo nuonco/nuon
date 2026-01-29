@@ -209,7 +209,7 @@ func NewTestingConfigStructure(name string) *ConfigStructure {
 func TestGenerate(t *testing.T) {
 	defer func() {
 		// cleanup
-		err := os.RemoveAll("./test-config-init")
+		err := os.RemoveAll("./test-app-init")
 		if err != nil {
 			t.Errorf("Failed to clean generated config %v", err)
 		}
