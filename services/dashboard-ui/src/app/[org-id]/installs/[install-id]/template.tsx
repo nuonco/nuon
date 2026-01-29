@@ -50,7 +50,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
                 text: 'Runner',
               },
               {
-                path: '/sandbox', //`/sandbox/${install?.install_sandbox_runs?.at(0)?.id || ""}`,
+                path: '/sandbox',
                 iconVariant: 'ShippingContainer',
                 text: 'Sandbox',
               },

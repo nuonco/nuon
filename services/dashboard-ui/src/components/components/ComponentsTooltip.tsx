@@ -63,7 +63,7 @@ export const ComponentsTooltip = ({
   return (
     <ContextTooltip
       showCount
-      items={componentSummaries}
+      items={componentSummaries || []}
       title={title}
       position={position}
       {...props}

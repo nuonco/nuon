@@ -127,7 +127,7 @@ export const InstallStatuses = ({
       }
     >
       <Status
-        status={install.drifted_objects?.length ? 'warn' : 'active'}
+        status={install?.drifted_objects?.length ? 'warn' : 'active'}
         variant="badge"
       >
         {isLabelHidden
@@ -206,7 +206,7 @@ export const InstallStatuses = ({
         install?.composite_component_status
       )}
       componentSummaries={getContextTooltipItemsFromInstallComponents(
-        install.install_components as TInstallComponent[],
+        install?.install_components as TInstallComponent[],
         `/${install.org_id}/installs/${install.id}/components`
       )}
       position={tooltipPosition}
