@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createOrg } from '@/actions/orgs/create-org'
 import { useAccount } from '@/hooks/use-account'
@@ -87,13 +87,6 @@ export const useAutoOrgCreation = ({
     setError(null)
     createOrgAutomatically()
   }
-
-  // Auto-trigger creation when conditions are met
-  useEffect(() => {
-    if (shouldAutoCreate()) {
-      createOrgAutomatically()
-    }
-  }, [account])
 
   return {
     isCreating,

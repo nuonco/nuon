@@ -12,6 +12,8 @@ import { CreateAccountStepContent } from '@/components/old/Apps/CreateAccountSte
 import { CreateAppStepContent } from '@/components/old/Apps/CreateAppStepContent'
 import { InstallCreationStepContent } from '@/components/old/Apps/InstallCreationStepContent'
 import { OrgCreationStepContent } from '@/components/old/Apps/OrgCreationStepContent'
+import { CLIInstallStepContent } from '@/components/old/Apps/CLIInstallStepContent'
+import { AppSyncStepContent } from '@/components/old/Apps/AppSyncStepContent'
 import { getUserJourneyStepMetadata } from '@/utils/user-journey-utils'
 
 const OnboardingNavigation: FC<{
@@ -139,18 +141,19 @@ export const OnboardingPageContent: FC = () => {
     (step: TUserJourneyStep) => !step.complete
   )
 
-  const displayStepIndex = manualStepIndex !== null ? manualStepIndex : 0
+  const defaultStepIndex =
+    firstIncompleteStepIndex !== -1
+      ? firstIncompleteStepIndex
+      : allJourneySteps.length - 1
+  const displayStepIndex =
+    manualStepIndex !== null ? manualStepIndex : defaultStepIndex
   const displayStep = allJourneySteps[displayStepIndex] || null
 
-  const shouldShowAdvanceButton =
-    displayStep?.complete &&
-    firstIncompleteStepIndex !== -1 &&
-    displayStepIndex !== firstIncompleteStepIndex
+  const nextStepIndex = displayStepIndex + 1
+  const nextStep = allJourneySteps[nextStepIndex]
+  const shouldShowAdvanceButton = nextStep !== undefined
 
-  const nextStepName =
-    firstIncompleteStepIndex !== -1
-      ? allJourneySteps[firstIncompleteStepIndex]?.name
-      : null
+  const nextStepName = nextStep?.name || null
 
   const orgId = getUserJourneyStepMetadata(
     account,
@@ -164,6 +167,31 @@ export const OnboardingPageContent: FC = () => {
     'app_created',
     'app_id'
   )
+
+  const savedJobTitle = getUserJourneyStepMetadata(
+    account,
+    'evaluation',
+    'account_created',
+    'jobTitle'
+  )
+  const savedCompanyName = getUserJourneyStepMetadata(
+    account,
+    'evaluation',
+    'account_created',
+    'companyName'
+  )
+  const savedNotes = getUserJourneyStepMetadata(
+    account,
+    'evaluation',
+    'account_created',
+    'notes'
+  )
+
+  const initialFormValues = {
+    jobTitle: savedJobTitle || '',
+    companyName: savedCompanyName || '',
+    notes: savedNotes || '',
+  }
 
   const handleComplete = () => {
     if (orgId) {
@@ -195,12 +223,12 @@ export const OnboardingPageContent: FC = () => {
     }
   }
 
-  const handleAdvanceToCurrentStep = () => {
-    if (firstIncompleteStepIndex === -1) return
+  const handleAdvanceToNextStep = () => {
+    if (nextStepIndex >= allJourneySteps.length) return
 
     setStepTransition('exit')
     setTimeout(() => {
-      setManualStepIndex(firstIncompleteStepIndex)
+      setManualStepIndex(nextStepIndex)
       setStepTransition('enter')
     }, 150)
     setTimeout(() => setStepTransition(null), 450)
@@ -221,8 +249,12 @@ export const OnboardingPageContent: FC = () => {
     switch (stepName) {
       case 'org_created':
         return 'Continue to Organization Setup'
+      case 'cli_installed':
+        return 'Continue to CLI Installation'
       case 'app_created':
         return 'Continue to App Creation'
+      case 'app_synced':
+        return 'Continue to App Sync'
       case 'install_created':
         return 'Continue to Install Creation'
       default:
@@ -282,6 +314,7 @@ export const OnboardingPageContent: FC = () => {
                     stepComplete={displayStep.complete}
                     account={account}
                     setSFData={setSFData}
+                    initialValues={initialFormValues}
                   />
                 ) : displayStep.name === 'org_created' ? (
                   <OrgCreationStepContent
@@ -290,11 +323,15 @@ export const OnboardingPageContent: FC = () => {
                     sfData={sfData}
                     skipNavigation
                   />
+                ) : displayStep.name === 'cli_installed' ? (
+                  <CLIInstallStepContent stepComplete={displayStep.complete} />
                 ) : displayStep.name === 'app_created' ? (
                   <CreateAppStepContent
                     stepComplete={displayStep.complete}
                     appId={displayStep.metadata?.app_id}
                   />
+                ) : displayStep.name === 'app_synced' ? (
+                  <AppSyncStepContent stepComplete={displayStep.complete} />
                 ) : displayStep.name === 'install_created' ? (
                   <InstallCreationStepContent
                     stepComplete={displayStep.complete}
@@ -314,8 +351,9 @@ export const OnboardingPageContent: FC = () => {
                     <Button
                       form="sf-form"
                       variant="primary"
-                      onClick={handleAdvanceToCurrentStep}
+                      onClick={handleAdvanceToNextStep}
                       className="px-3 py-1 text-sm"
+                      disabled={displayStep?.name !== 'account_created' && !displayStep?.complete}
                     >
                       <Text>{getAdvanceButtonText(nextStepName)}</Text>
                     </Button>

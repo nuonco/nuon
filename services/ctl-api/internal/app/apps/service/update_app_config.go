@@ -7,9 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -64,6 +66,19 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 		return
 	}
 
+	// Update journey step when config becomes active (app sync complete)
+	if req.Status == app.AppConfigStatusActive {
+		if acct, err := cctx.AccountFromGinContext(ctx); err == nil {
+			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, acct.ID, cfg.AppID); err != nil {
+				s.l.Warn("failed to update app_synced journey step",
+					zap.String("account_id", acct.ID),
+					zap.String("app_id", cfg.AppID),
+					zap.Error(err),
+				)
+			}
+		}
+	}
+
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
@@ -102,6 +117,19 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app inputs config: %w", err))
 		return
+	}
+
+	// Update journey step when config becomes active (app sync complete)
+	if req.Status == app.AppConfigStatusActive {
+		if acct, err := cctx.AccountFromGinContext(ctx); err == nil {
+			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, acct.ID, cfg.AppID); err != nil {
+				s.l.Warn("failed to update app_synced journey step",
+					zap.String("account_id", acct.ID),
+					zap.String("app_id", cfg.AppID),
+					zap.Error(err),
+				)
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)

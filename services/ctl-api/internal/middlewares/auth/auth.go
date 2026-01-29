@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -91,6 +93,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			}
 
 			cctx.SetAccountGinContext(ctx, acct)
+			m.detectCLIUsage(ctx, acct)
 			ctx.Next()
 			return
 		}
@@ -122,7 +125,42 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		cctx.SetAccountGinContext(ctx, acct)
+		m.detectCLIUsage(ctx, acct)
 		ctx.Next()
+	}
+}
+
+// isCLIUserAgent checks if the User-Agent indicates CLI usage
+func isCLIUserAgent(userAgent string) bool {
+	ua := strings.ToLower(userAgent)
+	cliPatterns := []string{
+		"nuon-cli",
+		"nuon/",
+		"go-http-client",
+		"curl",
+		"wget",
+		"postman",
+	}
+	for _, pattern := range cliPatterns {
+		if strings.Contains(ua, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+// detectCLIUsage checks if the request is from CLI and updates the journey step
+func (m *middleware) detectCLIUsage(ctx *gin.Context, acct *app.Account) {
+	userAgent := ctx.Request.UserAgent()
+	if !isCLIUserAgent(userAgent) {
+		return
+	}
+
+	if err := m.accountsHelpers.UpdateUserJourneyStepForCLIInstalled(ctx, acct.ID); err != nil {
+		m.l.Warn("failed to update cli_installed journey step",
+			zap.String("account_id", acct.ID),
+			zap.Error(err),
+		)
 	}
 }
 
