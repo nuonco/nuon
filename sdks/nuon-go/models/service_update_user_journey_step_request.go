@@ -19,6 +19,9 @@ type ServiceUpdateUserJourneyStepRequest struct {
 
 	// complete
 	Complete bool `json:"complete,omitempty"`
+
+	// metadata
+	Metadata any `json:"metadata,omitempty"`
 }
 
 // Validate validates this service update user journey step request
