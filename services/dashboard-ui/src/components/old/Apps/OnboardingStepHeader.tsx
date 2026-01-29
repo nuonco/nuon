@@ -16,14 +16,8 @@ const STEP_INFO = {
   org_created: {
     title: 'Set Up a Trial Organization',
   },
-  cli_installed: {
-    title: 'Install the Nuon CLI',
-  },
   app_created: {
     title: 'Create Your First App',
-  },
-  app_synced: {
-    title: 'Sync the App Config',
   },
   install_created: {
     title: 'Create an App Install',

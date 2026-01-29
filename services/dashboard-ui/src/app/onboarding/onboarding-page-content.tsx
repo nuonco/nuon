@@ -12,8 +12,6 @@ import { CreateAccountStepContent } from '@/components/old/Apps/CreateAccountSte
 import { CreateAppStepContent } from '@/components/old/Apps/CreateAppStepContent'
 import { InstallCreationStepContent } from '@/components/old/Apps/InstallCreationStepContent'
 import { OrgCreationStepContent } from '@/components/old/Apps/OrgCreationStepContent'
-import { CLIInstallStepContent } from '@/components/old/Apps/CLIInstallStepContent'
-import { AppSyncStepContent } from '@/components/old/Apps/AppSyncStepContent'
 import { getUserJourneyStepMetadata } from '@/utils/user-journey-utils'
 
 const OnboardingNavigation: FC<{
@@ -249,12 +247,8 @@ export const OnboardingPageContent: FC = () => {
     switch (stepName) {
       case 'org_created':
         return 'Continue to Organization Setup'
-      case 'cli_installed':
-        return 'Continue to CLI Installation'
       case 'app_created':
         return 'Continue to App Creation'
-      case 'app_synced':
-        return 'Continue to App Sync'
       case 'install_created':
         return 'Continue to Install Creation'
       default:
@@ -323,15 +317,11 @@ export const OnboardingPageContent: FC = () => {
                     sfData={sfData}
                     skipNavigation
                   />
-                ) : displayStep.name === 'cli_installed' ? (
-                  <CLIInstallStepContent stepComplete={displayStep.complete} />
                 ) : displayStep.name === 'app_created' ? (
                   <CreateAppStepContent
                     stepComplete={displayStep.complete}
                     appId={displayStep.metadata?.app_id}
                   />
-                ) : displayStep.name === 'app_synced' ? (
-                  <AppSyncStepContent stepComplete={displayStep.complete} />
                 ) : displayStep.name === 'install_created' ? (
                   <InstallCreationStepContent
                     stepComplete={displayStep.complete}

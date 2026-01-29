@@ -192,31 +192,3 @@ func (h *Helpers) UpdateUserJourneyStep(ctx context.Context, accountID, journeyN
 		NeedsRoleData:    false,
 	})
 }
-
-// UpdateUserJourneyStepForCLIInstalled updates the cli_installed step when CLI usage is detected
-func (h *Helpers) UpdateUserJourneyStepForCLIInstalled(ctx context.Context, accountID string) error {
-	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
-		AccountID:        accountID,
-		JourneyName:      "evaluation",
-		StepName:         "cli_installed",
-		Complete:         true,
-		CompletionMethod: "auto",
-		CompletionSource: "cli", // Detected via CLI User-Agent
-		Metadata:         make(map[string]interface{}),
-		NeedsRoleData:    false,
-	})
-}
-
-// UpdateUserJourneyStepForFirstAppSync updates the app_synced step when app config becomes active
-func (h *Helpers) UpdateUserJourneyStepForFirstAppSync(ctx context.Context, accountID, appID string) error {
-	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
-		AccountID:        accountID,
-		JourneyName:      "evaluation",
-		StepName:         "app_synced",
-		Complete:         true,
-		CompletionMethod: "auto",
-		CompletionSource: "cli", // Triggered when app config becomes active via sync
-		Metadata:         buildNavigationMetadata(&appID, nil, nil),
-		NeedsRoleData:    false,
-	})
-}

@@ -35,7 +35,7 @@ func (m *Client) createAccount(ctx context.Context, email, subject string, accou
 }
 
 // DefaultEvaluationJourney returns the evaluation journey for self-signup users
-// This is the 6-step journey: account_created, org_created, cli_installed, app_created, app_synced, install_created
+// This is the 4-step journey: account_created, org_created, app_created, install_created
 func DefaultEvaluationJourney() app.UserJourneys {
 	return app.UserJourneys{
 		{
@@ -61,26 +61,8 @@ func DefaultEvaluationJourney() app.UserJourneys {
 					Metadata:         make(map[string]interface{}),
 				},
 				{
-					Name:             "cli_installed",
-					Title:            "Install the CLI",
-					Complete:         false,
-					CompletedAt:      nil,
-					CompletionMethod: "",
-					CompletionSource: "",
-					Metadata:         make(map[string]interface{}),
-				},
-				{
 					Name:             "app_created",
 					Title:            "Create an app",
-					Complete:         false,
-					CompletedAt:      nil,
-					CompletionMethod: "",
-					CompletionSource: "",
-					Metadata:         make(map[string]interface{}),
-				},
-				{
-					Name:             "app_synced",
-					Title:            "Sync app configuration",
 					Complete:         false,
 					CompletedAt:      nil,
 					CompletionMethod: "",
