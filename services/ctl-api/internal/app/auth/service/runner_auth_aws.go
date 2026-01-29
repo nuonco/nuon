@@ -517,15 +517,19 @@ func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Run
 
 	// Extract role names and compare
 	// Caller ARN format (assumed role): arn:aws:sts::123456789012:assumed-role/role-name/session-name
-	// Expected ARN format (IAM role):   arn:aws:iam::123456789012:role/role-name
+	// Expected format: either just "role-name" or full ARN "arn:aws:iam::123456789012:role/role-name"
 	callerRoleName, err := extractRoleNameFromAssumedRoleARN(callerARN)
 	if err != nil {
 		return fmt.Errorf("failed to parse caller ARN: %w", err)
 	}
 
-	expectedRoleName, err := extractRoleNameFromIAMRoleARN(expectedRunnerRoleARN)
-	if err != nil {
-		return fmt.Errorf("failed to parse expected role ARN: %w", err)
+	// expectedRunnerRoleARN may be just the role name or a full ARN
+	expectedRoleName := expectedRunnerRoleARN
+	if strings.HasPrefix(expectedRunnerRoleARN, "arn:") {
+		expectedRoleName, err = extractRoleNameFromIAMRoleARN(expectedRunnerRoleARN)
+		if err != nil {
+			return fmt.Errorf("failed to parse expected role ARN: %w", err)
+		}
 	}
 
 	if callerRoleName != expectedRoleName {
