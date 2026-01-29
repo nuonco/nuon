@@ -9,9 +9,14 @@ import { MainSidebar } from './MainSidebar'
 interface IMainLayout {
   children: React.ReactNode
   versions: TNuonVersion
+  hideOrgContent?: boolean
 }
 
-export const MainLayout = ({ children, versions }: IMainLayout) => {
+export const MainLayout = ({
+  children,
+  versions,
+  hideOrgContent,
+}: IMainLayout) => {
   const { isSidebarOpen } = useSidebar()
 
   return (
@@ -24,7 +29,7 @@ export const MainLayout = ({ children, versions }: IMainLayout) => {
           }
         )}
       >
-        <MainSidebar versions={versions} />
+        <MainSidebar versions={versions} hideOrgContent={hideOrgContent} />
         {children}
       </div>
     </div>

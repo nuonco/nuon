@@ -5,12 +5,14 @@ import { MainSidebarButton } from './MainSidebarButton'
 
 export interface IMainTopbar extends React.HTMLAttributes<HTMLDivElement> {
   hideSidebarButtons?: boolean
+  hideOrgSettings?: boolean
 }
 
 export const MainTopbar = ({
   className,
   children,
   hideSidebarButtons = false,
+  hideOrgSettings = false,
   ...props
 }: IMainTopbar) => {
   return (
@@ -35,7 +37,7 @@ export const MainTopbar = ({
         {children}
 
         <div className="hidden md:flex ml-auto">
-          <UserDropdown alignment="right" />
+          <UserDropdown alignment="right" hideOrgSettings={hideOrgSettings} />
         </div>
       </div>
     </header>

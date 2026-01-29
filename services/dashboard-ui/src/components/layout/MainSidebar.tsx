@@ -13,7 +13,13 @@ import type { TNuonVersion } from '@/types'
 import { cn } from '@/utils/classnames'
 import { MainSidebarButton } from './MainSidebarButton'
 
-export const MainSidebar = ({ versions }: { versions: TNuonVersion }) => {
+export const MainSidebar = ({
+  versions,
+  hideOrgContent = false,
+}: {
+  versions: TNuonVersion
+  hideOrgContent?: boolean
+}) => {
   const { isSidebarOpen } = useSidebar()
   return (
     <aside
@@ -31,17 +37,22 @@ export const MainSidebar = ({ versions }: { versions: TNuonVersion }) => {
         </div>
       </header>
       <div className="p-4 flex flex-col gap-4 flex-auto">
-        <div className="flex h-14">
-          <OrgSwitcher />
-        </div>
+        {!hideOrgContent && (
+          <>
+            <div className="flex h-14">
+              <OrgSwitcher />
+            </div>
 
-        <MainNav />
+            <MainNav />
+          </>
+        )}
 
         <div className="flex flex-auto items-end md:hidden">
           <UserDropdown
             alignment="left"
             className="!w-full"
             buttonClassName="!w-full"
+            hideOrgSettings={hideOrgContent}
             icon={<Icon variant="CaretUp" />}
             position="above"
           />

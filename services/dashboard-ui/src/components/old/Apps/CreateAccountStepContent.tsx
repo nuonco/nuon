@@ -8,17 +8,24 @@ import { Card } from '@/components/common/Card'
 import { Input } from '@/components/common/form/Input'
 import { Textarea } from '@/components/common/form/Textarea'
 import { useUserJourney } from '@/hooks/use-user-journey'
+import { updateUserJourneyStepMetadata } from '@/actions/accounts/update-user-journey-step-metadata'
 
 interface CreateAppStepContentProps {
   stepComplete: boolean
   account: TAccount
   setSFData: (sfData: any) => void
+  initialValues?: {
+    jobTitle?: string
+    companyName?: string
+    notes?: string
+  }
 }
 
 export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
   stepComplete,
   account,
   setSFData,
+  initialValues,
 }) => {
   const { isBYOC } = useUserJourney()
   return (
@@ -36,11 +43,22 @@ export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
             <form
               id="sf-form"
               className="flex flex-col gap-4"
-              onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
+              onSubmit={async (e: React.FormEvent<HTMLFormElement>) => {
                 e?.preventDefault()
                 const formData = new FormData(e.currentTarget)
                 const formObject = Object.fromEntries(formData.entries())
                 setSFData?.(formObject as Record<string, string>)
+
+                await updateUserJourneyStepMetadata({
+                  journeyName: 'evaluation',
+                  stepName: 'account_created',
+                  metadata: {
+                    jobTitle: (formObject.jobTitle as string) || '',
+                    companyName: (formObject.companyName as string) || '',
+                    notes: (formObject.notes as string) || '',
+                  },
+                  complete: true,
+                })
               }}
             >
               {isBYOC ? (
@@ -61,6 +79,7 @@ export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
                 }}
                 name="jobTitle"
                 placeholder="Job title"
+                defaultValue={initialValues?.jobTitle}
               />
               <Input
                 className="font-sans"
@@ -69,6 +88,7 @@ export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
                 }}
                 name="companyName"
                 placeholder="Company name"
+                defaultValue={initialValues?.companyName}
               />
 
               <Textarea
@@ -79,6 +99,7 @@ export const CreateAccountStepContent: FC<CreateAppStepContentProps> = ({
                 name="notes"
                 placeholder="To help us improve Nuon, please tell us about your use case, your app's architecture, and your cloud providers."
                 rows={4}
+                defaultValue={initialValues?.notes}
               />
             </form>
           </Card>
