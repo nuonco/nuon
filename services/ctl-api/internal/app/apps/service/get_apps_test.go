@@ -40,11 +40,41 @@ import (
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
+
+	ghclient "github.com/google/go-github/v50/github"
+	enumsv1 "go.temporal.io/api/enums/v1"
 )
+
+// Test helper functions for mocking external dependencies
+
+// newMockGitHubClient returns a stub GitHub client for testing.
+// This client is not connected to any real GitHub instance.
+func newMockGitHubClient() (*ghclient.Client, error) {
+	return ghclient.NewClient(nil), nil
+}
+
+// mockEventLoopClient is a no-op implementation of eventloop.Client for testing.
+type mockEventLoopClient struct{}
+
+func (m *mockEventLoopClient) Send(ctx context.Context, id string, signal eventloop.Signal) {}
+
+func (m *mockEventLoopClient) Cancel(ctx context.Context, namespace, id string) error {
+	return nil
+}
+
+func (m *mockEventLoopClient) GetWorkflowStatus(ctx context.Context, namespace string, workflowID string) (enumsv1.WorkflowExecutionStatus, error) {
+	return enumsv1.WORKFLOW_EXECUTION_STATUS_RUNNING, nil
+}
+func (m *mockEventLoopClient) GetWorkflowCount(ctx context.Context, namespace string, workflowID string) (int64, error) {
+	return 0, nil
+}
+
+func newMockEventLoopClient() eventloop.Client {
+	return &mockEventLoopClient{}
+}
 
 // TestService holds all fx-injected dependencies for apps endpoint tests.
 type TestService struct {
@@ -94,10 +124,10 @@ func (s *AppsTestSuite) SetupSuite() {
 
 		// external services
 		fx.Provide(loops.New),
-		fx.Provide(github.NewMock), // Use mock GitHub client for tests
+		fx.Provide(newMockGitHubClient), // Use mock GitHub client for tests
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
-		fx.Provide(eventloop.NewMockClient),
+		fx.Provide(newMockEventLoopClient), // Use mock eventloop client for tests
 
 		// databases
 		fx.Provide(psql.AsPSQL(psql.New)),
