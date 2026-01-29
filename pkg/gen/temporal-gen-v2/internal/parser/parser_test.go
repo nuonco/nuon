@@ -55,7 +55,8 @@ func TestParse(t *testing.T) {
 			expected: &Annotation{
 				Type: "activity",
 				ActivityOpts: &ActivityOptions{
-					MaxRetries: 5,
+					MaxRetries:  5,
+					RetryPolicy: true,
 				},
 			},
 		},
@@ -72,6 +73,7 @@ func TestParse(t *testing.T) {
 					ScheduleToCloseTimeout: 10 * time.Minute,
 					StartToCloseTimeout:    5 * time.Minute,
 					MaxRetries:             3,
+					RetryPolicy:            true,
 				},
 			},
 		},
@@ -122,7 +124,7 @@ func TestParse(t *testing.T) {
 				"// @task-timeout 30m",
 				"// @id-template workflow-{{.ID}}",
 				"// @wait-for-cancellation true",
-				"// @task-queue default",
+				"// @workflow-task-queue default",
 				"// @options-callback GetOptions",
 			},
 			expected: &Annotation{
