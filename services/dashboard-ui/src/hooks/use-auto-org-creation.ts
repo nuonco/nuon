@@ -9,8 +9,10 @@ import { addSupportUsersToOrg } from '@/components/old/admin-actions'
 
 export const useAutoOrgCreation = ({
   sfData,
+  skipNavigation = false,
 }: {
   sfData: Record<string, string>
+  skipNavigation?: boolean
 }) => {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,8 +71,8 @@ export const useAutoOrgCreation = ({
         await refreshAccount()
         setIsCreating(false)
 
-        // Navigate to the new org
-        if (newOrg?.id) {
+        // Navigate to the new org (unless skipNavigation is true)
+        if (newOrg?.id && !skipNavigation) {
           router.push(`/${newOrg.id}/apps`)
         }
       }

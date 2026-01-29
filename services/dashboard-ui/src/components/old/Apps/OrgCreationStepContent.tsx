@@ -11,13 +11,16 @@ export const OrgCreationStepContent = ({
   stepComplete,
   orgId,
   sfData,
+  skipNavigation = false,
 }: {
   stepComplete: boolean
   orgId: string | undefined
   sfData: Record<string, string>
+  skipNavigation?: boolean
 }) => {
   const { isCreating, error, retry, shouldAutoCreate } = useAutoOrgCreation({
     sfData,
+    skipNavigation,
   })
   // Load org data
   const {

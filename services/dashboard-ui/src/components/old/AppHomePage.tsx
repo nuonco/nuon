@@ -2,18 +2,31 @@
 
 import React, { type FC, useState, useEffect } from 'react'
 import classNames from 'classnames'
+import Link from 'next/link'
 import { ArrowLineLeftIcon, ArrowLineRightIcon } from '@phosphor-icons/react'
 import { getIsSidebarOpenFromCookie } from '@/actions/layout/main-sidebar-cookie'
 import { Button } from '@/components/old/Button'
 import { Logo } from '@/components/old/Logo'
 import { SignOutButton } from '@/components/old/Profile'
 import { NuonVersions, type TNuonVersions } from '@/components/old/NuonVersions'
+import { Text } from '@/components/old/Typography'
 import { VERSION } from '@/utils'
 
 const NoOrgs: FC = () => {
   return (
-    <div className="flex-1">
-      {/* Empty container - journey modal handles all user communication */}
+    <div className="flex-1 flex items-center justify-center">
+      <div className="text-center max-w-md mx-auto p-8">
+        <Text variant="semi-18" className="mb-4">
+          Welcome to Nuon
+        </Text>
+        <Text variant="reg-14" className="mb-6 text-gray-600 dark:text-gray-400">
+          You don&apos;t have any organizations yet. Complete the onboarding process
+          to set up your first organization and start deploying applications.
+        </Text>
+        <Link href="/onboarding">
+          <Button variant="primary">Begin Onboarding</Button>
+        </Link>
+      </div>
     </div>
   )
 }
