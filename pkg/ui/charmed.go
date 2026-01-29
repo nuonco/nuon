@@ -86,6 +86,6 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 			fmt.Fprint(os.Stderr, s+"\n")
 		}
 
-		writeToLogFile(s + "\n")
+		writeToLogFile("%s", s+"\n")
 	}
 }
