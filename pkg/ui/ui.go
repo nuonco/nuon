@@ -88,8 +88,8 @@ func (l *logger) Error(err error) {
 	}
 
 	msg := emoji.Sprintf(":siren: %s\n", err.Error())
-	emoji.Fprintf(os.Stderr, msg)
-	writeToLogFile(msg)
+	emoji.Fprintf(os.Stderr, "%s", msg)
+	writeToLogFile("%s", msg)
 }
 
 func EnvVars(envVars map[string]any) {
