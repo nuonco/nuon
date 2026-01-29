@@ -196,7 +196,11 @@
       {
         "tab": "Support",
         "pages": ["support/support"]
-      }
+      },
+      {
+        "tab": "Knowledge Base",
+        "href": "https://support.nuon.co"
+      }      
     ],
     "global": {
       "anchors": [
