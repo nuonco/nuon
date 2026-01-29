@@ -10,7 +10,9 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -20,31 +22,35 @@ import (
 type Params struct {
 	fx.In
 
-	V               *validator.Validate
-	DB              *gorm.DB `name:"psql"`
-	MW              metrics.Writer
-	L               *zap.Logger
-	Cfg             *internal.Config
-	VcsHelpers      *vcshelpers.Helpers
-	Helpers         *appshelpers.Helpers
-	InstallsHelpers *installshelpers.Helpers
-	AccountsHelpers *accountshelpers.Helpers
-	EvClient        eventloop.Client
-	EndpointAudit   *api.EndpointAudit
+	V                 *validator.Validate
+	DB                *gorm.DB `name:"psql"`
+	MW                metrics.Writer
+	L                 *zap.Logger
+	Cfg               *internal.Config
+	VcsHelpers        *vcshelpers.Helpers
+	Helpers           *appshelpers.Helpers
+	InstallsHelpers   *installshelpers.Helpers
+	AccountsHelpers   *accountshelpers.Helpers
+	ComponentsHelpers *componentshelpers.Helpers
+	ActionsHelpers    *actionshelpers.Helpers
+	EvClient          eventloop.Client
+	EndpointAudit     *api.EndpointAudit
 }
 
 type service struct {
 	api.RouteRegister
-	v               *validator.Validate
-	db              *gorm.DB
-	mw              metrics.Writer
-	l               *zap.Logger
-	cfg             *internal.Config
-	vcsHelpers      *vcshelpers.Helpers
-	helpers         *appshelpers.Helpers
-	installsHelpers *installshelpers.Helpers
-	accountsHelpers *accountshelpers.Helpers
-	evClient        eventloop.Client
+	v                 *validator.Validate
+	db                *gorm.DB
+	mw                metrics.Writer
+	l                 *zap.Logger
+	cfg               *internal.Config
+	vcsHelpers        *vcshelpers.Helpers
+	helpers           *appshelpers.Helpers
+	installsHelpers   *installshelpers.Helpers
+	accountsHelpers   *accountshelpers.Helpers
+	componentsHelpers *componentshelpers.Helpers
+	actionsHelpers    *actionshelpers.Helpers
+	evClient          eventloop.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -54,6 +60,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	apps := ge.Group("/v1/apps")
 	{
 		apps.POST("", s.CreateApp)
+		apps.POST("/from-template", s.CreateAppFromTemplate)
 		apps.GET("", s.GetApps)
 		apps.PATCH("/:app_id", s.UpdateApp)
 		apps.GET("/:app_id", s.GetApp)
@@ -223,15 +230,17 @@ func New(params Params) *service {
 		RouteRegister: api.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		cfg:             params.Cfg,
-		v:               params.V,
-		db:              params.DB,
-		mw:              params.MW,
-		l:               params.L,
-		vcsHelpers:      params.VcsHelpers,
-		helpers:         params.Helpers,
-		installsHelpers: params.InstallsHelpers,
-		accountsHelpers: params.AccountsHelpers,
-		evClient:        params.EvClient,
+		cfg:               params.Cfg,
+		v:                 params.V,
+		db:                params.DB,
+		mw:                params.MW,
+		l:                 params.L,
+		vcsHelpers:        params.VcsHelpers,
+		helpers:           params.Helpers,
+		installsHelpers:   params.InstallsHelpers,
+		accountsHelpers:   params.AccountsHelpers,
+		componentsHelpers: params.ComponentsHelpers,
+		actionsHelpers:    params.ActionsHelpers,
+		evClient:          params.EvClient,
 	}
 }

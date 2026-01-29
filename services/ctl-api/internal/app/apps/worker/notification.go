@@ -8,11 +8,12 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-func (w *Workflows) sendNotification(ctx workflow.Context, typ notifications.Type, appID string, vars map[string]string) {
+func (w *Workflows) sendNotification(ctx workflow.Context, typ notifications.Type, orgID, appID string, vars map[string]string) {
 	l := workflow.GetLogger(ctx)
 
 	// Send email
 	if err := sharedactivities.AwaitSendEmail(ctx, sharedactivities.SendNotificationRequest{
+		OrgID: orgID,
 		AppID: appID,
 		Type:  typ,
 		Vars:  vars,
@@ -24,6 +25,7 @@ func (w *Workflows) sendNotification(ctx workflow.Context, typ notifications.Typ
 
 	// Send slack notification
 	if err := sharedactivities.AwaitSendSlack(ctx, sharedactivities.SendNotificationRequest{
+		OrgID: orgID,
 		AppID: appID,
 		Type:  typ,
 		Vars:  vars,

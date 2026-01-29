@@ -24,7 +24,7 @@ func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) er
 
 	// send a created notification
 	if install.InstallNumber == 1 {
-		w.sendNotification(ctx, notifications.NotificationsTypeFirstInstallCreated, install.AppID, map[string]string{
+		w.sendNotification(ctx, notifications.NotificationsTypeFirstInstallCreated, install.OrgID, install.AppID, map[string]string{
 			"install_name": install.Name,
 			"app_name":     install.App.Name,
 			"created_by":   install.CreatedBy.Email,
@@ -32,7 +32,7 @@ func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) er
 	}
 
 	if install.InstallNumber > 1 {
-		w.sendNotification(ctx, notifications.NotificationsTypeInstallCreated, install.AppID, map[string]string{
+		w.sendNotification(ctx, notifications.NotificationsTypeInstallCreated, install.OrgID, install.AppID, map[string]string{
 			"install_name": install.Name,
 			"app_name":     install.App.Name,
 			"created_by":   install.CreatedBy.Email,

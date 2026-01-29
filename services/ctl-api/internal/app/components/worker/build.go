@@ -54,7 +54,7 @@ func (w *Workflows) Build(ctx workflow.Context, sreq signals.RequestSignal) erro
 	}
 
 	notify := func(err error) error {
-		w.sendNotification(ctx, notifications.NotificationsTypeComponentBuildFailed, currentApp.ID, map[string]string{
+		w.sendNotification(ctx, notifications.NotificationsTypeComponentBuildFailed, currentApp.OrgID, currentApp.ID, map[string]string{
 			"component_name": comp.Name,
 			"app_name":       currentApp.Name,
 			"created_by":     build.CreatedBy.Email,

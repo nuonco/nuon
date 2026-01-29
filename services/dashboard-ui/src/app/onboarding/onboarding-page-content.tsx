@@ -321,6 +321,7 @@ export const OnboardingPageContent: FC = () => {
                   <CreateAppStepContent
                     stepComplete={displayStep.complete}
                     appId={displayStep.metadata?.app_id}
+                    orgId={orgId}
                   />
                 ) : displayStep.name === 'install_created' ? (
                   <InstallCreationStepContent

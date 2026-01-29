@@ -1,6 +1,7 @@
 export * from './actions'
 export * from './components'
 export * from './installs'
+export * from './create-app-from-template'
 export * from './get-apps'
 export * from './get-app'
 export * from './get-app-configs'

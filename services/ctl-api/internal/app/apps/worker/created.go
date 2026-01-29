@@ -24,7 +24,7 @@ func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) er
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	w.sendNotification(ctx, notifications.NotificationsTypeAppCreated, appID, map[string]string{
+	w.sendNotification(ctx, notifications.NotificationsTypeAppCreated, currentApp.OrgID, appID, map[string]string{
 		"app_name":   currentApp.Name,
 		"created_by": currentApp.CreatedBy.Email,
 	})
