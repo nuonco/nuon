@@ -75,7 +75,6 @@ func TestExtractNestedStackParameters(t *testing.T) {
 	params, defaultParams := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
 
 	expectedParams := []string{
-		"ClusterName",
 		"VpcCIDR",
 		"PublicSubnet1CIDR",
 		"PublicSubnet2CIDR",
@@ -86,7 +85,7 @@ func TestExtractNestedStackParameters(t *testing.T) {
 		"PrivateSubnet3CIDR",
 	}
 
-	reservedParams := []string{"NuonInstallID", "NuonOrgID", "NuonAppID"}
+	reservedParams := []string{"ClusterName", "NuonInstallID", "NuonOrgID", "NuonAppID"}
 
 	for _, paramName := range expectedParams {
 		t.Run("params_contains_"+paramName, func(t *testing.T) {
@@ -253,7 +252,7 @@ func TestExtractNestedStackParameters_BYOVPC(t *testing.T) {
 		"RunnerSubnetID",
 	}
 
-	reservedParams := []string{"NuonInstallID", "NuonOrgID", "NuonAppID"}
+	reservedParams := []string{"ClusterName", "NuonInstallID", "NuonOrgID", "NuonAppID"}
 
 	for _, paramName := range expectedParams {
 		t.Run("params_contains_"+paramName, func(t *testing.T) {
