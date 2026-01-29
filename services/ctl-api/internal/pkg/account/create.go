@@ -3,7 +3,6 @@ package account
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -35,10 +34,9 @@ func (m *Client) createAccount(ctx context.Context, email, subject string, accou
 	return &acct, nil
 }
 
-// DefaultEvaluationJourney returns the evaluation journey for self-signup users without auto-org creation
+// DefaultEvaluationJourney returns the evaluation journey for self-signup users
+// This is the 6-step journey: account_created, org_created, cli_installed, app_created, app_synced, install_created
 func DefaultEvaluationJourney() app.UserJourneys {
-	now := time.Now().UTC()
-
 	return app.UserJourneys{
 		{
 			Name:  "evaluation",
@@ -47,10 +45,10 @@ func DefaultEvaluationJourney() app.UserJourneys {
 				{
 					Name:             "account_created",
 					Title:            "Create an account",
-					Complete:         true,
-					CompletedAt:      &now,
-					CompletionMethod: "auto",
-					CompletionSource: "system",
+					Complete:         false,
+					CompletedAt:      nil,
+					CompletionMethod: "",
+					CompletionSource: "",
 					Metadata:         make(map[string]interface{}),
 				},
 				{
@@ -64,7 +62,7 @@ func DefaultEvaluationJourney() app.UserJourneys {
 				},
 				{
 					Name:             "cli_installed",
-					Title:            "Install the Nuon CLI",
+					Title:            "Install the CLI",
 					Complete:         false,
 					CompletedAt:      nil,
 					CompletionMethod: "",
@@ -82,7 +80,7 @@ func DefaultEvaluationJourney() app.UserJourneys {
 				},
 				{
 					Name:             "app_synced",
-					Title:            "Sync the app config",
+					Title:            "Sync app configuration",
 					Complete:         false,
 					CompletedAt:      nil,
 					CompletionMethod: "",
