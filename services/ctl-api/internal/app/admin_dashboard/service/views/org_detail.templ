@@ -4,14 +4,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/popover"
 )
 
 templ OrgDetail(org *app.Org, installs []*app.Install) {
-	@Layout("Organization Details") {
-		<div class="w-full max-w-7xl mx-auto p-6">
+	@Layout("Organization: " + org.Name) {
+		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
 			<div class="mb-6">
-				<a href="/orgs" class="text-sm text-muted-foreground hover:text-cyan transition-colors">
+				<a href="/orgs" class="text-sm text-cyan hover:underline">
 					← Back to Organizations
 				</a>
 			</div>
@@ -38,7 +39,7 @@ templ OrgDetail(org *app.Org, installs []*app.Install) {
 						<!-- Status -->
 						<div class="flex items-center justify-end gap-2">
 							<span class="text-xs text-muted-foreground uppercase">Status:</span>
-							@OrgStatusBadge(org.ID, org.Status)
+							@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
 						</div>
 
 						<!-- Type -->
@@ -71,8 +72,9 @@ templ OrgDetail(org *app.Org, installs []*app.Install) {
 				}
 			}
 		</div>
-		// Include the copybutton JavaScript
+		// Include the copybutton and popover JavaScript
 		@copybutton.Script()
+		@popover.Script()
 	}
 }
 

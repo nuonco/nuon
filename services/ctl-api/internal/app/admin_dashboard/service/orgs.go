@@ -16,7 +16,7 @@ import (
 func (s *service) Orgs(c *gin.Context) {
 	orgs, err := s.getOrgs(c)
 	if err != nil {
-		s.l.Error("failed to get orgs", zap.Error(err))
+		s.logger.Error("failed to get orgs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})
 		return
 	}

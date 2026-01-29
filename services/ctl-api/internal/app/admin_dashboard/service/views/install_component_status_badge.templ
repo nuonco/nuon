@@ -5,34 +5,29 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/tooltip"
 )
 
-// OrgStatusBadge renders just the status badge for htmx updates
-templ OrgStatusBadge(orgID string, status app.OrgStatus, statusDescription string) {
+templ InstallComponentStatusBadge(install *app.Install) {
 	<div
-		id={ "org-status-" + orgID }
-		hx-get={ "/orgs/" + orgID + "/status" }
+		hx-get={ "/installs/" + install.ID + "/status/component" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
 		@tooltip.Tooltip() {
 			@tooltip.Trigger(tooltip.TriggerProps{
-				For: "org-status-tooltip-" + orgID,
+				For: "install-component-tooltip-" + install.ID,
 			}) {
-				<span class={
-					"px-2 py-1 rounded text-xs font-mono uppercase",
-					orgStatusClass(status),
-				}>
-					{ string(status) }
+				<span class={ "px-2 py-1 rounded text-xs font-mono uppercase", componentStatusClass(install.CompositeComponentStatus) }>
+					Components
 				</span>
 			}
 			@tooltip.Content(tooltip.ContentProps{
-				ID:            "org-status-tooltip-" + orgID,
+				ID:            "install-component-tooltip-" + install.ID,
 				Position:      tooltip.PositionTop,
 				ShowArrow:     true,
 				HoverDelay:    200,
 				HoverOutDelay: 100,
 			}) {
-				if statusDescription != "" {
-					{ statusDescription }
+				if install.CompositeComponentStatusDescription != "" {
+					{ install.CompositeComponentStatusDescription }
 				} else {
 					No status description available
 				}

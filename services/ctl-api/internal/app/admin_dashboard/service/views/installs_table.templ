@@ -41,7 +41,9 @@ templ InstallsTable(orgID string, installs []*app.Install) {
 								</div>
 							}
 							@table.Cell() {
-								{ install.Name }
+								<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
+									{ install.Name }
+								</a>
 							}
 							@table.Cell(table.CellProps{Class: "text-sm"}) {
 								{ install.App.Name }

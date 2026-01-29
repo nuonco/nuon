@@ -20,7 +20,7 @@ func (s *service) InstallsTable(c *gin.Context) {
 
 	installs, err := s.getInstallsForOrg(c, orgID)
 	if err != nil {
-		s.l.Error("failed to get installs for table", zap.String("org_id", orgID), zap.Error(err))
+		s.logger.Error("failed to get installs for table", zap.String("org_id", orgID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})
 		return
 	}

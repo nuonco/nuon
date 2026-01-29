@@ -13,7 +13,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/nuonco/nuon/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/popover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/utils"
 )
 

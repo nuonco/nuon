@@ -20,12 +20,12 @@ func (s *service) OrgStatus(c *gin.Context) {
 
 	org, err := s.getOrg(c, orgID)
 	if err != nil {
-		s.l.Error("failed to get org status", zap.String("org_id", orgID), zap.Error(err))
+		s.logger.Error("failed to get org status", zap.String("org_id", orgID), zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
 		return
 	}
 
 	// Return just the status badge component
-	component := views.OrgStatusBadge(org.ID, org.Status)
+	component := views.OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }

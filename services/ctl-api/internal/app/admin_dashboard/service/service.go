@@ -21,13 +21,15 @@ type Params struct {
 	L   *zap.Logger
 }
 
-type service struct {
-	v   *validator.Validate
-	l   *zap.Logger
-	db  *gorm.DB
-	mw  metrics.Writer
-	cfg *internal.Config
+type Service struct {
+	v      *validator.Validate
+	logger *zap.Logger
+	db     *gorm.DB
+	mw     metrics.Writer
+	cfg    *internal.Config
 }
+
+type service = Service
 
 var _ api.Service = (*service)(nil)
 
@@ -60,19 +62,26 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/orgs/:id/status", s.OrgStatus)
 	api.GET("/orgs/:id/installs/table", s.InstallsTable)
 
-	s.l.Info("admin-dashboard routes registered")
+	// Install detail routes
+	api.GET("/installs/:id", s.InstallDetail)
+	api.GET("/installs/:id/status/runner", s.InstallRunnerStatus)
+	api.GET("/installs/:id/status/sandbox", s.InstallSandboxStatus)
+	api.GET("/installs/:id/status/component", s.InstallComponentStatus)
+	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
+
+	s.logger.Info("admin-dashboard routes registered")
 	return nil
 }
 
 func New(params Params) (*service, error) {
 	s := &service{
-		cfg: params.Cfg,
-		l:   params.L,
-		v:   params.V,
-		db:  params.DB,
-		mw:  params.MW,
+		cfg:    params.Cfg,
+		logger: params.L,
+		v:      params.V,
+		db:     params.DB,
+		mw:     params.MW,
 	}
 
-	s.l.Info("admin-dashboard service initialized")
+	s.logger.Info("admin-dashboard service initialized")
 	return s, nil
 }

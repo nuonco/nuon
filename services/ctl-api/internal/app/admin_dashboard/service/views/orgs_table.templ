@@ -44,12 +44,7 @@ templ OrgsTable(orgs []*app.Org) {
 							{ string(org.OrgType) }
 						}
 						@table.Cell() {
-							<span class={
-								"px-2 py-1 rounded text-xs font-mono uppercase",
-								orgStatusClass(org.Status),
-							}>
-								{ string(org.Status) }
-							</span>
+							@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
 						}
 						@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
 							{ org.CreatedAt.Format("2006-01-02 15:04") }

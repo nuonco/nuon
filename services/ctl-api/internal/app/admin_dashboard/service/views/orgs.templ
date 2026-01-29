@@ -4,11 +4,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/popover"
 )
 
 templ Orgs(orgs []*app.Org) {
 	@Layout("Organizations") {
-		<div class="w-full max-w-7xl mx-auto p-6">
+		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
 				@card.Header() {
 					@card.Title() {
@@ -23,8 +24,9 @@ templ Orgs(orgs []*app.Org) {
 				}
 			}
 		</div>
-		// Include the copybutton JavaScript
+		// Include the copybutton and popover JavaScript
 		@copybutton.Script()
+		@popover.Script()
 	}
 }
 
