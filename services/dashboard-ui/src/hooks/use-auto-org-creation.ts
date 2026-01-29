@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createOrg } from '@/actions/orgs/create-org'
 import { useAccount } from '@/hooks/use-account'
@@ -9,8 +9,10 @@ import { addSupportUsersToOrg } from '@/components/old/admin-actions'
 
 export const useAutoOrgCreation = ({
   sfData,
+  skipNavigation = false,
 }: {
   sfData: Record<string, string>
+  skipNavigation?: boolean
 }) => {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,8 +71,8 @@ export const useAutoOrgCreation = ({
         await refreshAccount()
         setIsCreating(false)
 
-        // Navigate to the new org
-        if (newOrg?.id) {
+        // Navigate to the new org (unless skipNavigation is true)
+        if (newOrg?.id && !skipNavigation) {
           router.push(`/${newOrg.id}/apps`)
         }
       }
@@ -85,13 +87,6 @@ export const useAutoOrgCreation = ({
     setError(null)
     createOrgAutomatically()
   }
-
-  // Auto-trigger creation when conditions are met
-  useEffect(() => {
-    if (shouldAutoCreate()) {
-      createOrgAutomatically()
-    }
-  }, [account])
 
   return {
     isCreating,

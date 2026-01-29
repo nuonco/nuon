@@ -66,18 +66,15 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey step for first app sync when status becomes active
+	// Update journey step when config becomes active (app sync complete)
 	if req.Status == app.AppConfigStatusActive {
-		user, err := cctx.AccountFromGinContext(ctx)
-		if err == nil && cfg != nil {
-			// Only update if this is the user's first app sync (app_synced step incomplete)
-			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, user.ID, cfg.AppID); err != nil {
-				// Log but don't fail the update
-				s.l.Warn("failed to update user journey for first app sync",
-					zap.String("account_id", user.ID),
+		if acct, err := cctx.AccountFromGinContext(ctx); err == nil {
+			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, acct.ID, cfg.AppID); err != nil {
+				s.l.Warn("failed to update app_synced journey step",
+					zap.String("account_id", acct.ID),
 					zap.String("app_id", cfg.AppID),
-					zap.String("app_config_id", cfg.ID),
-					zap.Error(err))
+					zap.Error(err),
+				)
 			}
 		}
 	}
@@ -122,18 +119,15 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey step for first app sync when status becomes active
+	// Update journey step when config becomes active (app sync complete)
 	if req.Status == app.AppConfigStatusActive {
-		user, err := cctx.AccountFromGinContext(ctx)
-		if err == nil && cfg != nil {
-			// Only update if this is the user's first app sync (app_synced step incomplete)
-			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, user.ID, cfg.AppID); err != nil {
-				// Log but don't fail the update
-				s.l.Warn("failed to update user journey for first app sync",
-					zap.String("account_id", user.ID),
+		if acct, err := cctx.AccountFromGinContext(ctx); err == nil {
+			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, acct.ID, cfg.AppID); err != nil {
+				s.l.Warn("failed to update app_synced journey step",
+					zap.String("account_id", acct.ID),
 					zap.String("app_id", cfg.AppID),
-					zap.String("app_config_id", cfg.ID),
-					zap.Error(err))
+					zap.Error(err),
+				)
 			}
 		}
 	}

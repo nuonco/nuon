@@ -18,7 +18,6 @@ import {
   UsersThree,
 } from '@phosphor-icons/react'
 import { useOrg } from '@/hooks/use-org'
-import { useUserJourney } from '@/hooks/use-user-journey'
 import { Link } from './Link'
 import { Text } from './Typography'
 
@@ -34,7 +33,6 @@ export const MainNav: FC<{
 }> = ({ isSidebarOpen }) => {
   const { org } = useOrg()
   const path = usePathname()
-  const { openOnboarding } = useUserJourney() || {}
   const links: Array<TLink> = [
     {
       href: `/${org.id}`,
@@ -133,7 +131,7 @@ export const MainNav: FC<{
       isExternal: true,
     },
     {
-      href: '#',
+      href: '/onboarding',
       text: (
         <>
           <span>
@@ -144,7 +142,6 @@ export const MainNav: FC<{
           ) : null}
         </>
       ),
-      onClick: openOnboarding,
     },
   ]
 
