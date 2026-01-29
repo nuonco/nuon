@@ -11,14 +11,18 @@ export const OrgCreationStepContent = ({
   stepComplete,
   orgId,
   sfData,
+  skipNavigation = false,
 }: {
   stepComplete: boolean
   orgId: string | undefined
   sfData: Record<string, string>
+  skipNavigation?: boolean
 }) => {
-  const { isCreating, error, retry, shouldAutoCreate } = useAutoOrgCreation({
-    sfData,
-  })
+  const { isCreating, error, retry, shouldAutoCreate, createOrgAutomatically } =
+    useAutoOrgCreation({
+      sfData,
+      skipNavigation,
+    })
   // Load org data
   const {
     data: org,
@@ -102,20 +106,39 @@ export const OrgCreationStepContent = ({
   }
 
   if (error) {
-    if (error) {
-      return (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-            <Text>Org creation failed</Text>
-          </div>
-          <Text className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            {error}
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+          <Text>Org creation failed</Text>
+        </div>
+        <Text className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {error}
+        </Text>
+        <Button onClick={retry} variant="primary">
+          Try Again
+        </Button>
+      </div>
+    )
+  }
+
+  if (shouldAutoCreate) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <Text variant="semi-14">
+            Ready to create your trial organization
           </Text>
-          <Button onClick={retry} variant="primary">
-            Try Again
+          <Text>
+            We&apos;ll set up a trial organization for you to get started with
+            Nuon.
+          </Text>
+          <Button onClick={createOrgAutomatically} variant="primary">
+            Create Organization
           </Button>
         </div>
-      )
-    }
+      </div>
+    )
   }
+
+  return null
 }
