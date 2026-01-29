@@ -4191,15 +4191,27 @@ Permanently forget (soft delete) an install component from the system. This oper
 - Install must exist and belong to the authenticated organization
 - Component must exist for the specified install
 - User must have appropriate permissions for the install's organization
+- Component must be removed from the app configuration (sync required)
 
 ## Behavior
 
 1. Validates install exists and belongs to org
 2. Validates install component exists
-3. Soft deletes the install component record
-4. Cascades soft delete to associated resources (via GORM associations)
-5. Sends event loop signal for any cleanup workflows
-6. Returns success response
+3. Validates component is not in the app configuration
+4. Soft deletes the install component record
+5. Cascades soft delete to associated resources (via GORM associations)
+6. Sends event loop signal for any cleanup workflows
+7. Returns success response
+
+## Validation
+
+Before forgetting an install component, the system validates that the component no longer exists in the app configuration. If the component is still in the app config, the request will fail with a user-friendly error message.
+
+**To resolve this error:**
+
+1. Remove the component from your `nuon.yaml` file
+2. Run `nuon apps sync` to update the app configuration
+3. Retry the forget operation
 
 ## Related Endpoints
 

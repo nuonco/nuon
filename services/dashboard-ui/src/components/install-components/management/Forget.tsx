@@ -31,7 +31,6 @@ export const ForgetComponentModal = ({
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()
-
   const [confirmName, setConfirmName] = useState('')
 
   const { data, error, isLoading, execute } = useServerAction({
