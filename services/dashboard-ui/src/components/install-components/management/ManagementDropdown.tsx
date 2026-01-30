@@ -6,6 +6,7 @@ import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
+import { ForgetComponentButton } from '@/components/install-components/management/Forget'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
 import type { TComponent } from '@/types'
 
@@ -44,7 +45,11 @@ export const ManagementDropdown = ({
         />
         <hr />
         <Text>Remove</Text>
-        <TeardownComponentButton component={component} isMenuButton />
+        {currentDeployStatus === 'inactive' ? (
+          <ForgetComponentButton component={component} isMenuButton />
+        ) : (
+          <TeardownComponentButton component={component} isMenuButton />
+        )}
       </Menu>
     </Dropdown>
   )

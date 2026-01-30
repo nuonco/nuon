@@ -238,6 +238,8 @@ type ClientService interface {
 
 	ForgetInstall(params *ForgetInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForgetInstallOK, error)
 
+	ForgetInstallComponent(params *ForgetInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForgetInstallComponentOK, error)
+
 	GenerateCLIInstallConfig(params *GenerateCLIInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateCLIInstallConfigOK, error)
 
 	GenerateTerraformInstallerConfig(params *GenerateTerraformInstallerConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateTerraformInstallerConfigOK, error)
@@ -4160,6 +4162,101 @@ func (a *Client) ForgetInstall(params *ForgetInstallParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ForgetInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	ForgetInstallComponent forgets an install component
+
+	# Forget Install Component
+
+Permanently forget (soft delete) an install component from the system. This operation marks the install component as deleted while preserving the record for audit purposes.
+
+## Use Cases
+
+- Remove a component that is no longer needed from an install
+- Clean up failed or orphaned install components
+- Prepare for reinstalling a component from scratch
+
+## Important Notes
+
+- This is a **soft delete** operation - the record is marked as deleted but remains in the database
+- The component will no longer appear in API responses or dashboard views
+- Associated resources (terraform state, deploys, etc.) are preserved via soft delete
+- This operation is **irreversible** via the API
+- To restore, database-level operations would be required
+
+## Prerequisites
+
+- Install must exist and belong to the authenticated organization
+- Component must exist for the specified install
+- User must have appropriate permissions for the install's organization
+- Component must be removed from the app configuration (sync required)
+
+## Behavior
+
+1. Validates install exists and belongs to org
+2. Validates install component exists
+3. Validates component is not in the app configuration
+4. Soft deletes the install component record
+5. Cascades soft delete to associated resources (via GORM associations)
+6. Sends event loop signal for any cleanup workflows
+7. Returns success response
+
+## Validation
+
+Before forgetting an install component, the system validates that the component no longer exists in the app configuration. If the component is still in the app config, the request will fail with a user-friendly error message.
+
+**To resolve this error:**
+
+1. Remove the component from your `nuon.yaml` file
+2. Run `nuon apps sync` to update the app configuration
+3. Retry the forget operation
+
+## Related Endpoints
+
+- `DELETE /v1/installs/{install_id}` - Delete entire install
+- `POST /v1/installs/{install_id}/forget` - Forget entire install
+- `POST /v1/installs/{install_id}/components/{component_id}/teardown` - Teardown component infrastructure
+*/
+func (a *Client) ForgetInstallComponent(params *ForgetInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForgetInstallComponentOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewForgetInstallComponentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ForgetInstallComponent",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/forget",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ForgetInstallComponentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ForgetInstallComponentOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ForgetInstallComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
