@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -109,8 +110,11 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		// Extract attribution from cookie (set by customer-dashboard during auth flow)
+		attribution := m.extractAttributionFromCookie(ctx)
+
 		// store the token
-		acctToken, err = m.saveAccountToken(ctx, token, claims)
+		acctToken, err = m.saveAccountToken(ctx, token, claims, attribution)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to save account token: %w", err))
 			ctx.Abort()
@@ -179,4 +183,21 @@ func New(params Params) *middleware {
 		runnersHelpers:  params.RunnersHelpers,
 		evClient:        params.EvClient,
 	}
+}
+
+// extractAttributionFromCookie reads marketing attribution data from the nuon_attribution cookie
+// set by customer-dashboard during the auth flow. Returns nil if no attribution is present.
+func (m *middleware) extractAttributionFromCookie(ctx *gin.Context) map[string]interface{} {
+	cookie, err := ctx.Cookie("nuon_attribution")
+	if err != nil || cookie == "" {
+		return nil
+	}
+
+	var attribution map[string]interface{}
+	if err := json.Unmarshal([]byte(cookie), &attribution); err != nil {
+		m.l.Debug("failed to parse attribution cookie", zap.Error(err))
+		return nil
+	}
+
+	return attribution
 }
