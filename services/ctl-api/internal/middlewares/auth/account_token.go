@@ -52,7 +52,7 @@ func (c customClaims) Validate(ctx context.Context) error {
 	return nil
 }
 
-func (m *middleware) saveAccountToken(ctx context.Context, token string, claims *validator.ValidatedClaims) (*app.Token, error) {
+func (m *middleware) saveAccountToken(ctx context.Context, token string, claims *validator.ValidatedClaims, attribution map[string]interface{}) (*app.Token, error) {
 	customClaims, ok := claims.CustomClaims.(*customClaims)
 	if !ok {
 		return nil, fmt.Errorf("unable to get custom claims")
@@ -82,8 +82,12 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 		} else {
 			// No pending invite - self-signup user, check deployment configuration
 			if m.cfg.EvaluationJourneyEnabled {
-				// Multi-tenant deployment: Enable evaluation journey
-				userJourneys = account.DefaultEvaluationJourney()
+				// Multi-tenant deployment: Enable evaluation journey with attribution
+				if len(attribution) > 0 {
+					userJourneys = account.DefaultEvaluationJourneyWithAttribution(attribution)
+				} else {
+					userJourneys = account.DefaultEvaluationJourney()
+				}
 			} else {
 				// BYOC deployment: Skip evaluation journey for clean first-run experience
 				userJourneys = account.NoUserJourneys()

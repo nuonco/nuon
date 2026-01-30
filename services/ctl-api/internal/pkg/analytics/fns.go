@@ -31,9 +31,30 @@ func identifyFn(ctx context.Context) (*segment.Identify, error) {
 		return nil, errors.Wrap(err, "no account found")
 	}
 
+	traits := segment.NewTraits().SetEmail(acct.Email)
+
+	// Extract attribution from user journey metadata and add as traits
+	// This enables GA4 user_id linking for marketing ROI analysis
+	if len(acct.UserJourneys) > 0 {
+		for _, journey := range acct.UserJourneys {
+			for _, step := range journey.Steps {
+				if step.Name == "account_created" && step.Metadata != nil {
+					if attr, ok := step.Metadata["attribution"].(map[string]interface{}); ok {
+						for k, v := range attr {
+							if s, ok := v.(string); ok && s != "" {
+								traits.Set(k, s)
+							}
+						}
+					}
+					break
+				}
+			}
+		}
+	}
+
 	return &segment.Identify{
 		UserId: acct.ID,
-		Traits: segment.NewTraits().SetEmail(acct.Email),
+		Traits: traits,
 	}, nil
 }
 
