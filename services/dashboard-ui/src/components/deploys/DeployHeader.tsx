@@ -41,7 +41,7 @@ export const DeployHeader = ({
           <span className="flex items-cenert gap-2">
             <ComponentType type={component?.type} displayVariant="icon-only" />
             <Text variant="base" weight="strong">
-              {deploy?.component_name} deploy
+              {deploy?.component_name} {deploy?.install_deploy_type === "teardown" ? "teardown" : "deploy"}
             </Text>
           </span>
           <ID>{deploy?.id}</ID>
