@@ -131,6 +131,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			{
 				component.GET("", s.GetInstallComponent)
 				component.POST("/teardown", s.TeardownInstallComponent)
+				component.POST("/forget", s.ForgetInstallComponent)
 				component.GET("/deploys", s.GetInstallComponentDeploys)
 				component.GET("/outputs", s.GetInstallComponentOutputs)
 				component.GET("/deploys/latest", s.GetInstallComponentLatestDeploy)

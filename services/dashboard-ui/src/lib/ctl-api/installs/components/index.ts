@@ -1,6 +1,7 @@
 export * from './deploys'
 export * from './deploy-component'
 export * from './deploy-components'
+export * from './forget-component'
 export * from './get-install-component'
 export * from './get-install-component-outputs'
 export * from './get-install-components'
