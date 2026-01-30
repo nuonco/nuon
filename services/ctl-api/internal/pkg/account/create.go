@@ -105,3 +105,25 @@ func DefaultEvaluationJourney() app.UserJourneys {
 func NoUserJourneys() app.UserJourneys {
 	return app.UserJourneys{}
 }
+
+// DefaultEvaluationJourneyWithAttribution returns the evaluation journey with attribution data
+// stored in the account_created step's metadata. This enables tracking marketing source
+// for ROI analysis.
+func DefaultEvaluationJourneyWithAttribution(attribution map[string]interface{}) app.UserJourneys {
+	journey := DefaultEvaluationJourney()
+
+	// Store attribution in the first step (account_created) metadata
+	if len(attribution) > 0 && len(journey) > 0 && len(journey[0].Steps) > 0 {
+		for i, step := range journey[0].Steps {
+			if step.Name == "account_created" {
+				if journey[0].Steps[i].Metadata == nil {
+					journey[0].Steps[i].Metadata = make(map[string]interface{})
+				}
+				journey[0].Steps[i].Metadata["attribution"] = attribution
+				break
+			}
+		}
+	}
+
+	return journey
+}
