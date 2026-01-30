@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This RFC proposes a comprehensive end-to-end (E2E) testing system for the Nuon platform using a dedicated Temporal instance to run automated CLI-based tests on a scheduled basis. The system will execute real-world user workflows (org creation, app sync, install deployment) to verify platform functionality and catch regressions early.
+This RFC proposes a comprehensive end-to-end (E2E) testing system for the Nuon platform using a dedicated Temporal instance to run automated tests on a scheduled basis. The system will execute real-world user workflows through both CLI commands and browser automation (Playwright) to verify platform functionality and catch regressions early. All test execution and results are tracked in Temporal workflows with centralized storage, metrics, and alerting.
 
 ## Motivation
 
@@ -18,16 +18,19 @@ This RFC proposes a comprehensive end-to-end (E2E) testing system for the Nuon p
 - Production incidents could be prevented with continuous E2E testing
 
 ### Goals
-1. **Automated E2E Testing**: Run comprehensive CLI-based tests that simulate real user workflows
-2. **Scheduled Execution**: Multiple test schedules (hourly smoke tests, daily full suite, weekend comprehensive)
-3. **Production Safety**: Complete isolation from production workflows via dedicated Temporal instance
-4. **Local Development**: Easy to run tests locally against local infrastructure
-5. **Observability**: Clear test results, metrics, and alerting on failures
+1. **Automated E2E Testing**: Run comprehensive tests simulating real user workflows via CLI and browser
+2. **Dashboard UX Testing**: Verify critical user flows through actual browser interactions (Playwright)
+3. **Scheduled Execution**: Multiple test schedules (hourly smoke tests, daily full suite, weekend comprehensive)
+4. **Production Safety**: Complete isolation from production workflows via dedicated Temporal instance
+5. **Local Development**: Easy to run tests locally against local infrastructure
+6. **Observability**: Clear test results, metrics, and alerting on failures
+7. **Centralized Tracking**: All test types (CLI + Dashboard) recorded in unified system
 
 ### Non-Goals
-- Unit testing (covered by existing test suites)
-- Load testing (separate concern)
-- Browser-based UI testing (covered by separate e2e service)
+- Unit testing (covered by existing test suites in dashboard-ui and ctl-api)
+- Load testing / Performance testing (separate concern)
+- Visual regression testing (future consideration)
+- Complete browser compatibility matrix (focus on Chrome initially)
 
 ## Proposed Solution
 
@@ -201,7 +204,9 @@ Flow:
 
 #### 3.2 Test Scenarios
 
-**Org Lifecycle Test:**
+**CLI Test Scenarios:**
+
+*Org Lifecycle Test:*
 ```go
 Activities:
   1. RunCLICommand("orgs", "create", "test-org-{timestamp}")
@@ -211,7 +216,7 @@ Activities:
   5. VerifyOrgDeleted(orgID)
 ```
 
-**App Sync Test:**
+*App Sync Test:*
 ```go
 Activities:
   1. CreateTestGitRepo(templateType)
@@ -222,7 +227,7 @@ Activities:
   6. WaitForBuildComplete(buildID)
 ```
 
-**Install Deploy Test:**
+*Install Deploy Test:*
 ```go
 Activities:
   1. RunCLICommand("installs", "create", appID, "--region", "us-west-2")
@@ -230,6 +235,51 @@ Activities:
   3. RunCLICommand("installs", "deploy", installID, componentID)
   4. MonitorDeploymentStatus(installID)
   5. VerifyInstallHealthy(installID)
+```
+
+**Dashboard Test Scenarios (Playwright):**
+
+*Dashboard Org Creation:*
+```go
+Activities:
+  1. RunPlaywrightTest("e2e/org-creation.spec.ts")
+     - Navigate to dashboard
+     - Click "Create Organization"
+     - Fill form and submit
+     - Verify success toast
+     - Verify redirect to org page
+  2. VerifyOrgInDatabase(orgID)
+```
+
+*Dashboard App Detail Page:*
+```go
+Activities:
+  1. RunCLICommand("apps", "sync", repoPath)  // Setup via CLI
+  2. RunPlaywrightTest("e2e/app-detail.spec.ts")
+     - Navigate to app detail page
+     - Verify components displayed
+     - Click "Build" button
+     - Verify build started notification
+```
+
+*Dashboard Install Deploy:*
+```go
+Activities:
+  1. RunPlaywrightTest("e2e/install-deploy.spec.ts")
+     - Navigate to install detail page
+     - Click "Deploy" button
+     - Monitor deployment status in UI
+     - Verify deployment completes
+```
+
+*Dashboard Error Handling:*
+```go
+Activities:
+  1. RunPlaywrightTest("e2e/error-handling.spec.ts")
+     - Trigger API error scenarios
+     - Verify user-friendly error messages
+     - Test form validation
+     - Verify network error handling
 ```
 
 ### 4. Scheduled Execution
@@ -350,7 +400,351 @@ func (e *Executor) RunCLICommand(ctx context.Context, args []string) (*CommandRe
 2. `DeleteCanaryAccount` - Remove test account
 3. `CleanupResources` - Remove any leftover resources
 
-### 6. Data Storage
+### 6. Dashboard Testing with Playwright
+
+#### 6.1 Overview
+
+Dashboard E2E tests use Playwright to automate real browser interactions and verify the user experience. These tests execute within the same canary Temporal workflows as CLI tests, providing unified tracking and reporting.
+
+**Why Playwright:**
+- Tests actual user interactions (clicks, forms, navigation)
+- Catches UI/UX bugs that API tests miss
+- Verifies visual elements and error messages
+- Industry standard (used by GitHub, Microsoft)
+- Can capture screenshots/videos on failure
+
+#### 6.2 Playwright Setup
+
+**Location:** `services/dashboard-ui/e2e/`
+
+**Configuration:**
+```typescript
+// services/dashboard-ui/playwright.config.ts
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: false,  // Sequential for canary tests
+  retries: 1,
+  workers: 1,
+  timeout: 60000,
+
+  reporter: [
+    ['json', { outputFile: 'playwright-report/results.json' }],
+    ['html', { outputFolder: 'playwright-report/html' }],
+  ],
+
+  use: {
+    baseURL: process.env.DASHBOARD_URL || 'http://localhost:4000',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+  ],
+})
+```
+
+**Authentication Fixture:**
+```typescript
+// services/dashboard-ui/e2e/fixtures/auth.ts
+
+import { test as base } from '@playwright/test'
+
+export const test = base.extend<{ authenticatedPage: Page }>({
+  authenticatedPage: async ({ page }, use) => {
+    // Auth token set by canary activity
+    const authToken = process.env.CANARY_AUTH_TOKEN
+    const orgId = process.env.CANARY_ORG_ID
+
+    await page.context().addCookies([
+      {
+        name: 'appSession',
+        value: authToken,
+        domain: 'localhost',
+        path: '/',
+      },
+    ])
+
+    await use(page)
+  },
+})
+```
+
+#### 6.3 Example Playwright Test
+
+```typescript
+// services/dashboard-ui/e2e/org-creation.spec.ts
+
+import { test, expect } from './fixtures/auth'
+
+test.describe('Organization Creation Flow', () => {
+  test('should create organization via dashboard UI', async ({ authenticatedPage: page }) => {
+    await page.goto('/')
+
+    // Click create organization button
+    await page.click('button:has-text("Create Organization")')
+
+    // Fill in organization name
+    const orgName = `test-org-${Date.now()}`
+    await page.fill('input[name="name"]', orgName)
+
+    // Submit form
+    await page.click('button[type="submit"]:has-text("Create")')
+
+    // Wait for success toast
+    await expect(page.locator('text=Organization created')).toBeVisible({
+      timeout: 10000
+    })
+
+    // Verify redirect to org page
+    await expect(page).toHaveURL(/\/orgs\/org[a-z0-9]+/)
+
+    // Verify org name appears in page
+    await expect(page.locator(`text=${orgName}`)).toBeVisible()
+  })
+
+  test('should validate required fields', async ({ authenticatedPage: page }) => {
+    await page.goto('/')
+    await page.click('button:has-text("Create Organization")')
+
+    // Try to submit without filling name
+    await page.click('button[type="submit"]:has-text("Create")')
+
+    // Should show validation error
+    await expect(page.locator('text=Organization name is required')).toBeVisible()
+  })
+})
+```
+
+#### 6.4 Canary Worker Integration
+
+**Playwright Activity:**
+```go
+// services/ctl-api/internal/app/canary/worker/activities/dashboard/run_playwright.go
+
+package dashboard
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    "os/exec"
+    "time"
+
+    "go.temporal.io/sdk/activity"
+)
+
+type PlaywrightRunner struct {
+    dashboardPath string
+    s3Client      *s3.Client
+    s3Bucket      string
+}
+
+type RunPlaywrightRequest struct {
+    TestFile     string            `json:"test_file"`
+    DashboardURL string            `json:"dashboard_url"`
+    AuthToken    string            `json:"auth_token"`
+    OrgID        string            `json:"org_id"`
+    Environment  map[string]string `json:"environment"`
+    Timeout      time.Duration     `json:"timeout"`
+}
+
+type PlaywrightTestResult struct {
+    TestFile      string           `json:"test_file"`
+    Success       bool             `json:"success"`
+    TestsPassed   int              `json:"tests_passed"`
+    TestsFailed   int              `json:"tests_failed"`
+    TestsSkipped  int              `json:"tests_skipped"`
+    Duration      time.Duration    `json:"duration"`
+    Tests         []PlaywrightTest `json:"tests"`
+    Screenshots   []string         `json:"screenshots"`  // S3 URLs
+    Videos        []string         `json:"videos"`       // S3 URLs
+    TraceFiles    []string         `json:"trace_files"` // S3 URLs
+    ErrorMessage  string           `json:"error_message,omitempty"`
+}
+
+type PlaywrightTest struct {
+    Title    string        `json:"title"`
+    Status   string        `json:"status"`
+    Duration time.Duration `json:"duration"`
+    Error    *TestError    `json:"error,omitempty"`
+}
+
+// @temporal-gen activity
+// @activity-queue "default"
+func (r *PlaywrightRunner) RunPlaywrightTest(ctx context.Context, req *RunPlaywrightRequest) (*PlaywrightTestResult, error) {
+    logger := activity.GetLogger(ctx)
+    startTime := time.Now()
+
+    // Prepare environment variables
+    env := []string{
+        fmt.Sprintf("DASHBOARD_URL=%s", req.DashboardURL),
+        fmt.Sprintf("CANARY_AUTH_TOKEN=%s", req.AuthToken),
+        fmt.Sprintf("CANARY_ORG_ID=%s", req.OrgID),
+        "NODE_ENV=test",
+        "CI=true",
+    }
+
+    // Execute Playwright tests
+    cmd := exec.CommandContext(ctx, "npx", "playwright", "test", req.TestFile)
+    cmd.Dir = r.dashboardPath
+    cmd.Env = append(os.Environ(), env...)
+
+    output, err := cmd.CombinedOutput()
+
+    // Parse JSON report
+    reportPath := filepath.Join(r.dashboardPath, "playwright-report", "results.json")
+    report, _ := r.parsePlaywrightReport(reportPath)
+
+    result := &PlaywrightTestResult{
+        TestFile:     req.TestFile,
+        TestsPassed:  report.Stats.Passed,
+        TestsFailed:  report.Stats.Failed,
+        TestsSkipped: report.Stats.Skipped,
+        Success:      report.Stats.Failed == 0 && err == nil,
+        Duration:     time.Since(startTime),
+    }
+
+    // Upload artifacts to S3 on failure
+    if !result.Success {
+        result.Screenshots, _ = r.uploadArtifacts(ctx, "playwright-report/**/*.png", "screenshots")
+        result.Videos, _ = r.uploadArtifacts(ctx, "playwright-report/**/*.webm", "videos")
+        result.TraceFiles, _ = r.uploadArtifacts(ctx, "playwright-report/**/*.zip", "traces")
+    }
+
+    return result, nil
+}
+```
+
+#### 6.5 Workflow Integration
+
+**E2ETestSuite with Playwright:**
+```go
+func (w *Workflows) E2ETestSuite(ctx workflow.Context, req *canary.E2ETestSuiteRequest) (*canary.E2ETestSuiteResponse, error) {
+    // ... setup canary environment ...
+
+    // Run CLI tests
+    if contains(req.TestScenarios, "org_lifecycle") {
+        // ... execute CLI org test ...
+    }
+
+    // Run Playwright tests
+    playwrightTests := []struct {
+        Scenario string
+        TestFile string
+    }{
+        {"dashboard_org_creation", "e2e/org-creation.spec.ts"},
+        {"dashboard_app_detail", "e2e/app-detail.spec.ts"},
+        {"dashboard_install_deploy", "e2e/install-deploy.spec.ts"},
+    }
+
+    for _, test := range playwrightTests {
+        if !contains(req.TestScenarios, test.Scenario) {
+            continue
+        }
+
+        response.TotalTests++
+
+        var playwrightResult *PlaywrightTestResult
+        err := workflow.ExecuteActivity(ctx, "RunPlaywrightTest", &RunPlaywrightRequest{
+            TestFile:     test.TestFile,
+            DashboardURL: req.DashboardURL,
+            AuthToken:    setupResult.APIToken,
+            OrgID:        setupResult.OrgID,
+            Timeout:      3 * time.Minute,
+        }).Get(ctx, &playwrightResult)
+
+        // Convert to canary TestResult
+        testResult := &canary.TestResult{
+            Scenario: test.Scenario,
+            Passed:   playwrightResult.Success,
+            Duration: playwrightResult.Duration,
+            Details: map[string]interface{}{
+                "test_file":     playwrightResult.TestFile,
+                "tests_passed":  playwrightResult.TestsPassed,
+                "tests_failed":  playwrightResult.TestsFailed,
+                "screenshots":   playwrightResult.Screenshots,
+                "videos":        playwrightResult.Videos,
+                "traces":        playwrightResult.TraceFiles,
+            },
+        }
+
+        response.Results[test.Scenario] = testResult
+    }
+
+    // ... cleanup and store results ...
+}
+```
+
+#### 6.6 Artifact Storage
+
+**S3 Upload on Failures:**
+- Screenshots: `s3://canary-artifacts/screenshots/YYYY-MM-DD/*.png`
+- Videos: `s3://canary-artifacts/videos/YYYY-MM-DD/*.webm`
+- Traces: `s3://canary-artifacts/traces/YYYY-MM-DD/*.zip`
+
+**Trace Viewer:**
+Playwright traces can be viewed at `https://trace.playwright.dev/?trace=<S3_URL>`
+
+#### 6.7 Test Scenarios
+
+**Critical UI Flows:**
+1. **Organization Creation** (`e2e/org-creation.spec.ts`)
+   - Create org via dashboard form
+   - Verify org appears in org switcher
+   - Test form validation
+
+2. **App Detail Page** (`e2e/app-detail.spec.ts`)
+   - Navigate to app after CLI sync
+   - View component list
+   - Trigger component build from UI
+
+3. **Install Deployment** (`e2e/install-deploy.spec.ts`)
+   - View install detail page
+   - Click deploy button
+   - Monitor deployment status in UI
+
+4. **Error Handling** (`e2e/error-handling.spec.ts`)
+   - API error displays user-friendly message
+   - Form validation shows inline errors
+   - Network errors handled gracefully
+
+#### 6.8 Notifications on Failure
+
+**Slack Alert with Artifacts:**
+```go
+func (n *Notifier) SendPlaywrightFailureNotification(ctx context.Context, result *PlaywrightTestResult) error {
+    message := fmt.Sprintf(`
+🔴 *Playwright Test Failed*
+
+*Test File:* %s
+*Failed Tests:* %d/%d
+*Duration:* %s
+
+*Debug Artifacts:*
+📸 <https://s3.amazonaws.com/%s|Screenshot>
+🎬 <https://s3.amazonaws.com/%s|Video>
+🔍 <https://trace.playwright.dev/?trace=%s|Trace>
+
+<https://temporal-canary-web.nuon.co/workflows/%s|View in Temporal UI>
+    `,
+        result.TestFile,
+        result.TestsFailed,
+        result.TestsPassed+result.TestsFailed,
+        result.Duration,
+        result.Screenshots[0],
+        result.Videos[0],
+        result.TraceFiles[0],
+        workflowID,
+    )
+
+    return n.slackClient.SendMessage(ctx, "#canary-alerts", message)
+}
+```
+
+### 7. Data Storage
 
 #### 6.1 Database Schema
 
