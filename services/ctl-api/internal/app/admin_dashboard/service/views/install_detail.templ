@@ -4,6 +4,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/components/popover"
+	"fmt"
 )
 
 templ InstallDetail(install *app.Install) {
@@ -48,10 +49,20 @@ templ InstallDetail(install *app.Install) {
 					</div>
 				</div>
 				<!-- Install Metadata Grid -->
-				<div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 pt-6 border-t border-border">
+				<div class="grid grid-cols-2 lg:grid-cols-3 gap-6 mt-6 pt-6 border-t border-border">
 					<div>
 						<div class="text-xs text-muted-foreground uppercase mb-1">App</div>
 						<div class="text-sm font-medium">{ install.App.Name }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">App Config Version</div>
+						<div class="text-sm font-medium font-mono">
+							if install.AppConfig.Version > 0 {
+								v{ fmt.Sprintf("%d", install.AppConfig.Version) }
+							} else {
+								<span class="text-muted-foreground">N/A</span>
+							}
+						</div>
 					</div>
 					<div>
 						<div class="text-xs text-muted-foreground uppercase mb-1">Cloud Platform</div>
@@ -64,6 +75,10 @@ templ InstallDetail(install *app.Install) {
 					<div>
 						<div class="text-xs text-muted-foreground uppercase mb-1">Created</div>
 						<div class="text-sm font-mono">{ install.CreatedAt.Format("2006-01-02 15:04") }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">Updated</div>
+						<div class="text-sm font-mono">{ install.UpdatedAt.Format("2006-01-02 15:04") }</div>
 					</div>
 				</div>
 			</div>

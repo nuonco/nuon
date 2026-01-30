@@ -44,6 +44,7 @@ func (s *Service) getInstall(c *gin.Context) (*app.Install, error) {
 	err := s.db.
 		Preload("Org").
 		Preload("App").
+		Preload("AppConfig").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Preload("AppRunnerConfig").
