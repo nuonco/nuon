@@ -50,6 +50,7 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
               size="lg"
               href={authUrl}
               className="w-full justify-center"
+              target="_self"
             >
               Sign up
             </Button>
@@ -70,6 +71,7 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
               size="lg"
               href={authUrl}
               className="w-full justify-center"
+              target="_self"
             >
               Sign in
             </Button>
