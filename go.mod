@@ -15,6 +15,8 @@ replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playgro
 
 replace github.com/databus23/helm-diff/v3 v3.12.5 => github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9
 
+replace helm.sh/helm/v4 => helm.sh/helm/v4 v4.0.0-alpha.1
+
 // Use in-tree SDKs instead of external module
 replace (
 	github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
