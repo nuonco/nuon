@@ -11,6 +11,10 @@ var rootCmd = &cobra.Command{}
 func Execute() {
 	c := &cli{}
 	c.registerAPI()
+	c.registerPublicAPI()
+	c.registerInternalAPI()
+	c.registerRunnerAPI()
+	c.registerAuthAPI()
 	c.registerWorker()
 	c.registerStartup()
 

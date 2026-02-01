@@ -9,41 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/profiles"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
-	actionsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker"
-	actionsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker/activities"
-	appbranchesworker "github.com/nuonco/nuon/services/ctl-api/internal/app/app-branches/worker"
-	appbranchesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/app-branches/worker/activities"
-	appsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker"
-	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
-	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"
-	componentsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
-	generalworker "github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker"
-	generalactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
-	installsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker"
-	installsactionsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/actions"
-	installsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	installscomponentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/components"
-	installssandboxworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/sandbox"
-	installsstackworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
-	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
-	orgsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker"
-	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
-	releasesworker "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/worker"
-	releasesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/worker/activities"
-	runnersworker "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker"
-	runnersactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/interceptors"
-	metricsinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/metrics"
-	validateinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/validate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
-	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
-	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
-	workflowsflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
-	flowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 var (
@@ -80,117 +47,60 @@ func shouldSkipNamespace(ns string) bool {
 }
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
-	providers := []fx.Option{
-		fx.Provide(interceptors.AsInterceptor(metricsinterceptor.New)),
-		fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),
-	}
+	providers := []fx.Option{}
 	providers = append(providers, c.providers()...)
 
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
-	// shared activities and workflows
-	providers = append(
-		providers,
-		fx.Provide(jobactivities.New),
-		fx.Provide(flowactivities.New),
-		fx.Provide(signalsactivities.New),
-		fx.Provide(statusactivities.New),
-		fx.Provide(activities.New),
-		fx.Provide(job.New),
-		fx.Provide(workflowsflow.New),
-		fx.Provide(workflows.NewActivities),
-		fx.Provide(workflows.NewWorkflows),
+	// Add worker interceptors and shared workflows
+	providers = append(providers,
+		fxmodules.WorkerInterceptorsModule,
+		fxmodules.SharedWorkflowsModule,
 	)
 
-	// generals worker
+	// Add namespace-specific worker modules based on flags
 	if (namespace == "all" || namespace == "general") && !shouldSkipNamespace("general") {
-		providers = append(providers,
-			fx.Provide(generalactivities.New),
-			fx.Provide(generalworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(generalworker.New)),
-		)
+		providers = append(providers, fxmodules.GeneralWorkerModule)
 	}
 
-	// orgs worker
 	if (namespace == "all" || namespace == "orgs") && !shouldSkipNamespace("orgs") {
-		providers = append(providers,
-			fx.Provide(orgsactivities.New),
-			fx.Provide(orgsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(orgsworker.New)),
-		)
+		providers = append(providers, fxmodules.OrgsWorkerModule)
 	}
 
-	// apps worker
 	if (namespace == "all" || namespace == "apps") && !shouldSkipNamespace("apps") {
-		providers = append(providers,
-			fx.Provide(appsactivities.New),
-			fx.Provide(appsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(appsworker.New)))
+		providers = append(providers, fxmodules.AppsWorkerModule)
 	}
 
-	// app-branches worker
 	if (namespace == "all" || namespace == "app-branches") && !shouldSkipNamespace("app-branches") {
-		providers = append(providers,
-			fx.Provide(appbranchesactivities.New),
-			fx.Provide(appbranchesworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(componentsworker.New)),
-		)
+		providers = append(providers, fxmodules.AppBranchesWorkerModule)
 	}
 
-	// components worker
 	if (namespace == "all" || namespace == "components") && !shouldSkipNamespace("components") {
-		providers = append(providers,
-			fx.Provide(componentsactivities.New),
-			fx.Provide(componentsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(componentsworker.New)),
-		)
+		providers = append(providers, fxmodules.ComponentsWorkerModule)
 	}
 
-	// installs worker
 	if (namespace == "all" || namespace == "installs") && !shouldSkipNamespace("installs") {
-		providers = append(providers,
-			fx.Provide(installsactivities.New),
-			fx.Provide(installsworker.NewWorkflows),
-			fx.Provide(installsactionsworker.NewWorkflows),
-			fx.Provide(installscomponentsworker.NewWorkflows),
-			fx.Provide(installssandboxworker.NewWorkflows),
-			fx.Provide(installsstackworker.NewWorkflows),
-			fx.Provide(installstate.New),
-			fx.Provide(worker.AsWorker(installsworker.New)),
-		)
+		providers = append(providers, fxmodules.InstallsWorkerModule)
 	}
 
 	if (namespace == "all" || namespace == "releases") && !shouldSkipNamespace("releases") {
-		providers = append(providers,
-			fx.Provide(releasesactivities.New),
-			fx.Provide(releasesworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(releasesworker.New)),
-		)
+		providers = append(providers, fxmodules.ReleasesWorkerModule)
 	}
 
 	if (namespace == "all" || namespace == "runners") && !shouldSkipNamespace("runners") {
-		providers = append(providers,
-			// runners worker
-			fx.Provide(runnersactivities.New),
-			fx.Provide(runnersworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(runnersworker.New)),
-		)
+		providers = append(providers, fxmodules.RunnersWorkerModule)
 	}
 
 	if (namespace == "all" || namespace == "actions") && !shouldSkipNamespace("actions") {
-		providers = append(providers,
-			// actions worker
-			fx.Provide(actionsactivities.New),
-			fx.Provide(actionsworker.NewWorkflows),
-			fx.Provide(worker.AsWorker(actionsworker.New)),
-		)
+		providers = append(providers, fxmodules.ActionsWorkerModule)
 	}
 
+	// Add final invocations
 	providers = append(providers,
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
-		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {
-		})),
+		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
 	)
+
 	fx.New(providers...).Run()
 }
