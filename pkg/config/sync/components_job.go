@@ -35,6 +35,14 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 		configRequest.References = append(configRequest.References, ref.String())
 	}
 
+	// Add operation roles if present
+	if len(comp.OperationRoles) > 0 {
+		configRequest.OperationRoles = make(map[string]string)
+		for _, opRole := range comp.OperationRoles {
+			configRequest.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
+	}
+
 	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
 	if err != nil {
 		return "", "", err

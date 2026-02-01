@@ -71,6 +71,9 @@ type AppComponentConfigConnection struct {
 	// kubernetes manifest
 	KubernetesManifest *AppKubernetesManifestComponentConfig `json:"kubernetes_manifest,omitempty"`
 
+	// Operation roles map: operation type -> role name
+	OperationRoles map[string]string `json:"operation_roles,omitempty"`
+
 	// references
 	References []string `json:"references"`
 

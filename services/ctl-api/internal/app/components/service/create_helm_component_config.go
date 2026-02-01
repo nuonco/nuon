@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
@@ -32,10 +33,11 @@ type CreateHelmComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies  []string `json:"dependencies"`
-	References    []string `json:"references"`
-	Checksum      string   `json:"checksum"`
-	DriftSchedule *string  `json:"drift_schedule,omitempty"`
+	Dependencies   []string           `json:"dependencies"`
+	References     []string           `json:"references"`
+	Checksum       string             `json:"checksum"`
+	DriftSchedule  *string            `json:"drift_schedule,omitempty"`
+	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
 }
 
 type HelmRepoConfigRequest struct {
@@ -204,6 +206,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		Checksum:               req.Checksum,
 		BuildTimeout:           req.BuildTimeout,
 		DeployTimeout:          req.DeployTimeout,
+		OperationRoles:         pgtype.Hstore(req.OperationRoles),
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)

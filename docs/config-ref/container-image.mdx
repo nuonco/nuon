@@ -15,6 +15,7 @@ title: 'Container Image'
 | `name` | `string` | ✅ Yes | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | - | `"database"` |
 | `var_name` | `string` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | `"db_endpoint"` |
 | `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
+| `operation_roles` | `array` | No | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | - | - |
 | `aws_ecr` | `AWSECRConfig` | No | AWS ECR image configuration Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories | - | - |
 | `public` | `PublicImageConfig` | No | public registry image configuration Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc) | - | - |
 | `build_timeout` | `string` | No | build operation timeout Duration string for build operations (e.g., "30m", "1h"). | - | `"30m"` |

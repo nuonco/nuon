@@ -28,9 +28,10 @@ type CreateDockerBuildComponentConfigRequest struct {
 	DeployTimeout string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	AppConfigID   string             `json:"app_config_id"`
 
-	Dependencies []string `json:"dependencies"`
-	References   []string `json:"references"`
-	Checksum     string   `json:"checksum"`
+	Dependencies   []string           `json:"dependencies"`
+	References     []string           `json:"references"`
+	Checksum       string             `json:"checksum"`
+	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
 }
 
 func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -177,6 +178,7 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		Checksum:                   req.Checksum,
 		BuildTimeout:               req.BuildTimeout,
 		DeployTimeout:              req.DeployTimeout,
+		OperationRoles:             pgtype.Hstore(req.OperationRoles),
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create docker build component config connection: %w", res.Error)

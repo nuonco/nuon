@@ -34,6 +34,9 @@ type ServiceCreateActionWorkflowConfigRequest struct {
 	// references
 	References []string `json:"references"`
 
+	// role
+	Role string `json:"role,omitempty"`
+
 	// steps
 	// Required: true
 	Steps []*ServiceCreateActionWorkflowConfigStepRequest `json:"steps"`
