@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
@@ -41,9 +42,10 @@ type CreateExternalImageComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies []string `json:"dependencies"`
-	References   []string `json:"references"`
-	Checksum     string   `json:"checksum"`
+	Dependencies   []string           `json:"dependencies"`
+	References     []string           `json:"references"`
+	Checksum       string             `json:"checksum"`
+	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
 }
 
 func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -170,6 +172,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		Checksum:                     req.Checksum,
 		BuildTimeout:                 req.BuildTimeout,
 		DeployTimeout:                req.DeployTimeout,
+		OperationRoles:               pgtype.Hstore(req.OperationRoles),
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create external image component config connection: %w", res.Error)

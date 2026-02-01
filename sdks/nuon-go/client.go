@@ -73,6 +73,9 @@ type Client interface {
 	GetLatestAppPermissionsConfig(ctx context.Context, appID string) (*models.AppAppPermissionsConfig, error)
 	GetAppPermissionsConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppPermissionsConfig, error)
 
+	// app operation roles
+	CreateAppOperationRoleConfig(ctx context.Context, appID string, req *models.ServiceCreateAppOperationRoleConfigRequest) (*models.AppAppOperationRoleConfig, error)
+
 	// app cloudformation stack config methods
 	CreateAppStackConfig(ctx context.Context, appID string, req *models.ServiceCreateAppStackConfigRequest) (*models.AppAppStackConfig, error)
 	GetAppStackConfig(ctx context.Context, appID, appStackConfigID string) (*models.AppAppStackConfig, error)

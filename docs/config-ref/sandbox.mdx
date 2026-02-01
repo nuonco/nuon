@@ -18,6 +18,7 @@ title: 'Sandbox'
 | `env_vars` | `object` | No | environment variables Map of environment variables passed to Terraform as key-value pairs | - | - |
 | `vars` | `object` | No | Terraform variables Map of Terraform input variables as key-value pairs. Supports templating | - | - |
 | `var_file` | `array` | No | Terraform variable files Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git rep... | - | - |
+| `operation_roles` | `array` | No | operation-specific IAM role assignments Map of sandbox operations to IAM role names. Allows using different roles for different operations (provision, deprovision, reprovision). Roles must be defin... | - | - |
 
 ### Property Details
 

@@ -50,6 +50,7 @@ type AWSStackOutputs struct {
 	MaintenanceIAMRoleARN string            `json:"maintenance_iam_role_arn,omitzero" mapstructure:"maintenance_iam_role_arn" temporaljson:"maintenance_iam_role_arn,omitzero,omitempty"`
 	RunnerIAMRoleARN      string            `json:"runner_iam_role_arn,omitzero" mapstructure:"runner_iam_role_arn" temporaljson:"runner_iam_role_arn,omitzero,omitempty"`
 	BreakGlassRoleARNs    map[string]string `json:"break_glass_role_arns,omitzero" mapstructure:"break_glass_role_arns" temporaljson:"break_glass_role_arns,omitzero,omitempty"`
+	CustomRoleARNs        map[string]string `json:"custom_role_arns,omitzero" mapstructure:"custom_role_arns" temporaljson:"custom_role_arns,omitzero,omitempty"`
 	InstallInputs         map[string]string `json:"install_inputs,omitzero" mapstructure:"install_inputs" temporaljson:"install_inputs,omitzero,omitempty"`
 }
 

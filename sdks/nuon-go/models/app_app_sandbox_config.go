@@ -50,6 +50,9 @@ type AppAppSandboxConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// Operation roles map: operation type -> role name
+	OperationRoles map[string]string `json:"operation_roles,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

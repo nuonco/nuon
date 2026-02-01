@@ -18,7 +18,6 @@ import (
 //
 // swagger:model service.CreateKubernetesManifestComponentConfigRequest
 type ServiceCreateKubernetesManifestComponentConfigRequest struct {
-
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
@@ -50,6 +49,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
+
+	// operation roles
+	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 
 	// public git vcs config
 	PublicGitVcsConfig *ServicePublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
@@ -157,7 +159,6 @@ func (m *ServiceCreateKubernetesManifestComponentConfigRequest) ContextValidate(
 }
 
 func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidateConnectedGithubVcsConfig(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.ConnectedGithubVcsConfig != nil {
 
 		if swag.IsZero(m.ConnectedGithubVcsConfig) { // not required
@@ -182,12 +183,10 @@ func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidateC
 }
 
 func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidateKustomize(ctx context.Context, formats strfmt.Registry) error {
-
 	return nil
 }
 
 func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidatePublicGitVcsConfig(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.PublicGitVcsConfig != nil {
 
 		if swag.IsZero(m.PublicGitVcsConfig) { // not required

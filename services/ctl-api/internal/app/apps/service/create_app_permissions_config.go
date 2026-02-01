@@ -20,6 +20,7 @@ type CreateAppPermissionsConfigRequest struct {
 	MaintenanceRole AppAWSIAMRoleConfig `json:"maintenance_role" validate:"required"`
 
 	BreakGlassRoles *[]AppAWSIAMRoleConfig `json:"break_glass_roles"`
+	CustomRoles     *[]AppAWSIAMRoleConfig `json:"custom_roles"`
 
 	AppConfigID string `json:"app_config_id" validate:"required"`
 }
@@ -103,6 +104,25 @@ func (s *service) CreateAppPermissionsConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
+func (s *service) getCustomRoleConfigs(roles []AppAWSIAMRoleConfig, appConfigID string) []app.AppAWSIAMRoleConfig {
+	roleConfigs := make([]app.AppAWSIAMRoleConfig, 0, len(roles))
+
+	for _, role := range roles {
+		roleConfig := app.AppAWSIAMRoleConfig{
+			AppConfigID:             appConfigID,
+			Type:                    app.AWSIAMRoleTypeCustom,
+			Name:                    role.Name,
+			Description:             role.Description,
+			DisplayName:             role.DisplayName,
+			PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
+			Policies:                role.getPolicies(appConfigID),
+		}
+		roleConfigs = append(roleConfigs, roleConfig)
+	}
+
+	return roleConfigs
+}
+
 func (s *service) getBreakGlassRoleConfigs(roles []AppAWSIAMRoleConfig, appConfigID string) []app.AppAWSIAMRoleConfig {
 	roleConfigs := make([]app.AppAWSIAMRoleConfig, 0, len(roles))
 
@@ -158,6 +178,10 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 	}
 	if req.BreakGlassRoles != nil {
 		obj.Roles = append(obj.Roles, s.getBreakGlassRoleConfigs(*req.BreakGlassRoles, req.AppConfigID)...)
+	}
+
+	if req.CustomRoles != nil {
+		obj.Roles = append(obj.Roles, s.getCustomRoleConfigs(*req.CustomRoles, req.AppConfigID)...)
 	}
 
 	res := s.db.WithContext(ctx).Create(&obj)

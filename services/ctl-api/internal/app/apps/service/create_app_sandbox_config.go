@@ -26,6 +26,8 @@ type CreateAppSandboxConfigRequest struct {
 	Variables      map[string]*string `json:"variables" validate:"required"`
 	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
 
+	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
+
 	References []string `json:"references"`
 
 	AppConfigID string `json:"app_config_id"`
@@ -159,6 +161,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 		TerraformVersion:         req.TerraformVersion,
 		References:               pq.StringArray(req.References),
+		OperationRoles:           pgtype.Hstore(req.OperationRoles),
 	}
 
 	if req.DriftSchedule != nil {

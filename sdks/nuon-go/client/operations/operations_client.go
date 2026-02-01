@@ -132,6 +132,8 @@ type ClientService interface {
 
 	CreateAppKubernetesManifestComponentConfig(params *CreateAppKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesManifestComponentConfigCreated, error)
 
+	CreateAppOperationRoleConfig(params *CreateAppOperationRoleConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppOperationRoleConfigCreated, error)
+
 	CreateAppPermissionsConfig(params *CreateAppPermissionsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppPermissionsConfigCreated, error)
 
 	CreateAppPoliciesConfig(params *CreateAppPoliciesConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppPoliciesConfigCreated, error)
@@ -315,6 +317,8 @@ type ClientService interface {
 	GetAppInstalls(params *GetAppInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInstallsOK, error)
 
 	GetAppLatestConfig(params *GetAppLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppLatestConfigOK, error)
+
+	GetAppOperationRoleConfigs(params *GetAppOperationRoleConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppOperationRoleConfigsOK, error)
 
 	GetAppPermissionsConfig(params *GetAppPermissionsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppPermissionsConfigOK, error)
 
@@ -1719,6 +1723,52 @@ func (a *Client) CreateAppKubernetesManifestComponentConfig(params *CreateAppKub
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateAppKubernetesManifestComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAppOperationRoleConfig creates operation role config
+
+Create operation role rules for an app config
+*/
+func (a *Client) CreateAppOperationRoleConfig(params *CreateAppOperationRoleConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppOperationRoleConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppOperationRoleConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppOperationRoleConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/operation-role-configs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppOperationRoleConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAppOperationRoleConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAppOperationRoleConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -6007,6 +6057,52 @@ func (a *Client) GetAppLatestConfig(params *GetAppLatestConfigParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppLatestConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppOperationRoleConfigs gets operation role configs
+
+Get all operation role configs for an app
+*/
+func (a *Client) GetAppOperationRoleConfigs(params *GetAppOperationRoleConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppOperationRoleConfigsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppOperationRoleConfigsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppOperationRoleConfigs",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/operation-role-configs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppOperationRoleConfigsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppOperationRoleConfigsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppOperationRoleConfigs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

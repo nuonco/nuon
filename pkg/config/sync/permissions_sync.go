@@ -33,6 +33,14 @@ func (s sync) getAppPermissionsRequest() *models.ServiceCreateAppPermissionsConf
 		req.BreakGlassRoles = breakGlassRoles
 	}
 
+	if len(s.cfg.Permissions.CustomRoles) > 0 {
+		customRoles := make([]*models.ServiceAppAWSIAMRoleConfig, 0, len(s.cfg.Permissions.CustomRoles))
+		for _, role := range s.cfg.BreakGlass.Roles {
+			customRoles = append(customRoles, s.awsIAMRoleToRequest(role))
+		}
+		req.CustomRoles = customRoles
+	}
+
 	return req
 }
 

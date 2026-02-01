@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
@@ -35,6 +36,8 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 
 	// VCS configuration for kustomize sources
 	basicVCSConfigRequest
+
+	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
 }
 
 // KustomizeConfigRequest defines kustomize options in API requests
@@ -229,6 +232,7 @@ func (s *service) createKubernetesManifestComponentConfig(
 		ComponentDependencyIDs:            pq.StringArray(depIDs),
 		BuildTimeout:                      req.BuildTimeout,
 		DeployTimeout:                     req.DeployTimeout,
+		OperationRoles:                    pgtype.Hstore(req.OperationRoles),
 	}
 
 	if req.DriftSchedule != nil {

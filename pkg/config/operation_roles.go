@@ -1,0 +1,319 @@
+package config
+
+import (
+	"errors"
+	"fmt"
+	"slices"
+	"strings"
+
+	"github.com/invopop/jsonschema"
+)
+
+type OperationRuleConfigType string
+
+const (
+	OperationRuleConfigTypeMatrix OperationRuleConfigType = "matrix"
+)
+
+type PrincipalType string
+
+const (
+	PrincipalTypeComponent PrincipalType = "component"
+	PrincipalTypeSandbox   PrincipalType = "sandbox"
+	PrincipalTypeAction    PrincipalType = "action"
+)
+
+type OperationType string
+
+const (
+	OperationProvision   OperationType = "provision"
+	OperationDeprovision OperationType = "deprovision"
+	OperationUpdate      OperationType = "update"
+	OperationReprovision OperationType = "reprovision"
+	OperationTrigger     OperationType = "trigger"
+)
+
+type ValidOperations []OperationType
+
+func (v ValidOperations) String() string {
+	operationStrings := make([]string, len(v))
+	for i, op := range v {
+		operationStrings[i] = string(op)
+	}
+	return strings.Join(operationStrings, ",")
+}
+
+var validOperations ValidOperations = []OperationType{
+	OperationProvision,
+	OperationDeprovision,
+	OperationUpdate,
+	OperationReprovision,
+	OperationTrigger,
+}
+
+// OperationRolesConfig defines role assignments for operations at the app level
+type OperationRolesConfig struct {
+	Type       string               `mapstructure:"type" toml:"type" jsonschema:"required"` // Should be "matrix"
+	RuleMatrix []*OperationRoleRule `mapstructure:"rules,omitempty" toml:"rules,omitempty" jsonschema:"required"`
+}
+
+func (c OperationRolesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("type").Short("configuration type").
+		Long("Type of operation roles configuration. Must be 'matrix' for rule-based role assignment").
+		Field("rules").Short("operation role rules").
+		Long("Array of rules that map principals (components, sandboxes, actions) and operations to IAM roles")
+}
+
+func (c *OperationRolesConfig) Parse() error {
+	return nil
+}
+
+func (c *OperationRolesConfig) Validate() error {
+	if c == nil {
+		return nil
+	}
+
+	if c.Type != "matrix" {
+		return errors.New("only matrix type supported")
+	}
+
+	if len(c.RuleMatrix) == 0 {
+		return errors.New("operation_roles rules cannot be empty when operation_roles is configured")
+	}
+
+	// validate if a particular rule is duplicated for a principal and a operation
+	seen := make(map[string]bool)
+	for i, rule := range c.RuleMatrix {
+		key := fmt.Sprintf("%s:%s", rule.Principal, rule.Operation)
+		if seen[key] {
+			return fmt.Errorf("duplicate rule at index %d: principal %q with operation %q is already defined", i, rule.Principal, rule.Operation)
+		}
+		seen[key] = true
+	}
+
+	for i, rule := range c.RuleMatrix {
+		if err := rule.Validate(); err != nil {
+			return fmt.Errorf("rule at index %d: %w", i, err)
+		}
+	}
+
+	return nil
+}
+
+// ValidateWithConfig validates operation role rules against actual components and actions, to make sure refs are correct
+func (c *OperationRolesConfig) ValidateWithConfig(
+	components []*Component,
+	actions []*ActionConfig,
+	permissions *PermissionsConfig,
+	breakGlass *BreakGlass,
+) error {
+	if c == nil {
+		return nil // Optional config
+	}
+
+	if err := c.Validate(); err != nil {
+		return err
+	}
+
+	componentNames := make(map[string]bool)
+	for _, comp := range components {
+		componentNames[comp.Name] = true
+	}
+
+	actionNames := make(map[string]bool)
+	for _, action := range actions {
+		actionNames[action.Name] = true
+	}
+
+	availableRoles := make(map[string]bool)
+	if permissions != nil {
+		for _, role := range permissions.Roles {
+			if role.Name != "" {
+				availableRoles[role.Name] = true
+			}
+		}
+	}
+	if breakGlass != nil {
+		for _, role := range breakGlass.Roles {
+			if role.Name != "" {
+				availableRoles[role.Name] = true
+			}
+		}
+	}
+
+	for i, rule := range c.RuleMatrix {
+		principalType, principalName, err := rule.ParsePrincipal()
+		if err != nil {
+			return fmt.Errorf("rule at index %d: failed to parse principal: %w", i, err)
+		}
+
+		// Skip wildcard validation for principal
+		if principalName != "*" {
+			switch PrincipalType(principalType) {
+			case PrincipalTypeComponent:
+				if principalName == "" {
+					return fmt.Errorf("rule at index %d: component principal has empty name", i)
+				}
+				if !componentNames[principalName] {
+					return fmt.Errorf("rule at index %d: component %q does not exist in app config", i, principalName)
+				}
+
+			case PrincipalTypeAction:
+				if principalName == "" {
+					return fmt.Errorf("rule at index %d: action principal has empty name", i)
+				}
+				if !actionNames[principalName] {
+					return fmt.Errorf("rule at index %d: action %q does not exist in app config", i, principalName)
+				}
+
+			case PrincipalTypeSandbox:
+				continue
+
+			default:
+				return fmt.Errorf("rule at index %d: unknown principal type %q", i, principalType)
+			}
+		}
+
+		if !availableRoles[rule.RoleName] {
+			return fmt.Errorf("rule at index %d: role %q does not exist in permissions or break_glass config", i, rule.RoleName)
+		}
+	}
+
+	return nil
+}
+
+// OperationRoleRule maps a principal (component/sandbox/action) + operation to a role name
+type OperationRoleRule struct {
+	// Format: "nuon::component:name", "nuon::sandbox", "nuon::action:name"
+	Principal string `mapstructure:"principal" toml:"principal" jsonschema:"required"`
+	// "provision", "deprovision", "update", "reprovision", "trigger"
+	Operation OperationType `mapstructure:"operation" toml:"operation" jsonschema:"required"`
+	RoleName  string        `mapstructure:"role" toml:"role" jsonschema:"required"`
+}
+
+func (r OperationRoleRule) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("principal").Short("principal identifier").
+		Long("Identifier for the entity: 'nuon::component:name', 'nuon::sandbox', or 'nuon::action:name'. Supports wildcards like 'nuon::component:*'").
+		Field("operation").Short("operation type").
+		Long("Type of operation: provision, deprovision, update, reprovision, or trigger").
+		Field("role").Short("IAM role name").
+		Long("Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs")
+}
+
+func (r *OperationRoleRule) Validate() error {
+	if err := r.ValidatePrincipal(); err != nil {
+		return err
+	}
+
+	if !slices.Contains(validOperations, r.Operation) {
+		return fmt.Errorf("operation must be one of: %s", validOperations.String())
+	}
+
+	if strings.TrimSpace(r.RoleName) == "" {
+		return errors.New("role name cannot be empty")
+	}
+
+	return nil
+}
+
+func (r *OperationRoleRule) ValidatePrincipal() error {
+	if r.Principal == "" {
+		return errors.New("principal cannot be empty")
+	}
+
+	// Must start with "nuon::"
+	if !strings.HasPrefix(r.Principal, "nuon::") {
+		return fmt.Errorf("principal must start with 'nuon::' (got: %s)", r.Principal)
+	}
+
+	principalType, principalName, err := r.ParsePrincipal()
+	if err != nil {
+		return err
+	}
+
+	validTypes := []PrincipalType{PrincipalTypeComponent, PrincipalTypeSandbox, PrincipalTypeAction}
+	if !slices.Contains(validTypes, PrincipalType(principalType)) {
+		validTypeStrings := make([]string, len(validTypes))
+		for i, t := range validTypes {
+			validTypeStrings[i] = string(t)
+		}
+		return fmt.Errorf("principal type must be one of: %s", strings.Join(validTypeStrings, ", "))
+	}
+
+	if PrincipalType(principalType) == PrincipalTypeSandbox && principalName != "" {
+		return errors.New("sandbox principal should not have a name (use 'nuon::sandbox')")
+	}
+
+	if (PrincipalType(principalType) == PrincipalTypeComponent ||
+		PrincipalType(principalType) == PrincipalTypeAction) &&
+		principalName == "" {
+		return fmt.Errorf("%s principal must have a name (e.g., 'nuon::%s:name' or 'nuon::%s:*')",
+			principalType, principalType, principalType)
+	}
+
+	return nil
+}
+
+// ParsePrincipal extracts the principal type and name from the principal string
+// Examples:
+//   - "nuon::component:database" -> ("component", "database", nil)
+//   - "nuon::sandbox" -> ("sandbox", "", nil)
+//   - "nuon::action:*" -> ("action", "*", nil)
+func (r *OperationRoleRule) ParsePrincipal() (string, string, error) {
+	if !strings.HasPrefix(r.Principal, "nuon::") {
+		return "", "", fmt.Errorf("principal must start with 'nuon::'")
+	}
+
+	remainder := strings.TrimPrefix(r.Principal, "nuon::")
+
+	// split by ":" to seprate principal type and name
+	parts := strings.SplitN(remainder, ":", 2)
+	if len(parts) == 0 {
+		return "", "", fmt.Errorf("invalid principal format: %s", r.Principal)
+	}
+
+	principalType := parts[0]
+
+	var principalName string
+
+	// check if theres a name part
+	if len(parts) == 2 {
+		principalName = parts[1]
+	}
+
+	if principalType == "" {
+		return "", "", fmt.Errorf("principalType cannot be empty, shuold be either component, action or sandbox")
+	}
+
+	return principalType, principalName, nil
+}
+
+// EntityOperationRole is used within entities like component, sandbox and action to specify roles for specific operation
+type EntityOperationRole struct {
+	Operation OperationType `mapstructure:"operation" toml:"operation" jsonschema:"required"`
+	RoleName  string        `mapstructure:"role" toml:"role" jsonschema:"required"`
+}
+
+func (e EntityOperationRole) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("operation").Short("operation type").
+		Long("Type of operation: provision, deprovision, update, reprovision, or trigger").
+		Field("role").Short("IAM role name").
+		Long("Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs")
+}
+
+func (e *EntityOperationRole) Validate() error {
+	// Validate operation
+	if !slices.Contains(validOperations, e.Operation) {
+		return fmt.Errorf("operation must be one of: %s", validOperations.String())
+	}
+
+	// Validate role name is not empty
+	if strings.TrimSpace(e.RoleName) == "" {
+		return errors.New("role name cannot be empty")
+	}
+
+	return nil
+}
