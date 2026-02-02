@@ -26,6 +26,19 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 	}
 	log.Debugf("✅ Found document, length: %d chars", len(text))
 
+	// Check if we're on line 0 (first line) after a # - provide schema type completions
+	if pos.Line == 0 {
+		lines := strings.Split(text, "\n")
+		if len(lines) > 0 {
+			firstLine := lines[0]
+			beforeCursor := firstLine[:min(int(pos.Character), len(firstLine))]
+			if strings.HasPrefix(strings.TrimSpace(beforeCursor), "#") {
+				log.Infof("🏷️  Building schema type completions for first line")
+				return buildSchemaTypeCompletions(), nil
+			}
+		}
+	}
+
 	// Parse TOML using hybrid parser
 	cursorPos := tomlparser.Position{Line: int(pos.Line), Character: int(pos.Character)}
 	doc := tomlparser.ParseTomlWithCursor(text, cursorPos)
@@ -164,3 +177,26 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 
 // small helper to get pointer of string
 func ptr(s string) *string { return &s }
+
+// buildSchemaTypeCompletions returns completion items for all valid schema types
+func buildSchemaTypeCompletions() *protocol.CompletionList {
+	schemaTypes := models.GetValidSchemaTypes()
+	items := make([]protocol.CompletionItem, 0, len(schemaTypes))
+
+	for _, schemaType := range schemaTypes {
+		kind := protocol.CompletionItemKindValue
+		detail := "Schema type"
+		items = append(items, protocol.CompletionItem{
+			Label:      schemaType,
+			Kind:       &kind,
+			Detail:     &detail,
+			InsertText: ptr(schemaType),
+		})
+	}
+
+	log.Infof("✅ Generated %d schema type completions", len(items))
+	return &protocol.CompletionList{
+		IsIncomplete: false,
+		Items:        items,
+	}
+}
