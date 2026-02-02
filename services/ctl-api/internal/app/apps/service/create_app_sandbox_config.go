@@ -27,7 +27,7 @@ type CreateAppSandboxConfigRequest struct {
 	Variables      map[string]*string `json:"variables" validate:"required"`
 	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
 
-	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 
 	References []string `json:"references"`
 
@@ -152,6 +152,11 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get public git config: %w", err)
 	}
 
+	var operationRoles pgtype.Hstore
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	appSandboxConfig := app.AppSandboxConfig{
 		AppID:                    appID,
 		AppConfigID:              req.AppConfigID,
@@ -162,7 +167,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 		TerraformVersion:         req.TerraformVersion,
 		References:               pq.StringArray(req.References),
-		OperationRoles:           pgtype.Hstore(req.OperationRoles),
+		OperationRoles:           operationRoles,
 	}
 
 	if req.DriftSchedule != nil {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
+	"github.com/nuonco/nuon/pkg/principal"
 )
 
 type OperationRuleConfigType string
@@ -15,22 +16,27 @@ const (
 	OperationRuleConfigTypeMatrix OperationRuleConfigType = "matrix"
 )
 
-type PrincipalType string
+// PrincipalType is an alias to principal.Type for backward compatibility
+type PrincipalType = principal.Type
 
 const (
-	PrincipalTypeComponent PrincipalType = "component"
-	PrincipalTypeSandbox   PrincipalType = "sandbox"
-	PrincipalTypeAction    PrincipalType = "action"
+	PrincipalTypeComponent PrincipalType = principal.TypeComponent
+	PrincipalTypeSandbox   PrincipalType = principal.TypeSandbox
+	PrincipalTypeAction    PrincipalType = principal.TypeAction
 )
 
 type OperationType string
 
 const (
+	// for sandbox
 	OperationProvision   OperationType = "provision"
 	OperationDeprovision OperationType = "deprovision"
-	OperationUpdate      OperationType = "update"
 	OperationReprovision OperationType = "reprovision"
-	OperationTrigger     OperationType = "trigger"
+	// for components
+	OperationDeploy   OperationType = "deploy"
+	OperationTeardown OperationType = "teardown"
+	// for actions
+	OperationTrigger OperationType = "trigger"
 )
 
 type ValidOperations []OperationType
@@ -46,8 +52,9 @@ func (v ValidOperations) String() string {
 var validOperations ValidOperations = []OperationType{
 	OperationProvision,
 	OperationDeprovision,
-	OperationUpdate,
 	OperationReprovision,
+	OperationDeploy,
+	OperationTeardown,
 	OperationTrigger,
 }
 
@@ -262,32 +269,12 @@ func (r *OperationRoleRule) ValidatePrincipal() error {
 //   - "nuon::sandbox" -> ("sandbox", "", nil)
 //   - "nuon::action:*" -> ("action", "*", nil)
 func (r *OperationRoleRule) ParsePrincipal() (string, string, error) {
-	if !strings.HasPrefix(r.Principal, "nuon::") {
-		return "", "", fmt.Errorf("principal must start with 'nuon::'")
+	p, err := principal.ParsePrincipal(r.Principal)
+	if err != nil {
+		return "", "", fmt.Errorf("unable to parse principal: %s", err)
 	}
 
-	remainder := strings.TrimPrefix(r.Principal, "nuon::")
-
-	// split by ":" to seprate principal type and name
-	parts := strings.SplitN(remainder, ":", 2)
-	if len(parts) == 0 {
-		return "", "", fmt.Errorf("invalid principal format: %s", r.Principal)
-	}
-
-	principalType := parts[0]
-
-	var principalName string
-
-	// check if theres a name part
-	if len(parts) == 2 {
-		principalName = parts[1]
-	}
-
-	if principalType == "" {
-		return "", "", fmt.Errorf("principalType cannot be empty, shuold be either component, action or sandbox")
-	}
-
-	return principalType, principalName, nil
+	return string(p.Type), p.Name, nil
 }
 
 // EntityOperationRole is used within entities like component, sandbox and action to specify roles for specific operation

@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -90,31 +91,31 @@ func (s *service) createAppOperationRoleConfigRecord(ctx context.Context, req *C
 	return &cfg, nil
 }
 
-func (s *service) createOperationRoleRules(ctx context.Context, cfg *app.AppOperationRoleConfig, req *CreateAppOperationRoleConfigRequest) ([]app.OperationRoleRule, error) {
+func (s *service) createOperationRoleRules(ctx context.Context, cfg *app.AppOperationRoleConfig, req *CreateAppOperationRoleConfigRequest) ([]*app.OperationRoleRule, error) {
 	if len(req.Rules) == 0 {
-		return []app.OperationRoleRule{}, nil
+		return []*app.OperationRoleRule{}, nil
 	}
 
-	rules := make([]app.OperationRoleRule, 0, len(req.Rules))
+	rules := make([]*app.OperationRoleRule, 0, len(req.Rules))
 
 	for _, ruleReq := range req.Rules {
 		// Validate operation type
 		operationType := app.OperationType(ruleReq.Operation)
-		validOperations := []app.OperationType{
-			app.OperationProvision,
-			app.OperationDeprovision,
-			app.OperationUpdate,
-			app.OperationReprovision,
-			app.OperationTrigger,
-		}
 
-		if !slices.Contains(validOperations, operationType) {
+		if !slices.Contains(app.ValidOperations, operationType) {
 			return nil, fmt.Errorf("invalid operation type: %s", ruleReq.Operation)
 		}
 
-		rules = append(rules, app.OperationRoleRule{
+		// Parse principal to extract type and name
+		p, err := principal.ParsePrincipal(ruleReq.Principal)
+		if err != nil {
+			return nil, fmt.Errorf("invalid principal %q: %w", ruleReq.Principal, err)
+		}
+
+		rules = append(rules, &app.OperationRoleRule{
 			AppOperationRoleConfigID: cfg.ID,
-			Principal:                ruleReq.Principal,
+			PrincipalType:            p.Type,
+			PrincipalName:            p.Name,
 			Operation:                operationType,
 			Role:                     ruleReq.Role,
 		})

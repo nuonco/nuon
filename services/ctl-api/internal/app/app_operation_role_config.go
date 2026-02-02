@@ -10,16 +10,6 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
-type OperationType string
-
-const (
-	OperationProvision   OperationType = "provision"
-	OperationDeprovision OperationType = "deprovision"
-	OperationUpdate      OperationType = "update"
-	OperationReprovision OperationType = "reprovision"
-	OperationTrigger     OperationType = "trigger"
-)
-
 // AppOperationRoleConfig stores operation role configuration for an app
 type AppOperationRoleConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
@@ -35,7 +25,7 @@ type AppOperationRoleConfig struct {
 	AppID       string `json:"app_id,omitzero" temporaljson:"app_id,omitzero,omitempty"`
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	Rules []OperationRoleRule `json:"rules,omitempty" gorm:"foreignKey:app_operation_role_config_id"`
+	Rules []*OperationRoleRule `json:"rules,omitempty" gorm:"foreignKey:app_operation_role_config_id"`
 }
 
 func (a *AppOperationRoleConfig) Indexes(db *gorm.DB) []migrations.Index {

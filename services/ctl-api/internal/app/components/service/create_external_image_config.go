@@ -43,10 +43,10 @@ type CreateExternalImageComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies   []string           `json:"dependencies"`
-	References     []string           `json:"references"`
-	Checksum       string             `json:"checksum"`
-	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
+	Dependencies   []string                      `json:"dependencies"`
+	References     []string                      `json:"references"`
+	Checksum       string                        `json:"checksum"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -164,6 +164,11 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		AWSECRImageConfig: req.AWSECRImageConfig.getAWSECRImageConfig(),
 	}
 
+	var operationRoles pgtype.Hstore
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		ExternalImageComponentConfig: &cfg,
 		ComponentID:                  parentCmp.ID,
@@ -174,6 +179,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		BuildTimeout:                 req.BuildTimeout,
 		DeployTimeout:                req.DeployTimeout,
 		OperationRoles:               pgtype.Hstore(req.OperationRoles),
+		OperationRoles:               operationRoles,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create external image component config connection: %w", res.Error)
