@@ -35,13 +35,6 @@ param privateSubnet3CIDR string = '10.128.134.0/24'
 @description('The location for all resources.')
 param location string = '{{.Install.AzureAccount.Location}}'
 
-@description('Admin username for the VM')
-param vmAdminUsername string = 'nuon_admin'
-
-@description('Admin password for the VM')
-@secure()
-param vmAdminPassword string = 'Password!123'
-
 @description('List of secrets to store in Azure Key Vault')
 param secrets array = []
 
@@ -422,11 +415,6 @@ RestartSec=5
 WantedBy=default.target
 EOF
 
-# Enable SSH password authentication
-sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
-systemctl restart sshd
-
 # Reload systemd and start the service (no SELinux on Ubuntu)
 systemctl daemon-reload
 systemctl enable --now nuon-runner
@@ -452,11 +440,22 @@ resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2023-03-01' = {
     virtualMachineProfile: {
       osProfile: {
         computerNamePrefix: nuonInstallID
-        adminUsername: vmAdminUsername
-        adminPassword: vmAdminPassword
+        adminUsername: 'nuon'  // Required by Azure but not used for authentication
         customData: base64(customData)
         linuxConfiguration: {
-          disablePasswordAuthentication: false
+          disablePasswordAuthentication: true
+          // Azure requires SSH keys when password auth is disabled.
+          // This is a throwaway public key - the private key was never stored.
+          // Runners authenticate via API tokens only. Use Azure Serial Console
+          // or Azure Bastion for emergency VM access.
+          ssh: {
+            publicKeys: [
+              {
+                path: '/home/nuon/.ssh/authorized_keys'
+                keyData: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDmwMWT2029b4Oem5zSKRVDCBcjoVTfsUXlbGdfGeq8tzTPwqQLGqqVJDSkVb7kIjpbRv7fpB9tJERenhixW4SmYogfMlkvOy9sw+v46chmmgDmqy5Tv7MZB5SCwGVKYHv4EcwACM+GkA5jWO9poMwQM2FIEe4QAI/YaIchGf5HlfyjB/Yh7TZkuCdQ4GdTr3zwfa4DRjFThVDIobtKLjOri0u/Hcux1gduuh1gMYqTQ6oZvAGYAgWnQOiZ7rTrQvei8+SZRwFJohXPFmLjBaqmKMHs1+fu50PBA38Jp+Eey2ghvsab0HNG0eQ0icjhmHEkJZOEZ8R2/WufAON3NtapBVlOB+aCpeeRcO9wusf5kFEr3ytoRf/p8wf397efpCvYLfw9bMmxfnyzMEb1+SoFk8xLaYeyFbJDpvBvg0+m+vmwdKhquikJVII7/r0GCkaW4e3L43aBEiBip6UTFoYep/cpeN1qq8oTrUV8kMH1rPAIpZCls0LWrJJ2OqvcYJnQYWfHZ/uT/r7B6Fu8IOlyDSdwXzy3+NGaUROPj9UWT1wtWr0xyJFdE9N82noGzhmhRlhi1tYefNt/eszG2qlVg507vKIyvmfkR5VOxA51m9fw/Cgfck/KLy3XJWoXbri2eSraHomN9jEjOCerFFvtEKXViGsl4Xj0Z3B7y3ZA9Q== nuon-azure-vm-dummy@nuon.co'
+              }
+            ]
+          }
         }
       }
       storageProfile: {
@@ -699,6 +698,8 @@ resource phoneHomeScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
 
       PAYLOAD=$(cat << EOF
 {
+  "request_type": "Create",
+  "phone_home_type": "azure",
   "resource_group_id": "$RESOURCE_GROUP_ID",
   "resource_group_name": "$RESOURCE_GROUP_NAME",
   "resource_group_location": "$RESOURCE_GROUP_LOCATION",
