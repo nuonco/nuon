@@ -50,6 +50,21 @@ func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 	return schema, nil
 }
 
+// GetSchemaTypes returns all valid schema type names
+func GetSchemaTypes() []string {
+	types := make([]string, 0, len(SchemaMapping))
+	for k := range SchemaMapping {
+		types = append(types, k)
+	}
+	return types
+}
+
+// IsValidSchemaType checks if a schema type is valid
+func IsValidSchemaType(typ string) bool {
+	_, ok := SchemaMapping[typ]
+	return ok
+}
+
 // Schema functions in lexicographical order
 
 func ActionConfigSchema() (*jsonschema.Schema, error) {
