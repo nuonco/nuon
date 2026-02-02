@@ -56,7 +56,7 @@ func (w *Workflows) All() []any {
 		w.EventLoop,
 	}
 
-	return append(wkflows, w.ListWorkflowFns())
+	return append(wkflows, w.ListWorkflowFns()...)
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
