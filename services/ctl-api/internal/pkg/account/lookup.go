@@ -14,6 +14,7 @@ func ServiceAccountEmail(id string) string {
 func (c *Client) FindAccount(ctx context.Context, emailOrSubjectOrID string) (*app.Account, error) {
 	acct := app.Account{}
 	res := c.db.WithContext(ctx).
+		Distinct().
 		Preload("Roles").
 		Preload("Roles.Org").
 		Preload("Roles.Policies").
@@ -22,7 +23,7 @@ func (c *Client) FindAccount(ctx context.Context, emailOrSubjectOrID string) (*a
 			Subject: emailOrSubjectOrID,
 		}).
 		Or(app.Account{
-			Subject: emailOrSubjectOrID,
+			ID: emailOrSubjectOrID,
 		}).
 		First(&acct)
 	if res.Error != nil {
