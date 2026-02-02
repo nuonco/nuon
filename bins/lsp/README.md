@@ -57,7 +57,7 @@ You should see a path like: `/usr/local/bin/nuon-lsp`
 1. Open any `.toml` file (or create a new one)
 2. Add a schema type at the top:
    ```toml
-   # helm
+   #helm
    ```
 3. On a new line, type `[` - you should see completion suggestions
 
