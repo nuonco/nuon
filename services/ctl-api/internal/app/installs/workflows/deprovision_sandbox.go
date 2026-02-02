@@ -15,6 +15,9 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
+	// Extract role from workflow metadata if present
+	role := generics.FromPtrStr(flw.Metadata["role"])
+
 	sg.nextGroup() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateState,
@@ -44,6 +47,9 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationDeprovisionSandboxPlan,
+		SandboxSubSignal: signals.SandboxSubSignal{
+			Role: role,
+		},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err
@@ -52,6 +58,9 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationDeprovisionSandboxApplyPlan,
+		SandboxSubSignal: signals.SandboxSubSignal{
+			Role: role,
+		},
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err

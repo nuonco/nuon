@@ -52,6 +52,9 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	// Extract role from deploy if present
+	role := installDeploy.Role
+
 	// first, provision the deploy with before and after triggers
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.ComponentID)
 	if err != nil {
@@ -80,6 +83,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				DeployID:    generics.FromPtrStr(installDeployID),
 				ComponentID: comp.ID,
+				Role:        role,
 			},
 		}, flw.PlanOnly)
 		if err != nil {
@@ -94,6 +98,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				DeployID:    generics.FromPtrStr(installDeployID),
 				ComponentID: comp.ID,
+				Role:        role,
 			},
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
@@ -104,6 +109,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 				DeployID:    generics.FromPtrStr(installDeployID),
 				ComponentID: comp.ID,
+				Role:        role,
 			},
 		}, flw.PlanOnly)
 		if err != nil {

@@ -15,7 +15,8 @@ import (
 )
 
 type DeprovisionInstallSandboxRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 func (c *DeprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {

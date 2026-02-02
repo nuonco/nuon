@@ -112,6 +112,7 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 		TriggeredByID:           req.InstallActionWorkflowTrigger.TriggeredByID,
 		TriggeredByType:         req.InstallActionWorkflowTrigger.TriggeredByType,
 		RunEnvVars:              generics.ToPtrStringMap(req.InstallActionWorkflowTrigger.RunEnvVars),
+		Role:                    req.InstallActionWorkflowTrigger.Role,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create action workflow run")
@@ -325,7 +326,7 @@ func (w *Workflows) getRoleForAction(
 			Operation:     operation,
 			PrincipalType: principal.TypeAction,
 			PrincipalName: run.ActionWorkflowConfig.ActionWorkflow.Name,
-			RuntimeRole:   "", // TODO: Add RuntimeRole field to InstallActionWorkflowRun
+			RuntimeRole:   run.Role,
 			EntityRoles:   entityRoles,
 			MatrixRules:   appConfig.OperationRoleConfig.Rules,
 			DefaultRole:   defaultRole,

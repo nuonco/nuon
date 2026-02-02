@@ -26,6 +26,9 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	// Extract role from workflow metadata if present
+	role := generics.FromPtrStr(flw.Metadata["role"])
+
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroup() // generate install state
@@ -118,6 +121,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 			Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
+				Role:        role,
 			},
 		}, flw.PlanOnly, WithSkippable(false))
 		steps = append(steps, deployStep)
@@ -126,6 +130,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 			Type: signals.OperationExecuteTeardownComponentApplyPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
+				Role:        role,
 			},
 		}, flw.PlanOnly)
 		steps = append(steps, deployStep)

@@ -191,6 +191,9 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Workflow, componentIDs []string, sg *stepGroup) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
+	// Extract role from workflow metadata if present
+	role := generics.FromPtrStr(flw.Metadata["role"])
+
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
@@ -226,6 +229,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				Type: signals.OperationExecuteDeployComponentSyncImage,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
+					Role:        role,
 				},
 			}, flw.PlanOnly)
 			if err != nil {
@@ -242,6 +246,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				Type: signals.OperationExecuteDeployComponentSyncAndPlan,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
+					Role:        role,
 				},
 			}, flw.PlanOnly, WithSkippable(false))
 			if err != nil {
@@ -252,6 +257,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				Type: signals.OperationExecuteDeployComponentApplyPlan,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
+					Role:        role,
 				},
 			}, flw.PlanOnly)
 			if err != nil {

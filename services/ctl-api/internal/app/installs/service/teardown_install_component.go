@@ -17,7 +17,8 @@ import (
 )
 
 type TeardownInstallComponentRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -92,6 +93,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		app.WorkflowTypeTeardownComponent,
 		map[string]string{
 			"component_id": component.ID,
+			"role":         req.Role,
 		},
 		req.PlanOnly,
 	)
