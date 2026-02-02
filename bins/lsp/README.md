@@ -1,32 +1,212 @@
 # Nuon Language Server Protocol (LSP)
 
-A Language Server Protocol implementation for Nuon configuration files, providing code completion, hover information, and validation for TOML. 
+A Language Server Protocol implementation for Nuon TOML configuration files.
 
 ## Features
 
-- **Code Completion**: Intelligent suggestions with trigger characters (`=` and space)
-- **Hover Information**: Contextual documentation on hover
-- **Text Document Sync**: Full document synchronization
+- **Code Completion**: Intelligent suggestions for configuration keys and values
+- **Hover Information**: Documentation and type info on hover
+- **Validation**: Real-time syntax checking
 
-## Installation
+---
 
-Install via Nuon CLI (experimental):
+## Using the LSP
+
+### VS Code
+
+> **📹 Video walkthrough**: [Watch installation guide on Loom](https://www.loom.com/share/282efad7fd7c406d9c7b9286d2bcf98f)
+
+#### Step 1: Check if you have the LSP binary
+
+Open your terminal and run:
 ```bash
-NUON_EXPERIMENT_LSP=true curl -sSL install.nuon.co | bash
+which nuon-lsp
 ```
 
-## Building the LSP
+✅ **If you see a path** (like `/usr/local/bin/nuon-lsp`) → Skip to Step 3
+❌ **If you get "command not found"** → Continue to Step 2
+
+#### Step 2: Install the LSP binary
+
+The LSP binary comes with the Nuon CLI. Install it:
+
+```bash
+# Using Homebrew
+brew install nuonco/tap/nuon
+
+# OR using install script
+curl -sSL install.nuon.co | bash
+```
+
+**Verify it worked:**
+```bash
+which nuon-lsp
+```
+
+You should see a path like: `/usr/local/bin/nuon-lsp`
+
+#### Step 3: Install the VS Code extension
+
+1. Open VS Code
+2. Go to Extensions (Cmd/Ctrl+Shift+X)
+3. Search for "Nuon LSP"
+4. Click Install on the [Nuon LSP extension](https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp)
+
+#### Step 4: Test it
+
+1. Open any `.toml` file (or create a new one)
+2. Add a schema type at the top:
+   ```toml
+   #helm
+   ```
+3. On a new line, type `[` - you should see completion suggestions
+
+**That's it!** The extension automatically finds the `nuon-lsp` binary you installed.
+
+#### Troubleshooting
+
+**Extension not working?**
+
+1. Check the LSP binary is in your PATH:
+   ```bash
+   which nuon-lsp
+   ```
+
+2. View error logs: Open VS Code Output panel (View → Output), select "Nuon LSP" from dropdown
+
+3. Reload VS Code: Cmd/Ctrl+Shift+P → "Reload Window"
+
+4. (Optional) Manually set the binary path in VS Code settings:
+   ```json
+   {
+     "nuonLsp.serverPath": "/path/to/nuon-lsp"
+   }
+   ```
+
+### Neovim
+
+#### Step 1: Check if you have the LSP binary
+
+Open your terminal and run:
+```bash
+which nuon-lsp
+```
+
+✅ **If you see a path** (like `/usr/local/bin/nuon-lsp`) → Skip to Step 3
+❌ **If you get "command not found"** → Continue to Step 2
+
+#### Step 2: Install the LSP binary
+
+The LSP binary comes with the Nuon CLI. Install it:
+
+```bash
+# Using Homebrew
+brew install nuonco/tap/nuon
+
+# OR using install script
+curl -sSL install.nuon.co | bash
+```
+
+**Verify it worked:**
+```bash
+which nuon-lsp
+```
+
+You should see a path like: `/usr/local/bin/nuon-lsp`
+
+#### Step 3: Add to your Neovim config
+
+Add this to your Neovim config file (usually `~/.config/nvim/init.lua`):
+
+```lua
+vim.lsp.start({
+  name = "nuon-lsp",
+  cmd = { "nuon-lsp" },
+  root_dir = vim.fn.getcwd(),
+  filetypes = { "toml" }
+})
+```
+
+**Reload your config:**
+```vim
+:source $MYVIMRC
+```
+
+#### Step 4: Test it
+
+1. Open any `.toml` file (or create a new one)
+2. Check the LSP is attached:
+   ```vim
+   :LspInfo
+   ```
+   You should see "nuon-lsp" in the list
+
+3. Try completions: Add a schema type at the top:
+   ```toml
+   # helm
+   ```
+   Then on a new line type `[` - you should see suggestions
+
+**That's it!**
+
+#### Troubleshooting
+
+**LSP not attaching?**
+
+1. Check the binary is in your PATH:
+   ```bash
+   which nuon-lsp
+   ```
+
+2. View LSP logs in Neovim:
+   ```vim
+   :LspLog
+   ```
+
+3. (Optional) Use absolute path in your config:
+   ```lua
+   vim.lsp.start({
+     name = "nuon-lsp",
+     cmd = { "/full/path/to/nuon-lsp" },  -- Use output from 'which nuon-lsp'
+     root_dir = vim.fn.getcwd(),
+     filetypes = { "toml" }
+   })
+   ```
+
+---
+
+## Development
+
+The LSP server is a Go binary that communicates with editors via the Language Server Protocol.
+
+### Architecture
+
+The LSP has two runtime modes:
+
+1. **Stdio Mode** (Production):
+   - Used by editor extensions
+   - Server communicates via stdin/stdout
+   - Default mode when no flags are provided
+
+2. **TCP Mode** (Development):
+   - Server listens on a TCP port
+   - Allows hot reloading without restarting your editor
+   - Easier debugging with server logs in terminal
+
+### Building the LSP Server
 
 ```bash
 cd bins/lsp
 go build -o nuon-lsp ./
 ```
 
-This creates the `nuon-lsp` binary that serves as the language server.
+This creates the `nuon-lsp` binary.
 
-## Local Development with TCP Mode
+### Local Development with TCP Mode
 
-### Using nuonctl (Recommended)
+For faster development iteration, you can run the LSP in TCP mode so you can restart it without reloading your editor.
+
+#### Using nuonctl (Recommended)
 
 ```bash
 nuonctl services dev --dev lsp
@@ -35,12 +215,10 @@ nuonctl services dev --dev lsp
 This automatically:
 - Starts the LSP server on port 7001
 - Starts health check on port 7002 (http://localhost:7002/health)
-- Configures VS Code to use port 7001
+- Configures VS Code to use TCP port 7001
 - Cleans up VS Code config on exit (Ctrl+C)
 
-No manual configuration needed!
-
-### Manual Mode
+#### Manual Mode
 
 ```bash
 cd bins/lsp
@@ -52,217 +230,138 @@ Check health:
 curl http://localhost:7002/health
 ```
 
-Then manually configure VS Code:
-
+Then manually configure VS Code settings:
 ```json
 {
   "nuonLsp.port": 7001
 }
 ```
 
-**Benefits:**
-- Restart LSP server without reloading VS Code
+**Benefits of TCP mode:**
+- Restart the LSP server without reloading your editor
 - See server logs directly in terminal
-- Debug with Go debugger
+- Easier debugging with Go debugger
 - Hot reload code changes
 
-## Development Setup
+### Developing the VS Code Extension
 
-The LSP runs as a subprocess communicating via stdio. Configuration differs between editors.
+The VS Code extension source is in `nuon-lsp-vscode/`.
 
-### Neovim
+> **Important**: You must open the `nuon-lsp-vscode` folder as your workspace root in VS Code. Opening a parent folder will prevent debugging from working correctly.
 
-#### Configuration
+**Setup:**
+1. Install dependencies:
+   ```bash
+   cd nuon-lsp-vscode && npm install
+   ```
 
-Add to your Neovim config:
-
-```lua
-vim.lsp.start({
-  name = "nuon-lsp",
-  cmd = { "/path/to/mono/bins/lsp/lsp" },  -- Update with your actual path
-  root_dir = vim.fn.getcwd()
-})
-```
-
-Replace `/path/to/mono` with your actual repository path.
-
-#### Development Workflow
-
-1. **Rebuild the binary** after changes:
+2. Build the LSP server:
    ```bash
    cd bins/lsp && go build -o nuon-lsp ./
    ```
 
-2. **Restart Neovim** or reload your config to pick up the new binary:
-   ```vim
-   :source $MYVIMRC
-   ```
-
-3. **Check LSP status**:
-   ```vim
-   :LspInfo
-   ```
-
-4. **View server logs**:
-   ```vim
-   :edit /tmp/nvim-lsp-debug.log  " Or check Neovim's LSP log
-   ```
-
-### VSCode
-
-#### Configuration
-
-The VSCode extension is located in `nuon-lsp-vscode/`.
-
-The extension configuration is in `nuon-lsp-vscode/extension.js`:
-
-```javascript
-// Server path is configurable via nuonLsp.serverPath setting
-const config = vscode.workspace.getConfiguration("nuonLsp");
-let serverCommand = config.get("serverPath");
-if (!serverCommand || serverCommand === "") {
-    serverCommand = path.join(context.extensionPath, "..", "lsp");
-}
-
-const serverOptions = {
-  command: serverCommand,
-  args: [],
-  transport: TransportKind.stdio,
-};
-
-const clientOptions = {
-  documentSelector: [
-    { scheme: "file", language: "toml" },
-  ],
-};
-```
-
-#### Installation
-
-1. **Build and prepare the extension**:
+3. Open `nuon-lsp-vscode` in VS Code:
    ```bash
-   cd bins/lsp
-   go build -o nuon-lsp ./
-   mkdir -p nuon-lsp-vscode/bin
-   cp lsp nuon-lsp-vscode/bin/
-   cd nuon-lsp-vscode && npm install
+   code nuon-lsp-vscode/
    ```
 
-2. **Install the extension in VSCode**:
-   - Copy the extension folder to your VSCode extensions directory:
-     ```bash
-     cp -r nuon-lsp-vscode ~/.vscode/extensions/nuon.nuon-lsp-0.0.1
-     ```
-   - Install dependencies in the installed extension:
-     ```bash
-     cd ~/.vscode/extensions/nuon.nuon-lsp-0.0.1 && npm install
-     ```
-   - Reload VSCode
-
-#### Development
-
-> **Important**: You must open the `nuon-lsp-vscode` folder as your workspace root in VSCode. Opening a parent folder will prevent debugging from working correctly.
-
-1. **Install Node dependencies**:
-   ```bash
-   cd nuon-lsp-vscode && npm install
-   ```
-
-2. **Update the binary path** in `extension.js` if needed
-
-3. **Run the extension in development mode**:
-   - Open VSCode with `nuon-lsp-vscode` as the workspace root: `code nuon-lsp-vscode/`
-   - Press `F5` to open the Extension Development Host
+4. Press `F5` to open the Extension Development Host
    - The extension will activate automatically on startup
+   - Check the Debug Console for: `🚀 Nuon-LSP extension activated`
 
-4. **Check the Debug Console** for activation logs:
-   - Look for: `🚀 Nuon-LSP extension activated`
-   - The output will show connection status
+5. Debug:
+   - View server logs: Output panel → "Nuon LSP" dropdown
+   - Debug client code: Use `console.log()` in `extension.js`
 
-#### Debugging the Extension
-
-1. In the Extension Development Host, open the VSCode Output panel (`View > Output`)
-2. Select "Nuon LSP" from the dropdown to see server logs
-3. Use `console.log()` in `extension.js` for debugging client-side code
-
-#### Building for Distribution
-
+**Building for distribution:**
 ```bash
 cd nuon-lsp-vscode
 npm run vscode:prepublish
 ```
 
-## Project Structure
+### Project Structure
 
-- `main.go` - Entry point and LSP initialization
-- `handlers/` - Request handlers (completion, hover, did-change, etc.)
-- `mappers/` - Data structure mappings
-- `models/` - Data models
-- `nvim.lua` - Neovim configuration example
-- `nuon-lsp-vscode/` - VSCode extension
-  - `extension.js` - Extension activation and client setup
-  - `package.json` - Extension metadata and dependencies
-- `schema.json` - Configuration schema for validation
-- `example.toml` - Example Nuon configuration file
+```
+bins/lsp/
+├── main.go                    # LSP server entry point
+├── handlers/                  # Request handlers (completion, hover, etc.)
+├── mappers/                   # Schema mapping logic
+├── models/                    # Data models
+├── nuon-lsp-vscode/          # VS Code extension
+│   ├── extension.js          # Extension client
+│   └── package.json          # Extension metadata
+├── README.md                  # This file
+├── DESIGN.md                  # Architecture decisions
+└── AGENTS.md                  # Developer guide for AI agents
+```
 
-## Supported File Types
+### Adding New Features
 
-- `.toml` - Nuon application manifests
+**Adding a new LSP handler:**
 
-> **Note**: For the LSP to provide completions, your TOML file must declare a schema type at the top (before any `[table]` headers):
-> ```toml
->  # helm
-> ```
-> Supported types include: `helm`, `docker_build`, `terraform_module`, `job`, and others defined in the Nuon JSON schema.
-
-## Adding New Features
-
-### Adding a New Handler
-
-1. Create a handler function in `handlers/`
-2. Register it in `main.go`:
+1. Create handler in `handlers/`:
    ```go
-   handler = protocol.Handler{
-     TextDocumentNewFeature: handlers.TextDocumentNewFeature,
+   package handlers
+
+   func TextDocumentNewFeature(ctx *glsp.Context, params *protocol.Params) (any, error) {
+       // Implementation
+       return result, nil
    }
    ```
-3. Rebuild: `go build -o nuon-lsp ./`
 
-### Modifying Language Support
+2. Register in `main.go`:
+   ```go
+   handler = protocol.Handler{
+       // ... existing handlers ...
+       TextDocumentNewFeature: handlers.TextDocumentNewFeature,
+   }
+   ```
 
-Update the `clientOptions.documentSelector` in VSCode's `extension.js` and the `activationEvents` in `package.json`.
+3. Update server capabilities in `initialize()` function in `main.go`
 
-## Troubleshooting
+4. Rebuild: `go build -o nuon-lsp ./`
 
-### LSP won't start in Neovim
+### Logging and Debugging
 
-- Verify the binary path is correct: `which lsp` or the full path you specified
-- Check Neovim LSP logs: `:LspLog` or check `/tmp/nvim-*.log`
-- Ensure the binary is executable: `chmod +x bins/lsp/lsp`
-
-### VSCode extension doesn't activate
-
-- Check the Debug Console for errors
-- Verify the binary path in `extension.js` is correct
-- Ensure the binary is executable: `chmod +x bins/lsp/lsp`
-- Restart the Extension Development Host (`Ctrl+Shift+F5`)
-
-### No completions showing up
-
-- Ensure the file type matches the `documentSelector` in the editor config
-- Check that the LSP server is running: `:LspInfo` (Neovim) or Output panel (VSCode)
-- Verify trigger characters are recognized: `=` and space
-
-## Logging
-
-The server uses `commonlog` for logging. Adjust verbosity in `main.go`:
+The server uses `commonlog` for structured logging. Adjust verbosity in `main.go`:
 
 ```go
-commonlog.Configure(2, nil)  // Change verbosity level here
+commonlog.Configure(2, nil)  // 0=verbose, 2=minimal
 ```
+
+**View logs:**
+- **VS Code**: Output panel → "Nuon LSP"
+- **Neovim**: `:LspLog` command
+
+---
+
+## Additional Notes
+
+### Supported File Types
+
+The LSP activates for `.toml` files. For the LSP to provide completions, your TOML file should include a schema type declaration as a comment at the top (usually added automatically by `nuon apps sync`):
+
+```toml
+# helm
+
+[public_repo]
+# ... configuration ...
+```
+
+The schema type is specified as a comment with `# <type>`. Supported types: `helm`, `docker_build`, `terraform_module`, `job`, and others.
+
+### How It Works
+
+The LSP uses:
+- **Custom TOML parser** - Handles incomplete input gracefully (essential while typing)
+- **JSON Schema mapping** - Provides context-aware completions based on your configuration type
+- **Position tracking** - Knows whether you're editing a key or a value to suggest appropriate completions
+
+See [DESIGN.md](DESIGN.md) for detailed architecture information.
 
 ## References
 
 - [Language Server Protocol Specification](https://microsoft.github.io/language-server-protocol/)
-- [glsp - Go LSP Framework](https://github.com/tliron/glsp)
-- [VSCode Language Client](https://code.visualstudio.com/docs/extensions/language-support)
+- [Nuon Documentation](https://docs.nuon.co)
+- [DESIGN.md](DESIGN.md) - Architecture decisions
+- [AGENTS.md](AGENTS.md) - Developer guide for AI assistants
