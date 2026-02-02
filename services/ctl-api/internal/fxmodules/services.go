@@ -20,10 +20,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
-// ServicesModule provides all API endpoint services (domain handlers).
-var ServicesModule = fx.Module("services",
+// sharedServices are services needed by public, runner, and internal APIs.
+// These do NOT include authservice which has strict config requirements.
+var sharedServices = fx.Options(
 	fx.Provide(api.AsService(docs.New)),
 	fx.Provide(api.AsService(health.New)),
+	fx.Provide(api.AsService(httpbin.New)),
 	fx.Provide(api.AsService(accountsservice.New)),
 	fx.Provide(api.AsService(orgsservice.New)),
 	fx.Provide(api.AsService(appsservice.New)),
@@ -34,6 +36,29 @@ var ServicesModule = fx.Module("services",
 	fx.Provide(api.AsService(runnersservice.New)),
 	fx.Provide(api.AsService(releasesservice.New)),
 	fx.Provide(api.AsService(actionsservice.New)),
-	fx.Provide(api.AsService(httpbin.New)),
+)
+
+// PublicServicesModule provides services for the public API (excludes authservice).
+var PublicServicesModule = fx.Module("public-services", sharedServices)
+
+// RunnerServicesModule provides services for the runner API (excludes authservice).
+var RunnerServicesModule = fx.Module("runner-services", sharedServices)
+
+// InternalServicesModule provides services for the internal API (excludes authservice).
+var InternalServicesModule = fx.Module("internal-services", sharedServices)
+
+// AuthServicesModule provides services for the auth API (includes authservice).
+var AuthServicesModule = fx.Module("auth-services",
+	sharedServices,
 	fx.Provide(api.AsService(authservice.New)),
 )
+
+// AllServicesModule provides all services including authservice (for dev mode).
+var AllServicesModule = fx.Module("all-services",
+	sharedServices,
+	fx.Provide(api.AsService(authservice.New)),
+)
+
+// ServicesModule is deprecated, use API-specific modules instead.
+// Kept for backwards compatibility.
+var ServicesModule = AllServicesModule

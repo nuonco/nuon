@@ -25,10 +25,10 @@ func (c *cli) runAuthAPI(cmd *cobra.Command, _ []string) {
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
-	// Add API-specific modules - only auth API
+	// Add API-specific modules - only auth API (includes auth service)
 	providers = append(providers,
 		fxmodules.MiddlewaresModule,
-		fxmodules.ServicesModule,
+		fxmodules.AuthServicesModule,
 		fxmodules.AuthAPIModule,
 	)
 
