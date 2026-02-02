@@ -125,7 +125,7 @@ const InputGroupFields = ({
             language="json"
             name={disabled ? undefined : `inputs:${input?.name}`}
             required={disabled ? false : input?.required}
-            defaultValue={installInputs?.[input?.name || ''] || input?.default}
+            defaultValue={installInputs?.[input?.name || ''] ?? input?.default}
             placeholder="Enter JSON configuration..."
             helperText="Enter valid JSON configuration"
             minHeight={120}
@@ -143,7 +143,7 @@ const InputGroupFields = ({
             autoComplete="off"
             name={disabled ? undefined : `inputs:${input?.name}`}
             required={disabled ? false : input?.required}
-            defaultValue={installInputs?.[input?.name || ''] || input?.default}
+            defaultValue={installInputs?.[input?.name || ''] ?? input?.default}
             placeholder={`Enter ${input?.display_name?.toLowerCase() || 'value'}`}
             disabled={disabled}
           />
