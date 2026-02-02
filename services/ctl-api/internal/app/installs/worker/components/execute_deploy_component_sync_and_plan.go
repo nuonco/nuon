@@ -45,6 +45,7 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 			BuildID:     componentBuild.ID,
 			Type:        app.InstallDeployTypeApply,
 			WorkflowID:  sreq.FlowID,
+			Role:        sreq.ExecuteDeployComponentSubSignal.Role,
 		})
 		if err != nil {
 			return fmt.Errorf("unable to create install deploy: %w", err)

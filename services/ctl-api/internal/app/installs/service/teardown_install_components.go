@@ -13,7 +13,8 @@ import (
 )
 
 type TeardownInstallComponentsRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 func (c *TeardownInstallComponentsRequest) Validate(v *validator.Validate) error {
@@ -81,7 +82,9 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		installID,
 		app.WorkflowTypeTeardownComponents,
-		map[string]string{},
+		map[string]string{
+			"role": req.Role,
+		},
 		req.PlanOnly,
 	)
 	if err != nil {

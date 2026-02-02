@@ -19,6 +19,7 @@ import (
 type CreateInstallComponentDeployRequest struct {
 	BuildID          string `json:"build_id"`
 	DeployDependents bool   `json:"deploy_dependents"`
+	Role             string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -107,6 +108,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 type CreateInstallDeployRequest struct {
 	BuildID          string `json:"build_id"`
 	DeployDependents bool   `json:"deploy_dependents"`
+	Role             string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -239,6 +241,7 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		ComponentBuildID:   req.BuildID,
 		InstallComponentID: installCmp.ID,
 		Type:               typ,
+		Role:               req.Role,
 	}
 
 	res = s.db.WithContext(ctx).Create(&deploy)

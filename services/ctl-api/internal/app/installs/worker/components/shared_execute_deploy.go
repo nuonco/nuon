@@ -236,7 +236,7 @@ func (w *Workflows) getRoleForDeploy(
 			Operation:     operation,
 			PrincipalType: principal.TypeComponent,
 			PrincipalName: comp.Name,
-			RuntimeRole:   "", // TODO: Add RuntimeRole field to InstallDeploy
+			RuntimeRole:   installDeploy.Role,
 			EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
 				build.ComponentConfigConnection.OperationRoles,
 			),

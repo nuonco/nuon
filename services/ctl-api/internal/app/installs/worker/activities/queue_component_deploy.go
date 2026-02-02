@@ -14,6 +14,7 @@ type CreateInstallDeployRequest struct {
 	BuildID     string                `json:"build_id" validate:"required"`
 	Type        app.InstallDeployType `json:"type" validate:"required"`
 	WorkflowID  string                `json:"workflow_id" validate:"required"`
+	Role        string                `json:"role,omitempty"`
 }
 
 // @temporal-gen activity
@@ -46,6 +47,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		ComponentBuildID:   req.BuildID,
 		Type:               req.Type,
 		InstallWorkflowID:  installWorkflowID,
+		Role:               req.Role,
 	}
 
 	res = a.db.WithContext(ctx).Create(&installDeploy)

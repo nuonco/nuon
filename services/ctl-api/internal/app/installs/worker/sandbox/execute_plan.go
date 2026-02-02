@@ -186,7 +186,7 @@ func (w *Workflows) getRoleForSandbox(
 			Operation:     operation,
 			PrincipalType: principal.TypeSandbox,
 			PrincipalName: "", // Sandboxes don't have names
-			RuntimeRole:   "", // TODO: Add RuntimeRole field to InstallSandboxRun
+			RuntimeRole:   installRun.Role,
 			EntityRoles:   entityRoles,
 			MatrixRules:   appConfig.OperationRoleConfig.Rules,
 			DefaultRole:   defaultRole,

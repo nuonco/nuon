@@ -11,7 +11,8 @@ import (
 )
 
 type ReprovisionInstallSandboxRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 // @ID						ReprovisionInstallSandbox
