@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,6 +36,26 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// Start health check server for monitoring runner status
+	// Use different ports for org (9090) and install (9091) runners
+	arg := args[0]
+	healthPort := 9090
+	if arg == "install" {
+		healthPort = 9091
+	}
+
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("ok"))
+		})
+		addr := fmt.Sprintf(":%d", healthPort)
+		log.Printf("starting health check server on %s", addr)
+		if err := http.ListenAndServe(addr, nil); err != nil {
+			log.Printf("health check server error: %v", err)
+		}
+	}()
+
 	devver, err := dev.New(args[0])
 	if err != nil {
 		log.Fatalf("unable to initialize devver %s", err)
@@ -44,7 +65,6 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("running runner like usual")
-	arg := args[0]
 	switch arg {
 	case "org", "build":
 		c.runBuild(cmd, nil)
