@@ -3,18 +3,33 @@ package operationroles
 
 import (
 	"fmt"
-	"slices"
 
-	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+type EntityOperationRoleMap map[app.OperationType]string
+
+func EntityOperationRoleMapFromHstore(hstore map[string]*string) EntityOperationRoleMap {
+	if hstore == nil {
+		return nil
+	}
+
+	result := make(EntityOperationRoleMap, len(hstore))
+	for key, value := range hstore {
+		if value != nil {
+			result[app.OperationType(key)] = *value
+		}
+	}
+	return result
+}
+
 // SelectionContext contains all information needed for role selection
 type SelectionContext struct {
-	Operation config.OperationType
+	Operation app.OperationType
 
 	// "component", "sandbox", "action"
-	PrincipalType config.PrincipalType
+	PrincipalType principal.Type
 	// Component/action name (empty for sandbox)
 	PrincipalName string
 
@@ -22,10 +37,12 @@ type SelectionContext struct {
 	// --role flag from CLI/UI (highest precedence)
 	RuntimeRole string
 	// Component/sandbox/action config
-	EntityRoles []*config.EntityOperationRole
+	EntityRoles EntityOperationRoleMap
 	// App-level rules from DB
 	MatrixRules []*app.OperationRoleRule
-	// For role ARN resolution
+	// DefaultRole is the role selected if none of the rules assiciate with the pricipal and operation
+	DefaultRole string
+
 	StackOutputs *app.InstallStackOutputs
 
 	AppConfig *app.AppConfig
@@ -49,14 +66,6 @@ type RoleSelection struct {
 	RoleName string
 	RoleARN  string
 	Source   RoleSelectionSource
-}
-
-var DefaultRoles = map[config.OperationType]string{
-	config.OperationProvision:   "provision",
-	config.OperationDeprovision: "deprovision",
-	config.OperationUpdate:      "maintenance",
-	config.OperationReprovision: "provision",
-	config.OperationTrigger:     "maintenance",
 }
 
 // SelectRole determines which role to use based on precedence rules
@@ -117,64 +126,58 @@ func SelectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		}, nil
 	}
 
-	// 4. Default role
-	defaultRole, ok := DefaultRoles[ctx.Operation]
-	if !ok {
-		return nil, fmt.Errorf("no default role found for operation %s", ctx.Operation)
-	}
-
 	roleARN, err := resolveRoleARN(
-		defaultRole,
+		ctx.DefaultRole,
 		ctx.AppConfig,
 		ctx.StackOutputs,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("default role %q: %w", defaultRole, err)
+		return nil, fmt.Errorf("default role %q: %w", ctx.DefaultRole, err)
 	}
 
 	return &RoleSelection{
-		RoleName: defaultRole,
+		RoleName: ctx.DefaultRole,
 		RoleARN:  roleARN,
 		Source:   RoleSelectionSourceDefault,
 	}, nil
 }
 
-func findEntityRole(roles []*config.EntityOperationRole, operation config.OperationType) string {
-	for _, r := range roles {
-		if r.Operation == operation {
-			return r.RoleName
-		}
+func findEntityRole(roles EntityOperationRoleMap, operation app.OperationType) string {
+	if roles == nil {
+		return ""
 	}
-	return ""
+	roleName, ok := roles[operation]
+	if !ok {
+		return ""
+	}
+	return roleName
 }
 
 func findMatrixRole(
 	rules []*app.OperationRoleRule,
-	principalType config.PrincipalType,
+	principalType principal.Type,
 	principalName string,
-	operation config.OperationType,
+	operation app.OperationType,
 ) (string, bool) {
-	var principals []string
-
-	switch principalType {
-	case config.PrincipalTypeComponent:
-		principals = []string{
-			fmt.Sprintf("nuon::component:%s", principalName),
-			"nuon::component:*",
-		}
-	case config.PrincipalTypeSandbox:
-		principals = []string{"nuon::sandbox"}
-	case config.PrincipalTypeAction:
-		principals = []string{
-			fmt.Sprintf("nuon::action:%s", principalName),
-			"nuon::action:*",
-		}
-	}
-
 	// Find matching rule
 	for _, rule := range rules {
-		if rule.Operation == app.OperationType(operation) || slices.Contains(principals, rule.Principal) {
-			return rule.Role, true
+		if rule.Operation != operation {
+			continue
+		}
+
+		if rule.PrincipalType != principalType {
+			continue
+		}
+
+		switch principalType {
+		case principal.TypeComponent, principal.TypeAction:
+			if rule.PrincipalName == principalName || rule.PrincipalName == "*" {
+				return rule.Role, true
+			}
+		case principal.TypeSandbox:
+			if rule.PrincipalName == "" {
+				return rule.Role, true
+			}
 		}
 	}
 

@@ -33,11 +33,11 @@ type CreateTerraformModuleComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies   []string           `json:"dependencies"`
-	References     []string           `json:"references"`
-	Checksum       string             `json:"checksum"`
-	DriftSchedule  *string            `json:"drift_schedule,omitempty"`
-	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
+	Dependencies   []string                      `json:"dependencies"`
+	References     []string                      `json:"references"`
+	Checksum       string                        `json:"checksum"`
+	DriftSchedule  *string                       `json:"drift_schedule,omitempty"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 type LatestTerraformVersion struct {
@@ -126,7 +126,6 @@ func (s *service) CreateAppTerraformModuleComponentConfig(ctx *gin.Context) {
 
 	// reuse the same logic as non-app scoped endpoint
 	s.CreateTerraformModuleComponentConfig(ctx)
-
 }
 
 // @ID						CreateTerraformModuleComponentConfig
@@ -219,6 +218,11 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 	}
 
+	var operationRoles pgtype.Hstore
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		TerraformModuleComponentConfig: &cfg,
 		ComponentID:                    parentCmp.ID,
@@ -229,6 +233,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		BuildTimeout:                   req.BuildTimeout,
 		DeployTimeout:                  req.DeployTimeout,
 		OperationRoles:                 pgtype.Hstore(req.OperationRoles),
+		OperationRoles:                 operationRoles,
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)

@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -18,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -37,7 +39,6 @@ func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.Requ
 
 	// Skip cron-triggered actions if sandbox is not active to prevent workflow history size from growing.
 	if req.InstallActionWorkflowTrigger.TriggerType == app.ActionWorkflowTriggerTypeCron {
-
 		switch install.SandboxStatus {
 		// We may want to add more cases here in the future.
 		case app.InstallSandboxStatusProvisioning,
@@ -178,10 +179,53 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 
+	// Get app config for role selection
+	appConfig, err := activities.AwaitGetAppConfigByID(ctx, run.Install.AppConfigID)
+	if err != nil {
+		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to get app config")
+		return fmt.Errorf("unable to get app config: %w", err)
+	}
+
+	// Get install stack for auth configuration
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, run.Install.ID)
+	if err != nil {
+		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to get install stack")
+		return errors.Wrap(err, "unable to get install stack")
+	}
+
+	compositePlan := plantypes.CompositePlan{
+		ActionWorkflowRunPlan: runPlan,
+	}
+
+	roleSelection, operation, err := w.getRoleForAction(ctx, l, appConfig, run, stack)
+	if err != nil {
+		return errors.Wrap(err, "unable to evaluate role for action")
+	}
+
+	l.Info("selected role for action workflow",
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("action_workflow", run.ActionWorkflowConfig.ActionWorkflow.Name),
+		zap.String("operation", string(operation)),
+	)
+
+	// Create auth configuration
+	planAuth, err := plan.CreatePlanAuth(
+		stack.InstallStackOutputs,
+		roleSelection.RoleARN,
+		fmt.Sprintf("install-action-workflow-%s", run.ID),
+	)
+	if err != nil {
+		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create auth config")
+		return errors.Wrap(err, "unable to create plan auth")
+	}
+	compositePlan.Auth = planAuth
+
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:         runnerJob.ID,
 		PlanJSON:      string(planJSON),
-		CompositePlan: plantypes.CompositePlan{ActionWorkflowRunPlan: runPlan},
+		CompositePlan: compositePlan,
 	}); err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
@@ -214,4 +258,47 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	return nil
+}
+
+func (w *Workflows) getRoleForAction(
+	ctx workflow.Context,
+	l *zap.Logger,
+	appConfig *app.AppConfig,
+	run *app.InstallActionWorkflowRun,
+	stack *app.InstallStack,
+) (*operationroles.RoleSelection, app.OperationType, error) {
+	// Actions always use trigger operation
+	operation := app.OperationTrigger
+
+	// Determine default role
+	defaultRole := appConfig.PermissionsConfig.MaintenanceRole.Name
+
+	// Get entity roles from action workflow config (if exists)
+	// TODO: Load action workflow config and get OperationRoles from it
+	var entityRoles operationroles.EntityOperationRoleMap
+
+	// Select role using operation roles engine
+	roleSelection, err := operationroles.SelectRole(
+		&operationroles.SelectionContext{
+			Operation:     operation,
+			PrincipalType: principal.TypeAction,
+			PrincipalName: run.ActionWorkflowConfig.ActionWorkflow.Name,
+			RuntimeRole:   "", // TODO: Add RuntimeRole field to InstallActionWorkflowRun
+			EntityRoles:   entityRoles,
+			MatrixRules:   appConfig.OperationRoleConfig.Rules,
+			DefaultRole:   defaultRole,
+			AppConfig:     appConfig,
+			StackOutputs:  &stack.InstallStackOutputs,
+		})
+	if err != nil {
+		w.updateActionRunStatus(
+			ctx,
+			run.ID,
+			app.InstallActionRunStatusError,
+			"unable to select role",
+		)
+		return nil, "", fmt.Errorf("unable to select role: %w", err)
+	}
+
+	return roleSelection, operation, nil
 }

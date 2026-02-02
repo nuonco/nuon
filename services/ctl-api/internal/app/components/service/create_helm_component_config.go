@@ -33,11 +33,11 @@ type CreateHelmComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies   []string           `json:"dependencies"`
-	References     []string           `json:"references"`
-	Checksum       string             `json:"checksum"`
-	DriftSchedule  *string            `json:"drift_schedule,omitempty"`
-	OperationRoles map[string]*string `json:"operation_roles,omitempty"`
+	Dependencies   []string                      `json:"dependencies"`
+	References     []string                      `json:"references"`
+	Checksum       string                        `json:"checksum"`
+	DriftSchedule  *string                       `json:"drift_schedule,omitempty"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 type HelmRepoConfigRequest struct {
@@ -197,6 +197,12 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 			TakeOwnership:  req.TakeOwnership,
 		},
 	}
+
+	var operationRoles pgtype.Hstore
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		HelmComponentConfig:    &cfg,
 		ComponentID:            parentCmp.ID,
@@ -207,6 +213,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		BuildTimeout:           req.BuildTimeout,
 		DeployTimeout:          req.DeployTimeout,
 		OperationRoles:         pgtype.Hstore(req.OperationRoles),
+		OperationRoles:         operationRoles,
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)
