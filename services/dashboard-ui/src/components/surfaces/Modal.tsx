@@ -24,6 +24,7 @@ export interface IModal
   modalKey?: string
   onClose?: () => void
   primaryActionTrigger?: IButtonAsButton
+  secondaryActionTrigger?: IButtonAsButton
   size?: 'default' | 'half' | '3/4' | 'full'
   triggerButton?: Omit<IButtonAsButton, 'onClick'>
 }
@@ -40,6 +41,7 @@ export const ModalBase = ({
   modalKey,
   onClose,
   primaryActionTrigger,
+  secondaryActionTrigger,
   size = 'default',
   ...props
 }: Omit<IModal, 'triggerButton'>) => {
@@ -121,9 +123,13 @@ export const ModalBase = ({
               {footerActions}
             </div>
             <div className="flex items-center gap-4">
-              <Button type="button" onClick={handleClose}>
-                {primaryActionTrigger ? 'Cancel' : 'Close'}
-              </Button>
+              {secondaryActionTrigger ? (
+                <Button {...secondaryActionTrigger} />
+              ) : (
+                <Button type="button" onClick={handleClose}>
+                  {primaryActionTrigger ? 'Cancel' : 'Close'}
+                </Button>
+              )}
               {primaryActionTrigger ? <Button {...primaryActionTrigger} /> : null}
             </div>
           </div>

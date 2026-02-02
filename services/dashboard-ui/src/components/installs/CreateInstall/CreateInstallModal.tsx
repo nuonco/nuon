@@ -15,6 +15,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
+  const clearDraftRef = useRef<(() => void) | null>(null)
 
   const handleClose = () => {
     setSelectedApp(undefined)
@@ -28,11 +29,8 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   }
 
 
-  // For the app selection phase, we don't need any action buttons
-  // The modal's close button (X) will handle cancellation
   const modalProps = selectedApp
     ? {
-        // When showing install form, use primaryActionTrigger for submit button
         primaryActionTrigger: {
           children: isSubmitting ? (
             <span className="flex items-center gap-2">
@@ -48,11 +46,14 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           disabled: isSubmitting,
           onClick: handleFormSubmit,
           variant: 'primary' as const,
-        }
+        },
+        secondaryActionTrigger: {
+          children: 'Cancel',
+          onClick: handleClose,
+          variant: 'ghost' as const,
+        },
       }
-    : {
-        // When showing app selection, no primary action needed - selection happens via radio buttons
-      }
+    : {}
 
   return (
     <Modal
@@ -76,12 +77,12 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           )}
         </div>
       }
-      size={selectedApp ? "3/4" : "default"}
+      size={selectedApp ? '3/4' : 'default'}
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       onClose={handleClose}
-      {...modalProps}
       {...props}
+      {...modalProps}
     >
       {selectedApp ? (
         <LoadAppConfigs
@@ -91,6 +92,9 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           formRef={formRef}
           modalId={props.modalId}
           onLoadingChange={setIsSubmitting}
+          onRegisterClearDraft={(fn) => {
+            clearDraftRef.current = fn
+          }}
         />
       ) : (
         <AppSelect onSelectApp={setSelectedApp} onClose={handleClose} />

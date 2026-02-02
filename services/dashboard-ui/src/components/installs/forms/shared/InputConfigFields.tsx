@@ -36,12 +36,33 @@ const InputGroupFields = ({
   groupInputs,
   install,
   disabled = false,
+  draftValues,
 }: {
   groupInputs: TAppInputConfig['input_groups'][0]
   install?: TInstall
   disabled?: boolean
+  draftValues?: Record<string, string> | null
 }) => {
   const installInputs = install ? install?.install_inputs?.at(0)?.values : {}
+
+  // Only use draft values if they actually exist (not null, not undefined, not empty object)
+  const hasDraftValues = draftValues && Object.keys(draftValues).length > 0
+
+  // Normalize draft values by removing 'inputs:' prefix
+  const normalizedDraftValues: Record<string, string> = {}
+  if (hasDraftValues) {
+    Object.entries(draftValues!).forEach(([key, value]) => {
+      if (key.startsWith('inputs:')) {
+        const fieldName = key.replace('inputs:', '')
+        normalizedDraftValues[fieldName] = value
+      }
+    })
+  }
+
+  // Only merge draft values if they exist, otherwise use install values only
+  const mergedValues = hasDraftValues
+    ? { ...installInputs, ...normalizedDraftValues }
+    : installInputs
 
   const allInputs = groupInputs?.app_inputs || []
 
@@ -74,8 +95,8 @@ const InputGroupFields = ({
             )}
             <CheckboxInput
               defaultChecked={
-                installInputs?.[input?.name || '']
-                  ? Boolean(installInputs?.[input?.name || ''] === 'true')
+                mergedValues?.[input?.name || '']
+                  ? Boolean(mergedValues?.[input?.name || ''] === 'true')
                   : Boolean(input?.default === 'true')
               }
               labelProps={{
@@ -125,7 +146,7 @@ const InputGroupFields = ({
             language="json"
             name={disabled ? undefined : `inputs:${input?.name}`}
             required={disabled ? false : input?.required}
-            defaultValue={installInputs?.[input?.name || ''] ?? input?.default}
+            defaultValue={mergedValues?.[input?.name || ''] ?? input?.default}
             placeholder="Enter JSON configuration..."
             helperText="Enter valid JSON configuration"
             minHeight={120}
@@ -143,7 +164,7 @@ const InputGroupFields = ({
             autoComplete="off"
             name={disabled ? undefined : `inputs:${input?.name}`}
             required={disabled ? false : input?.required}
-            defaultValue={installInputs?.[input?.name || ''] ?? input?.default}
+            defaultValue={mergedValues?.[input?.name || ''] ?? input?.default}
             placeholder={`Enter ${input?.display_name?.toLowerCase() || 'value'}`}
             disabled={disabled}
           />
@@ -180,6 +201,7 @@ const InputGroupFields = ({
       {/* Optional fields - inside Expand component */}
       {optionalInputs.length > 0 && (
         <Expand
+          key={`${groupInputs.id}-${hasDraftValues ? 'draft' : 'no-draft'}`}
           heading="Advanced"
           headerClassName="!px-4 bg-code"
           id={`${groupInputs.id}-advanced`}
@@ -198,6 +220,7 @@ const InputGroupFields = ({
 export const InputConfigFields = ({
   inputConfig,
   install,
+  draftValues,
 }: IInputConfigFields) => {
   if (!inputConfig?.input_groups) {
     return null
@@ -244,6 +267,7 @@ export const InputConfigFields = ({
           groupInputs={group}
           install={install}
           disabled={false}
+          draftValues={draftValues}
         />
       ))}
 
@@ -265,6 +289,7 @@ export const InputConfigFields = ({
               groupInputs={group}
               install={install}
               disabled={true}
+              draftValues={draftValues}
             />
           ))}
         </>

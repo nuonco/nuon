@@ -21,10 +21,10 @@ import type { TAppConfig } from '@/types'
 
 interface IEditInputs {}
 
-const ConfirmUpdateModal = ({ 
+const ConfirmUpdateModal = ({
   onConfirm,
   onCancel,
-  ...props 
+  ...props
 }: {
   onConfirm: () => void
   onCancel: () => void
@@ -70,18 +70,20 @@ const ConfirmUpdateModal = ({
             You are about to update an Install managed by a Config file.
           </Text>
           <Text variant="body">
-            If you proceed, the config file syncing will be disabled. Are you sure you want to continue?
+            If you proceed, the config file syncing will be disabled. Are you
+            sure you want to continue?
           </Text>
         </div>
-        
+
         <Banner theme="info">
           <Text variant="body">
-            <strong>Tip:</strong> Use the management menu to enable Install Config syncing again.
+            <strong>Tip:</strong> Use the management menu to enable Install
+            Config syncing again.
           </Text>
         </Banner>
 
         <div className="flex gap-3 justify-end">
-          <Button 
+          <Button
             onClick={() => {
               onCancel()
               removeModal(props.modalId)
@@ -103,6 +105,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
   const formRef = useRef<HTMLFormElement>(null)
+  const clearDraftRef = useRef<(() => void) | null>(null)
 
   const {
     data: config,
@@ -112,7 +115,13 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
     path: `/api/orgs/${org.id}/apps/${install?.app_id}/configs/${install?.app_config_id}?recurse=true`,
   })
 
-  const { data: result, error: actionError, headers, isLoading: isSubmitting, execute } = useServerAction({
+  const {
+    data: result,
+    error: actionError,
+    headers,
+    isLoading: isSubmitting,
+    execute,
+  } = useServerAction({
     action: updateInstallInputs,
   })
 
@@ -124,7 +133,9 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
     onSuccess: () => {
       const workflowId = headers?.['x-nuon-install-workflow-id']
       if (workflowId) {
-        router.push(`/${org.id}/installs/${install?.id}/workflows/${workflowId}`)
+        router.push(
+          `/${org.id}/installs/${install?.id}/workflows/${workflowId}`
+        )
       }
       removeModal(props.modalId)
     },
@@ -139,7 +150,8 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
     return groups
       ? groups.map((group) => ({
           ...group,
-          app_inputs: inputs?.filter((input) => input.group_id === group.id) || [],
+          app_inputs:
+            inputs?.filter((input) => input.group_id === group.id) || [],
         }))
       : []
   }
@@ -163,15 +175,19 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
     })
   }
 
-
   const handleFormSubmit = () => {
     if (formRef.current) {
       formRef.current.requestSubmit()
     }
   }
 
+  const handleClose = () => {
+    removeModal(props.modalId)
+  }
+
   return (
     <Modal
+      {...props}
       size="3/4"
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
@@ -186,24 +202,26 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
         </Text>
       }
       primaryActionTrigger={
-        !isLoading && !error && config ? {
-          children: isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <Icon variant="Loading" />
-              Updating inputs
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Icon variant="Cube" />
-              Update inputs
-            </span>
-          ),
-          disabled: isSubmitting,
-          onClick: handleFormSubmit,
-          variant: 'primary',
-        } : undefined
+        !isLoading && !error && config
+          ? {
+              children: isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <Icon variant="Loading" />
+                  Updating inputs
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Icon variant="Cube" />
+                  Update inputs
+                </span>
+              ),
+              disabled: isSubmitting,
+              onClick: handleFormSubmit,
+              variant: 'primary',
+            }
+          : undefined
       }
-      {...props}
+      onClose={handleClose}
     >
       {isLoading ? (
         <div className="flex flex-col gap-8 max-w-3xl">
@@ -219,7 +237,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               <Skeleton width="280px" height="24px" />
               <Skeleton width="200px" height="16px" />
             </div>
-            
+
             {/* Input fields in grid layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-1">
@@ -228,7 +246,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               </div>
               <Skeleton width="100%" height="40px" />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-1">
                 <Skeleton width="120px" height="16px" />
@@ -236,7 +254,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               </div>
               <Skeleton width="100%" height="40px" />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-1">
                 <Skeleton width="90px" height="16px" />
@@ -252,7 +270,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               <Skeleton width="320px" height="24px" />
               <Skeleton width="180px" height="16px" />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-1">
                 <Skeleton width="110px" height="16px" />
@@ -260,7 +278,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               </div>
               <Skeleton width="100%" height="40px" />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-1">
                 <Skeleton width="80px" height="16px" />
@@ -268,7 +286,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               </div>
               <Skeleton width="100%" height="40px" />
             </div>
-            
+
             {/* Checkbox items */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div />
@@ -277,7 +295,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
                 <Skeleton width="130px" height="16px" />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div />
               <div className="flex items-center gap-2 ml-1">
@@ -293,7 +311,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               <Skeleton width="200px" height="24px" />
               <Skeleton width="400px" height="16px" />
             </div>
-            
+
             <div className="flex gap-6">
               <div className="flex items-center gap-2">
                 <Skeleton width="16px" height="16px" />
@@ -325,13 +343,18 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
           onCancel={() => {
             removeModal(props.modalId)
           }}
+          onRegisterClearDraft={(fn) => {
+            clearDraftRef.current = fn
+          }}
         />
       )}
     </Modal>
   )
 }
 
-export const EditInputsButton = ({ ...props }: IEditInputs & IButtonAsButton) => {
+export const EditInputsButton = ({
+  ...props
+}: IEditInputs & IButtonAsButton) => {
   const { install } = useInstall()
   const { addModal } = useSurfaces()
 
@@ -357,9 +380,9 @@ export const EditInputsButton = ({ ...props }: IEditInputs & IButtonAsButton) =>
   }
 
   const handleClick = () => {
-    const isInstallManagedByConfig = 
+    const isInstallManagedByConfig =
       install?.metadata?.managed_by === 'nuon/cli/install-config'
-    
+
     if (isInstallManagedByConfig) {
       showConfirmModal()
     } else {
