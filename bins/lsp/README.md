@@ -14,7 +14,7 @@ A Language Server Protocol implementation for Nuon TOML configuration files.
 
 ### VS Code
 
-> **📹 Video walkthrough**: [Watch installation guide on Loom](<!-- TODO: Add Loom URL here -->)
+> **📹 Video walkthrough**: [Watch installation guide on Loom](https://www.loom.com/share/282efad7fd7c406d9c7b9286d2bcf98f)
 
 #### Step 1: Check if you have the LSP binary
 
