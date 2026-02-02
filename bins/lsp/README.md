@@ -20,10 +20,10 @@ A Language Server Protocol implementation for Nuon TOML configuration files.
 
 Open your terminal and run:
 ```bash
-nuon-lsp --version
+which nuon-lsp
 ```
 
-✅ **If you see a version number** → Skip to Step 3
+✅ **If you see a path** (like `/usr/local/bin/nuon-lsp`) → Skip to Step 3
 ❌ **If you get "command not found"** → Continue to Step 2
 
 #### Step 2: Install the LSP binary
@@ -40,10 +40,10 @@ curl -sSL install.nuon.co | bash
 
 **Verify it worked:**
 ```bash
-nuon-lsp --version
+which nuon-lsp
 ```
 
-You should see output like: `Nuon Language Server 0.0.1`
+You should see a path like: `/usr/local/bin/nuon-lsp`
 
 #### Step 3: Install the VS Code extension
 
@@ -55,7 +55,10 @@ You should see output like: `Nuon Language Server 0.0.1`
 #### Step 4: Test it
 
 1. Open any `.toml` file (or create a new one)
-2. Type `type = "helm"` at the top
+2. Add a schema type at the top:
+   ```toml
+   # helm
+   ```
 3. On a new line, type `[` - you should see completion suggestions
 
 **That's it!** The extension automatically finds the `nuon-lsp` binary you installed.
@@ -86,10 +89,10 @@ You should see output like: `Nuon Language Server 0.0.1`
 
 Open your terminal and run:
 ```bash
-nuon-lsp --version
+which nuon-lsp
 ```
 
-✅ **If you see a version number** → Skip to Step 3
+✅ **If you see a path** (like `/usr/local/bin/nuon-lsp`) → Skip to Step 3
 ❌ **If you get "command not found"** → Continue to Step 2
 
 #### Step 2: Install the LSP binary
@@ -106,10 +109,10 @@ curl -sSL install.nuon.co | bash
 
 **Verify it worked:**
 ```bash
-nuon-lsp --version
+which nuon-lsp
 ```
 
-You should see output like: `Nuon Language Server 0.0.1`
+You should see a path like: `/usr/local/bin/nuon-lsp`
 
 #### Step 3: Add to your Neovim config
 
@@ -138,7 +141,11 @@ vim.lsp.start({
    ```
    You should see "nuon-lsp" in the list
 
-3. Try completions: Type `type = "helm"` then on a new line type `[` - you should see suggestions
+3. Try completions: Add a schema type at the top:
+   ```toml
+   # helm
+   ```
+   Then on a new line type `[` - you should see suggestions
 
 **That's it!**
 
@@ -332,17 +339,16 @@ commonlog.Configure(2, nil)  // 0=verbose, 2=minimal
 
 ### Supported File Types
 
-The LSP activates for `.toml` files. For the LSP to provide completions, your TOML file should include a schema type declaration (usually added automatically by `nuon apps sync`):
+The LSP activates for `.toml` files. For the LSP to provide completions, your TOML file should include a schema type declaration as a comment at the top (usually added automatically by `nuon apps sync`):
 
 ```toml
-# Schema type (must appear before any [table] headers)
-type = "helm"
+# helm
 
 [public_repo]
 # ... configuration ...
 ```
 
-Supported schema types: `helm`, `docker_build`, `terraform_module`, `job`, and others.
+The schema type is specified as a comment with `# <type>`. Supported types: `helm`, `docker_build`, `terraform_module`, `job`, and others.
 
 ### How It Works
 
