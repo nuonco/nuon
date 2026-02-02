@@ -81,19 +81,28 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	prependRunEnvVars := PrependRunEnvPrefix(req.RunEnvVars)
-	prependRunEnvVars["install_action_workflow_id"] = installActionWorkflow.ID
-	prependRunEnvVars["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
+
+	workflowMetadata := make(map[string]string)
+	workflowMetadata["role"] = req.Role
+	workflowMetadata["install_action_workflow_id"] = installActionWorkflow.ID
+	workflowMetadata["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
+
 	account, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get account from context: %w", err))
 		return
 	}
-	prependRunEnvVars["triggerred_by_id"] = account.ID
+	workflowMetadata["triggerred_by_id"] = account.ID
+
+	// Merge the prepended run env vars into workflow metadata
+	for k, v := range prependRunEnvVars {
+		workflowMetadata[k] = v
+	}
 
 	workflow, err := s.CreateWorkflow(ctx,
 		installActionWorkflow.InstallID,
 		app.WorkflowTypeActionWorkflowRun,
-		prependRunEnvVars,
+		workflowMetadata,
 	)
 	if err != nil {
 		ctx.Error(err)

@@ -50,7 +50,9 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeReprovisionSandbox,
-		map[string]string{},
+		map[string]string{
+			"role": req.Role,
+		},
 		req.PlanOnly,
 	)
 	if err != nil {

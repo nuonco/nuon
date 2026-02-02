@@ -11,7 +11,8 @@ import (
 )
 
 type DeployInstallComponentsRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 // @ID						DeployInstallComponents
@@ -49,7 +50,9 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		installID,
 		app.WorkflowTypeDeployComponents,
-		map[string]string{},
+		map[string]string{
+			"role": req.Role,
+		},
 		req.PlanOnly,
 	)
 	if err != nil {
