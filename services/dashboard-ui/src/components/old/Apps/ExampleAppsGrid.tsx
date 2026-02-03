@@ -1,7 +1,6 @@
 'use client'
 
 import React, { type FC } from 'react'
-import { Button } from '@/components/old/Button'
 import { Text } from '@/components/old/Typography'
 
 interface ExampleApp {
@@ -39,52 +38,46 @@ const EXAMPLE_APPS: ExampleApp[] = [
 ]
 
 interface ExampleAppsGridProps {
-  onAppCreate: (app: ExampleApp) => void
-  creatingApp: string | null
+  selectedApp: ExampleApp | null
+  onAppSelect: (app: ExampleApp) => void
   disabled?: boolean
 }
 
 export const ExampleAppsGrid: FC<ExampleAppsGridProps> = ({
-  onAppCreate,
-  creatingApp,
+  selectedApp,
+  onAppSelect,
   disabled = false,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {EXAMPLE_APPS.map((app) => {
-        const isCreating = creatingApp === app.path
-        const isDisabled = disabled || (creatingApp !== null && !isCreating)
+        const isSelected = selectedApp?.path === app.path
 
         return (
           <div
             key={app.path}
             className={`border rounded-lg p-4 transition-colors ${
-              isCreating
+              disabled
+                ? 'opacity-50 cursor-not-allowed'
+                : 'cursor-pointer'
+            } ${
+              isSelected
                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-200 dark:border-gray-700'
+                : !disabled
+                  ? 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                  : 'border-gray-200 dark:border-gray-700'
             }`}
+            onClick={() => !disabled && onAppSelect(app)}
           >
             <div className="flex items-start justify-between mb-2">
               <Text variant="semi-14">{app.name}</Text>
-              {isCreating && (
-                <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
+              {isSelected && (
+                <div className="w-2 h-2 bg-primary-500 rounded-full" />
               )}
             </div>
-            <Text className="text-gray-600 dark:text-gray-400 mb-4">
+            <Text className="text-gray-600 dark:text-gray-400">
               {app.description}
             </Text>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onAppCreate(app)
-              }}
-              disabled={isDisabled}
-              className="w-full"
-            >
-              {isCreating ? 'Creating...' : 'Select'}
-            </Button>
           </div>
         )
       })}

@@ -3,7 +3,8 @@
 import React, { type FC, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Text } from '@/components/old/Typography'
-import { ExampleAppsGrid, type ExampleApp } from './ExampleAppsGrid'
+import { Button } from '@/components/old/Button'
+import { ExampleAppsGrid, EXAMPLE_APPS, type ExampleApp } from './ExampleAppsGrid'
 import { createAppFromTemplate } from '@/actions/apps/create-app-from-template'
 import { useAccount } from '@/hooks/use-account'
 import { useServerAction } from '@/hooks/use-server-action'
@@ -20,7 +21,7 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
   orgId,
 }) => {
   const pathname = usePathname()
-  const [creatingApp, setCreatingApp] = useState<string | null>(null)
+  const [selectedApp, setSelectedApp] = useState<ExampleApp>(EXAMPLE_APPS[0])
   const [verifying, setVerifying] = useState(false)
   const [confirmedError, setConfirmedError] = useState(false)
   const { refreshAccount } = useAccount()
@@ -32,7 +33,6 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
   const handleAppCreate = async (app: ExampleApp) => {
     if (!orgId) return
 
-    setCreatingApp(app.path)
     setVerifying(false)
     setConfirmedError(false)
 
@@ -44,14 +44,12 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
 
     // If we got data back, success is immediate
     if (result?.data) {
-      setCreatingApp(null)
       return
     }
 
     // If there was an error (e.g., timeout), verify with account polling
     if (result?.error) {
       setVerifying(true)
-      setCreatingApp(null)
 
       // Poll account multiple times to confirm if app was actually created
       for (let i = 0; i < 5; i++) {
@@ -73,6 +71,8 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
   // Only show error if we've confirmed failure after verification
   // AND we're not in a success state (props take precedence)
   const showError = confirmedError && !isSuccess && !verifying
+
+  const isDisabled = isSuccess || isLoading || verifying || !orgId
 
   return (
     <div className="space-y-6">
@@ -149,10 +149,22 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
             configure it automatically.
           </Text>
           <ExampleAppsGrid
-            onAppCreate={handleAppCreate}
-            creatingApp={creatingApp}
-            disabled={isSuccess || isLoading || verifying || !orgId}
+            selectedApp={selectedApp}
+            onAppSelect={setSelectedApp}
+            disabled={isDisabled}
           />
+          <div className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
+            <Text variant="reg-12" className="text-primary-800 dark:text-primary-200">
+              Selected: <strong>{selectedApp.name}</strong>
+            </Text>
+            <Button
+              variant="primary"
+              onClick={() => handleAppCreate(selectedApp)}
+              disabled={isDisabled}
+            >
+              {isLoading ? 'Creating...' : 'Create App'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
