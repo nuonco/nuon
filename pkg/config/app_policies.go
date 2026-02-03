@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 )
@@ -46,6 +47,9 @@ func (a *PoliciesConfig) parse() error {
 		if i < len(policyLineNumbers) {
 			a.Policies[i].SourceLine = policyLineNumbers[i]
 		}
+		// derive name from Contents path if Name is not set
+		// (e.g., "./block-mutable-tags.rego" → "block-mutable-tags")
+		a.Policies[i].SetNameFromContents()
 	}
 	return nil
 }
@@ -123,6 +127,7 @@ var AllAppPolicyEngines = []AppPolicyEngine{
 type AppPolicy struct {
 	Type       AppPolicyType   `mapstructure:"type"`
 	Engine     AppPolicyEngine `mapstructure:"engine,omitempty"`
+	Name       string          `mapstructure:"name,omitempty"`
 	Contents   string          `mapstructure:"contents" features:"get,template"`
 	Components []string        `mapstructure:"components,omitempty"`
 
@@ -148,6 +153,44 @@ func (a *AppPolicy) GetSourceLine() int {
 	return a.SourceLine
 }
 
+// SetNameFromSourceFile derives the policy name from the source filename by stripping
+// the directory path and file extension (e.g., "policies/block-mutable-tags.rego" → "block-mutable-tags").
+// This is only called if Name is not already set.
+func (a *AppPolicy) SetNameFromSourceFile() {
+	if a.Name != "" || a.SourceFile == "" {
+		return
+	}
+	a.Name = extractNameFromPath(a.SourceFile)
+}
+
+// SetNameFromContents derives the policy name from the Contents path when Name is not set.
+// This is used when policies are defined in policies.toml with Contents referencing a file
+// (e.g., "./block-mutable-tags.rego" → "block-mutable-tags").
+func (a *AppPolicy) SetNameFromContents() {
+	if a.Name != "" || a.Contents == "" {
+		return
+	}
+	// Only derive from file paths (starting with ./, ../, or /)
+	if !strings.HasPrefix(a.Contents, "./") && !strings.HasPrefix(a.Contents, "../") && !strings.HasPrefix(a.Contents, "/") {
+		return
+	}
+	a.Name = extractNameFromPath(a.Contents)
+}
+
+// extractNameFromPath extracts a name from a file path by stripping directory and extension.
+func extractNameFromPath(path string) string {
+	name := path
+	// Remove directory path
+	if idx := strings.LastIndex(name, "/"); idx >= 0 {
+		name = name[idx+1:]
+	}
+	// Remove file extension
+	if idx := strings.LastIndex(name, "."); idx >= 0 {
+		name = name[:idx]
+	}
+	return name
+}
+
 func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("type").Short("policy type").
@@ -163,6 +206,8 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("engine").Short("policy engine").
 		Long("The policy engine used to evaluate the policy. Must be compatible with the policy type.").
 		Enum(string(AppPolicyEngineKyverno), string(AppPolicyEngineOPA)).
+		Field("name").Short("policy name").
+		Long("Human-readable name for the policy. If not specified, will be derived from the source filename when parsing from a policies/ directory.").
 		Field("contents").Short("policy document").
 		Long("Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https://github.com/org/repo//policy.json), file paths (file:///path/to/policy.json), and relative paths (./policy.json)").
 		Field("components").Short("target components").
