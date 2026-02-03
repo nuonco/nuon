@@ -63,7 +63,6 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return errors.Wrap(err, "unable to create json")
 	}
 
-	// Get app config for role selection
 	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		w.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to get app config")
@@ -77,7 +76,6 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return errors.Wrap(err, "unable to get install stack")
 	}
 
-	// Build composite plan with auth information
 	compositePlan := plantypes.CompositePlan{
 		SandboxRunPlan: runPlan,
 	}
@@ -95,7 +93,6 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		zap.String("run_type", string(installRun.RunType)),
 	)
 
-	// Create auth configuration
 	planAuth, err := plan.CreatePlanAuth(
 		stack.InstallStackOutputs,
 		roleSelection.RoleARN,
@@ -154,7 +151,7 @@ func (w *Workflows) getRoleForSandbox(
 	ctx workflow.Context,
 	l *zap.Logger,
 	appConfig *app.AppConfig,
-	installRun *app.InstallSandboxRun,
+	sandboxRun *app.InstallSandboxRun,
 	stack *app.InstallStack,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
 	// Determine operation type based on run type
@@ -170,15 +167,10 @@ func (w *Workflows) getRoleForSandbox(
 		operation = app.OperationProvision
 	}
 
-	// Determine default role based on operation
 	defaultRole := appConfig.PermissionsConfig.ProvisionRole.Name
 	if operation == app.OperationDeprovision {
 		defaultRole = appConfig.PermissionsConfig.DeprovisionRole.Name
 	}
-
-	// Get entity roles from sandbox config (if exists)
-	// TODO: Load sandbox config and get OperationRoles from it
-	var entityRoles operationroles.EntityOperationRoleMap
 
 	// Select role using operation roles engine
 	roleSelection, err := operationroles.SelectRole(
@@ -186,17 +178,19 @@ func (w *Workflows) getRoleForSandbox(
 			Operation:     operation,
 			PrincipalType: principal.TypeSandbox,
 			PrincipalName: "", // Sandboxes don't have names
-			RuntimeRole:   installRun.Role,
-			EntityRoles:   entityRoles,
-			MatrixRules:   appConfig.OperationRoleConfig.Rules,
-			DefaultRole:   defaultRole,
-			AppConfig:     appConfig,
-			StackOutputs:  &stack.InstallStackOutputs,
+			RuntimeRole:   sandboxRun.Role,
+			EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
+				sandboxRun.AppSandboxConfig.OperationRoles,
+			),
+			MatrixRules:  appConfig.OperationRoleConfig.Rules,
+			DefaultRole:  defaultRole,
+			AppConfig:    appConfig,
+			StackOutputs: &stack.InstallStackOutputs,
 		})
 	if err != nil {
 		w.updateRunStatusWithoutStatusSync(
 			ctx,
-			installRun.ID,
+			sandboxRun.ID,
 			app.SandboxRunStatusError,
 			"unable to select role",
 		)

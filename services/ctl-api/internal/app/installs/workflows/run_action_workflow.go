@@ -68,7 +68,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	}
 
 	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata["role"])
+	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
 
 	prefix := "RUNENV_"
 	runEnvVars := map[string]string{}

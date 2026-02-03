@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetAppOperationRoleConfigs
@@ -16,6 +16,7 @@ import (
 // @Tags					apps
 // @Accept					json
 // @Param					app_id	path	string	true	"app ID"
+// @Param					operation_role_config_id	path	string	true	"operation role config ID"
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
@@ -27,46 +28,39 @@ import (
 // @Success				200	{array}		app.AppOperationRoleConfig
 // @Router					/v1/apps/{app_id}/operation-role-configs [get]
 func (s *service) GetAppOperationRoleConfigs(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+	appID := ctx.Param("app_id")
+	operationRoleConfigID := ctx.Param("operation_role_config_id")
+
+	currentApp, err := s.appByNameOrID(ctx, appID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	appID := ctx.Param("app_id")
-
-	// Verify app exists and belongs to org
-	var appEntity app.App
-	res := s.db.WithContext(ctx).Where("id = ? AND org_id = ?", appID, org.ID).First(&appEntity)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to find app: %w", res.Error))
-		return
+	appOperationRoleConfig, err := s.getAppOperationRoleConfig(ctx, currentApp.ID, operationRoleConfigID)
+	if err != nil {
+		ctx.Error(errors.Wrap(
+			err,
+			"unable to fetch app operations role config for for given app id and operations config id",
+		))
 	}
 
-	// Get all app configs for this app
-	var appConfigs []app.AppConfig
-	res = s.db.WithContext(ctx).Where("app_id = ?", appID).Find(&appConfigs)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to find app configs: %w", res.Error))
-		return
-	}
+	ctx.JSON(http.StatusOK, appOperationRoleConfig)
+}
 
-	// Extract app config IDs
-	appConfigIDs := make([]string, len(appConfigs))
-	for i, cfg := range appConfigs {
-		appConfigIDs[i] = cfg.ID
-	}
-
-	// Get operation role configs for these app configs
-	var configs []app.AppOperationRoleConfig
-	res = s.db.WithContext(ctx).
+func (s *service) getAppOperationRoleConfig(ctx *gin.Context, appID string, operationRoleConfigID string) (*app.AppOperationRoleConfig, error) {
+	var appOperationRoleConfig app.AppOperationRoleConfig
+	res := s.db.WithContext(ctx).
+		Where(app.AppOperationRoleConfig{
+			AppID: appID,
+			ID:    operationRoleConfigID,
+		}).
 		Preload("Rules").
-		Where("app_config_id IN ?", appConfigIDs).
-		Find(&configs)
+		Order("created_at desc").
+		Limit(1).
+		Find(&appOperationRoleConfig)
 	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to find operation role configs: %w", res.Error))
-		return
+		return nil, fmt.Errorf("unable to find operation role configs: %w", res.Error)
 	}
-
-	ctx.JSON(http.StatusOK, configs)
+	return &appOperationRoleConfig, nil
 }

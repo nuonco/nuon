@@ -191,8 +191,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Workflow, componentIDs []string, sg *stepGroup) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata["role"])
+	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {

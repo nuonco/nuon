@@ -15,9 +15,9 @@ import (
 )
 
 type OperationRoleRuleRequest struct {
-	Principal string `json:"principal" validate:"required"` // "nuon::component:name", "nuon::sandbox", "nuon::action:name"
-	Operation string `json:"operation" validate:"required"` // "provision", "deprovision", "update", "reprovision", "trigger"
-	Role      string `json:"role" validate:"required"`      // Role name
+	Principal string            `json:"principal" validate:"required"`
+	Operation app.OperationType `json:"operation" validate:"required"`
+	Role      string            `json:"role" validate:"required"`
 }
 
 type CreateAppOperationRoleConfigRequest struct {

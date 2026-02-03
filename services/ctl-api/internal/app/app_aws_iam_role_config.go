@@ -27,7 +27,7 @@ const (
 	// used for break-glass by the vendor
 	AWSIAMRoleTypeBreakGlass AWSIAMRoleType = "breakglass"
 
-	// used for break-glass by the vendor
+	// used for various app operations the vendor
 	AWSIAMRoleTypeCustom AWSIAMRoleType = "custom"
 
 	// used for break glass mode where the runner is given elevated permissions

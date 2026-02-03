@@ -14,7 +14,7 @@ type CreateSandboxRunRequest struct {
 	InstallID  string             `validate:"required"`
 	RunType    app.SandboxRunType `validate:"required"`
 	WorkflowID string             `validate:"required"`
-	Role       string             // Optional role override
+	Role       string
 }
 
 // @temporal-gen activity

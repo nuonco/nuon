@@ -84,7 +84,7 @@ type DeployComponentSubSignal struct {
 	// used to consume an existing plan-id
 	PlanID string
 
-	// Optional role override for this deploy operation
+	// Role override for this deploy operation
 	Role string
 }
 
@@ -97,7 +97,7 @@ type TeardownComponentSubSignal struct {
 	// used to consume an existing plan-id
 	PlanID string
 
-	// role override for this teardown operation
+	// Role override for this teardown operation
 	Role string
 }
 
@@ -110,7 +110,7 @@ type SandboxSubSignal struct {
 	// used to consume an existing plan-id
 	PlanID string
 
-	// Optional role override for this sandbox operation
+	// Role override for this sandbox operation
 	Role string
 }
 

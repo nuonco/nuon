@@ -15,7 +15,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 	steps := make([]*app.WorkflowStep, 0)
 
 	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata["role"])
+	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
 
 	sg := newStepGroup()
 

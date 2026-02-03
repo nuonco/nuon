@@ -27,8 +27,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata["role"])
+	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
 
 	sg.nextGroup() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{

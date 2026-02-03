@@ -26,8 +26,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata["role"])
+	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
 
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -65,7 +64,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 	}
 
 	for _, compID := range componentIDs {
-		sg.nextGroup()
+		sg.nextGroup() // new group for each component
 		comp, has := components[compID]
 		if !has {
 			return nil, errors.Errorf("component %s not found in app config", compID)
@@ -124,6 +123,9 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 				Role:        role,
 			},
 		}, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
 		steps = append(steps, deployStep)
 
 		deployStep, err = sg.installSignalStep(ctx, installID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
@@ -133,6 +135,9 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 				Role:        role,
 			},
 		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
 		steps = append(steps, deployStep)
 
 		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg)

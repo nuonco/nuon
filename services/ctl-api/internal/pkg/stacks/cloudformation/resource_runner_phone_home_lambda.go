@@ -23,7 +23,6 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudfor
 	}
 
 	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
-		// cloudformation has parameter called role.CloudFormationStackParamName
 		customRoleArns[role.Name] = cloudformation.If(
 			role.CloudFormationStackParamName,
 			generics.FromPtrStr(cloudformation.GetAttPtr(role.CloudFormationStackName, "Arn")),

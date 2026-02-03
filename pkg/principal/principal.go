@@ -20,11 +20,6 @@ type Principal struct {
 	Name string
 }
 
-// ParsePrincipal extracts the principal type and name from a principal string
-// Examples:
-//   - "nuon::component:database" -> ("component", "database", nil)
-//   - "nuon::sandbox" -> ("sandbox", "", nil)
-//   - "nuon::action:*" -> ("action", "*", nil)
 func ParsePrincipal(principalStr string) (*Principal, error) {
 	if !strings.HasPrefix(principalStr, "nuon::") {
 		return nil, fmt.Errorf("principal must start with 'nuon::'")
