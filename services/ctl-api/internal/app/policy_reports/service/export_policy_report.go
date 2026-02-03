@@ -34,6 +34,9 @@ type PolicyReportTemplateData struct {
 	GeneratedAt   string
 	ReportID      string
 	OrgID         string
+	OrgName       string // Human-readable name when available
+	AppID         string
+	AppName       string // Human-readable name when available
 	DenyCount     int
 	WarnCount     int
 	PassCount     int
@@ -41,16 +44,37 @@ type PolicyReportTemplateData struct {
 	Status        string
 	Violations    []PolicyViolationDisplay
 	HasViolations bool
+	Policies      []PolicyResultDisplay
+	Inputs        []PolicyInputDisplay
+}
+
+type PolicyResultDisplay struct {
+	PolicyID   string
+	PolicyName string // Human-readable name when available
+	Status     string // "deny", "warn", or "pass"
+	DenyCount  int
+	WarnCount  int
+	PassCount  int
+	InputCount int
+}
+
+type PolicyInputDisplay struct {
+	ID   string
+	Name string // Human-readable name when available
+	Type string
 }
 
 type PolicyViolationDisplay struct {
-	PolicyID   string
-	Message    string
-	Severity   string
-	InputIndex int
+	PolicyID      string
+	Message       string
+	Severity      string
+	InputIndex    int
+	InputIdentity string
 }
 
 // SARIF types for export
+type SARIFPropertyBag map[string]any
+
 type SARIFReport struct {
 	Version string     `json:"version"`
 	Schema  string     `json:"$schema"`
@@ -58,8 +82,38 @@ type SARIFReport struct {
 }
 
 type SARIFRun struct {
-	Tool    SARIFTool     `json:"tool"`
-	Results []SARIFResult `json:"results"`
+	Tool        SARIFTool         `json:"tool"`
+	Invocations []SARIFInvocation `json:"invocations,omitempty"`
+	Artifacts   []SARIFArtifact   `json:"artifacts,omitempty"`
+	Results     []SARIFResult     `json:"results"`
+	Properties  SARIFPropertyBag  `json:"properties,omitempty"`
+}
+
+type SARIFInvocation struct {
+	StartTimeUTC        *time.Time       `json:"startTimeUtc,omitempty"`
+	EndTimeUTC          *time.Time       `json:"endTimeUtc,omitempty"`
+	ExecutionSuccessful bool             `json:"executionSuccessful"`
+	Properties          SARIFPropertyBag `json:"properties,omitempty"`
+}
+
+type SARIFArtifact struct {
+	Location   SARIFArtifactLocation `json:"location"`
+	Roles      []string              `json:"roles,omitempty"`
+	Properties SARIFPropertyBag      `json:"properties,omitempty"`
+}
+
+type SARIFArtifactLocation struct {
+	URI   string `json:"uri"`
+	Index *int   `json:"index,omitempty"`
+}
+
+type SARIFPhysicalLocation struct {
+	ArtifactLocation SARIFArtifactLocation `json:"artifactLocation"`
+}
+
+type SARIFLocation struct {
+	PhysicalLocation *SARIFPhysicalLocation `json:"physicalLocation,omitempty"`
+	Properties       SARIFPropertyBag       `json:"properties,omitempty"`
 }
 
 type SARIFTool struct {
@@ -74,14 +128,23 @@ type SARIFToolDriver struct {
 }
 
 type SARIFRule struct {
-	ID               string       `json:"id"`
-	ShortDescription SARIFMessage `json:"shortDescription,omitempty"`
+	ID                   string                       `json:"id"`
+	ShortDescription     SARIFMessage                 `json:"shortDescription,omitempty"`
+	DefaultConfiguration *SARIFReportingConfiguration `json:"defaultConfiguration,omitempty"`
+	Properties           SARIFPropertyBag             `json:"properties,omitempty"`
+}
+
+type SARIFReportingConfiguration struct {
+	Level   string `json:"level,omitempty"`
+	Enabled bool   `json:"enabled"`
 }
 
 type SARIFResult struct {
-	RuleID  string       `json:"ruleId"`
-	Level   string       `json:"level"`
-	Message SARIFMessage `json:"message"`
+	RuleID     string           `json:"ruleId"`
+	Level      string           `json:"level"`
+	Message    SARIFMessage     `json:"message"`
+	Locations  []SARIFLocation  `json:"locations,omitempty"`
+	Properties SARIFPropertyBag `json:"properties,omitempty"`
 }
 
 type SARIFMessage struct {
@@ -90,6 +153,11 @@ type SARIFMessage struct {
 
 // OPA report format for export
 type OPAReport struct {
+	ReportID    string                `json:"report_id"`
+	OrgID       string                `json:"org_id"`
+	OrgName     string                `json:"org_name,omitempty"`
+	AppID       string                `json:"app_id"`
+	AppName     string                `json:"app_name,omitempty"`
 	EvaluatedAt time.Time             `json:"evaluated_at"`
 	Violations  []app.PolicyViolation `json:"violations"`
 	PolicyIDs   []string              `json:"policy_ids"`
@@ -163,6 +231,11 @@ func isValidPolicyReportFormat(format PolicyReportExportFormat) bool {
 
 func toOPAFormat(report *app.PolicyReport) OPAReport {
 	return OPAReport{
+		ReportID:    report.ID,
+		OrgID:       report.OrgID,
+		OrgName:     report.OrgName,
+		AppID:       report.AppID,
+		AppName:     report.AppName,
 		EvaluatedAt: report.EvaluatedAt,
 		Violations:  report.Violations,
 		PolicyIDs:   report.PolicyIDs,
@@ -175,21 +248,72 @@ func toOPAFormat(report *app.PolicyReport) OPAReport {
 }
 
 func toSARIFFormat(report *app.PolicyReport) SARIFReport {
-	policyIDs := make(map[string]bool)
-	for _, v := range report.Violations {
-		policyIDs[v.PolicyID] = true
+	// Build artifacts from inputs
+	artifacts := make([]SARIFArtifact, len(report.Inputs))
+	for i, input := range report.Inputs {
+		artifacts[i] = SARIFArtifact{
+			Location: SARIFArtifactLocation{
+				URI: fmt.Sprintf("nuon://policy-input/%s/%s", input.Type, input.ID),
+			},
+			Roles: []string{"analysisTarget"},
+			Properties: SARIFPropertyBag{
+				"input_id":   input.ID,
+				"input_type": input.Type,
+				"input_name": input.Name,
+			},
+		}
 	}
 
-	rules := make([]SARIFRule, 0, len(policyIDs))
-	for policyID := range policyIDs {
-		rules = append(rules, SARIFRule{
+	// Build policy lookup for per-policy counts
+	policyLookup := make(map[string]app.PolicyResult)
+	for _, p := range report.Policies {
+		policyLookup[p.PolicyID] = p
+	}
+
+	// Build rules for ALL policies (not just those with violations)
+	rules := make([]SARIFRule, len(report.PolicyIDs))
+	for i, policyID := range report.PolicyIDs {
+		rule := SARIFRule{
 			ID: policyID,
 			ShortDescription: SARIFMessage{
 				Text: "Policy: " + policyID,
 			},
-		})
+			DefaultConfiguration: &SARIFReportingConfiguration{
+				Enabled: true,
+			},
+		}
+
+		// Add per-policy counts from report.Policies if available
+		if policyResult, ok := policyLookup[policyID]; ok {
+			rule.ShortDescription.Text = "Policy: " + policyResult.PolicyName
+			if policyResult.PolicyName == "" {
+				rule.ShortDescription.Text = "Policy: " + policyID
+			}
+			rule.Properties = SARIFPropertyBag{
+				"policy_id":   policyID,
+				"policy_name": policyResult.PolicyName,
+				"status":      policyResult.Status,
+				"deny_count":  policyResult.DenyCount,
+				"warn_count":  policyResult.WarnCount,
+				"pass_count":  policyResult.PassCount,
+				"input_count": policyResult.InputCount,
+			}
+
+			// Set default level based on status
+			switch policyResult.Status {
+			case "deny":
+				rule.DefaultConfiguration.Level = "error"
+			case "warn":
+				rule.DefaultConfiguration.Level = "warning"
+			default:
+				rule.DefaultConfiguration.Level = "note"
+			}
+		}
+
+		rules[i] = rule
 	}
 
+	// Build results with locations referencing artifacts
 	results := make([]SARIFResult, len(report.Violations))
 	for i, v := range report.Violations {
 		level := "warning"
@@ -197,13 +321,56 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 			level = "error"
 		}
 
-		results[i] = SARIFResult{
+		result := SARIFResult{
 			RuleID: v.PolicyID,
 			Level:  level,
 			Message: SARIFMessage{
 				Text: v.Message,
 			},
 		}
+
+		// Add location referencing the artifact by index
+		if v.InputIndex >= 0 && v.InputIndex < len(artifacts) {
+			idx := v.InputIndex
+			result.Locations = []SARIFLocation{
+				{
+					PhysicalLocation: &SARIFPhysicalLocation{
+						ArtifactLocation: SARIFArtifactLocation{
+							Index: &idx,
+						},
+					},
+				},
+			}
+		}
+
+		// Preserve InputIdentity and other violation data in properties
+		if v.InputIdentity != "" || v.InputIndex >= 0 {
+			result.Properties = SARIFPropertyBag{
+				"input_index":    v.InputIndex,
+				"input_identity": v.InputIdentity,
+			}
+		}
+
+		results[i] = result
+	}
+
+	// Build invocation with timestamp
+	evaluatedAt := report.EvaluatedAt
+	invocations := []SARIFInvocation{
+		{
+			EndTimeUTC:          &evaluatedAt,
+			ExecutionSuccessful: true,
+		},
+	}
+
+	// Run-level properties with summary counts
+	runProperties := SARIFPropertyBag{
+		"deny_count":       report.DenyCount,
+		"warn_count":       report.WarnCount,
+		"pass_count":       report.PassCount,
+		"total_violations": len(report.Violations),
+		"total_inputs":     len(report.Inputs),
+		"total_policies":   len(report.PolicyIDs),
 	}
 
 	return SARIFReport{
@@ -219,7 +386,10 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 						Rules:          rules,
 					},
 				},
-				Results: results,
+				Invocations: invocations,
+				Artifacts:   artifacts,
+				Results:     results,
+				Properties:  runProperties,
 			},
 		},
 	}
@@ -255,10 +425,33 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 	violations := make([]PolicyViolationDisplay, len(report.Violations))
 	for i, v := range report.Violations {
 		violations[i] = PolicyViolationDisplay{
-			PolicyID:   v.PolicyID,
-			Message:    v.Message,
-			Severity:   v.Severity,
-			InputIndex: v.InputIndex,
+			PolicyID:      v.PolicyID,
+			Message:       v.Message,
+			Severity:      v.Severity,
+			InputIndex:    v.InputIndex,
+			InputIdentity: v.InputIdentity,
+		}
+	}
+
+	policies := make([]PolicyResultDisplay, len(report.Policies))
+	for i, p := range report.Policies {
+		policies[i] = PolicyResultDisplay{
+			PolicyID:   p.PolicyID,
+			PolicyName: p.PolicyName,
+			Status:     p.Status,
+			DenyCount:  p.DenyCount,
+			WarnCount:  p.WarnCount,
+			PassCount:  p.PassCount,
+			InputCount: p.InputCount,
+		}
+	}
+
+	inputs := make([]PolicyInputDisplay, len(report.Inputs))
+	for i, inp := range report.Inputs {
+		inputs[i] = PolicyInputDisplay{
+			ID:   inp.ID,
+			Name: inp.Name,
+			Type: inp.Type,
 		}
 	}
 
@@ -274,6 +467,9 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 		GeneratedAt:   time.Now().UTC().Format(time.RFC3339),
 		ReportID:      report.ID,
 		OrgID:         report.OrgID,
+		OrgName:       report.OrgName,
+		AppID:         report.AppID,
+		AppName:       report.AppName,
 		DenyCount:     report.DenyCount,
 		WarnCount:     report.WarnCount,
 		PassCount:     report.PassCount,
@@ -281,6 +477,8 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 		Status:        status,
 		Violations:    violations,
 		HasViolations: len(violations) > 0,
+		Policies:      policies,
+		Inputs:        inputs,
 	}
 
 	if err := s.renderPDFReport(ctx, data); err != nil {
@@ -288,57 +486,182 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 	}
 }
 
+// Color constants for severity
+var (
+	colorDeny = [3]int{200, 50, 50}   // Red
+	colorWarn = [3]int{200, 150, 0}   // Yellow/Orange
+	colorPass = [3]int{50, 150, 50}   // Green
+	colorText = [3]int{40, 40, 40}    // Dark gray
+	colorMute = [3]int{120, 120, 120} // Muted gray
+)
+
 func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateData) error {
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetTitle(data.Title, false)
 	pdf.SetAuthor("Nuon", false)
+	pdf.SetMargins(15, 15, 15)
 	pdf.AddPage()
-	pdf.SetFont("Helvetica", "B", 16)
-	pdf.Cell(0, 10, data.Title)
+
+	// Header with title and status badge
+	pdf.SetFont("Helvetica", "B", 18)
+	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+	pdf.Cell(140, 10, data.Title)
+
+	// Status badge
+	statusColor := colorPass
+	if data.Status == "failed" {
+		statusColor = colorDeny
+	} else if data.Status == "warning" {
+		statusColor = colorWarn
+	}
+	pdf.SetTextColor(statusColor[0], statusColor[1], statusColor[2])
+	pdf.SetFont("Helvetica", "B", 12)
+	pdf.Cell(0, 10, fmt.Sprintf("[%s]", data.Status))
+	pdf.Ln(12)
+
 	if pdf.Error() != nil {
 		return errors.Wrap(pdf.Error(), "unable to render pdf header")
 	}
 
-	pdf.Ln(8)
-	pdf.SetFont("Helvetica", "", 11)
-	pdf.Cell(0, 6, fmt.Sprintf("Report ID: %s", data.ReportID))
-	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("Organization: %s", data.OrgID))
-	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("Generated: %s", data.GeneratedAt))
+	// Report metadata - two column layout
+	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+	pdf.SetFont("Helvetica", "", 9)
+	leftCol := 95.0
+	pdf.Cell(leftCol, 5, fmt.Sprintf("Report ID: %s", data.ReportID))
+	pdf.Cell(0, 5, fmt.Sprintf("Generated: %s", data.GeneratedAt))
+	pdf.Ln(5)
+
+	orgDisplay := data.OrgID
+	if data.OrgName != "" {
+		orgDisplay = fmt.Sprintf("%s (%s)", data.OrgName, data.OrgID)
+	}
+	pdf.Cell(leftCol, 5, fmt.Sprintf("Organization: %s", orgDisplay))
+
+	appDisplay := data.AppID
+	if data.AppName != "" {
+		appDisplay = fmt.Sprintf("%s (%s)", data.AppName, data.AppID)
+	}
+	pdf.Cell(0, 5, fmt.Sprintf("App: %s", appDisplay))
 	pdf.Ln(10)
 
-	pdf.SetFont("Helvetica", "B", 12)
-	pdf.Cell(0, 7, "Summary")
-	pdf.Ln(8)
-	pdf.SetFont("Helvetica", "", 11)
-	pdf.Cell(0, 6, fmt.Sprintf("Denies: %d", data.DenyCount))
+	// Summary section - horizontal layout
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.Cell(0, 6, "Summary")
 	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("Warnings: %d", data.WarnCount))
-	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("Passes: %d", data.PassCount))
-	pdf.Ln(6)
-	pdf.Cell(0, 6, fmt.Sprintf("Total: %d", data.TotalCount))
-	pdf.Ln(10)
 
-	pdf.SetFont("Helvetica", "B", 12)
-	pdf.Cell(0, 7, "Violations")
-	pdf.Ln(8)
 	pdf.SetFont("Helvetica", "", 10)
+	pdf.SetTextColor(colorDeny[0], colorDeny[1], colorDeny[2])
+	pdf.Cell(40, 5, fmt.Sprintf("Denies: %d", data.DenyCount))
+	pdf.SetTextColor(colorWarn[0], colorWarn[1], colorWarn[2])
+	pdf.Cell(40, 5, fmt.Sprintf("Warnings: %d", data.WarnCount))
+	pdf.SetTextColor(colorPass[0], colorPass[1], colorPass[2])
+	pdf.Cell(40, 5, fmt.Sprintf("Passes: %d", data.PassCount))
+	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+	pdf.Cell(0, 5, fmt.Sprintf("Total: %d", data.TotalCount))
+	pdf.Ln(10)
+
+	// Policies Evaluated section
+	if len(data.Policies) > 0 {
+		pdf.SetFont("Helvetica", "B", 11)
+		pdf.Cell(0, 6, "Policies Evaluated")
+		pdf.Ln(6)
+
+		// Table header
+		pdf.SetFont("Helvetica", "B", 9)
+		pdf.SetFillColor(240, 240, 240)
+		pdf.CellFormat(80, 6, "Policy", "1", 0, "L", true, 0, "")
+		pdf.CellFormat(25, 6, "Status", "1", 0, "C", true, 0, "")
+		pdf.CellFormat(25, 6, "Denies", "1", 0, "C", true, 0, "")
+		pdf.CellFormat(25, 6, "Warnings", "1", 0, "C", true, 0, "")
+		pdf.CellFormat(25, 6, "Passes", "1", 0, "C", true, 0, "")
+		pdf.Ln(6)
+
+		pdf.SetFont("Helvetica", "", 9)
+		for _, p := range data.Policies {
+			policyDisplay := p.PolicyID
+			if p.PolicyName != "" {
+				policyDisplay = p.PolicyName
+			}
+
+			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+			pdf.CellFormat(80, 5, truncateString(policyDisplay, 40), "1", 0, "L", false, 0, "")
+
+			// Status with color
+			statusColor := getStatusColor(p.Status)
+			pdf.SetTextColor(statusColor[0], statusColor[1], statusColor[2])
+			pdf.CellFormat(25, 5, p.Status, "1", 0, "C", false, 0, "")
+
+			// Counts
+			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+			pdf.CellFormat(25, 5, fmt.Sprintf("%d", p.DenyCount), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(25, 5, fmt.Sprintf("%d", p.WarnCount), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(25, 5, fmt.Sprintf("%d", p.PassCount), "1", 0, "C", false, 0, "")
+			pdf.Ln(5)
+		}
+		pdf.Ln(5)
+	}
+
+	// Inputs Evaluated section
+	if len(data.Inputs) > 0 {
+		pdf.SetFont("Helvetica", "B", 11)
+		pdf.Cell(0, 6, "Inputs Evaluated")
+		pdf.Ln(6)
+
+		pdf.SetFont("Helvetica", "", 9)
+		for _, inp := range data.Inputs {
+			inputDisplay := inp.ID
+			if inp.Name != "" {
+				inputDisplay = fmt.Sprintf("%s (%s)", inp.Name, inp.ID)
+			}
+			pdf.SetTextColor(colorMute[0], colorMute[1], colorMute[2])
+			pdf.Cell(25, 5, inp.Type)
+			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+			pdf.Cell(0, 5, truncateString(inputDisplay, 60))
+			pdf.Ln(5)
+		}
+		pdf.Ln(5)
+	}
+
+	// Violations section
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+	pdf.Cell(0, 6, "Violations")
+	pdf.Ln(6)
 
 	if !data.HasViolations {
-		pdf.Cell(0, 6, "No policy violations detected.")
+		pdf.SetFont("Helvetica", "I", 10)
+		pdf.SetTextColor(colorPass[0], colorPass[1], colorPass[2])
+		pdf.Cell(0, 5, "No policy violations detected.")
+		pdf.Ln(8)
 	} else {
+		pdf.SetFont("Helvetica", "", 9)
 		for _, v := range data.Violations {
-			line := fmt.Sprintf("[%s] %s", v.Severity, v.Message)
-			pdf.MultiCell(0, 5, line, "", "L", false)
+			// Severity indicator with color
+			severityColor := getStatusColor(v.Severity)
+			pdf.SetTextColor(severityColor[0], severityColor[1], severityColor[2])
+			pdf.SetFont("Helvetica", "B", 9)
+			pdf.Cell(15, 5, fmt.Sprintf("[%s]", v.Severity))
+
+			// Message
+			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 			pdf.SetFont("Helvetica", "", 9)
-			pdf.Cell(0, 5, fmt.Sprintf("Policy: %s | Input: %d", v.PolicyID, v.InputIndex))
-			pdf.Ln(5)
-			pdf.SetFont("Helvetica", "", 10)
-			pdf.Ln(2)
+			pdf.MultiCell(0, 5, v.Message, "", "L", false)
+
+			// Policy reference with input identity
+			pdf.SetTextColor(colorMute[0], colorMute[1], colorMute[2])
+			pdf.SetFont("Helvetica", "", 8)
+			inputRef := v.InputIdentity
+			if inputRef == "" {
+				inputRef = fmt.Sprintf("Input Index: %d", v.InputIndex)
+			}
+			pdf.Cell(0, 4, fmt.Sprintf("Policy: %s | %s", v.PolicyID, inputRef))
+			pdf.Ln(6)
 		}
 	}
+
+	// CLI Reference section
+	pdf.Ln(5)
+	s.renderCLIReferenceSection(pdf, data)
 
 	var buf bytes.Buffer
 	if err := pdf.Output(&buf); err != nil {
@@ -349,4 +672,60 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	ctx.Data(http.StatusOK, "application/pdf", buf.Bytes())
 	return nil
+}
+
+func (s *service) renderCLIReferenceSection(pdf *fpdf.Fpdf, data PolicyReportTemplateData) {
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+	pdf.Cell(0, 6, "CLI Reference")
+	pdf.Ln(6)
+
+	pdf.SetFont("Helvetica", "", 8)
+	pdf.SetTextColor(colorMute[0], colorMute[1], colorMute[2])
+	pdf.Cell(0, 4, "Use these commands to explore details:")
+	pdf.Ln(5)
+
+	commands := []string{
+		fmt.Sprintf("nuon policies reports get -r %s", data.ReportID),
+		fmt.Sprintf("nuon policies get -a %s", data.AppID),
+	}
+
+	// Add component/build commands if we have inputs
+	for _, inp := range data.Inputs {
+		switch inp.Type {
+		case "component":
+			commands = append(commands, fmt.Sprintf("nuon components get -a %s -c %s", data.AppID, inp.ID))
+		case "component_build":
+			commands = append(commands, fmt.Sprintf("nuon builds get -a %s -b %s", data.AppID, inp.ID))
+			commands = append(commands, fmt.Sprintf("nuon builds logs -a %s -b %s", data.AppID, inp.ID))
+		}
+	}
+
+	pdf.SetFont("Courier", "", 8)
+	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
+	for _, cmd := range commands {
+		pdf.Cell(5, 4, "")
+		pdf.Cell(0, 4, cmd)
+		pdf.Ln(4)
+	}
+}
+
+func getStatusColor(status string) [3]int {
+	switch status {
+	case "deny":
+		return colorDeny
+	case "warn":
+		return colorWarn
+	case "pass":
+		return colorPass
+	default:
+		return colorText
+	}
+}
+
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
 }
