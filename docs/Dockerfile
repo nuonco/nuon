@@ -6,7 +6,7 @@ FROM deps AS final
 
 WORKDIR /app
 COPY . .
-RUN npm install -g mint
+RUN npm install -g mint@4.2.314
 
 EXPOSE 3000
 
@@ -26,7 +26,7 @@ FROM deps AS dev
 
 WORKDIR /app
 COPY . .
-RUN npm install -g mint
+RUN npm install -g mint@4.2.314
 
 EXPOSE 3000
 
