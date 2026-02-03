@@ -45,12 +45,16 @@ func (s *Service) GetReport(ctx context.Context, reportID string, asJSON bool) e
 	if len(report.Violations) > 0 {
 		fmt.Println("\nViolations:")
 		violationData := [][]string{
-			{"POLICY ID", "INPUT INDEX", "SEVERITY", "MESSAGE"},
+			{"POLICY ID", "INPUT", "SEVERITY", "MESSAGE"},
 		}
 		for _, v := range report.Violations {
+			inputRef := v.InputIdentity
+			if inputRef == "" {
+				inputRef = fmt.Sprintf("Index: %d", v.InputIndex)
+			}
 			violationData = append(violationData, []string{
 				v.PolicyID,
-				fmt.Sprintf("%d", v.InputIndex),
+				inputRef,
 				v.Severity,
 				v.Message,
 			})

@@ -88,7 +88,7 @@ func (v *SyncResultsView) Render() string {
 
 		reportID := subtleStyle.Render("—")
 		if r.PolicyReport != "" {
-			reportID = subtleStyle.Render(truncateReportID(r.PolicyReport))
+			reportID = subtleStyle.Render(r.PolicyReport)
 		}
 
 		line := fmt.Sprintf("%s %s  %s  %s %s %s   %s",
