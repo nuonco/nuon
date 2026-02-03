@@ -94,7 +94,6 @@ func (s *AppsTestSuite) SetupTest() {
 	s.router = testfx.NewTestRouter(testfx.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
-		MW:      s.service.MW,
 		TestOrg: s.testOrg,
 		TestAcc: s.testAcc,
 	})

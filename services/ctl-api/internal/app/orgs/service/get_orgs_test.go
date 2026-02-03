@@ -18,7 +18,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -37,7 +36,6 @@ type TestService struct {
 	CHDB            *gorm.DB `name:"ch"`
 	V               *validator.Validate
 	L               *zap.Logger
-	MW              metrics.Writer
 	OrgsHelpers     *orgshelpers.Helpers
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
@@ -90,7 +88,6 @@ func (s *OrgsTestSuite) SetupTest() {
 	s.router = testfx.NewTestRouter(testfx.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
-		MW:      s.service.MW,
 		TestAcc: s.testAcc,
 	})
 

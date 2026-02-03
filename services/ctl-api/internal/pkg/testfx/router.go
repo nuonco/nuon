@@ -5,10 +5,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/pagination"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/panicker"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -17,10 +16,8 @@ import (
 type RouterOptions struct {
 	// Logger for middlewares
 	L *zap.Logger
-	// Database for pagination middleware
+	// Database for pagination and patcher middleware
 	DB *gorm.DB
-	// MetricsWriter for panicker middleware
-	MW metrics.Writer
 	// TestOrg to inject into context (optional)
 	TestOrg *app.Org
 	// TestAccount to inject into context (optional)
@@ -33,7 +30,7 @@ type RouterOptions struct {
 //
 // Standard middlewares included (in order):
 // 1. stderr - Error handling and JSON error responses (REQUIRED)
-// 2. panicker - Panic recovery with proper error responses
+// 2. patcher - PATCH request field extraction for partial updates
 // 3. pagination - Query parameter parsing for paginated endpoints
 // 4. context injection - Injects test org and account into context
 //
@@ -42,7 +39,6 @@ type RouterOptions struct {
 //	router := testfx.NewTestRouter(testfx.RouterOptions{
 //	    L:       s.service.L,
 //	    DB:      s.service.DB,
-//	    MW:      s.service.MW,
 //	    TestOrg: s.testOrg,
 //	    TestAcc: s.testAcc,
 //	})
@@ -52,7 +48,6 @@ type RouterOptions struct {
 //	router := testfx.NewTestRouter(testfx.RouterOptions{
 //	    L:       s.service.L,
 //	    DB:      s.service.DB,
-//	    MW:      s.service.MW,
 //	    TestOrg: s.testOrg,
 //	    TestAcc: s.testAcc,
 //	    AdditionalMiddlewares: []gin.HandlerFunc{
@@ -67,12 +62,12 @@ func NewTestRouter(opts RouterOptions) *gin.Engine {
 	errMiddleware := stderr.New(opts.L, nil)
 	router.Use(errMiddleware.Handler())
 
-	// 2. Add panicker middleware for panic recovery
-	panickerMW := panicker.New(panicker.Params{
-		L:      opts.L,
-		Writer: opts.MW,
+	// 2. Add patcher middleware for PATCH request handling
+	patcherMW := patcher.New(patcher.Params{
+		L:  opts.L,
+		DB: opts.DB,
 	})
-	router.Use(panickerMW.Handler())
+	router.Use(patcherMW.Handler())
 
 	// 3. Add pagination middleware for paginated GET endpoints
 	paginationMW := pagination.New(pagination.Params{
