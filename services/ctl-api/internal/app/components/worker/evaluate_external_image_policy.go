@@ -128,9 +128,11 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	var futures []workflow.Future
 	for _, policy := range prepResult.Policies {
 		fut := workflow.ExecuteActivity(policyCtx, (&sharedactivities.Activities{}).EvaluateSinglePolicy, &sharedactivities.EvaluateSinglePolicyRequest{
-			PolicyID:  policy.PolicyID,
-			Contents:  policy.Contents,
-			InputJSON: policy.InputJSON,
+			PolicyID:      policy.PolicyID,
+			Contents:      policy.Contents,
+			InputJSON:     policy.InputJSON,
+			InputIndex:    policy.InputIndex,
+			InputIdentity: policy.InputIdentity,
 		})
 		futures = append(futures, fut)
 	}
