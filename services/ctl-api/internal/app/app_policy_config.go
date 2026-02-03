@@ -28,10 +28,12 @@ type AppPolicyConfig struct {
 	AppPoliciesConfigID string            `json:"app_policies_config,omitzero" gorm:"notnull;default null" temporaljson:"app_policies_config_id,omitzero,omitempty"`
 	AppPoliciesConfig   AppPoliciesConfig `json:"-" temporaljson:"app_policies_config,omitzero,omitempty"`
 
-	Type       config.AppPolicyType   `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
-	Engine     config.AppPolicyEngine `json:"engine,omitzero" temporaljson:"engine,omitzero,omitempty"`
-	Contents   string                 `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
-	Components []string               `json:"components,omitzero" gorm:"serializer:json" temporaljson:"components,omitzero,omitempty"`
+	Type        config.AppPolicyType   `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Engine      config.AppPolicyEngine `json:"engine,omitzero" temporaljson:"engine,omitzero,omitempty"`
+	Name        string                 `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
+	Description string                 `json:"description,omitzero" temporaljson:"description,omitzero,omitempty"`
+	Contents    string                 `json:"contents,omitzero" features:"template" temporaljson:"contents,omitzero,omitempty"`
+	Components  []string               `json:"components,omitzero" gorm:"serializer:json" temporaljson:"components,omitzero,omitempty"`
 }
 
 func (a *AppPolicyConfig) Indexes(db *gorm.DB) []migrations.Index {
