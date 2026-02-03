@@ -12,10 +12,11 @@ import (
 )
 
 type EvaluateSinglePolicyRequest struct {
-	PolicyID   string `json:"policy_id" validate:"required"`
-	Contents   string `json:"contents" validate:"required"`
-	InputJSON  []byte `json:"input_json" validate:"required"`
-	InputIndex int    `json:"input_index"` // Index of the input document being evaluated
+	PolicyID      string `json:"policy_id" validate:"required"`
+	Contents      string `json:"contents" validate:"required"`
+	InputJSON     []byte `json:"input_json" validate:"required"`
+	InputIndex    int    `json:"input_index"`                // Index of the input document being evaluated
+	InputIdentity string `json:"input_identity" validate:""` // Human-readable input reference
 }
 
 type EvaluateSinglePolicyResult struct {
@@ -57,6 +58,7 @@ func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSing
 	for i := range violations {
 		violations[i].PolicyID = req.PolicyID
 		violations[i].InputIndex = req.InputIndex
+		violations[i].InputIdentity = req.InputIdentity
 	}
 
 	l.Info("policy evaluation complete",
