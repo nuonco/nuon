@@ -180,6 +180,9 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 			Violations:        allViolations,
 			PolicyIDs:         prepResult.PolicyIDs,
 			PolicyInputCounts: policyInputCounts,
+			OrgName:           prepResult.OrgName,
+			AppName:           prepResult.AppName,
+			ComponentName:     prepResult.ComponentName,
 		}); err != nil {
 			l.Warn("failed to persist policy report", zap.Error(err))
 		}
