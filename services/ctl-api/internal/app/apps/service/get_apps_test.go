@@ -19,37 +19,14 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
-	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/pagination"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
-	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
-	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
-
-	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
 )
 
 // TestService holds all fx-injected dependencies for apps endpoint tests.
@@ -90,62 +67,14 @@ func TestAppsSuite(t *testing.T) {
 func (s *AppsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
-	s.app = fxtest.New(
-		s.T(),
-		fx.Provide(internal.NewConfig),
-
-		// logging
-		fx.Provide(log.New),
-		fx.Provide(dblog.New),
-
-		// external services
-		fx.Provide(loops.New),
-		fx.Provide(ghpkg.New), // Use real GitHub client (loads from env)
-		fx.Provide(metrics.New),
-		fx.Provide(propagator.New),
-
-		// temporal dependencies (required for eventloop)
-		fx.Provide(gzip.AsGzip(gzip.New)),
-		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
-		fx.Provide(signaldb.NewPayloadConverter),
-		fx.Provide(dataconverter.New),
-		fx.Provide(temporal.New),
-
-		// eventloop client (uses real temporal connection)
-		fx.Provide(eventloop.New),
-
-		// databases
-		fx.Provide(psql.AsPSQL(psql.New)),
-		fx.Provide(ch.AsCH(ch.New)),
-
-		// validator
-		fx.Provide(validator.New),
-
-		// clients and dependencies for account client
-		fx.Provide(authz.New),
-		fx.Provide(analytics.New),
-		fx.Provide(account.New),
-
-		// helpers (order matters due to dependencies)
-		fx.Provide(accountshelpers.New),
-		fx.Provide(vcshelpers.New),
-		fx.Provide(actionshelpers.New),
-		fx.Provide(componentshelpers.New),
-		fx.Provide(appshelpers.New),
-		fx.Provide(runnershelpers.New),
-		fx.Provide(installshelpers.New),
-
-		// endpoint audit
-		fx.Provide(api.NewEndpointAudit),
-
+	options := append(
+		testfx.CommonTestOptionsWithValidator(),
 		// service under test
 		fx.Provide(New),
-
-		// invokers
-		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
-
 		fx.Populate(&s.service),
 	)
+
+	s.app = fxtest.New(s.T(), options...)
 
 	s.app.RequireStart()
 
