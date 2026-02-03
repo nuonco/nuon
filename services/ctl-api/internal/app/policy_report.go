@@ -21,15 +21,17 @@ const (
 
 // PolicyViolation represents a single policy violation from evaluation.
 type PolicyViolation struct {
-	PolicyID   string `json:"policy_id" temporaljson:"policy_id,omitempty"`
-	InputIndex int    `json:"input_index" temporaljson:"input_index,omitempty"`
-	Message    string `json:"message" temporaljson:"message,omitempty"`
-	Severity   string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
+	PolicyID      string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	InputIndex    int    `json:"input_index" temporaljson:"input_index,omitempty"`
+	InputIdentity string `json:"input_identity,omitempty" temporaljson:"input_identity,omitempty"` // Human-readable input reference (e.g., "Deployment/default/nginx")
+	Message       string `json:"message" temporaljson:"message,omitempty"`
+	Severity      string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
 }
 
 // PolicyResult represents the evaluation result for a single policy.
 type PolicyResult struct {
 	PolicyID   string `json:"policy_id"`
+	PolicyName string `json:"policy_name,omitempty"`
 	Status     string `json:"status"` // "deny", "warn", or "pass"
 	DenyCount  int    `json:"deny_count"`
 	WarnCount  int    `json:"warn_count"`
@@ -41,6 +43,7 @@ type PolicyResult struct {
 type PolicyInputRef struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
+	Name string `json:"name,omitempty"`
 }
 
 // PolicyReport stores canonical policy evaluation results with format-agnostic storage.
@@ -60,6 +63,12 @@ type PolicyReport struct {
 	AppID       string  `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
 	InstallID   *string `json:"install_id,omitzero" gorm:"default:null" temporaljson:"install_id,omitzero,omitempty"`
 	ComponentID *string `json:"component_id,omitzero" gorm:"default:null" temporaljson:"component_id,omitzero,omitempty"`
+
+	// Denormalized display names for human-readable reports
+	OrgName       string  `json:"org_name,omitzero" gorm:"default:null" temporaljson:"org_name,omitzero,omitempty"`
+	AppName       string  `json:"app_name,omitzero" gorm:"default:null" temporaljson:"app_name,omitzero,omitempty"`
+	InstallName   *string `json:"install_name,omitzero" gorm:"default:null" temporaljson:"install_name,omitzero,omitempty"`
+	ComponentName *string `json:"component_name,omitzero" gorm:"default:null" temporaljson:"component_name,omitzero,omitempty"`
 
 	// Optional context references
 	WorkflowStepPolicyValidationID *string `json:"workflow_step_policy_validation_id,omitzero" gorm:"index" temporaljson:"workflow_step_policy_validation_id,omitzero,omitempty"`
