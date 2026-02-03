@@ -4,10 +4,11 @@ import (
 	"context"
 	_ "embed"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"gorm.io/gorm"
 )
 
-func (m *Migrations) Migration089AppBracnhesCleanup(ctx context.Context, db *gorm.DB) error {
+func (m *Migrations) Migration089AppBracnhesCleanup(ctx context.Context, db *gorm.DB, cfg *internal.Config) error {
 	dropTableVCSConnectionBranches := `DROP TABLE IF EXISTS vcs_connection_branches CASCADE`
 	dropTableVCSConnectionRepos := `DROP TABLE IF EXISTS vcs_connection_repos CASCADE`
 	dropTableAppConfigSyncRuns := `DROP TABLE IF EXISTS app_config_sync_runs CASCADE`

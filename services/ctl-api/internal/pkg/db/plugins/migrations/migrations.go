@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/services/config"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
@@ -20,7 +21,7 @@ type Migration struct {
 	Disabled  bool
 	AlwaysRun bool
 
-	Fn    func(context.Context, *gorm.DB) error
+	Fn    func(context.Context, *gorm.DB, *internal.Config) error
 	SQL   string
 	SQLFn func(context.Context, *gorm.DB) (string, error)
 }
@@ -181,7 +182,7 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 	}
 
 	if migration.Fn != nil {
-		if err := migration.Fn(ctx, a.db); err != nil {
+		if err := migration.Fn(ctx, a.db, a.cfg); err != nil {
 			statusDescription = "unable_to_exec_fn"
 			if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError); updateErr != nil {
 				a.l.Info("unable to update migration status", zap.Error(err))

@@ -3,12 +3,18 @@ package migrations
 import (
 	"context"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
-func (m *Migrations) migration01InternalAccounts(ctx context.Context, db *gorm.DB) error {
+func (m *Migrations) migration01InternalAccounts(ctx context.Context, db *gorm.DB, cfg *internal.Config) error {
+	// Skip service account creation in test environments
+	if cfg.IsTest {
+		return nil
+	}
+
 	svcAcctNames := []string{
 		"github-actions",
 		"nuonctl",

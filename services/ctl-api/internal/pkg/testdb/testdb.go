@@ -10,12 +10,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/services/config"
+	"github.com/nuonco/nuon/pkg/workflows/worker"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
+	psqlmigrations "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 const TestDBName = "ctl_api_test"
@@ -109,10 +117,9 @@ func migrateTestDatabase(cfg dbConfig) error {
 		return fmt.Errorf("failed to create hstore extension: %w", err)
 	}
 
-	// Run AutoMigrate on all models
-	models := psql.AllModels()
-	if err := db.AutoMigrate(models...); err != nil {
-		return fmt.Errorf("failed to auto-migrate models: %w", err)
+	// Use production migrator instead of AutoMigrate
+	if err := runMigrator(context.Background(), db); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return nil
@@ -201,4 +208,67 @@ func (s *BaseDBTestSuite) SetupTest() {
 	}
 	err := TruncateAllTables(context.Background(), s.db)
 	require.NoError(s.T(), err)
+}
+
+func runMigrator(ctx context.Context, db *gorm.DB) error {
+	testConfig := &internal.Config{
+		Config: worker.Config{
+			Env:                             config.Development,
+			ServiceName:                     "ctl-api-test",
+			GitRef:                          "test",
+			Version:                         "test",
+			LogLevel:                        "error",
+			TemporalHost:                    "localhost:7233",
+			TemporalTaskQueue:               "test",
+			TemporalMaxConcurrentActivities: 1,
+			HostIP:                          "localhost",
+		},
+		IsTest:      true, // Mark as test environment
+		ServiceType: "test",
+	}
+
+	logger := zap.NewNop()
+	v := validator.New()
+	metricsWriter, err := metrics.New(
+		v,
+		metrics.WithDisable(true),
+		metrics.WithLogger(logger),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create metrics writer: %w", err)
+	}
+
+	models := psql.AllModels()
+	acctClient := account.New(account.Params{
+		Cfg:             testConfig,
+		AnalyticsClient: nil, // Not needed for test migrations
+		DB:              db,
+		V:               v,
+		AuthzClient:     nil, // Not needed for test migrations
+		EvClient:        nil, // Not needed for test migrations
+	})
+
+	psqlMigs := psqlmigrations.New(psqlmigrations.Params{
+		AcctClient: acctClient,
+	})
+
+	migrator := migrations.New(migrations.Params{
+		Models:       models,
+		Migrations:   psqlMigs.All(), // All migrations, but 001 will skip due to IsTest
+		MigrationsDB: db,
+		DB:           db,
+		DBType:       "postgres",
+		L:            logger,
+		Cfg:          testConfig,
+		MW:           metricsWriter,
+		Opts:         migrations.NewOpts(),
+		TableOpts:    map[string]string{},
+	})
+
+	// Execute migrations
+	if err := migrator.Exec(ctx); err != nil {
+		return fmt.Errorf("failed to execute migrations: %w", err)
+	}
+
+	return nil
 }

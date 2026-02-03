@@ -5,11 +5,12 @@ import (
 	_ "embed"
 
 	"github.com/google/uuid"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"gorm.io/gorm"
 )
 
-func (m *Migrations) Migration088AccountsEmailsNotEmpty(ctx context.Context, db *gorm.DB) error {
+func (m *Migrations) Migration088AccountsEmailsNotEmpty(ctx context.Context, db *gorm.DB, cfg *internal.Config) error {
 	err := m.DeleteAccountsAndSetUUIDAsEmail(ctx, db)
 	if err != nil {
 		return err
@@ -19,8 +20,8 @@ func (m *Migrations) Migration088AccountsEmailsNotEmpty(ctx context.Context, db 
 BEGIN
     -- Check if constraint exists before adding
     IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint 
-        WHERE conname = 'accounts_email_not_empty' 
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'accounts_email_not_empty'
         AND conrelid = 'accounts'::regclass
     ) THEN
         ALTER TABLE accounts
