@@ -40,10 +40,16 @@ import (
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
+
+	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 )
 
 // TestService holds all fx-injected dependencies for apps endpoint tests.
@@ -94,10 +100,19 @@ func (s *AppsTestSuite) SetupSuite() {
 
 		// external services
 		fx.Provide(loops.New),
-		fx.Provide(github.NewMock), // Use mock GitHub client for tests
+		fx.Provide(ghpkg.New), // Use real GitHub client (loads from env)
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
-		fx.Provide(eventloop.NewMockClient),
+
+		// temporal dependencies (required for eventloop)
+		fx.Provide(gzip.AsGzip(gzip.New)),
+		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
+		fx.Provide(signaldb.NewPayloadConverter),
+		fx.Provide(dataconverter.New),
+		fx.Provide(temporal.New),
+
+		// eventloop client (uses real temporal connection)
+		fx.Provide(eventloop.New),
 
 		// databases
 		fx.Provide(psql.AsPSQL(psql.New)),

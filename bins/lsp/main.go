@@ -78,7 +78,7 @@ func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, 
 			TextDocumentSync: protocol.TextDocumentSyncKindFull,
 			HoverProvider:    true,
 			CompletionProvider: &protocol.CompletionOptions{
-				TriggerCharacters: []string{"=", " "},
+				TriggerCharacters: []string{"=", " ", "#"},
 			},
 			FoldingRangeProvider: true,
 		},

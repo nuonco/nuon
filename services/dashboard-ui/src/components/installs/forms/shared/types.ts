@@ -9,6 +9,7 @@ export interface ICreateInstallForm {
   onCancel: () => void
   isLoading?: boolean
   error?: any
+  onRegisterClearDraft?: (clearFn: () => void) => void
 }
 
 export interface IUpdateInstallForm {
@@ -21,15 +22,18 @@ export interface IUpdateInstallForm {
   isLoading?: boolean
   error?: any
   onFormSubmit?: () => void
+  onRegisterClearDraft?: (clearFn: () => void) => void
 }
 
 export interface IPlatformFields {
   platform: 'aws' | 'azure'
+  draftValues?: Record<string, string> | null
 }
 
 export interface IInputConfigFields {
   inputConfig: TAppInputConfig
   install?: TInstall
+  draftValues?: Record<string, string> | null
 }
 
 export interface IFieldWrapper {

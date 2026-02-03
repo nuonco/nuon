@@ -60,6 +60,9 @@ type Client interface {
 
 	LockTerraformWorkspace(ctx context.Context, workspaceID string, jobID *string, reqBody any) error
 	UnlockTerraformWorkspace(ctx context.Context, workspaceID string) error
+
+	// authentication
+	RunnerAuthAWS(ctx context.Context, req *models.ServiceRunnerAuthAWSRequest) (*models.ServiceRunnerAuthAWSResponse, error)
 }
 
 var _ Client = (*client)(nil)
@@ -101,7 +104,7 @@ func New(opts ...clientOption) (*client, error) {
 		return nil, fmt.Errorf("unable to parse api url: %w", err)
 	}
 
-	transport := httptransport.New(apiURL.Host, "", []string{apiURL.Scheme})
+	transport := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	appTransport := &appTransport{
 		authToken: c.APIToken,
 		transport: http.DefaultTransport,

@@ -249,7 +249,7 @@ func New(opts ...clientOption) (*client, error) {
 		return nil, fmt.Errorf("unable to parse api url: %w", err)
 	}
 
-	transport := httptransport.New(apiURL.Host, "", []string{apiURL.Scheme})
+	transport := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	appTransport := &appTransport{
 		authToken: c.APIToken,
 		orgID:     c.OrgID,

@@ -11,7 +11,8 @@ import (
 )
 
 type UpdateUserJourneyStepRequest struct {
-	Complete bool `json:"complete" binding:""`
+	Complete bool                   `json:"complete" binding:""`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // @ID						UpdateUserJourneyStep
@@ -48,7 +49,7 @@ func (s *service) UpdateUserJourneyStep(ctx *gin.Context) {
 	stepName := ctx.Param("step_name")
 
 	// Delegate business logic to private method
-	updatedAccount, err := s.updateUserJourneyStep(ctx, account.ID, journeyName, stepName, req.Complete)
+	updatedAccount, err := s.updateUserJourneyStep(ctx, account.ID, journeyName, stepName, req.Complete, req.Metadata)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -57,7 +58,7 @@ func (s *service) UpdateUserJourneyStep(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, updatedAccount)
 }
 
-func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName, stepName string, complete bool) (*app.Account, error) {
+func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName, stepName string, complete bool, metadata map[string]interface{}) (*app.Account, error) {
 	account, err := s.getAccount(ctx, accountID)
 	if err != nil {
 		return nil, err
@@ -70,6 +71,17 @@ func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName
 			for j, step := range journey.Steps {
 				if step.Name == stepName {
 					account.UserJourneys[i].Steps[j].Complete = complete
+
+					// Merge metadata if provided
+					if metadata != nil {
+						if account.UserJourneys[i].Steps[j].Metadata == nil {
+							account.UserJourneys[i].Steps[j].Metadata = make(map[string]interface{})
+						}
+						for k, v := range metadata {
+							account.UserJourneys[i].Steps[j].Metadata[k] = v
+						}
+					}
+
 					found = true
 					break
 				}

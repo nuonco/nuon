@@ -126,7 +126,7 @@ For enums and multiple examples:
 ### Recommended Workflow
 
 1. **Make schema changes** in `pkg/config/`
-2. **Run codegen**: `./run-nuonctl.sh scripts reset-generated-code`
+2. **Run codegen**: `nctl scripts reset-generated-code`
 3. **Generate docs**: `go generate ./pkg/config/schema`
 4. **Verify output**: Check `docs/config-ref/` files
 5. **Commit all changes**: Schema + generated docs

@@ -54,6 +54,7 @@ const (
 	OrgFeatureStratusWorkflow         OrgFeature = "stratus-workflow"
 	OrgFeatureTerraformInstaller      OrgFeature = "terraform-installer"
 	OrgFeatureDashboardSSE            OrgFeature = "dashboard-sse"
+	OrgFeatureUserManagedFeatures     OrgFeature = "user-managed-features"
 )
 
 type Org struct {
@@ -146,12 +147,13 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	// Set default feature flag values - most features enabled by default
-	// except org-dashboard and install-break-glass which remain disabled
+	// except org-dashboard, install-break-glass, and user-managed-features which remain disabled
 	defaultFeatures := map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureOrgDashboard:       false,
-		OrgFeatureInstallBreakGlass:  false,
-		OrgFeatureTerraformInstaller: false,
+		OrgFeatureOrgDashboard:        false,
+		OrgFeatureInstallBreakGlass:   false,
+		OrgFeatureTerraformInstaller:  false,
+		OrgFeatureUserManagedFeatures: false,
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
@@ -215,5 +217,65 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureStratusWorkflow,
 		OrgFeatureTerraformInstaller,
 		OrgFeatureDashboardSSE,
+		OrgFeatureUserManagedFeatures,
 	}
+}
+
+// OrgFeatureInfo contains metadata about a feature flag
+type OrgFeatureInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// GetFeatureDescriptions returns a map of feature names to their descriptions
+func GetFeatureDescriptions() map[OrgFeature]string {
+	return map[OrgFeature]string{
+		OrgFeatureAPIPagination:           "Enable pagination support across API endpoints for improved performance with large datasets",
+		OrgFeatureOrgDashboard:            "Access to the organization dashboard interface for managing org-wide settings and analytics",
+		OrgFeatureOrgRunner:               "Enable organization-specific runner functionality for executing deployments",
+		OrgFeatureOrgSettings:             "Access to organization settings management interface",
+		OrgFeatureOrgSupport:              "Enable organization support features including help documentation and support ticket integration",
+		OrgFeatureInstallBreakGlass:       "Emergency override access to installs for critical troubleshooting and recovery operations",
+		OrgFeatureInstallDeleteComponents: "Allow deletion of individual components within an installation",
+		OrgFeatureInstallDelete:           "Allow complete deletion of installations including all associated resources",
+		OrgFeatureTerraformWorkspace:      "Enable Terraform workspace management for infrastructure state isolation",
+		OrgFeatureDevCommand:              "Enable development command support for testing and debugging workflows",
+		OrgFeatureAppBranches:             "Support for multiple application branches allowing parallel development and testing",
+		OrgFeatureStratusLayout:           "Enable Stratus layout framework for enhanced UI rendering and component organization",
+		OrgFeatureStratusWorkflow:         "Enable Stratus workflow engine for advanced deployment orchestration and automation",
+		OrgFeatureTerraformInstaller:      "Enable Terraform-based installer for infrastructure provisioning and management",
+		OrgFeatureDashboardSSE:            "Enable server-sent events for real-time dashboard updates without polling",
+		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
+	}
+}
+
+// GetFeaturesWithDescriptions returns all features with their descriptions
+func GetFeaturesWithDescriptions() []OrgFeatureInfo {
+	features := GetFeatures()
+	descriptions := GetFeatureDescriptions()
+	result := make([]OrgFeatureInfo, 0, len(features))
+
+	for _, feature := range features {
+		result = append(result, OrgFeatureInfo{
+			Name:        string(feature),
+			Description: descriptions[feature],
+		})
+	}
+
+	return result
+}
+
+// GetUserManageableFeatures returns features that users are allowed to toggle
+// (excludes the user-managed-features flag itself, which is admin-only)
+func GetUserManageableFeatures() []OrgFeature {
+	allFeatures := GetFeatures()
+	manageable := make([]OrgFeature, 0, len(allFeatures)-1)
+
+	for _, feature := range allFeatures {
+		if feature != OrgFeatureUserManagedFeatures {
+			manageable = append(manageable, feature)
+		}
+	}
+
+	return manageable
 }

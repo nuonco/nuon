@@ -59,7 +59,10 @@ export const DeployTimeline = ({
                 <Link
                   href={`/${org.id}/installs/${install.id}/components/${componentId}/deploys/${deploy.id}`}
                 >
-                  {componentName} deploy
+                  {componentName}{' '}
+                  {deploy?.install_deploy_type === 'teardown'
+                    ? 'teardown'
+                    : 'deploy'}
                 </Link>
                 {deploy?.status_v2?.status === 'drifted' ? (
                   <Badge variant="code" size="sm">

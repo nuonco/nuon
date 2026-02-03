@@ -25,6 +25,7 @@ interface CreateInstallFromAppProps {
   formRef?: React.RefObject<HTMLFormElement>
   modalId?: string
   onLoadingChange?: (loading: boolean) => void
+  onRegisterClearDraft?: (clearFn: () => void) => void
 }
 
 export const CreateInstallFromApp = ({
@@ -35,6 +36,7 @@ export const CreateInstallFromApp = ({
   formRef: externalFormRef,
   modalId,
   onLoadingChange,
+  onRegisterClearDraft,
 }: CreateInstallFromAppProps) => {
   const { org } = useOrg()
   const router = useRouter()
@@ -172,6 +174,7 @@ export const CreateInstallFromApp = ({
           })
         }}
         onCancel={onClose}
+        onRegisterClearDraft={onRegisterClearDraft}
       />
     </div>
   )
