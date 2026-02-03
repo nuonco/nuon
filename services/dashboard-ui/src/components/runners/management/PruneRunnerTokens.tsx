@@ -41,10 +41,10 @@ export const PruneRunnerTokensModal = ({
     action: pruneRunnerTokens,
   })
 
-  const prunedCount = data?.data?.invalidated_count ?? 0
+  const prunedCount = data?.invalidated_count ?? 0
 
   useServerActionToast({
-    data: data?.data,
+    data: data,
     error,
     errorContent: <Text>Unable to prune runner tokens.</Text>,
     errorHeading: 'Token pruning failed',
