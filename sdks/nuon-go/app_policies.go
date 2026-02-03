@@ -46,3 +46,29 @@ func (c *client) GetAppPoliciesConfig(ctx context.Context, appID, appPoliciesID 
 
 	return resp.Payload, nil
 }
+
+func (c *client) GetAppPoliciesConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppPoliciesConfig, bool, error) {
+	params := &operations.GetAppPoliciesConfigsParams{
+		AppID:   appID,
+		Context: ctx,
+	}
+
+	if query != nil {
+		if query.Limit > 0 {
+			limit := int64(query.Limit)
+			params.Limit = &limit
+		}
+		if query.Offset > 0 {
+			offset := int64(query.Offset)
+			params.Offset = &offset
+		}
+	}
+
+	resp, err := c.genClient.Operations.GetAppPoliciesConfigs(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, false, err
+	}
+
+	hasMore := len(resp.Payload) > 0 && query != nil && query.Limit > 0 && len(resp.Payload) >= query.Limit
+	return resp.Payload, hasMore, nil
+}
