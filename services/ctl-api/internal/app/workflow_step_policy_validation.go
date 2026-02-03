@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
@@ -29,8 +30,9 @@ type WorkflowStepPolicyValidation struct {
 
 	// status denotes whether this passed, or whether it failed the job.
 	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
-	// response is the kyverno response
+	// response is the kyverno response (deprecated: use Reports for detailed results)
 	Response string `json:"response,omitzero" gorm:"jsonb" temporaljson:"response,omitzero,omitempty"`
+
 }
 
 func (v *WorkflowStepPolicyValidation) Indexes(db *gorm.DB) []migrations.Index {
@@ -46,4 +48,20 @@ func (v *WorkflowStepPolicyValidation) Indexes(db *gorm.DB) []migrations.Index {
 
 func (v *WorkflowStepPolicyValidation) TableName() string {
 	return "install_workflow_step_policy_validations"
+}
+
+func (v *WorkflowStepPolicyValidation) BeforeCreate(tx *gorm.DB) error {
+	if v.ID == "" {
+		v.ID = domains.NewPolicyValidationID()
+	}
+
+	if v.CreatedByID == "" {
+		v.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+
+	if v.OrgID == "" {
+		v.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	return nil
 }
