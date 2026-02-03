@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -165,7 +166,8 @@ func (s *AppsTestSuite) TestGetAppsReturnsEmptyArrayWhenNoApps() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), response)
@@ -201,7 +203,8 @@ func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
 
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 2)
@@ -241,7 +244,8 @@ func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
 
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 1)
@@ -268,7 +272,8 @@ func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
 
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 	require.LessOrEqual(s.T(), len(response), 5)
@@ -314,7 +319,8 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 1)
