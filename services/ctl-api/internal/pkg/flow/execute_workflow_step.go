@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -190,7 +191,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		zap.String("step_target_type", step.StepTargetType),
 		zap.String("workflow_id", flw.ID))
 
-	violations, policyErr := c.checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
+	violations, policyContext, policyErr := c.checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
 		l.Warn("failed to check policies",
 			zap.String("step_id", step.ID),
@@ -198,6 +199,34 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			zap.String("step_target_type", step.StepTargetType),
 			zap.String("workflow_id", flw.ID),
 			zap.Error(policyErr))
+	}
+
+	if policyContext != nil && step.PolicyValidation != nil {
+		orgID, err := cctx.OrgIDFromContext(ctx)
+		if err != nil {
+			l.Warn("unable to get org id", zap.Error(err))
+		} else {
+			validationID := step.PolicyValidation.ID
+			policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
+			for _, policyID := range policyContext.PolicyIDs {
+				policyInputCounts[policyID] = policyContext.InputCount
+			}
+			if _, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
+				OrgID:                          orgID,
+				AppID:                          policyContext.AppID,
+				InstallID:                      policyContext.InstallID,
+				InstallSandboxID:               policyContext.InstallSandboxID,
+				ComponentID:                    policyContext.ComponentID,
+				WorkflowStepPolicyValidationID: &validationID,
+				OwnerID:                        step.StepTargetID,
+				OwnerType:                      step.StepTargetType,
+				Violations:                     violations,
+				PolicyIDs:                      policyContext.PolicyIDs,
+				PolicyInputCounts:              policyInputCounts,
+			}); err != nil {
+				l.Warn("failed to persist policy report", zap.Error(err))
+			}
+		}
 	}
 
 	if len(violations) > 0 {
@@ -751,17 +780,26 @@ func (c *WorkflowConductor[DomainSignal]) separateViolations(violations []activi
 
 // checkPolicies prepares policy evaluation and then evaluates all applicable policies in parallel.
 // It returns all violations found across all policies.
-func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, error) {
+type policyEvaluationContext struct {
+	AppID            string
+	InstallID        *string
+	InstallSandboxID *string
+	ComponentID      *string
+	PolicyIDs        []string
+	InputCount       int
+}
+
+func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, *policyEvaluationContext, error) {
 	prepResult, err := activities.AwaitPrepPolicyEvaluation(ctx, &activities.PrepPolicyEvaluationRequest{
 		StepTargetID:   stepTargetID,
 		StepTargetType: stepTargetType,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to prepare policy evaluation")
+		return nil, nil, errors.Wrap(err, "unable to prepare policy evaluation")
 	}
 
 	if !prepResult.HasPolicies {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// Execute all policy evaluations in parallel
@@ -789,10 +827,17 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 	for _, fut := range futures {
 		var result activities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
-			return nil, errors.Wrap(err, "policy evaluation failed")
+			return nil, nil, errors.Wrap(err, "policy evaluation failed")
 		}
 		allViolations = append(allViolations, result.Violations...)
 	}
 
-	return allViolations, nil
+	return allViolations, &policyEvaluationContext{
+		AppID:            prepResult.AppID,
+		InstallID:        prepResult.InstallID,
+		InstallSandboxID: prepResult.InstallSandboxID,
+		ComponentID:      prepResult.ComponentID,
+		PolicyIDs:        prepResult.PolicyIDs,
+		InputCount:       prepResult.InputCount,
+	}, nil
 }

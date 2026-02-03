@@ -141,6 +141,31 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		}
 	}
 
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		l.Warn("unable to get org id", zap.Error(err))
+	} else {
+		componentID := prepResult.ComponentID
+		policyInputCounts := make(map[string]int, len(prepResult.PolicyIDs))
+		for _, policyID := range prepResult.PolicyIDs {
+			policyInputCounts[policyID] = prepResult.InputCount
+		}
+		if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
+			OrgID:             orgID,
+			AppID:             prepResult.AppID,
+			ComponentID:       &componentID,
+			InstallSandboxID:  nil,
+			OwnerID:           buildID,
+			OwnerType:         string(app.PolicyReportOwnerTypeComponentBuild),
+			RunnerJobID:       &buildJobID,
+			Violations:        allViolations,
+			PolicyIDs:         prepResult.PolicyIDs,
+			PolicyInputCounts: policyInputCounts,
+		}); err != nil {
+			l.Warn("failed to persist policy report", zap.Error(err))
+		}
+	}
+
 	if len(denyViolations) > 0 {
 		for _, v := range denyViolations {
 			l.Warn("policy violation (deny)", zap.String("message", v.Message))
