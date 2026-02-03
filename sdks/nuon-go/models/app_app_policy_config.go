@@ -40,11 +40,17 @@ type AppAppPolicyConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// description
+	Description string `json:"description,omitempty"`
+
 	// engine
 	Engine ConfigAppPolicyEngine `json:"engine,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`
+
+	// name
+	Name string `json:"name,omitempty"`
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`

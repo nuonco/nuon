@@ -30,10 +30,11 @@ type AppPolicyReport struct {
 
 // AppPolicyViolation represents a single policy violation.
 type AppPolicyViolation struct {
-	PolicyID   string `json:"policy_id,omitempty"`
-	InputIndex int    `json:"input_index,omitempty"`
-	Message    string `json:"message,omitempty"`
-	Severity   string `json:"severity,omitempty"`
+	PolicyID      string `json:"policy_id,omitempty"`
+	InputIndex    int    `json:"input_index,omitempty"`
+	InputIdentity string `json:"input_identity,omitempty"`
+	Message       string `json:"message,omitempty"`
+	Severity      string `json:"severity,omitempty"`
 }
 
 // AppPolicyResult represents the evaluation result for a single policy.
