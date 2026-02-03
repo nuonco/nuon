@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,77 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
-
-// SARIF (Static Analysis Results Interchange Format) types for policy evaluation reports
-// Based on SARIF 2.1.0 specification: https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html
-
-const (
-	SARIFVersion   = "2.1.0"
-	SARIFSchemaURI = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
-)
-
-type SARIFReport struct {
-	Version string     `json:"version"`
-	Schema  string     `json:"$schema"`
-	Runs    []SARIFRun `json:"runs"`
-}
-
-type SARIFRun struct {
-	Tool    SARIFTool     `json:"tool"`
-	Results []SARIFResult `json:"results"`
-}
-
-type SARIFTool struct {
-	Driver SARIFToolDriver `json:"driver"`
-}
-
-type SARIFToolDriver struct {
-	Name           string      `json:"name"`
-	Version        string      `json:"version,omitempty"`
-	InformationURI string      `json:"informationUri,omitempty"`
-	Rules          []SARIFRule `json:"rules,omitempty"`
-}
-
-type SARIFRule struct {
-	ID               string       `json:"id"`
-	ShortDescription SARIFMessage `json:"shortDescription,omitempty"`
-}
-
-type SARIFResult struct {
-	RuleID  string       `json:"ruleId"`
-	Level   string       `json:"level"` // "error", "warning", "note"
-	Message SARIFMessage `json:"message"`
-}
-
-type SARIFMessage struct {
-	Text string `json:"text"`
-}
-
-// OPA raw report format
-type OPAReport struct {
-	EvaluatedAt time.Time         `json:"evaluated_at"`
-	Violations  []PolicyViolation `json:"violations"`
-	PolicyIDs   []string          `json:"policy_ids"`
-	Policies    []PolicyResult    `json:"policies"`
-	Inputs      []PolicyInputRef  `json:"inputs,omitempty"`
-	DenyCount   int               `json:"deny_count"`
-	WarnCount   int               `json:"warn_count"`
-	PassCount   int               `json:"pass_count"`
-}
-
-type PolicyInputRef struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
-}
-
-type PolicyResult struct {
-	PolicyID   string `json:"policy_id"`
-	Status     string `json:"status"`
-	DenyCount  int    `json:"deny_count"`
-	WarnCount  int    `json:"warn_count"`
-	PassCount  int    `json:"pass_count"`
-	InputCount int    `json:"input_count"`
-}
 
 type PersistPolicyReportRequest struct {
 	OrgID                          string            `json:"org_id" validate:"required"`
@@ -102,11 +30,10 @@ type PersistPolicyReportRequest struct {
 }
 
 type PersistPolicyReportResult struct {
-	OPAReportID   string `json:"opa_report_id" temporaljson:"opa_report_id,omitempty"`
-	SARIFReportID string `json:"sarif_report_id" temporaljson:"sarif_report_id,omitempty"`
-	DenyCount     int    `json:"deny_count" temporaljson:"deny_count,omitempty"`
-	WarnCount     int    `json:"warn_count" temporaljson:"warn_count,omitempty"`
-	PassCount     int    `json:"pass_count" temporaljson:"pass_count,omitempty"`
+	ReportID  string `json:"report_id" temporaljson:"report_id,omitempty"`
+	DenyCount int    `json:"deny_count" temporaljson:"deny_count,omitempty"`
+	WarnCount int    `json:"warn_count" temporaljson:"warn_count,omitempty"`
+	PassCount int    `json:"pass_count" temporaljson:"pass_count,omitempty"`
 }
 
 // @temporal-gen activity
@@ -126,7 +53,7 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		l = l.With(zap.String("validation_id", *req.WorkflowStepPolicyValidationID))
 	}
 
-	l.Info("persisting policy reports")
+	l.Info("persisting policy report")
 
 	denyCount := req.DenyCount
 	warnCount := req.WarnCount
@@ -151,34 +78,38 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		}
 	}
 
-	// Create OPA report
-	opaReport := OPAReport{
-		EvaluatedAt: time.Now().UTC(),
-		Violations:  req.Violations,
-		PolicyIDs:   req.PolicyIDs,
-		Policies:    policyResults,
-		Inputs:      buildPolicyInputRefs(req),
-		DenyCount:   denyCount,
-		WarnCount:   warnCount,
-		PassCount:   passCount,
+	violations := make([]app.PolicyViolation, len(req.Violations))
+	for i, v := range req.Violations {
+		violations[i] = app.PolicyViolation{
+			PolicyID:   v.PolicyID,
+			InputIndex: v.InputIndex,
+			Message:    v.Message,
+			Severity:   v.Severity,
+		}
 	}
 
-	opaContent, err := json.Marshal(opaReport)
-	if err != nil {
-		l.Error("failed to marshal OPA report", zap.Error(err))
-		return nil, errors.Wrap(err, "failed to marshal OPA report")
+	policies := make([]app.PolicyResult, len(policyResults))
+	for i, p := range policyResults {
+		policies[i] = app.PolicyResult{
+			PolicyID:   p.PolicyID,
+			Status:     p.Status,
+			DenyCount:  p.DenyCount,
+			WarnCount:  p.WarnCount,
+			PassCount:  p.PassCount,
+			InputCount: p.InputCount,
+		}
 	}
 
-	// Create SARIF report
-	sarifReport := a.buildSARIFReport(req.Violations)
-	sarifContent, err := json.Marshal(sarifReport)
-	if err != nil {
-		l.Error("failed to marshal SARIF report", zap.Error(err))
-		return nil, errors.Wrap(err, "failed to marshal SARIF report")
+	inputs := buildPolicyInputRefs(req)
+	appInputs := make([]app.PolicyInputRef, len(inputs))
+	for i, inp := range inputs {
+		appInputs[i] = app.PolicyInputRef{
+			ID:   inp.ID,
+			Type: inp.Type,
+		}
 	}
 
-	// Persist OPA report
-	opaReportRecord := &app.PolicyReport{
+	report := &app.PolicyReport{
 		OrgID:                          req.OrgID,
 		AppID:                          req.AppID,
 		InstallID:                      req.InstallID,
@@ -187,65 +118,47 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		RunnerJobID:                    req.RunnerJobID,
 		OwnerID:                        req.OwnerID,
 		OwnerType:                      app.PolicyReportOwnerType(req.OwnerType),
-		Format:                         app.PolicyReportFormatOPA,
-		ContentVersion:                 "1.0.0",
-		Content:                        opaContent,
+		EvaluatedAt:                    time.Now().UTC(),
+		Violations:                     violations,
+		PolicyIDs:                      req.PolicyIDs,
+		Policies:                       policies,
+		Inputs:                         appInputs,
 		DenyCount:                      denyCount,
 		WarnCount:                      warnCount,
 		PassCount:                      passCount,
 		Status:                         buildPolicyReportStatus(ctx, denyCount, warnCount, passCount),
 	}
 
-	if err := a.db.WithContext(ctx).Create(opaReportRecord).Error; err != nil {
-		l.Error("failed to persist OPA report", zap.Error(err))
-		return nil, errors.Wrap(err, "failed to persist OPA report")
+	if err := a.db.WithContext(ctx).Create(report).Error; err != nil {
+		l.Error("failed to persist policy report", zap.Error(err))
+		return nil, errors.Wrap(err, "failed to persist policy report")
 	}
 
-	l.Debug("persisted OPA report", zap.String("report_id", opaReportRecord.ID))
-
-	// Persist SARIF report
-	sarifReportRecord := &app.PolicyReport{
-		OrgID:                          req.OrgID,
-		AppID:                          req.AppID,
-		InstallID:                      req.InstallID,
-		ComponentID:                    req.ComponentID,
-		WorkflowStepPolicyValidationID: req.WorkflowStepPolicyValidationID,
-		RunnerJobID:                    req.RunnerJobID,
-		OwnerID:                        req.OwnerID,
-		OwnerType:                      app.PolicyReportOwnerType(req.OwnerType),
-		Format:                         app.PolicyReportFormatSARIF,
-		ContentVersion:                 SARIFVersion,
-		Content:                        sarifContent,
-		DenyCount:                      denyCount,
-		WarnCount:                      warnCount,
-		PassCount:                      passCount,
-		Status:                         buildPolicyReportStatus(ctx, denyCount, warnCount, passCount),
-	}
-
-	if err := a.db.WithContext(ctx).Create(sarifReportRecord).Error; err != nil {
-		l.Error("failed to persist SARIF report", zap.Error(err))
-		return nil, errors.Wrap(err, "failed to persist SARIF report")
-	}
-
-	l.Debug("persisted SARIF report", zap.String("report_id", sarifReportRecord.ID))
-
-	l.Info("policy reports persisted successfully",
-		zap.String("opa_report_id", opaReportRecord.ID),
-		zap.String("sarif_report_id", sarifReportRecord.ID),
+	l.Info("policy report persisted successfully",
+		zap.String("report_id", report.ID),
 		zap.Int("deny_count", denyCount),
 		zap.Int("warn_count", warnCount),
+		zap.Int("pass_count", passCount),
 	)
 
 	return &PersistPolicyReportResult{
-		OPAReportID:   opaReportRecord.ID,
-		SARIFReportID: sarifReportRecord.ID,
-		DenyCount:     denyCount,
-		WarnCount:     warnCount,
-		PassCount:     passCount,
+		ReportID:  report.ID,
+		DenyCount: denyCount,
+		WarnCount: warnCount,
+		PassCount: passCount,
 	}, nil
 }
 
-func buildPolicyResults(policyIDs []string, policyInputCounts map[string]int, violations []PolicyViolation) []PolicyResult {
+type policyResult struct {
+	PolicyID   string
+	Status     string
+	DenyCount  int
+	WarnCount  int
+	PassCount  int
+	InputCount int
+}
+
+func buildPolicyResults(policyIDs []string, policyInputCounts map[string]int, violations []PolicyViolation) []policyResult {
 	if len(policyIDs) == 0 {
 		policyIDs = make([]string, 0)
 		seen := make(map[string]struct{})
@@ -262,12 +175,12 @@ func buildPolicyResults(policyIDs []string, policyInputCounts map[string]int, vi
 	}
 
 	if len(policyIDs) == 0 {
-		return []PolicyResult{}
+		return []policyResult{}
 	}
 
-	results := make([]PolicyResult, 0, len(policyIDs))
+	results := make([]policyResult, 0, len(policyIDs))
 	for _, policyID := range policyIDs {
-		results = append(results, PolicyResult{PolicyID: policyID})
+		results = append(results, policyResult{PolicyID: policyID})
 	}
 
 	resultIndex := make(map[string]int, len(policyIDs))
@@ -311,13 +224,18 @@ func buildPolicyResults(policyIDs []string, policyInputCounts map[string]int, vi
 	return results
 }
 
-func buildPolicyInputRefs(req *PersistPolicyReportRequest) []PolicyInputRef {
-	refs := make([]PolicyInputRef, 0, 2)
+type policyInputRef struct {
+	ID   string
+	Type string
+}
+
+func buildPolicyInputRefs(req *PersistPolicyReportRequest) []policyInputRef {
+	refs := make([]policyInputRef, 0, 2)
 	addRef := func(id, refType string) {
 		if id == "" {
 			return
 		}
-		refs = append(refs, PolicyInputRef{
+		refs = append(refs, policyInputRef{
 			ID:   id,
 			Type: refType,
 		})
@@ -374,57 +292,4 @@ func buildPolicyReportStatus(ctx context.Context, denyCount, warnCount, passCoun
 		"pass_count": passCount,
 	}
 	return composite
-}
-
-func (a *Activities) buildSARIFReport(violations []PolicyViolation) SARIFReport {
-	// Collect unique policy IDs for rules
-	policyIDs := make(map[string]bool)
-	for _, v := range violations {
-		policyIDs[v.PolicyID] = true
-	}
-
-	rules := make([]SARIFRule, 0, len(policyIDs))
-	for policyID := range policyIDs {
-		rules = append(rules, SARIFRule{
-			ID: policyID,
-			ShortDescription: SARIFMessage{
-				Text: "Policy: " + policyID,
-			},
-		})
-	}
-
-	// Convert violations to SARIF results
-	results := make([]SARIFResult, len(violations))
-	for i, v := range violations {
-		level := "warning"
-		if v.Severity == "deny" {
-			level = "error"
-		}
-
-		results[i] = SARIFResult{
-			RuleID: v.PolicyID,
-			Level:  level,
-			Message: SARIFMessage{
-				Text: v.Message,
-			},
-		}
-	}
-
-	return SARIFReport{
-		Version: SARIFVersion,
-		Schema:  SARIFSchemaURI,
-		Runs: []SARIFRun{
-			{
-				Tool: SARIFTool{
-					Driver: SARIFToolDriver{
-						Name:           "nuon-policy",
-						Version:        "1.0.0",
-						InformationURI: "https://nuon.co",
-						Rules:          rules,
-					},
-				},
-				Results: results,
-			},
-		},
-	}
 }

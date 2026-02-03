@@ -20,13 +20,8 @@ type PrepPolicyEvaluationRequest struct {
 	StepTargetType string `validate:"required"`
 }
 
-type PolicyViolation struct {
-	PolicyID   string `json:"policy_id" temporaljson:"policy_id,omitempty"`
-	RuleID     string `json:"rule_id" temporaljson:"rule_id,omitempty"`         // Rule within policy that was violated
-	InputIndex int    `json:"input_index" temporaljson:"input_index,omitempty"` // Index of the input document that triggered this violation
-	Message    string `json:"message" temporaljson:"message,omitempty"`
-	Severity   string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
-}
+// PolicyViolation is an alias to app.PolicyViolation for use in activity requests/responses.
+type PolicyViolation = app.PolicyViolation
 
 type PolicyToEvaluate struct {
 	PolicyID   string `json:"policy_id" temporaljson:"policy_id,omitempty"`
