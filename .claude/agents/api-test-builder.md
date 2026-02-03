@@ -142,7 +142,7 @@ func (s *YourTestSuite) SetupSuite() {
 
 All tests should use the `testfx.NewTestRouter()` helper which automatically includes:
 - **stderr middleware** - Error handling and JSON error responses (REQUIRED)
-- **panicker middleware** - Panic recovery with proper error responses
+- **patcher middleware** - PATCH request field extraction for partial updates
 - **pagination middleware** - Query parameter parsing for paginated endpoints
 - **context injection** - Automatic org/account context injection
 
@@ -156,7 +156,6 @@ func (s *YourTestSuite) SetupTest() {
     s.router = testfx.NewTestRouter(testfx.RouterOptions{
         L:       s.service.L,
         DB:      s.service.DB,
-        MW:      s.service.MW,
         TestOrg: s.testOrg,  // Optional: only if endpoint needs org context
         TestAcc: s.testAcc,  // Optional: only if endpoint needs account context
     })
@@ -176,7 +175,6 @@ func (s *YourTestSuite) SetupTest() {
     s.router = testfx.NewTestRouter(testfx.RouterOptions{
         L:       s.service.L,
         DB:      s.service.DB,
-        MW:      s.service.MW,
         TestOrg: s.testOrg,
         TestAcc: s.testAcc,
         AdditionalMiddlewares: []gin.HandlerFunc{
@@ -193,7 +191,7 @@ func (s *YourTestSuite) SetupTest() {
 
 1. Creates a new `gin.Engine` router
 2. Adds **stderr middleware** (REQUIRED - handles errors and returns JSON)
-3. Adds **panicker middleware** (panic recovery with proper error responses)
+3. Adds **patcher middleware** (extracts PATCH request fields for partial updates)
 4. Adds **pagination middleware** (parses limit, offset, page query parameters)
 5. Adds any **additional middlewares** you provide (optional)
 6. Adds **context injection middleware** (injects testOrg and testAcc into gin context)
@@ -567,6 +565,162 @@ func (s *YourTestSuite) TestCreateValidationErrors() {
 }
 ```
 
+### 9.5. Testing Workflow Signals with Mocks
+
+**For endpoints that send workflow signals** (e.g., create org, delete org, restart operations), use the mock event loop client to verify signals are triggered correctly.
+
+**Setup Mock in Test Suite:**
+```go
+import (
+    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
+    sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+)
+
+type YourTestSuite struct {
+    testdb.BaseDBTestSuite
+
+    app          *fxtest.App
+    service      TestService
+    router       *gin.Engine
+    testOrg      *app.Org
+    testAcc      *app.Account
+    mockEvClient *testfx.MockEventLoopClient  // Add mock client
+    yourService  *service
+}
+
+func (s *YourTestSuite) SetupSuite() {
+    s.BaseDBTestSuite.SetupSuite()
+    gin.SetMode(gin.TestMode)
+
+    // Create mock event loop client
+    s.mockEvClient = testfx.NewMockEventLoopClient()
+
+    options := append(
+        testfx.CtlApiFXOptions(),
+        // Override eventloop.Client with mock
+        fx.Decorate(func() eventloop.Client {
+            return s.mockEvClient
+        }),
+        fx.Provide(New),
+        fx.Populate(&s.service, &s.yourService),
+    )
+
+    s.app = fxtest.New(s.T(), options...)
+    s.app.RequireStart()
+    s.SetDB(s.service.DB)
+}
+
+func (s *YourTestSuite) SetupTest() {
+    s.BaseDBTestSuite.SetupTest()
+    s.setupTestData()
+
+    // CRITICAL: Reset mock before each test for clean state
+    s.mockEvClient.Reset()
+
+    // Create router...
+}
+```
+
+**Verify Signals in Tests (Table-Driven):**
+```go
+func (s *YourTestSuite) TestDeleteOrg() {
+    testCases := []struct {
+        name             string
+        setupFunc        func() *app.Org
+        expectedStatus   int
+        validateSignal   bool
+        expectedSignalType eventloop.SignalType
+    }{
+        {
+            name: "deletes default org and sends signal",
+            setupFunc: func() *app.Org {
+                ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
+                org := &app.Org{
+                    ID:      domains.NewOrgID(),
+                    Name:    "test-org",
+                    OrgType: app.OrgTypeDefault,
+                }
+                err := s.service.DB.WithContext(ctx).Create(org).Error
+                require.NoError(s.T(), err)
+                s.T().Cleanup(func() {
+                    s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
+                })
+                return org
+            },
+            expectedStatus:     http.StatusOK,
+            validateSignal:     true,
+            expectedSignalType: sigs.OperationDelete,
+        },
+        {
+            name: "integration org hard deletes without signal",
+            setupFunc: func() *app.Org {
+                ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
+                org := &app.Org{
+                    ID:      domains.NewOrgID(),
+                    Name:    "integration-org",
+                    OrgType: app.OrgTypeIntegration,
+                }
+                err := s.service.DB.WithContext(ctx).Create(org).Error
+                require.NoError(s.T(), err)
+                return org
+            },
+            expectedStatus: http.StatusOK,
+            validateSignal: false,
+        },
+    }
+
+    for _, tc := range testCases {
+        s.Run(tc.name, func() {
+            org := tc.setupFunc()
+
+            // Update router context for this org
+            s.router = testfx.NewTestRouter(testfx.RouterOptions{
+                L:       s.service.L,
+                DB:      s.service.DB,
+                TestOrg: org,
+                TestAcc: s.testAcc,
+            })
+            err := s.yourService.RegisterPublicRoutes(s.router)
+            require.NoError(s.T(), err)
+
+            // Reset mock before test
+            s.mockEvClient.Reset()
+
+            // Make request
+            rr := s.makeRequest(http.MethodDelete, "/v1/orgs/current")
+            require.Equal(s.T(), tc.expectedStatus, rr.Code)
+
+            // Validate signal
+            signals := s.mockEvClient.GetSignals()
+            if tc.validateSignal {
+                require.Len(s.T(), signals, 1, "expected exactly one signal")
+                assert.Equal(s.T(), org.ID, signals[0].ID)
+
+                // Type assert to specific signal type
+                orgSignal, ok := signals[0].Signal.(*sigs.Signal)
+                require.True(s.T(), ok)
+                assert.Equal(s.T(), tc.expectedSignalType, orgSignal.Type)
+            } else {
+                assert.Len(s.T(), signals, 0, "no signal should be sent")
+            }
+        })
+    }
+}
+```
+
+**Mock Helper Methods:**
+- `mockEvClient.Reset()` - Clear all signals (call in SetupTest)
+- `mockEvClient.GetSignals()` - Get all recorded signals
+- `mockEvClient.GetSignalsByID(id)` - Get signals for specific entity
+- `mockEvClient.GetSignalCount()` - Get total count
+
+**Key Pattern:**
+- Always reset mock in `SetupTest()` for clean state
+- Use table-driven tests to cover both signal and no-signal paths
+- Type assert signals to verify specific fields (e.g., `ForceDelete` flag)
+- Test happy path (signal sent) and alternate paths (no signal)
+
 ### 10. Running Tests
 
 **Local Execution:**
@@ -590,10 +744,12 @@ INTEGRATION=true go test -v ./services/ctl-api/internal/app/apps/service/... -ru
 - [ ] Capture loop variables correctly in cleanup closures
 - [ ] HTTP responses use appropriate types (OpenAPI `models.*` or internal `app.*` depending on handler)
 - [ ] Database operations use internal types (`app.*`)
-- [ ] **CRITICAL: Use `testfx.NewTestRouter()` helper for router setup** (includes stderr, panicker, pagination)
-- [ ] TestService struct includes `MW metrics.Writer` field for panicker middleware
+- [ ] **CRITICAL: Use `testfx.NewTestRouter()` helper for router setup** (includes stderr, patcher, pagination)
 - [ ] Pass `TestOrg` and `TestAcc` to router helper if endpoint needs context
 - [ ] Account context is set before creating orgs
+- [ ] **If endpoint sends workflow signals**: Use `testfx.MockEventLoopClient` to verify signals
+- [ ] **If using mock event loop**: Call `mockEvClient.Reset()` in `SetupTest()`
+- [ ] **If testing signals**: Verify both signal-sent and no-signal paths in table-driven tests
 - [ ] Test data is cleaned up in `cleanupTestData()` or via `s.T().Cleanup()`
 - [ ] Integration test check uses `os.Getenv("INTEGRATION")`
 - [ ] All test cases include debug logging for failures
