@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -113,8 +114,16 @@ func (s *service) CreateAppFromTemplate(ctx *gin.Context) {
 	}
 
 	// Create app config
+	// Use service version if it's valid semver, otherwise "development" (matches CLI pattern)
+	// In production/staging: s.cfg.Version is a proper semver (e.g., "v1.2.3") → use it
+	// In local dev: s.cfg.Version is a git hash (e.g., "75e5ddd") → use "development"
+	cliVersion := "development"
+	if _, semverErr := semver.NewVersion(s.cfg.Version); semverErr == nil {
+		cliVersion = s.cfg.Version
+	}
 	appConfig, err := s.createAppConfig(ctx, org.ID, newApp.ID, &CreateAppConfigRequest{
-		Readme: templateCfg.Readme,
+		Readme:     templateCfg.Readme,
+		CLIVersion: cliVersion,
 	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app config: %w", err))

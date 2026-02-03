@@ -12,8 +12,8 @@ import { VERSION } from '@/utils'
 const NoOrgs = () => (
   <EmptyState
     variant="diagram"
-    emptyTitle="No organizations yet"
-    emptyMessage="Complete the onboarding process to set up your first organization and start deploying applications."
+    emptyTitle="You don't have any organizations"
+    emptyMessage="Complete the onboarding process to set up your first org and start deploying apps."
     action={
       <Link href="/onboarding">
         <Button variant="primary">Begin Onboarding</Button>
