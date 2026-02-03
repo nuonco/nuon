@@ -12,6 +12,11 @@ type sourceFileSetter interface {
 	SetSourceFile(path string)
 }
 
+// nameFromSourceFileSetter is implemented by config types that can derive their name from the source file.
+type nameFromSourceFileSetter interface {
+	SetNameFromSourceFile()
+}
+
 func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 	exists, err := p.fs.DirExists(path)
 	if err != nil {
@@ -59,9 +64,14 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 			}
 
 			// Set the source file if the object implements sourceFileSetter
-			// Note: obj is **T, but SetSourceFile is on *T, so we use objValue.Interface()
-			if setter, ok := objValue.Interface().(sourceFileSetter); ok {
+			// Note: obj is *T (e.g., *AppPolicy), so we use obj directly for interface checks
+			if setter, ok := obj.(sourceFileSetter); ok {
 				setter.SetSourceFile(f)
+			}
+
+			// Derive name from source file if the object implements nameFromSourceFileSetter
+			if setter, ok := obj.(nameFromSourceFileSetter); ok {
+				setter.SetNameFromSourceFile()
 			}
 
 			objs = reflect.Append(objs, objValue)
