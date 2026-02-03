@@ -217,12 +217,16 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				InstallID:                      policyContext.InstallID,
 				InstallSandboxID:               policyContext.InstallSandboxID,
 				ComponentID:                    policyContext.ComponentID,
+				ComponentBuildID:               policyContext.ComponentBuildID,
 				WorkflowStepPolicyValidationID: &validationID,
 				OwnerID:                        step.StepTargetID,
 				OwnerType:                      step.StepTargetType,
 				Violations:                     violations,
 				PolicyIDs:                      policyContext.PolicyIDs,
 				PolicyInputCounts:              policyInputCounts,
+				AppName:                        policyContext.AppName,
+				InstallName:                    policyContext.InstallName,
+				ComponentName:                  policyContext.ComponentName,
 			}); err != nil {
 				l.Warn("failed to persist policy report", zap.Error(err))
 			}
@@ -785,8 +789,14 @@ type policyEvaluationContext struct {
 	InstallID        *string
 	InstallSandboxID *string
 	ComponentID      *string
+	ComponentBuildID *string
 	PolicyIDs        []string
 	InputCount       int
+
+	// Human-readable names for display in reports
+	AppName       string
+	InstallName   string
+	ComponentName string
 }
 
 func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, *policyEvaluationContext, error) {
@@ -815,9 +825,11 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 	var futures []workflow.Future
 	for _, policy := range prepResult.Policies {
 		fut := workflow.ExecuteActivity(policyCtx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
-			PolicyID:  policy.PolicyID,
-			Contents:  policy.Contents,
-			InputJSON: policy.InputJSON,
+			PolicyID:      policy.PolicyID,
+			Contents:      policy.Contents,
+			InputJSON:     policy.InputJSON,
+			InputIndex:    policy.InputIndex,
+			InputIdentity: policy.InputIdentity,
 		})
 		futures = append(futures, fut)
 	}
@@ -837,7 +849,11 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 		InstallID:        prepResult.InstallID,
 		InstallSandboxID: prepResult.InstallSandboxID,
 		ComponentID:      prepResult.ComponentID,
+		ComponentBuildID: prepResult.ComponentBuildID,
 		PolicyIDs:        prepResult.PolicyIDs,
 		InputCount:       prepResult.InputCount,
+		AppName:          prepResult.AppName,
+		InstallName:      prepResult.InstallName,
+		ComponentName:    prepResult.ComponentName,
 	}, nil
 }
