@@ -10,14 +10,6 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
-// PolicyReportFormat represents the format of a policy evaluation report.
-type PolicyReportFormat string
-
-const (
-	PolicyReportFormatOPA   PolicyReportFormat = "opa"
-	PolicyReportFormatSARIF PolicyReportFormat = "sarif"
-)
-
 // PolicyReportOwnerType represents the type of resource that was evaluated by policies.
 type PolicyReportOwnerType string
 
@@ -27,7 +19,31 @@ const (
 	PolicyReportOwnerTypeComponentBuild    PolicyReportOwnerType = "component_builds"
 )
 
-// PolicyReport stores detailed policy evaluation results in standardized formats (OPA JSON, SARIF).
+// PolicyViolation represents a single policy violation from evaluation.
+type PolicyViolation struct {
+	PolicyID   string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	InputIndex int    `json:"input_index" temporaljson:"input_index,omitempty"`
+	Message    string `json:"message" temporaljson:"message,omitempty"`
+	Severity   string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
+}
+
+// PolicyResult represents the evaluation result for a single policy.
+type PolicyResult struct {
+	PolicyID   string `json:"policy_id"`
+	Status     string `json:"status"` // "deny", "warn", or "pass"
+	DenyCount  int    `json:"deny_count"`
+	WarnCount  int    `json:"warn_count"`
+	PassCount  int    `json:"pass_count"`
+	InputCount int    `json:"input_count"`
+}
+
+// PolicyInputRef represents a reference to an input that was evaluated.
+type PolicyInputRef struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// PolicyReport stores canonical policy evaluation results with format-agnostic storage.
 type PolicyReport struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -53,12 +69,12 @@ type PolicyReport struct {
 	OwnerID   string                `json:"owner_id,omitzero" gorm:"type:text;notnull;index:idx_policy_reports_owner" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType PolicyReportOwnerType `json:"owner_type,omitzero" gorm:"type:text;notnull;index:idx_policy_reports_owner" temporaljson:"owner_type,omitzero,omitempty"`
 
-	// Report format and version
-	Format         PolicyReportFormat `json:"format,omitzero" gorm:"type:text;notnull" temporaljson:"format,omitzero,omitempty"`
-	ContentVersion string             `json:"content_version,omitzero" gorm:"type:text;notnull" temporaljson:"content_version,omitzero,omitempty"`
-
-	// The actual report content stored as JSONB
-	Content []byte `json:"content,omitzero" gorm:"type:jsonb" temporaljson:"content,omitzero,omitempty"`
+	// Canonical policy evaluation data
+	EvaluatedAt time.Time         `json:"evaluated_at,omitzero" gorm:"notnull" temporaljson:"evaluated_at,omitzero,omitempty"`
+	Violations  []PolicyViolation `json:"violations,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"violations,omitzero,omitempty"`
+	PolicyIDs   []string          `json:"policy_ids,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"policy_ids,omitzero,omitempty"`
+	Policies    []PolicyResult    `json:"policies,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"policies,omitzero,omitempty"`
+	Inputs      []PolicyInputRef  `json:"inputs,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"inputs,omitzero,omitempty"`
 
 	// Summary counts for list views
 	DenyCount int `json:"deny_count" gorm:"notnull;default:0" temporaljson:"deny_count,omitzero,omitempty"`

@@ -32,7 +32,6 @@ type WorkflowStepPolicyValidation struct {
 	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	// response is the kyverno response (deprecated: use Reports for detailed results)
 	Response string `json:"response,omitzero" gorm:"jsonb" temporaljson:"response,omitzero,omitempty"`
-
 }
 
 func (v *WorkflowStepPolicyValidation) Indexes(db *gorm.DB) []migrations.Index {
