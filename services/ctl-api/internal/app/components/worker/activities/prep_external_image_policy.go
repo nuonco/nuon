@@ -26,9 +26,11 @@ type ExternalImagePolicyViolation struct {
 }
 
 type ExternalImagePolicyToEvaluate struct {
-	PolicyID  string `json:"policy_id" temporaljson:"policy_id,omitempty"`
-	Contents  string `json:"contents" temporaljson:"contents,omitempty"`
-	InputJSON []byte `json:"input_json" temporaljson:"input_json,omitempty"`
+	PolicyID      string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	Contents      string `json:"contents" temporaljson:"contents,omitempty"`
+	InputJSON     []byte `json:"input_json" temporaljson:"input_json,omitempty"`
+	InputIndex    int    `json:"input_index" temporaljson:"input_index,omitempty"`
+	InputIdentity string `json:"input_identity" temporaljson:"input_identity,omitempty"`
 }
 
 type PrepExternalImagePolicyResult struct {
@@ -115,13 +117,17 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 		return nil, errors.Wrap(err, "unable to marshal policy input")
 	}
 
+	imageIdentity := buildImageIdentity(req.ImageMetadata)
+
 	policies := make([]ExternalImagePolicyToEvaluate, 0, len(applicablePolicies))
 	policyIDs := make([]string, 0, len(applicablePolicies))
 	for _, policy := range applicablePolicies {
 		policies = append(policies, ExternalImagePolicyToEvaluate{
-			PolicyID:  policy.ID,
-			Contents:  policy.Contents,
-			InputJSON: inputJSON,
+			PolicyID:      policy.ID,
+			Contents:      policy.Contents,
+			InputJSON:     inputJSON,
+			InputIndex:    0,
+			InputIdentity: imageIdentity,
 		})
 		policyIDs = append(policyIDs, policy.ID)
 	}
@@ -153,6 +159,23 @@ func (a *Activities) getBuildWithAppConfig(ctx context.Context, buildID string) 
 	}
 
 	return &bld, nil
+}
+
+func buildImageIdentity(meta *metadata.ImageMetadata) string {
+	if meta == nil {
+		return "unknown-image"
+	}
+
+	if meta.Image != "" && meta.Tag != "" {
+		return meta.Image + ":" + meta.Tag
+	}
+	if meta.Image != "" && meta.Digest != "" {
+		return meta.Image + "@" + meta.Digest
+	}
+	if meta.Image != "" {
+		return meta.Image
+	}
+	return "unknown-image"
 }
 
 func (a *Activities) filterContainerImagePolicies(
