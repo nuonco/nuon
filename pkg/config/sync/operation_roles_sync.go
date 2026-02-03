@@ -9,7 +9,6 @@ import (
 )
 
 func (s sync) getOperationRulesRequest() *models.ServiceCreateAppOperationRoleConfigRequest {
-	// Convert config rules to API request rules
 	rules := make([]*models.ServiceOperationRoleRuleRequest, 0, len(s.cfg.OperationRoles.RuleMatrix))
 	for _, rule := range s.cfg.OperationRoles.RuleMatrix {
 		rules = append(rules, &models.ServiceOperationRoleRuleRequest{

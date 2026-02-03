@@ -50,7 +50,6 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		configRequest.VariablesFiles = append(configRequest.VariablesFiles, v.Contents)
 	}
 
-	// Add operation roles if present
 	if len(comp.OperationRoles) > 0 {
 		configRequest.OperationRoles = make(map[string]string)
 		for _, opRole := range comp.OperationRoles {

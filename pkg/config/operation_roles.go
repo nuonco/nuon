@@ -16,7 +16,6 @@ const (
 	OperationRuleConfigTypeMatrix OperationRuleConfigType = "matrix"
 )
 
-// PrincipalType is an alias to principal.Type for backward compatibility
 type PrincipalType = principal.Type
 
 const (
@@ -155,7 +154,7 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 			return fmt.Errorf("rule at index %d: failed to parse principal: %w", i, err)
 		}
 
-		// Skip wildcard validation for principal
+		// skip checking refs for wildcard rules
 		if principalName != "*" {
 			switch PrincipalType(principalType) {
 			case PrincipalTypeComponent:
@@ -230,7 +229,6 @@ func (r *OperationRoleRule) ValidatePrincipal() error {
 		return errors.New("principal cannot be empty")
 	}
 
-	// Must start with "nuon::"
 	if !strings.HasPrefix(r.Principal, "nuon::") {
 		return fmt.Errorf("principal must start with 'nuon::' (got: %s)", r.Principal)
 	}
@@ -277,7 +275,9 @@ func (r *OperationRoleRule) ParsePrincipal() (string, string, error) {
 	return string(p.Type), p.Name, nil
 }
 
-// EntityOperationRole is used within entities like component, sandbox and action to specify roles for specific operation
+// EntityOperationRole is used within entities like component, sandbox to specify roles for specific operation
+// todo(sk): see if this needs to be used for actions  as well or we can use just role, using this makes easier for
+// future modifications, otoh using just role makes it a bit brittle
 type EntityOperationRole struct {
 	Operation OperationType `mapstructure:"operation" toml:"operation" jsonschema:"required"`
 	RoleName  string        `mapstructure:"role" toml:"role" jsonschema:"required"`
@@ -292,7 +292,6 @@ func (e EntityOperationRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 func (e *EntityOperationRole) Validate() error {
-	// Validate operation
 	if !slices.Contains(validOperations, e.Operation) {
 		return fmt.Errorf("operation must be one of: %s", validOperations.String())
 	}

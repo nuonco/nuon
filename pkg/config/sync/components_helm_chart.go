@@ -71,7 +71,6 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		configRequest.ValuesFiles = append(configRequest.ValuesFiles, value.Contents)
 	}
 
-	// Add operation roles if present
 	if len(comp.OperationRoles) > 0 {
 		configRequest.OperationRoles = make(map[string]string)
 		for _, opRole := range comp.OperationRoles {

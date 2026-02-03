@@ -36,7 +36,6 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("1.6.0").
 		Example("latest").
 		Field("connected_repo").Short("connected repository configuration").
-		// Validate each rule
 		Long("Configuration for a private repository connected to the Nuon platform").
 		Field("public_repo").Short("public repository configuration").
 		Long("Configuration for a public repository accessible without authentication").

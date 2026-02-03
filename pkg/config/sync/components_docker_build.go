@@ -48,7 +48,6 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest.EnvVars = obj.EnvVarMap
 
-	// Add operation roles if present
 	if len(comp.OperationRoles) > 0 {
 		configRequest.OperationRoles = make(map[string]string)
 		for _, opRole := range comp.OperationRoles {

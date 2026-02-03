@@ -180,14 +180,12 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 
-	// Get app config for role selection
 	appConfig, err := activities.AwaitGetAppConfigByID(ctx, run.Install.AppConfigID)
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to get app config")
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	// Get install stack for auth configuration
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, run.Install.ID)
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to get install stack")
@@ -211,7 +209,6 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		zap.String("operation", string(operation)),
 	)
 
-	// Create auth configuration
 	planAuth, err := plan.CreatePlanAuth(
 		stack.InstallStackOutputs,
 		roleSelection.RoleARN,
@@ -268,17 +265,15 @@ func (w *Workflows) getRoleForAction(
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	// Actions always use trigger operation
 	operation := app.OperationTrigger
 
-	// Determine default role
-	defaultRole := appConfig.PermissionsConfig.MaintenanceRole.Name
+	var entityRoles map[app.OperationType]string
+	if run.ActionWorkflowConfig.Role != "" {
+		entityRoles = map[app.OperationType]string{
+			operation: run.ActionWorkflowConfig.Role,
+		}
+	}
 
-	// Get entity roles from action workflow config (if exists)
-	// TODO: Load action workflow config and get OperationRoles from it
-	var entityRoles operationroles.EntityOperationRoleMap
-
-	// Select role using operation roles engine
 	roleSelection, err := operationroles.SelectRole(
 		&operationroles.SelectionContext{
 			Operation:     operation,
@@ -287,7 +282,7 @@ func (w *Workflows) getRoleForAction(
 			RuntimeRole:   run.Role,
 			EntityRoles:   entityRoles,
 			MatrixRules:   appConfig.OperationRoleConfig.Rules,
-			DefaultRole:   defaultRole,
+			DefaultRole:   appConfig.PermissionsConfig.MaintenanceRole.Name,
 			AppConfig:     appConfig,
 			StackOutputs:  &stack.InstallStackOutputs,
 		})

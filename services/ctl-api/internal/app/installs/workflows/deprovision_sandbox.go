@@ -15,8 +15,7 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
-	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata["role"])
+	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
 
 	sg.nextGroup() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{

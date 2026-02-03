@@ -25,7 +25,7 @@ type CompositePlan struct {
 	FetchImageMetadataPlan *FetchImageMetadataPlan `json:"fetch_image_metadata_plan,omitempty"`
 	SandboxRunPlan         *SandboxRunPlan         `json:"sandbox_run_plan,omitempty"`
 
-	// Auth for cloud providera
+	// Auth for cloud providers
 	Auth *PlanAuth `json:"plan_auth,omitempty"`
 }
 

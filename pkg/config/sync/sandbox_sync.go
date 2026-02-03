@@ -52,7 +52,6 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 		req.References = append(req.References, ref.String())
 	}
 
-	// Add operation roles if present
 	if len(s.cfg.Sandbox.OperationRoles) > 0 {
 		req.OperationRoles = make(map[string]string)
 		for _, opRole := range s.cfg.Sandbox.OperationRoles {

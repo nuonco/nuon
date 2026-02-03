@@ -35,7 +35,6 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 		configRequest.Tag = generics.ToPtr(containerImage.PublicImageConfig.Tag)
 	}
 
-	// Add operation roles if present
 	if len(comp.OperationRoles) > 0 {
 		configRequest.OperationRoles = make(map[string]string)
 		for _, opRole := range comp.OperationRoles {

@@ -126,9 +126,8 @@ func TestParsePrincipal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			principalType, principalName, err := ParsePrincipal(tt.principal)
+			p, err := ParsePrincipal(tt.principal)
 
-			// Check error expectation
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("expected error but got none")
@@ -137,6 +136,7 @@ func TestParsePrincipal(t *testing.T) {
 				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
 					t.Errorf("expected error to contain %q, got %q", tt.errorContains, err.Error())
 				}
+				return
 			} else {
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
@@ -144,14 +144,12 @@ func TestParsePrincipal(t *testing.T) {
 				}
 			}
 
-			// Check principal type
-			if principalType != tt.expectedType {
-				t.Errorf("expected type %q, got %q", tt.expectedType, principalType)
+			if string(p.Type) != tt.expectedType {
+				t.Errorf("expected type %q, got %q", tt.expectedType, p.Type)
 			}
 
-			// Check principal name
-			if principalName != tt.expectedName {
-				t.Errorf("expected name %q, got %q", tt.expectedName, principalName)
+			if p.Name != tt.expectedName {
+				t.Errorf("expected name %q, got %q", tt.expectedName, p.Name)
 			}
 		})
 	}

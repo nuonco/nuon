@@ -34,7 +34,6 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
-	// Get app config for role selection
 	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get app config")
@@ -118,7 +117,6 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		zap.String("operation", string(operation)),
 	)
 
-	// Create auth configuration
 	planAuth, err := pkgplan.CreatePlanAuth(
 		stack.InstallStackOutputs,
 		roleSelection.RoleARN,
@@ -224,13 +222,13 @@ func (w *Workflows) getRoleForDeploy(
 	}
 
 	defaultRole := appConfig.PermissionsConfig.MaintenanceRole.Name
-	if operation == app.OperationProvision {
+	switch operation {
+	case app.OperationProvision:
 		defaultRole = appConfig.PermissionsConfig.ProvisionRole.Name
-	} else if operation == app.OperationTeardown || operation == app.OperationDeprovision {
+	case app.OperationTeardown, app.OperationDeprovision:
 		defaultRole = appConfig.PermissionsConfig.DeprovisionRole.Name
 	}
 
-	// Select role using operation roles engine
 	roleSelection, err := operationroles.SelectRole(
 		&operationroles.SelectionContext{
 			Operation:     operation,
