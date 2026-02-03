@@ -434,6 +434,9 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 	}
 
 	policies := make([]PolicyResultDisplay, len(report.Policies))
+	computedDenyCount := 0
+	computedWarnCount := 0
+	computedPassCount := 0
 	for i, p := range report.Policies {
 		policies[i] = PolicyResultDisplay{
 			PolicyID:   p.PolicyID,
@@ -444,6 +447,9 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 			PassCount:  p.PassCount,
 			InputCount: p.InputCount,
 		}
+		computedDenyCount += p.DenyCount
+		computedWarnCount += p.WarnCount
+		computedPassCount += p.PassCount
 	}
 
 	inputs := make([]PolicyInputDisplay, len(report.Inputs))
@@ -462,6 +468,17 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 		status = "warning"
 	}
 
+	// Use computed counts from policies for accurate summary
+	denyCount := computedDenyCount
+	warnCount := computedWarnCount
+	passCount := computedPassCount
+	// Fall back to report-level counts if no policies data
+	if len(report.Policies) == 0 {
+		denyCount = report.DenyCount
+		warnCount = report.WarnCount
+		passCount = report.PassCount
+	}
+
 	data := PolicyReportTemplateData{
 		Title:         "Policy Report",
 		GeneratedAt:   time.Now().UTC().Format(time.RFC3339),
@@ -470,10 +487,10 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 		OrgName:       report.OrgName,
 		AppID:         report.AppID,
 		AppName:       report.AppName,
-		DenyCount:     report.DenyCount,
-		WarnCount:     report.WarnCount,
-		PassCount:     report.PassCount,
-		TotalCount:    report.DenyCount + report.WarnCount + report.PassCount,
+		DenyCount:     denyCount,
+		WarnCount:     warnCount,
+		PassCount:     passCount,
+		TotalCount:    denyCount + warnCount + passCount,
 		Status:        status,
 		Violations:    violations,
 		HasViolations: len(violations) > 0,
@@ -523,19 +540,18 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 		return errors.Wrap(pdf.Error(), "unable to render pdf header")
 	}
 
-	// Report metadata - two column layout
+	// Report metadata
 	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 	pdf.SetFont("Helvetica", "", 9)
-	leftCol := 95.0
-	pdf.Cell(leftCol, 5, fmt.Sprintf("Report ID: %s", data.ReportID))
-	pdf.Cell(0, 5, fmt.Sprintf("Generated: %s", data.GeneratedAt))
+	pdf.Cell(0, 5, fmt.Sprintf("Report ID: %s    Generated: %s UTC", data.ReportID, data.GeneratedAt))
 	pdf.Ln(5)
 
 	orgDisplay := data.OrgID
 	if data.OrgName != "" {
 		orgDisplay = fmt.Sprintf("%s (%s)", data.OrgName, data.OrgID)
 	}
-	pdf.Cell(leftCol, 5, fmt.Sprintf("Organization: %s", orgDisplay))
+	pdf.Cell(0, 5, fmt.Sprintf("Organization: %s", orgDisplay))
+	pdf.Ln(5)
 
 	appDisplay := data.AppID
 	if data.AppName != "" {
