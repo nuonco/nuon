@@ -224,6 +224,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				Violations:                     violations,
 				PolicyIDs:                      policyContext.PolicyIDs,
 				PolicyInputCounts:              policyInputCounts,
+				OrgName:                        policyContext.OrgName,
 				AppName:                        policyContext.AppName,
 				InstallName:                    policyContext.InstallName,
 				ComponentName:                  policyContext.ComponentName,
@@ -794,6 +795,7 @@ type policyEvaluationContext struct {
 	InputCount       int
 
 	// Human-readable names for display in reports
+	OrgName       string
 	AppName       string
 	InstallName   string
 	ComponentName string
@@ -852,6 +854,7 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 		ComponentBuildID: prepResult.ComponentBuildID,
 		PolicyIDs:        prepResult.PolicyIDs,
 		InputCount:       prepResult.InputCount,
+		OrgName:          prepResult.OrgName,
 		AppName:          prepResult.AppName,
 		InstallName:      prepResult.InstallName,
 		ComponentName:    prepResult.ComponentName,

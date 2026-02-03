@@ -30,6 +30,7 @@ type PersistPolicyReportRequest struct {
 	PassCount                      int               `json:"pass_count"`
 
 	// Human-readable names for display in reports
+	OrgName       string `json:"org_name"`
 	AppName       string `json:"app_name"`
 	InstallName   string `json:"install_name"`
 	ComponentName string `json:"component_name"`
@@ -87,10 +88,11 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 	violations := make([]app.PolicyViolation, len(req.Violations))
 	for i, v := range req.Violations {
 		violations[i] = app.PolicyViolation{
-			PolicyID:   v.PolicyID,
-			InputIndex: v.InputIndex,
-			Message:    v.Message,
-			Severity:   v.Severity,
+			PolicyID:      v.PolicyID,
+			InputIndex:    v.InputIndex,
+			InputIdentity: v.InputIdentity,
+			Message:       v.Message,
+			Severity:      v.Severity,
 		}
 	}
 
@@ -134,6 +136,11 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		WarnCount:                      warnCount,
 		PassCount:                      passCount,
 		Status:                         buildPolicyReportStatus(ctx, denyCount, warnCount, passCount),
+		// Human-readable names for display in reports
+		OrgName:       req.OrgName,
+		AppName:       req.AppName,
+		InstallName:   stringPtrToPtr(req.InstallName),
+		ComponentName: stringPtrToPtr(req.ComponentName),
 	}
 
 	if err := a.db.WithContext(ctx).Create(report).Error; err != nil {
@@ -304,4 +311,11 @@ func buildPolicyReportStatus(ctx context.Context, denyCount, warnCount, passCoun
 		"pass_count": passCount,
 	}
 	return composite
+}
+
+func stringPtrToPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

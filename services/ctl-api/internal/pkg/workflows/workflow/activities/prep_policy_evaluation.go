@@ -43,6 +43,7 @@ type PrepPolicyEvaluationResult struct {
 	InputCount       int                `json:"input_count" temporaljson:"input_count,omitempty"`
 
 	// Human-readable names for display in reports
+	OrgName       string `json:"org_name" temporaljson:"org_name,omitempty"`
 	AppName       string `json:"app_name" temporaljson:"app_name,omitempty"`
 	InstallName   string `json:"install_name" temporaljson:"install_name,omitempty"`
 	ComponentName string `json:"component_name" temporaljson:"component_name,omitempty"`
@@ -142,6 +143,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		ComponentBuildID: policyContext.ComponentBuildID,
 		PolicyIDs:        policyIDs,
 		InputCount:       len(policyInputs),
+		OrgName:          policyContext.OrgName,
 		AppName:          policyContext.AppName,
 		InstallName:      policyContext.InstallName,
 		ComponentName:    policyContext.ComponentName,
@@ -160,6 +162,7 @@ type policyContext struct {
 	IsSandbox        bool
 
 	// Human-readable names for display in reports
+	OrgName     string
 	AppName     string
 	InstallName string
 }
@@ -178,6 +181,7 @@ func (a *Activities) resolvePolicyContext(ctx context.Context, stepTargetID, ste
 func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID string) (*policyContext, error) {
 	var deploy app.InstallDeploy
 	res := a.db.WithContext(ctx).
+		Preload("InstallComponent.Install.App.Org").
 		Preload("InstallComponent.Install.App").
 		Preload("InstallComponent.Install").
 		Preload("InstallComponent.Component").
@@ -195,6 +199,7 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 		ComponentType:    deploy.InstallComponent.Component.Type,
 		ComponentName:    deploy.InstallComponent.Component.Name,
 		IsSandbox:        false,
+		OrgName:          deploy.InstallComponent.Install.App.Org.Name,
 		AppName:          deploy.InstallComponent.Install.App.Name,
 		InstallName:      deploy.InstallComponent.Install.Name,
 	}, nil
@@ -203,6 +208,7 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRunID string) (*policyContext, error) {
 	var sandboxRun app.InstallSandboxRun
 	res := a.db.WithContext(ctx).
+		Preload("Install.App.Org").
 		Preload("Install.App").
 		Preload("Install").
 		First(&sandboxRun, "id = ?", sandboxRunID)
@@ -218,6 +224,7 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 		ComponentType:    "",
 		ComponentName:    "",
 		IsSandbox:        true,
+		OrgName:          sandboxRun.Install.App.Org.Name,
 		AppName:          sandboxRun.Install.App.Name,
 		InstallName:      sandboxRun.Install.Name,
 	}, nil
