@@ -1,0 +1,37 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
+)
+
+templ InstallComponentStatusBadge(install *app.Install) {
+	<div
+		hx-get={ "/installs/" + install.ID + "/status/component" }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		@tooltip.Tooltip() {
+			@tooltip.Trigger(tooltip.TriggerProps{
+				For: "install-component-tooltip-" + install.ID,
+			}) {
+				<span class={ "px-2 py-1 rounded text-xs font-mono uppercase", componentStatusClass(install.CompositeComponentStatus) }>
+					Components
+				</span>
+			}
+			@tooltip.Content(tooltip.ContentProps{
+				ID:            "install-component-tooltip-" + install.ID,
+				Position:      tooltip.PositionTop,
+				ShowArrow:     true,
+				HoverDelay:    200,
+				HoverOutDelay: 100,
+			}) {
+				if install.CompositeComponentStatusDescription != "" {
+					{ install.CompositeComponentStatusDescription }
+				} else {
+					No status description available
+				}
+			}
+		}
+	</div>
+}

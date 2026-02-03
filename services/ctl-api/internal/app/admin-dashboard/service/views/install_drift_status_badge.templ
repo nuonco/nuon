@@ -1,0 +1,44 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
+	"fmt"
+)
+
+templ InstallDriftStatusBadge(install *app.Install) {
+	<div
+		hx-get={ "/installs/" + install.ID + "/status/drift" }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		@tooltip.Tooltip() {
+			@tooltip.Trigger(tooltip.TriggerProps{
+				For: "install-drift-tooltip-" + install.ID,
+			}) {
+				if len(install.DriftedObjects) == 0 {
+					<span class="px-2 py-1 rounded text-xs font-mono uppercase bg-success-bg text-success border border-success-border">
+						No Drift
+					</span>
+				} else {
+					<span class="px-2 py-1 rounded text-xs font-mono uppercase bg-warning-bg text-warning border border-warning-border">
+						Drift Detected
+					</span>
+				}
+			}
+			@tooltip.Content(tooltip.ContentProps{
+				ID:            "install-drift-tooltip-" + install.ID,
+				Position:      tooltip.PositionTop,
+				ShowArrow:     true,
+				HoverDelay:    200,
+				HoverOutDelay: 100,
+			}) {
+				if len(install.DriftedObjects) == 0 {
+					No configuration drift detected
+				} else {
+					{ fmt.Sprintf("%d drifted object(s) detected", len(install.DriftedObjects)) }
+				}
+			}
+		}
+	</div>
+}

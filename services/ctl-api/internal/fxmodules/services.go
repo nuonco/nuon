@@ -5,7 +5,7 @@ import (
 
 	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
 	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
-	admindashboardservice "github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/service"
+	admindashboardservice "github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service"
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
 	authservice "github.com/nuonco/nuon/services/ctl-api/internal/app/auth/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"

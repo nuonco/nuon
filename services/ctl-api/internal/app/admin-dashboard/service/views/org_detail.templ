@@ -1,0 +1,81 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+)
+
+templ OrgDetail(org *app.Org, installs []*app.Install) {
+	@Layout("Organization: " + org.Name) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			<!-- Breadcrumb navigation -->
+			<div class="mb-6">
+				<a href="/orgs" class="text-sm text-cyan hover:underline">
+					← Back to Organizations
+				</a>
+			</div>
+
+			<!-- Compact Org Header -->
+			<div class="bg-card border border-border rounded-lg p-6 mb-6">
+				<div class="flex items-start justify-between">
+					<!-- Left side: Name and ID -->
+					<div class="flex-1">
+						<h1 class="text-2xl font-bold mb-2">{ org.Name }</h1>
+						<div class="flex items-center gap-2">
+							<span class="text-xs text-muted-foreground uppercase">ID:</span>
+							<span id={ "org-detail-id-" + org.ID } class="font-mono text-xs text-foreground">
+								{ org.ID }
+							</span>
+							@copybutton.CopyButton(copybutton.Props{
+								TargetID: "org-detail-id-" + org.ID,
+							})
+						</div>
+					</div>
+
+					<!-- Right side: Status and timestamps -->
+					<div class="text-right space-y-2">
+						<!-- Status -->
+						<div class="flex items-center justify-end gap-2">
+							<span class="text-xs text-muted-foreground uppercase">Status:</span>
+							@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
+						</div>
+
+						<!-- Type -->
+						<div class="flex items-center justify-end gap-2">
+							<span class="text-xs text-muted-foreground uppercase">Type:</span>
+							<span class="font-mono text-xs uppercase">{ string(org.OrgType) }</span>
+						</div>
+
+						<!-- Timestamps -->
+						<div class="text-xs text-muted-foreground space-y-1">
+							<div>Created: <span class="font-mono">{ org.CreatedAt.Format("2006-01-02 15:04") }</span></div>
+							<div>Updated: <span class="font-mono">{ org.UpdatedAt.Format("2006-01-02 15:04") }</span></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Installs Section -->
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Installs
+					}
+					@card.Description() {
+						All installs for this organization
+					}
+				}
+				@card.Content() {
+					@InstallsTable(org.ID, installs)
+				}
+			}
+		</div>
+		// Include the copybutton and popover JavaScript
+		@copybutton.Script()
+		@popover.Script()
+	}
+}
+
+// Note: orgStatusClass helper function is shared from orgs.templ
