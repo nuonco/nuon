@@ -357,3 +357,11 @@ func NewHelmChartID() string {
 func NewEndpointAuditID() string {
 	return shortid.NewNanoID("epa")
 }
+
+func NewPolicyValidationID() string {
+	return shortid.NewNanoID("pvl")
+}
+
+func NewPolicyReportID() string {
+	return shortid.NewNanoID("pvr")
+}
