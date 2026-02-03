@@ -13,8 +13,14 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 )
 
+type buildResult struct {
+	component sync.ComponentState
+	buildID   string
+	status    string
+	success   bool
+}
+
 func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.ComponentState) error {
-	// Early return if no components to build
 	if len(comps) == 0 {
 		return nil
 	}
@@ -28,18 +34,16 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 	defer cancel()
 
 	multiSpinner := bubbles.NewMultiSpinnerView()
-
-	// Add all spinners first
 	for _, cmp := range comps {
 		multiSpinner.AddSpinner(cmp.ID, fmt.Sprintf("building component %s %s", cmp.ID, cmp.Name))
 	}
-
-	// Then start the display
 	multiSpinner.Start()
 
 	// NOTE: on updates, components are already active and new component_builds records wait to be created.
-	// So we need to wait for the new component_builds to be created before we start to poll.
 	time.Sleep(time.Second * 5)
+
+	completedBuilds := make([]buildResult, 0, len(comps))
+	var groupError error
 
 	for {
 		select {
@@ -48,65 +52,122 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 			ui.PrintError(err)
 			for cmpID := range cmpByID {
 				cmp := cmpByID[cmpID]
-				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("timeout waiting for component %s %s to build", cmp.ID, cmp.Name))
+				multiSpinner.CompleteSpinner(cmp.ID, false, "")
+				completedBuilds = append(completedBuilds, buildResult{
+					component: cmp,
+					status:    "timeout",
+					success:   false,
+				})
 			}
 			multiSpinner.Stop()
+			s.renderSyncResults(ctx, completedBuilds)
 			return err
 		default:
 		}
 
-		var groupError error
-		completedComponents := make([]sync.ComponentState, 0)
+		completedThisRound := make([]buildResult, 0)
 
 		for cmpID := range cmpByID {
 			cmp := cmpByID[cmpID]
 			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmp.ID)
 			if err != nil {
 				if nuon.IsServerError(err) {
-					multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
-					completedComponents = append(completedComponents, cmp)
+					multiSpinner.CompleteSpinner(cmp.ID, false, "")
+					completedThisRound = append(completedThisRound, buildResult{
+						component: cmp,
+						status:    "failed",
+						success:   false,
+					})
 					continue
 				}
-				// in case we didn't wait long enough for an initial build record, ignore and loop again
 				if nuon.IsNotFound(err) {
 					continue
 				}
-				// TODO: avoid panic if we error on network issues. We should introduce a retryer at the sdk level.
-				// for now, this loop is inherently retrying.
 				if cmpBuild == nil {
 					continue
 				}
 			}
+
 			if cmpBuild.Status == componentBuildStatusError {
-				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
-				completedComponents = append(completedComponents, cmp)
+				multiSpinner.CompleteSpinner(cmp.ID, false, "")
+				completedThisRound = append(completedThisRound, buildResult{
+					component: cmp,
+					buildID:   cmpBuild.ID,
+					status:    "failed",
+					success:   false,
+				})
 				groupError = errors.New("at least one build failed")
 				continue
 			}
+
 			if cmpBuild.Status == componentBuildStatusPolicyFailed {
-				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("policy violation for component %s %s", cmp.ID, cmp.Name))
-				completedComponents = append(completedComponents, cmp)
+				multiSpinner.CompleteSpinner(cmp.ID, false, "")
+				completedThisRound = append(completedThisRound, buildResult{
+					component: cmp,
+					buildID:   cmpBuild.ID,
+					status:    "failed",
+					success:   false,
+				})
 				groupError = errors.New("at least one build failed due to policy violation")
 				continue
 			}
 
 			if cmpBuild.Status == componentBuildStatusActive {
-				multiSpinner.CompleteSpinner(cmp.ID, true, fmt.Sprintf("finished building component %s %s", cmp.ID, cmp.Name))
-				completedComponents = append(completedComponents, cmp)
+				multiSpinner.CompleteSpinner(cmp.ID, true, "")
+				completedThisRound = append(completedThisRound, buildResult{
+					component: cmp,
+					buildID:   cmpBuild.ID,
+					status:    "built",
+					success:   true,
+				})
 				continue
 			}
 		}
 
-		// Remove completed components from tracking
-		for _, cmp := range completedComponents {
-			delete(cmpByID, cmp.ID)
+		for _, result := range completedThisRound {
+			delete(cmpByID, result.component.ID)
+			completedBuilds = append(completedBuilds, result)
 		}
 
 		if len(cmpByID) == 0 {
 			multiSpinner.Stop()
+			s.renderSyncResults(ctx, completedBuilds)
 			return groupError
 		}
 
 		time.Sleep(defaultSyncSleep)
 	}
+}
+
+func (s *Service) renderSyncResults(ctx context.Context, builds []buildResult) {
+	resultsView := bubbles.NewSyncResultsView()
+
+	for _, build := range builds {
+		result := bubbles.ComponentResult{
+			ID:      build.component.ID,
+			Name:    build.component.Name,
+			BuildID: build.buildID,
+			Status:  build.status,
+			Success: build.success,
+		}
+
+		if build.buildID != "" {
+			reports, err := s.api.GetPolicyReports(ctx, &nuon.PolicyReportsQuery{
+				OwnerType: "component_builds",
+				OwnerID:   build.buildID,
+				Limit:     1,
+			})
+			if err == nil && len(reports) > 0 {
+				report := reports[0]
+				result.DenyCount = report.DenyCount
+				result.WarnCount = report.WarnCount
+				result.PassCount = report.PassCount
+				result.PolicyReport = report.ID
+			}
+		}
+
+		resultsView.AddResult(result)
+	}
+
+	ui.PrintRaw(resultsView.Render())
 }
