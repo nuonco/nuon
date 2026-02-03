@@ -24,6 +24,11 @@ const (
 	PolicyReportExportFormatPDF   PolicyReportExportFormat = "pdf"
 )
 
+const (
+	SARIFVersion   = "2.1.0"
+	SARIFSchemaURI = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
+)
+
 type PolicyReportTemplateData struct {
 	Title         string
 	GeneratedAt   string
@@ -40,10 +45,59 @@ type PolicyReportTemplateData struct {
 
 type PolicyViolationDisplay struct {
 	PolicyID   string
-	RuleID     string
 	Message    string
 	Severity   string
 	InputIndex int
+}
+
+// SARIF types for export
+type SARIFReport struct {
+	Version string     `json:"version"`
+	Schema  string     `json:"$schema"`
+	Runs    []SARIFRun `json:"runs"`
+}
+
+type SARIFRun struct {
+	Tool    SARIFTool     `json:"tool"`
+	Results []SARIFResult `json:"results"`
+}
+
+type SARIFTool struct {
+	Driver SARIFToolDriver `json:"driver"`
+}
+
+type SARIFToolDriver struct {
+	Name           string      `json:"name"`
+	Version        string      `json:"version,omitempty"`
+	InformationURI string      `json:"informationUri,omitempty"`
+	Rules          []SARIFRule `json:"rules,omitempty"`
+}
+
+type SARIFRule struct {
+	ID               string       `json:"id"`
+	ShortDescription SARIFMessage `json:"shortDescription,omitempty"`
+}
+
+type SARIFResult struct {
+	RuleID  string       `json:"ruleId"`
+	Level   string       `json:"level"`
+	Message SARIFMessage `json:"message"`
+}
+
+type SARIFMessage struct {
+	Text string `json:"text"`
+}
+
+// OPA report format for export
+type OPAReport struct {
+	EvaluatedAt time.Time             `json:"evaluated_at"`
+	Violations  []app.PolicyViolation `json:"violations"`
+	PolicyIDs   []string              `json:"policy_ids"`
+	Policies    []app.PolicyResult    `json:"policies"`
+	Inputs      []app.PolicyInputRef  `json:"inputs,omitempty"`
+	DenyCount   int                   `json:"deny_count"`
+	WarnCount   int                   `json:"warn_count"`
+	PassCount   int                   `json:"pass_count"`
 }
 
 // @ID						ExportPolicyReport
@@ -88,13 +142,13 @@ func (s *service) ExportPolicyReport(ctx *gin.Context) {
 		return
 	}
 
-	if format == PolicyReportExportFormatPDF {
+	switch format {
+	case PolicyReportExportFormatPDF:
 		s.servePDFReport(ctx, report)
-		return
-	}
-
-	if err := s.serveJSONReport(ctx, report, format); err != nil {
-		ctx.Error(err)
+	case PolicyReportExportFormatSARIF:
+		s.serveSARIFReport(ctx, report)
+	default:
+		s.serveOPAReport(ctx, report)
 	}
 }
 
@@ -107,61 +161,101 @@ func isValidPolicyReportFormat(format PolicyReportExportFormat) bool {
 	}
 }
 
-func (s *service) serveJSONReport(ctx *gin.Context, report *app.PolicyReport, format PolicyReportExportFormat) error {
-	var targetFormat app.PolicyReportFormat
-	if format == PolicyReportExportFormatOPA {
-		targetFormat = app.PolicyReportFormatOPA
-	} else {
-		targetFormat = app.PolicyReportFormatSARIF
+func toOPAFormat(report *app.PolicyReport) OPAReport {
+	return OPAReport{
+		EvaluatedAt: report.EvaluatedAt,
+		Violations:  report.Violations,
+		PolicyIDs:   report.PolicyIDs,
+		Policies:    report.Policies,
+		Inputs:      report.Inputs,
+		DenyCount:   report.DenyCount,
+		WarnCount:   report.WarnCount,
+		PassCount:   report.PassCount,
+	}
+}
+
+func toSARIFFormat(report *app.PolicyReport) SARIFReport {
+	policyIDs := make(map[string]bool)
+	for _, v := range report.Violations {
+		policyIDs[v.PolicyID] = true
 	}
 
-	if report.Format != targetFormat {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("report %s is not in %s format", report.ID, format),
-			Description: fmt.Sprintf("Report %s is not available in %s format.", report.ID, format),
+	rules := make([]SARIFRule, 0, len(policyIDs))
+	for policyID := range policyIDs {
+		rules = append(rules, SARIFRule{
+			ID: policyID,
+			ShortDescription: SARIFMessage{
+				Text: "Policy: " + policyID,
+			},
 		})
-		return nil
 	}
 
-	filename := fmt.Sprintf("policy-report-%s.%s.json", report.ID, format)
+	results := make([]SARIFResult, len(report.Violations))
+	for i, v := range report.Violations {
+		level := "warning"
+		if v.Severity == "deny" {
+			level = "error"
+		}
+
+		results[i] = SARIFResult{
+			RuleID: v.PolicyID,
+			Level:  level,
+			Message: SARIFMessage{
+				Text: v.Message,
+			},
+		}
+	}
+
+	return SARIFReport{
+		Version: SARIFVersion,
+		Schema:  SARIFSchemaURI,
+		Runs: []SARIFRun{
+			{
+				Tool: SARIFTool{
+					Driver: SARIFToolDriver{
+						Name:           "nuon-policy",
+						Version:        "1.0.0",
+						InformationURI: "https://nuon.co",
+						Rules:          rules,
+					},
+				},
+				Results: results,
+			},
+		},
+	}
+}
+
+func (s *service) serveOPAReport(ctx *gin.Context, report *app.PolicyReport) {
+	opaReport := toOPAFormat(report)
+	content, err := json.Marshal(opaReport)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to marshal OPA report"))
+		return
+	}
+
+	filename := fmt.Sprintf("policy-report-%s.opa.json", report.ID)
 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-	ctx.Data(http.StatusOK, "application/json", report.Content)
-	return nil
+	ctx.Data(http.StatusOK, "application/json", content)
+}
+
+func (s *service) serveSARIFReport(ctx *gin.Context, report *app.PolicyReport) {
+	sarifReport := toSARIFFormat(report)
+	content, err := json.Marshal(sarifReport)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to marshal SARIF report"))
+		return
+	}
+
+	filename := fmt.Sprintf("policy-report-%s.sarif.json", report.ID)
+	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	ctx.Data(http.StatusOK, "application/json", content)
 }
 
 func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
-	if report.Format != app.PolicyReportFormatOPA {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("report %s is not in opa format", report.ID),
-			Description: "PDF export requires the OPA report format.",
-		})
-		return
-	}
-
-	var opaData struct {
-		EvaluatedAt time.Time `json:"evaluated_at"`
-		Violations  []struct {
-			PolicyID   string `json:"policy_id"`
-			RuleID     string `json:"rule_id"`
-			InputIndex int    `json:"input_index"`
-			Message    string `json:"message"`
-			Severity   string `json:"severity"`
-		} `json:"violations"`
-		DenyCount int `json:"deny_count"`
-		WarnCount int `json:"warn_count"`
-		PassCount int `json:"pass_count"`
-	}
-
-	if err := json.Unmarshal(report.Content, &opaData); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to parse OPA report content"))
-		return
-	}
-
-	violations := make([]PolicyViolationDisplay, len(opaData.Violations))
-	for i, v := range opaData.Violations {
+	violations := make([]PolicyViolationDisplay, len(report.Violations))
+	for i, v := range report.Violations {
 		violations[i] = PolicyViolationDisplay{
 			PolicyID:   v.PolicyID,
-			RuleID:     v.RuleID,
 			Message:    v.Message,
 			Severity:   v.Severity,
 			InputIndex: v.InputIndex,
@@ -169,9 +263,9 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 	}
 
 	status := "passed"
-	if opaData.DenyCount > 0 {
+	if report.DenyCount > 0 {
 		status = "failed"
-	} else if opaData.WarnCount > 0 {
+	} else if report.WarnCount > 0 {
 		status = "warning"
 	}
 
@@ -180,10 +274,10 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 		GeneratedAt:   time.Now().UTC().Format(time.RFC3339),
 		ReportID:      report.ID,
 		OrgID:         report.OrgID,
-		DenyCount:     opaData.DenyCount,
-		WarnCount:     opaData.WarnCount,
-		PassCount:     opaData.PassCount,
-		TotalCount:    opaData.DenyCount + opaData.WarnCount + opaData.PassCount,
+		DenyCount:     report.DenyCount,
+		WarnCount:     report.WarnCount,
+		PassCount:     report.PassCount,
+		TotalCount:    report.DenyCount + report.WarnCount + report.PassCount,
 		Status:        status,
 		Violations:    violations,
 		HasViolations: len(violations) > 0,
@@ -238,12 +332,10 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 		for _, v := range data.Violations {
 			line := fmt.Sprintf("[%s] %s", v.Severity, v.Message)
 			pdf.MultiCell(0, 5, line, "", "L", false)
-			if v.RuleID != "" {
-				pdf.SetFont("Helvetica", "", 9)
-				pdf.Cell(0, 5, fmt.Sprintf("Policy: %s | Rule: %s | Input: %d", v.PolicyID, v.RuleID, v.InputIndex))
-				pdf.Ln(5)
-				pdf.SetFont("Helvetica", "", 10)
-			}
+			pdf.SetFont("Helvetica", "", 9)
+			pdf.Cell(0, 5, fmt.Sprintf("Policy: %s | Input: %d", v.PolicyID, v.InputIndex))
+			pdf.Ln(5)
+			pdf.SetFont("Helvetica", "", 10)
 			pdf.Ln(2)
 		}
 	}
