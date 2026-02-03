@@ -1,6 +1,6 @@
 import { api } from '@/lib/api'
 import { buildQueryParams } from '@/utils/build-query-params'
-import type { TPolicyReport, TPolicyReportFormat } from '@/types/ctl-api.types'
+import type { TPolicyReport } from '@/types/ctl-api.types'
 
 export type TPolicyReportOwnerType =
   | 'install_deploys'
@@ -23,7 +23,6 @@ export const getPolicyReports = ({
   ownerId,
   appId,
   installId,
-  format,
   status,
   limit,
   offset,
@@ -33,7 +32,6 @@ export const getPolicyReports = ({
   ownerId?: string
   appId?: string
   installId?: string
-  format?: TPolicyReportFormat
   status?: TPolicyReportStatus
   limit?: number
   offset?: number
@@ -44,7 +42,6 @@ export const getPolicyReports = ({
       owner_id: ownerId,
       app_id: appId,
       install_id: installId,
-      format,
       status,
       limit,
       offset,
