@@ -30,7 +30,7 @@ type AppWorkflowStepPolicyValidation struct {
 	// install workflow step is the install step that this was performed within
 	InstallWorkflowStepID string `json:"install_workflow_step_id,omitempty"`
 
-	// response is the kyverno response
+	// response is the kyverno response (deprecated: use Reports for detailed results)
 	Response string `json:"response,omitempty"`
 
 	// runnerJobID is the runner job that this was performed within
