@@ -4,11 +4,10 @@ import (
 	"context"
 	_ "embed"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"gorm.io/gorm"
 )
 
-func (m *Migrations) Migration087InstallWorkflowsBackfillOwnership(ctx context.Context, db *gorm.DB, cfg *internal.Config) error {
+func (m *Migrations) Migration087InstallWorkflowsBackfillOwnership(ctx context.Context, db *gorm.DB) error {
 	// if res := db.WithContext(ctx).
 	// 	Exec("UPDATE install_workflows SET owner_id = install_id, owner_type = 'installs' WHERE owner_id IS NULL"); res.Error != nil {
 	// 	return res.Error

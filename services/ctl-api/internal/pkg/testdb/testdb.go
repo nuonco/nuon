@@ -223,7 +223,6 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 			TemporalMaxConcurrentActivities: 1,
 			HostIP:                          "localhost",
 		},
-		IsTest:      true, // Mark as test environment
 		ServiceType: "test",
 	}
 

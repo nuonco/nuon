@@ -48,13 +48,11 @@ func init() {
 	RegisterDefault("trace_sample_rate", defaultSampleRate)
 	RegisterDefault("trace_max_batch_count", defaultMaxBatchCount)
 	RegisterDefault("version", Version)
-	RegisterDefault("is_test", false)
 }
 
 // Base is the base configuration for all services
 type Base struct {
 	Env                          Env     `config:"env"`
-	IsTest                       bool    `config:"is_test"`
 	LogLevel                     string  `config:"log_level"`
 	ExportRuntimeMetrics         bool    `config:"export_runtime_metrics"`
 	ProjectID                    string  `config:"project_id"`

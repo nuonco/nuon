@@ -84,7 +84,6 @@ type Config struct {
 	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
-	IsTest         bool     `config:"is_test"`
 	GitRef         string   `config:"git_ref" validate:"required"`
 	Version        string   `config:"version" validate:"required"`
 	MetricsTags    []string `config:"metrics_tags"`

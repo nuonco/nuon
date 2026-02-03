@@ -3,11 +3,10 @@ package migrations
 import (
 	"context"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"gorm.io/gorm"
 )
 
-func (m *Migrations) Migration092BackfillOrgID(ctx context.Context, db *gorm.DB, cfg *internal.Config) error {
+func (m *Migrations) Migration092BackfillOrgID(ctx context.Context, db *gorm.DB) error {
 	updateTerraformStateJson := `UPDATE terraform_workspace_state_jsons
 SET org_id = terraform_workspaces.org_id
 FROM terraform_workspaces
