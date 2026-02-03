@@ -8,7 +8,7 @@ import (
 )
 
 type PruneRunnerTokensResponse struct {
-	InvalidatedCount int64 `json:"invalidated_count"`
+	InvalidatedCounts map[string]int64 `json:"invalidated_counts"`
 }
 
 // @ID						PruneInstallRunnerTokens
@@ -36,22 +36,17 @@ func (s *service) PruneInstallRunnerTokens(ctx *gin.Context) {
 		return
 	}
 
-	if len(rg.Runners) == 0 {
-		ctx.Error(fmt.Errorf("install has no runners"))
-		return
-	}
-
-	var totalInvalidated int64
+	invalidatedCounts := make(map[string]int64)
 	for _, runner := range rg.Runners {
 		count, err := s.runnersHelpers.InvalidateOldTokens(ctx, runner.ID)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to prune tokens for runner %s: %w", runner.ID, err))
 			return
 		}
-		totalInvalidated += count
+		invalidatedCounts[runner.ID] = count
 	}
 
 	ctx.JSON(http.StatusOK, PruneRunnerTokensResponse{
-		InvalidatedCount: totalInvalidated,
+		InvalidatedCounts: invalidatedCounts,
 	})
 }
