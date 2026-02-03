@@ -21,6 +21,8 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		EnvVars:                  map[string]string{},
 		VariablesFiles:           make([]string, 0),
 		Version:                  obj.TerraformVersion,
+		BuildTimeout:             obj.BuildTimeout,
+		DeployTimeout:            obj.DeployTimeout,
 	}
 
 	if obj.DriftSchedule != nil {

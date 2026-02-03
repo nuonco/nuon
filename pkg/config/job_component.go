@@ -13,6 +13,9 @@ type JobComponentConfig struct {
 	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 	Args      []string          `mapstructure:"args,omitempty" toml:"args,omitempty"`
 
+	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+
 	// deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }
@@ -44,7 +47,15 @@ func (j JobComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("args").Short("command arguments").
 		Long("Arguments to pass to the command").
 		Example("-c 'echo hello'").
-		Example("script.py")
+		Example("script.py").
+		Field("build_timeout").Short("build operation timeout").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h").
+		Field("deploy_timeout").Short("deploy operation timeout").
+		Long("Duration string for job execution (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h")
 }
 
 func (t *JobComponentConfig) Validate() error {

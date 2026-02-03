@@ -20,6 +20,9 @@ type PublicImageConfig struct {
 type ExternalImageComponentConfig struct {
 	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=public"`
 	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=aws_ecr"`
+
+	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 }
 
 func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -63,7 +66,15 @@ func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema
 		Field("aws_ecr").Short("AWS ECR image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories").
 		Field("public").Short("public registry image configuration").OneOfRequired("image_source").
-		Long("Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc)")
+		Long("Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc)").
+		Field("build_timeout").Short("build operation timeout").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h").
+		Field("deploy_timeout").Short("deploy operation timeout").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h")
 }
 
 func (t *ExternalImageComponentConfig) Validate() error {

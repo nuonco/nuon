@@ -21,12 +21,14 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 	}
 
 	configRequest := &models.ServiceCreateJobComponentConfigRequest{
-		AppConfigID: s.appConfigID,
-		Args:        containerImage.Args,
-		Cmd:         containerImage.Cmd,
-		EnvVars:     envVars,
-		ImageURL:    generics.ToPtr(containerImage.ImageURL),
-		Tag:         generics.ToPtr(containerImage.Tag),
+		AppConfigID:   s.appConfigID,
+		Args:          containerImage.Args,
+		Cmd:           containerImage.Cmd,
+		EnvVars:       envVars,
+		ImageURL:      generics.ToPtr(containerImage.ImageURL),
+		Tag:           generics.ToPtr(containerImage.Tag),
+		BuildTimeout:  containerImage.BuildTimeout,
+		DeployTimeout: containerImage.DeployTimeout,
 	}
 
 	for _, ref := range comp.References {

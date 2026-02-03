@@ -26,6 +26,8 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	// Inline manifest (mutually exclusive with Kustomize)
 	Manifest      string  `json:"manifest,omitempty"`
 	Namespace     string  `json:"namespace"`
+	BuildTimeout  string  `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout string  `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	DriftSchedule *string `json:"drift_schedule,omitempty"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
@@ -79,6 +81,18 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 		// Inline manifest should not have VCS config
 		if c.PublicGitVCSConfig != nil || c.ConnectedGithubVCSConfig != nil {
 			return errors.New("VCS config is only valid for kustomize sources, not inline manifests")
+		}
+	}
+
+	// Validate timeouts if provided
+	if c.BuildTimeout != "" {
+		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+			return err
+		}
+	}
+	if c.DeployTimeout != "" {
+		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
 		}
 	}
 
@@ -213,6 +227,8 @@ func (s *service) createKubernetesManifestComponentConfig(
 		References:                        pq.StringArray(req.References),
 		Checksum:                          req.Checksum,
 		ComponentDependencyIDs:            pq.StringArray(depIDs),
+		BuildTimeout:                      req.BuildTimeout,
+		DeployTimeout:                     req.DeployTimeout,
 	}
 
 	if req.DriftSchedule != nil {

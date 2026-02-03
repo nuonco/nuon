@@ -20,6 +20,9 @@ type KubernetesManifestComponentConfig struct {
 	// Namespace supports template variables (e.g., {{.nuon.install.id}})
 	Namespace     string  `mapstructure:"namespace,omitempty" toml:"namespace,omitempty" jsonschema:"required"`
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+
+	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 }
 
 // KustomizeConfig configures kustomize build options
@@ -64,7 +67,15 @@ func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.S
 		Example("production").
 		Example("{{.nuon.install.id}}").
 		Field("drift_schedule").Short("drift detection schedule").
-		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled.").Example("0 2 * * *")
+		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled.").Example("0 2 * * *").
+		Field("build_timeout").Short("build operation timeout").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h").
+		Field("deploy_timeout").Short("deploy operation timeout").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h")
 }
 
 func (t *KubernetesManifestComponentConfig) Validate() error {

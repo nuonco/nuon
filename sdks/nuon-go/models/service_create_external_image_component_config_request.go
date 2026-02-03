@@ -26,11 +26,17 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	// aws ecr image config
 	AwsEcrImageConfig *ServiceAwsECRImageConfigRequest `json:"aws_ecr_image_config,omitempty"`
 
+	// Duration string for build operations (e.g., "30m", "1h")
+	BuildTimeout string `json:"build_timeout,omitempty"`
+
 	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
 	// dependencies
 	Dependencies []string `json:"dependencies"`
+
+	// Duration string for deploy operations (e.g., "30m", "1h")
+	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
 	// image url
 	// Required: true

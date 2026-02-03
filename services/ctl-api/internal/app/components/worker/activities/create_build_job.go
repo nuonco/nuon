@@ -23,7 +23,7 @@ type CreateBuildJobRequest struct {
 
 // @temporal-gen activity
 func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequest) (*app.RunnerJob, error) {
-	bld, err := a.getComponentBuild(ctx, req.BuildID)
+	bld, err := a.getComponentBuildWithConfig(ctx, req.BuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", err)
 	}
@@ -39,6 +39,7 @@ func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequ
 		req.Op,
 		req.LogStreamID,
 		req.Metadata,
+		bld.ComponentConfigConnection.GetBuildTimeout(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create build job: %w", err)

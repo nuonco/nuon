@@ -34,8 +34,10 @@ func (a *awsECRImageConfigRequest) getAWSECRImageConfig() *app.AWSECRImageConfig
 type CreateExternalImageComponentConfigRequest struct {
 	AWSECRImageConfig *awsECRImageConfigRequest `json:"aws_ecr_image_config"`
 
-	ImageURL string `json:"image_url" validate:"required"`
-	Tag      string `json:"tag" validate:"required"`
+	ImageURL      string `json:"image_url" validate:"required"`
+	Tag           string `json:"tag" validate:"required"`
+	BuildTimeout  string `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout string `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -47,6 +49,16 @@ type CreateExternalImageComponentConfigRequest struct {
 func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+	if c.BuildTimeout != "" {
+		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+			return err
+		}
+	}
+	if c.DeployTimeout != "" {
+		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -156,6 +168,8 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		ComponentDependencyIDs:       pq.StringArray(depIDs),
 		References:                   pq.StringArray(req.References),
 		Checksum:                     req.Checksum,
+		BuildTimeout:                 req.BuildTimeout,
+		DeployTimeout:                req.DeployTimeout,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create external image component config connection: %w", res.Error)

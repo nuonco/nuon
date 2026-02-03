@@ -28,6 +28,8 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	Variables      map[string]*string `json:"variables" validate:"required"`
 	VariablesFiles []string           `json:"variables_files,omitempty"`
 	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
+	BuildTimeout   string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout  string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -58,6 +60,19 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 	if err := c.basicVCSConfigRequest.Validate(); err != nil {
 		return err
 	}
+
+	// Validate timeouts if provided
+	if c.BuildTimeout != "" {
+		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+			return err
+		}
+	}
+	if c.DeployTimeout != "" {
+		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -210,6 +225,8 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		ComponentDependencyIDs:         pq.StringArray(depIDs),
 		References:                     pq.StringArray(req.References),
 		Checksum:                       req.Checksum,
+		BuildTimeout:                   req.BuildTimeout,
+		DeployTimeout:                  req.DeployTimeout,
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)

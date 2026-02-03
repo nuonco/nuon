@@ -25,6 +25,8 @@ title: 'Helm'
 | `storage_driver` | `string` | No | which helm storage driver to use (defaults to configmap) | - | `"configmap"` |
 | `take_ownership` | `boolean` | No | - | - | - |
 | `drift_schedule` | `string` | No | - | - | - |
+| `build_timeout` | `string` | No | build operation timeout Duration string for build operations (e.g., "30m", "1h"). | - | `"30m"` |
+| `deploy_timeout` | `string` | No | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | - | `"30m"` |
 | `value` | `array` | No | array of helm values (not recommended) | - | - |
 
 ### Property Details
@@ -105,4 +107,30 @@ title: 'Helm'
 - `"configmap"`
 - `"secret"`
 
+
+#### `build_timeout`
+
+**Examples:**
+
+
+```yaml
+"30m"
+```
+
+```yaml
+"1h"
+```
+
+#### `deploy_timeout`
+
+**Examples:**
+
+
+```yaml
+"30m"
+```
+
+```yaml
+"1h"
+```
 

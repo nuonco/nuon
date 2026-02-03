@@ -23,6 +23,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// Duration string for build operations (e.g., "30m", "1h")
+	BuildTimeout string `json:"build_timeout,omitempty"`
+
 	// chart name
 	// Required: true
 	// Max Length: 62
@@ -37,6 +40,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 
 	// dependencies
 	Dependencies []string `json:"dependencies"`
+
+	// Duration string for deploy operations (e.g., "30m", "1h")
+	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`

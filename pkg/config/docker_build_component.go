@@ -13,6 +13,9 @@ type DockerBuildComponentConfig struct {
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
 
+	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+
 	// NOTE: the following parameters are not supported in the provider
 	// Target	     string		   `mapstructure:"target" toml:"target"`
 	// BuildArgs []string		`mapstructure:"build_args" toml:"build_args"`
@@ -32,7 +35,15 @@ func (d DockerBuildComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) 
 		Field("public_repo").Short("public repository containing Dockerfile").OneOfRequired("repository_source").
 		Long("Clone a public GitHub repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory").
 		Field("connected_repo").Short("connected repository containing Dockerfile").OneOfRequired("repository_source").
-		Long("Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory")
+		Long("Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory").
+		Field("build_timeout").Short("build operation timeout").
+		Long("Duration string for Docker build operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h").
+		Field("deploy_timeout").Short("deploy operation timeout").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h")
 }
 
 func (t *DockerBuildComponentConfig) Validate() error {

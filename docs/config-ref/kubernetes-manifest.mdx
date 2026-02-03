@@ -21,6 +21,8 @@ title: 'Kubernetes Manifest'
 | `connected_repo` | `ConnectedRepoConfig` | No | - | - | - |
 | `namespace` | `string` | ✅ Yes | Kubernetes namespace Kubernetes namespace where the manifest will be deployed. Supports template variables. | - | `"default"` |
 | `drift_schedule` | `string` | No | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. | - | `"0 2 * * *"` |
+| `build_timeout` | `string` | No | build operation timeout Duration string for build operations (e.g., "30m", "1h"). | - | `"30m"` |
+| `deploy_timeout` | `string` | No | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | - | `"30m"` |
 
 ### Property Details
 
@@ -107,5 +109,31 @@ title: 'Kubernetes Manifest'
 
 ```yaml
 "{{.nuon.install.id}}"
+```
+
+#### `build_timeout`
+
+**Examples:**
+
+
+```yaml
+"30m"
+```
+
+```yaml
+"1h"
+```
+
+#### `deploy_timeout`
+
+**Examples:**
+
+
+```yaml
+"30m"
+```
+
+```yaml
+"1h"
 ```
 
