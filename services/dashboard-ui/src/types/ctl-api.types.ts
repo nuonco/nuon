@@ -29,6 +29,7 @@ export type TAppPolicyConfig = {
   app_policies_config?: string
   type?: TAppPolicyType
   engine?: TAppPolicyEngine
+  name?: string
   contents?: string
   components?: string[]
 }

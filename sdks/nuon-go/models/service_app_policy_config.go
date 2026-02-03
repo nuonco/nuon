@@ -30,6 +30,9 @@ type ServiceAppPolicyConfig struct {
 	// engine
 	Engine ConfigAppPolicyEngine `json:"engine,omitempty"`
 
+	// name
+	Name string `json:"name,omitempty"`
+
 	// type
 	// Required: true
 	Type *ConfigAppPolicyType `json:"type"`

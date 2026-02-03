@@ -13,6 +13,7 @@ title: 'Policy'
 |----------|----------|----------|----------|----------|----------|
 | `type` | `string` | No | policy type Type of policy that determines where and how it is enforced | - | `"kubernetes_cluster"` |
 | `engine` | `string` | No | policy engine The policy engine used to evaluate the policy. Must be compatible with the policy type. | - | `"kyverno"` |
+| `name` | `string` | No | policy name Human-readable name for the policy. If not specified, will be derived from the source filename when parsing from a policies/ directory. | - | - |
 | `contents` | `string` | No | policy document Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (g... | - | - |
 | `components` | `array` | No | target components List of component names this policy applies to. Use ["*"] to apply to all components of the specified type. If empty, doesn't apply to any component. Ignored when type is 'sandbox'. | - | `"*"` |
 

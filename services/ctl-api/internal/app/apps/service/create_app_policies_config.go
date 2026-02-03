@@ -31,6 +31,7 @@ func (c CreateAppPoliciesConfigRequest) getPolicies(appID, appConfigID string) [
 			AppConfigID: appConfigID,
 			Type:        policy.Type,
 			Engine:      policy.Engine,
+			Name:        policy.Name,
 			Contents:    policy.Contents,
 			Components:  policy.Components,
 		})
@@ -41,6 +42,7 @@ func (c CreateAppPoliciesConfigRequest) getPolicies(appID, appConfigID string) [
 type AppPolicyConfig struct {
 	Type       config.AppPolicyType   `json:"type" validate:"required"`
 	Engine     config.AppPolicyEngine `json:"engine,omitempty"`
+	Name       string                 `json:"name,omitempty"`
 	Contents   string                 `json:"contents" validate:"required" swaggertype:"string"`
 	Components []string               `json:"components,omitempty"`
 }

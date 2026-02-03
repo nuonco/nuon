@@ -15,6 +15,7 @@ func (s sync) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyC
 	return &models.ServiceAppPolicyConfig{
 		Type:       &pt,
 		Engine:     pe,
+		Name:       policy.Name,
 		Contents:   generics.ToPtr(policy.Contents),
 		Components: policy.Components,
 	}
