@@ -180,7 +180,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			c.JSON(http.StatusBadRequest, ErrResponse{
+			c.JSON(http.StatusConflict, ErrResponse{
 				Error:       err.Error(),
 				UserError:   true,
 				Description: "duplicate key",
