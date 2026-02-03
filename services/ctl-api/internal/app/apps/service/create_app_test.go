@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -26,7 +27,6 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
@@ -40,6 +40,7 @@ type CreateAppTestService struct {
 	CHDB            *gorm.DB `name:"ch"`
 	V               *validator.Validate
 	L               *zap.Logger
+	MW              metrics.Writer
 	VcsHelpers      *vcshelpers.Helpers
 	AppsHelpers     *appshelpers.Helpers
 	InstallsHelpers *installshelpers.Helpers
@@ -72,7 +73,7 @@ func (s *CreateAppTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		testfx.CtlApiFXOptionsWithValidator(),
+		testfx.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -90,18 +91,13 @@ func (s *CreateAppTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router and register routes
-	s.router = gin.New()
-	errMiddleware := stderr.New(s.service.L, nil)
-	s.router.Use(errMiddleware.Handler())
-	s.router.Use(func(c *gin.Context) {
-		if s.testOrg != nil {
-			cctx.SetOrgGinContext(c, s.testOrg)
-		}
-		if s.testAcc != nil {
-			cctx.SetAccountGinContext(c, s.testAcc)
-		}
-		c.Next()
+	// Create test router with standard middlewares using helper
+	s.router = testfx.NewTestRouter(testfx.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		MW:      s.service.MW,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
 	})
 
 	err := s.service.AppsService.RegisterPublicRoutes(s.router)
