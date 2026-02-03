@@ -302,7 +302,6 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 
 func (w *Workflows) getRoleForAction(
 	ctx workflow.Context,
-	l *zap.Logger,
 	appConfig *app.AppConfig,
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,

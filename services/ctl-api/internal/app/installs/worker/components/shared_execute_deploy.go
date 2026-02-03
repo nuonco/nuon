@@ -209,7 +209,6 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 
 func (w *Workflows) getRoleForDeploy(
 	ctx workflow.Context,
-	l *zap.Logger,
 	appConfig *app.AppConfig,
 	installDeploy *app.InstallDeploy,
 	build *app.ComponentBuild,
