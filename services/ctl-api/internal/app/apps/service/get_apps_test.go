@@ -118,10 +118,15 @@ func (s *AppsTestSuite) SetupTest() {
 }
 
 func (s *AppsTestSuite) TearDownSuite() {
+	s.cleanupTestData()
 	s.app.RequireStop()
 }
 
 func (s *AppsTestSuite) setupTestData() {
+	// Clean up any existing test data first
+	s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
+	s.service.DB.Unscoped().Where("name LIKE ?", "test-org-%").Delete(&app.Org{})
+
 	// Create test account
 	testAcc := &app.Account{
 		ID:          domains.NewAccountID(),
@@ -138,7 +143,7 @@ func (s *AppsTestSuite) setupTestData() {
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
 		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		Name: "test-org-" + domains.NewOrgID(),
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -146,6 +151,15 @@ func (s *AppsTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
+}
+
+func (s *AppsTestSuite) cleanupTestData() {
+	if s.testOrg != nil {
+		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", s.testOrg.ID)
+	}
+	if s.testAcc != nil {
+		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", s.testAcc.ID)
+	}
 }
 
 func (s *AppsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
