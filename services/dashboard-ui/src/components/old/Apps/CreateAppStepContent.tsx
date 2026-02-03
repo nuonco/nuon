@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Text } from '@/components/old/Typography'
 import { ExampleAppsGrid, type ExampleApp } from './ExampleAppsGrid'
 import { createAppFromTemplate } from '@/actions/apps/create-app-from-template'
+import { useAccount } from '@/hooks/use-account'
 import { useServerAction } from '@/hooks/use-server-action'
 
 interface CreateAppStepContentProps {
@@ -20,6 +21,9 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
 }) => {
   const pathname = usePathname()
   const [creatingApp, setCreatingApp] = useState<string | null>(null)
+  const [verifying, setVerifying] = useState(false)
+  const [confirmedError, setConfirmedError] = useState(false)
+  const { refreshAccount } = useAccount()
 
   const { data, error, isLoading, execute } = useServerAction({
     action: createAppFromTemplate,
@@ -29,17 +33,50 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
     if (!orgId) return
 
     setCreatingApp(app.path)
-    await execute({
+    setVerifying(false)
+    setConfirmedError(false)
+
+    const result = await execute({
       body: { template: app.path },
       orgId,
       path: pathname,
     })
-    setCreatingApp(null)
+
+    // If we got data back, success is immediate
+    if (result?.data) {
+      setCreatingApp(null)
+      return
+    }
+
+    // If there was an error (e.g., timeout), verify with account polling
+    if (result?.error) {
+      setVerifying(true)
+      setCreatingApp(null)
+
+      // Poll account multiple times to confirm if app was actually created
+      for (let i = 0; i < 5; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        await refreshAccount()
+        // If stepComplete becomes true during polling, we're done (success will show via props)
+        // We can't check stepComplete here directly, but the component will re-render
+      }
+
+      // After polling, if we're still in verifying state (not success), show error
+      setVerifying(false)
+      setConfirmedError(true)
+    }
   }
+
+  // Success determined by props (stepComplete) or server action data
+  const isSuccess = stepComplete || !!data
+
+  // Only show error if we've confirmed failure after verification
+  // AND we're not in a success state (props take precedence)
+  const showError = confirmedError && !isSuccess && !verifying
 
   return (
     <div className="space-y-6">
-      {(stepComplete || data) && (
+      {isSuccess && (
         <div className="space-y-3 pb-4 border-b">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
@@ -70,7 +107,24 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
         </div>
       )}
 
-      {error && !data && (
+      {verifying && !isSuccess && (
+        <div className="space-y-3 pb-4 border-b">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+            <Text
+              variant="semi-14"
+              className="text-yellow-800 dark:text-yellow-200"
+            >
+              Verifying app creation...
+            </Text>
+          </div>
+          <Text className="text-gray-600 dark:text-gray-400">
+            Please wait while we confirm your app was created.
+          </Text>
+        </div>
+      )}
+
+      {showError && (
         <div className="space-y-3 pb-4 border-b">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-red-500 rounded-full" />
@@ -87,7 +141,7 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
         </div>
       )}
 
-      <div className={`space-y-6 ${stepComplete || data ? 'opacity-75' : ''}`}>
+      <div className={`space-y-6 ${isSuccess ? 'opacity-75' : ''}`}>
         <div className="space-y-3">
           <Text variant="semi-14">Choose your example app</Text>
           <Text variant="reg-12" className="text-gray-600 dark:text-gray-400">
@@ -97,7 +151,7 @@ export const CreateAppStepContent: FC<CreateAppStepContentProps> = ({
           <ExampleAppsGrid
             onAppCreate={handleAppCreate}
             creatingApp={creatingApp}
-            disabled={stepComplete || !!data || isLoading || !orgId}
+            disabled={isSuccess || isLoading || verifying || !orgId}
           />
         </div>
       </div>
