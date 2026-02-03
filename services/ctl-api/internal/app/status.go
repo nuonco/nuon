@@ -29,6 +29,7 @@ const (
 	StatusPlanning     Status = "planning"
 	StatusApplying     Status = "applying"
 	StatusQueued       Status = "queued"
+	StatusWarning      Status = "warning"
 )
 
 // type specific statuses
