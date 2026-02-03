@@ -45,10 +45,31 @@ export type TAppPoliciesConfig = {
   policies?: TAppPolicyConfig[]
 }
 
-export type TPolicyReportFormat = components['schemas']['app.PolicyReportFormat']
 export type TPolicyReportOwnerType =
-  | components['schemas']['app.PolicyReportOwnerType']
+  | 'install_deploys'
+  | 'install_sandbox_runs'
   | 'component_builds'
+
+export type TPolicyViolation = {
+  policy_id: string
+  input_index: number
+  message: string
+  severity: string
+}
+
+export type TPolicyResult = {
+  policy_id: string
+  status: string
+  deny_count: number
+  warn_count: number
+  pass_count: number
+  input_count: number
+}
+
+export type TPolicyInputRef = {
+  id: string
+  type: string
+}
 
 export type TPolicyReport = {
   id?: string
@@ -63,9 +84,11 @@ export type TPolicyReport = {
   runner_job_id?: string | null
   owner_id?: string
   owner_type?: TPolicyReportOwnerType
-  format?: TPolicyReportFormat
-  content_version?: string
-  content?: string
+  evaluated_at?: string
+  violations?: TPolicyViolation[]
+  policy_ids?: string[]
+  policies?: TPolicyResult[]
+  inputs?: TPolicyInputRef[]
   deny_count?: number
   warn_count?: number
   pass_count?: number

@@ -115,11 +115,9 @@ const PolicyReportExportDropdown = ({
   ownerType: string
 }) => {
   const handleExport = (format: TPolicyReportExportFormat) => {
-    const listFormat = format === 'pdf' ? 'opa' : format
     const params = new URLSearchParams({
       owner_type: ownerType,
       owner_id: reportId,
-      format: listFormat,
       limit: '1',
       offset: '0',
     })

@@ -63,7 +63,6 @@ const PolicyReportActions = ({ buildId }: { buildId: string }) => {
   const queryParams = useQueryParams({
     owner_type: 'component_builds',
     owner_id: buildId,
-    format: 'opa',
     limit: 1,
     offset: 0,
   })
@@ -94,34 +93,28 @@ const PolicyReportActions = ({ buildId }: { buildId: string }) => {
     exportWindow.document.title = 'Policy Report'
     exportWindow.document.body.innerText = 'Loading policy report...'
 
-    const renderContent = (content: string) => {
-      let parsed = content
-      const normalized = content.trim()
-      const tryParseJson = (value: string) =>
-        JSON.stringify(JSON.parse(value), null, 2)
-
-      try {
-        parsed = tryParseJson(normalized)
-      } catch {
-        try {
-          const decoded = atob(normalized)
-          parsed = tryParseJson(decoded)
-        } catch {
-          parsed = content
-        }
+    const renderViolations = (report: TPolicyReport) => {
+      const data = {
+        evaluated_at: report.evaluated_at,
+        violations: report.violations || [],
+        policies: report.policies || [],
+        inputs: report.inputs || [],
+        deny_count: report.deny_count,
+        warn_count: report.warn_count,
+        pass_count: report.pass_count,
       }
 
       exportWindow.document.body.innerHTML = ''
       const pre = exportWindow.document.createElement('pre')
-      pre.textContent = parsed
+      pre.textContent = JSON.stringify(data, null, 2)
       pre.style.whiteSpace = 'pre-wrap'
       pre.style.wordBreak = 'break-word'
       pre.style.margin = '16px'
       exportWindow.document.body.appendChild(pre)
     }
 
-    if (policyReport.content) {
-      renderContent(policyReport.content)
+    if (policyReport.violations) {
+      renderViolations(policyReport)
       return
     }
 
@@ -138,14 +131,14 @@ const PolicyReportActions = ({ buildId }: { buildId: string }) => {
       const payload = (await listResponse.json()) as {
         data?: TPolicyReport[]
       }
-      const reportContent = payload?.data?.[0]?.content
-      if (!reportContent) {
+      const report = payload?.data?.[0]
+      if (!report?.violations) {
         exportWindow.document.body.innerText =
           'Policy report content is unavailable.'
         return
       }
 
-      renderContent(reportContent)
+      renderViolations(report)
     } catch {
       exportWindow.document.body.innerText = 'Failed to load policy report.'
     }
