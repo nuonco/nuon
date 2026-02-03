@@ -69,7 +69,7 @@ func (s *AppsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		testfx.CommonTestOptionsWithValidator(),
+		testfx.CtlApiFXOptionsWithValidator(),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),

@@ -35,18 +35,18 @@ import (
 	validatorpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-// CommonTestOptions returns the common FX options used across all ctl-api integration tests.
+// CtlApiFXOptions returns the common FX options used across all ctl-api integration tests.
 // This includes configuration, logging, databases, external services, helpers, and clients.
 //
 // Usage:
 //
 //	app := fxtest.New(
 //	    t,
-//	    testfx.CommonTestOptions()...,
+//	    testfx.CtlApiFXOptions()...,
 //	    fx.Provide(MyService), // add your service under test
 //	    fx.Populate(&myTestService),
 //	)
-func CommonTestOptions() []fx.Option {
+func CtlApiFXOptions() []fx.Option {
 	return []fx.Option{
 		// Configuration
 		fx.Provide(internal.NewConfig),
@@ -100,11 +100,11 @@ func CommonTestOptions() []fx.Option {
 	}
 }
 
-// CommonTestOptionsWithValidator returns common test options but uses the standard validator
+// CtlApiFXOptionsWithValidator returns common test options but uses the standard validator
 // instead of the custom validator. Use this when you don't need custom entity_name validation.
 //
-// Deprecated: Most tests should use CommonTestOptions() with the custom validator.
-func CommonTestOptionsWithValidator() []fx.Option {
+// Deprecated: Most tests should use CtlApiFXOptions() with the custom validator.
+func CtlApiFXOptionsWithValidator() []fx.Option {
 	return []fx.Option{
 		// Configuration
 		fx.Provide(internal.NewConfig),
