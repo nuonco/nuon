@@ -1,0 +1,90 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"fmt"
+)
+
+templ InstallDetail(install *app.Install) {
+	@Layout("Install: " + install.Name) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			<!-- Breadcrumb Navigation -->
+			<div class="mb-6">
+				<a href={ templ.URL("/orgs/" + install.OrgID) } class="text-sm text-cyan hover:underline">
+					← Back to { install.Org.Name }
+				</a>
+			</div>
+			<!-- Header Card -->
+			<div class="bg-card border border-border rounded-lg p-6 mb-6">
+				<div class="flex items-start justify-between">
+					<!-- Left side: Name and ID -->
+					<div class="flex-1">
+						<h1 class="text-2xl font-bold mb-2">{ install.Name }</h1>
+						<div class="flex items-center gap-2">
+							<span class="text-xs text-muted-foreground uppercase">ID:</span>
+							<span id={ "install-id-" + install.ID } class="font-mono text-xs text-foreground">
+								{ install.ID }
+							</span>
+							@copybutton.CopyButton(copybutton.Props{
+								TargetID: "install-id-" + install.ID,
+							})
+						</div>
+					</div>
+					<!-- Right side: Status badges -->
+					<div class="flex gap-2">
+						<div id={ "install-runner-status-" + install.ID }>
+							@InstallRunnerStatusBadge(install)
+						</div>
+						<div id={ "install-sandbox-status-" + install.ID }>
+							@InstallSandboxStatusBadge(install)
+						</div>
+						<div id={ "install-component-status-" + install.ID }>
+							@InstallComponentStatusBadge(install)
+						</div>
+						<div id={ "install-drift-status-" + install.ID }>
+							@InstallDriftStatusBadge(install)
+						</div>
+					</div>
+				</div>
+				<!-- Install Metadata Grid -->
+				<div class="grid grid-cols-2 lg:grid-cols-3 gap-6 mt-6 pt-6 border-t border-border">
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">App</div>
+						<div class="text-sm font-medium">{ install.App.Name }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">App Config Version</div>
+						<div class="text-sm font-medium font-mono">
+							if install.AppConfig.Version > 0 {
+								v{ fmt.Sprintf("%d", install.AppConfig.Version) }
+							} else {
+								<span class="text-muted-foreground">N/A</span>
+							}
+						</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">Cloud Platform</div>
+						<div class="text-sm font-medium font-mono">{ string(install.CloudPlatform) }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">Runner Type</div>
+						<div class="text-sm font-medium font-mono">{ string(install.RunnerType) }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">Created</div>
+						<div class="text-sm font-mono">{ install.CreatedAt.Format("2006-01-02 15:04") }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase mb-1">Updated</div>
+						<div class="text-sm font-mono">{ install.UpdatedAt.Format("2006-01-02 15:04") }</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		// Include the copybutton and popover JavaScript
+		@copybutton.Script()
+		@popover.Script()
+	}
+}

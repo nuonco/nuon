@@ -88,6 +88,10 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
+	return nil
+}
+
 func New(params Params) *service {
 	return &service{
 		cfg:         params.Cfg,

@@ -1,0 +1,37 @@
+package views
+
+templ Layout(title string) {
+	<!DOCTYPE html>
+	<html lang="en" class="dark">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
+			<!-- Google Fonts: Inter + JetBrains Mono -->
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+			<link rel="stylesheet" href="/assets/css/output.css"/>
+			<!-- htmx for dynamic updates -->
+			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+		</head>
+		<body class="min-h-screen bg-background text-foreground">
+			<!-- Simple navigation -->
+			<nav class="border-b border-border bg-card">
+				<div class="max-w-7xl mx-auto px-6 py-4">
+					<div class="flex items-center space-x-8">
+						<a href="/" class="text-lg font-semibold text-cyan">Nuon Admin</a>
+						<a href="/orgs" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Organizations</a>
+						<a href="/livez" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Health</a>
+					</div>
+				</div>
+			</nav>
+
+			<!-- Page content -->
+			<main class="py-8">
+				{ children... }
+			</main>
+		</body>
+	</html>
+}

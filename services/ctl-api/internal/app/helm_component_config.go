@@ -85,6 +85,7 @@ type HelmConfig struct {
 	Namespace      string             `json:"namespace"`
 	StorageDriver  string             `json:"storage_driver"`
 	HelmRepoConfig *HelmRepoConfig    `json:"helm_repo_config,omitempty"`
+
 	// Newer fields that we don't need to store as columns in the database
 	TakeOwnership bool `json:"take_ownership,omitempty"`
 }

@@ -27,6 +27,9 @@ type TerraformModuleComponentConfig struct {
 
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
+	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+
 	// deprecated
 	Variables []TerraformVariable   `mapstructure:"var,omitempty" toml:"var,omitempty"`
 	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
@@ -50,7 +53,15 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 		Field("connected_repo").Short("connected repository configuration").
 		Long("Configuration for a private repository connected to the Nuon platform").
 		Field("drift_schedule").Short("drift detection schedule").
-		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating")
+		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating").
+		Field("build_timeout").Short("build operation timeout").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h").
+		Field("deploy_timeout").Short("deploy operation timeout").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h")
 }
 
 func (t *TerraformModuleComponentConfig) Parse() error {

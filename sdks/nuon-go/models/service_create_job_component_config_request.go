@@ -25,11 +25,17 @@ type ServiceCreateJobComponentConfigRequest struct {
 	// args
 	Args []string `json:"args"`
 
+	// Duration string for build operations (e.g., "30m", "1h")
+	BuildTimeout string `json:"build_timeout,omitempty"`
+
 	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
 	// cmd
 	Cmd []string `json:"cmd"`
+
+	// Duration string for deploy operations (e.g., "30m", "1h")
+	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`

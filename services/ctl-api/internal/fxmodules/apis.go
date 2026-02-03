@@ -47,6 +47,7 @@ var AllAPIsModule = fx.Module("all-apis",
 	fx.Provide(api.AsAPI(api.NewRunnerAPI)),
 	fx.Provide(api.AsAPI(api.NewInternalAPI)),
 	fx.Provide(api.AsAPI(api.NewAuthAPI)),
+	fx.Provide(api.AsAPI(api.NewAdminDashboardAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )

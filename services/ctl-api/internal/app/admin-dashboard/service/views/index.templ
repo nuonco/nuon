@@ -1,0 +1,47 @@
+package views
+
+import "github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
+
+templ Index(title, message string) {
+	@Layout(title) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			<div class="max-w-2xl mx-auto">
+				<div class="bg-card text-card-foreground rounded-lg border border-border p-8">
+					<div class="mb-6 text-center">
+						<h1 class="text-4xl font-bold mb-2">{ title }</h1>
+						<p class="text-lg text-muted-foreground">{ message }</p>
+					</div>
+					<div class="mt-8 space-y-4">
+						<div class="bg-muted rounded-md p-4 text-sm flex justify-between items-center">
+							<span class="font-semibold">Status:</span>
+							<span class="text-green-600 dark:text-green-400 ml-2">● Running</span>
+						</div>
+						<div class="bg-muted rounded-md p-4 text-sm flex justify-between items-center">
+							<span class="font-semibold">Port:</span>
+							<span class="ml-2">8085</span>
+						</div>
+						<div class="bg-muted rounded-md p-4 text-sm flex justify-between items-center">
+							<span class="font-semibold">Environment:</span>
+							<span class="ml-2">Development</span>
+						</div>
+					</div>
+					<div class="mt-8 flex gap-4 justify-center">
+						@button.Button(button.Props{
+							Href:    "/livez",
+							Variant: button.VariantSecondary,
+						}) {
+							Health Check
+						}
+						@button.Button(button.Props{
+							Href:    "https://github.com/nuonco/nuon",
+							Target:  "_blank",
+							Variant: button.VariantDefault,
+						}) {
+							Documentation
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}

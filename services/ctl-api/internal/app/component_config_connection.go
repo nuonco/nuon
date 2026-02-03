@@ -54,6 +54,8 @@ type ComponentConfigConnection struct {
 	References                        pq.StringArray                     `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 	Checksum                          string                             `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
 	DriftSchedule                     string                             `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
+	BuildTimeout                      string                             `json:"build_timeout,omitempty" gorm:"default:null" temporaljson:"build_timeout,omitzero,omitempty"`   // Duration string for build operations (e.g., "30m", "1h"). Max 1h.
+	DeployTimeout                     string                             `json:"deploy_timeout,omitempty" gorm:"default:null" temporaljson:"deploy_timeout,omitzero,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 
 	// loaded via after query
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
@@ -172,5 +174,27 @@ func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+func (c *ComponentConfigConnection) GetBuildTimeout() *time.Duration {
+	if c.BuildTimeout != "" {
+		d, err := time.ParseDuration(c.BuildTimeout)
+		if err != nil {
+			return nil
+		}
+		return &d
+	}
+	return nil
+}
+
+func (c *ComponentConfigConnection) GetDeployTimeout() *time.Duration {
+	if c.DeployTimeout != "" {
+		d, err := time.ParseDuration(c.DeployTimeout)
+		if err != nil {
+			return nil
+		}
+		return &d
+	}
 	return nil
 }

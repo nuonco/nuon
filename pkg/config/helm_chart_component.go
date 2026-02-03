@@ -48,6 +48,9 @@ type HelmChartComponentConfig struct {
 
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
+	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+
 	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty" toml:"value,omitempty"`
 }
@@ -61,7 +64,15 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("values").Short("map of helm values").
 		Field("public_repo").Short("public repo with the helm chart").OneOfRequired("public_repo").
 		Field("connected_repo").Short("connected repo with the helm chart").OneOfRequired("connected_repo").
-		Field("helm_repo").Short("helm repo config").OneOfRequired("helm_repo")
+		Field("helm_repo").Short("helm repo config").OneOfRequired("helm_repo").
+		Field("build_timeout").Short("build operation timeout").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h").
+		Field("deploy_timeout").Short("deploy operation timeout").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Example("30m").
+		Example("1h")
 }
 
 type HelmRepoConfig struct {

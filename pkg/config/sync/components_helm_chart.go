@@ -24,6 +24,8 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		Namespace:                obj.Namespace,
 		StorageDriver:            obj.StorageDriver,
 		TakeOwnership:            obj.TakeOwnership,
+		BuildTimeout:             obj.BuildTimeout,
+		DeployTimeout:            obj.DeployTimeout,
 	}
 
 	if obj.DriftSchedule != nil {

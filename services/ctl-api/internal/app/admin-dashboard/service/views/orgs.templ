@@ -1,0 +1,47 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+)
+
+templ Orgs(orgs []*app.Org) {
+	@Layout("Organizations") {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Organizations
+					}
+					@card.Description() {
+						All organizations in the system
+					}
+				}
+				@card.Content() {
+					@OrgsTable(orgs)
+				}
+			}
+		</div>
+		// Include the copybutton and popover JavaScript
+		@copybutton.Script()
+		@popover.Script()
+	}
+}
+
+// Helper function for status badge styling
+func orgStatusClass(status app.OrgStatus) string {
+	switch status {
+	case app.OrgStatusActive:
+		return "bg-success-bg text-success border border-success-border"
+	case app.OrgStatusError:
+		return "bg-error-bg text-error border border-error-border"
+	case app.OrgStatusProvisioning:
+		return "bg-info-bg text-info border border-info-border"
+	case app.OrgStatusDeleting, app.OrgStatusDeprovisioning:
+		return "bg-warning-bg text-warning border border-warning-border"
+	default:
+		return "bg-muted text-muted-foreground border border-border"
+	}
+}

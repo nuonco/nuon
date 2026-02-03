@@ -19,6 +19,7 @@ func init() {
 	config.RegisterDefault("internal_http_port", "8082")
 	config.RegisterDefault("runner_http_port", "8083")
 	config.RegisterDefault("auth_http_port", "8084")
+	config.RegisterDefault("admin_dashboard_http_port", "8085")
 
 	// defaults for psql database
 	config.RegisterDefault("db_region", "us-west-2")
@@ -94,10 +95,11 @@ type Config struct {
 
 	RootDomain string `config:"root_domain"` // for all services
 
-	HTTPPort         string `config:"http_port" validate:"required"`
-	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
-	RunnerHTTPPort   string `config:"runner_http_port" validate:"required"`
-	AuthHTTPPort     string `config:"auth_http_port" validate:"required"`
+	HTTPPort               string `config:"http_port" validate:"required"`
+	InternalHTTPPort       string `config:"internal_http_port" validate:"required"`
+	RunnerHTTPPort         string `config:"runner_http_port" validate:"required"`
+	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
+	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
 
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
@@ -139,10 +141,11 @@ type Config struct {
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
 
 	// middleware configuration
-	Middlewares         []string `config:"middlewares"`
-	InternalMiddlewares []string `config:"internal_middlewares"`
-	RunnerMiddlewares   []string `config:"runner_middlewares"`
-	AuthMiddlewares     []string `config:"auth_middlewares"`
+	Middlewares               []string `config:"middlewares"`
+	InternalMiddlewares       []string `config:"internal_middlewares"`
+	RunnerMiddlewares         []string `config:"runner_middlewares"`
+	AuthMiddlewares           []string `config:"auth_middlewares"`
+	AdminDashboardMiddlewares []string `config:"admin_dashboard_middlewares"`
 
 	// Nuon Auth Config
 	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`

@@ -1,0 +1,335 @@
+@import "tailwindcss";
+
+/* Tell Tailwind where to scan for classes */
+@source "../../**/*.templ";
+@source "../../**/*.go";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --breakpoint-3xl: 1600px;
+  --breakpoint-4xl: 2000px;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Existing templui tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Custom Nuon tokens */
+  --color-cyan: var(--cyan);
+  --color-cyan-hover: var(--cyan-hover);
+  --color-purple: var(--purple);
+  --color-pink: var(--pink);
+  --color-elevated: var(--elevated);
+  --color-hover: var(--hover);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-disabled: var(--text-disabled);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-hover: var(--border-hover);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+  --color-error-border: var(--error-border);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-info-border: var(--info-border);
+}
+
+@theme {
+  /* Font families */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+
+  /* Font sizes - Nuon scale (increased for readability) */
+  --text-xs: 0.75rem;     /* 12px - badges, labels */
+  --text-sm: 0.8125rem;   /* 13px - metadata */
+  --text-base: 0.875rem;  /* 14px - body, tables */
+  --text-md: 0.9375rem;   /* 15px - primary */
+  --text-lg: 1rem;        /* 16px - headers */
+  --text-xl: 1.125rem;    /* 18px - titles */
+  --text-2xl: 1.5rem;     /* 24px - page titles */
+
+  /* Spacing scale - Nuon 4px based */
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-16: 4rem;     /* 64px */
+}
+
+:root {
+  --radius: 0.65rem;
+
+  /* Light theme - minimal changes (keep as fallback) */
+  --background: oklch(0.97 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --elevated: oklch(0.95 0 0);
+  --hover: oklch(0.93 0 0);
+
+  /* Brand colors (same in light/dark) */
+  --cyan: oklch(0.708 0.192 231.289);
+  --cyan-hover: oklch(0.770 0.180 228.456);
+  --purple: oklch(0.620 0.246 291.484);
+  --pink: oklch(0.600 0.262 327.356);
+  --primary: var(--cyan);
+  --primary-foreground: oklch(0.048 0.008 250.567);
+
+  /* Text */
+  --text-secondary: oklch(0.454 0.013 265.889);
+  --text-disabled: oklch(0.634 0.012 267.451);
+  --muted: oklch(0.93 0 0);
+  --muted-foreground: oklch(0.454 0.013 265.889);
+
+  /* Borders */
+  --border: oklch(0.922 0 0);
+  --border-subtle: oklch(0.89 0 0);
+  --border-hover: oklch(0.85 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: var(--cyan);
+
+  /* Secondary button */
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.145 0 0);
+
+  /* Status colors */
+  --success: oklch(0.616 0.157 143.899);
+  --success-bg: oklch(0.616 0.157 143.899 / 0.1);
+  --success-border: oklch(0.616 0.157 143.899 / 0.3);
+  --warning: oklch(0.760 0.168 89.429);
+  --warning-bg: oklch(0.760 0.168 89.429 / 0.1);
+  --warning-border: oklch(0.760 0.168 89.429 / 0.3);
+  --error: oklch(0.580 0.204 20.089);
+  --error-bg: oklch(0.580 0.204 20.089 / 0.1);
+  --error-border: oklch(0.580 0.204 20.089 / 0.3);
+  --info: oklch(0.630 0.196 259.108);
+  --info-bg: oklch(0.630 0.196 259.108 / 0.1);
+  --info-border: oklch(0.630 0.196 259.108 / 0.3);
+
+  /* Destructive (error alias for templui) */
+  --destructive: var(--error);
+  --accent: oklch(0.93 0 0);
+  --accent-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+}
+
+.dark {
+  /* Backgrounds - Nuon dark theme */
+  --background: oklch(0.084 0.010 242.113);      /* #0f1416 - bg-elevated */
+  --card: oklch(0.098 0.011 239.825);            /* #121a1d - bg-card */
+  --elevated: oklch(0.084 0.010 242.113);        /* #0f1416 */
+  --hover: oklch(0.125 0.012 239.356);           /* #172023 - bg-hover */
+  --popover: oklch(0.098 0.011 239.825);
+
+  /* Text - Nuon dark theme */
+  --foreground: oklch(0.927 0.006 283.516);      /* #ededef - text-primary */
+  --card-foreground: oklch(0.927 0.006 283.516);
+  --popover-foreground: oklch(0.927 0.006 283.516);
+  --text-secondary: oklch(0.634 0.012 267.451);  /* #a0a0a9 */
+  --text-disabled: oklch(0.298 0.012 265.447);   /* #48484f */
+  --muted: oklch(0.125 0.012 239.356);           /* Matches hover */
+  --muted-foreground: oklch(0.454 0.013 265.889); /* #6e6e77 - text-muted */
+
+  /* Brand - Cyan primary (same as light) */
+  --cyan: oklch(0.708 0.192 231.289);            /* #4cc9f0 */
+  --cyan-hover: oklch(0.770 0.180 228.456);      /* #6dd4f4 */
+  --purple: oklch(0.620 0.246 291.484);          /* #8b5cf6 */
+  --pink: oklch(0.600 0.262 327.356);            /* #f72585 */
+  --primary: var(--cyan);
+  --primary-foreground: oklch(0.048 0.008 250.567); /* Very dark for contrast */
+
+  /* Secondary - Transparent with border */
+  --secondary: oklch(0.098 0.011 239.825);       /* Matches card */
+  --secondary-foreground: oklch(0.927 0.006 283.516);
+
+  /* Borders - Nuon dark theme */
+  --border: oklch(0.189 0.015 238.872);          /* #253033 - border-default */
+  --border-subtle: oklch(0.145 0.013 239.146);   /* #1a2528 */
+  --border-hover: oklch(0.233 0.016 238.645);    /* #2d3b3f */
+  --input: oklch(0.189 0.015 238.872);
+  --ring: var(--cyan);
+
+  /* Status colors (same as light) */
+  --success: oklch(0.616 0.157 143.899);
+  --success-bg: oklch(0.616 0.157 143.899 / 0.1);
+  --success-border: oklch(0.616 0.157 143.899 / 0.3);
+  --warning: oklch(0.760 0.168 89.429);
+  --warning-bg: oklch(0.760 0.168 89.429 / 0.1);
+  --warning-border: oklch(0.760 0.168 89.429 / 0.3);
+  --error: oklch(0.580 0.204 20.089);
+  --error-bg: oklch(0.580 0.204 20.089 / 0.1);
+  --error-border: oklch(0.580 0.204 20.089 / 0.3);
+  --info: oklch(0.630 0.196 259.108);
+  --info-bg: oklch(0.630 0.196 259.108 / 0.1);
+  --info-border: oklch(0.630 0.196 259.108 / 0.3);
+
+  /* Destructive (error alias) */
+  --destructive: var(--error);
+  --accent: oklch(0.125 0.012 239.356);
+  --accent-foreground: oklch(0.927 0.006 283.516);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-muted-foreground) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-muted-foreground);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-foreground);
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  /* Button customizations */
+  .btn-primary {
+    background-color: var(--color-cyan);
+    color: #000;
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-cyan-hover);
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border border-border text-foreground;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-secondary:hover {
+    border-color: color-mix(in oklch, var(--color-cyan) 50%, transparent);
+    background-color: color-mix(in oklch, var(--color-cyan) 5%, transparent);
+  }
+
+  /* Card customizations */
+  .card {
+    @apply bg-card text-foreground;
+    border: 1px solid var(--color-border-subtle);
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card:hover {
+    background-color: var(--color-hover);
+    border-color: var(--color-border-hover);
+  }
+
+  .card-active {
+    border-color: var(--color-cyan);
+  }
+
+  /* Input customizations */
+  .input {
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    color: var(--color-foreground);
+  }
+
+  .input:focus {
+    border-color: var(--color-cyan);
+    ring: 1px;
+    ring-color: color-mix(in oklch, var(--color-cyan) 20%, transparent);
+  }
+
+  .input::placeholder {
+    color: var(--color-text-disabled);
+  }
+
+  /* Table customizations */
+  .table-header {
+    background-color: var(--color-elevated);
+    color: var(--color-muted-foreground);
+    @apply font-mono text-xs uppercase tracking-wider;
+  }
+
+  .table-row {
+    border-bottom: 1px solid var(--color-border-subtle);
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .table-row:hover {
+    background-color: var(--color-hover);
+  }
+
+  /* Badge customizations */
+  .badge {
+    @apply font-mono text-xs uppercase tracking-wide px-2 py-0.5 rounded;
+  }
+
+  .badge-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border: 1px solid var(--color-success-border);
+  }
+
+  .badge-warning {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+    border: 1px solid var(--color-warning-border);
+  }
+
+  .badge-error {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+    border: 1px solid var(--color-error-border);
+  }
+
+  .badge-info {
+    background-color: var(--color-info-bg);
+    color: var(--color-info);
+    border: 1px solid var(--color-info-border);
+  }
+
+  /* Nav label style (mono uppercase) */
+  .nav-label {
+    @apply font-mono uppercase tracking-wider text-sm;
+  }
+
+  /* Technical text (IDs, timestamps) */
+  .text-technical {
+    @apply font-mono;
+    color: var(--color-text-secondary);
+  }
+}

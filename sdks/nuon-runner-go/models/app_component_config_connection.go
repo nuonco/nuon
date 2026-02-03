@@ -26,6 +26,9 @@ type AppComponentConfigConnection struct {
 	// app config version
 	AppConfigVersion int64 `json:"app_config_version,omitempty"`
 
+	// Duration string for build operations (e.g., "30m", "1h"). Max 1h.
+	BuildTimeout string `json:"build_timeout,omitempty"`
+
 	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
@@ -43,6 +46,9 @@ type AppComponentConfigConnection struct {
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
+
+	// Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
+	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
 	// docker build
 	DockerBuild *AppDockerBuildComponentConfig `json:"docker_build,omitempty"`

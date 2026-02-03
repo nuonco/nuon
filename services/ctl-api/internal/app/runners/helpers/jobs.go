@@ -16,7 +16,7 @@ const (
 	DefaultMaxExecutions int = 1
 )
 
-func (s *Helpers) getExecutionTimeout(typ app.RunnerJobType) time.Duration {
+func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duration {
 	timeouts := map[app.RunnerJobType]time.Duration{
 		// build timeouts
 		app.RunnerJobTypeDockerBuild:          time.Minute * 60,

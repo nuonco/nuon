@@ -1,0 +1,42 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
+)
+
+// OrgStatusBadge renders just the status badge for htmx updates
+templ OrgStatusBadge(orgID string, status app.OrgStatus, statusDescription string) {
+	<div
+		id={ "org-status-" + orgID }
+		hx-get={ "/orgs/" + orgID + "/status" }
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		@tooltip.Tooltip() {
+			@tooltip.Trigger(tooltip.TriggerProps{
+				For: "org-status-tooltip-" + orgID,
+			}) {
+				<span class={
+					"px-2 py-1 rounded text-xs font-mono uppercase",
+					orgStatusClass(status),
+				}>
+					{ string(status) }
+				</span>
+			}
+			@tooltip.Content(tooltip.ContentProps{
+				ID:            "org-status-tooltip-" + orgID,
+				Position:      tooltip.PositionTop,
+				ShowArrow:     true,
+				HoverDelay:    200,
+				HoverOutDelay: 100,
+			}) {
+				if statusDescription != "" {
+					{ statusDescription }
+				} else {
+					No status description available
+				}
+			}
+		}
+	</div>
+}

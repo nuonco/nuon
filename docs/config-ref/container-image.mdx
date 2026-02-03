@@ -17,6 +17,8 @@ title: 'Container Image'
 | `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
 | `aws_ecr` | `AWSECRConfig` | No | AWS ECR image configuration Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories | - | - |
 | `public` | `PublicImageConfig` | No | public registry image configuration Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc) | - | - |
+| `build_timeout` | `string` | No | build operation timeout Duration string for build operations (e.g., "30m", "1h"). | - | `"30m"` |
+| `deploy_timeout` | `string` | No | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | - | `"30m"` |
 
 ### Property Details
 
@@ -86,5 +88,31 @@ title: 'Container Image'
 
 ```yaml
 "infrastructure"
+```
+
+#### `build_timeout`
+
+**Examples:**
+
+
+```yaml
+"30m"
+```
+
+```yaml
+"1h"
+```
+
+#### `deploy_timeout`
+
+**Examples:**
+
+
+```yaml
+"30m"
+```
+
+```yaml
+"1h"
 ```
 

@@ -27,6 +27,8 @@ type CreateHelmComponentConfigRequest struct {
 	Namespace     string             `json:"namespace,omitempty"`
 	StorageDriver string             `json:"storage_driver,omitempty"`
 	TakeOwnership bool               `json:"take_ownership,omitempty"`
+	BuildTimeout  string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -56,6 +58,19 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 		}
 		return err
 	}
+
+	// Validate timeouts if provided
+	if c.BuildTimeout != "" {
+		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+			return err
+		}
+	}
+	if c.DeployTimeout != "" {
+		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -187,6 +202,8 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		ComponentDependencyIDs: pq.StringArray(depIDs),
 		References:             pq.StringArray(req.References),
 		Checksum:               req.Checksum,
+		BuildTimeout:           req.BuildTimeout,
+		DeployTimeout:          req.DeployTimeout,
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)

@@ -75,10 +75,11 @@ func (a *API) registerServices() error {
 	// register services
 	for _, svc := range a.services {
 		method, ok := map[string]func(*gin.Engine) error{
-			"runner":   svc.RegisterRunnerRoutes,
-			"public":   svc.RegisterPublicRoutes,
-			"internal": svc.RegisterInternalRoutes,
-			"auth":     svc.RegisterAuthRoutes,
+			"runner":          svc.RegisterRunnerRoutes,
+			"public":          svc.RegisterPublicRoutes,
+			"internal":        svc.RegisterInternalRoutes,
+			"auth":            svc.RegisterAuthRoutes,
+			"admin-dashboard": svc.RegisterAdminDashboardRoutes,
 		}[a.name]
 		if !ok {
 			return fmt.Errorf("%s", "invalid name "+a.name)
