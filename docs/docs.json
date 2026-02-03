@@ -166,6 +166,7 @@
             "group": "How To",
             "pages": [
               "guides/byoc",
+              "guides/bring-your-own-network",
               "guides/install-access-permissions",
               "guides/using-variables",
               "guides/using-readmes",

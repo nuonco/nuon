@@ -1,148 +1,335 @@
 ---
-title: 'Bring your Own Network'
-description: "How to install an app into customer-provided network."
-icon: code
+title: 'Bring Your Own Infrastructure'
+description: "Deploy apps into customer-provided VPCs and Kubernetes clusters."
+icon: network-wired
 ---
 
-Often, customers have their own AWS VPC or Azure VNet already set up, and would prefer to install BYOC applications there. This guide will walk you through supporting this use-case using app inputs and configurable sandboxes.
+Many customers have existing AWS VPCs or Kubernetes clusters they want to use for BYOC deployments. Nuon supports three deployment models to meet different infrastructure requirements:
 
-## Installing in a Customer-Provided Network
+| Model | Network | Cluster | Best For |
+|-------|---------|---------|----------|
+| **Standard** | Nuon creates VPC | Nuon creates EKS | Full isolation, new deployments |
+| **BYO-VPC** | Customer provides VPC | Nuon creates EKS | Network compliance, co-location |
+| **BYO-EKS** | Customer provides VPC | Customer provides EKS | Existing infrastructure, consolidation |
 
-To enable a customer to install your app in their own network, you need 2 things:
+## When to Use Each Model
 
-- [App inputs](/concepts/app-inputs) to enable the customer to provide information about the network during the installation process.
-- A [Sandbox](/concepts/sandboxes) that accepts the inputs as [Terraform variables](https://developer.hashicorp.com/terraform/language/values/variables), and uses them to create [Terraform data sources](https://developer.hashicorp.com/terraform/language/data-sources).
+**Standard (Nuon Managed)**: Best when customers want complete isolation and don't have existing infrastructure requirements. Nuon provisions everything.
 
-The sandbox can then use those data sources to read the information it needs to provision resources in the customer-provided network.
+**BYO-VPC**: Best when customers have:
+- Compliance requirements for specific network configurations
+- Existing VPCs with peering, transit gateways, or VPN connections
+- Applications that need to communicate with resources in an existing VPC
 
-## Sandboxes
+**BYO-EKS**: Best when customers have:
+- Existing Kubernetes clusters with established policies and monitoring
+- Desire to consolidate workloads on shared infrastructure
+- Specific cluster configurations (node types, autoscaling, add-ons)
 
-To give you a head start, we provide managed sandboxes for the most popular platforms. The sandboxes listed here are identical to our [turnkey managed sandboxes](/concepts/sandboxes#nuon-managed-sandboxes), except they do not provision network infrastructure of their own and have extra variables for the required network info.
+---
 
-### AWS EKS BYOVPC
+## BYO-VPC: Install into an Existing VPC
 
-[AWS EKS BYOVPC](https://registry.terraform.io/modules/nuonco/eks-byovpc-sandbox/aws/latest) is a sandbox for provisioning an EKS app in a customer-provided VPC.
-It requires a `vpc_id` input.
+With BYO-VPC, customers provide their existing VPC and subnet information. Nuon creates a new EKS cluster within that VPC.
+
+### Requirements
+
+The customer's VPC must have:
+
+- **Private subnets** with outbound internet access (via NAT Gateway) for pulling container images
+- **Public subnets** for load balancers (if using public-facing services)
+- **A subnet for the Nuon runner** with outbound internet access
 
 <Note>
-In order for components to work with `aws-eks-byovpc` sandbox, subnets must be tagged in a way Nuon can look them up.
-
-The `eks-byovpc` sandbox requires adding a `"kubernetes.io/role/internal-elb:1"` tag to all private subnets, and a `"kubernetes.io/role/elb:1"` tag to all public subnets.
+The Nuon runner operates on a standalone EC2 Auto Scaling Group, not inside the EKS cluster. This ensures consistent, isolated deployment capabilities.
 </Note>
 
-```toml inputs.toml
-[inputs]
-[[inputs.input]]
-name         = "vpc_id"
-description  = "The VPC to install the app in"
-sensitive    = false
-display_name = "VPC ID"
-required     = true
-```
+### Configuration
 
-```toml sandbox.toml
-[sandbox]
-terraform_version = "1.11.3"
-[sandbox.public_repo]
-repo      = "nuonco/sandboxes"
-directory = "aws-eks-byovpc"
-branch    = "main"
-[sandbox.vars]
-vpc_id = "{{.nuon.install.inputs.vpc_id}}"
-```
+#### inputs.toml
 
-### AWS ECS BYOVPC
-
-[AWS ECS BYOVPC](https://registry.terraform.io/modules/nuonco/ecs-byovpc-sandbox/aws/latest) is a sandbox for provisioning an ECS app in a customer-provided VPC.
-It requires a `vpc_id` app input.
-
-This sandbox also needs to be given private and public subnets to use. There are 2 way to do this:
-
-1. Tag the public subnets in the target VPC with `visibility:public`, and the private subnets with `visibility:private`. This is the default behavior
-1. Define app inputs named `private_subnet_ids` and `public_subnet_ids` that each accept a comma-separated string of subnet IDs, and pass them to the sandbox using vars. These will override any tagged subnets that are found.
+Define inputs to collect the customer's VPC and subnet information:
 
 ```toml inputs.toml
-[inputs]
+#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
 
-[[inputs.input]]
-name         = "vpc_id"
-description  = "The VPC to install the app in"
-sensitive    = false
+[[group]]
+name = "network"
+display_name = "Network Configuration"
+description = "Provide your existing VPC details"
+
+[[input]]
+name = "vpc_id"
 display_name = "VPC ID"
-required     = true
+description = "ID of your existing VPC (e.g., vpc-abc123)"
+required = true
+sensitive = false
+group = "network"
 
-# Delete these inputs to use tagged subnets instead.
-[[inputs.input]]
-name         = "private_subnet_ids"
-description  = "Subnets for private resources"
-sensitive    = false
+[[input]]
+name = "private_subnet_ids"
 display_name = "Private Subnet IDs"
-required     = false
-[[inputs.input]]
-name         = "public_subnet_ids"
-description  = "Subnets for public resources"
-sensitive    = false
-display_name = "Public Subnets"
-required     = false
+description = "Comma-separated list of private subnet IDs for the EKS cluster"
+required = true
+sensitive = false
+group = "network"
+
+[[input]]
+name = "public_subnet_ids"
+display_name = "Public Subnet IDs"
+description = "Comma-separated list of public subnet IDs for load balancers"
+required = true
+sensitive = false
+group = "network"
+
+[[input]]
+name = "runner_subnet_id"
+display_name = "Runner Subnet ID"
+description = "Subnet ID for the Nuon runner (must have outbound internet access)"
+required = true
+sensitive = false
+group = "network"
 ```
+
+#### sandbox.toml
+
+Use the standard EKS sandbox - it receives VPC information from the install stack:
 
 ```toml sandbox.toml
-[sandbox]
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+
 terraform_version = "1.11.3"
-[sandbox.public_repo]
-repo      = "nuonco/sandboxes"
-directory = "aws-ecs-byovpc"
-branch    = "main"
-[sandbox.vars]
+
+[public_repo]
+repo = "nuonco/aws-eks-sandbox"
+directory = "."
+branch = "main"
+
+[vars]
+cluster_name = "n-{{.nuon.install.id}}"
+# VPC parameters flow from the CloudFormation stack
 vpc_id = "{{.nuon.install.inputs.vpc_id}}"
-# Delete these vars to use tagged subnets instead.
 private_subnet_ids = "{{.nuon.install.inputs.private_subnet_ids}}"
-public_subnet_ids  = "{{.nuon.install.inputs.public_subnet_ids}}"
+public_subnet_ids = "{{.nuon.install.inputs.public_subnet_ids}}"
 ```
 
-### Azure AKS BYOVPN
+---
 
-The [Azure AKS BYOVPN](https://registry.terraform.io/modules/nuonco/aks-byovpn-sandbox/azure/latest) sandbox creates an AKS cluster in a customer-provided VPN.
-It requires `resource_group_name`, `network_name`, and `subnet_name`.
+## BYO-EKS: Install into an Existing Kubernetes Cluster
+
+With BYO-EKS, customers provide both their VPC and an existing EKS cluster. Nuon deploys components directly into the existing cluster without creating new infrastructure.
+
+### Requirements
+
+The customer's EKS cluster must have:
+
+- Kubernetes version 1.27 or later
+- OIDC provider configured for IAM Roles for Service Accounts (IRSA)
+- Adequate node capacity or cluster autoscaling configured
+- Network connectivity between the runner subnet and the cluster
+
+### Configuration
+
+#### inputs.toml
+
+Collect both cluster and network information:
 
 ```toml inputs.toml
-[inputs]
-[[inputs.input]]
-name         = "resource_group_name"
-description  = "The Resource Group of the VPN to install the app in."
-sensitive    = false
+#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
+
+[[group]]
+name = "cluster"
+display_name = "Cluster Configuration"
+description = "Provide your existing EKS cluster details"
+
+[[input]]
+name = "cluster_name"
+display_name = "EKS Cluster Name"
+description = "Name of your existing EKS cluster"
+required = true
+sensitive = false
+group = "cluster"
+
+[[group]]
+name = "network"
+display_name = "Network Configuration"
+description = "VPC configuration for the runner"
+
+[[input]]
+name = "vpc_id"
+display_name = "VPC ID"
+description = "VPC ID where your cluster runs"
+required = true
+sensitive = false
+group = "network"
+
+[[input]]
+name = "private_subnet_ids"
+display_name = "Private Subnet IDs"
+description = "Comma-separated list of private subnet IDs"
+required = true
+sensitive = false
+group = "network"
+
+[[input]]
+name = "public_subnet_ids"
+display_name = "Public Subnet IDs"
+description = "Comma-separated list of public subnet IDs"
+required = true
+sensitive = false
+group = "network"
+
+[[input]]
+name = "runner_subnet_id"
+display_name = "Runner Subnet ID"
+description = "Subnet for the Nuon runner (must have outbound internet access)"
+required = true
+sensitive = false
+group = "network"
+```
+
+#### sandbox.toml
+
+Use the BYO-EKS sandbox, which reads the existing cluster instead of creating one:
+
+```toml sandbox.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+
+terraform_version = "1.11.3"
+
+[public_repo]
+repo = "nuonco/aws-byo-eks-sandbox"
+directory = "."
+branch = "main"
+
+[vars]
+# Reference existing cluster
+cluster_name = "{{.nuon.install.inputs.cluster_name}}"
+# VPC parameters
+vpc_id = "{{.nuon.install.inputs.vpc_id}}"
+private_subnet_ids = "{{.nuon.install.inputs.private_subnet_ids}}"
+public_subnet_ids = "{{.nuon.install.inputs.public_subnet_ids}}"
+```
+
+<Note>
+The `aws-byo-eks-sandbox` uses Terraform data sources to read the existing cluster configuration. The sandbox outputs remain compatible with standard components, so your Helm charts and Kubernetes manifests work without modification.
+</Note>
+
+---
+
+## Sandbox Reference
+
+| Use Case | Sandbox Repository | Creates Cluster? |
+|----------|-------------------|------------------|
+| Standard EKS | nuonco/aws-eks-sandbox | Yes |
+| Standard EKS with Karpenter | nuonco/aws-eks-karpenter-sandbox | Yes |
+| BYO-EKS | nuonco/aws-byo-eks-sandbox | No (reads existing) |
+| Standard ECS | nuonco/aws-ecs-sandbox | Yes |
+| Azure AKS | nuonco/azure-aks-sandbox | Yes |
+
+---
+
+## Subnet Tagging (Alternative Method)
+
+For BYO-VPC scenarios, you can alternatively use subnet tags instead of explicit subnet ID inputs. This is useful when customers prefer not to enter specific subnet IDs.
+
+### Required Tags
+
+Tag subnets in the target VPC:
+
+| Subnet Type | Tag Key | Tag Value |
+|-------------|---------|-----------|
+| Private subnets | `kubernetes.io/role/internal-elb` | `1` |
+| Public subnets | `kubernetes.io/role/elb` | `1` |
+
+### Using Tags with ECS
+
+The AWS ECS BYOVPC sandbox supports automatic subnet discovery:
+
+- Tag public subnets with `visibility:public`
+- Tag private subnets with `visibility:private`
+- Or provide explicit subnet IDs via inputs (which override tagged subnets).
+
+---
+
+## Troubleshooting
+
+### Runner cannot reach the cluster
+
+Ensure the runner subnet has:
+
+- A route to the cluster's VPC CIDR
+- Security group rules allowing outbound HTTPS (443) to the cluster endpoint
+
+### Components fail to deploy
+
+For BYO-EKS, verify:
+
+- The cluster's OIDC provider is configured
+- Node groups have capacity for new pods
+- The Nuon runner has cluster access (EKS access entries are created automatically)
+
+### Subnets not found
+
+If using subnet tagging:
+
+- Verify tags are applied correctly (`kubernetes.io/role/internal-elb:1`)
+- Check that subnets are in the same VPC as specified
+
+If using explicit subnet IDs:
+
+- Verify the subnet IDs are correct and exist
+- Ensure subnets belong to the specified VPC
+
+---
+
+## Azure BYO-VPN
+
+For Azure deployments, use the Azure AKS BYOVPN sandbox:
+
+```toml inputs.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
+
+[[input]]
+name = "resource_group_name"
 display_name = "Resource Group Name"
-required     = true
+description = "The Resource Group containing your VPN"
+required = true
+sensitive = false
 
-[[inputs.input]]
-name         = "network_name"
-description  = "The VPN to install the app in."
-sensitive    = false
+[[input]]
+name = "network_name"
 display_name = "Network Name"
-required     = true
+description = "The VPN to install the app in"
+required = true
+sensitive = false
 
-[[inputs.input]]
-name         = "subnet_name"
-description  = "The Subnet in the VPN to install the app in."
-sensitive    = false
+[[input]]
+name = "subnet_name"
 display_name = "Subnet Name"
-required     = true
+description = "The Subnet within the VPN"
+required = true
+sensitive = false
 ```
 
 ```toml sandbox.toml
-[sandbox]
+#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+
 terraform_version = "1.11.3"
-[sandbox.public_repo]
-repo      = "nuonco/sandboxes"
+
+[public_repo]
+repo = "nuonco/sandboxes"
 directory = "azure-aks-byovpn"
-branch    = "main"
-[sandbox.vars]
+branch = "main"
+
+[vars]
 resource_group_name = "{{.nuon.install.inputs.resource_group_name}}"
-network_name        = "{{.nuon.install.inputs.network_name}}"
-subnet_name         = "{{.nuon.install.inputs.subnet_name}}"
+network_name = "{{.nuon.install.inputs.network_name}}"
+subnet_name = "{{.nuon.install.inputs.subnet_name}}"
 ```
 
 ```toml runner.toml
-[runner]
+#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+
 runner_type = "azure-aks"
 ```
