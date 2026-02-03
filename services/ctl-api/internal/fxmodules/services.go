@@ -12,6 +12,7 @@ import (
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
+	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
 	releasesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
 	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
@@ -38,6 +39,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(releasesservice.New)),
 	fx.Provide(api.AsService(actionsservice.New)),
 	fx.Provide(api.AsService(admindashboardservice.New)),
+	fx.Provide(api.AsService(policyreportsservice.New)),
 )
 
 // PublicServicesModule provides services for the public API (excludes authservice).
