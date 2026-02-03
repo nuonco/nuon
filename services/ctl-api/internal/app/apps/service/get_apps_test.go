@@ -26,7 +26,9 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/pagination"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
 )
 
@@ -47,7 +49,7 @@ type TestService struct {
 
 // AppsTestSuite is the testify suite for apps endpoints.
 type AppsTestSuite struct {
-	suite.Suite
+	testdb.BaseDBTestSuite
 
 	app     *fxtest.App
 	service TestService
@@ -66,6 +68,7 @@ func TestAppsSuite(t *testing.T) {
 }
 
 func (s *AppsTestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
 	options := append(
@@ -79,11 +82,18 @@ func (s *AppsTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Create test org and account
+	// Store DB reference for automatic truncation
+	s.SetDB(s.service.DB)
+}
+
+func (s *AppsTestSuite) SetupTest() {
+	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
 	// Create test router and register routes
 	s.router = gin.New()
+	errMiddleware := stderr.New(s.service.L, nil)
+	s.router.Use(errMiddleware.Handler())
 
 	// Add pagination middleware to parse query parameters
 	paginationMW := pagination.New(pagination.Params{
@@ -108,45 +118,34 @@ func (s *AppsTestSuite) SetupSuite() {
 }
 
 func (s *AppsTestSuite) TearDownSuite() {
-	s.cleanupTestData()
 	s.app.RequireStop()
 }
 
 func (s *AppsTestSuite) setupTestData() {
-	// Clean up any existing test data first
-	s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
-	s.service.DB.Unscoped().Where("name LIKE ?", "test-org-%").Delete(&app.Org{})
-
 	// Create test account
 	testAcc := &app.Account{
-		ID:      "acc" + domains.NewAccountID(), // Explicitly set ID
-		Email:   "test@example.com",
-		Subject: "test-subject",
+		ID:          domains.NewAccountID(),
+		Email:       "test@example.com",
+		Subject:     "test-subject",
+		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
 	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), testAcc.ID, "Account ID should be set after creation")
 	s.testAcc = testAcc
 
 	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(), // ID will get prefix from BeforeCreate
-		Name: "test-org-" + domains.NewOrgID(),
+		ID:   domains.NewOrgID(),
+		Name: "test-org",
+		NotificationsConfig: app.NotificationsConfig{
+			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+		},
 	}
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
-}
-
-func (s *AppsTestSuite) cleanupTestData() {
-	if s.testOrg != nil {
-		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", s.testOrg.ID)
-	}
-	if s.testAcc != nil {
-		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", s.testAcc.ID)
-	}
 }
 
 func (s *AppsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -201,11 +200,17 @@ func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
 
 	rr := s.makeRequest(http.MethodGet, "/v1/apps")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
 	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 2)
 
@@ -242,11 +247,17 @@ func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
 	// Search for "frontend"
 	rr := s.makeRequest(http.MethodGet, "/v1/apps?q=frontend")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
 	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 1)
 	require.Equal(s.T(), "frontend-app", response[0].Name)
@@ -270,11 +281,17 @@ func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
 	// Request with limit
 	rr := s.makeRequest(http.MethodGet, "/v1/apps?limit=5")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
 	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.LessOrEqual(s.T(), len(response), 5)
 }
@@ -317,11 +334,17 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 
 	rr := s.makeRequest(http.MethodGet, "/v1/apps")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
 	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 1)
 	require.Equal(s.T(), "my-app", response[0].Name)
