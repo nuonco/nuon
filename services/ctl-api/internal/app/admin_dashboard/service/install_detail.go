@@ -3,38 +3,33 @@ package service
 import (
 	"net/http"
 
+	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/service/views"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard/service/views"
 )
 
-func (s *Service) InstallDetail(c *gin.Context) {
-	ctx := c.Request.Context()
-
+func (s *service) InstallDetail(c *gin.Context) {
 	install, err := s.getInstall(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "install not found"})
 			return
 		}
-		s.logger.Error("failed to fetch install", zap.Error(err))
+		s.l.Error("failed to fetch install", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch install"})
 		return
 	}
 
 	component := views.InstallDetail(install)
-	err = component.Render(ctx, c.Writer)
-	if err != nil {
-		s.logger.Error("failed to render install detail", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to render page"})
-		return
-	}
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
 // getInstall fetches an install by ID with necessary preloads
-func (s *Service) getInstall(c *gin.Context) (*app.Install, error) {
+func (s *service) getInstall(c *gin.Context) (*app.Install, error) {
 	installID := c.Param("id")
 	if installID == "" {
 		return nil, gorm.ErrRecordNotFound

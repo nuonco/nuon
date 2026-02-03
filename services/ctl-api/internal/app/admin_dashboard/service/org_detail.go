@@ -14,22 +14,23 @@ import (
 )
 
 func (s *service) OrgDetail(c *gin.Context) {
+	ctx := c.Request.Context()
 	orgID := c.Param("id")
 	if orgID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Org ID is required"})
 		return
 	}
 
-	org, err := s.getOrg(c, orgID)
+	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
-		s.logger.Error("failed to get org", zap.String("org_id", orgID), zap.Error(err))
+		s.l.Error("failed to get org", zap.String("org_id", orgID), zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
 		return
 	}
 
-	installs, err := s.getInstallsForOrg(c, orgID)
+	installs, err := s.getInstallsForOrg(ctx, orgID)
 	if err != nil {
-		s.logger.Error("failed to get installs", zap.String("org_id", orgID), zap.Error(err))
+		s.l.Error("failed to get installs", zap.String("org_id", orgID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})
 		return
 	}

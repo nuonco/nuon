@@ -22,11 +22,11 @@ type Params struct {
 }
 
 type Service struct {
-	v      *validator.Validate
-	logger *zap.Logger
-	db     *gorm.DB
-	mw     metrics.Writer
-	cfg    *internal.Config
+	v   *validator.Validate
+	l   *zap.Logger
+	db  *gorm.DB
+	mw  metrics.Writer
+	cfg *internal.Config
 }
 
 type service = Service
@@ -69,19 +69,19 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/installs/:id/status/component", s.InstallComponentStatus)
 	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
 
-	s.logger.Info("admin-dashboard routes registered")
+	s.l.Info("admin-dashboard routes registered")
 	return nil
 }
 
 func New(params Params) (*service, error) {
 	s := &service{
-		cfg:    params.Cfg,
-		logger: params.L,
-		v:      params.V,
-		db:     params.DB,
-		mw:     params.MW,
+		cfg: params.Cfg,
+		l:   params.L,
+		v:   params.V,
+		db:  params.DB,
+		mw:  params.MW,
 	}
 
-	s.logger.Info("admin-dashboard service initialized")
+	s.l.Info("admin-dashboard service initialized")
 	return s, nil
 }

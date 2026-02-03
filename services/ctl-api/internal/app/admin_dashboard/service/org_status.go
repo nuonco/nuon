@@ -12,15 +12,16 @@ import (
 
 // OrgStatus returns just the status badge for htmx polling
 func (s *service) OrgStatus(c *gin.Context) {
+	ctx := c.Request.Context()
 	orgID := c.Param("id")
 	if orgID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Org ID is required"})
 		return
 	}
 
-	org, err := s.getOrg(c, orgID)
+	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
-		s.logger.Error("failed to get org status", zap.String("org_id", orgID), zap.Error(err))
+		s.l.Error("failed to get org status", zap.String("org_id", orgID), zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
 		return
 	}
