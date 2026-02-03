@@ -9,6 +9,7 @@ import { ShutdownRunnerButton } from './ShutdownRunner'
 import { ShutdownMngRunnerButton } from './ShutdownMngRunner'
 import { ShutdownInstanceButton } from './ShutdownInstance'
 import { DeprovisionRunnerButton } from './DeprovisionRunner'
+import { PruneRunnerTokensButton } from './PruneRunnerTokens'
 import type { TRunner, TRunnerSettings } from '@/types'
 
 export const ManagementDropdown = ({
@@ -51,6 +52,10 @@ export const ManagementDropdown = ({
 
         {isInstallRunner && isManagedRunner ? (
           <ShutdownInstanceButton runnerId={runner.id} isMenuButton />
+        ) : null}
+
+        {isInstallRunner ? (
+          <PruneRunnerTokensButton runnerId={runner.id} isMenuButton />
         ) : null}
 
         {isInstallRunner && <hr />}
