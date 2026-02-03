@@ -149,14 +149,13 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 
 func (w *Workflows) getRoleForSandbox(
 	ctx workflow.Context,
-	l *zap.Logger,
 	appConfig *app.AppConfig,
 	sandboxRun *app.InstallSandboxRun,
 	stack *app.InstallStack,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
 	// Determine operation type based on run type
 	var operation app.OperationType
-	switch installRun.RunType {
+	switch sandboxRun.RunType {
 	case app.SandboxRunTypeProvision:
 		operation = app.OperationProvision
 	case app.SandboxRunTypeReprovision:
