@@ -34,6 +34,10 @@ type ExternalImagePolicyToEvaluate struct {
 type PrepExternalImagePolicyResult struct {
 	Policies    []ExternalImagePolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
 	HasPolicies bool                            `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	AppID       string                          `json:"app_id" temporaljson:"app_id,omitempty"`
+	ComponentID string                          `json:"component_id" temporaljson:"component_id,omitempty"`
+	PolicyIDs   []string                        `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
+	InputCount  int                             `json:"input_count" temporaljson:"input_count,omitempty"`
 }
 
 // @temporal-gen activity
@@ -58,6 +62,10 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 		return &PrepExternalImagePolicyResult{
 			Policies:    []ExternalImagePolicyToEvaluate{},
 			HasPolicies: false,
+			AppID:       build.ComponentConfigConnection.Component.AppID,
+			ComponentID: build.ComponentConfigConnection.ComponentID,
+			PolicyIDs:   []string{},
+			InputCount:  0,
 		}, nil
 	}
 	appConfigID := appConfigs[0].ID
@@ -70,6 +78,10 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 		return &PrepExternalImagePolicyResult{
 			Policies:    []ExternalImagePolicyToEvaluate{},
 			HasPolicies: false,
+			AppID:       build.ComponentConfigConnection.Component.AppID,
+			ComponentID: build.ComponentConfigConnection.ComponentID,
+			PolicyIDs:   []string{},
+			InputCount:  0,
 		}, nil
 	}
 
@@ -83,6 +95,10 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 		return &PrepExternalImagePolicyResult{
 			Policies:    []ExternalImagePolicyToEvaluate{},
 			HasPolicies: false,
+			AppID:       build.ComponentConfigConnection.Component.AppID,
+			ComponentID: build.ComponentConfigConnection.ComponentID,
+			PolicyIDs:   []string{},
+			InputCount:  0,
 		}, nil
 	}
 
@@ -100,12 +116,14 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 	}
 
 	policies := make([]ExternalImagePolicyToEvaluate, 0, len(applicablePolicies))
+	policyIDs := make([]string, 0, len(applicablePolicies))
 	for _, policy := range applicablePolicies {
 		policies = append(policies, ExternalImagePolicyToEvaluate{
 			PolicyID:  policy.ID,
 			Contents:  policy.Contents,
 			InputJSON: inputJSON,
 		})
+		policyIDs = append(policyIDs, policy.ID)
 	}
 
 	l.Info("policy evaluation preparation complete",
@@ -115,6 +133,10 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 	return &PrepExternalImagePolicyResult{
 		Policies:    policies,
 		HasPolicies: true,
+		AppID:       build.ComponentConfigConnection.Component.AppID,
+		ComponentID: build.ComponentConfigConnection.ComponentID,
+		PolicyIDs:   policyIDs,
+		InputCount:  1,
 	}, nil
 }
 

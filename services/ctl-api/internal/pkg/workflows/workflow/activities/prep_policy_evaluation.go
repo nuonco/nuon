@@ -21,20 +21,29 @@ type PrepPolicyEvaluationRequest struct {
 }
 
 type PolicyViolation struct {
-	PolicyID string `json:"policy_id" temporaljson:"policy_id,omitempty"`
-	Message  string `json:"message" temporaljson:"message,omitempty"`
-	Severity string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
+	PolicyID   string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	RuleID     string `json:"rule_id" temporaljson:"rule_id,omitempty"`         // Rule within policy that was violated
+	InputIndex int    `json:"input_index" temporaljson:"input_index,omitempty"` // Index of the input document that triggered this violation
+	Message    string `json:"message" temporaljson:"message,omitempty"`
+	Severity   string `json:"severity" temporaljson:"severity,omitempty"` // "deny" or "warn"
 }
 
 type PolicyToEvaluate struct {
-	PolicyID  string `json:"policy_id" temporaljson:"policy_id,omitempty"`
-	Contents  string `json:"contents" temporaljson:"contents,omitempty"`
-	InputJSON []byte `json:"input_json" temporaljson:"input_json,omitempty"`
+	PolicyID   string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	Contents   string `json:"contents" temporaljson:"contents,omitempty"`
+	InputJSON  []byte `json:"input_json" temporaljson:"input_json,omitempty"`
+	InputIndex int    `json:"input_index" temporaljson:"input_index,omitempty"` // Index of the input document
 }
 
 type PrepPolicyEvaluationResult struct {
-	Policies    []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
-	HasPolicies bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	Policies         []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
+	HasPolicies      bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	AppID            string             `json:"app_id" temporaljson:"app_id,omitempty"`
+	InstallID        *string            `json:"install_id" temporaljson:"install_id,omitempty"`
+	InstallSandboxID *string            `json:"install_sandbox_id" temporaljson:"install_sandbox_id,omitempty"`
+	ComponentID      *string            `json:"component_id" temporaljson:"component_id,omitempty"`
+	PolicyIDs        []string           `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
+	InputCount       int                `json:"input_count" temporaljson:"input_count,omitempty"`
 }
 
 // @temporal-gen activity
@@ -87,9 +96,20 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 	if len(applicablePolicies) == 0 {
 		l.Info("no applicable policies found")
 		return &PrepPolicyEvaluationResult{
-			Policies:    []PolicyToEvaluate{},
-			HasPolicies: false,
+			Policies:         []PolicyToEvaluate{},
+			HasPolicies:      false,
+			AppID:            policyContext.AppID,
+			InstallID:        policyContext.InstallID,
+			InstallSandboxID: policyContext.InstallSandboxID,
+			ComponentID:      policyContext.ComponentID,
+			PolicyIDs:        []string{},
+			InputCount:       0,
 		}, nil
+	}
+
+	policyIDs := make([]string, 0, len(applicablePolicies))
+	for _, policy := range applicablePolicies {
+		policyIDs = append(policyIDs, policy.ID)
 	}
 
 	policyInputs, err := a.preparePolicyInputs(approvalPlan.PlanContents, policyContext.ComponentType)
@@ -107,16 +127,26 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 	)
 
 	return &PrepPolicyEvaluationResult{
-		Policies:    policies,
-		HasPolicies: true,
+		Policies:         policies,
+		HasPolicies:      true,
+		AppID:            policyContext.AppID,
+		InstallID:        policyContext.InstallID,
+		InstallSandboxID: policyContext.InstallSandboxID,
+		ComponentID:      policyContext.ComponentID,
+		PolicyIDs:        policyIDs,
+		InputCount:       len(policyInputs),
 	}, nil
 }
 
 type policyContext struct {
-	AppConfigID   string
-	ComponentType app.ComponentType
-	ComponentName string
-	IsSandbox     bool
+	AppConfigID      string
+	AppID            string
+	InstallID        *string
+	InstallSandboxID *string
+	ComponentID      *string
+	ComponentType    app.ComponentType
+	ComponentName    string
+	IsSandbox        bool
 }
 
 func (a *Activities) resolvePolicyContext(ctx context.Context, stepTargetID, stepTargetType string) (*policyContext, error) {
@@ -142,6 +172,9 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 
 	return &policyContext{
 		AppConfigID:   deploy.InstallComponent.Install.AppConfigID,
+		AppID:         deploy.InstallComponent.Install.AppID,
+		InstallID:     &deploy.InstallComponent.InstallID,
+		ComponentID:   &deploy.InstallComponent.ComponentID,
 		ComponentType: deploy.InstallComponent.Component.Type,
 		ComponentName: deploy.InstallComponent.Component.Name,
 		IsSandbox:     false,
@@ -158,10 +191,13 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 	}
 
 	return &policyContext{
-		AppConfigID:   sandboxRun.Install.AppConfigID,
-		ComponentType: "",
-		ComponentName: "",
-		IsSandbox:     true,
+		AppConfigID:      sandboxRun.Install.AppConfigID,
+		AppID:            sandboxRun.Install.AppID,
+		InstallID:        &sandboxRun.InstallID,
+		InstallSandboxID: sandboxRun.InstallSandboxID,
+		ComponentType:    "",
+		ComponentName:    "",
+		IsSandbox:        true,
 	}, nil
 }
 
@@ -304,11 +340,12 @@ func (a *Activities) buildPolicyEvaluationItems(
 	result := make([]PolicyToEvaluate, 0, len(policies)*len(inputs))
 
 	for _, policy := range policies {
-		for _, input := range inputs {
+		for idx, input := range inputs {
 			result = append(result, PolicyToEvaluate{
-				PolicyID:  policy.ID,
-				Contents:  policy.Contents,
-				InputJSON: input,
+				PolicyID:   policy.ID,
+				Contents:   policy.Contents,
+				InputJSON:  input,
+				InputIndex: idx,
 			})
 		}
 	}
