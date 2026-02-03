@@ -24,7 +24,6 @@ import (
 // @Param					owner_id	query	string	false	"owner id"
 // @Param					app_id		query	string	false	"app id"
 // @Param					install_id	query	string	false	"install id"
-// @Param					format		query	string	false	"report format (opa, sarif)"
 // @Param					status		query	string	false	"report status"
 // @Tags					policy-reports
 // @Accept					json
@@ -49,10 +48,9 @@ func (s *service) GetPolicyReports(ctx *gin.Context) {
 	ownerID := ctx.Query("owner_id")
 	appID := ctx.Query("app_id")
 	installID := ctx.Query("install_id")
-	format := ctx.Query("format")
 	status := ctx.Query("status")
 
-	reports, err := s.getPolicyReports(ctx, org.ID, ownerType, ownerID, appID, installID, format, status)
+	reports, err := s.getPolicyReports(ctx, org.ID, ownerType, ownerID, appID, installID, status)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get policy reports"))
 		return
@@ -61,7 +59,7 @@ func (s *service) GetPolicyReports(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, reports)
 }
 
-func (s *service) getPolicyReports(ctx *gin.Context, orgID, ownerType, ownerID, appID, installID, format, status string) ([]*app.PolicyReport, error) {
+func (s *service) getPolicyReports(ctx *gin.Context, orgID, ownerType, ownerID, appID, installID, status string) ([]*app.PolicyReport, error) {
 	var reports []*app.PolicyReport
 
 	query := s.db.WithContext(ctx).
@@ -90,16 +88,6 @@ func (s *service) getPolicyReports(ctx *gin.Context, orgID, ownerType, ownerID, 
 
 	if installID != "" {
 		query = query.Where("install_id = ?", installID)
-	}
-
-	if format != "" {
-		if format != string(app.PolicyReportFormatOPA) && format != string(app.PolicyReportFormatSARIF) {
-			return nil, stderr.ErrUser{
-				Err:         fmt.Errorf("invalid format: %s", format),
-				Description: "invalid format",
-			}
-		}
-		query = query.Where("format = ?", format)
 	}
 
 	if status != "" {
