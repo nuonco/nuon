@@ -68,12 +68,15 @@ export async function api<T>({
     if (
       contentLength !== '0' &&
       (contentType?.includes('text/csv') ||
+        contentType?.includes('text/html') ||
         contentType?.includes('application/octet-stream'))
     ) {
       const content = await response.text()
       let filename = contentType?.includes('text/csv')
         ? 'data.csv'
-        : 'download.bin'
+        : contentType?.includes('text/html')
+          ? 'report.html'
+          : 'download.bin'
       const contentDisposition = response.headers.get('content-disposition')
       const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/)
       if (filenameMatch) {

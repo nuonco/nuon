@@ -44,6 +44,33 @@ export type TAppPoliciesConfig = {
   policies?: TAppPolicyConfig[]
 }
 
+export type TPolicyReportFormat = components['schemas']['app.PolicyReportFormat']
+export type TPolicyReportOwnerType =
+  | components['schemas']['app.PolicyReportOwnerType']
+  | 'component_builds'
+
+export type TPolicyReport = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  install_id?: string | null
+  component_id?: string | null
+  workflow_step_policy_validation_id?: string | null
+  runner_job_id?: string | null
+  owner_id?: string
+  owner_type?: TPolicyReportOwnerType
+  format?: TPolicyReportFormat
+  content_version?: string
+  content?: string
+  deny_count?: number
+  warn_count?: number
+  pass_count?: number
+  status?: components['schemas']['app.CompositeStatus']
+}
+
 // component
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig =
