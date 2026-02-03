@@ -17,6 +17,7 @@ type PersistPolicyReportRequest struct {
 	InstallID                      *string           `json:"install_id"`
 	InstallSandboxID               *string           `json:"install_sandbox_id"`
 	ComponentID                    *string           `json:"component_id"`
+	ComponentBuildID               *string           `json:"component_build_id"`
 	WorkflowStepPolicyValidationID *string           `json:"workflow_step_policy_validation_id"`
 	RunnerJobID                    *string           `json:"runner_job_id"`
 	OwnerID                        string            `json:"owner_id" validate:"required"`
@@ -27,6 +28,11 @@ type PersistPolicyReportRequest struct {
 	DenyCount                      int               `json:"deny_count"`
 	WarnCount                      int               `json:"warn_count"`
 	PassCount                      int               `json:"pass_count"`
+
+	// Human-readable names for display in reports
+	AppName       string `json:"app_name"`
+	InstallName   string `json:"install_name"`
+	ComponentName string `json:"component_name"`
 }
 
 type PersistPolicyReportResult struct {
@@ -106,6 +112,7 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		appInputs[i] = app.PolicyInputRef{
 			ID:   inp.ID,
 			Type: inp.Type,
+			Name: inp.Name,
 		}
 	}
 
@@ -227,37 +234,42 @@ func buildPolicyResults(policyIDs []string, policyInputCounts map[string]int, vi
 type policyInputRef struct {
 	ID   string
 	Type string
+	Name string
 }
 
 func buildPolicyInputRefs(req *PersistPolicyReportRequest) []policyInputRef {
-	refs := make([]policyInputRef, 0, 2)
-	addRef := func(id, refType string) {
+	refs := make([]policyInputRef, 0, 3)
+	addRef := func(id, refType, name string) {
 		if id == "" {
 			return
 		}
 		refs = append(refs, policyInputRef{
 			ID:   id,
 			Type: refType,
+			Name: name,
 		})
 	}
 
 	switch req.OwnerType {
 	case string(app.PolicyReportOwnerTypeComponentBuild):
-		addRef(req.OwnerID, "component_build")
+		addRef(req.OwnerID, "component_build", "")
 		if req.ComponentID != nil {
-			addRef(*req.ComponentID, "component")
+			addRef(*req.ComponentID, "component", req.ComponentName)
 		}
 		return refs
 	case string(app.PolicyReportOwnerTypeInstallSandboxRun):
-		addRef(req.OwnerID, "sandbox_run")
+		addRef(req.OwnerID, "sandbox_run", "")
 		if req.InstallSandboxID != nil {
-			addRef(*req.InstallSandboxID, "sandbox")
+			addRef(*req.InstallSandboxID, "sandbox", "")
 		}
 		return refs
 	case string(app.PolicyReportOwnerTypeInstallDeploy):
-		addRef(req.OwnerID, "component_deploy")
+		addRef(req.OwnerID, "component_deploy", "")
+		if req.ComponentBuildID != nil {
+			addRef(*req.ComponentBuildID, "component_build", "")
+		}
 		if req.ComponentID != nil {
-			addRef(*req.ComponentID, "component")
+			addRef(*req.ComponentID, "component", req.ComponentName)
 		}
 		return refs
 	default:
@@ -280,7 +292,7 @@ func buildPolicyReportStatus(ctx context.Context, denyCount, warnCount, passCoun
 		status = app.StatusError
 		statusDescription = "policy checks failed"
 	} else if warnCount > 0 {
-		status = app.StatusInProgress
+		status = app.StatusWarning
 		statusDescription = "policy warnings detected"
 	}
 
