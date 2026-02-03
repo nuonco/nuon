@@ -33,7 +33,11 @@ const FieldWrapper = ({
   )
 }
 
-const AWSFields = () => {
+const AWSFields = ({
+  draftValues,
+}: {
+  draftValues?: Record<string, string> | null
+}) => {
   const options = AWS_REGIONS.map((region) => ({
     value: region.value,
     label: region?.iconVariant
@@ -56,13 +60,18 @@ const AWSFields = () => {
           options={options}
           placeholder="Choose AWS region"
           required
+          defaultValue={draftValues?.region || ''}
         />
       </FieldWrapper>
     </fieldset>
   )
 }
 
-const AzureFields = () => {
+const AzureFields = ({
+  draftValues,
+}: {
+  draftValues?: Record<string, string> | null
+}) => {
   const options = AZURE_REGIONS.map((region) => ({
     value: region.value,
     label: region?.iconVariant
@@ -85,19 +94,23 @@ const AzureFields = () => {
           options={options}
           placeholder="Choose Azure location"
           required
+          defaultValue={draftValues?.location || ''}
         />
       </FieldWrapper>
     </fieldset>
   )
 }
 
-export const PlatformFields = ({ platform }: IPlatformFields) => {
+export const PlatformFields = ({
+  platform,
+  draftValues,
+}: IPlatformFields) => {
   if (platform === 'aws') {
-    return <AWSFields />
+    return <AWSFields draftValues={draftValues} />
   }
 
   if (platform === 'azure') {
-    return <AzureFields />
+    return <AzureFields draftValues={draftValues} />
   }
 
   return null

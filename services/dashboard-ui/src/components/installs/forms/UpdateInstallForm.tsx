@@ -1,6 +1,6 @@
 'use client'
 
-import { type FormEvent, useRef, forwardRef } from 'react'
+import { type FormEvent, useRef, forwardRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { updateInstall } from '@/actions/installs/update-install'
 import { Banner } from '@/components/common/Banner'
@@ -11,8 +11,11 @@ import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
+import { useFormPersistence } from '@/hooks/use-form-persistence'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { InputConfigFields } from './shared/InputConfigFields'
 import { PlatformFields } from './shared/PlatformFields'
+import { ResumeDraftModal } from './shared/ResumeDraftModal'
 import type { IUpdateInstallForm } from './shared/types'
 
 const UpdateInstallOptions = () => {
@@ -48,35 +51,91 @@ const UpdateInstallOptions = () => {
   )
 }
 
-export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>(({
-  install,
-  platform,
-  inputConfig,
-  onSubmit,
-  onSuccess,
-  onCancel,
-  onFormSubmit,
-}, ref) => {
-  const path = usePathname()
-  const { org } = useOrg()
-  const formRef = useRef<HTMLFormElement>(null)
+export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>(
+  (
+    {
+      install,
+      platform,
+      inputConfig,
+      onSubmit,
+      onSuccess,
+      onCancel,
+      onFormSubmit,
+      onRegisterClearDraft,
+    },
+    ref
+  ) => {
+    const path = usePathname()
+    const { org } = useOrg()
+    const formRef = useRef<HTMLFormElement>(null)
+    const draftShownRef = useRef(false)
+    const { addModal, removeModal } = useSurfaces()
 
-  const { data, error, headers, isLoading, execute } = useServerAction({
-    action: updateInstall,
-  })
+    const { data, error, headers, isLoading, execute } = useServerAction({
+      action: updateInstall,
+    })
 
-  useServerActionToast({
-    data,
-    error,
-    errorContent: <Text>Unable to update install {install.name}.</Text>,
-    errorHeading: 'Install update failed',
-    onSuccess: onSuccess ? () => {
-      const result = { data, headers }
-      onSuccess(result)
-    } : undefined,
-    successContent: <Text>Install {install.name} updated successfully!</Text>,
-    successHeading: 'Install updated',
-  })
+    const {
+      hasDraft,
+      draftTimestamp,
+      draftValues,
+      clearDraft,
+      restoreDraft,
+      formKey,
+    } = useFormPersistence({
+      storageKey: `install-update-draft:${install.id}`,
+      formRef,
+      enabled: true,
+      configId: inputConfig?.id,
+    })
+
+    useEffect(() => {
+      if (onRegisterClearDraft) {
+        onRegisterClearDraft(clearDraft)
+      }
+    }, [onRegisterClearDraft, clearDraft])
+
+    useEffect(() => {
+      if (hasDraft && !draftShownRef.current && draftTimestamp) {
+        draftShownRef.current = true
+
+        let modalId: string
+        const modal = (
+          <ResumeDraftModal
+            draftTimestamp={draftTimestamp}
+            onResume={() => {
+              restoreDraft()
+              removeModal(modalId)
+            }}
+            onStartFresh={() => {
+              clearDraft()
+              draftShownRef.current = false
+              removeModal(modalId)
+            }}
+            onClose={() => {
+              removeModal(modalId)
+            }}
+          />
+        )
+        modalId = addModal(modal)
+      }
+    }, [hasDraft, draftTimestamp, restoreDraft, clearDraft, addModal, removeModal])
+
+    useServerActionToast({
+      data,
+      error,
+      errorContent: <Text>Unable to update install {install.name}.</Text>,
+      errorHeading: 'Install update failed',
+      onSuccess: onSuccess
+        ? () => {
+            clearDraft()
+            const result = { data, headers }
+            onSuccess(result)
+          }
+        : undefined,
+      successContent: <Text>Install {install.name} updated successfully!</Text>,
+      successHeading: 'Install updated',
+    })
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -132,6 +191,7 @@ export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>
 
   return (
     <form
+      key={formKey}
       ref={(node) => {
         formRef.current = node
         if (typeof ref === 'function') {
@@ -161,9 +221,15 @@ export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>
 
         
         {inputConfig && (
-          <InputConfigFields 
+          <InputConfigFields
+            key={formKey}
             inputConfig={inputConfig}
             install={install}
+            draftValues={
+              draftValues && Object.keys(draftValues).length > 0
+                ? draftValues
+                : undefined
+            }
           />
         )}
 

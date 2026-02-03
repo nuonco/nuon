@@ -16,6 +16,7 @@ interface LoadAppConfigsProps {
   formRef?: React.RefObject<HTMLFormElement>
   modalId?: string
   onLoadingChange?: (loading: boolean) => void
+  onRegisterClearDraft?: (clearFn: () => void) => void
 }
 
 export const LoadAppConfigs = ({
@@ -25,6 +26,7 @@ export const LoadAppConfigs = ({
   formRef,
   modalId,
   onLoadingChange,
+  onRegisterClearDraft,
 }: LoadAppConfigsProps) => {
   const { org } = useOrg()
   const {
@@ -97,6 +99,7 @@ export const LoadAppConfigs = ({
       formRef={formRef}
       modalId={modalId}
       onLoadingChange={onLoadingChange}
+      onRegisterClearDraft={onRegisterClearDraft}
     />
   )
 }
