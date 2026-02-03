@@ -16,6 +16,7 @@ export type TPolicyReportStatus =
   | 'skipped'
   | 'paused'
   | 'not_attempted'
+  | 'warning'
 
 export const getPolicyReports = ({
   orgId,
