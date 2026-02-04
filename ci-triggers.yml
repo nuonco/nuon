@@ -13,6 +13,8 @@ services: |
     - pkg/**
 
   runner:
+    - go.mod
+    - go.sum
     - bins/runner/**
     - pkg/**
 
