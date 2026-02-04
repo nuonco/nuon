@@ -28,6 +28,8 @@ type handlerState struct {
 	appCfg     *models.AppAppConfig
 	sandboxCfg *models.AppAppSandboxConfig
 
+	auth *plantypes.PlanAuth
+
 	// Legacy
 	// set during the fetch/validate phase
 	// plan    *planv1.Plan

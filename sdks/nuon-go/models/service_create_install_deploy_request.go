@@ -25,6 +25,9 @@ type ServiceCreateInstallDeployRequest struct {
 
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// role
+	Role string `json:"role,omitempty"`
 }
 
 // Validate validates this service create install deploy request

@@ -238,7 +238,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		ActionWorkflowRunPlan: runPlan,
 	}
 
-	roleSelection, operation, err := w.getRoleForAction(ctx, l, appConfig, run, stack)
+	roleSelection, operation, err := w.getRoleForAction(ctx, appConfig, run, stack)
 	if err != nil {
 		return errors.Wrap(err, "unable to evaluate role for action")
 	}

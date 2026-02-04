@@ -25,10 +25,6 @@ func (s sync) getOperationRulesRequest() *models.ServiceCreateAppOperationRoleCo
 }
 
 func (s sync) syncAppOperationRules(ctx context.Context, resource string) error {
-	if s.cfg.OperationRoles == nil {
-		return nil
-	}
-
 	req := s.getOperationRulesRequest()
 	_, err := s.apiClient.CreateAppOperationRoleConfig(ctx, s.appID, req)
 	if err != nil {

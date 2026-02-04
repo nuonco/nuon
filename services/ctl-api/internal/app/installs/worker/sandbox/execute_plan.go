@@ -80,7 +80,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		SandboxRunPlan: runPlan,
 	}
 
-	roleSelection, operation, err := w.getRoleForSandbox(ctx, l, appConfig, installRun, stack)
+	roleSelection, operation, err := w.getRoleForSandbox(ctx, appConfig, installRun, stack)
 	if err != nil {
 		return errors.Wrap(err, "unable to evaluate role for sandbox")
 	}

@@ -104,7 +104,7 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		DeployPlan: plan,
 	}
 
-	roleSelection, operation, err := w.getRoleForDeploy(ctx, l, appConfig, installDeploy, build, comp, stack)
+	roleSelection, operation, err := w.getRoleForDeploy(ctx, appConfig, installDeploy, build, comp, stack)
 	if err != nil {
 		return errors.Wrap(err, "unable to evaluate role for component deploy")
 	}

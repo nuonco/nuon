@@ -36,8 +36,11 @@ const (
 	// AppOperationTypeDeprovision captures enum value "deprovision"
 	AppOperationTypeDeprovision AppOperationType = "deprovision"
 
-	// AppOperationTypeUpdate captures enum value "update"
-	AppOperationTypeUpdate AppOperationType = "update"
+	// AppOperationTypeDeploy captures enum value "deploy"
+	AppOperationTypeDeploy AppOperationType = "deploy"
+
+	// AppOperationTypeTeardown captures enum value "teardown"
+	AppOperationTypeTeardown AppOperationType = "teardown"
 
 	// AppOperationTypeReprovision captures enum value "reprovision"
 	AppOperationTypeReprovision AppOperationType = "reprovision"
@@ -51,7 +54,7 @@ var appOperationTypeEnum []any
 
 func init() {
 	var res []AppOperationType
-	if err := json.Unmarshal([]byte(`["provision","deprovision","update","reprovision","trigger"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["provision","deprovision","deploy","teardown","reprovision","trigger"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
