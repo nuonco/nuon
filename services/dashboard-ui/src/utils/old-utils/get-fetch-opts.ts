@@ -9,7 +9,7 @@ export async function getFetchOpts(
   return {
     cache: 'no-store',
     headers: {
-      Authorization: `Bearer ${session?.accessToken}`,
+      Authorization: `Bearer ${session?.accessToken || session?.tokenSet?.accessToken}`,
       'Content-Type': 'application/json',
       'X-Nuon-Org-ID': orgId,
       ...headers,

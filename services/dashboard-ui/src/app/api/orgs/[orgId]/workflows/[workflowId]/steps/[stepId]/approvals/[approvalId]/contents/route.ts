@@ -30,7 +30,7 @@ export async function GET(
       path: `/v1/workflows/${workflowId}/steps/${stepId}/approvals/${approvalId}/contents`,
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session?.accessToken || session?.tokenSet?.accessToken}`,
         'Content-Type': 'application/json',
         'X-Nuon-Org-ID': orgId,
         'Accept-Encoding': 'gzip',
