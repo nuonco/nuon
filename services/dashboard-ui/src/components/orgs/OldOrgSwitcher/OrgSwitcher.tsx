@@ -16,6 +16,8 @@ import type { TOrg } from '@/types'
 import { OrgAvatar } from './OrgAvatar'
 import { OrgsNav } from './OrgsNav'
 
+import { SurfacesProvider } from '@/providers/surfaces-provider'
+
 export interface IOrgSummary {
   org: TOrg
   shouldPoll?: boolean
@@ -65,7 +67,9 @@ export const OrgVCSConnectionsDetails: FC<{ org: TOrg }> = ({ org }) => {
     <div className="flex flex-col gap-4 mx-4 py-4 border-cool-grey-600 dark:border-cool-grey-500 border-b border-dotted ">
       <div className="flex items-center justify-between">
         <Text variant="med-14">GitHub connections</Text>
-        <ConnectGithubButton />
+        <SurfacesProvider>
+          <ConnectGithubButton />
+        </SurfacesProvider>
       </div>
 
       <div>
