@@ -127,33 +127,77 @@ err := s.service.YourService.RegisterPublicRoutes(s.router)
 ## 5. Test Data Setup
 
 **Key Principles:**
-- Clean up existing test data first (prevent conflicts)
+- **DO NOT manually clean up existing test data** - `BaseDBTestSuite.SetupTest()` handles this automatically
 - Set account context before creating orgs (required by BeforeCreate hook)
 - Use consistent test data IDs and names
 
 **Critical Pattern:**
 ```go
-// ALWAYS set account context before creating orgs
-ctx := context.Background()
-ctx = cctx.SetAccountContext(ctx, testAcc)
-testOrg := &app.Org{...}
-err = s.service.DB.WithContext(ctx).Create(testOrg).Error
+func (s *YourTestSuite) setupTestData() {
+    // Create test account
+    testAcc := &app.Account{
+        ID:          domains.NewAccountID(),
+        Email:       "test@example.com",
+        Subject:     "test-subject",
+        AccountType: app.AccountTypeAuth0,
+    }
+    err := s.service.DB.Create(testAcc).Error
+    require.NoError(s.T(), err)
+    s.testAcc = testAcc
+
+    // ALWAYS set account context before creating orgs
+    ctx := context.Background()
+    ctx = cctx.SetAccountContext(ctx, testAcc)
+    testOrg := &app.Org{
+        ID:   domains.NewOrgID(),
+        Name: "test-org",
+        NotificationsConfig: app.NotificationsConfig{
+            InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+        },
+    }
+    err = s.service.DB.WithContext(ctx).Create(testOrg).Error
+    require.NoError(s.T(), err)
+    s.testOrg = testOrg
+}
+```
+
+**What NOT to Do:**
+```go
+// ❌ BAD: Manual cleanup is redundant and can cause conflicts
+func (s *YourTestSuite) setupTestData() {
+    s.service.DB.Unscoped().Where("name = ?", "test-org").Delete(&app.Org{})
+    s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
+    // ... rest of setup
+}
 ```
 
 **Reference Examples:**
-- `services/ctl-api/internal/app/apps/service/get_apps_test.go:110-139` - Complete setupTestData
-- `services/ctl-api/internal/app/apps/service/create_app_test.go:120-145` - With initial cleanup
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:109-138` - Complete setupTestData
+- `services/ctl-api/internal/app/orgs/service/get_org_test.go:83-108` - With org creation
 
 ## 6. Test Cleanup
 
-**Key Principles:**
-- Use `s.T().Cleanup()` in table-driven tests (automatic per-subtest cleanup)
-- Use `cleanupTestData()` + `TearDownSuite()` for suite-level cleanup
-- Stop FX app in `TearDownSuite()`
+**CRITICAL: DO NOT create manual cleanup functions**
+- `BaseDBTestSuite` automatically truncates tables between tests via `SetupTest()`
+- Manual `cleanupTestData()` functions are **redundant** and can cause conflicts
+- Only stop FX app in `TearDownSuite()`
 
-**Reference Examples:**
-- `services/ctl-api/internal/app/apps/service/get_apps_test.go:105-108,141-148` - Complete cleanup
-- `services/ctl-api/internal/app/apps/service/create_app_test.go:106-118` - With cleanupTestData method
+**Key Principles:**
+- Use `s.T().Cleanup()` in table-driven tests for per-subtest cleanup (optional, for test-specific resources)
+- Rely on `BaseDBTestSuite.SetupTest()` for automatic table truncation
+- Keep `TearDownSuite()` minimal - only `s.app.RequireStop()`
+
+**TearDownSuite Pattern:**
+```go
+func (s *YourTestSuite) TearDownSuite() {
+    s.app.RequireStop()
+}
+```
+
+**Why No Manual Cleanup:**
+- `BaseDBTestSuite.SetupTest()` runs before each test and truncates all tables with CASCADE
+- Manual cleanup can create race conditions and deadlocks
+- Table truncation is more reliable and comprehensive than selective deletion
 
 ## 7. Making HTTP Requests
 
@@ -346,7 +390,8 @@ INTEGRATION=true go test -v ./services/ctl-api/internal/app/apps/service/... -ru
 - [ ] **If testing across orgs**: Recreate router with new org context
 - [ ] **If creating orgs**: Set account context first (`cctx.SetAccountContext`)
 - [ ] **If endpoint sends signals**: Use `tests.MockEventLoopClient` and reset in `SetupTest()`
-- [ ] Test data cleaned up via `cleanupTestData()` or `s.T().Cleanup()`
+- [ ] Test cleanup relies on `BaseDBTestSuite` automatic truncation (no manual `cleanupTestData()`)
+- [ ] `TearDownSuite()` only calls `s.app.RequireStop()` (no manual cleanup)
 - [ ] Integration test guard: `os.Getenv("INTEGRATION")`
 - [ ] All assertions include debug logging for failures
 - [ ] Tests verify both HTTP response AND database state

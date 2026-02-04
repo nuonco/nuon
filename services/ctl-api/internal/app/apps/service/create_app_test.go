@@ -103,17 +103,7 @@ func (s *CreateAppTestSuite) SetupTest() {
 }
 
 func (s *CreateAppTestSuite) TearDownSuite() {
-	s.cleanupTestData()
 	s.app.RequireStop()
-}
-
-func (s *CreateAppTestSuite) cleanupTestData() {
-	if s.testOrg != nil {
-		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", s.testOrg.ID)
-	}
-	if s.testAcc != nil {
-		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", s.testAcc.ID)
-	}
 }
 
 func (s *CreateAppTestSuite) setupTestData() {

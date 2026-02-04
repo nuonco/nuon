@@ -108,7 +108,6 @@ func (s *DeleteOrgTestSuite) SetupTest() {
 }
 
 func (s *DeleteOrgTestSuite) TearDownSuite() {
-	s.cleanupTestData()
 	s.app.RequireStop()
 }
 
@@ -137,15 +136,6 @@ func (s *DeleteOrgTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
-}
-
-func (s *DeleteOrgTestSuite) cleanupTestData() {
-	if s.testOrg != nil {
-		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", s.testOrg.ID)
-	}
-	if s.testAcc != nil {
-		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", s.testAcc.ID)
-	}
 }
 
 func (s *DeleteOrgTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
