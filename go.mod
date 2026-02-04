@@ -9,9 +9,8 @@ replace github.com/spf13/viper v1.6.1 => github.com/spf13/viper v1.7.1
 
 replace github.com/spf13/viper v1.4.0 => github.com/spf13/viper v1.7.1
 
-replace github.com/go-playground/validator/v10 v10.22.1 => github.com/go-playground/validator/v10 v10.16.0
+replace github.com/go-playground/validator/v10 => github.com/go-playground/validator/v10 v10.23.0
 
-replace github.com/go-playground/validator/v10 v10.23.0 => github.com/go-playground/validator/v10 v10.16.0
 
 replace github.com/databus23/helm-diff/v3 v3.12.5 => github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9
 
