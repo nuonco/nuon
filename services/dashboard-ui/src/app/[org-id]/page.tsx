@@ -115,7 +115,7 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
       }
     }
 
-    return org?.features?.['stratus-layout'] ? (
+    return (
       <PageLayout className="divide-y" isScrollable>
         <Breadcrumbs
           breadcrumbs={[
@@ -174,65 +174,6 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
           </PageGrid>
         </PageContent>
       </PageLayout>
-    ) : (
-      <DashboardContent
-        breadcrumb={[{ href: `/${orgId}`, text: 'Dashboard' }]}
-        heading={org?.name}
-        headingUnderline={org?.id}
-        statues={
-          <span className="flex flex-col gap-2">
-            <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-              Status
-            </OldText>
-            <StatusBadge
-              status={org?.status}
-              description={org?.status_description}
-              descriptionAlignment="right"
-            />
-          </span>
-        }
-      >
-        <div className="flex-auto md:grid md:grid-cols-12 divide-x">
-          <div className="divide-y flex flex-col flex-auto col-span-8">
-            <Section heading="Overview" className="flex-initial">
-              <OldText variant="reg-12">TKTK</OldText>
-            </Section>
-            <Section className="flex-initial" heading="Workspaces">
-              <OldText variant="reg-12">TKTK</OldText>
-            </Section>
-          </div>
-          <div className="divide-y flex flex-col flex-auto col-span-4">
-            <Section className="flex-initial">
-              <div className="flex flex-col gap-3">
-                <span>
-                  <OldText variant="med-18">Introducing Nuon Actions!</OldText>
-                  <OldText
-                    className="text-cool-grey-600 dark:text-white/70"
-                    variant="reg-12"
-                  >
-                    Mar 5, 2025
-                  </OldText>
-                </span>
-                <OldText variant="reg-14" className="!leading-relaxed">
-                  Nuon Actions allow you to create automated workflows that can
-                  be run in installs. Actions are useful for debugging, running
-                  scripts, and implementing health checks.
-                </OldText>
-                <OldLink
-                  href="https://docs.nuon.co/concepts/nuon-actions"
-                  target="_blank"
-                  className="text-base"
-                >
-                  Check it out <CaretRightIcon />
-                </OldLink>
-              </div>
-            </Section>
-            <Section className="flex-initial" heading="Recent activity">
-              <OldText variant="reg-12">TKTK</OldText>
-            </Section>
-          </div>
-        </div>
-      </DashboardContent>
     )
   } else {
     if (org?.features?.['org-runner']) {

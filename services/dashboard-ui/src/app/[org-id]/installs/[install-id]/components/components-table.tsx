@@ -1,6 +1,4 @@
-'use server'
-
-import { InstallComponentsTable as Table } from '@/components/install-components/InstallComponentsTable'
+import { InstallComponentsTable as Table, InstallComponentsTableSkeleton as Skeleton } from '@/components/install-components/InstallComponentsTable'
 import { getInstallComponents, getAppConfig } from '@/lib'
 import type { TInstall } from '@/types'
 
@@ -75,3 +73,5 @@ export async function InstallComponentsTable({
     />
   )
 }
+
+export const InstallComponentsTableSkeleton = Skeleton

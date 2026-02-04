@@ -2,12 +2,7 @@ import { InstallActionRunHeader } from '@/components/actions/InstallActionRunHea
 import { BackToTop } from '@/components/common/BackToTop'
 import { PageSection } from '@/components/layout/PageSection'
 import { TabNav } from '@/components/navigation/TabNav'
-import {
-  getInstallAction,
-  getInstallActionRun,
-  getWorkflow,
-  getOrg,
-} from '@/lib'
+import { getInstallAction, getInstallActionRun, getWorkflow } from '@/lib'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
 import type { TLayoutProps } from '@/types'
 
@@ -25,7 +20,7 @@ export default async function InstallActionRunLayout({
     ['action-id']: actionId,
     ['run-id']: runId,
   } = await params
-  const [{ data: installActionRun }, { data: installAction }, { data: org }] =
+  const [{ data: installActionRun }, { data: installAction }] =
     await Promise.all([
       getInstallActionRun({
         installId,
@@ -37,7 +32,6 @@ export default async function InstallActionRunLayout({
         installId,
         orgId,
       }),
-      getOrg({ orgId }),
     ])
 
   const { data: workflow } = await getWorkflow({
@@ -51,27 +45,22 @@ export default async function InstallActionRunLayout({
       initInstallActionRun={installActionRun}
       shouldPoll
     >
-      {org?.features?.['stratus-layout'] ? (
-        <PageSection id={containerId} isScrollable>
-          
-          <InstallActionRunHeader
-            actionId={actionId}
-            actionName={installAction?.action_workflow?.name}
-            workflow={workflow}
-          />
-          <TabNav
-            basePath={`/${orgId}/installs/${installId}/actions/${actionId}/${runId}`}
-            tabs={[
-              { text: 'Summary', path: '/' },
-              { text: 'Logs', path: '/logs' },
-            ]}
-          />
-          {children}
-          <BackToTop containerId={containerId} />
-        </PageSection>
-      ) : (
-        children
-      )}
+      <PageSection id={containerId} isScrollable>
+        <InstallActionRunHeader
+          actionId={actionId}
+          actionName={installAction?.action_workflow?.name}
+          workflow={workflow}
+        />
+        <TabNav
+          basePath={`/${orgId}/installs/${installId}/actions/${actionId}/${runId}`}
+          tabs={[
+            { text: 'Summary', path: '/' },
+            { text: 'Logs', path: '/logs' },
+          ]}
+        />
+        {children}
+        <BackToTop containerId={containerId} />
+      </PageSection>
     </InstallActionRunProvider>
   )
 }

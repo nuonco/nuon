@@ -1,3 +1,5 @@
+// NOTE(nnnat): needs refactored to stratus
+
 import cronstrue from 'cronstrue'
 import type { Metadata } from 'next'
 import { BackLink } from '@/components/common/BackLink'
@@ -17,7 +19,6 @@ import {
   Config,
   ConfigurationVariables,
   ConfigurationVCS,
-  DashboardContent,
   Expand,
   Section,
   Text as OldText,
@@ -52,7 +53,7 @@ export default async function AppActionPage({ params }) {
   ])
 
   const containerId = 'app-action-page'
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
       <Breadcrumbs
         breadcrumbs={[
@@ -185,114 +186,5 @@ export default async function AppActionPage({ params }) {
       {/* old page layout */}
       <BackToTop containerId={containerId} />
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app.name },
-        { href: `/${orgId}/apps/${app.id}/actions`, text: 'Actions' },
-        {
-          href: `/${orgId}/apps/${app.id}/actions/${actionId}`,
-          text: action.name,
-        },
-      ]}
-      heading={action.name}
-      headingUnderline={actionId}
-    >
-      <div className="flex flex-col md:flex-row flex-auto">
-        <Section className="border-r" heading="Steps">
-          <div className="flex flex-col gap-4">
-            {action.configs[0].steps
-              ?.sort((a, b) => b?.idx - a?.idx)
-              ?.reverse()
-              ?.map((s, i) => {
-                return (
-                  <Expand
-                    isOpen
-                    id={s.id}
-                    key={s.id}
-                    parentClass="border rounded"
-                    headerClass="px-3 py-2"
-                    heading={
-                      <OldText variant="med-12">
-                        {i + 1}. {s.name}
-                      </OldText>
-                    }
-                    expandContent={
-                      <div className="flex flex-col gap-4 p-3 border-t">
-                        {s?.connected_github_vcs_config ||
-                        s?.public_git_vcs_config ? (
-                          <Config>
-                            <ConfigurationVCS vcs={s} />
-                          </Config>
-                        ) : null}
-
-                        {s.inline_contents?.length > 0 ? (
-                          <div className="flex flex-col gap-2">
-                            <OldText variant="med-12">Inline contents</OldText>
-                            <CodeViewer initCodeSource={s.inline_contents} />
-                          </div>
-                        ) : null}
-
-                        {s?.command?.length > 0 ? (
-                          <div className="flex flex-col gap-2">
-                            <OldText variant="med-12">Command</OldText>
-                            <CodeViewer initCodeSource={s?.command} />
-                          </div>
-                        ) : null}
-
-                        {s?.env_vars ? (
-                          <ConfigurationVariables variables={s.env_vars} />
-                        ) : null}
-                      </div>
-                    }
-                  />
-                )
-              })}
-          </div>
-        </Section>
-
-        <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
-          <Section className="flex-initial" heading="Triggers">
-            <div className="flex flex-col divide-y">
-              {action.configs[0].triggers.map((t) => (
-                <div className="flex gap-2 py-2" key={t.id}>
-                  <ActionTriggerType
-                    triggerType={t.type}
-                    componentName={t?.component?.name}
-                    componentPath={`/${orgId}/apps/${appId}/components/${t?.component_id}`}
-                  />
-                  {t.type === 'cron' ? (
-                    <OldText variant="reg-12">
-                      Will run{' '}
-                      {cronstrue
-                        .toString(t.cron_schedule, { verbose: true })
-                        .toLowerCase()}
-                      .
-                    </OldText>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </Section>
-          {action.configs?.[0]?.break_glass_role_arn!! ? (
-            <Section
-              className="flex-initial"
-              childrenClassName="flex flex-col gap-2"
-              heading="Break glass role"
-            >
-              <OldText variant="med-14">Access Permissions</OldText>
-              <OldText variant="med-12">
-                Break glass role{' '}
-                <Code variant="inline">
-                  {action?.configs?.[0]?.break_glass_role_arn}
-                </Code>{' '}
-                must be enabled in install stack before running this action.
-              </OldText>
-            </Section>
-          ) : null}
-        </div>
-      </div>
-    </DashboardContent>
   )
 }

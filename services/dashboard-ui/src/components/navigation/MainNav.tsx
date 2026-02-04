@@ -62,15 +62,13 @@ export const MainNav = () => {
 
       <Divider />
 
-      {org?.features?.['org-support'] ? (
-        <div className="flex flex-col gap-1">
-          <NavLabel>Resources</NavLabel>
+      <div className="flex flex-col gap-1">
+        <NavLabel>Resources</NavLabel>
 
-          {SUPPORT_LINKS.map((link) => (
-            <MainNavLink key={link.text} basePath={basePath} {...link} />
-          ))}
-        </div>
-      ) : null}
+        {SUPPORT_LINKS.map((link) => (
+          <MainNavLink key={link.text} basePath={basePath} {...link} />
+        ))}
+      </div>
     </nav>
   )
 }

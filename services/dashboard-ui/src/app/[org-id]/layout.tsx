@@ -18,9 +18,6 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import type { TLayoutProps } from '@/types'
 
-// NOTE: old layout stuff
-import { Layout as OldLayout } from '@/components/old/Layout'
-
 export default async function OrgLayout({
   children,
   params,
@@ -53,42 +50,25 @@ export default async function OrgLayout({
           warningTimeMs={30 * 1000} // 30 second warning
         >
           <OrgProvider initOrg={org} shouldPoll>
-            {org?.features?.['stratus-layout'] ? (
-              <BreadcrumbProvider>
-                <SidebarProvider initIsSidebarOpen={isSidebarOpen}>
-                  <ToastProvider>
-                    <SurfacesProvider>
-                      <MainLayout
-                        versions={{
-                          api: apiVersion,
-                          ui: {
-                            version: VERSION,
-                          },
-                        }}
-                      >
-                        {children}
-                      </MainLayout>
-                      <VCSConnectionSuccess />
-                    </SurfacesProvider>
-                  </ToastProvider>
-                </SidebarProvider>
-              </BreadcrumbProvider>
-            ) : (
-              <OldLayout
-                isSidebarOpen={isSidebarOpen}
-                orgs={orgs}
-                versions={
-                  {
-                    api: apiVersion,
-                    ui: {
-                      version: VERSION,
-                    },
-                  } as any
-                }
-              >
-                {children}
-              </OldLayout>
-            )}
+            <BreadcrumbProvider>
+              <SidebarProvider initIsSidebarOpen={isSidebarOpen}>
+                <ToastProvider>
+                  <SurfacesProvider>
+                    <MainLayout
+                      versions={{
+                        api: apiVersion,
+                        ui: {
+                          version: VERSION,
+                        },
+                      }}
+                    >
+                      {children}
+                    </MainLayout>
+                    <VCSConnectionSuccess />
+                  </SurfacesProvider>
+                </ToastProvider>
+              </SidebarProvider>
+            </BreadcrumbProvider>
           </OrgProvider>
         </AutoRefreshProvider>
       </APIHealthProvider>

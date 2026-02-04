@@ -27,7 +27,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
   const isManagedByConfig =
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageLayout>
       {isThirdLevel ? (
         <PageContent className="border-t" isScrollable variant="secondary">
@@ -206,7 +206,5 @@ export default function Template({ children }: { children: React.ReactNode }) {
         </>
       )}
     </PageLayout>
-  ) : (
-    children
   )
 }

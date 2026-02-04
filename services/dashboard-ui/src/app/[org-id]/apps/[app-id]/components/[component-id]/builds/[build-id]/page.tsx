@@ -1,44 +1,15 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import { BuildHeader } from '@/components/builds/BuildHeader'
-import { BackLink } from '@/components/common/BackLink'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { BackToTop } from '@/components/common/BackToTop'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { ID } from '@/components/common/ID'
-import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { BuildProvider } from '@/providers/build-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import {
-  getApp,
-  getComponentBuild,
-  getComponent,
-  getOrg,
-} from '@/lib'
-import { ComponentConfig } from './config'
+import { getApp, getComponentBuild, getComponent, getOrg } from '@/lib'
+
 import { Logs, LogsError, LogsSkeleton } from './logs'
 import { RefreshLogStream } from './refresh-log-stream'
-
-// NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
-import { CalendarBlankIcon, TimerIcon } from '@phosphor-icons/react/dist/ssr'
-import {
-  ComponentConfigType,
-  DashboardContent,
-  Duration,
-  ErrorFallback,
-  Loading,
-  LogStreamProvider as OldLogStreamProvider,
-  OperationLogsSection,
-  Section,
-  Time,
-  Text as OldText,
-  ToolTip,
-  Truncate,
-} from '@/components'
-import { BuildDetails } from '@/components/old/Components/BuildDetails'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -74,7 +45,7 @@ export default async function AppComponentBuildPage({ params }) {
     ])
 
   const containerId = 'component-build-page'
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <>
       <Breadcrumbs
         breadcrumbs={[
@@ -107,150 +78,31 @@ export default async function AppComponentBuildPage({ params }) {
       <BuildProvider initBuild={build}>
         <BuildHeader component={component} />
         <PageSection id={containerId} isScrollable>
-          {/* old page layout */}
           <div>
             {build?.log_stream ? (
               <LogStreamProvider
                 initLogStream={build?.log_stream}
                 shouldPoll={build?.log_stream?.open}
               >
-                <ErrorBoundary fallback={<LogsError />}>
-                  <Suspense fallback={<LogsSkeleton />}>
-                    <Logs
-                      logStreamId={build?.log_stream?.id}
-                      logStreamOpen={build?.log_stream?.open}
-                      orgId={orgId}
-                    />
-                  </Suspense>
-                </ErrorBoundary>
+                <AsyncBoundary
+                  errorFallback={<LogsError />}
+                  loadingFallback={<LogsSkeleton />}
+                >
+                  <Logs
+                    logStreamId={build?.log_stream?.id}
+                    logStreamOpen={build?.log_stream?.open}
+                    orgId={orgId}
+                  />
+                </AsyncBoundary>
               </LogStreamProvider>
             ) : (
               <RefreshLogStream />
             )}
           </div>
-          {/* old page layout */}
 
           <BackToTop containerId={containerId} />
         </PageSection>
       </BuildProvider>
     </>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app?.id}`, text: app?.name },
-        { href: `/${orgId}/apps/${app?.id}/components`, text: 'Components' },
-        {
-          href: `/${orgId}/apps/${app?.id}/components/${build.component_id}`,
-          text: build?.component_name,
-        },
-        {
-          href: `/${orgId}/apps/${app?.id}/components/${build.component_id}/builds/${build.id}`,
-          text: 'Build',
-        },
-      ]}
-      heading={`${build?.component_name} build`}
-      headingUnderline={build.id}
-      meta={
-        <div className="flex gap-8 items-center justify-start pb-6">
-          <OldText>
-            <CalendarBlankIcon />
-            <Time time={build.created_at} />
-          </OldText>
-          <OldText>
-            <TimerIcon />
-            <Duration beginTime={build.created_at} endTime={build.updated_at} />
-          </OldText>
-          <ComponentConfigType configType={component?.type} />
-        </div>
-      }
-      statues={<BuildDetails initBuild={build} shouldPoll />}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <div className="md:col-span-8">
-          {build?.log_stream ? (
-            <OldLogStreamProvider initLogStream={build?.log_stream}>
-              <OperationLogsSection heading="Build logs" />
-            </OldLogStreamProvider>
-          ) : (
-            <Section heading="Build logs">
-              <RefreshLogStream />
-            </Section>
-          )}
-        </div>
-        <div className="divide-y flex flex-col md:col-span-4">
-          {build.vcs_connection_commit && (
-            <Section className="flex-initial" heading="Commit details">
-              <div className="flex gap-6 items-start justify-start">
-                <span className="flex flex-col gap-2">
-                  <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                    SHA
-                  </OldText>
-                  <ToolTip tipContent={build.vcs_connection_commit?.sha}>
-                    <OldText
-                      className="truncate text-ellipsis w-16"
-                      variant="mono-12"
-                    >
-                      {build.vcs_connection_commit?.sha}
-                    </OldText>
-                  </ToolTip>
-                </span>
-
-                {build.vcs_connection_commit?.author_name !== '' && (
-                  <span className="flex flex-col gap-2">
-                    <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                      Author
-                    </OldText>
-                    <OldText>
-                      {build.vcs_connection_commit?.author_name}
-                    </OldText>
-                  </span>
-                )}
-
-                <span className="flex flex-col gap-2">
-                  <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                    Message
-                  </OldText>
-                  <OldText>
-                    {build.vcs_connection_commit?.message?.length >= 32 ? (
-                      <ToolTip
-                        tipContent={build.vcs_connection_commit?.message}
-                        alignment="right"
-                        position="top"
-                      >
-                        <Truncate variant="small">
-                          {build.vcs_connection_commit?.message}
-                        </Truncate>
-                      </ToolTip>
-                    ) : (
-                      build?.vcs_connection_commit?.message
-                    )}
-                  </OldText>
-                </span>
-              </div>
-            </Section>
-          )}
-
-          <Section className="flex-initial" heading="Component config">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading component config..."
-                  />
-                }
-              >
-                <ComponentConfig
-                  componentId={componentId}
-                  componentConfigId={build?.component_config_connection_id}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-        </div>
-      </div>
-    </DashboardContent>
   )
 }
