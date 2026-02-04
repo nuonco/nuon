@@ -1,0 +1,204 @@
+// Status Badge Component - Following templui pattern
+// Displays status badges with consistent styling across the admin dashboard
+package status
+
+import (
+	"strings"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/utils"
+)
+
+type Variant string
+type Size string
+
+const (
+	VariantSuccess Variant = "success"
+	VariantError   Variant = "error"
+	VariantWarning Variant = "warning"
+	VariantInfo    Variant = "info"
+	VariantDefault Variant = "default"
+	VariantBrand   Variant = "brand"
+)
+
+const (
+	SizeDefault Size = "default"
+	SizeSm      Size = "sm"
+	SizeLg      Size = "lg"
+)
+
+type Props struct {
+	ID         string           // Optional status badge ID
+	Class      string           // Custom CSS classes
+	Attrs      templ.Attributes // Additional HTML attributes
+	Variant    Variant          // Color variant (success, error, warning, info, default)
+	Size       Size             // Size variant (default, sm, lg)
+	Text       string           // Status text to display
+	Uppercase  bool             // Display text in uppercase (default: true)
+	FontMono   bool             // Use monospace font (default: true)
+}
+
+templ Status(props Props) {
+	{{ var p = props }}
+	// Set defaults
+	if p.Variant == "" {
+		{{ p.Variant = VariantDefault }}
+	}
+	if p.Size == "" {
+		{{ p.Size = SizeDefault }}
+	}
+	// Uppercase is true by default
+	{{ var uppercaseClass = "" }}
+	if p.Uppercase {
+		{{ uppercaseClass = "uppercase" }}
+	}
+	// FontMono is true by default
+	{{ var monoClass = "" }}
+	if p.FontMono {
+		{{ monoClass = "font-mono" }}
+	}
+	<span
+		if p.ID != "" {
+			id={ p.ID }
+		}
+		class={
+			utils.TwMerge(
+				"inline-flex items-center rounded border",
+				variantClasses(p.Variant),
+				sizeClasses(p.Size),
+				uppercaseClass,
+				monoClass,
+				p.Class,
+			),
+		}
+		{ p.Attrs... }
+	>
+		{ p.Text }
+	</span>
+}
+
+// StatusAuto automatically determines variant from status text
+// Convenience wrapper around Status component with automatic variant detection
+templ StatusAuto(text string, size Size, class string, attrs templ.Attributes) {
+	@Status(Props{
+		Variant:   statusTextToVariant(text),
+		Size:      size,
+		Text:      text,
+		Class:     class,
+		Attrs:     attrs,
+		Uppercase: true,
+		FontMono:  true,
+	})
+}
+
+// StatusAutoSimple automatically determines variant with default settings
+// Most convenient usage for simple cases
+templ StatusAutoSimple(text string) {
+	@Status(Props{
+		Variant:   statusTextToVariant(text),
+		Size:      SizeDefault,
+		Text:      text,
+		Uppercase: true,
+		FontMono:  true,
+	})
+}
+
+// variantClasses returns the CSS classes for each variant
+func variantClasses(variant Variant) string {
+	switch variant {
+	case VariantSuccess:
+		return "bg-success-bg text-success border-success-border"
+	case VariantError:
+		return "bg-error-bg text-error border-error-border"
+	case VariantWarning:
+		return "bg-warning-bg text-warning border-warning-border"
+	case VariantInfo:
+		return "bg-info-bg text-info border-info-border"
+	case VariantBrand:
+		return "bg-cyan text-cyan-foreground border-cyan"
+	case VariantDefault:
+		return "bg-muted text-muted-foreground border-border"
+	default:
+		return "bg-muted text-muted-foreground border-border"
+	}
+}
+
+// statusTextToVariant maps status text to appropriate variant
+// Matches the STATUS_THEME_MAP pattern from React codebase
+func statusTextToVariant(text string) Variant {
+	// Normalize text: lowercase and replace spaces/underscores
+	normalized := strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(text, " ", "-"), "_", "-"))
+
+	// Success statuses
+	successStatuses := map[string]bool{
+		"active": true, "ok": true, "finished": true, "healthy": true,
+		"connected": true, "approved": true, "success": true,
+	}
+	if successStatuses[normalized] {
+		return VariantSuccess
+	}
+
+	// Error statuses
+	errorStatuses := map[string]bool{
+		"failed": true, "error": true, "bad": true, "access-error": true,
+		"timed-out": true, "unknown": true, "unhealthy": true, "not-connected": true,
+		"suspended": true, "policy-failed": true, "policy_failed": true,
+	}
+	if errorStatuses[normalized] {
+		return VariantError
+	}
+
+	// Warning statuses
+	warningStatuses := map[string]bool{
+		"approval-denied": true, "approval-awaiting": true, "cancelled": true,
+		"outdated": true, "warn": true, "warning": true, "drifted": true,
+	}
+	if warningStatuses[normalized] {
+		return VariantWarning
+	}
+
+	// Info statuses
+	infoStatuses := map[string]bool{
+		"executing": true, "waiting": true, "started": true, "in-progress": true,
+		"building": true, "queued": true, "planning": true, "provisioning": true,
+		"syncing": true, "deploying": true, "available": true, "pending-approval": true,
+		"info": true, "retried": true, "applying": true,
+	}
+	if infoStatuses[normalized] {
+		return VariantInfo
+	}
+
+	// Brand statuses
+	brandStatuses := map[string]bool{
+		"special": true, "brand": true,
+	}
+	if brandStatuses[normalized] {
+		return VariantBrand
+	}
+
+	// Neutral/default statuses
+	neutralStatuses := map[string]bool{
+		"noop": true, "inactive": true, "pending": true, "offline": true,
+		"not-deployed": true, "no-build": true, "not-attempted": true,
+		"deprovisioned": true, "skeleton": true,
+	}
+	if neutralStatuses[normalized] {
+		return VariantDefault
+	}
+
+	// Default fallback
+	return VariantDefault
+}
+
+// sizeClasses returns the CSS classes for each size
+func sizeClasses(size Size) string {
+	switch size {
+	case SizeSm:
+		return "px-1.5 py-0.5 text-xs"
+	case SizeLg:
+		return "px-3 py-1.5 text-sm"
+	case SizeDefault:
+		return "px-2 py-1 text-xs"
+	default:
+		return "px-2 py-1 text-xs"
+	}
+}
