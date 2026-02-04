@@ -27,6 +27,23 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	l.Info("starting policy evaluation", zap.String("build_id", buildID))
 
+	// Check if any container image policies exist BEFORE fetching metadata
+	// This avoids expensive runner job + OCI registry calls when no policies are configured
+	policyCheckResult, err := activities.AwaitCheckContainerImagePoliciesExist(ctx, &activities.CheckContainerImagePoliciesExistRequest{
+		BuildID: buildID,
+	})
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to check for policies", err))
+		return fmt.Errorf("unable to check for container image policies: %w", err)
+	}
+
+	if !policyCheckResult.HasPolicies {
+		l.Info("no container image policies configured, skipping policy evaluation")
+		return nil
+	}
+
+	l.Info("container image policies found, proceeding with metadata fetch")
+
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get log stream ID", err))
