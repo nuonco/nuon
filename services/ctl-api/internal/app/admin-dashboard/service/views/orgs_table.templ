@@ -10,7 +10,7 @@ import (
 templ OrgsTable(orgs []*app.Org) {
 	<div
 		id="orgs-table"
-		hx-get="/orgs/table"
+		hx-get="orgs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
@@ -36,7 +36,7 @@ templ OrgsTable(orgs []*app.Org) {
 							</div>
 						}
 						@table.Cell() {
-							<a href={ templ.URL("/orgs/" + org.ID) } class="text-cyan hover:underline">
+							<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline">
 								{ org.Name }
 							</a>
 						}

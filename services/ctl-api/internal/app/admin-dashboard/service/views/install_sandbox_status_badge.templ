@@ -2,12 +2,28 @@ package views
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
 )
 
+func sandboxStatusToVariant(sandboxStatus app.InstallSandboxStatus) status.Variant {
+	switch sandboxStatus {
+	case app.InstallSandboxStatusActive:
+		return status.VariantSuccess
+	case app.InstallSandboxStatusError, app.InstallSandboxStatusDeleteFailed, app.InstallSandboxStatusAccessError:
+		return status.VariantError
+	case app.InstallSandboxStatusQueued, app.InstallSandboxStatusProvisioning, app.InstallSandboxStatusReprovisioning:
+		return status.VariantInfo
+	case app.InstallSandboxStatusDeprovisioning, app.InstallSandboxStatusDeprovisioned, app.InstallSandboxStatusDeleted:
+		return status.VariantWarning
+	default:
+		return status.VariantDefault
+	}
+}
+
 templ InstallSandboxStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "/installs/" + install.ID + "/status/sandbox" }
+		hx-get={ "installs/" + install.ID + "/status/sandbox" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
@@ -15,9 +31,13 @@ templ InstallSandboxStatusBadge(install *app.Install) {
 			@tooltip.Trigger(tooltip.TriggerProps{
 				For: "install-sandbox-tooltip-" + install.ID,
 			}) {
-				<span class={ "px-2 py-1 rounded text-xs font-mono uppercase", sandboxStatusClass(install.SandboxStatus) }>
-					Sandbox
-				</span>
+				@status.Status(status.Props{
+					Variant:   sandboxStatusToVariant(install.SandboxStatus),
+					Size:      status.SizeDefault,
+					Text:      "Sandbox",
+					Uppercase: true,
+					FontMono:  true,
+				})
 			}
 			@tooltip.Content(tooltip.ContentProps{
 				ID:            "install-sandbox-tooltip-" + install.ID,
