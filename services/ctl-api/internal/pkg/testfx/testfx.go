@@ -11,6 +11,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -23,6 +24,7 @@ import (
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
@@ -60,6 +62,7 @@ func CtlApiFXOptions() []fx.Option {
 		fx.Provide(ghpkg.New),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
+		fx.Provide(features.New),
 
 		// Temporal dependencies (required for eventloop)
 		fx.Provide(gzip.AsGzip(gzip.New)),
@@ -91,6 +94,7 @@ func CtlApiFXOptions() []fx.Option {
 		fx.Provide(appshelpers.New),
 		fx.Provide(runnershelpers.New),
 		fx.Provide(installshelpers.New),
+		fx.Provide(orgshelpers.New),
 
 		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),
@@ -118,6 +122,7 @@ func CtlApiFXOptionsWithValidator() []fx.Option {
 		fx.Provide(ghpkg.New),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
+		fx.Provide(features.New),
 
 		// Temporal dependencies (required for eventloop)
 		fx.Provide(gzip.AsGzip(gzip.New)),
@@ -149,6 +154,7 @@ func CtlApiFXOptionsWithValidator() []fx.Option {
 		fx.Provide(appshelpers.New),
 		fx.Provide(runnershelpers.New),
 		fx.Provide(installshelpers.New),
+		fx.Provide(orgshelpers.New),
 
 		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),

@@ -104,10 +104,24 @@ func (s *CreateAppTestSuite) SetupTest() {
 }
 
 func (s *CreateAppTestSuite) TearDownSuite() {
+	s.cleanupTestData()
 	s.app.RequireStop()
 }
 
+func (s *CreateAppTestSuite) cleanupTestData() {
+	if s.testOrg != nil {
+		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", s.testOrg.ID)
+	}
+	if s.testAcc != nil {
+		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", s.testAcc.ID)
+	}
+}
+
 func (s *CreateAppTestSuite) setupTestData() {
+	// Clean up any existing test data first
+	s.service.DB.Unscoped().Where("email = ?", "user@example.com").Delete(&app.Account{})
+	s.service.DB.Unscoped().Where("name = ?", "test-org").Delete(&app.Org{})
+
 	// Create test account
 	testAcc := &app.Account{
 		ID:          domains.NewAccountID(),
@@ -248,7 +262,7 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 		}
 		err := s.service.DB.Create(acc2).Error
 		require.NoError(s.T(), err)
-		s.testAcc = acc2
+		defer s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
 
 		ctx := context.Background()
 		ctx = cctx.SetAccountContext(ctx, acc2)
@@ -261,11 +275,32 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 		}
 		err = s.service.DB.WithContext(ctx).Create(org2).Error
 		require.NoError(s.T(), err)
-		s.testOrg = org2
+		defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
+
+		// Recreate router with new org context
+		router := testfx.NewTestRouter(testfx.RouterOptions{
+			L:       s.service.L,
+			DB:      s.service.DB,
+			TestOrg: org2,
+			TestAcc: acc2,
+		})
+		err = s.service.AppsService.RegisterPublicRoutes(router)
+		require.NoError(s.T(), err)
 
 		// Try to create duplicate app across orgs
 		req := CreateAppRequest{Name: appName}
-		rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
+
+		var reqBody *bytes.Buffer
+		jsonBytes, err := json.Marshal(req)
+		require.NoError(s.T(), err)
+		reqBody = bytes.NewBuffer(jsonBytes)
+
+		httpReq, err := http.NewRequest(http.MethodPost, "/v1/apps", reqBody)
+		require.NoError(s.T(), err)
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, httpReq)
 
 		// Validate 201
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
