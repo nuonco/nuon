@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type PruneTokensResponse struct {
@@ -31,15 +32,20 @@ func (s *service) PruneTokens(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	// Verify runner belongs to caller's org
-	_, err := s.getRunnerCtlAPI(ctx, runnerID)
+	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	runner, err := s.getOrgRunner(ctx, runnerID, org.ID)
+	if err != nil || runner == nil {
 		ctx.Error(fmt.Errorf("unable to get runner %s: %w", runnerID, err))
 		return
 	}
 
-	count, err := s.helpers.InvalidateOldTokens(ctx, runnerID)
+	count, err := s.helpers.InvalidateOldTokens(ctx, runner.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to prune tokens for runner %s: %w", runnerID, err))
+		ctx.Error(fmt.Errorf("unable to prune tokens for runner %s: %w", runner.ID, err))
 		return
 	}
 
