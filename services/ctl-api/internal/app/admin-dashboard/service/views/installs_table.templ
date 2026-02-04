@@ -3,6 +3,7 @@ package views
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
 )
 
@@ -10,7 +11,7 @@ import (
 templ InstallsTable(orgID string, installs []*app.Install) {
 	<div
 		id={ "installs-table-" + orgID }
-		hx-get={ "/orgs/" + orgID + "/installs/table" }
+		hx-get={ "orgs/" + orgID + "/installs/table" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
@@ -41,7 +42,7 @@ templ InstallsTable(orgID string, installs []*app.Install) {
 								</div>
 							}
 							@table.Cell() {
-								<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
+								<a href={ templ.URL("installs/" + install.ID) } class="text-cyan hover:underline">
 									{ install.Name }
 								</a>
 							}
@@ -49,28 +50,13 @@ templ InstallsTable(orgID string, installs []*app.Install) {
 								{ install.App.Name }
 							}
 							@table.Cell() {
-								<span class={
-									"px-2 py-1 rounded text-xs font-mono uppercase",
-									runnerStatusClass(install.RunnerStatus),
-								}>
-									{ string(install.RunnerStatus) }
-								</span>
+								@status.StatusAutoSimple(string(install.RunnerStatus))
 							}
 							@table.Cell() {
-								<span class={
-									"px-2 py-1 rounded text-xs font-mono uppercase",
-									sandboxStatusClass(install.SandboxStatus),
-								}>
-									{ string(install.SandboxStatus) }
-								</span>
+								@status.StatusAutoSimple(string(install.SandboxStatus))
 							}
 							@table.Cell() {
-								<span class={
-									"px-2 py-1 rounded text-xs font-mono uppercase",
-									componentStatusClass(install.CompositeComponentStatus),
-								}>
-									{ string(install.CompositeComponentStatus) }
-								</span>
+								@status.StatusAutoSimple(string(install.CompositeComponentStatus))
 							}
 							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
 								{ install.CreatedAt.Format("2006-01-02 15:04") }
@@ -83,50 +69,3 @@ templ InstallsTable(orgID string, installs []*app.Install) {
 	</div>
 }
 
-// Helper function for runner status badge styling
-func runnerStatusClass(status app.RunnerStatus) string {
-	switch status {
-	case app.RunnerStatusActive:
-		return "bg-success-bg text-success border border-success-border"
-	case app.RunnerStatusError, app.RunnerStatusOffline:
-		return "bg-error-bg text-error border border-error-border"
-	case app.RunnerStatusPending, app.RunnerStatusProvisioning, app.RunnerStatusReprovisioning, app.RunnerStatusAwaitingInstallStackRun:
-		return "bg-info-bg text-info border border-info-border"
-	case app.RunnerStatusDeprovisioning, app.RunnerStatusDeprovisioned:
-		return "bg-warning-bg text-warning border border-warning-border"
-	default:
-		return "bg-muted text-muted-foreground border border-border"
-	}
-}
-
-// Helper function for sandbox status badge styling
-func sandboxStatusClass(status app.InstallSandboxStatus) string {
-	switch status {
-	case app.InstallSandboxStatusActive:
-		return "bg-success-bg text-success border border-success-border"
-	case app.InstallSandboxStatusError, app.InstallSandboxStatusDeleteFailed, app.InstallSandboxStatusAccessError:
-		return "bg-error-bg text-error border border-error-border"
-	case app.InstallSandboxStatusQueued, app.InstallSandboxStatusProvisioning, app.InstallSandboxStatusReprovisioning:
-		return "bg-info-bg text-info border border-info-border"
-	case app.InstallSandboxStatusDeprovisioning, app.InstallSandboxStatusDeprovisioned, app.InstallSandboxStatusDeleted:
-		return "bg-warning-bg text-warning border border-warning-border"
-	default:
-		return "bg-muted text-muted-foreground border border-border"
-	}
-}
-
-// Helper function for component status badge styling
-func componentStatusClass(status app.InstallComponentStatus) string {
-	switch status {
-	case app.InstallComponentStatusActive:
-		return "bg-success-bg text-success border border-success-border"
-	case app.InstallComponentStatusError, app.InstallComponentStatusDeleteFailed:
-		return "bg-error-bg text-error border border-error-border"
-	case app.InstallComponentStatusQueued, app.InstallComponentStatusPlanning, app.InstallComponentStatusSyncing, app.InstallComponentStatusExecuting:
-		return "bg-info-bg text-info border border-info-border"
-	case app.InstallComponentStatusDeleted, app.InstallComponentStatusInactive:
-		return "bg-warning-bg text-warning border border-warning-border"
-	default:
-		return "bg-muted text-muted-foreground border border-border"
-	}
-}
