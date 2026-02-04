@@ -1,14 +1,16 @@
 package views
 
 import (
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
 	"fmt"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
 )
 
 templ InstallDriftStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "/installs/" + install.ID + "/status/drift" }
+		hx-get={ "installs/" + install.ID + "/status/drift" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
@@ -17,13 +19,21 @@ templ InstallDriftStatusBadge(install *app.Install) {
 				For: "install-drift-tooltip-" + install.ID,
 			}) {
 				if len(install.DriftedObjects) == 0 {
-					<span class="px-2 py-1 rounded text-xs font-mono uppercase bg-success-bg text-success border border-success-border">
-						No Drift
-					</span>
+					@status.Status(status.Props{
+						Variant:   status.VariantSuccess,
+						Size:      status.SizeDefault,
+						Text:      "No Drift",
+						Uppercase: true,
+						FontMono:  true,
+					})
 				} else {
-					<span class="px-2 py-1 rounded text-xs font-mono uppercase bg-warning-bg text-warning border border-warning-border">
-						Drift Detected
-					</span>
+					@status.Status(status.Props{
+						Variant:   status.VariantWarning,
+						Size:      status.SizeDefault,
+						Text:      "Drift Detected",
+						Uppercase: true,
+						FontMono:  true,
+					})
 				}
 			}
 			@tooltip.Content(tooltip.ContentProps{
