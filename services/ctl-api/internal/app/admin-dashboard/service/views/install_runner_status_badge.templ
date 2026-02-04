@@ -2,12 +2,28 @@ package views
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
 )
 
+func runnerStatusToVariant(runnerStatus app.RunnerStatus) status.Variant {
+	switch runnerStatus {
+	case app.RunnerStatusActive:
+		return status.VariantSuccess
+	case app.RunnerStatusError, app.RunnerStatusOffline:
+		return status.VariantError
+	case app.RunnerStatusPending, app.RunnerStatusProvisioning, app.RunnerStatusReprovisioning, app.RunnerStatusAwaitingInstallStackRun:
+		return status.VariantInfo
+	case app.RunnerStatusDeprovisioning, app.RunnerStatusDeprovisioned:
+		return status.VariantWarning
+	default:
+		return status.VariantDefault
+	}
+}
+
 templ InstallRunnerStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "/installs/" + install.ID + "/status/runner" }
+		hx-get={ "installs/" + install.ID + "/status/runner" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
@@ -15,9 +31,13 @@ templ InstallRunnerStatusBadge(install *app.Install) {
 			@tooltip.Trigger(tooltip.TriggerProps{
 				For: "install-runner-tooltip-" + install.ID,
 			}) {
-				<span class={ "px-2 py-1 rounded text-xs font-mono uppercase", runnerStatusClass(install.RunnerStatus) }>
-					Runner
-				</span>
+				@status.Status(status.Props{
+					Variant:   runnerStatusToVariant(install.RunnerStatus),
+					Size:      status.SizeDefault,
+					Text:      "Runner",
+					Uppercase: true,
+					FontMono:  true,
+				})
 			}
 			@tooltip.Content(tooltip.ContentProps{
 				ID:            "install-runner-tooltip-" + install.ID,

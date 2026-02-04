@@ -10,7 +10,9 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
 )
 
@@ -40,9 +42,9 @@ func InstallDriftStatusBadge(install *app.Install) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/installs/" + install.ID + "/status/drift")
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("installs/" + install.ID + "/status/drift")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_drift_status_badge.templ`, Line: 11, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_drift_status_badge.templ`, Line: 13, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -77,12 +79,24 @@ func InstallDriftStatusBadge(install *app.Install) templ.Component {
 				}
 				ctx = templ.InitializeContext(ctx)
 				if len(install.DriftedObjects) == 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<span class=\"px-2 py-1 rounded text-xs font-mono uppercase bg-success-bg text-success border border-success-border\">No Drift</span>")
+					templ_7745c5c3_Err = status.Status(status.Props{
+						Variant:   status.VariantSuccess,
+						Size:      status.SizeDefault,
+						Text:      "No Drift",
+						Uppercase: true,
+						FontMono:  true,
+					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span class=\"px-2 py-1 rounded text-xs font-mono uppercase bg-warning-bg text-warning border border-warning-border\">Drift Detected</span>")
+					templ_7745c5c3_Err = status.Status(status.Props{
+						Variant:   status.VariantWarning,
+						Size:      status.SizeDefault,
+						Text:      "Drift Detected",
+						Uppercase: true,
+						FontMono:  true,
+					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -95,7 +109,7 @@ func InstallDriftStatusBadge(install *app.Install) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -112,7 +126,7 @@ func InstallDriftStatusBadge(install *app.Install) templ.Component {
 				}
 				ctx = templ.InitializeContext(ctx)
 				if len(install.DriftedObjects) == 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "No configuration drift detected")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "No configuration drift detected")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -120,7 +134,7 @@ func InstallDriftStatusBadge(install *app.Install) templ.Component {
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d drifted object(s) detected", len(install.DriftedObjects)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_drift_status_badge.templ`, Line: 39, Col: 80}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_drift_status_badge.templ`, Line: 49, Col: 80}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -145,7 +159,7 @@ func InstallDriftStatusBadge(install *app.Install) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
