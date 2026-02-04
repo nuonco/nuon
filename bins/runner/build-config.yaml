@@ -5,4 +5,4 @@ dist:
   otelcol_version: 0.104.0
   output_path: ./internal/app/collector
   version: 1.0.0
-  module: github.com/nuonco/mono/bins/runner/internal/app/collector
+  module: github.com/nuonco/nuon/bins/runner/internal/app/collector
