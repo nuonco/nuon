@@ -124,7 +124,8 @@ func migrateTestDatabase(cfg dbConfig) error {
 	return nil
 }
 
-// TruncateAllTables truncates all tables in the database.
+// TruncateAllTables truncates all tables in the database except service accounts.
+// Service accounts are preserved to avoid re-running data migrations.
 func TruncateAllTables(ctx context.Context, db *gorm.DB) error {
 	models := psql.AllModels()
 
@@ -134,14 +135,26 @@ func TruncateAllTables(ctx context.Context, db *gorm.DB) error {
 		if err := stmt.Parse(model); err != nil {
 			return fmt.Errorf("failed to parse model: %w", err)
 		}
+
+		// Skip accounts table - we'll handle it separately
+		if stmt.Schema.Table == "accounts" {
+			continue
+		}
+
 		tableNames = append(tableNames, fmt.Sprintf(`"%s"`, stmt.Schema.Table))
 	}
 
+	// Truncate all tables except accounts
 	sql := fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE",
 		strings.Join(tableNames, ", "))
 
 	if err := db.WithContext(ctx).Exec(sql).Error; err != nil {
 		return fmt.Errorf("failed to truncate tables: %w", err)
+	}
+
+	// Delete non-service accounts from accounts table
+	if err := db.WithContext(ctx).Exec("DELETE FROM accounts WHERE account_type <> 'service'").Error; err != nil {
+		return fmt.Errorf("failed to clean accounts table: %w", err)
 	}
 
 	return nil
@@ -208,10 +221,6 @@ func (s *BaseDBTestSuite) SetupTest() {
 
 	// Truncate all tables
 	err := TruncateAllTables(context.Background(), s.db)
-	require.NoError(s.T(), err)
-
-	// Re-run migrations
-	err = runMigrator(context.Background(), s.db)
 	require.NoError(s.T(), err)
 }
 
