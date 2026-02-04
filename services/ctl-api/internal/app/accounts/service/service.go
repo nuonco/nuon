@@ -42,6 +42,13 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			userJourneys.POST("/:journey_name/complete", s.CompleteUserJourney)
 		}
 	}
+
+	// auth/me - registered here instead of authservice so it's available in PublicServicesModule
+	auth := api.Group("/v1/auth")
+	{
+		auth.GET("/me", s.GetAuthMe)
+	}
+
 	return nil
 }
 

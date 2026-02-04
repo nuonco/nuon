@@ -56,10 +56,7 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	auth := api.Group("/v1/auth")
-	{
-		auth.GET("/me", s.GetAuthMe)
-	}
+	// Note: /v1/auth/me is registered in accountsservice so it's available in PublicServicesModule
 	return nil
 }
 
