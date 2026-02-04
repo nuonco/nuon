@@ -21,19 +21,18 @@ import (
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // CreateOrgTestSuite is the testify suite for create org endpoint.
 type CreateOrgTestSuite struct {
-	testdb.BaseDBTestSuite
+	tests.BaseDBTestSuite
 
 	app          *fxtest.App
 	service      TestService
 	router       *gin.Engine
 	testAcc      *app.Account
-	mockEvClient *testfx.MockEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 	orgsService  *service
 }
 
@@ -51,10 +50,10 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create mock event loop client
-	s.mockEvClient = testfx.NewMockEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		testfx.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(),
 		// Override eventloop.Client with mock
 		fx.Decorate(func() eventloop.Client {
 			return s.mockEvClient
@@ -79,7 +78,7 @@ func (s *CreateOrgTestSuite) SetupTest() {
 	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
-	s.router = testfx.NewTestRouter(testfx.RouterOptions{
+	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: s.testAcc,
@@ -325,7 +324,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	})
 
 	// Create router with service account context
-	router := testfx.NewTestRouter(testfx.RouterOptions{
+	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: serviceAcc,
@@ -434,7 +433,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 	})
 
 	// Create router with integration account context
-	router := testfx.NewTestRouter(testfx.RouterOptions{
+	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: integrationAcc,

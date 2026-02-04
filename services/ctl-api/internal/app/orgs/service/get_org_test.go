@@ -17,13 +17,12 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // GetOrgTestSuite is the testify suite for get org endpoint.
 type GetOrgTestSuite struct {
-	testdb.BaseDBTestSuite
+	tests.BaseDBTestSuite
 
 	app         *fxtest.App
 	service     TestService
@@ -47,7 +46,7 @@ func (s *GetOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		testfx.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
@@ -65,7 +64,7 @@ func (s *GetOrgTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Create test router with standard middlewares
-	s.router = testfx.NewTestRouter(testfx.RouterOptions{
+	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
@@ -221,7 +220,7 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 			org := tc.setupFunc()
 
 			// Update router context to use the test org
-			s.router = testfx.NewTestRouter(testfx.RouterOptions{
+			s.router = tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
 				TestOrg: org,
@@ -256,7 +255,7 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 
 func (s *GetOrgTestSuite) TestGetOrgWithoutOrgContext() {
 	// Create router without org context
-	router := testfx.NewTestRouter(testfx.RouterOptions{
+	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: s.testAcc,

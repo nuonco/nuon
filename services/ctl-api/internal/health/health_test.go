@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // TestService holds all fx-injected dependencies for health endpoint tests.
@@ -52,7 +52,7 @@ func (s *HealthTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		testfx.CtlApiFXOptionsWithValidator(),
+		tests.CtlApiFXOptionsWithValidator(),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),

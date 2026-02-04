@@ -24,8 +24,7 @@ import (
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // TestService holds all fx-injected dependencies for orgs endpoint tests.
@@ -44,7 +43,7 @@ type TestService struct {
 
 // OrgsTestSuite is the testify suite for orgs endpoints.
 type OrgsTestSuite struct {
-	testdb.BaseDBTestSuite
+	tests.BaseDBTestSuite
 
 	app     *fxtest.App
 	service TestService
@@ -66,7 +65,7 @@ func (s *OrgsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		testfx.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -85,7 +84,7 @@ func (s *OrgsTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Create test router with standard middlewares
-	s.router = testfx.NewTestRouter(testfx.RouterOptions{
+	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: s.testAcc,

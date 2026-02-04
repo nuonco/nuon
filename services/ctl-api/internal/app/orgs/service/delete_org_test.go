@@ -25,8 +25,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // DeleteOrgTestService holds all fx-injected dependencies for delete org tests.
@@ -44,14 +43,14 @@ type DeleteOrgTestService struct {
 
 // DeleteOrgTestSuite is the testify suite for delete org endpoint.
 type DeleteOrgTestSuite struct {
-	testdb.BaseDBTestSuite
+	tests.BaseDBTestSuite
 
 	app          *fxtest.App
 	service      DeleteOrgTestService
 	router       *gin.Engine
 	testOrg      *app.Org
 	testAcc      *app.Account
-	mockEvClient *testfx.MockEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 	orgsService  *service
 }
 
@@ -69,10 +68,10 @@ func (s *DeleteOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create mock event loop client
-	s.mockEvClient = testfx.NewMockEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		testfx.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(),
 		// Override eventloop.Client with mock
 		fx.Decorate(func() eventloop.Client {
 			return s.mockEvClient
@@ -97,7 +96,7 @@ func (s *DeleteOrgTestSuite) SetupTest() {
 	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
-	s.router = testfx.NewTestRouter(testfx.RouterOptions{
+	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
@@ -231,7 +230,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			org := tc.setupFunc()
 
 			// Update router context to use the test org
-			s.router = testfx.NewTestRouter(testfx.RouterOptions{
+			s.router = tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
 				TestOrg: org,

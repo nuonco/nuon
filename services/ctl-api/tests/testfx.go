@@ -1,4 +1,4 @@
-package testfx
+package tests
 
 import (
 	"github.com/go-playground/validator/v10"

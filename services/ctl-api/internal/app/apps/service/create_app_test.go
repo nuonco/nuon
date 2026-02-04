@@ -28,8 +28,7 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // CreateAppTestService holds all fx-injected dependencies for create app tests.
@@ -50,7 +49,7 @@ type CreateAppTestService struct {
 
 // CreateAppTestSuite is the testify suite for CreateApp endpoint.
 type CreateAppTestSuite struct {
-	testdb.BaseDBTestSuite
+	tests.BaseDBTestSuite
 
 	app     *fxtest.App
 	service CreateAppTestService
@@ -73,7 +72,7 @@ func (s *CreateAppTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		testfx.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -92,7 +91,7 @@ func (s *CreateAppTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Create test router with standard middlewares using helper
-	s.router = testfx.NewTestRouter(testfx.RouterOptions{
+	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestOrg: s.testOrg,
@@ -278,7 +277,7 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 		defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 
 		// Recreate router with new org context
-		router := testfx.NewTestRouter(testfx.RouterOptions{
+		router := tests.NewTestRouter(tests.RouterOptions{
 			L:       s.service.L,
 			DB:      s.service.DB,
 			TestOrg: org2,
