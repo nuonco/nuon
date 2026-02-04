@@ -20,6 +20,9 @@ type ServiceCreateInstallActionWorkflowRunRequest struct {
 	// action workflow config id
 	ActionWorkflowConfigID string `json:"action_workflow_config_id,omitempty"`
 
+	// role
+	Role string `json:"role,omitempty"`
+
 	// run env vars
 	RunEnvVars map[string]string `json:"run_env_vars,omitempty"`
 }

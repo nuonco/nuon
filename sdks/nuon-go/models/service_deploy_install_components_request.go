@@ -19,6 +19,9 @@ type ServiceDeployInstallComponentsRequest struct {
 
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// role
+	Role string `json:"role,omitempty"`
 }
 
 // Validate validates this service deploy install components request

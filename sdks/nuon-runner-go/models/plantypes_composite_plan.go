@@ -31,6 +31,11 @@ type PlantypesCompositePlan struct {
 	// fetch image metadata plan
 	FetchImageMetadataPlan *PlantypesFetchImageMetadataPlan `json:"fetch_image_metadata_plan,omitempty"`
 
+	// Auth for cloud providers
+	PlanAuth struct {
+		PlantypesPlanAuth
+	} `json:"plan_auth,omitempty"`
+
 	// sandbox run plan
 	SandboxRunPlan *PlantypesSandboxRunPlan `json:"sandbox_run_plan,omitempty"`
 
@@ -58,6 +63,10 @@ func (m *PlantypesCompositePlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateFetchImageMetadataPlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePlanAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -171,6 +180,14 @@ func (m *PlantypesCompositePlan) validateFetchImageMetadataPlan(formats strfmt.R
 	return nil
 }
 
+func (m *PlantypesCompositePlan) validatePlanAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.PlanAuth) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 func (m *PlantypesCompositePlan) validateSandboxRunPlan(formats strfmt.Registry) error {
 	if swag.IsZero(m.SandboxRunPlan) { // not required
 		return nil
@@ -257,6 +274,10 @@ func (m *PlantypesCompositePlan) ContextValidate(ctx context.Context, formats st
 	}
 
 	if err := m.contextValidateFetchImageMetadataPlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePlanAuth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -374,6 +395,11 @@ func (m *PlantypesCompositePlan) contextValidateFetchImageMetadataPlan(ctx conte
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *PlantypesCompositePlan) contextValidatePlanAuth(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

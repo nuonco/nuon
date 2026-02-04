@@ -67,6 +67,12 @@ type GetAppOperationRoleConfigsParams struct {
 	*/
 	AppID string
 
+	/* OperationRoleConfigID.
+
+	   operation role config ID
+	*/
+	OperationRoleConfigID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -131,6 +137,17 @@ func (o *GetAppOperationRoleConfigsParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithOperationRoleConfigID adds the operationRoleConfigID to the get app operation role configs params
+func (o *GetAppOperationRoleConfigsParams) WithOperationRoleConfigID(operationRoleConfigID string) *GetAppOperationRoleConfigsParams {
+	o.SetOperationRoleConfigID(operationRoleConfigID)
+	return o
+}
+
+// SetOperationRoleConfigID adds the operationRoleConfigId to the get app operation role configs params
+func (o *GetAppOperationRoleConfigsParams) SetOperationRoleConfigID(operationRoleConfigID string) {
+	o.OperationRoleConfigID = operationRoleConfigID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetAppOperationRoleConfigsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -141,6 +158,11 @@ func (o *GetAppOperationRoleConfigsParams) WriteToRequest(r runtime.ClientReques
 
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
+		return err
+	}
+
+	// path param operation_role_config_id
+	if err := r.SetPathParam("operation_role_config_id", o.OperationRoleConfigID); err != nil {
 		return err
 	}
 

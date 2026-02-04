@@ -59,6 +59,9 @@ type AppAppConfig struct {
 	// input
 	Input *AppAppInputConfig `json:"input,omitempty"`
 
+	// operation role config
+	OperationRoleConfig *AppAppOperationRoleConfig `json:"operation_role_config,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
@@ -123,6 +126,10 @@ func (m *AppAppConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInput(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOperationRoleConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -284,6 +291,29 @@ func (m *AppAppConfig) validateInput(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("input")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) validateOperationRoleConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.OperationRoleConfig) { // not required
+		return nil
+	}
+
+	if m.OperationRoleConfig != nil {
+		if err := m.OperationRoleConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("operation_role_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("operation_role_config")
 			}
 
 			return err
@@ -499,6 +529,10 @@ func (m *AppAppConfig) ContextValidate(ctx context.Context, formats strfmt.Regis
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateOperationRoleConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePermissions(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -661,6 +695,31 @@ func (m *AppAppConfig) contextValidateInput(ctx context.Context, formats strfmt.
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("input")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) contextValidateOperationRoleConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.OperationRoleConfig != nil {
+
+		if swag.IsZero(m.OperationRoleConfig) { // not required
+			return nil
+		}
+
+		if err := m.OperationRoleConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("operation_role_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("operation_role_config")
 			}
 
 			return err

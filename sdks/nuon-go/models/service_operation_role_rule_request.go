@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -19,15 +20,15 @@ import (
 // swagger:model service.OperationRoleRuleRequest
 type ServiceOperationRoleRuleRequest struct {
 
-	// "provision", "deprovision", "update", "reprovision", "trigger"
+	// operation
 	// Required: true
-	Operation *string `json:"operation"`
+	Operation *AppOperationType `json:"operation"`
 
-	// "nuon::component:name", "nuon::sandbox", "nuon::action:name"
+	// principal
 	// Required: true
 	Principal *string `json:"principal"`
 
-	// Role name
+	// role
 	// Required: true
 	Role *string `json:"role"`
 }
@@ -60,6 +61,25 @@ func (m *ServiceOperationRoleRuleRequest) validateOperation(formats strfmt.Regis
 		return err
 	}
 
+	if err := validate.Required("operation", "body", m.Operation); err != nil {
+		return err
+	}
+
+	if m.Operation != nil {
+		if err := m.Operation.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("operation")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("operation")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -81,8 +101,38 @@ func (m *ServiceOperationRoleRuleRequest) validateRole(formats strfmt.Registry) 
 	return nil
 }
 
-// ContextValidate validates this service operation role rule request based on context it is used
+// ContextValidate validate this service operation role rule request based on the context it is used
 func (m *ServiceOperationRoleRuleRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateOperation(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceOperationRoleRuleRequest) contextValidateOperation(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Operation != nil {
+
+		if err := m.Operation.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("operation")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("operation")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

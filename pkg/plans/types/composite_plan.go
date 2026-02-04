@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -14,6 +16,21 @@ import (
 type PlanAuth struct {
 	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
 	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
+}
+
+func PlanAuthFromSDK(planAuth *models.PlantypesPlanAuth) (*PlanAuth, error) {
+	var auth PlanAuth
+	planAuthBytes, err := json.Marshal(planAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to build plan auth")
+	}
+
+	err = json.Unmarshal(planAuthBytes, &auth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to build plan auth")
+	}
+
+	return &auth, nil
 }
 
 type CompositePlan struct {

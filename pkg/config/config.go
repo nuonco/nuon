@@ -38,7 +38,7 @@ type AppConfig struct {
 	// Stack config
 	Stack *StackConfig `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
 	// Operation rules
-	OperationRoles *OperationRolesConfig `mapstructure:"operation_roles" toml:"operation_roles,omitempty"`
+	OperationRoles *OperationRolesConfig `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]

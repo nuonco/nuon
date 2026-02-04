@@ -6073,7 +6073,7 @@ func (a *Client) GetAppOperationRoleConfigs(params *GetAppOperationRoleConfigsPa
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppOperationRoleConfigs",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/operation-role-configs",
+		PathPattern:        "/v1/apps/{app_id}/operation-role-configs{operation_role_config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

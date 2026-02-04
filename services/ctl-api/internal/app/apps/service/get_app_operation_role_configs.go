@@ -26,7 +26,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.AppOperationRoleConfig
-// @Router					/v1/apps/{app_id}/operation-role-configs [get]
+// @Router					/v1/apps/{app_id}/operation-role-configs{operation_role_config_id} [get]
 func (s *service) GetAppOperationRoleConfigs(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	operationRoleConfigID := ctx.Param("operation_role_config_id")

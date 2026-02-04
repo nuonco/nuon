@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
@@ -29,20 +28,7 @@ type AppOperationRoleConfig struct {
 }
 
 func (a *AppOperationRoleConfig) Indexes(db *gorm.DB) []migrations.Index {
-	return []migrations.Index{
-		{
-			Name: indexes.Name(db, &AppInput{}, "org_id"),
-			Columns: []string{
-				"org_id",
-			},
-		},
-		{
-			Name: indexes.Name(db, &AppInput{}, "app_id"),
-			Columns: []string{
-				"app_id",
-			},
-		},
-	}
+	return []migrations.Index{}
 }
 
 func (a *AppOperationRoleConfig) BeforeCreate(tx *gorm.DB) error {
