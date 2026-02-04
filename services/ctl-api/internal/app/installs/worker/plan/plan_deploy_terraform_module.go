@@ -3,7 +3,6 @@ package plan
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -12,8 +11,6 @@ import (
 
 	_ "embed"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
@@ -103,34 +100,44 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		}
 	}
 
-	// render platform-specific values
-	var awsAuth *awscredentials.Config
-	var azureAuth *azurecredentials.Config
 	envVars := generics.ToStringMap(cfg.EnvVars)
-	switch {
-	case stack.InstallStackOutputs.AWSStackOutputs != nil:
-		roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
-		awsAuth = &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("install-deploy-%s", req.InstallDeployID),
-				RoleARN:     roleARN,
-			},
-		}
-	case stack.InstallStackOutputs.AzureStackOutputs != nil:
-		azureAuth = &azurecredentials.Config{
-			UseDefault: true,
-		}
-		envVars["ARM_SUBSCRIPTION_ID"] = "{{.nuon.install_stack.outputs.subscription_id}}"
-	}
-	if err := render.RenderMap(&envVars, stateData); err != nil {
-		l.Error("error rendering env-vars",
-			zap.Any("env-vars", envVars),
-			zap.Error(err),
-			zap.Any("state", stateData),
-		)
-		return nil, errors.Wrap(err, "unable to render environment variables")
-	}
+
+	// =====================================================================
+	// THIS AUTH BLOCK WILL NOT BE FUNCTIONAL ONCE DYNAMIC ROLES HAVE GONE LIVE
+	// WE USE AUTH BLOCK IN COMPOSITE PLAN FOR ALL CLOUD ROLE OPERATIONS
+
+	// code is left for my vaccum cleaner to eat, he hungry
+
+	// render platform-specific values
+	// var awsAuth *awscredentials.Config
+	// var azureAuth *azurecredentials.Config
+	// switch {
+	// case stack.InstallStackOutputs.AWSStackOutputs != nil:
+	// 	roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
+	// 	awsAuth = &awscredentials.Config{
+	// 		Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+	// 		AssumeRole: &awscredentials.AssumeRoleConfig{
+	// 			SessionName: fmt.Sprintf("install-deploy-%s", req.InstallDeployID),
+	// 			RoleARN:     roleARN,
+	// 		},
+	// 	}
+	// // todo(sk): add azure config to composite plan, currently it only uses aws plan
+	// // todo(sk): this is a breaking change if not done, add azure before merging pr
+	// case stack.InstallStackOutputs.AzureStackOutputs != nil:
+	// 	azureAuth = &azurecredentials.Config{
+	// 		UseDefault: true,
+	// 	}
+	// 	envVars["ARM_SUBSCRIPTION_ID"] = "{{.nuon.install_stack.outputs.subscription_id}}"
+	// }
+	// if err := render.RenderMap(&envVars, stateData); err != nil {
+	// 	l.Error("error rendering env-vars",
+	// 		zap.Any("env-vars", envVars),
+	// 		zap.Error(err),
+	// 		zap.Any("state", stateData),
+	// 	)
+	// 	return nil, errors.Wrap(err, "unable to render environment variables")
+	// }
+	// =====================================================================
 
 	// construct plan from rendered values
 	return &plantypes.TerraformDeployPlan{
@@ -142,8 +149,8 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: installComp.TerraformWorkspace.ID,
 		},
-		AzureAuth:   azureAuth,
-		AWSAuth:     awsAuth,
+		AzureAuth:   nil,
+		AWSAuth:     nil,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,

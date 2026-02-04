@@ -2,10 +2,12 @@
 package operationroles
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"go.uber.org/zap"
 )
 
 type EntityOperationRoleMap map[app.OperationType]string
@@ -26,6 +28,9 @@ func EntityOperationRoleMapFromHstore(hstore map[string]*string) EntityOperation
 
 // SelectionContext contains all information needed for role selection
 type SelectionContext struct {
+	// under sandbox mode make sure to choose either provision deprovision or maintenance
+	SandboxMode bool
+
 	Operation app.OperationType
 
 	// "component", "sandbox", "action"
@@ -42,6 +47,8 @@ type SelectionContext struct {
 	MatrixRules []*app.OperationRoleRule
 	// DefaultRole is the role selected if none of the rules assiciate with the pricipal and operation
 	DefaultRole string
+	// Break Glass role
+	BreakGlassRole string
 
 	StackOutputs *app.InstallStackOutputs
 
@@ -60,6 +67,8 @@ const (
 	RoleSelectionSourceMatrix RoleSelectionSource = "matrix"
 	// existing behavior
 	RoleSelectionSourceDefault RoleSelectionSource = "default"
+	// break glass
+	RoleSelectionSourceBreakGlass RoleSelectionSource = "breakglass"
 )
 
 type RoleSelection struct {
@@ -74,9 +83,28 @@ type RoleSelection struct {
 // 2. Entity-level config (component/sandbox/action specific)
 // 3. Matrix rules (app-level operation_roles config)
 // 4. Default roles (provision/maintenance/deprovision)
-func SelectRole(ctx *SelectionContext) (*RoleSelection, error) {
+func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 	if ctx == nil {
 		return nil, fmt.Errorf("selection context is required")
+	}
+
+	// early exit for azure since architecturally azure uses single tenant<> sub id combination
+	if ctx.StackOutputs.AzureStackOutputs != nil {
+		return &RoleSelection{
+			// in case of azure this will be empty, till we figureout azure role based permissions
+			RoleName: "azure-placeholder-name",
+			RoleARN:  "azure-placeholder-arn",
+			Source:   RoleSelectionSourceDefault,
+		}, nil
+	}
+
+	defaultRoleARN, err := resolveRoleARN(
+		ctx.DefaultRole,
+		ctx.AppConfig,
+		ctx.StackOutputs,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve default role %q: %w", ctx.DefaultRole, err)
 	}
 
 	// 1. Runtime override (highest precedence)
@@ -96,7 +124,30 @@ func SelectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		}, nil
 	}
 
-	// 2. Entity-level config
+	// 1.1 for testing purposes we keep sandbox mode at lower priority so we can select roles on runtime
+	if ctx.SandboxMode {
+		return &RoleSelection{
+			RoleName: ctx.DefaultRole,
+			// replace this with role arn
+			RoleARN: defaultRoleARN,
+			Source:  RoleSelectionSourceDefault,
+		}, nil
+	}
+
+	// 2. Break glass situation, we should respect break glass role definition
+	if ctx.BreakGlassRole != "" {
+		roleARN, err := resolveRoleARN(ctx.BreakGlassRole, ctx.AppConfig, ctx.StackOutputs)
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve break glass role %q: %w", ctx.BreakGlassRole, err)
+		}
+		return &RoleSelection{
+			RoleName: ctx.BreakGlassRole,
+			RoleARN:  roleARN,
+			Source:   RoleSelectionSourceBreakGlass,
+		}, nil
+	}
+
+	// 3. Entity-level config
 	if roleName := findEntityRole(ctx.EntityRoles, ctx.Operation); roleName != "" {
 		roleARN, err := resolveRoleARN(roleName, ctx.AppConfig, ctx.StackOutputs)
 		if err != nil {
@@ -109,7 +160,7 @@ func SelectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		}, nil
 	}
 
-	// 3. Matrix rules
+	// 4. Matrix rules
 	if roleName, found := findMatrixRole(
 		ctx.MatrixRules,
 		ctx.PrincipalType,
@@ -126,18 +177,9 @@ func SelectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		}, nil
 	}
 
-	roleARN, err := resolveRoleARN(
-		ctx.DefaultRole,
-		ctx.AppConfig,
-		ctx.StackOutputs,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("default role %q: %w", ctx.DefaultRole, err)
-	}
-
 	return &RoleSelection{
 		RoleName: ctx.DefaultRole,
-		RoleARN:  roleARN,
+		RoleARN:  defaultRoleARN,
 		Source:   RoleSelectionSourceDefault,
 	}, nil
 }
@@ -191,21 +233,13 @@ func resolveRoleARN(roleName string, appCfg *app.AppConfig, stackOutputs *app.In
 	}
 
 	availableRoles := make(map[string]string)
-
-	for _, role := range appCfg.PermissionsConfig.CustomRoles {
-		if arn, exists := stackOutputs.AWSStackOutputs.CustomRoleARNs[role.Name]; exists {
-			availableRoles[role.Name] = arn
-		}
+	if stackOutputs.AWSStackOutputs != nil {
+		availableRoles = getAWSRoleMap(appCfg, stackOutputs.AWSStackOutputs)
+	} else if stackOutputs.AzureStackOutputs != nil {
+		availableRoles = getAzureRoleMap(appCfg, stackOutputs.AzureStackOutputs)
+	} else {
+		return "", errors.New("Install stack output nil for both aws and azure")
 	}
-	for _, role := range appCfg.BreakGlassConfig.Roles {
-		if arn, exists := stackOutputs.AWSStackOutputs.BreakGlassRoleARNs[role.Name]; exists {
-			availableRoles[role.Name] = arn
-		}
-	}
-
-	availableRoles[appCfg.PermissionsConfig.ProvisionRole.Name] = stackOutputs.AWSStackOutputs.ProvisionIAMRoleARN
-	availableRoles[appCfg.PermissionsConfig.DeprovisionRole.Name] = stackOutputs.AWSStackOutputs.DeprovisionIAMRoleARN
-	availableRoles[appCfg.PermissionsConfig.MaintenanceRole.Name] = stackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
 
 	roleARN, ok := availableRoles[roleName]
 	if !ok {
@@ -213,4 +247,28 @@ func resolveRoleARN(roleName string, appCfg *app.AppConfig, stackOutputs *app.In
 	}
 
 	return roleARN, nil
+}
+
+func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs) map[string]string {
+	availableRoles := make(map[string]string)
+	for _, role := range appCfg.PermissionsConfig.CustomRoles {
+		if arn, exists := stackOutputs.CustomRoleARNs[role.Name]; exists {
+			availableRoles[role.Name] = arn
+		}
+	}
+	for _, role := range appCfg.BreakGlassConfig.Roles {
+		if arn, exists := stackOutputs.BreakGlassRoleARNs[role.Name]; exists {
+			availableRoles[role.Name] = arn
+		}
+	}
+	availableRoles[appCfg.PermissionsConfig.ProvisionRole.Name] = stackOutputs.ProvisionIAMRoleARN
+	availableRoles[appCfg.PermissionsConfig.DeprovisionRole.Name] = stackOutputs.DeprovisionIAMRoleARN
+	availableRoles[appCfg.PermissionsConfig.MaintenanceRole.Name] = stackOutputs.MaintenanceIAMRoleARN
+
+	return availableRoles
+}
+
+func getAzureRoleMap(appCfg *app.AppConfig, stackOutputs *app.AzureStackOutputs) map[string]string {
+	availableRoles := make(map[string]string)
+	return availableRoles
 }
