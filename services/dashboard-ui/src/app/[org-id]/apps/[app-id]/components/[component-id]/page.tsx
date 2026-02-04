@@ -66,7 +66,7 @@ export default async function AppComponent({ params, searchParams }) {
   }
 
   const containerId = 'app-component-page'
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
       <Breadcrumbs
         breadcrumbs={[
@@ -161,73 +161,5 @@ export default async function AppComponent({ params, searchParams }) {
       {/* old page layout */}
       <BackToTop containerId={containerId} />
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app?.name },
-        { href: `/${orgId}/apps/${app.id}/components`, text: 'Components' },
-        {
-          href: `/${orgId}/apps/${app.id}/components/${component.id}`,
-          text: component?.name,
-        },
-      ]}
-      heading={component?.name}
-      headingUnderline={componentId}
-      statues={<OldBuildComponentButton component={component} />}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <div className="divide-y flex flex-col md:col-span-8">
-          {component?.dependencies && (
-            <Section className="flex-initial" heading="Dependencies">
-              <OldErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading component dependencies..."
-                    />
-                  }
-                >
-                  <Dependencies component={component} orgId={orgId} />
-                </Suspense>
-              </OldErrorBoundary>
-            </Section>
-          )}
-
-          <Section heading="Latest config">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading component config..."
-                  />
-                }
-              >
-                <Config componentId={componentId} orgId={orgId} />
-              </Suspense>
-            </OldErrorBoundary>
-          </Section>
-        </div>
-        <div className="divide-y flex flex-col md:col-span-4">
-          <Section heading="Build history">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading variant="stack" loadingText="Loading builds..." />
-                }
-              >
-                <OldBuilds
-                  componentId={componentId}
-                  orgId={orgId}
-                  offset={sp['offset'] || '0'}
-                />
-              </Suspense>
-            </OldErrorBoundary>
-          </Section>
-        </div>
-      </div>
-    </DashboardContent>
   )
 }

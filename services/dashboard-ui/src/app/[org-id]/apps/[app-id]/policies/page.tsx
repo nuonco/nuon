@@ -38,7 +38,7 @@ export default async function AppPoliciesPage({ params }: TAppPageProps) {
     getOrg({ orgId }),
   ])
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -74,28 +74,5 @@ export default async function AppPoliciesPage({ params }: TAppPageProps) {
         </ErrorBoundary>
       </div>
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app?.id}`, text: app?.name || '' },
-        { href: `/${orgId}/apps/${app?.id}/policies`, text: 'Policies' },
-      ]}
-      heading={app?.name || ''}
-      headingUnderline={app?.id}
-      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
-    >
-      <Section childrenClassName="flex flex-auto">
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading policies..." />
-            }
-          >
-            <PoliciesTable appId={appId} orgId={orgId} />
-          </Suspense>
-        </OldErrorBoundary>
-      </Section>
-    </DashboardContent>
   )
 }

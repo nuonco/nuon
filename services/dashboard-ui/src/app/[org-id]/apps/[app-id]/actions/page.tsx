@@ -45,7 +45,7 @@ export default async function AppActionsPage({
     getOrg({ orgId }),
   ])
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -86,38 +86,5 @@ export default async function AppActionsPage({
       </ErrorBoundary>
       {/* old layout stuff */}
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app.name },
-        { href: `/${orgId}/apps/${app.id}/actions`, text: 'Actions' },
-      ]}
-      heading={app.name}
-      headingUnderline={app.id}
-      statues={
-        app?.cloud_platform === 'aws' || app.cloud_platform === 'azure' ? (
-          <AppCreateInstallButton platform={app?.cloud_platform} />
-        ) : null
-      }
-      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
-    >
-      <Section childrenClassName="flex flex-auto">
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading actions..." />
-            }
-          >
-            <AppActions
-              appId={appId}
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              q={sp['q'] || ''}
-            />
-          </Suspense>
-        </OldErrorBoundary>
-      </Section>
-    </DashboardContent>
   )
 }

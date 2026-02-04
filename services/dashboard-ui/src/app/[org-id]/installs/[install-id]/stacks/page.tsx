@@ -46,7 +46,7 @@ export default async function InstallStack({ params }: TInstallPageProps) {
     }),
   ])
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -83,64 +83,5 @@ export default async function InstallStack({ params }: TInstallPageProps) {
         </Suspense>
       </OldErrorBoundary>
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/installs`, text: 'Installs' },
-        {
-          href: `/${orgId}/installs/${install.id}/components`,
-          text: install.name,
-        },
-        {
-          href: `/${orgId}/installs/${install.id}/sandbox`,
-          text: 'Sandbox',
-        },
-      ]}
-      heading={install.name}
-      headingUnderline={install.id}
-      headingMeta={
-        <>
-          Last updated <Time time={install?.updated_at} format="relative" />
-        </>
-      }
-      statues={
-        <div className="flex items-start gap-8">
-          {install?.metadata?.managed_by &&
-          install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
-            <span className="flex flex-col gap-2">
-              <OldText isMuted>Managed By</OldText>
-              <OldText>
-                <FileCodeIcon />
-                Config File
-              </OldText>
-            </span>
-          ) : null}
-          <span className="flex flex-col gap-2">
-            <OldText isMuted>App config</OldText>
-            <OldText>
-              <OldLink href={`/${orgId}/apps/${install.app_id}`}>
-                {install?.app?.name}
-              </OldLink>
-            </OldText>
-          </span>
-          <InstallStatuses />
-
-          <InstallManagementDropdown />
-        </div>
-      }
-      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
-    >
-      <section className="px-6 py-8">
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading loadingText="Loading components..." variant="page" />
-            }
-          >
-            <Stacks installId={install?.id} orgId={orgId} />
-          </Suspense>
-        </OldErrorBoundary>
-      </section>
-    </DashboardContent>
   )
 }

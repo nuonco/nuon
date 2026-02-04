@@ -62,7 +62,7 @@ export default async function InstallWorkflow({
 
   const containerId = 'workflow-page'
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection id={containerId} isScrollable className="!gap-2 !pb-24">
       <OnboardingCelebrationWrapper>
         <Breadcrumbs
@@ -145,46 +145,5 @@ export default async function InstallWorkflow({
       </OnboardingCelebrationWrapper>
       <BackToTop containerId={containerId} />
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/installs`, text: 'Installs' },
-        {
-          href: `/${orgId}/installs/${install.id}`,
-          text: install.name,
-        },
-        {
-          href: `/${orgId}/installs/${install.id}/workflows`,
-          text: 'Workflows',
-        },
-        {
-          href: `/${orgId}/installs/${install.id}/workflows/${workflowId}`,
-          text:
-            installWorkflow?.name ||
-            snakeToWords(toSentenceCase(installWorkflow?.type)),
-        },
-      ]}
-    >
-      <OnboardingCelebrationWrapper>
-        <WorkflowHeader initWorkflow={installWorkflow} shouldPoll />
-        <ErrorBoundary
-          fallback={
-            <Empty
-              emptyTitle="No workflow steps"
-              emptyMessage="Unable to load workflow steps"
-              variant="404"
-            />
-          }
-        >
-          <Suspense
-            fallback={
-              <Loading variant="stack" loadingText="Loading workflow steps" />
-            }
-          >
-            <OldWorkflowSteps workflowId={workflowId} orgId={orgId} />
-          </Suspense>
-        </ErrorBoundary>
-      </OnboardingCelebrationWrapper>
-    </DashboardContent>
   )
 }

@@ -36,70 +36,48 @@ export default async function AppsPage({ params, searchParams }) {
   return (
     <>
       {process.env.SEGMENT_WRITE_KEY && <SegmentAnalyticsSetOrg org={org} />}
-      {org?.features?.['stratus-layout'] ? (
-        <PageLayout isScrollable>
-          <Breadcrumbs
-            breadcrumbs={[
-              {
-                path: `/${orgId}`,
-                text: org?.name,
-              },
-              {
-                path: `/${orgId}/apps`,
-                text: 'Apps',
-              },
-            ]}
-          />
-          <PageHeader>
-            <HeadingGroup>
-              <Text variant="h3" weight="stronger" level={1}>
-                Apps
-              </Text>
-              <Text theme="neutral">Manage your applications here.</Text>
-            </HeadingGroup>
-          </PageHeader>
-          <PageContent>
-            <PageSection>
-              <ErrorBoundary
-                fallback={
-                  <Text>
-                    An error loading your apps, please refresh the page and try
-                    again.
-                  </Text>
-                }
-              >
-                <Suspense fallback={<AppsTableSkeleton />}>
-                  <AppsTable
-                    orgId={orgId}
-                    offset={sp['offset'] || '0'}
-                    q={sp['q'] || ''}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            </PageSection>
-          </PageContent>
-        </PageLayout>
-      ) : (
-        <DashboardContent
-          breadcrumb={[{ href: `/${orgId}/apps`, text: 'Apps' }]}
-        >
-          <Section>
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading variant="page" loadingText="Loading apps..." />
-                }
-              >
-                <Apps
+      <PageLayout isScrollable>
+        <Breadcrumbs
+          breadcrumbs={[
+            {
+              path: `/${orgId}`,
+              text: org?.name,
+            },
+            {
+              path: `/${orgId}/apps`,
+              text: 'Apps',
+            },
+          ]}
+        />
+        <PageHeader>
+          <HeadingGroup>
+            <Text variant="h3" weight="stronger" level={1}>
+              Apps
+            </Text>
+            <Text theme="neutral">Manage your applications here.</Text>
+          </HeadingGroup>
+        </PageHeader>
+        <PageContent>
+          <PageSection>
+            <ErrorBoundary
+              fallback={
+                <Text>
+                  An error loading your apps, please refresh the page and try
+                  again.
+                </Text>
+              }
+            >
+              <Suspense fallback={<AppsTableSkeleton />}>
+                <AppsTable
                   orgId={orgId}
                   offset={sp['offset'] || '0'}
                   q={sp['q'] || ''}
                 />
               </Suspense>
-            </OldErrorBoundary>
-          </Section>
-        </DashboardContent>
-      )}
+            </ErrorBoundary>
+          </PageSection>
+        </PageContent>
+      </PageLayout>
     </>
   )
 }

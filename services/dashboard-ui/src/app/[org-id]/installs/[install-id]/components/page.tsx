@@ -50,7 +50,7 @@ export default async function InstallComponentsPage({
     getOrg({ orgId }),
   ])
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -100,71 +100,5 @@ export default async function InstallComponentsPage({
       </ErrorBoundary>
       {/* old layout stuff */}
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/installs`, text: 'Installs' },
-        {
-          href: `/${orgId}/installs/${install?.id}`,
-          text: install?.name,
-        },
-        {
-          href: `/${orgId}/installs/${install?.id}/components`,
-          text: 'Components',
-        },
-      ]}
-      heading={install?.name}
-      headingUnderline={install?.id}
-      headingMeta={
-        <>
-          Last updated <Time time={install?.updated_at} format="relative" />
-        </>
-      }
-      statues={
-        <div className="flex items-start gap-8">
-          {install?.metadata?.managed_by &&
-          install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
-            <span className="flex flex-col gap-2">
-              <OldText isMuted>Managed By</OldText>
-              <OldText>
-                <FileCodeIcon />
-                Config File
-              </OldText>
-            </span>
-          ) : null}
-          <span className="flex flex-col gap-2">
-            <OldText isMuted>App config</OldText>
-            <OldText>
-              <Link href={`/${orgId}/apps/${install?.app_id}`}>
-                {install?.app?.name}
-              </Link>
-            </OldText>
-          </span>
-          <InstallStatuses />
-
-          <InstallManagementDropdown />
-        </div>
-      }
-      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
-    >
-      <section className="px-6 py-8">
-        <ErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading loadingText="Loading components..." variant="page" />
-            }
-          >
-            <InstallComponents
-              install={install}
-              installId={install?.id}
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              q={sp['q'] || ''}
-              types={sp['types'] || ''}
-            />
-          </Suspense>
-        </ErrorBoundary>
-      </section>
-    </DashboardContent>
   )
 }

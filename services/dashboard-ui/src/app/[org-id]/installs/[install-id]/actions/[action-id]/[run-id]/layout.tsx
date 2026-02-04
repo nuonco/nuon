@@ -51,27 +51,23 @@ export default async function InstallActionRunLayout({
       initInstallActionRun={installActionRun}
       shouldPoll
     >
-      {org?.features?.['stratus-layout'] ? (
-        <PageSection id={containerId} isScrollable>
-          
-          <InstallActionRunHeader
-            actionId={actionId}
-            actionName={installAction?.action_workflow?.name}
-            workflow={workflow}
-          />
-          <TabNav
-            basePath={`/${orgId}/installs/${installId}/actions/${actionId}/${runId}`}
-            tabs={[
-              { text: 'Summary', path: '/' },
-              { text: 'Logs', path: '/logs' },
-            ]}
-          />
-          {children}
-          <BackToTop containerId={containerId} />
-        </PageSection>
-      ) : (
-        children
-      )}
+      <PageSection id={containerId} isScrollable>
+
+        <InstallActionRunHeader
+          actionId={actionId}
+          actionName={installAction?.action_workflow?.name}
+          workflow={workflow}
+        />
+        <TabNav
+          basePath={`/${orgId}/installs/${installId}/actions/${actionId}/${runId}`}
+          tabs={[
+            { text: 'Summary', path: '/' },
+            { text: 'Logs', path: '/logs' },
+          ]}
+        />
+        {children}
+        <BackToTop containerId={containerId} />
+      </PageSection>
     </InstallActionRunProvider>
   )
 }

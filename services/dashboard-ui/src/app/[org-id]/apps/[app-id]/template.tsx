@@ -22,7 +22,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
   const { app } = useApp()
   const isThirdLevel = pathName.split('/').length > 5
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageLayout>
       {isThirdLevel ? (
         <PageContent className="border-t" isScrollable variant="secondary">
@@ -143,7 +143,5 @@ export default function Template({ children }: { children: React.ReactNode }) {
         </>
       )}
     </PageLayout>
-  ) : (
-    children
   )
 }

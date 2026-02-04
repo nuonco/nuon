@@ -27,15 +27,11 @@ export default async function AppLayout({ children, params }: IAppLayout) {
 
   return (
     <AppProvider initApp={app} shouldPoll>
-      {org?.features?.['stratus-layout'] ? (
-        <PageSidebarProvider initIsPageSidebarOpen={isPageSidebarOpen}>
-          <ToastProvider>
-            <SurfacesProvider>{children}</SurfacesProvider>
-          </ToastProvider>
-        </PageSidebarProvider>
-      ) : (
-        children
-      )}
+      <PageSidebarProvider initIsPageSidebarOpen={isPageSidebarOpen}>
+        <ToastProvider>
+          <SurfacesProvider>{children}</SurfacesProvider>
+        </ToastProvider>
+      </PageSidebarProvider>
     </AppProvider>
   )
 }

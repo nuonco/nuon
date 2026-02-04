@@ -72,7 +72,7 @@ export default async function OrgTeam({ params, searchParams }) {
   }
 
   if (org?.features?.['org-settings']) {
-    return org?.features?.['stratus-layout'] ? (
+    return (
       <PageLayout isScrollable>
         <Breadcrumbs
           breadcrumbs={[
@@ -129,62 +129,6 @@ export default async function OrgTeam({ params, searchParams }) {
           </PageSection>
         </PageContent>
       </PageLayout>
-    ) : (
-      <DashboardContent
-        breadcrumb={[{ href: `/${orgId}`, text: 'Team' }]}
-        heading={org?.name}
-        headingUnderline={org?.id}
-        statues={
-          <div className="flex items-start gap-8">
-            <span className="flex flex-col gap-2">
-              <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                Status
-              </OldText>
-              <StatusBadge
-                status={org?.status}
-                description={org?.status_description}
-                descriptionAlignment="right"
-              />
-            </span>
-            <OrgInviteModal />
-          </div>
-        }
-      >
-        <div className="flex-auto h-full md:grid md:grid-cols-12 divide-x">
-          <div className="divide-y flex flex-col flex-auto h-full col-span-8">
-            <Section heading="Members">
-              <OldErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading org members..."
-                    />
-                  }
-                >
-                  <OrgMembers orgId={orgId} offset={sp['offset'] || '0'} />
-                </Suspense>
-              </OldErrorBoundary>
-            </Section>
-          </div>
-          <div className="divide-y flex flex-col flex-auto col-span-4">
-            <Section heading="Invites">
-              <OldErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading org invites..."
-                    />
-                  }
-                >
-                  <OrgInvites orgId={orgId} />
-                </Suspense>
-              </OldErrorBoundary>
-            </Section>
-          </div>
-        </div>
-      </DashboardContent>
     )
   } else {
     redirect(`/${orgId}/apps`)

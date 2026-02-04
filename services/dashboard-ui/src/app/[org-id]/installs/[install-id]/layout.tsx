@@ -27,15 +27,11 @@ export default async function InstallLayout({
 
   return (
     <InstallProvider initInstall={install} shouldPoll>
-      {org?.features?.['stratus-layout'] ? (
-        <PageSidebarProvider initIsPageSidebarOpen={isPageSidebarOpen}>
-          <ToastProvider>
-            <SurfacesProvider>{children}</SurfacesProvider>
-          </ToastProvider>
-        </PageSidebarProvider>
-      ) : (
-        children
-      )}
+      <PageSidebarProvider initIsPageSidebarOpen={isPageSidebarOpen}>
+        <ToastProvider>
+          <SurfacesProvider>{children}</SurfacesProvider>
+        </ToastProvider>
+      </PageSidebarProvider>
     </InstallProvider>
   )
 }

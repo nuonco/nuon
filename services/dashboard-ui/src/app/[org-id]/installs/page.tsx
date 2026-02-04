@@ -40,7 +40,7 @@ export default async function InstallsPage({
   const { ['org-id']: orgId } = await params
   const { data: org } = await getOrg({ orgId })
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageLayout isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -85,25 +85,5 @@ export default async function InstallsPage({
         </PageSection>
       </PageContent>
     </PageLayout>
-  ) : (
-    <DashboardContent
-      breadcrumb={[{ href: `/${orgId}/installs`, text: 'Installs' }]}
-    >
-      <Section>
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading installs..." />
-            }
-          >
-            <Installs
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              q={sp['q'] || ''}
-            />
-          </Suspense>
-        </OldErrorBoundary>
-      </Section>
-    </DashboardContent>
   )
 }

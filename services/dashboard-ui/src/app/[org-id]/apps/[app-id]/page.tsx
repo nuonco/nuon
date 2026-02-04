@@ -59,7 +59,7 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
   ])
 
   const containerId = 'app-overview-page'
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <>
       <Breadcrumbs
         breadcrumbs={[
@@ -118,96 +118,5 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
         <BackToTop containerId={containerId} />
       </PageSection>
     </>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app.name },
-      ]}
-      heading={app.name}
-      headingUnderline={app.id}
-      statues={
-        configs?.length ? (
-          <AppCreateInstallButton
-            platform={app?.runner_config.app_runner_type}
-          />
-        ) : null
-      }
-      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto">
-        <div className="divide-y flex flex-col md:col-span-7">
-          <ErrorBoundary fallbackRender={ErrorFallback}>
-            <Suspense
-              fallback={
-                <Section className="border-r" heading="README">
-                  <Loading
-                    loadingText="Loading latest README config..."
-                    variant="stack"
-                  />
-                </Section>
-              }
-            >
-              <ReadmeConfig
-                appConfigId={configs?.at(0)?.id}
-                appId={appId}
-                orgId={orgId}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
-
-        <div className="divide-y flex flex-col md:col-span-5">
-          <ErrorBoundary fallbackRender={ErrorFallback}>
-            <Suspense
-              fallback={
-                <Section className="flex-initial" heading="Inputs">
-                  <Loading loadingText="Loading latest input config..." />
-                </Section>
-              }
-            >
-              <InputsConfig
-                appConfigId={configs?.at(0)?.id}
-                appId={appId}
-                appName={app?.name}
-                orgId={orgId}
-              />
-            </Suspense>
-          </ErrorBoundary>
-
-          <Section className="flex-initial" heading="Sandbox">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading loadingText="Loading latest sandbox config..." />
-                }
-              >
-                <SandboxConfig
-                  appConfigId={configs?.at(0)?.id}
-                  appId={appId}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-
-          <Section heading="Runner">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading loadingText="Loading latest runner config..." />
-                }
-              >
-                <RunnerConfig
-                  appConfigId={configs?.at(0)?.id}
-                  appId={appId}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-        </div>
-      </div>
-    </DashboardContent>
   )
 }

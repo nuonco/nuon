@@ -42,7 +42,7 @@ export default async function AppInstallsPage({ params, searchParams }) {
     notFound()
   }
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -83,39 +83,5 @@ export default async function AppInstallsPage({ params, searchParams }) {
       </ErrorBoundary>
       {/* old layout stuff */}
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app.name },
-        { href: `/${orgId}/apps/${app.id}/installs`, text: 'Installs' },
-      ]}
-      heading={app.name}
-      headingUnderline={app.id}
-      statues={
-        app?.cloud_platform === 'aws' || app.cloud_platform === 'azure' ? (
-          <AppCreateInstallButton platform={app?.cloud_platform} />
-        ) : null
-      }
-      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
-    >
-      <Section>
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading installs..." />
-            }
-          >
-            <AppInstalls
-              app={app}
-              appId={appId}
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              q={sp['q'] || ''}
-            />
-          </Suspense>
-        </OldErrorBoundary>
-      </Section>
-    </DashboardContent>
   )
 }
