@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -12,20 +11,6 @@ import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeF
 import type { TPageProps } from '@/types'
 import { getInstall, getOrg } from '@/lib'
 import { Workflows, WorkflowsError } from './workflows'
-
-// NOTE: old layout stuff
-import {
-  DashboardContent,
-  Link as OldLink,
-  Loading,
-  InstallPageSubNav,
-  InstallStatuses,
-  InstallManagementDropdown,
-  Section,
-  Text as OldText,
-  Time,
-} from '@/components'
-import { InstallWorkflows } from './install-workflows'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -8,18 +7,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getApp, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { ActionsTable, ActionsTableSkeleton } from './actions-table'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  AppCreateInstallButton,
-  AppPageSubNav,
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  Section,
-} from '@/components'
-import { AppActions } from './actions'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 
@@ -73,18 +60,19 @@ export default async function AppActionsPage({
         </Text>
       </HeadingGroup>
 
-      {/* old layout stuff */}
-      <ErrorBoundary fallback={<>Error loading app actions</>}>
-        <Suspense fallback={<ActionsTableSkeleton />}>
-          <ActionsTable
-            appId={appId}
-            orgId={orgId}
-            offset={sp['offset'] || '0'}
-            q={sp['q'] || ''}
-          />
-        </Suspense>
-      </ErrorBoundary>
-      {/* old layout stuff */}
+      <AsyncBoundary
+        errorFallback={
+          <span className="text-md">Unable to load app actions</span>
+        }
+        loadingFallback={<ActionsTableSkeleton />}
+      >
+        <ActionsTable
+          appId={appId}
+          orgId={orgId}
+          offset={sp['offset'] || '0'}
+          q={sp['q'] || ''}
+        />
+      </AsyncBoundary>
     </PageSection>
   )
 }

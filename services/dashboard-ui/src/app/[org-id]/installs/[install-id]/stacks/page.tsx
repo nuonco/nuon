@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -8,21 +7,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstall, getOrg } from '@/lib'
 import { TPageProps } from '@/types'
 import { InstallStacksTable, InstallStacksTableSkeleton } from './stacks-table'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  InstallStatuses,
-  InstallPageSubNav,
-  InstallManagementDropdown,
-  Link as OldLink,
-  Loading,
-  Text as OldText,
-  Time,
-} from '@/components'
-import { Stacks } from './stacks'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -77,11 +61,14 @@ export default async function InstallStack({ params }: TInstallPageProps) {
         </Text>
       </HeadingGroup>
 
-      <OldErrorBoundary fallbackRender={ErrorFallback}>
-        <Suspense fallback={<InstallStacksTableSkeleton />}>
-          <InstallStacksTable installId={install?.id} orgId={orgId} />
-        </Suspense>
-      </OldErrorBoundary>
+      <AsyncBoundary
+        loadingFallback={<InstallStacksTableSkeleton />}
+        errorFallback={
+          <span className="text-md">Unable to load install stacks</span>
+        }
+      >
+        <InstallStacksTable installId={install?.id} orgId={orgId} />
+      </AsyncBoundary>
     </PageSection>
   )
 }

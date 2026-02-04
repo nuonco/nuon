@@ -1,32 +1,14 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { InstallActionsTableSkeleton } from '@/components/actions/InstallActionsTable'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstall, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InstallActionsTable } from './actions-table'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  Link as OldLink,
-  InstallManagementDropdown,
-  InstallPageSubNav,
-  InstallStatuses,
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  Section,
-  Text as OldText,
-  Time,
-} from '@/components'
-import { InstallActions } from './actions'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 

@@ -18,9 +18,6 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import type { TLayoutProps } from '@/types'
 
-// NOTE: old layout stuff
-import { Layout as OldLayout } from '@/components/old/Layout'
-
 export default async function OrgLayout({
   children,
   params,

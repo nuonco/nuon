@@ -1,44 +1,15 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import { BuildHeader } from '@/components/builds/BuildHeader'
-import { BackLink } from '@/components/common/BackLink'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { BackToTop } from '@/components/common/BackToTop'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { ID } from '@/components/common/ID'
-import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { BuildProvider } from '@/providers/build-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import {
-  getApp,
-  getComponentBuild,
-  getComponent,
-  getOrg,
-} from '@/lib'
-import { ComponentConfig } from './config'
+import { getApp, getComponentBuild, getComponent, getOrg } from '@/lib'
+
 import { Logs, LogsError, LogsSkeleton } from './logs'
 import { RefreshLogStream } from './refresh-log-stream'
-
-// NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
-import { CalendarBlankIcon, TimerIcon } from '@phosphor-icons/react/dist/ssr'
-import {
-  ComponentConfigType,
-  DashboardContent,
-  Duration,
-  ErrorFallback,
-  Loading,
-  LogStreamProvider as OldLogStreamProvider,
-  OperationLogsSection,
-  Section,
-  Time,
-  Text as OldText,
-  ToolTip,
-  Truncate,
-} from '@/components'
-import { BuildDetails } from '@/components/old/Components/BuildDetails'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -107,28 +78,27 @@ export default async function AppComponentBuildPage({ params }) {
       <BuildProvider initBuild={build}>
         <BuildHeader component={component} />
         <PageSection id={containerId} isScrollable>
-          {/* old page layout */}
           <div>
             {build?.log_stream ? (
               <LogStreamProvider
                 initLogStream={build?.log_stream}
                 shouldPoll={build?.log_stream?.open}
               >
-                <ErrorBoundary fallback={<LogsError />}>
-                  <Suspense fallback={<LogsSkeleton />}>
-                    <Logs
-                      logStreamId={build?.log_stream?.id}
-                      logStreamOpen={build?.log_stream?.open}
-                      orgId={orgId}
-                    />
-                  </Suspense>
-                </ErrorBoundary>
+                <AsyncBoundary
+                  errorFallback={<LogsError />}
+                  loadingFallback={<LogsSkeleton />}
+                >
+                  <Logs
+                    logStreamId={build?.log_stream?.id}
+                    logStreamOpen={build?.log_stream?.open}
+                    orgId={orgId}
+                  />
+                </AsyncBoundary>
               </LogStreamProvider>
             ) : (
               <RefreshLogStream />
             )}
           </div>
-          {/* old page layout */}
 
           <BackToTop containerId={containerId} />
         </PageSection>

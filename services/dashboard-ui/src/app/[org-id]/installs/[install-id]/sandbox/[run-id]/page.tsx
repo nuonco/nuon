@@ -1,13 +1,7 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-
-import {
-  CalendarBlankIcon,
-  CaretLeftIcon,
-  TimerIcon,
-} from '@phosphor-icons/react/dist/ssr'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { BackToTop } from '@/components/common/BackToTop'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageSection } from '@/components/layout/PageSection'
@@ -19,28 +13,7 @@ import { toSentenceCase } from '@/utils/string-utils'
 import { Logs, LogsError, LogsSkeleton } from './logs'
 
 // NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
-import {
-  AppSandboxConfig,
-  AppSandboxVariables,
-  ApprovalStep,
-  ClickToCopy,
-  DashboardContent,
-  Duration,
-  InstallWorkflowCancelModal,
-  Loading,
-  Link,
-  LogStreamProvider as OldLogStreamProvider,
-  JsonView,
-  OperationLogsSection,
-  RunnerJobPlanModal,
-  SandboxRunStatus,
-  Section,
-  Text,
-  Time,
-  ToolTip,
-} from '@/components'
-import { CANCEL_RUNNER_JOBS, sentanceCase } from '@/utils'
+import { Section } from '@/components'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -136,15 +109,16 @@ export default async function SandboxRuns({ params }) {
               initLogStream={sandboxRun?.log_stream}
               shouldPoll={sandboxRun?.log_stream?.open}
             >
-              <ErrorBoundary fallback={<LogsError />}>
-                <Suspense fallback={<LogsSkeleton />}>
-                  <Logs
-                    logStreamId={sandboxRun?.log_stream?.id}
-                    logStreamOpen={sandboxRun?.log_stream?.open}
-                    orgId={orgId}
-                  />
-                </Suspense>
-              </ErrorBoundary>
+              <AsyncBoundary
+                errorFallback={<LogsError />}
+                loadingFallback={<LogsSkeleton />}
+              >
+                <Logs
+                  logStreamId={sandboxRun?.log_stream?.id}
+                  logStreamOpen={sandboxRun?.log_stream?.open}
+                  orgId={orgId}
+                />
+              </AsyncBoundary>
             </LogStreamProvider>
           </div>
 

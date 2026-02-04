@@ -1,41 +1,17 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { BackToTop } from '@/components/common/BackToTop'
-import { Card } from '@/components/common/Card'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getApp, getAppConfigs, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { AppInputs, AppInputsError, AppInputsSkeleton } from './inputs-config'
-import {
-  AppRunner,
-  AppRunnerError,
-  AppRunnerSkeleton,
-} from './runner-config'
+import { AppRunner, AppRunnerError, AppRunnerSkeleton } from './runner-config'
 import {
   AppSandbox,
   AppSandboxError,
   AppSandboxSkeleton,
 } from './sandbox-config'
-
-// NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
-import {
-  AppCreateInstallButton,
-  AppPageSubNav,
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  Section,
-} from '@/components'
-import {
-  InputsConfig,
-  ReadmeConfig,
-  RunnerConfig,
-  SandboxConfig,
-} from './app-configs.old'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 

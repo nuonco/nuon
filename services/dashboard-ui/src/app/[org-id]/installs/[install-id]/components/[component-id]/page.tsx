@@ -1,3 +1,5 @@
+// NOTE(nnnnat): Needs refactored to stratus
+
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
@@ -19,9 +21,7 @@ import { Deploys } from './deploys'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr'
 import {
-  DashboardContent,
   ErrorFallback,
-  InstallComponentManagementDropdown,
   Link,
   Loading,
   Section,
@@ -29,7 +29,6 @@ import {
 } from '@/components'
 import { DriftedBanner } from '@/components/old/DriftedBanner'
 import { TerraformWorkspace } from '@/components/old/InstallSandbox'
-import { OldDeploys } from './old-deploys'
 import { ComponentConfig } from './config'
 import { ComponentDependencies } from './dependencies'
 import { LatestOutputs } from './outputs'

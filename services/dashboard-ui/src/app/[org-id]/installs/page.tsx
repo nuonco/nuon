@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -13,11 +12,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InstallsTable } from './installs-table'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import { DashboardContent, ErrorFallback, Loading, Section } from '@/components'
-import { Installs } from './installs'
 
 type TInstallsPageProps = TPageProps<'org-id'>
 

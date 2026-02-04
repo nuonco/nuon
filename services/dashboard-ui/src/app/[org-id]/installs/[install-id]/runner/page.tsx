@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { AsyncBoundary } from '@/components/common/AsyncBoundary'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -22,26 +19,6 @@ import { TPageProps } from '@/types'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerDetailsError } from './runner-details'
 import { RunnerHealth, RunnerHealthError } from './runner-health'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  InstallStatuses,
-  InstallPageSubNav,
-  Link as OldLink,
-  Loading,
-  Section,
-  Text as OldText,
-  Time,
-} from '@/components'
-import { InstallManagementDropdown } from '@/components/old/Installs'
-import { ManageRunnerDropdown } from '@/components/old/OldRunners/ManageDropdown'
-import { Activity } from './activity'
-import { Details } from './details'
-import { Health } from './health'
-import { UpcomingJobs } from './upcoming-jobs'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -122,7 +99,9 @@ export default async function Runner({
       <div className="flex flex-col @min-4xl:flex-row gap-6">
         <AsyncBoundary
           errorFallback={<RunnerDetailsError />}
-          loadingFallback={<RunnerDetailsCardSkeleton className="flex-initial" />}
+          loadingFallback={
+            <RunnerDetailsCardSkeleton className="flex-initial" />
+          }
         >
           <RunnerDetails
             orgId={orgId}

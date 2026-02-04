@@ -1,10 +1,4 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import {
-  CalendarBlankIcon,
-  CaretLeftIcon,
-  TimerIcon,
-} from '@phosphor-icons/react/dist/ssr'
 import { ActionStepGraph } from '@/components/actions/ActionStepsGraph'
 import { InstallActionRunOutputs } from '@/components/actions/InstallActionRunOutputs'
 import { Text } from '@/components/common/Text'
@@ -13,32 +7,10 @@ import {
   getInstallAction,
   getInstallActionRun,
   getInstall,
-  getWorkflow,
   getOrg,
 } from '@/lib'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
 import { hydrateActionRunSteps } from '@/utils/action-utils'
-import { CANCEL_RUNNER_JOBS } from '@/utils'
-
-// NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
-import {
-  ActionTriggerType,
-  ActionLogsSection,
-  ActionWorkflowStatus,
-  ClickToCopy,
-  DashboardContent,
-  Duration,
-  Link as OldLink,
-  Loading,
-  LogStreamProvider,
-  RunnerJobPlanModal,
-  Text as OldText,
-  Time,
-  ToolTip,
-} from '@/components'
-import { InstallActionCancelButton } from '@/components/old/InstallActionRunCancelButton'
-import { InstallActionRunDetails } from '@/components/old/InstallActionRunDetails'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -92,16 +64,6 @@ export default async function InstallActionRunPage({ params }) {
     }),
     getOrg({ orgId }),
   ])
-
-  const { data: workflow } = await getWorkflow({
-    orgId,
-    workflowId: installActionRun?.install_workflow_id,
-  })
-  const step = workflow
-    ? workflow?.steps
-        ?.filter((s) => s?.step_target_id === installActionRun?.id)
-        ?.at(-1)
-    : null
 
   return (
     <InstallActionRunProvider

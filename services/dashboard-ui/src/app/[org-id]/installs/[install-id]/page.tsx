@@ -1,10 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstall, getOrg } from '@/lib'
@@ -12,19 +8,7 @@ import { CurrentInputs } from './inputs'
 import { Readme } from './readme'
 
 // NOTE: old install components
-import { ErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  InstallPageSubNav,
-  InstallStatuses,
-  InstallManagementDropdown,
-  Link as OldLink,
-  Loading,
-  Section,
-  Text as OldText,
-  Time,
-} from '@/components'
+import { Loading, Section } from '@/components'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
@@ -75,29 +59,36 @@ export default async function Install({ params }) {
           headingClassName="px-6 pt-6"
           childrenClassName="overflow-auto px-6 pb-6"
         >
-          <ErrorBoundary fallbackRender={ErrorFallback}>
-            <Suspense
-              fallback={
-                <Loading
-                  variant="stack"
-                  loadingText="Loading install README..."
-                />
-              }
-            >
-              <Readme installId={installId} orgId={orgId} />
-            </Suspense>
-          </ErrorBoundary>
+          <AsyncBoundary
+            loadingFallback={
+              <Loading
+                variant="stack"
+                loadingText="Loading install README..."
+              />
+            }
+            errorFallback={
+              <span className="text-md">Unable to load the REAMDE</span>
+            }
+          >
+            <Readme installId={installId} orgId={orgId} />
+          </AsyncBoundary>
         </Section>
 
         <div className="divide-y flex flex-col col-span-4">
           <Section className="flex-initial">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={<Loading loadingText="Loading install inputs..." />}
-              >
-                <CurrentInputs installId={installId} orgId={orgId} />
-              </Suspense>
-            </ErrorBoundary>
+            <AsyncBoundary
+              loadingFallback={
+                <Loading
+                  variant="stack"
+                  loadingText="Loading install inputs..."
+                />
+              }
+              errorFallback={
+                <span className="text-md">Unable to load current inputs</span>
+              }
+            >
+              <CurrentInputs installId={installId} orgId={orgId} />
+            </AsyncBoundary>
           </Section>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { BackToTop } from '@/components/common/BackToTop'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
 import { PageSection } from '@/components/layout/PageSection'
@@ -10,40 +10,10 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { DeployProvider } from '@/providers/deploy-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { getComponent, getInstall, getDeploy, getWorkflow, getOrg } from '@/lib'
-import { Build } from './build'
-import { ComponentConfig } from './config'
 import { Logs, LogsError, LogsSkeleton } from './logs'
 
 // NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
-import {
-  CalendarBlankIcon,
-  CaretLeftIcon,
-  CaretRightIcon,
-  TimerIcon,
-} from '@phosphor-icons/react/dist/ssr'
-import {
-  ApprovalStep,
-  ClickToCopy,
-  ConfigurationVariables,
-  DashboardContent,
-  DeployStatus,
-  Duration,
-  ErrorFallback,
-  InstallComponentManagementDropdown,
-  InstallWorkflowCancelModal,
-  Link as OldLink,
-  Loading,
-  LogStreamProvider as OldLogStreamProvider,
-  OperationLogsSection,
-  RunnerJobPlanModal,
-  Section,
-  Text as OldText,
-  Time,
-  ToolTip,
-  Truncate,
-} from '@/components'
-import { CANCEL_RUNNER_JOBS, sizeToMbOrGB } from '@/utils'
+import { Section } from '@/components'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -170,15 +140,16 @@ export default async function InstallComponentDeploy({ params }) {
               initLogStream={deploy?.log_stream}
               shouldPoll={deploy?.log_stream?.open}
             >
-              <ErrorBoundary fallback={<LogsError />}>
-                <Suspense fallback={<LogsSkeleton />}>
-                  <Logs
-                    logStreamId={deploy?.log_stream?.id}
-                    orgId={orgId}
-                    logStreamOpen={deploy?.log_stream?.open}
-                  />
-                </Suspense>
-              </ErrorBoundary>
+              <AsyncBoundary
+                errorFallback={<LogsError />}
+                loadingFallback={<LogsSkeleton />}
+              >
+                <Logs
+                  logStreamId={deploy?.log_stream?.id}
+                  orgId={orgId}
+                  logStreamOpen={deploy?.log_stream?.open}
+                />
+              </AsyncBoundary>
             </LogStreamProvider>
 
             {workflow &&

@@ -41,7 +41,10 @@ export const DeployHeader = ({
           <span className="flex items-cenert gap-2">
             <ComponentType type={component?.type} displayVariant="icon-only" />
             <Text variant="base" weight="strong">
-              {deploy?.component_name} {deploy?.install_deploy_type === "teardown" ? "teardown" : "deploy"}
+              {deploy?.component_name}{' '}
+              {deploy?.install_deploy_type === 'teardown'
+                ? 'teardown'
+                : 'deploy'}
             </Text>
           </span>
           <ID>{deploy?.id}</ID>
@@ -59,6 +62,13 @@ export const DeployHeader = ({
               endTime={deploy?.updated_at}
             />
           </Text>
+          <ID>
+            <Link
+              href={`/${deploy?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
+            >
+              {deploy?.build_id}
+            </Link>
+          </ID>
         </div>
         {deploy?.install_workflow_id ? (
           <Button
@@ -84,7 +94,7 @@ export const DeployHeader = ({
                   {toSentenceCase(deploy?.status_v2?.status_human_description)}
                 </Text>
               ),
-              position: 'left',
+              position: 'bottom',
             }}
           />
 

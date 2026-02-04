@@ -1,3 +1,5 @@
+// NOTE(nnnat): needs refactored to stratus
+
 import cronstrue from 'cronstrue'
 import type { Metadata } from 'next'
 import { BackLink } from '@/components/common/BackLink'
@@ -17,7 +19,6 @@ import {
   Config,
   ConfigurationVariables,
   ConfigurationVCS,
-  DashboardContent,
   Expand,
   Section,
   Text as OldText,

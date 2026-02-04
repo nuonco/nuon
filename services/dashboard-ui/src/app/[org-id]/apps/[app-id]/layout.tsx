@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getIsPageSidebarOpenFromCookie } from '@/actions/layout/page-sidebar-cookie'
-import { getApp, getOrg } from '@/lib'
+import { getApp } from '@/lib'
 import { AppProvider } from '@/providers/app-provider'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
@@ -12,13 +12,10 @@ interface IAppLayout extends TLayoutProps<'org-id' | 'app-id'> {}
 export default async function AppLayout({ children, params }: IAppLayout) {
   const isPageSidebarOpen = await getIsPageSidebarOpenFromCookie()
   const { ['org-id']: orgId, ['app-id']: appId } = await params
-  const [{ data: app, error }, { data: org }] = await Promise.all([
-    getApp({
-      orgId,
-      appId,
-    }),
-    getOrg({ orgId }),
-  ])
+  const { data: app, error } = await getApp({
+    orgId,
+    appId,
+  })
 
   if (error) {
     console.error('error fetching app by id', error)

@@ -3,11 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { TemporalLink } from '@/components/admin/TemporalLink'
 import { CreateInstallButton } from '@/components/apps/CreateInstall'
-import { Dropdown } from '@/components/common/Dropdown'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
-import { Link } from '@/components/common/Link'
-import { Menu } from '@/components/common/Menu'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -77,24 +73,6 @@ export default function Template({ children }: { children: React.ReactNode }) {
               {app?.runner_config ? (
                 <CreateInstallButton variant="primary" />
               ) : null}
-
-              {/* <Dropdown
-               *   buttonText="Manage"
-               *   id="app-manage"
-               *   variant="primary"
-               *   alignment="right"
-               * >
-               *   <Menu className="min-w-56">
-               *     <Link href={`/${org.id}/apps/${app?.id}/configs`}>
-               *       Config versions
-               *       <Icon variant="GitDiff" />
-               *     </Link>
-               *     <Link href={`/${org.id}/apps/${app?.id}/workflows`}>
-               *       Workflows
-               *       <Icon variant="TreeStructure" />
-               *     </Link>
-               *   </Menu>
-               * </Dropdown> */}
             </div>
           </PageHeader>
           <PageContent className="border-t" isScrollable variant="secondary">
@@ -122,6 +100,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   text: 'Roles',
                 },
                 {
+                  path: `/policies`,
+                  iconVariant: 'ShieldCheck',
+                  text: 'Policies',
+                },
+                {
                   path: `/installs`,
                   iconVariant: 'Cube',
                   text: 'Installs',
@@ -130,11 +113,6 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   path: `/readme`,
                   iconVariant: 'BookOpen',
                   text: 'README',
-                },
-                {
-                  path: `/policies`,
-                  iconVariant: 'ShieldCheck',
-                  text: 'Policies',
                 },
               ]}
             />

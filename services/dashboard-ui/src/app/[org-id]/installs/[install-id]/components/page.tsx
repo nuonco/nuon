@@ -1,30 +1,15 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
-import { InstallComponentsTableSkeleton } from "@/components/install-components/InstallComponentsTable";
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstall, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
-import { InstallComponentsTable } from "./components-table";
-
-
-// NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
 import {
-  DashboardContent,
-  ErrorFallback,
-  Link,
-  InstallStatuses,
-  InstallPageSubNav,
-  InstallManagementDropdown,
-  Loading,
-  Text as OldText,
-  Time,
-} from '@/components'
-import { InstallComponents } from './components'
+  InstallComponentsTable,
+  InstallComponentsTableSkeleton,
+} from './components-table'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -81,24 +66,21 @@ export default async function InstallComponentsPage({
         </Text>
       </HeadingGroup>
 
-      {/* old layout stuff */}
-      <ErrorBoundary fallbackRender={ErrorFallback}>
-        <Suspense
-          fallback={
-            <Loading loadingText="Loading components..." variant="page" />
-          }
-        >
-          <InstallComponentsTable
-            install={install}
-            installId={install?.id}
-            orgId={orgId}
-            offset={sp['offset'] || '0'}
-            q={sp['q'] || ''}
-            types={sp['types'] || ''}
-          />
-        </Suspense>
-      </ErrorBoundary>
-      {/* old layout stuff */}
+      <AsyncBoundary
+        loadingFallback={<InstallComponentsTableSkeleton />}
+        errorFallback={
+          <span className="text-md">Unable to load install components</span>
+        }
+      >
+        <InstallComponentsTable
+          install={install}
+          installId={install?.id}
+          orgId={orgId}
+          offset={sp['offset'] || '0'}
+          q={sp['q'] || ''}
+          types={sp['types'] || ''}
+        />
+      </AsyncBoundary>
     </PageSection>
   )
 }

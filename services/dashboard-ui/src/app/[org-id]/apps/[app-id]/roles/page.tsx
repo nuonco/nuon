@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -56,15 +55,17 @@ export default async function AppRolesPage({ params }) {
           IAM roles
         </Text>
         <Text variant="subtext" theme="neutral">
-          View the IAM roles that your app uses to access customer AWS resources.
+          View the IAM roles that your app uses to access customer AWS
+          resources.
         </Text>
       </HeadingGroup>
-      
-      <ErrorBoundary fallback={<AppRolesError />}>
-        <Suspense fallback={<AppRolesSkeleton />}>
-          <AppRoles appId={appId} orgId={orgId} />
-        </Suspense>
-      </ErrorBoundary>
+
+      <AsyncBoundary
+        errorFallback={<AppRolesError />}
+        loadingFallback={<AppRolesSkeleton />}
+      >
+        <AppRoles appId={appId} orgId={orgId} />
+      </AsyncBoundary>
     </PageSection>
   )
 }

@@ -1,3 +1,5 @@
+// NOTE(nnnnat): needs refactored to stratus
+
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
@@ -17,13 +19,11 @@ import { Builds, BuildsSkeleton, BuildsError } from './builds'
 // NOTE: old layout stuff
 import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
-  BuildComponentButton as OldBuildComponentButton,
-  DashboardContent,
   ErrorFallback,
   Loading,
   Section,
 } from '@/components'
-import { OldBuilds } from './old-builds'
+
 import { Config } from './config'
 import { Dependencies } from './dependencies'
 

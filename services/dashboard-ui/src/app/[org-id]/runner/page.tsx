@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 import { TemporalLink } from '@/components/admin/TemporalLink'
 import { AsyncBoundary } from '@/components/common/AsyncBoundary'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
@@ -19,23 +17,6 @@ import { getRunner, getRunnerSettings, getOrg } from '@/lib'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerError } from './runner-details'
 import { RunnerHealth, RunnerHealthError } from './runner-health'
-
-// NOTE: old layout components
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  Notice,
-  StatusBadge,
-  Section,
-  Text as OldText,
-} from '@/components'
-import { ManageRunnerDropdown } from '@/components/old/OldRunners/ManageDropdown'
-import { Activity } from './activity'
-import { Details } from './details'
-import { Health } from './health'
-import { UpcomingJobs } from './upcoming-jobs'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params

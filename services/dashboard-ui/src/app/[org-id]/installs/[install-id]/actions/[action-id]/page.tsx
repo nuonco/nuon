@@ -1,5 +1,8 @@
+// NOTE(nnnnat): refactor to stratus
+
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
@@ -15,7 +18,6 @@ import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
 
 // NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
 import {
   ActionTriggerType,
   ClickToCopy,
@@ -23,18 +25,13 @@ import {
   Config,
   ConfigurationVCS,
   ConfigurationVariables,
-  ErrorFallback,
   Expand,
-  Loading,
-  DashboardContent,
   Section,
   StatusBadge,
   Text as OldText,
   ToolTip,
   Truncate,
 } from '@/components'
-import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
-import { ActionRuns } from './action-runs'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id' | 'action-id'>
 

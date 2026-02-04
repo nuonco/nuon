@@ -14,10 +14,6 @@ import { AppsTable } from './apps-table'
 // TODO(nnnat): move segment init script to org dashboard
 import { SegmentAnalyticsSetOrg } from '@/lib/segment-analytics'
 
-// old layout components
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import { DashboardContent, ErrorFallback, Loading, Section } from '@/components'
-import { Apps } from './apps'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params

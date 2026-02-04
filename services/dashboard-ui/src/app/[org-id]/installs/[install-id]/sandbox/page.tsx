@@ -1,33 +1,19 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { CaretRightIcon, FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
+import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { ManagementDropdown } from "@/components/sandbox/management/ManagementDropdown"
+import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { getInstall, getInstallDriftedObjects, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
 
 // NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  InstallStatuses,
-  InstallPageSubNav,
-  InstallManagementDropdown,
-  Link as OldLink,
-  Loading,
-  Section,
-  Text as OldText,
-  Time,
-} from '@/components'
+import { Loading, Section } from '@/components'
 import { DriftedBanner } from '@/components/old/DriftedBanner'
 import { TerraformWorkspace } from '@/components/old/InstallSandbox'
-import { SandboxManagementDropdown } from '@/components/old/InstallSandbox/ManagementDropdown'
-import { SandboxRuns } from './sandbox-runs'
 import { SandboxConfig } from './config'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
@@ -96,56 +82,58 @@ export default async function InstallSandboxPage({
           ) : null}
           <Section
             actions={
-              <OldText>
-                <OldLink href={`/${orgId}/apps/${install.app_id}`}>
+              <Text variant="subtext">
+                <Link href={`/${orgId}/apps/${install.app_id}`}>
                   Details
-                  <CaretRightIcon />
-                </OldLink>
-              </OldText>
+                  <Icon variant="CaretRightIcon" />
+                </Link>
+              </Text>
             }
             className="flex-initial"
             heading="Config"
             childrenClassName="flex flex-col gap-4"
           >
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    loadingText="Loading sandbox config..."
-                    variant="stack"
-                  />
-                }
-              >
-                <SandboxConfig
-                  appId={install?.app_id}
-                  appConfigId={install?.app_config_id}
-                  orgId={orgId}
+            <AsyncBoundary
+              loadingFallback={
+                <Loading
+                  loadingText="Loading sandbox config..."
+                  variant="stack"
                 />
-              </Suspense>
-            </OldErrorBoundary>
+              }
+              errorFallback={
+                <span className="text-md">Unable to load sandbox config</span>
+              }
+            >
+              <SandboxConfig
+                appId={install?.app_id}
+                appConfigId={install?.app_config_id}
+                orgId={orgId}
+              />
+            </AsyncBoundary>
           </Section>
 
           <Section
             className="flex-initial"
             childrenClassName="flex flex-col gap-4"
           >
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Section heading="Terraform state">
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading latest Terraform workspace..."
-                    />
-                  </Section>
-                }
-              >
-                <TerraformWorkspace
-                  orgId={orgId}
-                  workspace={install?.sandbox?.terraform_workspace}
+            <AsyncBoundary
+              loadingFallback={
+                <Loading
+                  loadingText="Loading latest Terraform workspace..."
+                  variant="stack"
                 />
-              </Suspense>
-            </OldErrorBoundary>
+              }
+              errorFallback={
+                <span className="text-md">
+                  Unable to load Terraform workspace
+                </span>
+              }
+            >
+              <TerraformWorkspace
+                orgId={orgId}
+                workspace={install?.sandbox?.terraform_workspace}
+              />
+            </AsyncBoundary>
           </Section>
         </div>
 
@@ -156,15 +144,16 @@ export default async function InstallSandboxPage({
             </div>
           </Section>
           <Section heading="Sandbox history">
-            <ErrorBoundary fallback={<RunsError />}>
-              <Suspense fallback={<RunsSkeleton />}>
-                <Runs
-                  installId={installId}
-                  orgId={orgId}
-                  offset={sp['offset'] || '0'}
-                />
-              </Suspense>
-            </ErrorBoundary>
+            <AsyncBoundary
+              loadingFallback={<RunsSkeleton />}
+              errorFallback={<RunsError />}
+            >
+              <Runs
+                installId={installId}
+                orgId={orgId}
+                offset={sp['offset'] || '0'}
+              />
+            </AsyncBoundary>
           </Section>
         </div>
       </div>

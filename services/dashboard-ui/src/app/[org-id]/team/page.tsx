@@ -14,29 +14,12 @@ import { TeamTable, TeamTableSkeleton } from '@/components/team/TeamTable'
 import { InviteUserButton } from '@/components/team/InviteUser'
 import { getOrg, getOrgAccounts } from '@/lib'
 import { getSession } from '@/lib/auth-server'
-import type { TAccount, TInvite } from '@/types'
 import { isNuonSession } from '@/utils/session-utils'
 import {
   InvitedUser,
   InvitedUserError,
   InvitedUserSkeleton,
 } from './invited-user'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  OrgInviteModal,
-  StatusBadge,
-  Section,
-  TeamMembersTable,
-  OldText,
-  Pagination,
-} from '@/components'
-import { API_URL } from '@/configs/api'
-import { getFetchOpts } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -167,74 +150,4 @@ const StratusOrgMembers: FC<{
     : members.filter((member) => !member?.email?.endsWith('nuon.co'))
 
   return <TeamTable members={filteredMembers} pagination={pagination} />
-}
-
-// Old team members component (for non-stratus layout)
-const OrgMembers: FC<{
-  orgId: string
-  limit?: number
-  offset?: string
-}> = async ({ orgId, limit = 10, offset }) => {
-  const session = await getSession()
-  const {
-    data: members,
-    error,
-    headers,
-  } = await getOrgAccounts({
-    orgId,
-    limit,
-    offset,
-  })
-
-  const pageData = {
-    hasNext: headers?.['x-nuon-page-next'] || 'false',
-    offset: headers?.['x-nuon-page-offset'] || '0',
-  }
-
-  return members && members.length > 0 ? (
-    <div className="flex flex-col gap-4 w-full">
-      <TeamMembersTable
-        members={
-          isNuonSession(session?.user)
-            ? members
-            : members.filter((member) => !member?.email?.endsWith('nuon.co'))
-        }
-        limit={limit}
-      />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={limit}
-      />
-    </div>
-  ) : (
-    <OldText>No team members to show</OldText>
-  )
-}
-
-const OrgInvites: FC<{ orgId: string }> = async ({ orgId }) => {
-  const invites = await fetch(
-    `${API_URL}/v1/orgs/current/invites`,
-    await getFetchOpts(orgId)
-  )
-    .then((res) => res.json() as Promise<Array<TInvite>>)
-    .catch(console.error)
-
-  return invites && invites.length ? (
-    <div className="flex flex-col divide-y">
-      {invites.map((invite) => (
-        <span className="text-sm py-2 flex items-center gap-2" key={invite.id}>
-          <StatusBadge
-            status={invite.status}
-            isWithoutBorder
-            isStatusTextHidden
-          />{' '}
-          {invite.email}
-        </span>
-      ))}
-    </div>
-  ) : (
-    <OldText>No invites to show</OldText>
-  )
 }
