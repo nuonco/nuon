@@ -14,29 +14,12 @@ import { TeamTable, TeamTableSkeleton } from '@/components/team/TeamTable'
 import { InviteUserButton } from '@/components/team/InviteUser'
 import { getOrg, getOrgAccounts } from '@/lib'
 import { getSession } from '@/lib/auth-server'
-import type { TAccount, TInvite } from '@/types'
 import { isNuonSession } from '@/utils/session-utils'
 import {
   InvitedUser,
   InvitedUserError,
   InvitedUserSkeleton,
 } from './invited-user'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  OrgInviteModal,
-  StatusBadge,
-  Section,
-  TeamMembersTable,
-  OldText,
-  Pagination,
-} from '@/components'
-import { API_URL } from '@/configs/api'
-import { getFetchOpts } from '@/utils'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { ['org-id']: orgId } = await params
@@ -72,7 +55,7 @@ export default async function OrgTeam({ params, searchParams }) {
   }
 
   if (org?.features?.['org-settings']) {
-    return org?.features?.['stratus-layout'] ? (
+    return (
       <PageLayout isScrollable>
         <Breadcrumbs
           breadcrumbs={[
@@ -129,62 +112,6 @@ export default async function OrgTeam({ params, searchParams }) {
           </PageSection>
         </PageContent>
       </PageLayout>
-    ) : (
-      <DashboardContent
-        breadcrumb={[{ href: `/${orgId}`, text: 'Team' }]}
-        heading={org?.name}
-        headingUnderline={org?.id}
-        statues={
-          <div className="flex items-start gap-8">
-            <span className="flex flex-col gap-2">
-              <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                Status
-              </OldText>
-              <StatusBadge
-                status={org?.status}
-                description={org?.status_description}
-                descriptionAlignment="right"
-              />
-            </span>
-            <OrgInviteModal />
-          </div>
-        }
-      >
-        <div className="flex-auto h-full md:grid md:grid-cols-12 divide-x">
-          <div className="divide-y flex flex-col flex-auto h-full col-span-8">
-            <Section heading="Members">
-              <OldErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading org members..."
-                    />
-                  }
-                >
-                  <OrgMembers orgId={orgId} offset={sp['offset'] || '0'} />
-                </Suspense>
-              </OldErrorBoundary>
-            </Section>
-          </div>
-          <div className="divide-y flex flex-col flex-auto col-span-4">
-            <Section heading="Invites">
-              <OldErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading org invites..."
-                    />
-                  }
-                >
-                  <OrgInvites orgId={orgId} />
-                </Suspense>
-              </OldErrorBoundary>
-            </Section>
-          </div>
-        </div>
-      </DashboardContent>
     )
   } else {
     redirect(`/${orgId}/apps`)
@@ -223,74 +150,4 @@ const StratusOrgMembers: FC<{
     : members.filter((member) => !member?.email?.endsWith('nuon.co'))
 
   return <TeamTable members={filteredMembers} pagination={pagination} />
-}
-
-// Old team members component (for non-stratus layout)
-const OrgMembers: FC<{
-  orgId: string
-  limit?: number
-  offset?: string
-}> = async ({ orgId, limit = 10, offset }) => {
-  const session = await getSession()
-  const {
-    data: members,
-    error,
-    headers,
-  } = await getOrgAccounts({
-    orgId,
-    limit,
-    offset,
-  })
-
-  const pageData = {
-    hasNext: headers?.['x-nuon-page-next'] || 'false',
-    offset: headers?.['x-nuon-page-offset'] || '0',
-  }
-
-  return members && members.length > 0 ? (
-    <div className="flex flex-col gap-4 w-full">
-      <TeamMembersTable
-        members={
-          isNuonSession(session?.user)
-            ? members
-            : members.filter((member) => !member?.email?.endsWith('nuon.co'))
-        }
-        limit={limit}
-      />
-      <Pagination
-        param="offset"
-        pageData={pageData}
-        position="center"
-        limit={limit}
-      />
-    </div>
-  ) : (
-    <OldText>No team members to show</OldText>
-  )
-}
-
-const OrgInvites: FC<{ orgId: string }> = async ({ orgId }) => {
-  const invites = await fetch(
-    `${API_URL}/v1/orgs/current/invites`,
-    await getFetchOpts(orgId)
-  )
-    .then((res) => res.json() as Promise<Array<TInvite>>)
-    .catch(console.error)
-
-  return invites && invites.length ? (
-    <div className="flex flex-col divide-y">
-      {invites.map((invite) => (
-        <span className="text-sm py-2 flex items-center gap-2" key={invite.id}>
-          <StatusBadge
-            status={invite.status}
-            isWithoutBorder
-            isStatusTextHidden
-          />{' '}
-          {invite.email}
-        </span>
-      ))}
-    </div>
-  ) : (
-    <OldText>No invites to show</OldText>
-  )
 }

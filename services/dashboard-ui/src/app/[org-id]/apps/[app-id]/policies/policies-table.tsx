@@ -37,7 +37,7 @@ export const PoliciesTable = async ({
       componentNameToId[c.name] = c.id
     }
   })
-
+  
   return error && status !== 404 ? (
     <Banner theme="error">Can&apos;t load policies: {error?.error}</Banner>
   ) : (

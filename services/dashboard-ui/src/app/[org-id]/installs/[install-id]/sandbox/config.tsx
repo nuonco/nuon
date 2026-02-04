@@ -1,3 +1,5 @@
+// NOTE(nnnnat): needs updated to stratus
+
 import { AppSandboxConfig, AppSandboxVariables, Notice } from '@/components'
 import { ValuesFileModal } from '@/components/old/InstallSandbox'
 import { getAppConfig } from '@/lib'

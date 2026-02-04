@@ -104,7 +104,6 @@ jobs:
           - runner
           - cli
           - lsp
-          - wiki
 
           # need to be updated to use nctl
           # - workers-infra-tests
@@ -115,6 +114,7 @@ jobs:
       prod: true
       stage: false
       is_promotion: true
+      disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
 
   bump_tag:

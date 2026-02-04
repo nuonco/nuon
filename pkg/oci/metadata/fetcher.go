@@ -102,6 +102,8 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 
 	if opts.Auth != nil && opts.Auth.Username != "" {
 		serverAddr := opts.Auth.ServerAddress
+		serverAddr = strings.TrimPrefix(serverAddr, "https://")
+		serverAddr = strings.TrimPrefix(serverAddr, "http://")
 		if serverAddr == "" {
 			parts := strings.SplitN(opts.Image, "/", 2)
 			if len(parts) > 0 {

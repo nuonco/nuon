@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -12,20 +11,6 @@ import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeF
 import type { TPageProps } from '@/types'
 import { getInstall, getOrg } from '@/lib'
 import { Workflows, WorkflowsError } from './workflows'
-
-// NOTE: old layout stuff
-import {
-  DashboardContent,
-  Link as OldLink,
-  Loading,
-  InstallPageSubNav,
-  InstallStatuses,
-  InstallManagementDropdown,
-  Section,
-  Text as OldText,
-  Time,
-} from '@/components'
-import { InstallWorkflows } from './install-workflows'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -51,7 +36,7 @@ export default async function InstallWorkflowsPage({
     getOrg({ orgId }),
   ])
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -97,71 +82,5 @@ export default async function InstallWorkflowsPage({
         </Suspense>
       </ErrorBoundary>
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/installs`, text: 'Installs' },
-        {
-          href: `/${orgId}/installs/${install.id}`,
-          text: install.name,
-        },
-        {
-          href: `/${orgId}/installs/${install.id}/workflows`,
-          text: 'Workflows',
-        },
-      ]}
-      heading={install.name}
-      headingUnderline={install.id}
-      headingMeta={
-        <>
-          Last updated <Time time={install?.updated_at} format="relative" />
-        </>
-      }
-      statues={
-        <div className="flex items-start gap-8">
-          {install?.metadata?.managed_by &&
-          install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
-            <span className="flex flex-col gap-2">
-              <OldText isMuted>Managed By</OldText>
-              <OldText>
-                <FileCodeIcon />
-                Config File
-              </OldText>
-            </span>
-          ) : null}
-          <span className="flex flex-col gap-2">
-            <OldText isMuted>App config</OldText>
-            <OldText>
-              <OldLink href={`/${orgId}/apps/${install.app_id}`}>
-                {install?.app?.name}
-              </OldLink>
-            </OldText>
-          </span>
-          <InstallStatuses />
-
-          <InstallManagementDropdown />
-        </div>
-      }
-      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
-    >
-      <div className="flex flex-col lg:flex-row flex-auto">
-        <Section heading="Install workflows" className="overflow-auto">
-          <Suspense
-            fallback={
-              <Loading
-                loadingText="Loading install history..."
-                variant="page"
-              />
-            }
-          >
-            <InstallWorkflows
-              installId={installId}
-              orgId={orgId}
-              offset={sp['workflows'] || '0'}
-            />
-          </Suspense>
-        </Section>
-      </div>
-    </DashboardContent>
   )
 }

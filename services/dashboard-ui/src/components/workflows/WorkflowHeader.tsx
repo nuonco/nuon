@@ -1,5 +1,7 @@
 'use client'
 
+// NOTE(nnnnat): old layout can be deleted
+
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/old/Badge'
 import { Link } from '@/components/old/Link'
