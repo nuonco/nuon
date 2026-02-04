@@ -50,7 +50,7 @@ jobs:
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
-      semver: ${{ steps.semver.outputs.nextStrict }}
+      semver: ${{ steps.semver.outputs.version }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -59,14 +59,9 @@ jobs:
         id: git_ref
         run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Determine next version
+      - name: Set fixed version
         id: semver
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          minorList: ""
-          patchAll: true
+        run: echo "version=0.19.765" >> $GITHUB_OUTPUT
 
   start_slack_notifications:
     name: update promotions channel
