@@ -100,10 +100,6 @@ func (s *OrgsTestSuite) TearDownSuite() {
 }
 
 func (s *OrgsTestSuite) setupTestData() {
-	// Clean up any existing test data first
-	s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
-	s.service.DB.Unscoped().Where("name LIKE ?", "test-org-%").Delete(&app.Org{})
-
 	// Create test account
 	testAcc := &app.Account{
 		ID:          domains.NewAccountID(),

@@ -117,10 +117,6 @@ func (s *CreateAppTestSuite) cleanupTestData() {
 }
 
 func (s *CreateAppTestSuite) setupTestData() {
-	// Clean up any existing test data first
-	s.service.DB.Unscoped().Where("email = ?", "user@example.com").Delete(&app.Account{})
-	s.service.DB.Unscoped().Where("name = ?", "test-org").Delete(&app.Org{})
-
 	// Create test account
 	testAcc := &app.Account{
 		ID:          domains.NewAccountID(),
