@@ -30,11 +30,7 @@ export const VCSConnections = ({
           >
             <VCSConnection vcs_connection={vcs} />
             <span className="self-end">
-              {org?.features['stratus-layout'] ? (
-                <VCSManagementDropdown vcs_connection={vcs} />
-              ) : (
-                <RemoveVCSConnection connection={vcs} />
-              )}
+              <VCSManagementDropdown vcs_connection={vcs} />
             </span>
           </Text>
         ))}

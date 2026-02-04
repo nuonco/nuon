@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -13,11 +12,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { InstallsTable } from './installs-table'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import { DashboardContent, ErrorFallback, Loading, Section } from '@/components'
-import { Installs } from './installs'
 
 type TInstallsPageProps = TPageProps<'org-id'>
 
@@ -40,7 +34,7 @@ export default async function InstallsPage({
   const { ['org-id']: orgId } = await params
   const { data: org } = await getOrg({ orgId })
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageLayout isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -85,25 +79,5 @@ export default async function InstallsPage({
         </PageSection>
       </PageContent>
     </PageLayout>
-  ) : (
-    <DashboardContent
-      breadcrumb={[{ href: `/${orgId}/installs`, text: 'Installs' }]}
-    >
-      <Section>
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading installs..." />
-            }
-          >
-            <Installs
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              q={sp['q'] || ''}
-            />
-          </Suspense>
-        </OldErrorBoundary>
-      </Section>
-    </DashboardContent>
   )
 }

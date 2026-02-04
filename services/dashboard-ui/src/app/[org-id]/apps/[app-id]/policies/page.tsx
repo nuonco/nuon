@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -8,15 +7,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getApp, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { PoliciesTable, PoliciesTableSkeleton } from './policies-table'
-
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  AppPageSubNav,
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  Section,
-} from '@/components'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 
@@ -38,7 +28,7 @@ export default async function AppPoliciesPage({ params }: TAppPageProps) {
     getOrg({ orgId }),
   ])
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -67,35 +57,15 @@ export default async function AppPoliciesPage({ params }: TAppPageProps) {
       </HeadingGroup>
 
       <div className="flex flex-auto">
-        <ErrorBoundary fallback={<>Error loading policies</>}>
-          <Suspense fallback={<PoliciesTableSkeleton />}>
-            <PoliciesTable appId={appId} orgId={orgId} />
-          </Suspense>
-        </ErrorBoundary>
+        <AsyncBoundary
+          errorFallback={
+            <span className="text-md">Unable to load app policies</span>
+          }
+          loadingFallback={<PoliciesTableSkeleton />}
+        >
+          <PoliciesTable appId={appId} orgId={orgId} />
+        </AsyncBoundary>
       </div>
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app?.id}`, text: app?.name || '' },
-        { href: `/${orgId}/apps/${app?.id}/policies`, text: 'Policies' },
-      ]}
-      heading={app?.name || ''}
-      headingUnderline={app?.id}
-      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
-    >
-      <Section childrenClassName="flex flex-auto">
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading policies..." />
-            }
-          >
-            <PoliciesTable appId={appId} orgId={orgId} />
-          </Suspense>
-        </OldErrorBoundary>
-      </Section>
-    </DashboardContent>
   )
 }
