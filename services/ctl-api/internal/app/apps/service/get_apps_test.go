@@ -18,38 +18,16 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
-	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/pagination"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
-	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
-	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
-
-	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // TestService holds all fx-injected dependencies for apps endpoint tests.
@@ -60,6 +38,7 @@ type TestService struct {
 	CHDB            *gorm.DB `name:"ch"`
 	V               *validator.Validate
 	L               *zap.Logger
+	MW              metrics.Writer
 	VcsHelpers      *vcshelpers.Helpers
 	AppsHelpers     *appshelpers.Helpers
 	InstallsHelpers *installshelpers.Helpers
@@ -69,7 +48,7 @@ type TestService struct {
 
 // AppsTestSuite is the testify suite for apps endpoints.
 type AppsTestSuite struct {
-	suite.Suite
+	tests.BaseDBTestSuite
 
 	app     *fxtest.App
 	service TestService
@@ -88,89 +67,34 @@ func TestAppsSuite(t *testing.T) {
 }
 
 func (s *AppsTestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.app = fxtest.New(
-		s.T(),
-		fx.Provide(internal.NewConfig),
-
-		// logging
-		fx.Provide(log.New),
-		fx.Provide(dblog.New),
-
-		// external services
-		fx.Provide(loops.New),
-		fx.Provide(ghpkg.New), // Use real GitHub client (loads from env)
-		fx.Provide(metrics.New),
-		fx.Provide(propagator.New),
-
-		// temporal dependencies (required for eventloop)
-		fx.Provide(gzip.AsGzip(gzip.New)),
-		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
-		fx.Provide(signaldb.NewPayloadConverter),
-		fx.Provide(dataconverter.New),
-		fx.Provide(temporal.New),
-
-		// eventloop client (uses real temporal connection)
-		fx.Provide(eventloop.New),
-
-		// databases
-		fx.Provide(psql.AsPSQL(psql.New)),
-		fx.Provide(ch.AsCH(ch.New)),
-
-		// validator
-		fx.Provide(validator.New),
-
-		// clients and dependencies for account client
-		fx.Provide(authz.New),
-		fx.Provide(analytics.New),
-		fx.Provide(account.New),
-
-		// helpers (order matters due to dependencies)
-		fx.Provide(accountshelpers.New),
-		fx.Provide(vcshelpers.New),
-		fx.Provide(actionshelpers.New),
-		fx.Provide(componentshelpers.New),
-		fx.Provide(appshelpers.New),
-		fx.Provide(runnershelpers.New),
-		fx.Provide(installshelpers.New),
-
-		// endpoint audit
-		fx.Provide(api.NewEndpointAudit),
-
+	options := append(
+		tests.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
-
-		// invokers
-		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
-
 		fx.Populate(&s.service),
 	)
 
+	s.app = fxtest.New(s.T(), options...)
+
 	s.app.RequireStart()
 
-	// Create test org and account
+	// Store DB reference for automatic truncation
+	s.SetDB(s.service.DB)
+}
+
+func (s *AppsTestSuite) SetupTest() {
+	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router and register routes
-	s.router = gin.New()
-
-	// Add pagination middleware to parse query parameters
-	paginationMW := pagination.New(pagination.Params{
-		L:  s.service.L,
-		DB: s.service.DB,
-	})
-	s.router.Use(paginationMW.Handler())
-
-	// Add test middleware to inject org and account context
-	s.router.Use(func(c *gin.Context) {
-		if s.testOrg != nil {
-			cctx.SetOrgGinContext(c, s.testOrg)
-		}
-		if s.testAcc != nil {
-			cctx.SetAccountGinContext(c, s.testAcc)
-		}
-		c.Next()
+	// Create test router with standard middlewares using helper
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
 	})
 
 	err := s.service.AppsService.RegisterPublicRoutes(s.router)
@@ -178,45 +102,34 @@ func (s *AppsTestSuite) SetupSuite() {
 }
 
 func (s *AppsTestSuite) TearDownSuite() {
-	s.cleanupTestData()
 	s.app.RequireStop()
 }
 
 func (s *AppsTestSuite) setupTestData() {
-	// Clean up any existing test data first
-	s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
-	s.service.DB.Unscoped().Where("name LIKE ?", "test-org-%").Delete(&app.Org{})
-
 	// Create test account
 	testAcc := &app.Account{
-		ID:      "acc" + domains.NewAccountID(), // Explicitly set ID
-		Email:   "test@example.com",
-		Subject: "test-subject",
+		ID:          domains.NewAccountID(),
+		Email:       "test@example.com",
+		Subject:     "test-subject",
+		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
 	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), testAcc.ID, "Account ID should be set after creation")
 	s.testAcc = testAcc
 
 	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(), // ID will get prefix from BeforeCreate
+		ID:   domains.NewOrgID(),
 		Name: "test-org-" + domains.NewOrgID(),
+		NotificationsConfig: app.NotificationsConfig{
+			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+		},
 	}
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
-}
-
-func (s *AppsTestSuite) cleanupTestData() {
-	if s.testOrg != nil {
-		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", s.testOrg.ID)
-	}
-	if s.testAcc != nil {
-		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", s.testAcc.ID)
-	}
 }
 
 func (s *AppsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -236,7 +149,8 @@ func (s *AppsTestSuite) TestGetAppsReturnsEmptyArrayWhenNoApps() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), response)
@@ -270,10 +184,17 @@ func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
 
 	rr := s.makeRequest(http.MethodGet, "/v1/apps")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 2)
 
@@ -310,10 +231,17 @@ func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
 	// Search for "frontend"
 	rr := s.makeRequest(http.MethodGet, "/v1/apps?q=frontend")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 1)
 	require.Equal(s.T(), "frontend-app", response[0].Name)
@@ -337,10 +265,17 @@ func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
 	// Request with limit
 	rr := s.makeRequest(http.MethodGet, "/v1/apps?limit=5")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.LessOrEqual(s.T(), len(response), 5)
 }
@@ -383,10 +318,17 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 
 	rr := s.makeRequest(http.MethodGet, "/v1/apps")
 
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	var response []app.App
+	// Use OpenAPI-generated response type
+	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+	}
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 1)
 	require.Equal(s.T(), "my-app", response[0].Name)

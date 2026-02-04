@@ -109,34 +109,53 @@ func (s *appsTestSuite) TestCreateApp() {
 }
 
 func (s *appsTestSuite) TestGetApp() {
+	// Create an app for testing
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.Nil(s.T(), err)
 	require.NotNil(s.T(), app)
 
-	s.T().Run("success", func(t *testing.T) {
-		currentApp, err := s.apiClient.GetApp(s.ctx, app.ID)
-		require.Nil(t, err)
-		require.NotNil(t, currentApp)
-	})
-	s.T().Run("success by name", func(t *testing.T) {
-		currentApp, err := s.apiClient.GetApp(s.ctx, app.Name)
-		require.Nil(t, err)
-		require.NotNil(t, currentApp)
-	})
+	testCases := []struct {
+		testName      string
+		appIdentifier string
+		expectError   bool
+	}{
+		{
+			testName:      "success by id",
+			appIdentifier: app.ID,
+			expectError:   false,
+		},
+		{
+			testName:      "success by name",
+			appIdentifier: app.Name,
+			expectError:   false,
+		},
+		{
+			testName:      "errors on empty id",
+			appIdentifier: "",
+			expectError:   true,
+		},
+		{
+			testName:      "errors on invalid id",
+			appIdentifier: generics.GetFakeObj[string](),
+			expectError:   true,
+		},
+	}
 
-	s.T().Run("errors on empty id", func(t *testing.T) {
-		app, err := s.apiClient.GetApp(s.ctx, "")
-		require.NotNil(t, err)
-		require.Nil(t, app)
-	})
+	for _, tc := range testCases {
+		s.T().Run(tc.testName, func(t *testing.T) {
+			currentApp, err := s.apiClient.GetApp(s.ctx, tc.appIdentifier)
 
-	s.T().Run("errors on invalid id", func(t *testing.T) {
-		app, err := s.apiClient.GetApp(s.ctx, generics.GetFakeObj[string]())
-		require.NotNil(t, err)
-		require.Nil(t, app)
-	})
+			if tc.expectError {
+				require.NotNil(t, err)
+				require.Nil(t, currentApp)
+			} else {
+				require.Nil(t, err)
+				require.NotNil(t, currentApp)
+			}
+		})
+	}
 }
 
 func (s *appsTestSuite) TestUpdateApp() {

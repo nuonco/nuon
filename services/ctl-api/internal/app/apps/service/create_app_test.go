@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -18,39 +19,16 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
-	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
-	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
-	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
-	validatorpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // CreateAppTestService holds all fx-injected dependencies for create app tests.
@@ -61,6 +39,7 @@ type CreateAppTestService struct {
 	CHDB            *gorm.DB `name:"ch"`
 	V               *validator.Validate
 	L               *zap.Logger
+	MW              metrics.Writer
 	VcsHelpers      *vcshelpers.Helpers
 	AppsHelpers     *appshelpers.Helpers
 	InstallsHelpers *installshelpers.Helpers
@@ -70,7 +49,7 @@ type CreateAppTestService struct {
 
 // CreateAppTestSuite is the testify suite for CreateApp endpoint.
 type CreateAppTestSuite struct {
-	testdb.BaseDBTestSuite
+	tests.BaseDBTestSuite
 
 	app     *fxtest.App
 	service CreateAppTestService
@@ -80,7 +59,11 @@ type CreateAppTestSuite struct {
 }
 
 func TestCreateAppSuite(t *testing.T) {
-	testdb.SkipIfNotIntegration(t)
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
+
 	suite.Run(t, new(CreateAppTestSuite))
 }
 
@@ -88,62 +71,14 @@ func (s *CreateAppTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.app = fxtest.New(
-		s.T(),
-		fx.Provide(internal.NewConfig),
-
-		// logging
-		fx.Provide(log.New),
-		fx.Provide(dblog.New),
-
-		// external services
-		fx.Provide(loops.New),
-		fx.Provide(ghpkg.New),
-		fx.Provide(metrics.New),
-		fx.Provide(propagator.New),
-
-		// temporal dependencies
-		fx.Provide(gzip.AsGzip(gzip.New)),
-		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
-		fx.Provide(signaldb.NewPayloadConverter),
-		fx.Provide(dataconverter.New),
-		fx.Provide(temporal.New),
-
-		// eventloop client
-		fx.Provide(eventloop.New),
-
-		// databases
-		fx.Provide(psql.AsPSQL(psql.New)),
-		fx.Provide(ch.AsCH(ch.New)),
-
-		// validator (use custom validator with entity_name registration)
-		fx.Provide(validatorpkg.New),
-
-		// clients and dependencies
-		fx.Provide(authz.New),
-		fx.Provide(analytics.New),
-		fx.Provide(account.New),
-
-		// helpers
-		fx.Provide(accountshelpers.New),
-		fx.Provide(vcshelpers.New),
-		fx.Provide(actionshelpers.New),
-		fx.Provide(componentshelpers.New),
-		fx.Provide(appshelpers.New),
-		fx.Provide(runnershelpers.New),
-		fx.Provide(installshelpers.New),
-
-		// endpoint audit
-		fx.Provide(api.NewEndpointAudit),
-
+	options := append(
+		tests.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
-
-		// invokers
-		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
-
 		fx.Populate(&s.service),
 	)
+
+	s.app = fxtest.New(s.T(), options...)
 
 	s.app.RequireStart()
 
@@ -155,18 +90,12 @@ func (s *CreateAppTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router and register routes
-	s.router = gin.New()
-	errMiddleware := stderr.New(s.service.L, nil)
-	s.router.Use(errMiddleware.Handler())
-	s.router.Use(func(c *gin.Context) {
-		if s.testOrg != nil {
-			cctx.SetOrgGinContext(c, s.testOrg)
-		}
-		if s.testAcc != nil {
-			cctx.SetAccountGinContext(c, s.testAcc)
-		}
-		c.Next()
+	// Create test router with standard middlewares using helper
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
 	})
 
 	err := s.service.AppsService.RegisterPublicRoutes(s.router)
@@ -235,7 +164,8 @@ func (s *CreateAppTestSuite) TestCreateAppSuccess() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	var response app.App
+	// Use OpenAPI-generated response type
+	var response models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
@@ -317,7 +247,7 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 		}
 		err := s.service.DB.Create(acc2).Error
 		require.NoError(s.T(), err)
-		s.testAcc = acc2
+		defer s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
 
 		ctx := context.Background()
 		ctx = cctx.SetAccountContext(ctx, acc2)
@@ -330,11 +260,32 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 		}
 		err = s.service.DB.WithContext(ctx).Create(org2).Error
 		require.NoError(s.T(), err)
-		s.testOrg = org2
+		defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
+
+		// Recreate router with new org context
+		router := tests.NewTestRouter(tests.RouterOptions{
+			L:       s.service.L,
+			DB:      s.service.DB,
+			TestOrg: org2,
+			TestAcc: acc2,
+		})
+		err = s.service.AppsService.RegisterPublicRoutes(router)
+		require.NoError(s.T(), err)
 
 		// Try to create duplicate app across orgs
 		req := CreateAppRequest{Name: appName}
-		rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
+
+		var reqBody *bytes.Buffer
+		jsonBytes, err := json.Marshal(req)
+		require.NoError(s.T(), err)
+		reqBody = bytes.NewBuffer(jsonBytes)
+
+		httpReq, err := http.NewRequest(http.MethodPost, "/v1/apps", reqBody)
+		require.NoError(s.T(), err)
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, httpReq)
 
 		// Validate 201
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
