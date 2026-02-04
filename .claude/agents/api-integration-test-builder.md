@@ -1,6 +1,6 @@
 ---
-name: api-test-builder
-description: Use this agent when:\n- Creating new integration tests for ctl-api endpoints\n- Fixing or updating existing API integration tests\n- Setting up test suites with proper database isolation\n- Writing tests that verify HTTP endpoint behavior\n- Testing API endpoints with proper authentication and context\n- Ensuring test patterns match established conventions\n\n<example>\nContext: Developer needs to test a new API endpoint.\nuser: "I need to write integration tests for the POST /v1/components endpoint"\nassistant: "Let me use the api-test-builder agent to create a comprehensive integration test suite following the established patterns."\n<uses Task tool to launch api-test-builder agent>\n</example>\n\n<example>\nContext: Developer's tests are failing with database issues.\nuser: "My integration tests are failing with 'relation does not exist' errors"\nassistant: "I'll use the api-test-builder agent to fix the test database setup and ensure proper isolation."\n<uses Task tool to launch api-test-builder agent>\n</example>\n\n<example>\nContext: Developer wants to add more test cases.\nuser: "Can you add validation tests and edge cases to the existing app tests?"\nassistant: "Let me use the api-test-builder agent to expand the test coverage with proper test cases."\n<uses Task tool to launch api-test-builder agent>\n</example>
+name: api-integration-test-builder
+description: Use this agent when:\n- Creating new integration tests for ctl-api endpoints\n- Fixing or updating existing API integration tests\n- Setting up test suites with proper database isolation\n- Writing tests that verify HTTP endpoint behavior\n- Testing API endpoints with proper authentication and context\n- Ensuring test patterns match established conventions\n\n<example>\nContext: Developer needs to test a new API endpoint.\nuser: "I need to write integration tests for the POST /v1/components endpoint"\nassistant: "Let me use the api-integration-test-builder agent to create a comprehensive integration test suite following the established patterns."\n<uses Task tool to launch api-integration-test-builder agent>\n</example>\n\n<example>\nContext: Developer's tests are failing with database issues.\nuser: "My integration tests are failing with 'relation does not exist' errors"\nassistant: "I'll use the api-integration-test-builder agent to fix the test database setup and ensure proper isolation."\n<uses Task tool to launch api-integration-test-builder agent>\n</example>\n\n<example>\nContext: Developer wants to add more test cases.\nuser: "Can you add validation tests and edge cases to the existing app tests?"\nassistant: "Let me use the api-integration-test-builder agent to expand the test coverage with proper test cases."\n<uses Task tool to launch api-integration-test-builder agent>\n</example>
 model: sonnet
 color: green
 ---
@@ -116,7 +116,7 @@ func (s *YourTestSuite) SetupSuite() {
     gin.SetMode(gin.TestMode)
 
     options := append(
-        testfx.CtlApiFXOptionsWithValidator(),
+        testfx.CtlApiFXOptions(),  // Use the main FX options (includes custom validator)
         // service under test
         fx.Provide(New),
         fx.Populate(&s.service),
@@ -132,7 +132,12 @@ func (s *YourTestSuite) SetupSuite() {
 
 **Key Points:**
 - **Always call `s.BaseDBTestSuite.SetupSuite()` first** - This creates the test database and sets `DB_NAME` environment variable
-- **Use `testfx.CtlApiFXOptionsWithValidator()`** - Provides all standard FX dependencies
+- **Use `testfx.CtlApiFXOptions()`** - Provides all standard FX dependencies including:
+  - Databases (PostgreSQL, ClickHouse)
+  - External services (Loops, GitHub, Metrics, Features)
+  - Temporal dependencies and EventLoop client
+  - All helpers (accounts, vcs, actions, components, apps, runners, installs, orgs)
+  - Custom validator with entity_name validation
 - **Call `s.SetDB(s.service.DB)` at the end** - Enables automatic table truncation
 - **FX automatically connects to test database** - No manual DSN configuration needed
 
@@ -529,7 +534,94 @@ s.Run(tc.name, func() {
    - `expectedCode` - Expected HTTP status code
    - `validateFunc` - Optional additional validation logic
 
-### 9. Validation Test Pattern (Table-Driven)
+### 9. Testing Across Multiple Organizations
+
+**CRITICAL Pattern: Router Context Capture**
+
+The `testfx.NewTestRouter()` creates a middleware closure that captures the `TestOrg` and `TestAcc` at router creation time. When testing operations across different organizations, you **must recreate the router** with the new org context.
+
+**Example: Testing Duplicate Names Across Orgs**
+```go
+func (s *YourTestSuite) TestCreateAppDuplicateName() {
+    appName := "test-app"
+
+    // Create existing app in first org
+    existingApp := &app.App{
+        Name:        appName,
+        OrgID:       s.testOrg.ID,
+        CreatedByID: s.testAcc.ID,
+    }
+    err := s.service.DB.Create(existingApp).Error
+    require.NoError(s.T(), err)
+
+    s.Run("within org", func() {
+        // Use existing router - same org context
+        req := CreateAppRequest{Name: appName}
+        rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
+        require.Equal(s.T(), http.StatusConflict, rr.Code)
+    })
+
+    s.Run("across orgs", func() {
+        // Create second org and account
+        acc2 := &app.Account{
+            ID:          domains.NewAccountID(),
+            Email:       "test2@example.com",
+            Subject:     "subject",
+            AccountType: app.AccountTypeAuth0,
+        }
+        err := s.service.DB.Create(acc2).Error
+        require.NoError(s.T(), err)
+        defer s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
+
+        ctx := context.Background()
+        ctx = cctx.SetAccountContext(ctx, acc2)
+        org2 := &app.Org{
+            ID:   domains.NewOrgID(),
+            Name: "test-org-2",
+            NotificationsConfig: app.NotificationsConfig{
+                InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+            },
+        }
+        err = s.service.DB.WithContext(ctx).Create(org2).Error
+        require.NoError(s.T(), err)
+        defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
+
+        // CRITICAL: Recreate router with new org context
+        router := testfx.NewTestRouter(testfx.RouterOptions{
+            L:       s.service.L,
+            DB:      s.service.DB,
+            TestOrg: org2,      // New org
+            TestAcc: acc2,      // New account
+        })
+        err = s.service.YourService.RegisterPublicRoutes(router)
+        require.NoError(s.T(), err)
+
+        // Make request with new router
+        var reqBody *bytes.Buffer
+        jsonBytes, err := json.Marshal(CreateAppRequest{Name: appName})
+        require.NoError(s.T(), err)
+        reqBody = bytes.NewBuffer(jsonBytes)
+
+        httpReq, err := http.NewRequest(http.MethodPost, "/v1/apps", reqBody)
+        require.NoError(s.T(), err)
+        httpReq.Header.Set("Content-Type", "application/json")
+
+        rr := httptest.NewRecorder()
+        router.ServeHTTP(rr, httpReq)
+
+        // Should succeed - different org
+        require.Equal(s.T(), http.StatusCreated, rr.Code)
+    })
+}
+```
+
+**Why This Is Required:**
+- The router middleware closure captures `TestOrg` and `TestAcc` at router creation
+- Modifying suite fields (`s.testOrg`, `s.testAcc`) doesn't update the captured values
+- Using the original router with modified suite fields will inject the **wrong** org context
+- Always recreate the router when testing with a different organization
+
+### 10. Validation Test Pattern (Table-Driven)
 
 **For validation tests, use table-driven subtests:**
 
@@ -565,7 +657,7 @@ func (s *YourTestSuite) TestCreateValidationErrors() {
 }
 ```
 
-### 9.5. Testing Workflow Signals with Mocks
+### 11. Testing Workflow Signals with Mocks
 
 **For endpoints that send workflow signals** (e.g., create org, delete org, restart operations), use the mock event loop client to verify signals are triggered correctly.
 
@@ -711,9 +803,7 @@ func (s *YourTestSuite) TestDeleteOrg() {
 
 **Mock Helper Methods:**
 - `mockEvClient.Reset()` - Clear all signals (call in SetupTest)
-- `mockEvClient.GetSignals()` - Get all recorded signals
-- `mockEvClient.GetSignalsByID(id)` - Get signals for specific entity
-- `mockEvClient.GetSignalCount()` - Get total count
+- `mockEvClient.GetSignals()` - Get all recorded signals (returns `[]testfx.SignalRecord`)
 
 **Key Pattern:**
 - Always reset mock in `SetupTest()` for clean state
@@ -721,7 +811,7 @@ func (s *YourTestSuite) TestDeleteOrg() {
 - Type assert signals to verify specific fields (e.g., `ForceDelete` flag)
 - Test happy path (signal sent) and alternate paths (no signal)
 
-### 10. Running Tests
+### 12. Running Tests
 
 **Local Execution:**
 ```bash
@@ -734,11 +824,11 @@ INTEGRATION=true go test -v ./services/ctl-api/internal/app/apps/service/... -ru
 
 **NEVER run tests directly with `go test` without `INTEGRATION=true`** - they will be skipped.
 
-### 11. Code Quality Checklist
+### 13. Code Quality Checklist
 
 **Before Completing:**
 - [ ] All tests use `testdb.BaseDBTestSuite` for database setup
-- [ ] All tests use `testfx.CtlApiFXOptions()` (NOT the deprecated `CtlApiFXOptionsWithValidator()`)
+- [ ] All tests use `testfx.CtlApiFXOptions()` which provides all standard dependencies
 - [ ] **Use table-driven tests** for comprehensive endpoint testing
 - [ ] Use `s.T().Cleanup()` for automatic cleanup in table-driven tests
 - [ ] Capture loop variables correctly in cleanup closures
@@ -746,6 +836,7 @@ INTEGRATION=true go test -v ./services/ctl-api/internal/app/apps/service/... -ru
 - [ ] Database operations use internal types (`app.*`)
 - [ ] **CRITICAL: Use `testfx.NewTestRouter()` helper for router setup** (includes stderr, patcher, pagination)
 - [ ] Pass `TestOrg` and `TestAcc` to router helper if endpoint needs context
+- [ ] **If testing across orgs**: Recreate router with new org context (middleware captures at creation time)
 - [ ] Account context is set before creating orgs
 - [ ] **If endpoint sends workflow signals**: Use `testfx.MockEventLoopClient` to verify signals
 - [ ] **If using mock event loop**: Call `mockEvClient.Reset()` in `SetupTest()`
@@ -756,7 +847,7 @@ INTEGRATION=true go test -v ./services/ctl-api/internal/app/apps/service/... -ru
 - [ ] Tests verify both HTTP response AND database state where applicable
 - [ ] Ran `go fmt` on all modified Go files
 
-### 12. Common Issues & Solutions
+### 14. Common Issues & Solutions
 
 **Issue: Empty response body**
 Solution: Missing stderr middleware - add `errMiddleware.Handler()` to router.
@@ -771,24 +862,34 @@ Solution: Ensure `s.BaseDBTestSuite.SetupTest()` is called in `SetupTest()` to t
 
 1. **Table-Driven Tests**: ALWAYS use table-driven test patterns for comprehensive coverage
 2. **Database Isolation**: Always use `BaseDBTestSuite` for proper test database setup
-3. **FX Options**: Use `testfx.CtlApiFXOptions()` (NOT the deprecated version)
-4. **Router Setup - CRITICAL**: ALWAYS use `testfx.NewTestRouter()` helper (includes stderr, panicker, pagination)
-5. **Type Safety**: Use appropriate types (OpenAPI or internal) based on what handler returns
-6. **Context**: Always set account context when creating orgs or other audited entities
-7. **Cleanup**: Use `s.T().Cleanup()` in table-driven tests for automatic cleanup
-8. **Debug**: Include debug logging in all test assertions for troubleshooting
-9. **Verify State**: Test both HTTP response AND database state changes where applicable
+3. **FX Options**: Use `testfx.CtlApiFXOptions()` which includes:
+   - Databases (PostgreSQL, ClickHouse)
+   - All helpers (accounts, vcs, actions, components, apps, runners, installs, orgs)
+   - External services (loops, github, metrics, features)
+   - Temporal dependencies and EventLoop client
+   - Custom validator with entity_name validation
+4. **Router Setup - CRITICAL**: ALWAYS use `testfx.NewTestRouter()` helper (includes stderr, patcher, pagination)
+5. **Cross-Org Testing**: Recreate router when testing across different orgs (middleware captures context at creation)
+6. **Type Safety**: Use appropriate types (OpenAPI or internal) based on what handler returns
+7. **Context**: Always set account context when creating orgs or other audited entities
+8. **Cleanup**: Use `s.T().Cleanup()` in table-driven tests for automatic cleanup
+9. **Mock Signals**: Use `testfx.MockEventLoopClient()` to verify workflow signals, reset in `SetupTest()`
+10. **Debug**: Include debug logging in all test assertions for troubleshooting
+11. **Verify State**: Test both HTTP response AND database state changes where applicable
 
 ## Key Files to Reference
 
 - **Existing Test Patterns**:
   - `/services/ctl-api/internal/app/orgs/service/get_orgs_test.go` - **BEST EXAMPLE** (table-driven tests)
+  - `/services/ctl-api/internal/app/orgs/service/delete_org_test.go` - Mock EventLoop usage
   - `/services/ctl-api/internal/app/apps/service/get_apps_test.go` - Individual test methods
-  - `/services/ctl-api/internal/app/apps/service/create_app_test.go` - Validation tests
+  - `/services/ctl-api/internal/app/apps/service/create_app_test.go` - Validation tests & cross-org pattern
   - `/services/ctl-api/internal/health/health_test.go` - Simple endpoint tests
 - **Test Infrastructure**:
   - `/services/ctl-api/internal/pkg/testdb/testdb.go` - Database setup
   - `/services/ctl-api/internal/pkg/testfx/testfx.go` - FX options
+  - `/services/ctl-api/internal/pkg/testfx/router.go` - Test router helper
+  - `/services/ctl-api/internal/pkg/testfx/mock_eventloop.go` - Mock EventLoop client
 - **OpenAPI Types**: `/sdks/nuon-go/models/*.go`
 - **Internal Types**: `/services/ctl-api/internal/app/*.go`
 
