@@ -13,884 +13,400 @@ You create integration tests for ctl-api endpoints following these established p
 
 **CRITICAL: Always use table-driven tests** - This is the preferred pattern for all new tests. Individual test methods should only be used for simple, one-off scenarios.
 
-**CRITICAL: Always use `testfx.NewTestRouter()` helper** - This provides standard middlewares (stderr, panicker, pagination) and context injection automatically. Never manually create routers or middlewares.
+**CRITICAL: Always use `testfx.NewTestRouter()` helper** - This provides standard middlewares (stderr, patcher, pagination) and context injection automatically. Never manually create routers or middlewares.
 
-### 1. Test Suite Structure
+**CRITICAL: Always reference existing test files** - Use the Read tool to examine actual test implementations rather than relying on embedded examples. Patterns evolve, and real code is always current.
 
-**File Organization:**
+## 1. File Organization
+
+**Test File Location:**
 - Tests live in `/services/ctl-api/internal/app/{domain}/service/*_test.go`
 - One test file per handler (e.g., `create_app_test.go`, `get_apps_test.go`)
-- Test files in the same package as the code under test (`package service`)
+- Test files in the same package as code under test (`package service`)
 
-**Test Suite Pattern:**
+**Reference Examples:**
+- See `services/ctl-api/internal/app/apps/service/get_apps_test.go` - Complete structure
+- See `services/ctl-api/internal/app/orgs/service/delete_org_test.go` - With mock EventLoop
+
+## 2. Test Suite Structure
+
+**Key Components:**
 ```go
-package service
-
-import (
-    "context"
-    "encoding/json"
-    "net/http"
-    "net/http/httptest"
-    "os"
-    "testing"
-
-    "github.com/gin-gonic/gin"
-    "github.com/go-playground/validator/v10"
-    "github.com/stretchr/testify/require"
-    "github.com/stretchr/testify/suite"
-    "go.uber.org/fx"
-    "go.uber.org/fx/fxtest"
-    "go.uber.org/zap"
-    "gorm.io/gorm"
-
-    "github.com/nuonco/nuon/pkg/shortid/domains"
-    "github.com/nuonco/nuon/sdks/nuon-go/models"
-    "github.com/nuonco/nuon/services/ctl-api/internal/app"
-    accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
-    appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-    installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-    vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-    "github.com/nuonco/nuon/services/ctl-api/internal/middlewares/pagination"
-    "github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/testdb"
-    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
-)
-
-// TestService holds all fx-injected dependencies
+// TestService struct - holds FX-injected dependencies
 type TestService struct {
     fx.In
-
     DB              *gorm.DB `name:"psql"`
     CHDB            *gorm.DB `name:"ch"`
     V               *validator.Validate
     L               *zap.Logger
-    MW              metrics.Writer
-    VcsHelpers      *vcshelpers.Helpers
-    AppsHelpers     *appshelpers.Helpers
-    InstallsHelpers *installshelpers.Helpers
-    AccountsHelpers *accountshelpers.Helpers
-    YourService     *service  // Replace with actual service under test
+    // ... helpers and service under test
 }
 
-// YourTestSuite is the testify suite
+// Test suite - embeds BaseDBTestSuite for automatic table truncation
 type YourTestSuite struct {
     testdb.BaseDBTestSuite
-
     app     *fxtest.App
     service TestService
     router  *gin.Engine
     testOrg *app.Org
     testAcc *app.Account
 }
+```
 
+**Integration Test Guard:**
+```go
 func TestYourSuite(t *testing.T) {
     if os.Getenv("INTEGRATION") != "true" {
         t.Skip("INTEGRATION is not set, skipping")
         return
     }
-
     suite.Run(t, new(YourTestSuite))
 }
 ```
 
-### 2. Test Database Setup with FX
+**Complete Examples:**
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:35-59` - Basic structure
+- `services/ctl-api/internal/app/orgs/service/delete_org_test.go:45-56` - With mock EventLoop client
 
-**CRITICAL: Database Isolation Pattern**
+## 3. Database Setup with FX
 
-The test database is set via environment variable override in `BaseDBTestSuite.SetupSuite()`:
+**How It Works:**
+1. `BaseDBTestSuite.SetupSuite()` creates test database via `testdb.CreateTestDatabase()`
+2. Sets `os.Setenv("DB_NAME", "ctl_api_test")` to override config
+3. FX loads config via `internal.NewConfig()` which reads `DB_NAME` from environment
+4. `psql.New()` connects to test database automatically
+5. `s.SetDB(s.service.DB)` enables automatic table truncation between tests
 
+**Key Principles:**
+- Call `s.BaseDBTestSuite.SetupSuite()` **first** (creates test DB, sets env vars)
+- Use `testfx.CtlApiFXOptions()` for all standard FX dependencies
+- Call `s.SetDB(s.service.DB)` at **end** for automatic truncation
+
+**FX Options Includes:**
+- Databases (PostgreSQL, ClickHouse)
+- All helpers (accounts, vcs, actions, components, apps, runners, installs, orgs)
+- External services (loops, github, metrics, features)
+- Temporal dependencies and EventLoop client
+- Custom validator with entity_name validation
+
+**Reference Examples:**
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:67-87` - Basic FX setup
+- `services/ctl-api/internal/app/orgs/service/delete_org_test.go:67-90` - With mock EventLoop
+
+## 4. Router Setup with testfx.NewTestRouter()
+
+**What the Helper Provides:**
+1. Creates new `gin.Engine` router
+2. Adds **stderr middleware** (REQUIRED - JSON error responses)
+3. Adds **patcher middleware** (PATCH request field extraction)
+4. Adds **pagination middleware** (limit, offset, page query params)
+5. Adds custom middlewares (optional)
+6. Adds **context injection** (injects TestOrg and TestAcc into gin context)
+
+**Key Pattern:**
 ```go
-// How it works:
-// 1. BaseDBTestSuite.SetupSuite() runs CreateTestDatabase()
-// 2. Sets os.Setenv("DB_NAME", "ctl_api_test")
-// 3. FX loads config via internal.NewConfig()
-// 4. Config reads DB_NAME from environment
-// 5. psql.New() connects to test database automatically
+s.router = testfx.NewTestRouter(testfx.RouterOptions{
+    L:       s.service.L,
+    DB:      s.service.DB,
+    TestOrg: s.testOrg,  // Optional: only if endpoint needs org context
+    TestAcc: s.testAcc,  // Optional: only if endpoint needs account context
+})
+err := s.service.YourService.RegisterPublicRoutes(s.router)
 ```
 
-**SetupSuite Pattern:**
+**Benefits:**
+- Consistency across all tests
+- Centralized middleware management
+- No forgotten stderr middleware (empty error responses)
+- Easy to extend with additional standard middlewares
+
+**Reference Examples:**
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:94-103` - Standard setup
+- `services/ctl-api/internal/pkg/testfx/router.go` - Router helper implementation
+
+## 5. Test Data Setup
+
+**Key Principles:**
+- Clean up existing test data first (prevent conflicts)
+- Set account context before creating orgs (required by BeforeCreate hook)
+- Use consistent test data IDs and names
+
+**Critical Pattern:**
 ```go
-func (s *YourTestSuite) SetupSuite() {
-    s.BaseDBTestSuite.SetupSuite()  // Creates test DB, sets DB_NAME env var
-    gin.SetMode(gin.TestMode)
-
-    options := append(
-        testfx.CtlApiFXOptions(),  // Use the main FX options (includes custom validator)
-        // service under test
-        fx.Provide(New),
-        fx.Populate(&s.service),
-    )
-
-    s.app = fxtest.New(s.T(), options...)
-    s.app.RequireStart()
-
-    // Store DB reference for automatic truncation
-    s.SetDB(s.service.DB)
-}
+// ALWAYS set account context before creating orgs
+ctx := context.Background()
+ctx = cctx.SetAccountContext(ctx, testAcc)
+testOrg := &app.Org{...}
+err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 ```
 
-**Key Points:**
-- **Always call `s.BaseDBTestSuite.SetupSuite()` first** - This creates the test database and sets `DB_NAME` environment variable
-- **Use `testfx.CtlApiFXOptions()`** - Provides all standard FX dependencies including:
-  - Databases (PostgreSQL, ClickHouse)
-  - External services (Loops, GitHub, Metrics, Features)
-  - Temporal dependencies and EventLoop client
-  - All helpers (accounts, vcs, actions, components, apps, runners, installs, orgs)
-  - Custom validator with entity_name validation
-- **Call `s.SetDB(s.service.DB)` at the end** - Enables automatic table truncation
-- **FX automatically connects to test database** - No manual DSN configuration needed
+**Reference Examples:**
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:110-139` - Complete setupTestData
+- `services/ctl-api/internal/app/apps/service/create_app_test.go:120-145` - With initial cleanup
 
-### 3. Test Router Setup with Middleware
+## 6. Test Cleanup
 
-**CRITICAL: Use `testfx.NewTestRouter()` Helper**
+**Key Principles:**
+- Use `s.T().Cleanup()` in table-driven tests (automatic per-subtest cleanup)
+- Use `cleanupTestData()` + `TearDownSuite()` for suite-level cleanup
+- Stop FX app in `TearDownSuite()`
 
-All tests should use the `testfx.NewTestRouter()` helper which automatically includes:
-- **stderr middleware** - Error handling and JSON error responses (REQUIRED)
-- **patcher middleware** - PATCH request field extraction for partial updates
-- **pagination middleware** - Query parameter parsing for paginated endpoints
-- **context injection** - Automatic org/account context injection
+**Reference Examples:**
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:105-108,141-148` - Complete cleanup
+- `services/ctl-api/internal/app/apps/service/create_app_test.go:106-118` - With cleanupTestData method
 
-**SetupTest Pattern:**
-```go
-func (s *YourTestSuite) SetupTest() {
-    s.BaseDBTestSuite.SetupTest()  // Truncates all tables
-    s.setupTestData()
-
-    // Create test router with standard middlewares using helper
-    s.router = testfx.NewTestRouter(testfx.RouterOptions{
-        L:       s.service.L,
-        DB:      s.service.DB,
-        TestOrg: s.testOrg,  // Optional: only if endpoint needs org context
-        TestAcc: s.testAcc,  // Optional: only if endpoint needs account context
-    })
-
-    err := s.service.YourService.RegisterPublicRoutes(s.router)
-    require.NoError(s.T(), err)
-}
-```
-
-**With Additional Custom Middlewares:**
-```go
-func (s *YourTestSuite) SetupTest() {
-    s.BaseDBTestSuite.SetupTest()
-    s.setupTestData()
-
-    // Add custom middlewares after standard ones
-    s.router = testfx.NewTestRouter(testfx.RouterOptions{
-        L:       s.service.L,
-        DB:      s.service.DB,
-        TestOrg: s.testOrg,
-        TestAcc: s.testAcc,
-        AdditionalMiddlewares: []gin.HandlerFunc{
-            myCustomMiddleware.Handler(),
-        },
-    })
-
-    err := s.service.YourService.RegisterPublicRoutes(s.router)
-    require.NoError(s.T(), err)
-}
-```
-
-**What `testfx.NewTestRouter()` Does:**
-
-1. Creates a new `gin.Engine` router
-2. Adds **stderr middleware** (REQUIRED - handles errors and returns JSON)
-3. Adds **patcher middleware** (extracts PATCH request fields for partial updates)
-4. Adds **pagination middleware** (parses limit, offset, page query parameters)
-5. Adds any **additional middlewares** you provide (optional)
-6. Adds **context injection middleware** (injects testOrg and testAcc into gin context)
-
-**CRITICAL Benefits:**
-
-- **Consistency** - All tests use the same middleware stack
-- **Maintainability** - Changes to standard middlewares are centralized
-- **Extensibility** - Easy to add more standard middlewares or custom ones
-- **Error Prevention** - No more forgotten stderr middleware causing empty error responses
-
-**NEVER manually create middlewares** unless you have a specific reason. Always use `testfx.NewTestRouter()`.
-
-### 4. Test Data Setup
-
-**setupTestData Pattern:**
-```go
-func (s *YourTestSuite) setupTestData() {
-    // Clean up any existing test data first
-    s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
-    s.service.DB.Unscoped().Where("name LIKE ?", "test-org-%").Delete(&app.Org{})
-
-    // Create test account
-    testAcc := &app.Account{
-        ID:          domains.NewAccountID(),
-        Email:       "test@example.com",
-        Subject:     "test-subject",
-        AccountType: app.AccountTypeAuth0,
-    }
-    err := s.service.DB.Create(testAcc).Error
-    require.NoError(s.T(), err)
-    s.testAcc = testAcc
-
-    // Create test org with account context (required by BeforeCreate hook)
-    ctx := context.Background()
-    ctx = cctx.SetAccountContext(ctx, testAcc)
-    testOrg := &app.Org{
-        ID:   domains.NewOrgID(),
-        Name: "test-org-" + domains.NewOrgID(),
-        NotificationsConfig: app.NotificationsConfig{
-            InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-        },
-    }
-    err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-    require.NoError(s.T(), err)
-    s.testOrg = testOrg
-}
-```
-
-**CRITICAL: Account Context for Org Creation**
-- Always set account context before creating orgs
-- Org's BeforeCreate hook requires account context to set `CreatedByID`
-
-### 5. Test Cleanup
-
-**TearDownSuite Pattern:**
-```go
-func (s *YourTestSuite) TearDownSuite() {
-    s.cleanupTestData()
-    s.app.RequireStop()
-}
-
-func (s *YourTestSuite) cleanupTestData() {
-    if s.testOrg != nil {
-        s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", s.testOrg.ID)
-    }
-    if s.testAcc != nil {
-        s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", s.testAcc.ID)
-    }
-}
-```
-
-### 6. Making HTTP Requests
+## 7. Making HTTP Requests
 
 **Helper Method Pattern:**
-```go
-func (s *YourTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
-    var reqBody *bytes.Buffer
-    if body != nil {
-        jsonBytes, err := json.Marshal(body)
-        require.NoError(s.T(), err)
-        reqBody = bytes.NewBuffer(jsonBytes)
-    } else {
-        reqBody = bytes.NewBuffer(nil)
-    }
+All tests use a `makeRequest()` helper that:
+- Marshals request body to JSON
+- Creates HTTP request with proper headers
+- Records response via `httptest.ResponseRecorder`
+- Serves request through test router
 
-    req, err := http.NewRequest(method, path, reqBody)
-    require.NoError(s.T(), err)
+**Reference Examples:**
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:150-157` - GET requests
+- `services/ctl-api/internal/app/apps/service/create_app_test.go:137-154` - POST with body
 
-    if body != nil {
-        req.Header.Set("Content-Type", "application/json")
-    }
-
-    rr := httptest.NewRecorder()
-    s.router.ServeHTTP(rr, req)
-    return rr
-}
-```
-
-### 7. Response Type Pattern
-
-**CRITICAL: Use OpenAPI Types for HTTP Responses**
-
-```go
-func (s *YourTestSuite) TestGetEndpoint() {
-    rr := s.makeRequest(http.MethodGet, "/v1/apps")
-
-    if rr.Code != http.StatusOK {
-        s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-    }
-    require.Equal(s.T(), http.StatusOK, rr.Code)
-
-    // Use OpenAPI-generated response type
-    var response []*models.AppApp
-    err := json.Unmarshal(rr.Body.Bytes(), &response)
-    if err != nil {
-        s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
-    }
-    require.NoError(s.T(), err)
-    require.Len(s.T(), response, 2)
-}
-```
+## 8. Response Type Pattern
 
 **Type Usage Rules:**
-- **HTTP Response Unmarshaling**: Use OpenAPI types (`models.AppApp`)
-- **Direct Database Operations**: Use internal types (`app.App`)
-- **Test Fixtures**: Use internal types (`app.App`)
+- **HTTP Response Unmarshaling**: Use OpenAPI types (`models.AppApp`, `models.ServiceCreateAppRequest`)
+- **Direct Database Operations**: Use internal types (`app.App`, `app.Org`)
+- **Test Fixtures**: Use internal types
 
-### 8. Table-Driven Test Pattern (PREFERRED)
-
-**CRITICAL: Use table-driven tests for comprehensive endpoint testing**
-
-Table-driven tests provide better coverage, clearer test cases, and easier maintenance. Use this pattern for GET and POST endpoints with multiple scenarios.
-
-**Complete Example:**
+**Debug Logging Pattern:**
 ```go
-func (s *YourTestSuite) TestGetEndpoint() {
-    testCases := []struct {
-        name          string
-        setupFunc     func() []string // Returns entity IDs or other setup data
-        queryParams   string
-        expectedCount int
-        expectedCode  int
-        validateFunc  func([]app.Entity) // Additional validations
-    }{
-        {
-            name: "returns empty array when no data",
-            setupFunc: func() []string {
-                return []string{}
-            },
-            queryParams:   "",
-            expectedCount: 0,
-            expectedCode:  http.StatusOK,
-        },
-        {
-            name: "returns created entities",
-            setupFunc: func() []string {
-                ctx := context.Background()
-                ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-                entity1 := &app.Entity{
-                    ID:   domains.NewEntityID(),
-                    Name: "test-entity-1",
-                    OrgID: s.testOrg.ID,
-                }
-                entity2 := &app.Entity{
-                    ID:   domains.NewEntityID(),
-                    Name: "test-entity-2",
-                    OrgID: s.testOrg.ID,
-                }
-
-                err := s.service.DB.WithContext(ctx).Create(entity1).Error
-                require.NoError(s.T(), err)
-                s.T().Cleanup(func() {
-                    s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entity1.ID)
-                })
-
-                err = s.service.DB.WithContext(ctx).Create(entity2).Error
-                require.NoError(s.T(), err)
-                s.T().Cleanup(func() {
-                    s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entity2.ID)
-                })
-
-                return []string{entity1.ID, entity2.ID}
-            },
-            queryParams:   "",
-            expectedCount: 2,
-            expectedCode:  http.StatusOK,
-            validateFunc: func(entities []app.Entity) {
-                names := []string{entities[0].Name, entities[1].Name}
-                require.Contains(s.T(), names, "test-entity-1")
-                require.Contains(s.T(), names, "test-entity-2")
-            },
-        },
-        {
-            name: "filters with search query",
-            setupFunc: func() []string {
-                ctx := context.Background()
-                ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-                entity1 := &app.Entity{
-                    ID:    domains.NewEntityID(),
-                    Name:  "frontend-app",
-                    OrgID: s.testOrg.ID,
-                }
-                entity2 := &app.Entity{
-                    ID:    domains.NewEntityID(),
-                    Name:  "backend-app",
-                    OrgID: s.testOrg.ID,
-                }
-
-                s.service.DB.WithContext(ctx).Create(entity1)
-                s.T().Cleanup(func() {
-                    s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entity1.ID)
-                })
-
-                s.service.DB.WithContext(ctx).Create(entity2)
-                s.T().Cleanup(func() {
-                    s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entity2.ID)
-                })
-
-                return []string{entity1.ID, entity2.ID}
-            },
-            queryParams:   "?q=frontend",
-            expectedCount: 1,
-            expectedCode:  http.StatusOK,
-            validateFunc: func(entities []app.Entity) {
-                require.Equal(s.T(), "frontend-app", entities[0].Name)
-            },
-        },
-        {
-            name: "respects pagination",
-            setupFunc: func() []string {
-                ctx := context.Background()
-                ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-                ids := make([]string, 0, 15)
-                for i := 0; i < 15; i++ {
-                    entity := &app.Entity{
-                        ID:    domains.NewEntityID(),
-                        Name:  fmt.Sprintf("test-%02d", i),
-                        OrgID: s.testOrg.ID,
-                    }
-                    s.service.DB.WithContext(ctx).Create(entity)
-                    entityID := entity.ID
-                    s.T().Cleanup(func() {
-                        s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entityID)
-                    })
-                    ids = append(ids, entity.ID)
-                }
-                return ids
-            },
-            queryParams:   "?limit=5",
-            expectedCount: 5,
-            expectedCode:  http.StatusOK,
-        },
-    }
-
-    for _, tc := range testCases {
-        s.Run(tc.name, func() {
-            // Setup test data
-            entityIDs := tc.setupFunc()
-
-            // Update context if needed (e.g., for org-scoped endpoints)
-            if len(entityIDs) > 0 {
-                // Update account's accessible entity IDs if needed
-            }
-
-            // Make request
-            rr := s.makeRequest(http.MethodGet, "/v1/entities"+tc.queryParams)
-
-            if rr.Code != tc.expectedCode {
-                s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-            }
-            require.Equal(s.T(), tc.expectedCode, rr.Code)
-
-            // Parse response
-            var response []app.Entity
-            err := json.Unmarshal(rr.Body.Bytes(), &response)
-            if err != nil {
-                s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
-            }
-            require.NoError(s.T(), err)
-            require.NotNil(s.T(), response)
-
-            // Validate expected count
-            if tc.expectedCount > 0 {
-                require.Len(s.T(), response, tc.expectedCount)
-            }
-
-            // Run additional validations
-            if tc.validateFunc != nil && len(response) > 0 {
-                tc.validateFunc(response)
-            }
-        })
-    }
+if rr.Code != http.StatusOK {
+    s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 }
+require.Equal(s.T(), http.StatusOK, rr.Code)
 ```
 
-**Key Table-Driven Test Patterns:**
+**Reference Examples:**
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go:159-173` - Response unmarshaling with logging
 
-1. **Use `s.T().Cleanup()` for automatic cleanup:**
+## 9. Table-Driven Test Pattern (PREFERRED)
+
+**Structure:**
 ```go
-s.T().Cleanup(func() {
-    s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entityID)
-})
-```
+testCases := []struct {
+    name          string
+    setupFunc     func() []string    // Returns entity IDs
+    queryParams   string             // URL query string
+    expectedCount int
+    expectedCode  int
+    validateFunc  func([]Entity)     // Additional validations
+}{
+    {name: "...", setupFunc: func() {...}, ...},
+}
 
-2. **Capture variables in closures correctly:**
-```go
-// CORRECT: Capture variable in local scope
-entityID := entity.ID
-s.T().Cleanup(func() {
-    s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entityID)
-})
-
-// WRONG: Using loop variable directly will cause issues
-s.T().Cleanup(func() {
-    s.service.DB.Unscoped().Delete(&app.Entity{}, "id = ?", entity.ID)
-})
-```
-
-3. **Use subtests with descriptive names:**
-```go
-s.Run(tc.name, func() {
-    // Test logic here
-})
-```
-
-4. **Structure test cases with:**
-   - `name` - Descriptive test case name
-   - `setupFunc` - Function that creates test data and returns identifiers
-   - `queryParams` - URL query parameters to test
-   - `expectedCount` - Expected number of results
-   - `expectedCode` - Expected HTTP status code
-   - `validateFunc` - Optional additional validation logic
-
-### 9. Testing Across Multiple Organizations
-
-**CRITICAL Pattern: Router Context Capture**
-
-The `testfx.NewTestRouter()` creates a middleware closure that captures the `TestOrg` and `TestAcc` at router creation time. When testing operations across different organizations, you **must recreate the router** with the new org context.
-
-**Example: Testing Duplicate Names Across Orgs**
-```go
-func (s *YourTestSuite) TestCreateAppDuplicateName() {
-    appName := "test-app"
-
-    // Create existing app in first org
-    existingApp := &app.App{
-        Name:        appName,
-        OrgID:       s.testOrg.ID,
-        CreatedByID: s.testAcc.ID,
-    }
-    err := s.service.DB.Create(existingApp).Error
-    require.NoError(s.T(), err)
-
-    s.Run("within org", func() {
-        // Use existing router - same org context
-        req := CreateAppRequest{Name: appName}
-        rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
-        require.Equal(s.T(), http.StatusConflict, rr.Code)
-    })
-
-    s.Run("across orgs", func() {
-        // Create second org and account
-        acc2 := &app.Account{
-            ID:          domains.NewAccountID(),
-            Email:       "test2@example.com",
-            Subject:     "subject",
-            AccountType: app.AccountTypeAuth0,
-        }
-        err := s.service.DB.Create(acc2).Error
-        require.NoError(s.T(), err)
-        defer s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
-
-        ctx := context.Background()
-        ctx = cctx.SetAccountContext(ctx, acc2)
-        org2 := &app.Org{
-            ID:   domains.NewOrgID(),
-            Name: "test-org-2",
-            NotificationsConfig: app.NotificationsConfig{
-                InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-            },
-        }
-        err = s.service.DB.WithContext(ctx).Create(org2).Error
-        require.NoError(s.T(), err)
-        defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
-
-        // CRITICAL: Recreate router with new org context
-        router := testfx.NewTestRouter(testfx.RouterOptions{
-            L:       s.service.L,
-            DB:      s.service.DB,
-            TestOrg: org2,      // New org
-            TestAcc: acc2,      // New account
-        })
-        err = s.service.YourService.RegisterPublicRoutes(router)
-        require.NoError(s.T(), err)
-
-        // Make request with new router
-        var reqBody *bytes.Buffer
-        jsonBytes, err := json.Marshal(CreateAppRequest{Name: appName})
-        require.NoError(s.T(), err)
-        reqBody = bytes.NewBuffer(jsonBytes)
-
-        httpReq, err := http.NewRequest(http.MethodPost, "/v1/apps", reqBody)
-        require.NoError(s.T(), err)
-        httpReq.Header.Set("Content-Type", "application/json")
-
-        rr := httptest.NewRecorder()
-        router.ServeHTTP(rr, httpReq)
-
-        // Should succeed - different org
-        require.Equal(s.T(), http.StatusCreated, rr.Code)
+for _, tc := range testCases {
+    s.Run(tc.name, func() {
+        entityIDs := tc.setupFunc()
+        rr := s.makeRequest(method, path+tc.queryParams)
+        // ... assertions
     })
 }
 ```
 
-**Why This Is Required:**
-- The router middleware closure captures `TestOrg` and `TestAcc` at router creation
-- Modifying suite fields (`s.testOrg`, `s.testAcc`) doesn't update the captured values
-- Using the original router with modified suite fields will inject the **wrong** org context
-- Always recreate the router when testing with a different organization
+**Key Patterns:**
+- Use `s.T().Cleanup()` for automatic cleanup per subtest
+- Capture loop variables in closures: `entityID := entity.ID`
+- Use descriptive test case names
 
-### 10. Validation Test Pattern (Table-Driven)
+**Reference Examples:**
+- `services/ctl-api/internal/app/apps/service/create_app_test.go:186-228` - Validation tests (best example)
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go` - Multiple GET endpoint scenarios
 
-**For validation tests, use table-driven subtests:**
+## 10. Testing Across Multiple Organizations
 
+**CRITICAL: Router Context Capture**
+
+The `testfx.NewTestRouter()` creates a middleware closure that captures `TestOrg` and `TestAcc` at router **creation time**. When testing across different organizations, you **must recreate the router** with the new org context.
+
+**Why This Matters:**
+- Router middleware captures context at creation (closure behavior)
+- Modifying `s.testOrg` or `s.testAcc` doesn't update captured values
+- Using original router with modified suite fields = wrong org context
+
+**Key Pattern:**
 ```go
-func (s *YourTestSuite) TestCreateValidationErrors() {
-    // entity_name validator allows: lowercase letters, numbers, underscores, hyphens
-    // regex: ^[a-z0-9_-]*$
-    testCases := []struct {
-        name       string
-        entityName string
-    }{
-        {name: "empty name", entityName: ""},
-        {name: "name with spaces", entityName: "my entity"},
-        {name: "name with uppercase", entityName: "MyEntity"},
-        {name: "name with special chars", entityName: "my-entity!@#"},
-        {name: "name with dots", entityName: "my.entity"},
-        {name: "name with slashes", entityName: "my/entity"},
-    }
+s.Run("across orgs", func() {
+    // Create second org and account
+    acc2, org2 := createSecondOrg()
 
-    for _, tc := range testCases {
-        s.Run(tc.name, func() {
-            req := CreateEntityRequest{
-                Name: tc.entityName,
-            }
-            rr := s.makeRequest(http.MethodPost, "/v1/entities", req)
+    // CRITICAL: Recreate router with new org context
+    router := testfx.NewTestRouter(testfx.RouterOptions{
+        L:       s.service.L,
+        DB:      s.service.DB,
+        TestOrg: org2,      // New org
+        TestAcc: acc2,      // New account
+    })
+    // ... make request with new router
+})
+```
 
-            if rr.Code != http.StatusBadRequest {
-                s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-            }
-            require.Equal(s.T(), http.StatusBadRequest, rr.Code)
-        })
-    }
+**Reference Example:**
+- `services/ctl-api/internal/app/apps/service/create_app_test.go:255-307` - Complete cross-org test
+
+## 11. Validation Test Pattern
+
+**entity_name validator rules:** lowercase letters, numbers, underscores, hyphens (regex: `^[a-z0-9_-]*$`)
+
+**Table-Driven Pattern:**
+```go
+testCases := []struct {
+    name       string
+    entityName string
+}{
+    {name: "empty name", entityName: ""},
+    {name: "name with spaces", entityName: "my entity"},
+    // ... more cases
 }
 ```
 
-### 11. Testing Workflow Signals with Mocks
+**Reference Example:**
+- `services/ctl-api/internal/app/apps/service/create_app_test.go:186-228` - Comprehensive validation tests
 
-**For endpoints that send workflow signals** (e.g., create org, delete org, restart operations), use the mock event loop client to verify signals are triggered correctly.
+## 12. Testing Workflow Signals with Mocks
 
-**Setup Mock in Test Suite:**
+**When to Use:**
+For endpoints that send workflow signals (create org, delete org, restart operations), use `testfx.MockEventLoopClient` to verify signals.
+
+**Setup Pattern:**
 ```go
-import (
-    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/testfx"
-    sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+// In test suite struct
+mockEvClient *testfx.MockEventLoopClient
+
+// In SetupSuite - create and inject mock
+s.mockEvClient = testfx.NewMockEventLoopClient()
+options := append(
+    testfx.CtlApiFXOptions(),
+    fx.Decorate(func() eventloop.Client {
+        return s.mockEvClient
+    }),
+    // ...
 )
 
-type YourTestSuite struct {
-    testdb.BaseDBTestSuite
-
-    app          *fxtest.App
-    service      TestService
-    router       *gin.Engine
-    testOrg      *app.Org
-    testAcc      *app.Account
-    mockEvClient *testfx.MockEventLoopClient  // Add mock client
-    yourService  *service
-}
-
-func (s *YourTestSuite) SetupSuite() {
-    s.BaseDBTestSuite.SetupSuite()
-    gin.SetMode(gin.TestMode)
-
-    // Create mock event loop client
-    s.mockEvClient = testfx.NewMockEventLoopClient()
-
-    options := append(
-        testfx.CtlApiFXOptions(),
-        // Override eventloop.Client with mock
-        fx.Decorate(func() eventloop.Client {
-            return s.mockEvClient
-        }),
-        fx.Provide(New),
-        fx.Populate(&s.service, &s.yourService),
-    )
-
-    s.app = fxtest.New(s.T(), options...)
-    s.app.RequireStart()
-    s.SetDB(s.service.DB)
-}
-
-func (s *YourTestSuite) SetupTest() {
-    s.BaseDBTestSuite.SetupTest()
-    s.setupTestData()
-
-    // CRITICAL: Reset mock before each test for clean state
-    s.mockEvClient.Reset()
-
-    // Create router...
-}
+// In SetupTest - CRITICAL: reset before each test
+s.mockEvClient.Reset()
 ```
 
-**Verify Signals in Tests (Table-Driven):**
+**Verification Pattern:**
 ```go
-func (s *YourTestSuite) TestDeleteOrg() {
-    testCases := []struct {
-        name             string
-        setupFunc        func() *app.Org
-        expectedStatus   int
-        validateSignal   bool
-        expectedSignalType eventloop.SignalType
-    }{
-        {
-            name: "deletes default org and sends signal",
-            setupFunc: func() *app.Org {
-                ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
-                org := &app.Org{
-                    ID:      domains.NewOrgID(),
-                    Name:    "test-org",
-                    OrgType: app.OrgTypeDefault,
-                }
-                err := s.service.DB.WithContext(ctx).Create(org).Error
-                require.NoError(s.T(), err)
-                s.T().Cleanup(func() {
-                    s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-                })
-                return org
-            },
-            expectedStatus:     http.StatusOK,
-            validateSignal:     true,
-            expectedSignalType: sigs.OperationDelete,
-        },
-        {
-            name: "integration org hard deletes without signal",
-            setupFunc: func() *app.Org {
-                ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
-                org := &app.Org{
-                    ID:      domains.NewOrgID(),
-                    Name:    "integration-org",
-                    OrgType: app.OrgTypeIntegration,
-                }
-                err := s.service.DB.WithContext(ctx).Create(org).Error
-                require.NoError(s.T(), err)
-                return org
-            },
-            expectedStatus: http.StatusOK,
-            validateSignal: false,
-        },
-    }
-
-    for _, tc := range testCases {
-        s.Run(tc.name, func() {
-            org := tc.setupFunc()
-
-            // Update router context for this org
-            s.router = testfx.NewTestRouter(testfx.RouterOptions{
-                L:       s.service.L,
-                DB:      s.service.DB,
-                TestOrg: org,
-                TestAcc: s.testAcc,
-            })
-            err := s.yourService.RegisterPublicRoutes(s.router)
-            require.NoError(s.T(), err)
-
-            // Reset mock before test
-            s.mockEvClient.Reset()
-
-            // Make request
-            rr := s.makeRequest(http.MethodDelete, "/v1/orgs/current")
-            require.Equal(s.T(), tc.expectedStatus, rr.Code)
-
-            // Validate signal
-            signals := s.mockEvClient.GetSignals()
-            if tc.validateSignal {
-                require.Len(s.T(), signals, 1, "expected exactly one signal")
-                assert.Equal(s.T(), org.ID, signals[0].ID)
-
-                // Type assert to specific signal type
-                orgSignal, ok := signals[0].Signal.(*sigs.Signal)
-                require.True(s.T(), ok)
-                assert.Equal(s.T(), tc.expectedSignalType, orgSignal.Type)
-            } else {
-                assert.Len(s.T(), signals, 0, "no signal should be sent")
-            }
-        })
-    }
+signals := s.mockEvClient.GetSignals()
+if shouldHaveSignal {
+    require.Len(s.T(), signals, 1)
+    assert.Equal(s.T(), expectedID, signals[0].ID)
+    // Type assert to verify specific fields
+    sig, ok := signals[0].Signal.(*sigs.Signal)
+    require.True(s.T(), ok)
+    assert.Equal(s.T(), expectedType, sig.Type)
+} else {
+    assert.Len(s.T(), signals, 0)
 }
 ```
 
-**Mock Helper Methods:**
+**Mock Methods:**
 - `mockEvClient.Reset()` - Clear all signals (call in SetupTest)
 - `mockEvClient.GetSignals()` - Get all recorded signals (returns `[]testfx.SignalRecord`)
 
-**Key Pattern:**
-- Always reset mock in `SetupTest()` for clean state
-- Use table-driven tests to cover both signal and no-signal paths
-- Type assert signals to verify specific fields (e.g., `ForceDelete` flag)
-- Test happy path (signal sent) and alternate paths (no signal)
+**Reference Examples:**
+- `services/ctl-api/internal/app/orgs/service/delete_org_test.go:67-114` - Complete mock setup
+- `services/ctl-api/internal/app/orgs/service/delete_org_test.go:165-280` - Signal verification in table-driven tests
+- `services/ctl-api/internal/pkg/testfx/mock_eventloop.go` - Mock implementation
 
-### 12. Running Tests
+## 13. Running Tests
 
-**Local Execution:**
 ```bash
 # CRITICAL: Use nuonctl to ensure proper environment setup
 nuonctl tests run ctl-api --test integration
 
-# Run specific test
+# Run specific test suite
 INTEGRATION=true go test -v ./services/ctl-api/internal/app/apps/service/... -run TestAppsSuite
+
+# Run specific subtest
+INTEGRATION=true go test -v ./services/ctl-api/internal/app/apps/service/... -run TestAppsSuite/TestGetAppsReturnsCreatedApps
 ```
 
-**NEVER run tests directly with `go test` without `INTEGRATION=true`** - they will be skipped.
+**NEVER run tests without `INTEGRATION=true`** - they will be skipped.
 
-### 13. Code Quality Checklist
+## 14. Code Quality Checklist
 
 **Before Completing:**
 - [ ] All tests use `testdb.BaseDBTestSuite` for database setup
-- [ ] All tests use `testfx.CtlApiFXOptions()` which provides all standard dependencies
+- [ ] All tests use `testfx.CtlApiFXOptions()` for standard dependencies
 - [ ] **Use table-driven tests** for comprehensive endpoint testing
 - [ ] Use `s.T().Cleanup()` for automatic cleanup in table-driven tests
-- [ ] Capture loop variables correctly in cleanup closures
-- [ ] HTTP responses use appropriate types (OpenAPI `models.*` or internal `app.*` depending on handler)
-- [ ] Database operations use internal types (`app.*`)
-- [ ] **CRITICAL: Use `testfx.NewTestRouter()` helper for router setup** (includes stderr, patcher, pagination)
-- [ ] Pass `TestOrg` and `TestAcc` to router helper if endpoint needs context
-- [ ] **If testing across orgs**: Recreate router with new org context (middleware captures at creation time)
-- [ ] Account context is set before creating orgs
-- [ ] **If endpoint sends workflow signals**: Use `testfx.MockEventLoopClient` to verify signals
-- [ ] **If using mock event loop**: Call `mockEvClient.Reset()` in `SetupTest()`
-- [ ] **If testing signals**: Verify both signal-sent and no-signal paths in table-driven tests
-- [ ] Test data is cleaned up in `cleanupTestData()` or via `s.T().Cleanup()`
-- [ ] Integration test check uses `os.Getenv("INTEGRATION")`
-- [ ] All test cases include debug logging for failures
-- [ ] Tests verify both HTTP response AND database state where applicable
+- [ ] Capture loop variables correctly in cleanup closures (`entityID := entity.ID`)
+- [ ] HTTP responses use appropriate types (OpenAPI for API responses, internal for DB)
+- [ ] **Use `testfx.NewTestRouter()` helper** (never manually create middlewares)
+- [ ] Pass `TestOrg` and `TestAcc` to router if endpoint needs context
+- [ ] **If testing across orgs**: Recreate router with new org context
+- [ ] **If creating orgs**: Set account context first (`cctx.SetAccountContext`)
+- [ ] **If endpoint sends signals**: Use `testfx.MockEventLoopClient` and reset in `SetupTest()`
+- [ ] Test data cleaned up via `cleanupTestData()` or `s.T().Cleanup()`
+- [ ] Integration test guard: `os.Getenv("INTEGRATION")`
+- [ ] All assertions include debug logging for failures
+- [ ] Tests verify both HTTP response AND database state
 - [ ] Ran `go fmt` on all modified Go files
 
-### 14. Common Issues & Solutions
+## 15. Common Issues & Solutions
 
 **Issue: Empty response body**
-Solution: Missing stderr middleware - add `errMiddleware.Handler()` to router.
+- Cause: Missing stderr middleware
+- Solution: Always use `testfx.NewTestRouter()` (includes stderr automatically)
 
-**Issue: Account/Org creation fails**
-Solution: Set account context before creating org: `ctx = cctx.SetAccountContext(ctx, testAcc)`
+**Issue: Account/Org creation fails with "CreatedByID required"**
+- Cause: Missing account context
+- Solution: `ctx = cctx.SetAccountContext(ctx, testAcc)` before creating org
 
 **Issue: Tests interfere with each other**
-Solution: Ensure `s.BaseDBTestSuite.SetupTest()` is called in `SetupTest()` to truncate tables.
+- Cause: Tables not truncated between tests
+- Solution: Call `s.BaseDBTestSuite.SetupTest()` in `SetupTest()`
+
+**Issue: Cross-org test uses wrong org context**
+- Cause: Router middleware captured old context at creation
+- Solution: Recreate router with new org context (see section 10)
+
+**Issue: FX dependency missing**
+- Cause: Helper or service not provided in `testfx.CtlApiFXOptions()`
+- Solution: Add to `services/ctl-api/internal/pkg/testfx/testfx.go`
 
 ## Your Decision-Making Framework
 
-1. **Table-Driven Tests**: ALWAYS use table-driven test patterns for comprehensive coverage
-2. **Database Isolation**: Always use `BaseDBTestSuite` for proper test database setup
-3. **FX Options**: Use `testfx.CtlApiFXOptions()` which includes:
-   - Databases (PostgreSQL, ClickHouse)
-   - All helpers (accounts, vcs, actions, components, apps, runners, installs, orgs)
-   - External services (loops, github, metrics, features)
-   - Temporal dependencies and EventLoop client
-   - Custom validator with entity_name validation
-4. **Router Setup - CRITICAL**: ALWAYS use `testfx.NewTestRouter()` helper (includes stderr, patcher, pagination)
-5. **Cross-Org Testing**: Recreate router when testing across different orgs (middleware captures context at creation)
-6. **Type Safety**: Use appropriate types (OpenAPI or internal) based on what handler returns
-7. **Context**: Always set account context when creating orgs or other audited entities
-8. **Cleanup**: Use `s.T().Cleanup()` in table-driven tests for automatic cleanup
-9. **Mock Signals**: Use `testfx.MockEventLoopClient()` to verify workflow signals, reset in `SetupTest()`
-10. **Debug**: Include debug logging in all test assertions for troubleshooting
-11. **Verify State**: Test both HTTP response AND database state changes where applicable
+1. **Read Existing Tests First**: Use Read tool to examine actual test files before writing new tests
+2. **Table-Driven Tests**: ALWAYS use table-driven patterns for comprehensive coverage
+3. **Database Isolation**: Always use `BaseDBTestSuite` for automatic test database setup
+4. **FX Dependencies**: Use `testfx.CtlApiFXOptions()` for all standard dependencies
+5. **Router Helper**: ALWAYS use `testfx.NewTestRouter()` (never manual middleware setup)
+6. **Cross-Org Testing**: Recreate router when testing across different orgs
+7. **Type Safety**: OpenAPI types for HTTP responses, internal types for database
+8. **Context Management**: Set account context before creating orgs or audited entities
+9. **Cleanup**: Use `s.T().Cleanup()` in table-driven tests for automatic cleanup
+10. **Mock Signals**: Use `testfx.MockEventLoopClient()` for workflow signal verification
+11. **Debug Logging**: Include status/body logging in all test assertions
+12. **State Verification**: Test both HTTP response AND database state changes
 
 ## Key Files to Reference
 
-- **Existing Test Patterns**:
-  - `/services/ctl-api/internal/app/orgs/service/get_orgs_test.go` - **BEST EXAMPLE** (table-driven tests)
-  - `/services/ctl-api/internal/app/orgs/service/delete_org_test.go` - Mock EventLoop usage
-  - `/services/ctl-api/internal/app/apps/service/get_apps_test.go` - Individual test methods
-  - `/services/ctl-api/internal/app/apps/service/create_app_test.go` - Validation tests & cross-org pattern
-  - `/services/ctl-api/internal/health/health_test.go` - Simple endpoint tests
-- **Test Infrastructure**:
-  - `/services/ctl-api/internal/pkg/testdb/testdb.go` - Database setup
-  - `/services/ctl-api/internal/pkg/testfx/testfx.go` - FX options
-  - `/services/ctl-api/internal/pkg/testfx/router.go` - Test router helper
-  - `/services/ctl-api/internal/pkg/testfx/mock_eventloop.go` - Mock EventLoop client
-- **OpenAPI Types**: `/sdks/nuon-go/models/*.go`
-- **Internal Types**: `/services/ctl-api/internal/app/*.go`
+**CRITICAL: Always use Read tool to examine these files for current patterns:**
 
-You provide complete, production-ready integration tests that follow established patterns, ensure proper database isolation, and thoroughly verify API behavior.
+**Best Practice Examples:**
+- `services/ctl-api/internal/app/orgs/service/get_orgs_test.go` - **BEST OVERALL EXAMPLE** (table-driven)
+- `services/ctl-api/internal/app/orgs/service/delete_org_test.go` - Mock EventLoop usage
+- `services/ctl-api/internal/app/apps/service/create_app_test.go` - Validation & cross-org tests
+- `services/ctl-api/internal/app/apps/service/get_apps_test.go` - GET endpoint patterns
+
+**Test Infrastructure:**
+- `services/ctl-api/internal/pkg/testdb/testdb.go` - Database setup mechanism
+- `services/ctl-api/internal/pkg/testfx/testfx.go` - FX options and dependencies
+- `services/ctl-api/internal/pkg/testfx/router.go` - Test router helper
+- `services/ctl-api/internal/pkg/testfx/mock_eventloop.go` - Mock EventLoop client
+
+**Type Definitions:**
+- `sdks/nuon-go/models/*.go` - OpenAPI-generated types for HTTP
+- `services/ctl-api/internal/app/*.go` - Internal domain types for database
+
+You provide complete, production-ready integration tests that follow established patterns, ensure proper database isolation, and thoroughly verify API behavior. **Always read existing test files first** to understand current implementations rather than relying on memory or embedded examples.
