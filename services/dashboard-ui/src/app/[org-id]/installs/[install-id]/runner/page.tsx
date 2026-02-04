@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
-import { FileCodeIcon } from '@phosphor-icons/react/dist/ssr'
 import { AsyncBoundary } from '@/components/common/AsyncBoundary'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -22,26 +19,6 @@ import { TPageProps } from '@/types'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerDetailsError } from './runner-details'
 import { RunnerHealth, RunnerHealthError } from './runner-health'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  DashboardContent,
-  ErrorFallback,
-  InstallStatuses,
-  InstallPageSubNav,
-  Link as OldLink,
-  Loading,
-  Section,
-  Text as OldText,
-  Time,
-} from '@/components'
-import { InstallManagementDropdown } from '@/components/old/Installs'
-import { ManageRunnerDropdown } from '@/components/old/OldRunners/ManageDropdown'
-import { Activity } from './activity'
-import { Details } from './details'
-import { Health } from './health'
-import { UpcomingJobs } from './upcoming-jobs'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
 
@@ -83,7 +60,7 @@ export default async function Runner({
     notFound()
   }
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection className="@container" isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -122,7 +99,9 @@ export default async function Runner({
       <div className="flex flex-col @min-4xl:flex-row gap-6">
         <AsyncBoundary
           errorFallback={<RunnerDetailsError />}
-          loadingFallback={<RunnerDetailsCardSkeleton className="flex-initial" />}
+          loadingFallback={
+            <RunnerDetailsCardSkeleton className="flex-initial" />
+          }
         >
           <RunnerDetails
             orgId={orgId}
@@ -152,130 +131,5 @@ export default async function Runner({
         </AsyncBoundary>
       </div>
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/installs`, text: 'Installs' },
-        {
-          href: `/${orgId}/installs/${install.id}`,
-          text: install.name,
-        },
-        {
-          href: `/${orgId}/installs/${install.id}/runner`,
-          text: 'Runner',
-        },
-      ]}
-      heading={install.name}
-      headingUnderline={install.id}
-      headingMeta={
-        <>
-          Last updated <Time time={install?.updated_at} format="relative" />
-        </>
-      }
-      statues={
-        <div className="flex items-start gap-8">
-          {install?.metadata?.managed_by &&
-          install?.metadata?.managed_by === 'nuon/cli/install-config' ? (
-            <span className="flex flex-col gap-2">
-              <OldText isMuted>Managed By</OldText>
-              <OldText>
-                <FileCodeIcon />
-                Config File
-              </OldText>
-            </span>
-          ) : null}
-          <span className="flex flex-col gap-2">
-            <OldText isMuted>App config</OldText>
-            <OldText>
-              <OldLink href={`/${orgId}/apps/${install.app_id}`}>
-                {install?.app?.name}
-              </OldLink>
-            </OldText>
-          </span>
-          <InstallStatuses />
-
-          <InstallManagementDropdown />
-        </div>
-      }
-      meta={<InstallPageSubNav installId={installId} orgId={orgId} />}
-    >
-      <div className="flex-auto md:grid md:grid-cols-12 divide-x">
-        <div className="divide-y flex flex-col flex-auto col-span-8">
-          <Section className="flex-initial" heading="Health">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading runner health status..."
-                  />
-                }
-              >
-                <Health runnerId={runner.id} orgId={orgId} />
-              </Suspense>
-            </OldErrorBoundary>
-          </Section>
-          <Section className="flex-initial">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading runner metadata..."
-                  />
-                }
-              >
-                <Details orgId={orgId} runner={runner} settings={settings} />
-              </Suspense>
-            </OldErrorBoundary>
-          </Section>
-          <Section heading="Completed jobs">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading runner jobs..."
-                  />
-                }
-              >
-                <Activity
-                  runnerId={runner.id}
-                  orgId={orgId}
-                  offset={(sp['past-jobs'] as string) || '0'}
-                />
-              </Suspense>
-            </OldErrorBoundary>
-          </Section>
-        </div>
-        <div className="divide-y flex-auto flex flex-col col-span-4">
-          <Section heading="Runner controls" className="flex-initial">
-            <ManageRunnerDropdown
-              runner={runner}
-              settings={settings}
-              isInstallRunner
-            />
-          </Section>
-          <Section heading="Upcoming jobs ">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    variant="stack"
-                    loadingText="Loading upcoming jobs..."
-                  />
-                }
-              >
-                <UpcomingJobs
-                  runnerId={runner.id}
-                  orgId={orgId}
-                  offset={(sp['upcoming-jobs'] as string) || '0'}
-                />
-              </Suspense>
-            </OldErrorBoundary>
-          </Section>
-        </div>
-      </div>
-    </DashboardContent>
   )
 }

@@ -1,3 +1,5 @@
+// NOTE(nnnnat): Needs refactored to stratus
+
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
@@ -19,9 +21,7 @@ import { Deploys } from './deploys'
 import { ErrorBoundary } from 'react-error-boundary'
 import { CaretRightIcon } from '@phosphor-icons/react/dist/ssr'
 import {
-  DashboardContent,
   ErrorFallback,
-  InstallComponentManagementDropdown,
   Link,
   Loading,
   Section,
@@ -29,7 +29,6 @@ import {
 } from '@/components'
 import { DriftedBanner } from '@/components/old/DriftedBanner'
 import { TerraformWorkspace } from '@/components/old/InstallSandbox'
-import { OldDeploys } from './old-deploys'
 import { ComponentConfig } from './config'
 import { ComponentDependencies } from './dependencies'
 import { LatestOutputs } from './outputs'
@@ -90,7 +89,7 @@ export default async function InstallComponentPage({
 
   const component = installComponent?.component
   const containerId = 'install-component-page'
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
       <Breadcrumbs
         breadcrumbs={[
@@ -270,158 +269,5 @@ export default async function InstallComponentPage({
       {/* old page layout */}
       <BackToTop containerId={containerId} />
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/installs`, text: 'Installs' },
-        {
-          href: `/${orgId}/installs/${install.id}`,
-          text: install.name,
-        },
-        {
-          href: `/${orgId}/installs/${install?.id}/components`,
-          text: 'Components',
-        },
-        {
-          href: `/${orgId}/installs/${install.id}/components/${componentId}`,
-          text: component.name,
-        },
-      ]}
-      heading={component.name}
-      headingUnderline={component.id}
-      statues={
-        <div className="flex gap-8">
-          <InstallComponentManagementDropdown
-            componentId={installComponent?.component_id}
-            componentName={installComponent?.component?.name}
-            componentType={installComponent?.component?.type}
-            currentBuildId={installComponent?.install_deploys?.at(0)?.build_id}
-          />
-        </div>
-      }
-    >
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <div className="divide-y flex-auto flex flex-col md:col-span-8">
-          {installComponent?.drifted_object ? (
-            <Section className="!border-b-0 !pb-0">
-              <DriftedBanner drifted={installComponent?.drifted_object} />
-            </Section>
-          ) : null}
-
-          <Section
-            actions={
-              <OldText>
-                <Link
-                  href={`/${orgId}/apps/${component.app_id}/components/${component.id}`}
-                >
-                  Details
-                  <CaretRightIcon />
-                </Link>
-              </OldText>
-            }
-            className="flex-initial"
-            heading="Component config"
-            childrenClassName="flex flex-col gap-4"
-          >
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    loadingText="Loading component config..."
-                    variant="stack"
-                  />
-                }
-              >
-                <ComponentConfig
-                  componentId={componentId}
-                  install={install}
-                  orgId={orgId}
-                />
-              </Suspense>
-            </ErrorBoundary>
-            {org?.features?.['terraform-workspace'] || (
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={<Loading loadingText="Loading latest outputs..." />}
-                >
-                  <LatestOutputs
-                    componentId={componentId}
-                    installId={installId}
-                    orgId={orgId}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            )}
-          </Section>
-          {org?.features?.['terraform-workspace'] &&
-          component?.type === 'terraform_module' ? (
-            <Section
-              className="flex-initial"
-              childrenClassName="flex flex-col gap-4"
-            >
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Section heading="Terraform workspace">
-                      <Loading
-                        loadingText="Loading latest terraform workspace..."
-                        variant="stack"
-                      />
-                    </Section>
-                  }
-                >
-                  <TerraformWorkspace
-                    orgId={orgId}
-                    workspace={installComponent.terraform_workspace}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            </Section>
-          ) : null}
-
-          {component.dependencies && (
-            <Section className="flex-initial" heading="Dependencies">
-              <ErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading component dependencies..."
-                    />
-                  }
-                >
-                  <ComponentDependencies
-                    component={component}
-                    orgId={orgId}
-                    installId={installId}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            </Section>
-          )}
-        </div>
-        <div className="divide-y flex flex-col md:col-span-4">
-          <Section heading="Deploy history">
-            <ErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
-                  <Loading
-                    loadingText="Loading deploy history..."
-                    variant="stack"
-                  />
-                }
-              >
-                <OldDeploys
-                  component={component}
-                  installId={installId}
-                  orgId={orgId}
-                  offset={sp['offset'] || '0'}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
-        </div>
-      </div>
-    </DashboardContent>
   )
 }

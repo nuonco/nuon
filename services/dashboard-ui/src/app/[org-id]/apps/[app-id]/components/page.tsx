@@ -1,25 +1,12 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { getApp, getAppConfigs, getOrg } from '@/lib'
+import { getApp, getOrg } from '@/lib'
 import type { TPageProps } from '@/types'
 import { ComponentsTable, ComponentsTableSkeleton } from './components-table'
-
-// NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  AppCreateInstallButton,
-  AppPageSubNav,
-  DashboardContent,
-  ErrorFallback,
-  Loading,
-  Section,
-} from '@/components'
-import { AppComponents } from './components'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 
@@ -40,13 +27,12 @@ export default async function AppComponentsPage({
 }: TAppPageProps) {
   const { ['org-id']: orgId, ['app-id']: appId } = await params
   const sp = await searchParams
-  const [{ data: app }, { data: configs }, { data: org }] = await Promise.all([
+  const [{ data: app }, { data: org }] = await Promise.all([
     getApp({ appId, orgId }),
-    getAppConfigs({ appId, orgId }),
     getOrg({ orgId }),
   ])
 
-  return org?.features?.['stratus-layout'] ? (
+  return (
     <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
@@ -74,56 +60,22 @@ export default async function AppComponentsPage({
         </Text>
       </HeadingGroup>
 
-      {/* old layout stuff */}
       <div className="flex flex-auto">
-        <ErrorBoundary fallback={<>Error with components</>}>
-          <Suspense fallback={<ComponentsTableSkeleton />}>
-            <ComponentsTable
-              appId={appId}
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              q={sp['q'] || ''}
-              types={sp['types'] || ''}
-            />
-          </Suspense>
-        </ErrorBoundary>
+        <AsyncBoundary
+          errorFallback={
+            <span className="text-md">Unable to load app components</span>
+          }
+          loadingFallback={<ComponentsTableSkeleton />}
+        >
+          <ComponentsTable
+            appId={appId}
+            orgId={orgId}
+            offset={sp['offset'] || '0'}
+            q={sp['q'] || ''}
+            types={sp['types'] || ''}
+          />
+        </AsyncBoundary>
       </div>
-      {/* old layout stuff */}
     </PageSection>
-  ) : (
-    <DashboardContent
-      breadcrumb={[
-        { href: `/${orgId}/apps`, text: 'Apps' },
-        { href: `/${orgId}/apps/${app.id}`, text: app.name },
-        { href: `/${orgId}/apps/${app.id}/components`, text: 'Components' },
-      ]}
-      heading={app.name}
-      headingUnderline={app.id}
-      statues={
-        app?.cloud_platform === 'aws' || app.cloud_platform === 'azure' ? (
-          <AppCreateInstallButton platform={app?.cloud_platform} />
-        ) : null
-      }
-      meta={<AppPageSubNav appId={appId} orgId={orgId} />}
-    >
-      <Section childrenClassName="flex flex-auto">
-        <OldErrorBoundary fallbackRender={ErrorFallback}>
-          <Suspense
-            fallback={
-              <Loading variant="page" loadingText="Loading components..." />
-            }
-          >
-            <AppComponents
-              appId={appId}
-              configId={configs?.at(0)?.id}
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              q={sp['q'] || ''}
-              types={sp['types'] || ''}
-            />
-          </Suspense>
-        </OldErrorBoundary>
-      </Section>
-    </DashboardContent>
   )
 }

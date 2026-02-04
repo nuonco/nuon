@@ -1,10 +1,4 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import {
-  CalendarBlankIcon,
-  CaretLeftIcon,
-  TimerIcon,
-} from '@phosphor-icons/react/dist/ssr'
 import { ActionStepGraph } from '@/components/actions/ActionStepsGraph'
 import { InstallActionRunOutputs } from '@/components/actions/InstallActionRunOutputs'
 import { Text } from '@/components/common/Text'
@@ -13,32 +7,10 @@ import {
   getInstallAction,
   getInstallActionRun,
   getInstall,
-  getWorkflow,
   getOrg,
 } from '@/lib'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
 import { hydrateActionRunSteps } from '@/utils/action-utils'
-import { CANCEL_RUNNER_JOBS } from '@/utils'
-
-// NOTE: old layout stuff
-import { ErrorBoundary } from 'react-error-boundary'
-import {
-  ActionTriggerType,
-  ActionLogsSection,
-  ActionWorkflowStatus,
-  ClickToCopy,
-  DashboardContent,
-  Duration,
-  Link as OldLink,
-  Loading,
-  LogStreamProvider,
-  RunnerJobPlanModal,
-  Text as OldText,
-  Time,
-  ToolTip,
-} from '@/components'
-import { InstallActionCancelButton } from '@/components/old/InstallActionRunCancelButton'
-import { InstallActionRunDetails } from '@/components/old/InstallActionRunDetails'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
   const {
@@ -93,172 +65,52 @@ export default async function InstallActionRunPage({ params }) {
     getOrg({ orgId }),
   ])
 
-  const { data: workflow } = await getWorkflow({
-    orgId,
-    workflowId: installActionRun?.install_workflow_id,
-  })
-  const step = workflow
-    ? workflow?.steps
-        ?.filter((s) => s?.step_target_id === installActionRun?.id)
-        ?.at(-1)
-    : null
-
   return (
     <InstallActionRunProvider
       initInstallActionRun={installActionRun}
       shouldPoll
     >
-      {org?.features?.['stratus-layout'] ? (
-        <div className="flex flex-col gap-6">
-          <Breadcrumbs
-            breadcrumbs={[
-              {
-                path: `/${orgId}`,
-                text: org?.name,
-              },
-              {
-                path: `/${orgId}/installs`,
-                text: 'Installs',
-              },
-              {
-                path: `/${orgId}/installs/${installId}`,
-                text: install?.name,
-              },
-              {
-                path: `/${orgId}/installs/${installId}/actions`,
-                text: 'Actions',
-              },
-              {
-                path: `/${orgId}/installs/${installId}/actions/${actionId}`,
-                text: installAction?.action_workflow?.name || 'Action',
-              },
-              {
-                path: `/${orgId}/installs/${installId}/actions/${actionId}/${runId}`,
-                text: `${installActionRun?.trigger_type} run`,
-              },
-            ]}
-          />
-          <ActionStepGraph
-            steps={hydrateActionRunSteps({
-              steps: installActionRun?.steps,
-              stepConfigs: installActionRun?.config?.steps,
-            })}
-          />
-
-          <Text variant="body" weight="strong">
-            Outputs
-          </Text>
-          <InstallActionRunOutputs />
-        </div>
-      ) : (
-        <DashboardContent
-          breadcrumb={[
-            { href: `/${orgId}/installs`, text: 'Installs' },
+      <div className="flex flex-col gap-6">
+        <Breadcrumbs
+          breadcrumbs={[
             {
-              href: `/${orgId}/installs/${install.id}`,
-              text: install.name,
+              path: `/${orgId}`,
+              text: org?.name,
             },
             {
-              href: `/${orgId}/installs/${install.id}/actions`,
+              path: `/${orgId}/installs`,
+              text: 'Installs',
+            },
+            {
+              path: `/${orgId}/installs/${installId}`,
+              text: install?.name,
+            },
+            {
+              path: `/${orgId}/installs/${installId}/actions`,
               text: 'Actions',
             },
             {
-              href: `/${orgId}/installs/${install.id}/actions/${actionId}`,
-              text: `${installAction?.action_workflow?.name}`,
+              path: `/${orgId}/installs/${installId}/actions/${actionId}`,
+              text: installAction?.action_workflow?.name || 'Action',
             },
             {
-              href: `/${orgId}/installs/${install.id}/actions/${actionId}/${installActionRun.id}`,
-              text: installActionRun.id,
+              path: `/${orgId}/installs/${installId}/actions/${actionId}/${runId}`,
+              text: `${installActionRun?.trigger_type} run`,
             },
           ]}
-          heading={`${installAction?.action_workflow?.name} execution`}
-          headingUnderline={actionId}
-          headingMeta={
-            installActionRun?.install_workflow_id ? (
-              <OldLink
-                href={`/${orgId}/installs/${installId}/workflows/${installActionRun?.install_workflow_id}?target=${step?.id}`}
-              >
-                <CaretLeftIcon />
-                View workflow
-              </OldLink>
-            ) : null
-          }
-          meta={
-            <div className="flex gap-8 items-center justify-start pb-6">
-              <OldText>
-                <CalendarBlankIcon size={14} />
-                <Time time={installActionRun.created_at} />
-              </OldText>
-              <OldText>
-                <TimerIcon size={14} />
-                <Duration nanoseconds={installActionRun.execution_time} />
-              </OldText>
-            </div>
-          }
-          statues={
-            <div className="flex gap-6 items-start justify-start">
-              <span className="flex flex-col gap-2">
-                <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Status
-                </OldText>
-                <ActionWorkflowStatus descriptionAlignment="right" />
-              </span>
-              <span className="flex flex-col gap-2">
-                <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Trigger type
-                </OldText>
-                <ActionTriggerType
-                  triggerType={installActionRun?.triggered_by_type}
-                  componentName={installActionRun?.run_env_vars?.COMPONENT_NAME}
-                  componentPath={`/${orgId}/installs/${installId}/components/${installActionRun?.run_env_vars?.COMPONENT_ID}`}
-                />
-              </span>
+        />
+        <ActionStepGraph
+          steps={hydrateActionRunSteps({
+            steps: installActionRun?.steps,
+            stepConfigs: installActionRun?.config?.steps,
+          })}
+        />
 
-              <span className="flex flex-col gap-2">
-                <OldText className="text-cool-grey-600 dark:text-cool-grey-500">
-                  Install
-                </OldText>
-                <OldText variant="med-12">{install.name}</OldText>
-                <OldText variant="mono-12">
-                  <ToolTip alignment="right" tipContent={install.id}>
-                    <ClickToCopy>{install.id}</ClickToCopy>
-                  </ToolTip>
-                </OldText>
-              </span>
-              {installActionRun?.runner_job?.id ? (
-                <ErrorBoundary
-                  fallback={<OldText>Can&apso;t fetching job plan</OldText>}
-                >
-                  <Suspense
-                    fallback={
-                      <Loading
-                        variant="stack"
-                        loadingText="Loading job plan..."
-                      />
-                    }
-                  >
-                    <RunnerJobPlanModal
-                      runnerJobId={installActionRun?.runner_job?.id}
-                    />
-                  </Suspense>
-                </ErrorBoundary>
-              ) : null}
-              {CANCEL_RUNNER_JOBS ? (
-                <InstallActionCancelButton workflow={workflow} />
-              ) : null}
-            </div>
-          }
-        >
-          <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-            <div className="md:col-span-8">
-              <LogStreamProvider initLogStream={installActionRun?.log_stream}>
-                <ActionLogsSection />
-              </LogStreamProvider>
-            </div>
-            <InstallActionRunDetails />
-          </div>
-        </DashboardContent>
-      )}
+        <Text variant="body" weight="strong">
+          Outputs
+        </Text>
+        <InstallActionRunOutputs />
+      </div>
     </InstallActionRunProvider>
   )
 }
