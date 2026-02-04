@@ -104,8 +104,14 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		DeployPlan: plan,
 	}
 
-	roleSelection, operation, err := w.getRoleForDeploy(ctx, appConfig, installDeploy, build, comp, stack)
+	roleSelection, operation, err := w.getRoleForDeploy(l, appConfig, installDeploy, build, comp, stack)
 	if err != nil {
+		w.updateDeployStatusWithoutStatusSync(
+			ctx,
+			installDeploy.ID,
+			app.InstallDeployStatusError,
+			"unable to select role",
+		)
 		return errors.Wrap(err, "unable to evaluate role for component deploy")
 	}
 
@@ -208,7 +214,7 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 }
 
 func (w *Workflows) getRoleForDeploy(
-	ctx workflow.Context,
+	l *zap.Logger,
 	appConfig *app.AppConfig,
 	installDeploy *app.InstallDeploy,
 	build *app.ComponentBuild,
@@ -218,14 +224,6 @@ func (w *Workflows) getRoleForDeploy(
 	operation := app.OperationDeploy
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		operation = app.OperationTeardown
-	}
-
-	defaultRole := appConfig.PermissionsConfig.MaintenanceRole.Name
-	switch operation {
-	case app.OperationProvision:
-		defaultRole = appConfig.PermissionsConfig.ProvisionRole.Name
-	case app.OperationTeardown, app.OperationDeprovision:
-		defaultRole = appConfig.PermissionsConfig.DeprovisionRole.Name
 	}
 
 	roleSelection, err := operationroles.SelectRole(
@@ -238,19 +236,12 @@ func (w *Workflows) getRoleForDeploy(
 				build.ComponentConfigConnection.OperationRoles,
 			),
 			MatrixRules:  appConfig.OperationRoleConfig.Rules,
-			DefaultRole:  defaultRole,
+			DefaultRole:  appConfig.PermissionsConfig.MaintenanceRole.Name,
 			AppConfig:    appConfig,
 			StackOutputs: &stack.InstallStackOutputs,
-		})
+		}, l)
 	if err != nil {
-		w.updateDeployStatusWithoutStatusSync(
-			ctx,
-			installDeploy.ID,
-			app.InstallDeployStatusError,
-			"unable to select role",
-		)
-		return nil, "", fmt.Errorf("unable to select role: %w", err)
+		return nil, "", err
 	}
-
 	return roleSelection, operation, nil
 }

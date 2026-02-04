@@ -238,8 +238,14 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		ActionWorkflowRunPlan: runPlan,
 	}
 
-	roleSelection, operation, err := w.getRoleForAction(ctx, appConfig, run, stack)
+	roleSelection, operation, err := w.getRoleForAction(l, appConfig, run, stack)
 	if err != nil {
+		w.updateActionRunStatus(
+			ctx,
+			run.ID,
+			app.InstallActionRunStatusError,
+			"unable to select role",
+		)
 		return errors.Wrap(err, "unable to evaluate role for action")
 	}
 
@@ -301,7 +307,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 }
 
 func (w *Workflows) getRoleForAction(
-	ctx workflow.Context,
+	l *zap.Logger,
 	appConfig *app.AppConfig,
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,
@@ -315,26 +321,35 @@ func (w *Workflows) getRoleForAction(
 		}
 	}
 
+	var defaultRole string
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		defaultRole = appConfig.PermissionsConfig.ProvisionRole.Name
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		defaultRole = "azure-maintainence-mock-role-name"
+	default:
+	}
+
+	var breakGlassRole string
+	if run.ActionWorkflowConfig.BreakGlassRoleARN.Valid {
+		breakGlassRole = run.ActionWorkflowConfig.BreakGlassRoleARN.String
+	}
+
 	roleSelection, err := operationroles.SelectRole(
 		&operationroles.SelectionContext{
-			Operation:     operation,
-			PrincipalType: principal.TypeAction,
-			PrincipalName: run.ActionWorkflowConfig.ActionWorkflow.Name,
-			RuntimeRole:   run.Role,
-			EntityRoles:   entityRoles,
-			MatrixRules:   appConfig.OperationRoleConfig.Rules,
-			DefaultRole:   appConfig.PermissionsConfig.MaintenanceRole.Name,
-			AppConfig:     appConfig,
-			StackOutputs:  &stack.InstallStackOutputs,
-		})
+			Operation:      operation,
+			PrincipalType:  principal.TypeAction,
+			PrincipalName:  run.ActionWorkflowConfig.ActionWorkflow.Name,
+			RuntimeRole:    run.Role,
+			EntityRoles:    entityRoles,
+			MatrixRules:    appConfig.OperationRoleConfig.Rules,
+			DefaultRole:    defaultRole,
+			AppConfig:      appConfig,
+			StackOutputs:   &stack.InstallStackOutputs,
+			BreakGlassRole: breakGlassRole,
+		}, l)
 	if err != nil {
-		w.updateActionRunStatus(
-			ctx,
-			run.ID,
-			app.InstallActionRunStatusError,
-			"unable to select role",
-		)
-		return nil, "", fmt.Errorf("unable to select role: %w", err)
+		return nil, "", err
 	}
 
 	return roleSelection, operation, nil
