@@ -19,8 +19,9 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	wkspace, err := workspace.New(h.v,
 		workspace.WithLogger(l),
 		workspace.WithGitSource(&plantypes.GitSource{
-			URL: "https://github.com/jonmorehouse/empty",
-			Ref: "main",
+			URL:  "https://github.com/jonmorehouse/empty",
+			Ref:  "main",
+			Path: ".",
 		}),
 		workspace.WithWorkspaceID(jobExecution.ID),
 	)
