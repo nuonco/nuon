@@ -117,7 +117,6 @@ func migrateTestDatabase(cfg dbConfig) error {
 		return fmt.Errorf("failed to create hstore extension: %w", err)
 	}
 
-	// Use production migrator instead of AutoMigrate
 	if err := runMigrator(context.Background(), db); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
@@ -200,13 +199,19 @@ func (s *BaseDBTestSuite) DB() *gorm.DB {
 	return s.db
 }
 
-// SetupTest truncates all tables before each test.
+// SetupTest truncates all tables before each test and re-runs migrations.
 // If you override SetupTest in your suite, call s.BaseDBTestSuite.SetupTest() first.
 func (s *BaseDBTestSuite) SetupTest() {
 	if s.db == nil {
 		s.T().Fatal("DB not set - call SetDB() in SetupSuite")
 	}
+
+	// Truncate all tables
 	err := TruncateAllTables(context.Background(), s.db)
+	require.NoError(s.T(), err)
+
+	// Re-run migrations
+	err = runMigrator(context.Background(), s.db)
 	require.NoError(s.T(), err)
 }
 
@@ -253,7 +258,7 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 
 	migrator := migrations.New(migrations.Params{
 		Models:       models,
-		Migrations:   psqlMigs.All(), // All migrations, but 001 will skip due to IsTest
+		Migrations:   psqlMigs.All(),
 		MigrationsDB: db,
 		DB:           db,
 		DBType:       "postgres",
