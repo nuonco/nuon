@@ -156,10 +156,17 @@ type Client interface {
 	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)
 	GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error)
+	GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error)
+	GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error)
 	CancelWorkflow(ctx context.Context, workflowID string) (*operations.CancelWorkflowAccepted, error)
 	UpdateWorkflow(ctx context.Context, workflowID string, req *models.ServiceUpdateWorkflowRequest) (*models.AppWorkflow, error)
 	CreateWorkflowStepApprovalResponse(cxt context.Context, workflowID string, workflowStepID string, approvalID string, req *models.ServiceCreateWorkflowStepApprovalResponseRequest) (*models.ServiceCreateWorkflowStepApprovalResponseResponse, error)
 	GetWorkflowStepApprovalContents(ctx context.Context, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
+	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
+	RetryOwnerWorkflow(ctx context.Context, workflowID string, req *models.ServiceRetryWorkflowByIDRequest) (*models.ServiceRetryWorkflowByIDResponse, error)
+
+	// runner job plan
+	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)
 
 	// install stacks
 	GetInstallStack(ctx context.Context, installID string) (*models.AppInstallStack, error)

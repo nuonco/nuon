@@ -10,6 +10,8 @@ func (c *cli) installsCmd() *cobra.Command {
 	var (
 		id            string
 		workflowID    string
+		stepID        string
+		note          string
 		name          string
 		region        string
 		appID         string
@@ -411,35 +413,157 @@ func (c *cli) installsCmd() *cobra.Command {
 
 	workflowsCmd := &cobra.Command{
 		Use:   "workflows",
-		Short: "View workflows",
-		Long:  "View workflows by install ID",
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Workflows(cmd.Context(), id, offset, limit, PrintJSON, workflowID)
-		}),
+		Short: "Manage workflows",
+		Long:  "Manage and view workflows by install ID",
 	}
-	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
-	workflowsCmd.MarkFlagRequired("install-id")
-	workflowsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
-	workflowsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
-	workflowsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID install workflow you want to view")
 	installsCmds.AddCommand(workflowsCmd)
 
-	// workflows get
-	workflowGetCmd := &cobra.Command{
-		Use:   "workflows-get",
-		Short: "Get one workflows",
-		Long:  "View one workflows by install ID and workflow ID",
+	workflowsListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List workflows",
+		Long:    "List all workflows for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowGet(cmd.Context(), id, workflowID)
+			return svc.WorkflowsList(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
-	workflowGetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the workflow you want to view")
-	workflowGetCmd.MarkFlagRequired("install-id")
-	workflowGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow you want to view")
-	workflowGetCmd.MarkFlagRequired("workflow-id")
-	installsCmds.AddCommand(workflowGetCmd)
+	workflowsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	workflowsListCmd.MarkFlagRequired("install-id")
+	workflowsListCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	workflowsListCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
+	workflowsCmd.AddCommand(workflowsListCmd)
+
+	workflowsGetCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get a workflow",
+		Long:  "Get workflow details including steps summary",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowsGet(cmd.Context(), workflowID, PrintJSON)
+		}),
+	}
+	workflowsGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	workflowsGetCmd.MarkFlagRequired("workflow-id")
+	workflowsCmd.AddCommand(workflowsGetCmd)
+
+	stepsCmd := &cobra.Command{
+		Use:   "steps",
+		Short: "Manage workflow steps",
+		Long:  "View and manage workflow steps",
+	}
+	workflowsCmd.AddCommand(stepsCmd)
+
+	stepsListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List workflow steps",
+		Long:    "List all steps for a workflow",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowStepsList(cmd.Context(), workflowID, PrintJSON)
+		}),
+	}
+	stepsListCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	stepsListCmd.MarkFlagRequired("workflow-id")
+	stepsCmd.AddCommand(stepsListCmd)
+
+	stepsGetCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get a workflow step",
+		Long:  "Get detailed information about a workflow step",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			stepID, _ := cmd.Flags().GetString("step-id")
+			return svc.WorkflowStepsGet(cmd.Context(), workflowID, stepID, PrintJSON)
+		}),
+	}
+	stepsGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	stepsGetCmd.MarkFlagRequired("workflow-id")
+	stepsGetCmd.Flags().StringP("step-id", "s", "", "The ID of the step")
+	stepsGetCmd.MarkFlagRequired("step-id")
+	stepsCmd.AddCommand(stepsGetCmd)
+
+	stepsPlanCmd := &cobra.Command{
+		Use:   "plan",
+		Short: "View step plan",
+		Long:  "View the deploy plan for a workflow step",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowStepPlan(cmd.Context(), id, workflowID, stepID, PrintJSON)
+		}),
+	}
+	stepsPlanCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	stepsPlanCmd.MarkFlagRequired("install-id")
+	stepsPlanCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	stepsPlanCmd.MarkFlagRequired("workflow-id")
+	stepsPlanCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
+	stepsPlanCmd.MarkFlagRequired("step-id")
+	stepsCmd.AddCommand(stepsPlanCmd)
+
+	stepsLogsCmd := &cobra.Command{
+		Use:   "logs",
+		Short: "View step logs",
+		Long:  "View execution logs for a workflow step",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowStepLogs(cmd.Context(), id, workflowID, stepID, PrintJSON)
+		}),
+	}
+	stepsLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	stepsLogsCmd.MarkFlagRequired("install-id")
+	stepsLogsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	stepsLogsCmd.MarkFlagRequired("workflow-id")
+	stepsLogsCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
+	stepsLogsCmd.MarkFlagRequired("step-id")
+	stepsCmd.AddCommand(stepsLogsCmd)
+
+	stepsApproveCmd := &cobra.Command{
+		Use:   "approve",
+		Short: "Approve a step",
+		Long:  "Approve a waiting workflow step",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowStepApprove(cmd.Context(), workflowID, stepID, note, PrintJSON)
+		}),
+	}
+	stepsApproveCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	stepsApproveCmd.MarkFlagRequired("workflow-id")
+	stepsApproveCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
+	stepsApproveCmd.MarkFlagRequired("step-id")
+	stepsApproveCmd.Flags().StringVarP(&note, "note", "n", "", "Optional note for the approval")
+	stepsCmd.AddCommand(stepsApproveCmd)
+
+	stepsRejectCmd := &cobra.Command{
+		Use:   "reject",
+		Short: "Reject a step",
+		Long:  "Reject a waiting workflow step",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowStepReject(cmd.Context(), workflowID, stepID, note, PrintJSON)
+		}),
+	}
+	stepsRejectCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	stepsRejectCmd.MarkFlagRequired("workflow-id")
+	stepsRejectCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
+	stepsRejectCmd.MarkFlagRequired("step-id")
+	stepsRejectCmd.Flags().StringVarP(&note, "note", "n", "", "Optional note for the rejection")
+	stepsCmd.AddCommand(stepsRejectCmd)
+
+	stepsRetryCmd := &cobra.Command{
+		Use:   "retry",
+		Short: "Retry a step",
+		Long:  "Retry a failed workflow step",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowStepRetry(cmd.Context(), workflowID, stepID, PrintJSON)
+		}),
+	}
+	stepsRetryCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
+	stepsRetryCmd.MarkFlagRequired("workflow-id")
+	stepsRetryCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
+	stepsRetryCmd.MarkFlagRequired("step-id")
+	stepsCmd.AddCommand(stepsRetryCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
