@@ -19,7 +19,7 @@ export async function GET(
       {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.accessToken || session?.tokenSet?.accessToken}`,
           'X-Nuon-Org-ID': orgId,
         },
       }
@@ -33,11 +33,14 @@ export async function GET(
         url: `${API_URL}/v1/installs/${installId}/generate-terraform-installer-config`,
         orgId,
         installId,
-        errorBody: errorText
+        errorBody: errorText,
       })
-      return new Response(`Failed to generate terraform installer config: ${response.status} ${response.statusText}`, {
-        status: response.status,
-      })
+      return new Response(
+        `Failed to generate terraform installer config: ${response.status} ${response.statusText}`,
+        {
+          status: response.status,
+        }
+      )
     }
 
     // Get the response as binary data
