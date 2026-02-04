@@ -9,24 +9,27 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 )
 
 type Params struct {
 	fx.In
-	V   *validator.Validate
-	Cfg *internal.Config
-	DB  *gorm.DB `name:"psql"`
-	MW  metrics.Writer
-	L   *zap.Logger
+	V           *validator.Validate
+	Cfg         *internal.Config
+	DB          *gorm.DB `name:"psql"`
+	MW          metrics.Writer
+	L           *zap.Logger
+	AppsHelpers *appshelpers.Helpers
 }
 
 type Service struct {
-	v   *validator.Validate
-	l   *zap.Logger
-	db  *gorm.DB
-	mw  metrics.Writer
-	cfg *internal.Config
+	v           *validator.Validate
+	l           *zap.Logger
+	db          *gorm.DB
+	mw          metrics.Writer
+	cfg         *internal.Config
+	appsHelpers *appshelpers.Helpers
 }
 
 type service = Service
@@ -75,11 +78,12 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 func New(params Params) (*service, error) {
 	s := &service{
-		cfg: params.Cfg,
-		l:   params.L,
-		v:   params.V,
-		db:  params.DB,
-		mw:  params.MW,
+		cfg:         params.Cfg,
+		l:           params.L,
+		v:           params.V,
+		db:          params.DB,
+		mw:          params.MW,
+		appsHelpers: params.AppsHelpers,
 	}
 
 	s.l.Info("admin-dashboard service initialized")

@@ -2,12 +2,28 @@ package views
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tooltip"
 )
 
+func componentStatusToVariant(componentStatus app.InstallComponentStatus) status.Variant {
+	switch componentStatus {
+	case app.InstallComponentStatusActive:
+		return status.VariantSuccess
+	case app.InstallComponentStatusError, app.InstallComponentStatusDeleteFailed:
+		return status.VariantError
+	case app.InstallComponentStatusQueued, app.InstallComponentStatusPlanning, app.InstallComponentStatusSyncing, app.InstallComponentStatusExecuting:
+		return status.VariantInfo
+	case app.InstallComponentStatusDeleted, app.InstallComponentStatusInactive:
+		return status.VariantWarning
+	default:
+		return status.VariantDefault
+	}
+}
+
 templ InstallComponentStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "/installs/" + install.ID + "/status/component" }
+		hx-get={ "installs/" + install.ID + "/status/component" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
@@ -15,9 +31,13 @@ templ InstallComponentStatusBadge(install *app.Install) {
 			@tooltip.Trigger(tooltip.TriggerProps{
 				For: "install-component-tooltip-" + install.ID,
 			}) {
-				<span class={ "px-2 py-1 rounded text-xs font-mono uppercase", componentStatusClass(install.CompositeComponentStatus) }>
-					Components
-				</span>
+				@status.Status(status.Props{
+					Variant:   componentStatusToVariant(install.CompositeComponentStatus),
+					Size:      status.SizeDefault,
+					Text:      "Components",
+					Uppercase: true,
+					FontMono:  true,
+				})
 			}
 			@tooltip.Content(tooltip.ContentProps{
 				ID:            "install-component-tooltip-" + install.ID,
