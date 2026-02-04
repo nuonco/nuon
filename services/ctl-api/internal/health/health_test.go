@@ -16,21 +16,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
-	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
-	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // TestService holds all fx-injected dependencies for health endpoint tests.
@@ -65,42 +51,14 @@ func TestHealthSuite(t *testing.T) {
 func (s *HealthTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
-	s.app = fxtest.New(
-		s.T(),
-		fx.Provide(internal.NewConfig),
-
-		// logging
-		fx.Provide(log.New),
-		fx.Provide(dblog.New),
-
-		// external services
-		fx.Provide(loops.New),
-		fx.Provide(github.New),
-		fx.Provide(metrics.New),
-		fx.Provide(propagator.New),
-
-		// databases
-		fx.Provide(psql.AsPSQL(psql.New)),
-		fx.Provide(ch.AsCH(ch.New)),
-
-		// temporal (required for health checks)
-		fx.Provide(gzip.AsGzip(gzip.New)),
-		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
-		fx.Provide(signaldb.NewPayloadConverter),
-		fx.Provide(dataconverter.New),
-		fx.Provide(temporal.New),
-
-		// validator
-		fx.Provide(validator.New),
-
+	options := append(
+		tests.CtlApiFXOptionsWithValidator(),
 		// service under test
 		fx.Provide(New),
-
-		// invokers
-		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
-
 		fx.Populate(&s.service),
 	)
+
+	s.app = fxtest.New(s.T(), options...)
 
 	s.app.RequireStart()
 
