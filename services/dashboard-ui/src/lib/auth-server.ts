@@ -25,7 +25,7 @@ async function callAuthServiceAPI<T>(path: string): Promise<TAPIResponse<T>> {
   let response: Response | undefined
   try {
     const token = await getAuthTokenFromCookie()
-    
+
     const fetchOpts: RequestInit = {
       cache: 'no-store',
       method: 'GET',
@@ -126,7 +126,7 @@ export async function getSession(): Promise<ISession | null | undefined> {
       return null
     }
   }
-  
+
   // Use Auth0 for now
   return await auth0.getSession()
 }
@@ -138,7 +138,7 @@ export async function getAccessToken(): Promise<string | null> {
 
   // Extract token from Auth0 session
   const session = await auth0.getSession()
-  return session?.accessToken || null
+  return session?.tokenSet?.accessToken || null
 }
 
 export async function getUserProfile(): Promise<IUser | null> {
