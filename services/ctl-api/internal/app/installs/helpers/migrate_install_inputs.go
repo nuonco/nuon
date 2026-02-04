@@ -82,23 +82,22 @@ func (h *Helpers) migrateInstallInputs(
 
 	fmt.Println("sk debug: existing install inputs", installID, existingInputs.Values)
 
-	if res.Error != nil {
-		if res.Error == gorm.ErrRecordNotFound {
-			// for backward compatibility for older installs where older installs dont have install in puts set
-			// at latest app config
-			res := txn.WithContext(ctx).
-				Where(app.InstallInputs{
-					InstallID: installID,
-				}).
-				Order("created_at DESC").
-				Limit(1).
-				Find(&existingInputs)
+	if res.Error != nil && res.Error == gorm.ErrRecordNotFound {
+		// for backward compatibility for older installs where older installs dont have install in puts set
+		// at latest app config
+		res := txn.WithContext(ctx).
+			Where(app.InstallInputs{
+				InstallID: installID,
+			}).
+			Order("created_at DESC").
+			Limit(1).
+			Find(&existingInputs)
 
-			// error out if install exists but there are no install inputs associated with it
-			if res.Error != nil {
-				return errors.Wrap(res.Error, fmt.Sprintf("unable to fetch install inputs for installID %s", installID))
-			}
+		// error out if install exists but there are no install inputs associated with it
+		if res.Error != nil {
+			return errors.Wrap(res.Error, fmt.Sprintf("unable to fetch install inputs for installID %s", installID))
 		}
+	} else if res.Error != nil {
 		return fmt.Errorf("unable to fetch existing inputs: %w", res.Error)
 	}
 
