@@ -2,11 +2,18 @@ package installs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/pkg/browser"
+
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/plandiff"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/logs"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -85,8 +92,122 @@ func (s *Service) WorkflowStepsList(ctx context.Context, workflowID string, asJS
 	return nil
 }
 
+// getLastProcessedStepID returns the ID of the most recently processed step in a workflow.
+// This is useful for viewing logs of the step that just ran, rather than the step awaiting action.
+// Logic: 1) Find first not-attempted step, return step at index-1
+// 2) If no not-attempted step, return highest index step that is finished, in-progress, or error
+func (s *Service) getLastProcessedStepID(ctx context.Context, workflowID string) (string, error) {
+	steps, err := s.api.GetWorkflowSteps(ctx, workflowID)
+	if err != nil {
+		return "", err
+	}
+	if len(steps) == 0 {
+		return "", fmt.Errorf("no steps found for workflow %s", workflowID)
+	}
+
+	// Find the first not-attempted step by index
+	var firstNotAttempted *models.AppWorkflowStep
+	for _, step := range steps {
+		if step.Status != nil && step.Status.Status == models.AppStatusNotDashAttempted {
+			if firstNotAttempted == nil || step.Idx < firstNotAttempted.Idx {
+				firstNotAttempted = step
+			}
+		}
+	}
+
+	// If we found a not-attempted step, return the step just before it
+	if firstNotAttempted != nil && firstNotAttempted.Idx > 0 {
+		targetIdx := firstNotAttempted.Idx - 1
+		for _, step := range steps {
+			if step.Idx == targetIdx {
+				return step.ID, nil
+			}
+		}
+	}
+
+	// Fallback: find the highest index step that has been processed
+	// (finished, in-progress, error, success, or any status that indicates execution)
+	var lastProcessed *models.AppWorkflowStep
+	for _, step := range steps {
+		if step.Status == nil {
+			continue
+		}
+		status := step.Status.Status
+		// Skip steps that haven't been processed
+		if status == models.AppStatusNotDashAttempted || status == models.AppStatusPending {
+			continue
+		}
+		if lastProcessed == nil || step.Idx > lastProcessed.Idx {
+			lastProcessed = step
+		}
+	}
+
+	if lastProcessed != nil {
+		return lastProcessed.ID, nil
+	}
+
+	// Final fallback: return the step with highest index
+	latest := steps[0]
+	for _, step := range steps {
+		if step.Idx > latest.Idx {
+			latest = step
+		}
+	}
+	return latest.ID, nil
+}
+
+// confirmStepAction displays step details and prompts for confirmation before taking an action.
+func (s *Service) confirmStepAction(ctx context.Context, installID, workflowID, stepID, action string) (bool, error) {
+	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	if err != nil {
+		return false, err
+	}
+
+	// Display step information
+	fmt.Println()
+	fmt.Printf("Step:   %s\n", step.Name)
+	fmt.Printf("ID:     %s\n", step.ID)
+	fmt.Printf("Index:  %d\n", step.Idx)
+	if step.Status != nil {
+		fmt.Printf("Status: %s\n", step.Status.Status)
+	}
+
+	// Try to display plan summary if available
+	if step.StepTargetID != "" && step.StepTargetType == "install_deploys" && installID != "" {
+		resolvedInstallID, err := lookup.InstallID(ctx, s.api, installID)
+		if err == nil {
+			deploy, err := s.api.GetInstallDeploy(ctx, resolvedInstallID, step.StepTargetID)
+			if err == nil && len(deploy.RunnerJobs) > 0 {
+				plan, err := s.api.GetRunnerJobPlan(ctx, deploy.RunnerJobs[0].ID)
+				if err == nil && plan != "" {
+					formatted, err := plandiff.FormatPlan(plan)
+					if err == nil {
+						fmt.Println()
+						fmt.Println("Plan:")
+						fmt.Println(formatted)
+					}
+				}
+			}
+		}
+	}
+
+	fmt.Println()
+
+	prompt := fmt.Sprintf("Are you sure you want to %s step '%s'?", action, step.Name)
+	return bubbles.Confirm(prompt)
+}
+
 func (s *Service) WorkflowStepsGet(ctx context.Context, workflowID, stepID string, asJSON bool) error {
 	view := ui.NewListView()
+
+	// If stepID is not provided, use the last processed step
+	if stepID == "" {
+		var err error
+		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
+		if err != nil {
+			return view.Error(err)
+		}
+	}
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
@@ -173,7 +294,12 @@ func formatWorkflows(workflows []*models.AppWorkflow) [][]string {
 		updatedAt, _ := time.Parse(time.RFC3339Nano, workflow.UpdatedAt)
 		status := ""
 		if workflow.Status != nil {
-			status = string(workflow.Status.Status)
+			statusText := string(workflow.Status.Status)
+			if styles.IsActionableStatus(workflow.Status.Status) {
+				status = styles.GetStatusStyle(workflow.Status.Status).Render("→ " + statusText)
+			} else {
+				status = styles.GetStatusStyle(workflow.Status.Status).Render(statusText)
+			}
 		}
 
 		data = append(data, []string{
@@ -199,13 +325,23 @@ func formatWorkflowSteps(steps []*models.AppWorkflowStep) [][]string {
 			"STATUS",
 			"EXECUTION TYPE",
 			"APPROVAL",
+			"POLICY",
 			"FINISHED",
 		},
 	}
 	for _, step := range steps {
+		// Skip hidden steps from CLI output
+		if step.ExecutionType == models.AppWorkflowStepExecutionTypeHidden {
+			continue
+		}
 		status := ""
 		if step.Status != nil {
-			status = string(step.Status.Status)
+			statusText := string(step.Status.Status)
+			if styles.IsActionableStatus(step.Status.Status) {
+				status = styles.GetStatusStyle(step.Status.Status).Render("→ " + statusText)
+			} else {
+				status = styles.GetStatusStyle(step.Status.Status).Render(statusText)
+			}
 		}
 		approval := "-"
 		if step.Approval != nil {
@@ -216,6 +352,11 @@ func formatWorkflowSteps(steps []*models.AppWorkflowStep) [][]string {
 			finished = "yes"
 		}
 
+		policy := "-"
+		if step.Status != nil && step.Status.Metadata != nil {
+			policy = getPolicyColumnValue(step.Status.Metadata)
+		}
+
 		data = append(data, []string{
 			fmt.Sprintf("%d", step.Idx),
 			step.ID,
@@ -223,6 +364,7 @@ func formatWorkflowSteps(steps []*models.AppWorkflowStep) [][]string {
 			status,
 			string(step.ExecutionType),
 			approval,
+			policy,
 			finished,
 		})
 	}
@@ -241,8 +383,30 @@ func (s *Service) listWorkflows(ctx context.Context, installID string, offset, l
 	return workflows, hasMore, nil
 }
 
-func (s *Service) WorkflowStepApprove(ctx context.Context, workflowID, stepID, note string, asJSON bool) error {
+func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID, stepID, note string, skipConfirm, asJSON bool) error {
 	view := ui.NewListView()
+
+	// If stepID is not provided, use the last processed step and require confirmation
+	stepWasProvided := stepID != ""
+	if stepID == "" {
+		var err error
+		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
+		if err != nil {
+			return view.Error(err)
+		}
+	}
+
+	// Require confirmation when using auto-resolved step (unless --yes flag is set)
+	if !stepWasProvided && !skipConfirm {
+		confirmed, err := s.confirmStepAction(ctx, installID, workflowID, stepID, "approve")
+		if err != nil {
+			return view.Error(err)
+		}
+		if !confirmed {
+			fmt.Println("Aborted.")
+			return nil
+		}
+	}
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
@@ -270,8 +434,30 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, workflowID, stepID, n
 	return nil
 }
 
-func (s *Service) WorkflowStepReject(ctx context.Context, workflowID, stepID, note string, asJSON bool) error {
+func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID, stepID, note string, skipConfirm, asJSON bool) error {
 	view := ui.NewListView()
+
+	// If stepID is not provided, use the last processed step and require confirmation
+	stepWasProvided := stepID != ""
+	if stepID == "" {
+		var err error
+		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
+		if err != nil {
+			return view.Error(err)
+		}
+	}
+
+	// Require confirmation when using auto-resolved step (unless --yes flag is set)
+	if !stepWasProvided && !skipConfirm {
+		confirmed, err := s.confirmStepAction(ctx, installID, workflowID, stepID, "reject")
+		if err != nil {
+			return view.Error(err)
+		}
+		if !confirmed {
+			fmt.Println("Aborted.")
+			return nil
+		}
+	}
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
@@ -299,8 +485,30 @@ func (s *Service) WorkflowStepReject(ctx context.Context, workflowID, stepID, no
 	return nil
 }
 
-func (s *Service) WorkflowStepRetry(ctx context.Context, workflowID, stepID string, asJSON bool) error {
+func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, stepID string, skipConfirm, asJSON bool) error {
 	view := ui.NewListView()
+
+	// If stepID is not provided, use the last processed step and require confirmation
+	stepWasProvided := stepID != ""
+	if stepID == "" {
+		var err error
+		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
+		if err != nil {
+			return view.Error(err)
+		}
+	}
+
+	// Require confirmation when using auto-resolved step (unless --yes flag is set)
+	if !stepWasProvided && !skipConfirm {
+		confirmed, err := s.confirmStepAction(ctx, installID, workflowID, stepID, "retry")
+		if err != nil {
+			return view.Error(err)
+		}
+		if !confirmed {
+			fmt.Println("Aborted.")
+			return nil
+		}
+	}
 
 	resp, err := s.api.RetryOwnerWorkflow(ctx, workflowID, &models.ServiceRetryWorkflowByIDRequest{
 		Operation: "retry-step",
@@ -321,6 +529,15 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, workflowID, stepID stri
 
 func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, stepID string, asJSON bool) error {
 	view := ui.NewListView()
+
+	// If stepID is not provided, use the last processed step
+	if stepID == "" {
+		var err error
+		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
+		if err != nil {
+			return view.Error(err)
+		}
+	}
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
@@ -357,20 +574,107 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 
 	if plan == "" {
 		fmt.Println("No plan available")
+		displayPolicyViolationsIfPresent(step)
 		return nil
 	}
 
 	if asJSON {
-		ui.PrintJSON(map[string]string{"plan": plan})
+		result := map[string]any{"plan": plan}
+		if step.Status != nil && step.Status.Metadata != nil {
+			denyViolations, warnViolations := extractPolicyViolations(step.Status.Metadata)
+			if len(denyViolations) > 0 {
+				result["deny_violations"] = denyViolations
+			}
+			if len(warnViolations) > 0 {
+				result["warn_violations"] = warnViolations
+			}
+		}
+		ui.PrintJSON(result)
 		return nil
 	}
 
-	fmt.Println(plan)
+	// Try to format the plan with human-readable diff output
+	formatted, err := plandiff.FormatPlan(plan)
+	if err != nil {
+		// Fall back to raw plan output if formatting fails
+		fmt.Println(plan)
+		displayPolicyViolationsIfPresent(step)
+		return nil
+	}
+
+	fmt.Println(formatted)
+	displayPolicyViolationsIfPresent(step)
+	return nil
+}
+
+// displayPolicyViolationsIfPresent checks step metadata for policy violations and displays them.
+func displayPolicyViolationsIfPresent(step *models.AppWorkflowStep) {
+	if step.Status == nil || step.Status.Metadata == nil {
+		return
+	}
+
+	denyViolations, warnViolations := extractPolicyViolations(step.Status.Metadata)
+	output := formatPolicyViolationsDisplay(denyViolations, warnViolations)
+	if output != "" {
+		fmt.Print(output)
+	}
+}
+
+func (s *Service) WorkflowSetApprovalOption(ctx context.Context, workflowID string, approveAll, prompt, asJSON bool) error {
+	view := ui.NewListView()
+
+	var approvalOption models.AppInstallApprovalOption
+	if approveAll {
+		approvalOption = models.AppInstallApprovalOptionApproveDashAll
+	} else if prompt {
+		approvalOption = models.AppInstallApprovalOptionPrompt
+	} else {
+		return view.Error(fmt.Errorf("must specify either --approve-all or --prompt"))
+	}
+
+	workflow, err := s.api.UpdateWorkflow(ctx, workflowID, &models.ServiceUpdateWorkflowRequest{
+		ApprovalOption: &approvalOption,
+	})
+	if err != nil {
+		return view.Error(err)
+	}
+
+	if asJSON {
+		ui.PrintJSON(workflow)
+		return nil
+	}
+
+	fmt.Printf("Updated workflow %s approval option to %s\n", workflowID, approvalOption)
 	return nil
 }
 
 func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, stepID string, asJSON bool) error {
 	view := ui.NewListView()
+
+	// If stepID is not provided, use the last processed step (not the one awaiting action)
+	if stepID == "" {
+		var err error
+		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
+		if err != nil {
+			return view.Error(err)
+		}
+	}
+
+	if !s.cfg.Preview {
+		workflow, err := s.api.GetWorkflow(ctx, workflowID)
+		if err != nil {
+			return view.Error(err)
+		}
+
+		cfg, err := s.api.GetCLIConfig(ctx)
+		if err != nil {
+			return view.Error(err)
+		}
+
+		url := fmt.Sprintf("%s/%s/installs/%s/workflows/%s?target=%s", cfg.DashboardURL, s.cfg.OrgID, workflow.OwnerID, workflowID, stepID)
+		browser.OpenURL(url)
+		return nil
+	}
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
@@ -382,13 +686,15 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 	}
 
 	var logStreamID string
+	var deployID string
 	switch step.StepTargetType {
 	case "install_deploys":
 		installID, err = lookup.InstallID(ctx, s.api, installID)
 		if err != nil {
 			return ui.PrintError(err)
 		}
-		deploy, err := s.api.GetInstallDeploy(ctx, installID, step.StepTargetID)
+		deployID = step.StepTargetID
+		deploy, err := s.api.GetInstallDeploy(ctx, installID, deployID)
 		if err != nil {
 			return view.Error(err)
 		}
@@ -405,18 +711,120 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 		return view.Error(fmt.Errorf("no log stream found for step %s", stepID))
 	}
 
-	logs, err := s.api.LogStreamReadLogs(ctx, logStreamID, "")
-	if err != nil {
-		return view.Error(err)
-	}
-
 	if asJSON {
-		ui.PrintJSON(logs)
+		logRecords, err := s.api.LogStreamReadLogs(ctx, logStreamID, "")
+		if err != nil {
+			return view.Error(err)
+		}
+		ui.PrintJSON(logRecords)
 		return nil
 	}
 
-	for _, log := range logs {
-		fmt.Println(log.Body)
-	}
+	logs.LogStreamApp(ctx, s.cfg, s.api, installID, deployID, logStreamID)
 	return nil
+}
+
+// policyViolation represents a policy violation from step metadata.
+type policyViolation struct {
+	PolicyID string `json:"policy_id"`
+	Message  string `json:"message"`
+	Severity string `json:"severity"`
+}
+
+// extractPolicyViolations extracts deny and warn violations from step metadata.
+func extractPolicyViolations(metadata map[string]any) ([]policyViolation, []policyViolation) {
+	var denyViolations, warnViolations []policyViolation
+
+	if denyRaw, ok := metadata["deny_violations"]; ok {
+		denyViolations = parsePolicyViolations(denyRaw)
+	}
+	if warnRaw, ok := metadata["warn_violations"]; ok {
+		warnViolations = parsePolicyViolations(warnRaw)
+	}
+
+	return denyViolations, warnViolations
+}
+
+// parsePolicyViolations converts a raw interface{} to a slice of policy violations.
+func parsePolicyViolations(raw any) []policyViolation {
+	var violations []policyViolation
+
+	data, err := json.Marshal(raw)
+	if err != nil {
+		return violations
+	}
+
+	_ = json.Unmarshal(data, &violations)
+	return violations
+}
+
+// formatPolicyViolationsDisplay formats policy violations for CLI output.
+func formatPolicyViolationsDisplay(denyViolations, warnViolations []policyViolation) string {
+	if len(denyViolations) == 0 && len(warnViolations) == 0 {
+		return ""
+	}
+
+	var output string
+	separator := styles.TextSubtle.Render("─── Policy Violations ───────────────────────────────────────────")
+	endSeparator := styles.TextSubtle.Render("──────────────────────────────────────────────────────────────────")
+
+	output += "\n" + separator + "\n"
+
+	if len(denyViolations) > 0 {
+		output += fmt.Sprintf("\n%s\n", styles.TextError.Render(fmt.Sprintf("✗ DENY VIOLATIONS (%d)", len(denyViolations))))
+		for _, v := range denyViolations {
+			output += fmt.Sprintf("\n  %s %s\n", styles.TextSubtle.Render("Policy:"), styles.TextPrimary.Render(v.PolicyID))
+			output += fmt.Sprintf("  %s %s\n", styles.TextSubtle.Render("Message:"), v.Message)
+		}
+	}
+
+	if len(warnViolations) > 0 {
+		output += fmt.Sprintf("\n%s\n", styles.TextWarning.Render(fmt.Sprintf("⚠ WARNINGS (%d)", len(warnViolations))))
+		for _, v := range warnViolations {
+			output += fmt.Sprintf("\n  %s %s\n", styles.TextSubtle.Render("Policy:"), styles.TextPrimary.Render(v.PolicyID))
+			output += fmt.Sprintf("  %s %s\n", styles.TextSubtle.Render("Message:"), v.Message)
+		}
+	}
+
+	output += "\n" + endSeparator + "\n"
+
+	return output
+}
+
+// getPolicyColumnValue returns a formatted policy status string for table display.
+func getPolicyColumnValue(metadata map[string]any) string {
+	if metadata == nil {
+		return "-"
+	}
+
+	denyViolations, warnViolations := extractPolicyViolations(metadata)
+	denyCount := len(denyViolations)
+	warnCount := len(warnViolations)
+
+	if denyCount == 0 && warnCount == 0 {
+		if _, hasDeny := metadata["deny_violations"]; hasDeny {
+			return styles.TextSuccess.Render("✓")
+		}
+		if _, hasWarn := metadata["warn_violations"]; hasWarn {
+			return styles.TextSuccess.Render("✓")
+		}
+		return "-"
+	}
+
+	var parts []string
+	if denyCount > 0 {
+		parts = append(parts, styles.TextError.Render(fmt.Sprintf("✗ %d", denyCount)))
+	}
+	if warnCount > 0 {
+		parts = append(parts, styles.TextWarning.Render(fmt.Sprintf("⚠ %d", warnCount)))
+	}
+
+	result := ""
+	for i, p := range parts {
+		if i > 0 {
+			result += " "
+		}
+		result += p
+	}
+	return result
 }

@@ -14,8 +14,9 @@ import (
 )
 
 type (
-	cobraRunCommand  func(*cobra.Command, []string)
-	cobraRunECommand func(*cobra.Command, []string) error
+	cobraRunCommand          func(*cobra.Command, []string)
+	cobraRunECommand         func(*cobra.Command, []string) error
+	cobraRunECommandExitCode func(*cobra.Command, []string) (int, error)
 )
 
 // wrapCmd wraps all CLI commands, providing a central point to control error flow and handling.
@@ -28,6 +29,22 @@ func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
 		// if err != nil {
 		// 	fmt.Println(errors.Wrap(err, "command failed"))
 		// }
+	}
+}
+
+// wrapCmdWithExitCode wraps CLI commands that return custom exit codes.
+// This is useful for commands like "watch" that need to signal different outcomes.
+func (c *cli) wrapCmdWithExitCode(f cobraRunECommandExitCode) cobraRunCommand {
+	wrapped := func(cmd *cobra.Command, args []string) error {
+		exitCode, err := f(cmd, args)
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+		return err
+	}
+	fn := c.sentryWrapCmd(c.analyticsWrapCmd(wrapped))
+	return func(cmd *cobra.Command, args []string) {
+		_ = fn(cmd, args)
 	}
 }
 

@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/installs"
@@ -31,6 +34,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		enable        bool
 		disable       bool
 		dryRun        bool
+		skipConfirm   bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -440,12 +444,88 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Get workflow details including steps summary",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowsGet(cmd.Context(), workflowID, PrintJSON)
+			wfID := workflowID
+			if wfID == "" {
+				wfID = svc.GetWorkflowID()
+			}
+			if wfID == "" {
+				return fmt.Errorf("workflow-id is required, use --workflow-id or 'workflows select' to set one")
+			}
+			return svc.WorkflowsGet(cmd.Context(), wfID, PrintJSON)
 		}),
 	}
-	workflowsGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	workflowsGetCmd.MarkFlagRequired("workflow-id")
+	workflowsGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
 	workflowsCmd.AddCommand(workflowsGetCmd)
+
+	workflowsSelectCmd := &cobra.Command{
+		Use:   "select",
+		Short: "Select a workflow",
+		Long:  "Select a workflow to use as default for subsequent commands",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowsSelect(cmd.Context(), id, workflowID, offset, limit, PrintJSON)
+		}),
+	}
+	workflowsSelectCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	workflowsSelectCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow to select directly")
+	workflowsSelectCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	workflowsSelectCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum workflows to return")
+	workflowsCmd.AddCommand(workflowsSelectCmd)
+
+	workflowsDeselectCmd := &cobra.Command{
+		Use:   "deselect",
+		Short: "Deselect the current workflow",
+		Long:  "Clear the currently selected workflow",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.WorkflowsDeselect(cmd.Context())
+		}),
+	}
+	workflowsCmd.AddCommand(workflowsDeselectCmd)
+
+	var watchInterval time.Duration
+	var watchQuiet bool
+	workflowsWatchCmd := &cobra.Command{
+		Use:   "watch",
+		Short: "Watch a workflow until completion",
+		Long: `Watch a workflow until it reaches a terminal state or requires approval.
+
+Exit codes:
+  0   - Workflow succeeded
+  1   - Workflow failed
+  2   - Workflow cancelled
+  3   - Approval required (step is waiting for approval)
+  130 - Interrupted (Ctrl+C)
+
+Examples:
+  # Watch a specific workflow
+  nuon installs workflows watch -w wfl123abc
+
+  # Watch the latest workflow for an install
+  nuon installs workflows watch -i myinstall
+
+  # Watch with custom interval
+  nuon installs workflows watch -w wfl123abc -n 10s
+
+  # Quiet mode (no output, just exit code)
+  nuon installs workflows watch -w wfl123abc -q`,
+		Run: c.wrapCmdWithExitCode(func(cmd *cobra.Command, _ []string) (int, error) {
+			svc := installs.New(c.apiClient, c.cfg)
+
+			// Try to get workflow ID from flag or config
+			wfID := workflowID
+			if wfID == "" {
+				wfID = svc.GetWorkflowID()
+			}
+
+			return svc.WorkflowsWatch(cmd.Context(), id, wfID, watchInterval, PrintJSON, watchQuiet)
+		}),
+	}
+	workflowsWatchCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install (watches latest workflow)")
+	workflowsWatchCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow to watch")
+	workflowsWatchCmd.Flags().DurationVarP(&watchInterval, "interval", "n", 5*time.Second, "Polling interval")
+	workflowsWatchCmd.Flags().BoolVarP(&watchQuiet, "quiet", "q", false, "Quiet mode - no output, just exit code")
+	workflowsCmd.AddCommand(workflowsWatchCmd)
 
 	stepsCmd := &cobra.Command{
 		Use:   "steps",
@@ -454,6 +534,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	}
 	workflowsCmd.AddCommand(stepsCmd)
 
+	// Helper to get workflow ID from flag or config
+	getWorkflowID := func(svc *installs.Service) (string, error) {
+		wfID := workflowID
+		if wfID == "" {
+			wfID = svc.GetWorkflowID()
+		}
+		if wfID == "" {
+			return "", fmt.Errorf("workflow-id is required, use --workflow-id or 'workflows select' to set one")
+		}
+		return wfID, nil
+	}
+
 	stepsListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -461,11 +553,14 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:    "List all steps for a workflow",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowStepsList(cmd.Context(), workflowID, PrintJSON)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepsList(cmd.Context(), wfID, PrintJSON)
 		}),
 	}
-	stepsListCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	stepsListCmd.MarkFlagRequired("workflow-id")
+	stepsListCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
 	stepsCmd.AddCommand(stepsListCmd)
 
 	stepsGetCmd := &cobra.Command{
@@ -474,14 +569,16 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Get detailed information about a workflow step",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
 			stepID, _ := cmd.Flags().GetString("step-id")
-			return svc.WorkflowStepsGet(cmd.Context(), workflowID, stepID, PrintJSON)
+			return svc.WorkflowStepsGet(cmd.Context(), wfID, stepID, PrintJSON)
 		}),
 	}
-	stepsGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	stepsGetCmd.MarkFlagRequired("workflow-id")
-	stepsGetCmd.Flags().StringP("step-id", "s", "", "The ID of the step")
-	stepsGetCmd.MarkFlagRequired("step-id")
+	stepsGetCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsGetCmd.Flags().StringP("step-id", "s", "", "The ID of the step (defaults to latest)")
 	stepsCmd.AddCommand(stepsGetCmd)
 
 	stepsPlanCmd := &cobra.Command{
@@ -490,15 +587,17 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "View the deploy plan for a workflow step",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowStepPlan(cmd.Context(), id, workflowID, stepID, PrintJSON)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepPlan(cmd.Context(), id, wfID, stepID, PrintJSON)
 		}),
 	}
 	stepsPlanCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	stepsPlanCmd.MarkFlagRequired("install-id")
-	stepsPlanCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	stepsPlanCmd.MarkFlagRequired("workflow-id")
-	stepsPlanCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
-	stepsPlanCmd.MarkFlagRequired("step-id")
+	stepsPlanCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsPlanCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
 	stepsCmd.AddCommand(stepsPlanCmd)
 
 	stepsLogsCmd := &cobra.Command{
@@ -507,63 +606,98 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "View execution logs for a workflow step",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowStepLogs(cmd.Context(), id, workflowID, stepID, PrintJSON)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepLogs(cmd.Context(), id, wfID, stepID, PrintJSON)
 		}),
 	}
 	stepsLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	stepsLogsCmd.MarkFlagRequired("install-id")
-	stepsLogsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	stepsLogsCmd.MarkFlagRequired("workflow-id")
-	stepsLogsCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
-	stepsLogsCmd.MarkFlagRequired("step-id")
+	stepsLogsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsLogsCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
 	stepsCmd.AddCommand(stepsLogsCmd)
 
 	stepsApproveCmd := &cobra.Command{
 		Use:   "approve",
 		Short: "Approve a step",
-		Long:  "Approve a waiting workflow step",
+		Long:  "Approve a waiting workflow step. If step-id is not provided, uses the latest step and prompts for confirmation.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowStepApprove(cmd.Context(), workflowID, stepID, note, PrintJSON)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepApprove(cmd.Context(), id, wfID, stepID, note, skipConfirm, PrintJSON)
 		}),
 	}
-	stepsApproveCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	stepsApproveCmd.MarkFlagRequired("workflow-id")
-	stepsApproveCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
-	stepsApproveCmd.MarkFlagRequired("step-id")
+	stepsApproveCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install (used for plan display)")
+	stepsApproveCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsApproveCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
 	stepsApproveCmd.Flags().StringVarP(&note, "note", "n", "", "Optional note for the approval")
+	stepsApproveCmd.Flags().BoolVarP(&skipConfirm, "yes", "y", false, "Skip confirmation prompt when using latest step")
 	stepsCmd.AddCommand(stepsApproveCmd)
 
 	stepsRejectCmd := &cobra.Command{
 		Use:   "reject",
 		Short: "Reject a step",
-		Long:  "Reject a waiting workflow step",
+		Long:  "Reject a waiting workflow step. If step-id is not provided, uses the latest step and prompts for confirmation.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowStepReject(cmd.Context(), workflowID, stepID, note, PrintJSON)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepReject(cmd.Context(), id, wfID, stepID, note, skipConfirm, PrintJSON)
 		}),
 	}
-	stepsRejectCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	stepsRejectCmd.MarkFlagRequired("workflow-id")
-	stepsRejectCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
-	stepsRejectCmd.MarkFlagRequired("step-id")
+	stepsRejectCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install (used for plan display)")
+	stepsRejectCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsRejectCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
 	stepsRejectCmd.Flags().StringVarP(&note, "note", "n", "", "Optional note for the rejection")
+	stepsRejectCmd.Flags().BoolVarP(&skipConfirm, "yes", "y", false, "Skip confirmation prompt when using latest step")
 	stepsCmd.AddCommand(stepsRejectCmd)
 
 	stepsRetryCmd := &cobra.Command{
 		Use:   "retry",
 		Short: "Retry a step",
-		Long:  "Retry a failed workflow step",
+		Long:  "Retry a failed workflow step. If step-id is not provided, uses the latest step and prompts for confirmation.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowStepRetry(cmd.Context(), workflowID, stepID, PrintJSON)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowStepRetry(cmd.Context(), id, wfID, stepID, skipConfirm, PrintJSON)
 		}),
 	}
-	stepsRetryCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow")
-	stepsRetryCmd.MarkFlagRequired("workflow-id")
-	stepsRetryCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step")
-	stepsRetryCmd.MarkFlagRequired("step-id")
+	stepsRetryCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install (used for plan display)")
+	stepsRetryCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	stepsRetryCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
+	stepsRetryCmd.Flags().BoolVarP(&skipConfirm, "yes", "y", false, "Skip confirmation prompt when using latest step")
 	stepsCmd.AddCommand(stepsRetryCmd)
+
+	approveAll := false
+	promptApproval := false
+	setApprovalOptionCmd := &cobra.Command{
+		Use:   "set-approval-option",
+		Short: "Set workflow approval option",
+		Long:  "Set the approval option for a workflow (auto-approve all steps or prompt for each)",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			wfID, err := getWorkflowID(svc)
+			if err != nil {
+				return err
+			}
+			return svc.WorkflowSetApprovalOption(cmd.Context(), wfID, approveAll, promptApproval, PrintJSON)
+		}),
+	}
+	setApprovalOptionCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
+	setApprovalOptionCmd.Flags().BoolVar(&approveAll, "approve-all", false, "Auto-approve all steps in the workflow")
+	setApprovalOptionCmd.Flags().BoolVar(&promptApproval, "prompt", false, "Prompt for approval on each step")
+	setApprovalOptionCmd.MarkFlagsMutuallyExclusive("approve-all", "prompt")
+	workflowsCmd.AddCommand(setApprovalOptionCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
