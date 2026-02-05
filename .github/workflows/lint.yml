@@ -35,7 +35,7 @@ jobs:
         run: npm install -g @ast-grep/cli
 
       - name: Run ast-grep scan
-        run: sg scan services/ pkg/ --filter=error
+        run: sg scan services/ pkg/ --filter no-fmt-println
 
   update_status:
     name: update status
