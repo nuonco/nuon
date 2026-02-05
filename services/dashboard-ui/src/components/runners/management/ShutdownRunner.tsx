@@ -31,7 +31,7 @@ export const ShutdownRunnerButton = ({
       {...props}
     >
       {props?.isMenuButton ? null : <Icon variant="ArrowClockwise" />}
-      Shutdown runner
+      Restart process
       {props?.isMenuButton ? <Icon variant="ArrowClockwise" /> : null}
     </Button>
   )
@@ -59,13 +59,13 @@ export const ShutdownRunnerModal = ({
   useServerActionToast({
     data: isShutdown,
     error,
-    errorContent: <Text>Unable to shutdown runner.</Text>,
-    errorHeading: `Runner shutdown failed`,
+    errorContent: <Text>Unable to restart runner process.</Text>,
+    errorHeading: `Restart runner process failed`,
     onSuccess: () => {
       removeModal(props.modalId)
     },
-    successContent: <Text>Runner shutdown initiated successfully.</Text>,
-    successHeading: `Runner shutdown started`,
+    successContent: <Text>Restart runner process initiated successfully.</Text>,
+    successHeading: `Restart runner process started`,
   })
 
   const handleClose = () => {
@@ -119,7 +119,7 @@ export const ShutdownRunnerModal = ({
             theme="warn"
           >
             <Icon variant="ArrowClockwise" size="24" />
-            Shutdown runner?
+            Restart process?
           </Text>
         </div>
       }
@@ -127,12 +127,12 @@ export const ShutdownRunnerModal = ({
         children: isLoading ? (
           <span className="flex items-center gap-2">
             <Icon variant="Loading" />
-            Shutting down
+            Restarting
           </span>
         ) : (
           <span className="flex items-center gap-2">
             <Icon variant="ArrowClockwise" />
-            Shutdown runner
+            Restart process
           </span>
         ),
         disabled: isLoading,
@@ -145,16 +145,21 @@ export const ShutdownRunnerModal = ({
       <div className="flex flex-col gap-6">
         {error?.error ? (
           <Banner theme="error">
-            {error?.error || 'Unable to shutdown runner.'}
+            {error?.error || 'Unable to restart runner process.'}
           </Banner>
         ) : null}
 
         <div className="flex flex-col gap-4">
           <Text variant="base" weight="strong">
-            Shutdown this runner gracefully.
+            Restart this runner process gracefully.
           </Text>
-          <Text variant="body" theme="neutral" className="leading-relaxed max-w-md">
-            The runner will make a best effort to shut down after any queued jobs are complete.
+          <Text
+            variant="body"
+            theme="neutral"
+            className="leading-relaxed max-w-md"
+          >
+            The runner will make a best effort to restart after any queued jobs
+            are complete.
           </Text>
 
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
@@ -169,14 +174,16 @@ export const ShutdownRunnerModal = ({
               onChange={(e) => setForce(e.target.checked)}
               className="mt-1.5"
               labelProps={{
-                className: "hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !p-2 gap-4 max-w-none !items-start",
+                className:
+                  'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !p-2 gap-4 max-w-none !items-start',
                 labelText: (
                   <div className="flex flex-col gap-1">
                     <Text variant="base" weight="stronger">
                       Destroy instance
                     </Text>
                     <Text variant="subtext" theme="neutral">
-                      Immediately shutdown the runner, terminating any in-flight jobs. This has the potential for loss of state.
+                      Immediately shutdown the runner, terminating any in-flight
+                      jobs. This has the potential for loss of state.
                     </Text>
                   </div>
                 ),
