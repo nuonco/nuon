@@ -1,0 +1,218 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+)
+
+templ AccountDetail(account *app.Account, apps []*app.App, installs []*app.Install) {
+	@Layout("Account: " + account.Email) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			<!-- Breadcrumb navigation -->
+			<div class="mb-6">
+				<a href="../accounts" class="text-sm text-cyan hover:underline">
+					← Back to Accounts
+				</a>
+			</div>
+
+			<!-- Account Header -->
+			<div class="bg-card border border-border rounded-lg p-6 mb-6">
+				<div class="flex items-start justify-between">
+					<!-- Left side: Email and ID -->
+					<div class="flex-1">
+						<h1 class="text-2xl font-bold mb-2">{ account.Email }</h1>
+						<div class="flex items-center gap-2">
+							<span class="text-xs text-muted-foreground uppercase">ID:</span>
+							<span id={ "account-detail-id-" + account.ID } class="font-mono text-xs text-foreground">
+								{ account.ID }
+							</span>
+							@copybutton.CopyButton(copybutton.Props{
+								TargetID: "account-detail-id-" + account.ID,
+							})
+						</div>
+						if account.Subject != "" {
+							<div class="flex items-center gap-2 mt-2">
+								<span class="text-xs text-muted-foreground uppercase">Subject:</span>
+								<span class="font-mono text-xs text-foreground">{ account.Subject }</span>
+							</div>
+						}
+					</div>
+
+					<!-- Right side: Type and timestamps -->
+					<div class="text-right space-y-2">
+						<!-- Type -->
+						<div class="flex items-center justify-end gap-2">
+							<span class="text-xs text-muted-foreground uppercase">Type:</span>
+							<span class="font-mono text-xs uppercase">{ string(account.AccountType) }</span>
+						</div>
+
+						<!-- Timestamps -->
+						<div class="text-xs text-muted-foreground space-y-1">
+							<div>Created: <span class="font-mono">{ account.CreatedAt.Format("2006-01-02 15:04") }</span></div>
+							<div>Updated: <span class="font-mono">{ account.UpdatedAt.Format("2006-01-02 15:04") }</span></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Organizations Section -->
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Organizations
+					}
+					@card.Description() {
+						Organizations this user belongs to
+					}
+				}
+				@card.Content() {
+					if len(account.Orgs) == 0 {
+						<div class="text-sm text-muted-foreground">No organizations found.</div>
+					} else {
+						<div class="space-y-2">
+							for _, org := range account.Orgs {
+								<div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+									<div class="flex flex-col gap-1">
+										<a href={ templ.URL("../orgs/" + org.ID) } class="text-cyan hover:underline font-medium">
+											{ org.Name }
+										</a>
+										<div class="flex items-center gap-2">
+											<span id={ "org-id-" + org.ID } class="font-mono text-xs text-muted-foreground">{ org.ID }</span>
+											@copybutton.CopyButton(copybutton.Props{
+												TargetID: "org-id-" + org.ID,
+											})
+										</div>
+									</div>
+									<div class="text-xs text-muted-foreground">
+										<span class="font-mono uppercase">{ string(org.OrgType) }</span>
+									</div>
+								</div>
+							}
+						</div>
+					}
+				}
+			}
+
+			<!-- Apps Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Apps Created
+						}
+						@card.Description() {
+							Apps created by this user
+						}
+					}
+					@card.Content() {
+						if len(apps) == 0 {
+							<div class="text-sm text-muted-foreground">No apps created.</div>
+						} else {
+							<div class="space-y-2">
+								for _, app := range apps {
+									<div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+										<div class="flex flex-col gap-1">
+											<div class="font-medium">{ app.Name }</div>
+											<div class="flex items-center gap-2">
+												<span id={ "app-id-" + app.ID } class="font-mono text-xs text-muted-foreground">{ app.ID }</span>
+												@copybutton.CopyButton(copybutton.Props{
+													TargetID: "app-id-" + app.ID,
+												})
+											</div>
+										</div>
+										<div class="flex flex-col items-end gap-1">
+											<a href={ templ.URL("../orgs/" + app.OrgID) } class="text-cyan hover:underline text-sm">
+												{ app.Org.Name }
+											</a>
+											<div class="text-xs text-muted-foreground">
+												<span class="font-mono">{ app.CreatedAt.Format("2006-01-02 15:04") }</span>
+											</div>
+										</div>
+									</div>
+								}
+							</div>
+						}
+					}
+				}
+			</div>
+
+			<!-- Installs Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Installs Created
+						}
+						@card.Description() {
+							Installs created by this user
+						}
+					}
+					@card.Content() {
+						if len(installs) == 0 {
+							<div class="text-sm text-muted-foreground">No installs created.</div>
+						} else {
+							@table.Table() {
+								@table.Header() {
+									@table.Row() {
+										@table.Head() { Install }
+										@table.Head() { Organization }
+										@table.Head() { App }
+										@table.Head() { Runner }
+										@table.Head() { Sandbox }
+										@table.Head() { Components }
+										@table.Head() { Created At }
+									}
+								}
+								@table.Body() {
+									for _, install := range installs {
+										@table.Row() {
+											@table.Cell() {
+												<div class="flex flex-col gap-1">
+													<a href={ templ.URL("../installs/" + install.ID) } class="text-cyan hover:underline">
+														{ install.Name }
+													</a>
+													<div class="flex items-center gap-2">
+														<span id={ "install-id-" + install.ID } class="font-mono text-xs text-muted-foreground">{ install.ID }</span>
+														@copybutton.CopyButton(copybutton.Props{
+															TargetID: "install-id-" + install.ID,
+														})
+													</div>
+												</div>
+											}
+											@table.Cell() {
+												<a href={ templ.URL("../orgs/" + install.OrgID) } class="text-cyan hover:underline">
+													{ install.Org.Name }
+												</a>
+											}
+											@table.Cell(table.CellProps{Class: "text-sm"}) {
+												{ install.App.Name }
+											}
+											@table.Cell() {
+												@status.StatusAutoSimple(string(install.RunnerStatus))
+											}
+											@table.Cell() {
+												@status.StatusAutoSimple(string(install.SandboxStatus))
+											}
+											@table.Cell() {
+												@status.StatusAutoSimple(string(install.CompositeComponentStatus))
+											}
+											@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+												{ install.CreatedAt.Format("2006-01-02 15:04") }
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			</div>
+		</div>
+		@copybutton.Script()
+		@popover.Script()
+	}
+}
