@@ -65,11 +65,6 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	auth := api.Group("/v1/auth")
-	{
-		auth.POST("/identity-providers", s.AdminCreateIdentityProvider)
-		auth.PATCH("/identity-providers/:identity_provider_id", s.AdminPatchIdentityProvider)
-	}
 	return nil
 }
 
