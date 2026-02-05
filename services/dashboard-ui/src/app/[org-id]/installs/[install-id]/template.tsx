@@ -102,7 +102,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
                 </Text>
               </HeadingGroup>
 
-              <div className="flex flex-wrap gap-4 md:gap-8">
+              <div className="flex items-start flex-wrap gap-4 md:gap-8">
                 <TemporalLink namespace="installs" eventLoopId={install?.id} />
                 {isManagedByConfig && (
                   <LabeledValue label="Managed By">
