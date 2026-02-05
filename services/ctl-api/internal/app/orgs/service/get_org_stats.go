@@ -52,7 +52,6 @@ func (s *service) getOrgStats(ctx context.Context, orgID string) (*OrgStatsRespo
 
 	var installCount int64
 	var appCount int64
-	fmt.Println("Getting stats for org:", orgID)
 	s.db.WithContext(ctx).
 		Model(&app.App{}).
 		Where("org_id = ?", orgID).
@@ -62,8 +61,6 @@ func (s *service) getOrgStats(ctx context.Context, orgID string) (*OrgStatsRespo
 		Model(&app.Install{}).
 		Where("org_id = ?", orgID).
 		Count(&installCount)
-
-	fmt.Println("AppCount:", appCount, "InstallCount:", installCount)
 
 	installNames := []string{}
 	rows, err := s.db.WithContext(ctx).

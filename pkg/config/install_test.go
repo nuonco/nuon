@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -601,7 +600,6 @@ enabled = "true"
 			require.Equal(t, len(tc.expectedInstall.InputGroups), len(parsedInstall.InputGroups),
 				"input group count mismatch")
 			for i, expectedGroup := range tc.expectedInstall.InputGroups {
-				fmt.Println(parsedInstall.InputGroups[i].Inputs)
 				assert.Equal(t, expectedGroup.Inputs, parsedInstall.InputGroups[i].Inputs,
 					"InputGroup[%d].Inputs mismatch", i)
 			}

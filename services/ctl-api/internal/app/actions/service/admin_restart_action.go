@@ -33,8 +33,6 @@ func (s *service) RestartAction(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Println(actionWorkflowID)
-
 	actionWorkflow, err := s.getActionWorkflow(ctx, actionWorkflowID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))

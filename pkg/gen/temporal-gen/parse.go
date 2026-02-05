@@ -31,8 +31,7 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) {
 		Mode:    packages.NeedName | packages.NeedCompiledGoFiles | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax,
 	}, dir)
 	if err != nil {
-		fmt.Println("Error parsing package:", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("error parsing package: %w", err)
 	}
 
 	var walkerr error
@@ -73,8 +72,7 @@ func parseDir(ctx context.Context, dir string) ([]*BaseFile, error) {
 								// TODO(sdboyer) enforce that first param is context
 								case "as-activity":
 									if len(x.Type.Params.List) < 2 {
-										fmt.Println(astfmt.Sprint(x.Type.Params.List))
-										walkerr = withPos(fset, x.Type.Params.Pos(), errors.New("base func must have at least two params, the first being ctx"))
+										walkerr = withPos(fset, x.Type.Params.Pos(), fmt.Errorf("base func must have at least two params, the first being ctx: %s", astfmt.Sprint(x.Type.Params.List)))
 										return false
 									}
 									afn, err := extractAsActivityFn(fset, x, pkg)

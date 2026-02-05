@@ -300,6 +300,15 @@ When working with Go code in this repository, agents should follow these practic
 - Add appropriate logging with structured fields
 - Ensure proper imports and avoid unused dependencies
 
+### Logging
+
+**Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.
+
+| Component | Logger |
+|-----------|--------|
+| `pkg/` with logger access | `*zap.Logger` passed in |
+| `pkg/` init functions | Standard `log` package |
+
 ### API Development
 - Use proper Swagger annotations for all HTTP endpoints
 - Include both `@Security APIKey` and `@Security OrgID` for authenticated endpoints

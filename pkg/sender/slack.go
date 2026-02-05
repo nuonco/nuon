@@ -80,8 +80,6 @@ func (s *slackNotifier) Send(ctx context.Context, msg string) error {
 		return err
 	}
 
-	fmt.Println(string(bs))
-
 	req, err := http.NewRequestWithContext(ctx, "POST", s.webhookURL, bytes.NewBuffer(bs))
 	if err != nil {
 		return err
