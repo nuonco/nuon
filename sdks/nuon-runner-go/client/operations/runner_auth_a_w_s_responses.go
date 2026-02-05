@@ -65,7 +65,7 @@ RunnerAuthAWSOK describes a response with status code 200, with default header v
 OK
 */
 type RunnerAuthAWSOK struct {
-	Payload *models.ServiceRunnerAuthAWSResponse
+	Payload *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSResponse
 }
 
 // IsSuccess returns true when this runner auth a w s o k response has a 2xx status code
@@ -108,13 +108,13 @@ func (o *RunnerAuthAWSOK) String() string {
 	return fmt.Sprintf("[POST /v1/runner-auth/aws][%d] runnerAuthAWSOK %s", 200, payload)
 }
 
-func (o *RunnerAuthAWSOK) GetPayload() *models.ServiceRunnerAuthAWSResponse {
+func (o *RunnerAuthAWSOK) GetPayload() *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSResponse {
 	return o.Payload
 }
 
 func (o *RunnerAuthAWSOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ServiceRunnerAuthAWSResponse)
+	o.Payload = new(models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
