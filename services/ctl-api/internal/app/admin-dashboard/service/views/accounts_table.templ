@@ -32,7 +32,9 @@ templ AccountsTable(accounts []*app.Account) {
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<span class="text-foreground">{ account.Email }</span>
+									<a href={ templ.URL("accounts/" + account.ID) } class="text-cyan hover:underline">
+										{ account.Email }
+									</a>
 									<div class="flex items-center gap-2">
 										<span id={ "account-id-" + account.ID } class="font-mono text-xs text-muted-foreground">{ account.ID }</span>
 										@copybutton.CopyButton(copybutton.Props{
