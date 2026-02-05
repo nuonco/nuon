@@ -30,7 +30,7 @@ export const ShutdownMngRunnerButton = ({
       {...props}
     >
       {props?.isMenuButton ? null : <Icon variant="ArrowClockwise" />}
-      Shutdown runner
+      Restart process
       {props?.isMenuButton ? <Icon variant="ArrowClockwise" /> : null}
     </Button>
   )
@@ -56,15 +56,15 @@ export const ShutdownMngRunnerModal = ({
   useServerActionToast({
     data: isShutdown,
     error,
-    errorContent: <Text>Unable to shutdown managed runner.</Text>,
-    errorHeading: `Managed runner shutdown failed`,
+    errorContent: <Text>Unable to restart managed runner process.</Text>,
+    errorHeading: `Restart managed runner process failed`,
     onSuccess: () => {
       removeModal(props.modalId)
     },
     successContent: (
-      <Text>Managed runner shutdown initiated successfully.</Text>
+      <Text>Restart managed runner process initiated successfully.</Text>
     ),
-    successHeading: `Managed runner shutdown started`,
+    successHeading: `Restart managed runner process started`,
   })
 
   const handleClose = () => {
@@ -116,7 +116,7 @@ export const ShutdownMngRunnerModal = ({
             theme="warn"
           >
             <Icon variant="ArrowClockwise" size="24" />
-            Shutdown runner?
+            Restart process?
           </Text>
         </div>
       }
@@ -124,12 +124,12 @@ export const ShutdownMngRunnerModal = ({
         children: isLoading ? (
           <span className="flex items-center gap-2">
             <Icon variant="Loading" />
-            Shutting down
+            Restarting
           </span>
         ) : (
           <span className="flex items-center gap-2">
             <Icon variant="ArrowClockwise" />
-            Shutdown runner
+            Restart process
           </span>
         ),
         disabled: isLoading,
@@ -142,27 +142,27 @@ export const ShutdownMngRunnerModal = ({
       <div className="flex flex-col gap-6">
         {error?.error ? (
           <Banner theme="error">
-            {error?.error || 'Unable to shutdown managed runner.'}
+            {error?.error || 'Unable to restart managed runner process.'}
           </Banner>
         ) : null}
 
         <div className="flex flex-col gap-4">
           <Text variant="base" weight="strong">
-            Shutdown this managed runner.
+            Restart this managed runner process.
           </Text>
           <Text
             variant="body"
             theme="neutral"
             className="leading-relaxed max-w-md"
           >
-            The managed runner will be gracefully shut down and all resources
-            will be cleaned up automatically.
+            The managed runner will be gracefully restarted after completing any
+            queued jobs.
           </Text>
 
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
-            <li>All running jobs will be completed before shutdown</li>
-            <li>The runner will be removed from the managed pool</li>
-            <li>Resources will be automatically cleaned up</li>
+            <li>All running jobs will be completed before restart</li>
+            <li>Causes all jobs to queue while the runner restarts</li>
+            <li>Any new version updates will be applied</li>
           </ul>
         </div>
       </div>
