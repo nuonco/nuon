@@ -31,13 +31,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install ast-grep
-        run: |
-          curl -fsSL https://ast-grep.github.io/install.sh | bash -s -- --prefix /usr/local
-          echo "/usr/local/bin" >> $GITHUB_PATH
-
       - name: Run ast-grep scan
-        run: sg scan services/ pkg/ --report-style=short
+        uses: ast-grep/action@v1.4
+        with:
+          paths: services/ pkg/
 
   update_status:
     name: update status
