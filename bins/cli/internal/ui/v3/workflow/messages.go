@@ -17,6 +17,15 @@ func tick() tea.Msg {
 	return tickMsg{}
 }
 
+// exitCountdownTickMsg is sent every second during the exit countdown
+type exitCountdownTickMsg struct{}
+
+func exitCountdownTick() tea.Cmd {
+	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
+		return exitCountdownTickMsg{}
+	})
+}
+
 type workflowFetchedMsg struct {
 	workflow *models.AppWorkflow
 	stack    *models.AppInstallStack
@@ -45,15 +54,31 @@ type createWorkflowStepApprovalResponseMsg struct {
 	err                          error
 }
 
-func (m model) createWorkflowStepApprovalResponseCmd() tea.Msg {
-	// This runs in a goroutine automatically
-	req := &models.ServiceCreateWorkflowStepApprovalResponseRequest{
-		ResponseType: models.AppWorkflowStepResponseTypeApprove,
-		Note:         "",
+// makeApproveStepCmd creates a command that captures the necessary values upfront
+// so the UI can update immediately while the API call runs async
+func (m model) makeApproveStepCmd() tea.Cmd {
+	// Guard against nil selectedStep or Approval
+	if m.selectedStep == nil || m.selectedStep.Approval == nil {
+		return func() tea.Msg {
+			return createWorkflowStepApprovalResponseMsg{err: fmt.Errorf("no step selected for approval")}
+		}
 	}
-	approvalResponseResponse, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, m.selectedStep.ID, m.selectedStep.Approval.ID, req)
-	m.setLogMessage(fmt.Sprintf("[%s] step approved %s", approvalResponseResponse.Type, approvalResponseResponse.ID), "success")
-	return createWorkflowStepApprovalResponseMsg{selectedStepApprovalResponse: approvalResponseResponse, err: err}
+
+	// Capture values needed for the API call
+	api := m.api
+	ctx := m.ctx
+	workflowID := m.workflowID
+	stepID := m.selectedStep.ID
+	approvalID := m.selectedStep.Approval.ID
+
+	return func() tea.Msg {
+		req := &models.ServiceCreateWorkflowStepApprovalResponseRequest{
+			ResponseType: models.AppWorkflowStepResponseTypeApprove,
+			Note:         "",
+		}
+		resp, err := api.CreateWorkflowStepApprovalResponse(ctx, workflowID, stepID, approvalID, req)
+		return createWorkflowStepApprovalResponseMsg{selectedStepApprovalResponse: resp, err: err}
+	}
 }
 
 type cancelWorkflowMsg struct {

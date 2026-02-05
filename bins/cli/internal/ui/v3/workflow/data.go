@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -85,6 +86,155 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 
 	m.populateStepDetailView(false)
 	m.loading = false
+
+	// In watch mode, check for action-required conditions and set exit
+	if m.watchMode {
+		m.checkWatchModeExit()
+	}
+}
+
+// checkWatchModeExit checks if we should exit in watch mode due to action-required conditions
+func (m *model) checkWatchModeExit() {
+	if m.workflow == nil {
+		return
+	}
+
+	// Skip exit checks while an action is being processed
+	if m.actionInFlight || m.approvingStep {
+		return
+	}
+
+	// Check for approval-pending steps
+	for _, step := range m.workflow.Steps {
+		if step.Approval != nil && step.Status != nil {
+			if step.Status.Status == models.AppStatusApprovalDashAwaiting && !step.Finished {
+				m.exitCode = ExitCodeApprovalRequired
+				m.exitReason = exitReason{
+					stepName: step.Name,
+					stepID:   step.ID,
+				}
+				m.triggerExit()
+				return
+			}
+		}
+	}
+
+	// Check for failed steps (error, cancelled, discarded)
+	// We check for error/cancelled/discarded first to report the actual failure
+	failedStatuses := []models.AppStatus{
+		models.AppStatusError,
+		models.AppStatusCancelled,
+		models.AppStatusDiscarded,
+	}
+	for _, step := range m.workflow.Steps {
+		if step.Status != nil && generics.SliceContains(step.Status.Status, failedStatuses) {
+			m.exitCode = ExitCodeStepFailed
+			m.exitReason = exitReason{
+				stepName: step.Name,
+				stepID:   step.ID,
+			}
+			if step.Status.StatusHumanDescription != "" {
+				m.exitReason.errorMessage = step.Status.StatusHumanDescription
+			}
+			m.triggerExit()
+			return
+		}
+	}
+
+	// Check for not-attempted steps - find the last processed step and report its status
+	hasNotAttempted := false
+	var firstNotAttemptedIdx int64 = -1
+	for _, step := range m.workflow.Steps {
+		if step.Status != nil && step.Status.Status == models.AppStatusNotDashAttempted && step.Finished {
+			hasNotAttempted = true
+			if firstNotAttemptedIdx == -1 || step.Idx < firstNotAttemptedIdx {
+				firstNotAttemptedIdx = step.Idx
+			}
+		}
+	}
+	if hasNotAttempted {
+		// Find the last processed step (step before first not-attempted, or highest processed index)
+		var lastProcessed *models.AppWorkflowStep
+		for _, step := range m.workflow.Steps {
+			if step.Status == nil {
+				continue
+			}
+			// If we have a not-attempted step, look for the step just before it
+			if firstNotAttemptedIdx > 0 && step.Idx == firstNotAttemptedIdx-1 {
+				lastProcessed = step
+				break
+			}
+			// Fallback: find highest index step that was processed
+			status := step.Status.Status
+			if status != models.AppStatusNotDashAttempted && status != models.AppStatusPending {
+				if lastProcessed == nil || step.Idx > lastProcessed.Idx {
+					lastProcessed = step
+				}
+			}
+		}
+
+		if lastProcessed != nil && lastProcessed.Status != nil {
+			m.exitCode = ExitCodeStepFailed
+			m.exitReason = exitReason{
+				stepName: lastProcessed.Name,
+				stepID:   lastProcessed.ID,
+			}
+			if lastProcessed.Status.StatusHumanDescription != "" {
+				m.exitReason.errorMessage = lastProcessed.Status.StatusHumanDescription
+			} else {
+				m.exitReason.errorMessage = fmt.Sprintf("Step ended with status: %s", lastProcessed.Status.Status)
+			}
+			m.triggerExit()
+			return
+		}
+	}
+
+	// Check if workflow was cancelled
+	if m.workflow.Status != nil && m.workflow.Status.Status == models.AppStatusCancelled {
+		m.exitCode = ExitCodeCancelled
+		m.exitReason = exitReason{workflowStatus: "cancelled"}
+		m.triggerExit()
+		return
+	}
+
+	// Check if all steps are finished (success case)
+	// We rely on step statuses rather than workflow status to avoid premature exit
+	_, pending, _ := common.CalculateStepProgress(m.workflow.Steps)
+	if pending == 0 && len(m.workflow.Steps) > 0 {
+		m.exitCode = ExitCodeSuccess
+		m.exitReason = exitReason{workflowStatus: "success"}
+		m.triggerExit()
+	}
+}
+
+// triggerExit either starts the countdown or quits immediately based on exitWait
+func (m *model) triggerExit() {
+	// Don't trigger exit while approving
+	if m.approvingStep {
+		return
+	}
+	if m.exitWait > 0 && !m.exitWaiting {
+		m.exitWaiting = true
+		m.exitCountdown = m.exitWait
+	} else if m.exitWait == 0 {
+		m.quitting = true
+	}
+}
+
+// resetExitCountdown resets the exit countdown when user interacts with the TUI
+func (m *model) resetExitCountdown() {
+	if m.exitWaiting {
+		m.exitCountdown = m.exitWait
+	}
+}
+
+// cancelExitCountdown cancels the exit countdown (e.g., when a new step begins)
+func (m *model) cancelExitCountdown() {
+	m.exitWaiting = false
+	m.exitCountdown = 0
+	m.exitCode = 0
+	m.exitReason = exitReason{}
+	m.actionInFlight = true // skip exit checks until action response is received
 }
 
 func (m *model) handleStackFetched(msg stackFetchedMsg) {
@@ -105,6 +255,8 @@ func (m *model) handleWorkflowStepApprovalResponseCreated(msg createWorkflowStep
 	m.selectedStepApprovalResponse = resp
 	m.loading = false
 	m.stepApprovalConf = false
+	m.approvingStep = false
+	m.actionInFlight = false // action completed, re-enable exit checks
 	// after a step is approved, we want to immediately fetch the workflow to get the upated version
 	return m.fetchWorkflowCmd
 }
@@ -118,6 +270,7 @@ func (m *model) handleCancelWorkflow(msg cancelWorkflowMsg) tea.Cmd {
 	m.setLogMessage("workflow has been cancelled", "error")
 	m.resetSelected()
 	m.resetWorkflowCancelationConf()
+	m.actionInFlight = false // action completed, re-enable exit checks
 	return m.fetchWorkflowCmd
 }
 
@@ -127,6 +280,8 @@ func (m *model) handleApproveAll(msg approveAllMsg) []tea.Cmd {
 		m.setLogMessage(fmt.Sprintf("%s", msg.err), "error")
 	}
 	m.workflowApprovalConf = false
+	m.approvingStep = false
+	m.actionInFlight = false // action completed, re-enable exit checks
 	m.populateStepDetailView(true)
 	if msg.approved > 0 {
 		m.setLogMessage(fmt.Sprintf("approved %02d workflows", msg.approved), "success")

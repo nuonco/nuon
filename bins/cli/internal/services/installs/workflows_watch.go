@@ -21,6 +21,7 @@ const (
 	ExitCodeFailed           = 1
 	ExitCodeCancelled        = 2
 	ExitCodeApprovalRequired = 3
+	ExitCodeStepFailed       = 4
 	ExitCodeInterrupt        = 130
 )
 
@@ -96,6 +97,23 @@ func (s *Service) WorkflowsWatch(ctx context.Context, installID, workflowID stri
 			return ExitCodeApprovalRequired, nil
 		}
 
+		// Check for failed steps
+		failedStep := findFailedStep(workflow.Steps)
+		if failedStep != nil {
+			if asJSON {
+				ui.PrintJSON(map[string]interface{}{
+					"workflow":    workflow,
+					"failed_step": failedStep,
+					"status":      "step_failed",
+				})
+			} else if !quiet {
+				s.renderWorkflowStatus(workflow, isTTY, firstRender)
+				fmt.Println()
+				fmt.Printf("❌ Step failed: %s (%s)\n", failedStep.Name, failedStep.ID)
+			}
+			return ExitCodeStepFailed, nil
+		}
+
 		// Check for terminal states
 		if workflow.Status != nil {
 			status := workflow.Status.Status
@@ -165,6 +183,16 @@ func findApprovalPendingStep(steps []*models.AppWorkflowStep) *models.AppWorkflo
 			if step.Status.Status == models.AppStatusApprovalDashAwaiting && !step.Finished {
 				return step
 			}
+		}
+	}
+	return nil
+}
+
+// findFailedStep returns the first step that has failed
+func findFailedStep(steps []*models.AppWorkflowStep) *models.AppWorkflowStep {
+	for _, step := range steps {
+		if step.Status != nil && step.Status.Status == models.AppStatusError {
+			return step
 		}
 	}
 	return nil
