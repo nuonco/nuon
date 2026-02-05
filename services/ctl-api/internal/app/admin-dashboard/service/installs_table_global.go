@@ -13,8 +13,9 @@ import (
 // InstallsTableGlobal returns just the installs table for htmx polling
 func (s *service) InstallsTableGlobal(c *gin.Context) {
 	ctx := c.Request.Context()
+	search := c.Query("search")
 
-	installs, err := s.getInstalls(ctx)
+	installs, err := s.getInstalls(ctx, search)
 	if err != nil {
 		s.l.Error("failed to get installs for table", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})

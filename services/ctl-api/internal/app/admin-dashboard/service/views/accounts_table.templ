@@ -13,6 +13,7 @@ templ AccountsTable(accounts []*app.Account) {
 		hx-get="accounts/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
+		hx-include="[name='search']"
 	>
 		if len(accounts) == 0 {
 			<div class="text-sm text-muted-foreground">No accounts found.</div>

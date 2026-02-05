@@ -13,8 +13,9 @@ import (
 // OrgsTable returns just the orgs table for htmx polling
 func (s *service) OrgsTable(c *gin.Context) {
 	ctx := c.Request.Context()
+	search := c.Query("search")
 
-	orgs, err := s.getOrgs(ctx)
+	orgs, err := s.getOrgs(ctx, search)
 	if err != nil {
 		s.l.Error("failed to get orgs for table", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})

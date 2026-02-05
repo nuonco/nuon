@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,9 @@ import (
 
 func (s *service) Installs(c *gin.Context) {
 	ctx := c.Request.Context()
+	search := c.Query("search")
 
-	installs, err := s.getInstalls(ctx)
+	installs, err := s.getInstalls(ctx, search)
 	if err != nil {
 		s.l.Error("failed to get installs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})
@@ -27,13 +29,25 @@ func (s *service) Installs(c *gin.Context) {
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getInstalls(ctx context.Context) ([]*app.Install, error) {
+func (s *service) getInstalls(ctx context.Context, search string) ([]*app.Install, error) {
 	var installs []*app.Install
 
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("App").
-		Preload("RunnerGroup").
+		Preload("RunnerGroup")
+
+	// Apply search filter if provided
+	if search != "" {
+		search = strings.TrimSpace(search)
+		query = query.Where(
+			"name ILIKE ? OR id = ?",
+			"%"+search+"%",
+			search,
+		)
+	}
+
+	res := query.
 		Order("created_at desc").
 		Limit(100).
 		Find(&installs)

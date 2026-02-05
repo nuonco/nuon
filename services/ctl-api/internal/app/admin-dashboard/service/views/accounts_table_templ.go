@@ -36,7 +36,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"accounts-table\" hx-get=\"accounts/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"accounts-table\" hx-get=\"accounts/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -268,7 +268,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var13 templ.SafeURL
 								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("accounts/" + account.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 35, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 36, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 								if templ_7745c5c3_Err != nil {
@@ -281,7 +281,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var14 string
 								templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(account.Email)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 36, Col: 25}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 37, Col: 25}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 								if templ_7745c5c3_Err != nil {
@@ -294,7 +294,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var15 string
 								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("account-id-" + account.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 39, Col: 47}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 40, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {
@@ -307,7 +307,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var16 string
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(account.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 39, Col: 110}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 40, Col: 110}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -361,7 +361,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 									var templ_7745c5c3_Var18 templ.SafeURL
 									templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + org.ID))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 49, Col: 47}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 50, Col: 47}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 									if templ_7745c5c3_Err != nil {
@@ -374,7 +374,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 									var templ_7745c5c3_Var19 string
 									templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(org.Name)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 50, Col: 21}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 51, Col: 21}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 									if templ_7745c5c3_Err != nil {
@@ -420,7 +420,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var21 string
 								templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(string(account.AccountType))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 59, Col: 37}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 60, Col: 37}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 								if templ_7745c5c3_Err != nil {
@@ -451,7 +451,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var23 string
 								templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(account.CreatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 62, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 63, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 								if templ_7745c5c3_Err != nil {
@@ -482,7 +482,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var25 string
 								templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(account.UpdatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 65, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 66, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 								if templ_7745c5c3_Err != nil {

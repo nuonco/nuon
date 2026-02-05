@@ -14,6 +14,7 @@ templ InstallsTableGlobal(installs []*app.Install) {
 		hx-get="installs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
+		hx-include="[name='search']"
 	>
 		if len(installs) == 0 {
 			<div class="text-sm text-muted-foreground">No installs found.</div>
