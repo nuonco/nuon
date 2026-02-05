@@ -21,6 +21,18 @@ type GenerateWorkflowStepsRequest struct {
 func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWorkflowStepsRequest) ([]*app.WorkflowStep, error) {
 	fid := req.WorkflowID
 
+	// Check if steps already exist - return them for idempotency.
+	// This is critical for continue-as-new semantics where this child workflow
+	// may be called multiple times across workflow runs.
+	existingSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, fid)
+	if err == nil && len(existingSteps) > 0 {
+		result := make([]*app.WorkflowStep, len(existingSteps))
+		for i := range existingSteps {
+			result[i] = &existingSteps[i]
+		}
+		return result, nil
+	}
+
 	wflw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, fid)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get workflow by ID %s: %w", fid, err)
