@@ -50,14 +50,14 @@ type PolicyInputRef struct {
 type PolicyReport struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
-	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedBy   Account               `gorm:"foreignKey:CreatedByID;references:ID" json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
-	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
+	Org   Org    `gorm:"foreignKey:OrgID;references:ID" json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// Denormalized context for filtering
 	AppID       string  `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
@@ -70,20 +70,20 @@ type PolicyReport struct {
 	InstallName   *string `json:"install_name,omitzero" gorm:"default:null" temporaljson:"install_name,omitzero,omitempty"`
 	ComponentName *string `json:"component_name,omitzero" gorm:"default:null" temporaljson:"component_name,omitzero,omitempty"`
 
-	// Optional context references
-	WorkflowStepPolicyValidationID *string `json:"workflow_step_policy_validation_id,omitzero" gorm:"index" temporaljson:"workflow_step_policy_validation_id,omitzero,omitempty"`
-	RunnerJobID                    *string `json:"runner_job_id,omitzero" gorm:"index" temporaljson:"runner_job_id,omitzero,omitempty"`
+	// Optional context references (indexes defined in Indexes())
+	WorkflowStepPolicyValidationID *string `json:"workflow_step_policy_validation_id,omitzero" temporaljson:"workflow_step_policy_validation_id,omitzero,omitempty"`
+	RunnerJobID                    *string `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
 
-	// Polymorphic relationship to the impacted Nuon resource
-	OwnerID   string                `json:"owner_id,omitzero" gorm:"type:text;notnull;index:idx_policy_reports_owner" temporaljson:"owner_id,omitzero,omitempty"`
-	OwnerType PolicyReportOwnerType `json:"owner_type,omitzero" gorm:"type:text;notnull;index:idx_policy_reports_owner" temporaljson:"owner_type,omitzero,omitempty"`
+	// Polymorphic relationship to the impacted Nuon resource (indexes defined in Indexes())
+	OwnerID   string                `json:"owner_id,omitzero" gorm:"type:varchar(26);notnull;check:owner_id_checker,char_length(owner_id)=26" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType PolicyReportOwnerType `json:"owner_type,omitzero" gorm:"type:text;notnull;check:owner_type_checker,owner_type IN ('install_deploys','install_sandbox_runs','component_builds')" temporaljson:"owner_type,omitzero,omitempty"`
 
 	// Canonical policy evaluation data
 	EvaluatedAt time.Time         `json:"evaluated_at,omitzero" gorm:"notnull" temporaljson:"evaluated_at,omitzero,omitempty"`
-	Violations  []PolicyViolation `json:"violations,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"violations,omitzero,omitempty"`
-	PolicyIDs   []string          `json:"policy_ids,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"policy_ids,omitzero,omitempty"`
-	Policies    []PolicyResult    `json:"policies,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"policies,omitzero,omitempty"`
-	Inputs      []PolicyInputRef  `json:"inputs,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"inputs,omitzero,omitempty"`
+	Violations  []PolicyViolation `json:"violations,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"violations,omitzero,omitempty"`
+	PolicyIDs   []string          `json:"policy_ids,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"policy_ids,omitzero,omitempty"`
+	Policies    []PolicyResult    `json:"policies,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"policies,omitzero,omitempty"`
+	Inputs      []PolicyInputRef  `json:"inputs,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"inputs,omitzero,omitempty"`
 
 	// Summary counts for list views
 	DenyCount int `json:"deny_count" gorm:"notnull;default:0" temporaljson:"deny_count,omitzero,omitempty"`
@@ -108,6 +108,29 @@ func (r *PolicyReport) Indexes(db *gorm.DB) []migrations.Index {
 				"app_id",
 				"install_id",
 				"owner_type",
+			},
+		},
+		{
+			Name: indexes.Name(db, &PolicyReport{}, "owner_latest"),
+			Columns: []string{
+				"org_id",
+				"owner_type",
+				"owner_id",
+				"evaluated_at",
+			},
+		},
+		{
+			Name: indexes.Name(db, &PolicyReport{}, "workflow_step_policy_validation_id"),
+			Columns: []string{
+				"org_id",
+				"workflow_step_policy_validation_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &PolicyReport{}, "runner_job_id"),
+			Columns: []string{
+				"org_id",
+				"runner_job_id",
 			},
 		},
 	}
