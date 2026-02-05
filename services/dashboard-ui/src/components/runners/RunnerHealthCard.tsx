@@ -40,10 +40,7 @@ export const RunnerHealthCard = ({
       <Text variant="base" weight="strong">
         Health status
       </Text>
-      <div className="flex flex-col gap-6 w-full">
-        <Text variant="base">
-          Last hour: {getHealthyPercentage(healthchecks)}% healthy
-        </Text>
+      <div className="flex flex-col gap-6 w-full">       
         <div className="flex items-center gap-0.5">
           {healthchecks.map((healthcheck) => (
             <Tooltip

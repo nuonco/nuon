@@ -23,7 +23,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   const { data: org } = await getOrg({ orgId })
 
   return {
-    title: `Build runner | ${org.name} | Nuon`,
+    title: `Builds | ${org.name} | Nuon`,
   }
 }
 
@@ -57,14 +57,14 @@ export default async function OrgRunner({ params, searchParams }) {
           },
           {
             path: `/${orgId}/runner`,
-            text: 'Runner',
+            text: 'Builds',
           },
         ]}
       />
       <PageHeader>
         <HeadingGroup>
           <Text variant="h3" weight="strong" level={1}>
-            Build runner
+            Builds
           </Text>
           <Text theme="neutral">
             View your organizations build runner performance and activities.
