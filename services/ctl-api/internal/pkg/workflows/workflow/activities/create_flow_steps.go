@@ -45,8 +45,8 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 		return nil, errors.Wrap(res.Error, "unable to get workflow steps")
 	}
 
-	if len(existingSteps) == len(reqs.Steps) {
-		// all steps already exist, nothing to do
+	if len(existingSteps) > 0 {
+		// steps already exist, return them for idempotency
 		return existingSteps, nil
 	}
 
