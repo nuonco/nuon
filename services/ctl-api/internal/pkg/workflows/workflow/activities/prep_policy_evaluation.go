@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/pkg/types/components/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 )
 
 type PrepPolicyEvaluationRequest struct {
@@ -154,23 +155,8 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 	}, nil
 }
 
-type policyContext struct {
-	AppConfigID      string
-	OrgID            string
-	AppID            string
-	InstallID        *string
-	InstallSandboxID *string
-	ComponentID      *string
-	ComponentBuildID *string
-	ComponentType    app.ComponentType
-	ComponentName    string
-	IsSandbox        bool
-
-	// Human-readable names for display in reports
-	OrgName     string
-	AppName     string
-	InstallName string
-}
+// policyContext is an alias for the shared PolicyEvaluationContext type.
+type policyContext = policyhelpers.PolicyEvaluationContext
 
 func (a *Activities) resolvePolicyContext(ctx context.Context, stepTargetID, stepTargetType string) (*policyContext, error) {
 	switch app.WorkflowStepTargetType(stepTargetType) {
@@ -187,8 +173,6 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 	var deploy app.InstallDeploy
 	res := a.db.WithContext(ctx).
 		Preload("InstallComponent.Install.App.Org").
-		Preload("InstallComponent.Install.App").
-		Preload("InstallComponent.Install").
 		Preload("InstallComponent.Component").
 		First(&deploy, "id = ?", deployID)
 	if res.Error != nil {
@@ -215,8 +199,6 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 	var sandboxRun app.InstallSandboxRun
 	res := a.db.WithContext(ctx).
 		Preload("Install.App.Org").
-		Preload("Install.App").
-		Preload("Install").
 		First(&sandboxRun, "id = ?", sandboxRunID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get sandbox run")

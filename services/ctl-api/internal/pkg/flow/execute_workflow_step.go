@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -779,22 +780,9 @@ func (c *WorkflowConductor[DomainSignal]) separateViolations(violations []activi
 
 // checkPolicies prepares policy evaluation and then evaluates all applicable policies in parallel.
 // It returns all violations found across all policies.
-type policyEvaluationContext struct {
-	OrgID            string
-	AppID            string
-	InstallID        *string
-	InstallSandboxID *string
-	ComponentID      *string
-	ComponentBuildID *string
-	PolicyIDs        []string
-	InputCount       int
-
-	// Human-readable names for display in reports
-	OrgName       string
-	AppName       string
-	InstallName   string
-	ComponentName string
-}
+//
+// policyEvaluationContext is an alias for the shared PolicyEvaluationContext type.
+type policyEvaluationContext = policyhelpers.PolicyEvaluationContext
 
 func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, *policyEvaluationContext, error) {
 	prepResult, err := activities.AwaitPrepPolicyEvaluation(ctx, &activities.PrepPolicyEvaluationRequest{

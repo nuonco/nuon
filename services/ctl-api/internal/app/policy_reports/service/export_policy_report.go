@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -42,35 +43,16 @@ type PolicyReportTemplateData struct {
 	PassCount     int
 	TotalCount    int
 	Status        string
-	Violations    []PolicyViolationDisplay
+	Violations    []helpers.PolicyViolationDisplay
 	HasViolations bool
-	Policies      []PolicyResultDisplay
-	Inputs        []PolicyInputDisplay
+	Policies      []helpers.PolicyResultDisplay
+	Inputs        []helpers.PolicyInputDisplay
 }
 
-type PolicyResultDisplay struct {
-	PolicyID   string
-	PolicyName string // Human-readable name when available
-	Status     string // "deny", "warn", or "pass"
-	DenyCount  int
-	WarnCount  int
-	PassCount  int
-	InputCount int
-}
-
-type PolicyInputDisplay struct {
-	ID   string
-	Name string // Human-readable name when available
-	Type string
-}
-
-type PolicyViolationDisplay struct {
-	PolicyID      string
-	Message       string
-	Severity      string
-	InputIndex    int
-	InputIdentity string
-}
+// Type aliases for backward compatibility and local convenience
+type PolicyResultDisplay = helpers.PolicyResultDisplay
+type PolicyInputDisplay = helpers.PolicyInputDisplay
+type PolicyViolationDisplay = helpers.PolicyViolationDisplay
 
 // SARIF types for export
 type SARIFPropertyBag map[string]any
@@ -422,43 +404,17 @@ func (s *service) serveSARIFReport(ctx *gin.Context, report *app.PolicyReport) {
 }
 
 func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
-	violations := make([]PolicyViolationDisplay, len(report.Violations))
-	for i, v := range report.Violations {
-		violations[i] = PolicyViolationDisplay{
-			PolicyID:      v.PolicyID,
-			Message:       v.Message,
-			Severity:      v.Severity,
-			InputIndex:    v.InputIndex,
-			InputIdentity: v.InputIdentity,
-		}
-	}
+	violations := helpers.ToViolationDisplays(report.Violations)
+	policies := helpers.ToResultDisplays(report.Policies)
+	inputs := helpers.ToInputDisplays(report.Inputs)
 
-	policies := make([]PolicyResultDisplay, len(report.Policies))
 	computedDenyCount := 0
 	computedWarnCount := 0
 	computedPassCount := 0
-	for i, p := range report.Policies {
-		policies[i] = PolicyResultDisplay{
-			PolicyID:   p.PolicyID,
-			PolicyName: p.PolicyName,
-			Status:     p.Status,
-			DenyCount:  p.DenyCount,
-			WarnCount:  p.WarnCount,
-			PassCount:  p.PassCount,
-			InputCount: p.InputCount,
-		}
+	for _, p := range policies {
 		computedDenyCount += p.DenyCount
 		computedWarnCount += p.WarnCount
 		computedPassCount += p.PassCount
-	}
-
-	inputs := make([]PolicyInputDisplay, len(report.Inputs))
-	for i, inp := range report.Inputs {
-		inputs[i] = PolicyInputDisplay{
-			ID:   inp.ID,
-			Name: inp.Name,
-			Type: inp.Type,
-		}
 	}
 
 	status := "passed"
@@ -740,8 +696,9 @@ func getStatusColor(status string) [3]int {
 }
 
 func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
 		return s
 	}
-	return s[:maxLen-3] + "..."
+	return string(runes[:maxLen-3]) + "..."
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 )
 
 type PersistPolicyReportRequest struct {
@@ -85,38 +86,12 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		}
 	}
 
-	violations := make([]app.PolicyViolation, len(req.Violations))
-	for i, v := range req.Violations {
-		violations[i] = app.PolicyViolation{
-			PolicyID:      v.PolicyID,
-			InputIndex:    v.InputIndex,
-			InputIdentity: v.InputIdentity,
-			Message:       v.Message,
-			Severity:      v.Severity,
-		}
-	}
+	violations := req.Violations
 
-	policies := make([]app.PolicyResult, len(policyResults))
-	for i, p := range policyResults {
-		policies[i] = app.PolicyResult{
-			PolicyID:   p.PolicyID,
-			Status:     p.Status,
-			DenyCount:  p.DenyCount,
-			WarnCount:  p.WarnCount,
-			PassCount:  p.PassCount,
-			InputCount: p.InputCount,
-		}
-	}
+	policies := helpers.ToAppResultsFromInternal(toInternalResults(policyResults))
 
 	inputs := buildPolicyInputRefs(req)
-	appInputs := make([]app.PolicyInputRef, len(inputs))
-	for i, inp := range inputs {
-		appInputs[i] = app.PolicyInputRef{
-			ID:   inp.ID,
-			Type: inp.Type,
-			Name: inp.Name,
-		}
-	}
+	appInputs := helpers.ToAppInputRefsFromInternal(toInternalInputRefs(inputs))
 
 	report := &app.PolicyReport{
 		OrgID:                          req.OrgID,
@@ -318,4 +293,31 @@ func stringPtrToPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func toInternalResults(results []policyResult) []helpers.PolicyResultInternal {
+	internal := make([]helpers.PolicyResultInternal, len(results))
+	for i, r := range results {
+		internal[i] = helpers.PolicyResultInternal{
+			PolicyID:   r.PolicyID,
+			Status:     r.Status,
+			DenyCount:  r.DenyCount,
+			WarnCount:  r.WarnCount,
+			PassCount:  r.PassCount,
+			InputCount: r.InputCount,
+		}
+	}
+	return internal
+}
+
+func toInternalInputRefs(inputs []policyInputRef) []helpers.PolicyInputRefInternal {
+	internal := make([]helpers.PolicyInputRefInternal, len(inputs))
+	for i, inp := range inputs {
+		internal[i] = helpers.PolicyInputRefInternal{
+			ID:   inp.ID,
+			Type: inp.Type,
+			Name: inp.Name,
+		}
+	}
+	return internal
 }
