@@ -15,7 +15,8 @@ export const VCSAccountLink = ({
     >
       <Text variant="subtext" family="mono">
         {vcs_connection?.github_account_name ||
-          vcs_connection?.github_account_id}
+          vcs_connection?.github_account_id ||
+          vcs_connection?.github_install_id}
       </Text>
     </Link>
   )
