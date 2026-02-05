@@ -30,7 +30,7 @@ export const ShutdownInstanceButton = ({
       {...props}
     >
       {props?.isMenuButton ? null : <Icon variant="CloudArrowDown" />}
-      Shutdown instance
+      Restart instance
       {props?.isMenuButton ? <Icon variant="CloudArrowDown" /> : null}
     </Button>
   )
@@ -56,13 +56,15 @@ export const ShutdownInstanceModal = ({
   useServerActionToast({
     data: isShutdown,
     error,
-    errorContent: <Text>Unable to shutdown runner instance.</Text>,
-    errorHeading: `Runner instance shutdown failed`,
+    errorContent: <Text>Unable to restart runner instance.</Text>,
+    errorHeading: `Restart runner instance failed`,
     onSuccess: () => {
       removeModal(props.modalId)
     },
-    successContent: <Text>Runner instance shutdown initiated successfully.</Text>,
-    successHeading: `Runner instance shutdown started`,
+    successContent: (
+      <Text>Restart runner instance initiated successfully.</Text>
+    ),
+    successHeading: `Restart runner instance started`,
   })
 
   const handleClose = () => {
@@ -114,7 +116,7 @@ export const ShutdownInstanceModal = ({
             theme="warn"
           >
             <Icon variant="CloudArrowDown" size="24" />
-            Shutdown runner instance?
+            Restart runner instance?
           </Text>
         </div>
       }
@@ -122,12 +124,12 @@ export const ShutdownInstanceModal = ({
         children: isLoading ? (
           <span className="flex items-center gap-2">
             <Icon variant="Loading" />
-            Shutting down
+            Restarting
           </span>
         ) : (
           <span className="flex items-center gap-2">
             <Icon variant="CloudArrowDown" />
-            Shutdown instance
+            Restart instance
           </span>
         ),
         disabled: isLoading,
@@ -140,16 +142,20 @@ export const ShutdownInstanceModal = ({
       <div className="flex flex-col gap-6">
         {error?.error ? (
           <Banner theme="error">
-            {error?.error || 'Unable to shutdown runner instance.'}
+            {error?.error || 'Unable to restart runner instance.'}
           </Banner>
         ) : null}
 
         <div className="flex flex-col gap-4">
           <Text variant="base" weight="strong">
-            Shutdown this runner instance.
+            Restart this runner instance.
           </Text>
-          <Text variant="body" theme="neutral" className="leading-relaxed max-w-md">
-            The runner VM will be shutdown and restarted.
+          <Text
+            variant="body"
+            theme="neutral"
+            className="leading-relaxed max-w-md"
+          >
+            The runner VM will be restarted.
           </Text>
         </div>
       </div>
