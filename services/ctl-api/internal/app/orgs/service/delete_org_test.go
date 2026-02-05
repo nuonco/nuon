@@ -50,7 +50,7 @@ type DeleteOrgTestSuite struct {
 	router       *gin.Engine
 	testOrg      *app.Org
 	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	mockEvClient *tests.FakeEventLoopClient
 	orgsService  *service
 }
 
@@ -67,8 +67,8 @@ func (s *DeleteOrgTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create mock event loop client
-	s.mockEvClient = tests.NewMockEventLoopClient()
+	// Create fake event loop client for testing
+	s.mockEvClient = tests.NewFakeEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptions(),
