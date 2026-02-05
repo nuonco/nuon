@@ -8,11 +8,10 @@ import (
 )
 
 type CreateWorkflowRequest struct {
-	InstallID    string                `validate:"required"`
-	WorkflowType app.WorkflowType      `validate:"required"`
-	Metadata     map[string]string     `validate:"required"`
-	ErrBehavior  app.StepErrorBehavior `validate:"required"`
-	PlanOnly     bool                  `validate:"required"`
+	InstallID    string            `validate:"required"`
+	WorkflowType app.WorkflowType  `validate:"required"`
+	Metadata     map[string]string `validate:"required"`
+	PlanOnly     bool              `validate:"required"`
 }
 
 // @temporal-gen activity
