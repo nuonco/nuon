@@ -282,7 +282,7 @@ func (w *Workflows) getRoleForAction(
 	var defaultRole string
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
-		defaultRole = appConfig.PermissionsConfig.ProvisionRole.Name
+		defaultRole = appConfig.PermissionsConfig.MaintenanceRole.Name
 	case stack.InstallStackOutputs.AzureStackOutputs != nil:
 		defaultRole = "azure-maintainence-mock-role-name"
 	default:
