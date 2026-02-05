@@ -72,6 +72,5 @@ func runValidate(targetDir string, recursive bool) error {
 		return fmt.Errorf("validation failed")
 	}
 
-	fmt.Println("Validation successful!")
 	return nil
 }

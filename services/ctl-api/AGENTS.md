@@ -957,3 +957,13 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return n
 - This is expected behavior — go-swagger uses full package paths for type disambiguation
 - Example: `GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest`
 - These names appear in generated SDK code but don't affect functionality
+
+## Logging Conventions
+
+**Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.
+
+| Context | Logger |
+|---------|--------|
+| HTTP Services | `*zap.Logger` via FX injection (`s.l`) |
+| Temporal Workflows | `log.WorkflowLogger(ctx)` from `internal/pkg/log` |
+| Temporal Activities | Logger from activity context |

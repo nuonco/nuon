@@ -80,8 +80,6 @@ func (h *Helpers) migrateInstallInputs(
 		}).
 		First(&existingInputs)
 
-	fmt.Println("sk debug: existing install inputs", installID, existingInputs.Values)
-
 	if res.Error != nil && res.Error == gorm.ErrRecordNotFound {
 		// for backward compatibility for older installs where older installs dont have install in puts set
 		// at latest app config
@@ -107,8 +105,6 @@ func (h *Helpers) migrateInstallInputs(
 			migratedValues[key] = value
 		}
 	}
-
-	fmt.Println("sk debug: migrated install inputs", installID, migratedValues)
 
 	newInputs := app.InstallInputs{
 		InstallID:        installID,
