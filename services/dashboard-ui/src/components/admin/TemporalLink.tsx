@@ -15,7 +15,7 @@ export const TemporalLink = ({
 
   return !isLoading && user?.email?.endsWith('@nuon.co') ? (
     <Link
-      className="text-sm"
+      className="text-xs"
       href={`/admin/temporal/namespaces/${namespace}/workflows/event-loop-${eventLoopId}`}
       target="_blank"
     >
