@@ -584,6 +584,8 @@ type ClientService interface {
 
 	PhoneHome(params *PhoneHomeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PhoneHomeCreated, error)
 
+	PruneTokens(params *PruneTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PruneTokensOK, error)
+
 	RemoveUser(params *RemoveUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveUserCreated, error)
 
 	ReprovisionInstall(params *ReprovisionInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallCreated, error)
@@ -12222,6 +12224,57 @@ func (a *Client) PhoneHome(params *PhoneHomeParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for PhoneHome: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	PruneTokens prunes old tokens for a runner
+
+	Prune old tokens for a specific runner by invalidating all tokens except the most recent one.
+
+This is useful for cleaning up old tokens without disrupting the currently running runner.
+The latest token (by creation time) is preserved, ensuring the active runner continues to function.
+
+Returns the count of invalidated tokens for the specified runner.
+*/
+func (a *Client) PruneTokens(params *PruneTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PruneTokensOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewPruneTokensParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "PruneTokens",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/prune-tokens",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PruneTokensReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*PruneTokensOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for PruneTokens: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
