@@ -8,6 +8,7 @@ import { DeprovisionRunnerModal } from './DeprovisionRunnerModal'
 import { ShutdownInstanceModal } from './ShutdownInstance'
 import { ShutdownRunnerModal } from './ShutdownRunnerModal'
 import { UpdateRunnerModal } from './UpdateRunnerModal'
+import { PruneRunnerTokensButton } from '@/components/runners/management/PruneRunnerTokens'
 
 export const ManageRunnerDropdown = ({
   isInstallRunner = false,
@@ -42,6 +43,9 @@ export const ManageRunnerDropdown = ({
         <ShutdownRunnerModal runnerId={runner?.id} />
         {isInstallRunner ? (
           <ShutdownInstanceModal runnerId={runner?.id} />
+        ) : null}
+        {isInstallRunner ? (
+          <PruneRunnerTokensButton runnerId={runner?.id} />
         ) : null}
 
         {isInstallRunner ? (
