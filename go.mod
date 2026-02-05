@@ -33,6 +33,8 @@ require (
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/DataDog/dd-trace-go/v2 v2.2.2
 	github.com/Jeffail/gabs v1.4.0
+	github.com/Oudwins/tailwind-merge-go v0.2.1
+	github.com/a-h/templ v0.3.977
 	github.com/abiosoft/lineprefix v0.1.4
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/avast/retry-go v3.0.0+incompatible
@@ -182,8 +184,6 @@ require (
 	github.com/DataDog/go-tuf v1.1.0-0.5.2 // indirect
 	github.com/DataDog/opentelemetry-mapping-go/pkg/otlp/attributes v0.27.0 // indirect
 	github.com/DataDog/sketches-go v1.4.7 // indirect
-	github.com/Oudwins/tailwind-merge-go v0.2.1 // indirect
-	github.com/a-h/templ v0.3.977 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/briandowns/spinner v1.23.0 // indirect
@@ -458,7 +458,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.11 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.32 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.32
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.14 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.14 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
