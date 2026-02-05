@@ -24,3 +24,14 @@ func (a *Helpers) CreateToken(ctx context.Context, runnerID string) (*app.Token,
 
 	return token, nil
 }
+
+func (a *Helpers) InvalidateOldTokens(ctx context.Context, runnerID string) (int64, error) {
+	email := account.ServiceAccountEmail(runnerID)
+
+	count, err := a.acctClient.InvalidateOldTokens(ctx, email)
+	if err != nil {
+		return 0, errors.Wrap(err, "unable to invalidate old tokens")
+	}
+
+	return count, nil
+}
