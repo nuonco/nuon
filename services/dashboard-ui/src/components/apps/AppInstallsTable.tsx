@@ -17,9 +17,7 @@ import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstall, TCloudPlatform } from '@/types'
-
-// NOTE: Old stufff
-import { CreateInstallModal } from '@/components/old/Installs'
+import { CreateInstallButton } from "./CreateInstall"
 
 export type InstallRow = {
   actionHref: string
@@ -145,7 +143,7 @@ export const AppInstallsTable = ({
         emptyMessage:
           'An install is an instance of an application running in a customer cloud account.',
         emptyTitle: 'No installs created',
-        action: <CreateInstallModal />,
+        action: <CreateInstallButton />,
       }}
       pagination={pagination}
       searchPlaceholder="Search install name..."
