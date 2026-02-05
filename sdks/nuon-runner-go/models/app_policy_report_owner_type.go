@@ -35,6 +35,9 @@ const (
 
 	// AppPolicyReportOwnerTypeInstallSandboxRuns captures enum value "install_sandbox_runs"
 	AppPolicyReportOwnerTypeInstallSandboxRuns AppPolicyReportOwnerType = "install_sandbox_runs"
+
+	// AppPolicyReportOwnerTypeComponentBuilds captures enum value "component_builds"
+	AppPolicyReportOwnerTypeComponentBuilds AppPolicyReportOwnerType = "component_builds"
 )
 
 // for schema
@@ -42,7 +45,7 @@ var appPolicyReportOwnerTypeEnum []any
 
 func init() {
 	var res []AppPolicyReportOwnerType
-	if err := json.Unmarshal([]byte(`["install_deploys","install_sandbox_runs"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["install_deploys","install_sandbox_runs","component_builds"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

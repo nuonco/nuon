@@ -27,6 +27,9 @@ type ServiceAppPolicyConfig struct {
 	// Required: true
 	Contents *string `json:"contents"`
 
+	// description
+	Description string `json:"description,omitempty"`
+
 	// engine
 	Engine ConfigAppPolicyEngine `json:"engine,omitempty"`
 
