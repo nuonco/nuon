@@ -31,10 +31,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install ast-grep
+        run: npm install -g @ast-grep/cli
+
       - name: Run ast-grep scan
-        uses: ast-grep/action@v1.4
-        with:
-          paths: services/ pkg/
+        run: sg scan services/ pkg/ --filter=error
 
   update_status:
     name: update status
