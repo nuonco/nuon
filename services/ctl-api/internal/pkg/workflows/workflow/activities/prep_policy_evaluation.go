@@ -34,6 +34,7 @@ type PolicyToEvaluate struct {
 type PrepPolicyEvaluationResult struct {
 	Policies         []PolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
 	HasPolicies      bool               `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	OrgID            string             `json:"org_id" temporaljson:"org_id,omitempty"`
 	AppID            string             `json:"app_id" temporaljson:"app_id,omitempty"`
 	InstallID        *string            `json:"install_id" temporaljson:"install_id,omitempty"`
 	InstallSandboxID *string            `json:"install_sandbox_id" temporaljson:"install_sandbox_id,omitempty"`
@@ -101,6 +102,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		return &PrepPolicyEvaluationResult{
 			Policies:         []PolicyToEvaluate{},
 			HasPolicies:      false,
+			OrgID:            policyContext.OrgID,
 			AppID:            policyContext.AppID,
 			InstallID:        policyContext.InstallID,
 			InstallSandboxID: policyContext.InstallSandboxID,
@@ -108,6 +110,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 			ComponentBuildID: policyContext.ComponentBuildID,
 			PolicyIDs:        []string{},
 			InputCount:       0,
+			OrgName:          policyContext.OrgName,
 			AppName:          policyContext.AppName,
 			InstallName:      policyContext.InstallName,
 			ComponentName:    policyContext.ComponentName,
@@ -136,6 +139,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 	return &PrepPolicyEvaluationResult{
 		Policies:         policies,
 		HasPolicies:      true,
+		OrgID:            policyContext.OrgID,
 		AppID:            policyContext.AppID,
 		InstallID:        policyContext.InstallID,
 		InstallSandboxID: policyContext.InstallSandboxID,
@@ -152,6 +156,7 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 
 type policyContext struct {
 	AppConfigID      string
+	OrgID            string
 	AppID            string
 	InstallID        *string
 	InstallSandboxID *string
@@ -192,6 +197,7 @@ func (a *Activities) resolveDeployPolicyContext(ctx context.Context, deployID st
 
 	return &policyContext{
 		AppConfigID:      deploy.InstallComponent.Install.AppConfigID,
+		OrgID:            deploy.InstallComponent.Install.App.OrgID,
 		AppID:            deploy.InstallComponent.Install.AppID,
 		InstallID:        &deploy.InstallComponent.InstallID,
 		ComponentID:      &deploy.InstallComponent.ComponentID,
@@ -218,6 +224,7 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 
 	return &policyContext{
 		AppConfigID:      sandboxRun.Install.AppConfigID,
+		OrgID:            sandboxRun.Install.App.OrgID,
 		AppID:            sandboxRun.Install.AppID,
 		InstallID:        &sandboxRun.InstallID,
 		InstallSandboxID: sandboxRun.InstallSandboxID,

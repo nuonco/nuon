@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -202,35 +201,30 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	if policyContext != nil && step.PolicyValidation != nil {
-		orgID, err := cctx.OrgIDFromContext(ctx)
-		if err != nil {
-			l.Warn("unable to get org id", zap.Error(err))
-		} else {
-			validationID := step.PolicyValidation.ID
-			policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
-			for _, policyID := range policyContext.PolicyIDs {
-				policyInputCounts[policyID] = policyContext.InputCount
-			}
-			if _, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
-				OrgID:                          orgID,
-				AppID:                          policyContext.AppID,
-				InstallID:                      policyContext.InstallID,
-				InstallSandboxID:               policyContext.InstallSandboxID,
-				ComponentID:                    policyContext.ComponentID,
-				ComponentBuildID:               policyContext.ComponentBuildID,
-				WorkflowStepPolicyValidationID: &validationID,
-				OwnerID:                        step.StepTargetID,
-				OwnerType:                      step.StepTargetType,
-				Violations:                     violations,
-				PolicyIDs:                      policyContext.PolicyIDs,
-				PolicyInputCounts:              policyInputCounts,
-				OrgName:                        policyContext.OrgName,
-				AppName:                        policyContext.AppName,
-				InstallName:                    policyContext.InstallName,
-				ComponentName:                  policyContext.ComponentName,
-			}); err != nil {
-				l.Warn("failed to persist policy report", zap.Error(err))
-			}
+		validationID := step.PolicyValidation.ID
+		policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
+		for _, policyID := range policyContext.PolicyIDs {
+			policyInputCounts[policyID] = policyContext.InputCount
+		}
+		if _, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
+			OrgID:                          policyContext.OrgID,
+			AppID:                          policyContext.AppID,
+			InstallID:                      policyContext.InstallID,
+			InstallSandboxID:               policyContext.InstallSandboxID,
+			ComponentID:                    policyContext.ComponentID,
+			ComponentBuildID:               policyContext.ComponentBuildID,
+			WorkflowStepPolicyValidationID: &validationID,
+			OwnerID:                        step.StepTargetID,
+			OwnerType:                      step.StepTargetType,
+			Violations:                     violations,
+			PolicyIDs:                      policyContext.PolicyIDs,
+			PolicyInputCounts:              policyInputCounts,
+			OrgName:                        policyContext.OrgName,
+			AppName:                        policyContext.AppName,
+			InstallName:                    policyContext.InstallName,
+			ComponentName:                  policyContext.ComponentName,
+		}); err != nil {
+			l.Warn("failed to persist policy report", zap.Error(err))
 		}
 	}
 
@@ -786,6 +780,7 @@ func (c *WorkflowConductor[DomainSignal]) separateViolations(violations []activi
 // checkPolicies prepares policy evaluation and then evaluates all applicable policies in parallel.
 // It returns all violations found across all policies.
 type policyEvaluationContext struct {
+	OrgID            string
 	AppID            string
 	InstallID        *string
 	InstallSandboxID *string
@@ -847,6 +842,7 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 	}
 
 	return allViolations, &policyEvaluationContext{
+		OrgID:            prepResult.OrgID,
 		AppID:            prepResult.AppID,
 		InstallID:        prepResult.InstallID,
 		InstallSandboxID: prepResult.InstallSandboxID,
