@@ -37,19 +37,6 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 		return []*app.WorkflowStep{}, nil
 	}
 
-	var existingSteps []*app.WorkflowStep
-	if res := a.db.WithContext(ctx).
-		Where(app.WorkflowStep{InstallWorkflowID: reqs.Steps[0].FlowID}).
-		Order("group_idx, group_retry_idx, idx, created_at asc").
-		Find(&existingSteps); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get workflow steps")
-	}
-
-	if len(existingSteps) > 0 {
-		// steps already exist, return them for idempotency
-		return existingSteps, nil
-	}
-
 	steps := make([]*app.WorkflowStep, 0, len(reqs.Steps))
 	for _, req := range reqs.Steps {
 		step := app.WorkflowStep{
