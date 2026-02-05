@@ -65,6 +65,11 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/orgs/:id/status", s.OrgStatus)
 	api.GET("/orgs/:id/installs/table", s.InstallsTable)
 
+	// Accounts routes
+	api.GET("/accounts", s.Accounts)
+	api.GET("/accounts/table", s.AccountsTable)
+	api.GET("/accounts/:id", s.AccountDetail)
+
 	// Global installs routes
 	api.GET("/installs", s.Installs)
 	api.GET("/installs/table", s.InstallsTableGlobal)
