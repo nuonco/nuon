@@ -32,7 +32,7 @@ type CreateOrgTestSuite struct {
 	service      TestService
 	router       *gin.Engine
 	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	mockEvClient *tests.FakeEventLoopClient
 	orgsService  *service
 }
 
@@ -49,8 +49,8 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create mock event loop client
-	s.mockEvClient = tests.NewMockEventLoopClient()
+	// Create fake event loop client for testing
+	s.mockEvClient = tests.NewFakeEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptions(),
