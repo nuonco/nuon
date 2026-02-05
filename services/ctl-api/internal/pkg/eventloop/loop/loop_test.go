@@ -361,6 +361,12 @@ func (l *mlog) Append(elem string) {
 }
 
 func TestMain(m *testing.M) {
+	// Skip all eventloop tests if INTEGRATION is not set
+	if os.Getenv("INTEGRATION") != "true" {
+		fmt.Println("INTEGRATION is not set, skipping eventloop tests")
+		os.Exit(0)
+	}
+
 	var err error
 	devenv, err = tctest.NewEnv(context.Background())
 	if err != nil {

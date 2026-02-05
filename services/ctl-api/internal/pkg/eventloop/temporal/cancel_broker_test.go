@@ -2,6 +2,7 @@ package temporal
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -17,6 +18,12 @@ import (
 )
 
 func TestCancelBroker(t *testing.T) {
+	// Skip if INTEGRATION is not set
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
+
 	clientOpts := new(client.Options)
 	var err error
 	clientOpts.HostPort, err = getFreeHostPort()

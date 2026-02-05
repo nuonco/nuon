@@ -3,6 +3,7 @@ package temporal
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -118,6 +119,12 @@ func registerNS(opts client.Options, ns string) error {
 // - request signals pattern vs. base pattern
 // func (s *SendTestSuite) Test_Send() {
 func TestSend(t *testing.T) {
+	// Skip if INTEGRATION is not set
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
+
 	clientOpts := new(client.Options)
 	var err error
 	clientOpts.HostPort, err = getFreeHostPort()
