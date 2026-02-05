@@ -106,7 +106,7 @@ func (c *client) GetPolicyReport(ctx context.Context, reportID string) (*models.
 }
 
 // ExportPolicyReport exports a policy report in the specified format.
-// Valid formats: "opa", "sarif", "pdf"
+// Valid formats: "json", "sarif", "pdf"
 func (c *client) ExportPolicyReport(ctx context.Context, reportID, format string) ([]byte, string, error) {
 	reqURL := fmt.Sprintf("%s/v1/policy-reports/%s/export", c.APIURL, reportID)
 

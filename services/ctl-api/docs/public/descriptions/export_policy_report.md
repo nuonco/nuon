@@ -1,1 +1,1 @@
-Exports a policy report as JSON (OPA/SARIF) or PDF.
+Exports a policy report as JSON, SARIF, or PDF.

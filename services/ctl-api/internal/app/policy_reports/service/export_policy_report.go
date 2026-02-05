@@ -19,7 +19,7 @@ import (
 type PolicyReportExportFormat string
 
 const (
-	PolicyReportExportFormatOPA   PolicyReportExportFormat = "opa"
+	PolicyReportExportFormatJSON  PolicyReportExportFormat = "json"
 	PolicyReportExportFormatSARIF PolicyReportExportFormat = "sarif"
 	PolicyReportExportFormatPDF   PolicyReportExportFormat = "pdf"
 )
@@ -151,8 +151,8 @@ type SARIFMessage struct {
 	Text string `json:"text"`
 }
 
-// OPA report format for export
-type OPAReport struct {
+// PolicyReportJSON is the JSON export format for policy reports
+type PolicyReportJSON struct {
 	ReportID    string                `json:"report_id"`
 	OrgID       string                `json:"org_id"`
 	OrgName     string                `json:"org_name,omitempty"`
@@ -172,7 +172,7 @@ type OPAReport struct {
 // @Summary				export policy report
 // @Description.markdown	export_policy_report.md
 // @Param					report_id	path	string	true	"policy report ID"
-// @Param					format		query	string	false	"export format: opa, sarif, pdf (default: opa)"
+// @Param					format		query	string	false	"export format: json, sarif, pdf (default: json)"
 // @Tags					policy-reports
 // @Accept					json
 // @Produce				json
@@ -194,12 +194,12 @@ func (s *service) ExportPolicyReport(ctx *gin.Context) {
 	}
 
 	reportID := ctx.Param("report_id")
-	format := PolicyReportExportFormat(ctx.DefaultQuery("format", string(PolicyReportExportFormatOPA)))
+	format := PolicyReportExportFormat(ctx.DefaultQuery("format", string(PolicyReportExportFormatJSON)))
 
 	if !isValidPolicyReportFormat(format) {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("invalid format: %s", format),
-			Description: "Valid formats are: opa, sarif, pdf",
+			Description: "Valid formats are: json, sarif, pdf",
 		})
 		return
 	}
@@ -216,21 +216,21 @@ func (s *service) ExportPolicyReport(ctx *gin.Context) {
 	case PolicyReportExportFormatSARIF:
 		s.serveSARIFReport(ctx, report)
 	default:
-		s.serveOPAReport(ctx, report)
+		s.serveJSONReport(ctx, report)
 	}
 }
 
 func isValidPolicyReportFormat(format PolicyReportExportFormat) bool {
 	switch format {
-	case PolicyReportExportFormatOPA, PolicyReportExportFormatSARIF, PolicyReportExportFormatPDF:
+	case PolicyReportExportFormatJSON, PolicyReportExportFormatSARIF, PolicyReportExportFormatPDF:
 		return true
 	default:
 		return false
 	}
 }
 
-func toOPAFormat(report *app.PolicyReport) OPAReport {
-	return OPAReport{
+func toJSONFormat(report *app.PolicyReport) PolicyReportJSON {
+	return PolicyReportJSON{
 		ReportID:    report.ID,
 		OrgID:       report.OrgID,
 		OrgName:     report.OrgName,
@@ -395,15 +395,15 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 	}
 }
 
-func (s *service) serveOPAReport(ctx *gin.Context, report *app.PolicyReport) {
-	opaReport := toOPAFormat(report)
-	content, err := json.Marshal(opaReport)
+func (s *service) serveJSONReport(ctx *gin.Context, report *app.PolicyReport) {
+	jsonReport := toJSONFormat(report)
+	content, err := json.Marshal(jsonReport)
 	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to marshal OPA report"))
+		ctx.Error(errors.Wrap(err, "unable to marshal JSON report"))
 		return
 	}
 
-	filename := fmt.Sprintf("policy-report-%s.opa.json", report.ID)
+	filename := fmt.Sprintf("policy-report-%s.json", report.ID)
 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	ctx.Data(http.StatusOK, "application/json", content)
 }
