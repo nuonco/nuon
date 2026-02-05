@@ -1,0 +1,27 @@
+package search
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/input"
+)
+
+type Props struct {
+	Placeholder string // Placeholder text for the search input
+	TargetURL   string // HTMX endpoint to call (e.g., "orgs/table")
+	TargetID    string // ID of the element to update (e.g., "orgs-table")
+}
+
+templ SearchInput(props Props) {
+	<div class="mb-4">
+		@input.Input(input.Props{
+			Name:        "search",
+			Type:        input.TypeSearch,
+			Placeholder: props.Placeholder,
+			Attributes: templ.Attributes{
+				"hx-get":     props.TargetURL,
+				"hx-trigger": "keyup changed delay:500ms, search",
+				"hx-target":  "#" + props.TargetID,
+				"hx-swap":    "outerHTML",
+			},
+		})
+	</div>
+}

@@ -1,7 +1,7 @@
 {
   "componentsDir": "components",
   "utilsDir": "utils",
-  "moduleName": "github.com/nuonco/nuon/services/ctl-api/internal/app/admin_dashboard",
+  "moduleName": "github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard",
   "jsDir": "assets/js",
   "jsPublicPath": "/assets/js"
 }

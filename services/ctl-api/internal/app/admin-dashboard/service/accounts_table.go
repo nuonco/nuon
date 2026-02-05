@@ -13,8 +13,9 @@ import (
 // AccountsTable returns just the accounts table for htmx polling
 func (s *service) AccountsTable(c *gin.Context) {
 	ctx := c.Request.Context()
+	search := c.Query("search")
 
-	accounts, err := s.getAccounts(ctx)
+	accounts, err := s.getAccounts(ctx, search)
 	if err != nil {
 		s.l.Error("failed to get accounts for table", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch accounts"})

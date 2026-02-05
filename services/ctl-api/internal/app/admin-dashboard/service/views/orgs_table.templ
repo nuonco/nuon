@@ -13,40 +13,45 @@ templ OrgsTable(orgs []*app.Org) {
 		hx-get="orgs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
+		hx-include="[name='search']"
 	>
-		@table.Table() {
-			@table.Header() {
-				@table.Row() {
-					@table.Head() { Organization }
-					@table.Head() { Type }
-					@table.Head() { Status }
-					@table.Head() { Created At }
-				}
-			}
-			@table.Body() {
-				for _, org := range orgs {
+		if len(orgs) == 0 {
+			<div class="text-sm text-muted-foreground">No organizations found.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
 					@table.Row() {
-						@table.Cell() {
-							<div class="flex flex-col gap-1">
-								<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline">
-									{ org.Name }
-								</a>
-								<div class="flex items-center gap-2">
-									<span id={ "org-id-" + org.ID } class="font-mono text-xs text-muted-foreground">{ org.ID }</span>
-									@copybutton.CopyButton(copybutton.Props{
-										TargetID: "org-id-" + org.ID,
-									})
+						@table.Head() { Organization }
+						@table.Head() { Type }
+						@table.Head() { Status }
+						@table.Head() { Created At }
+					}
+				}
+				@table.Body() {
+					for _, org := range orgs {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex flex-col gap-1">
+									<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline">
+										{ org.Name }
+									</a>
+									<div class="flex items-center gap-2">
+										<span id={ "org-id-" + org.ID } class="font-mono text-xs text-muted-foreground">{ org.ID }</span>
+										@copybutton.CopyButton(copybutton.Props{
+											TargetID: "org-id-" + org.ID,
+										})
+									</div>
 								</div>
-							</div>
-						}
-						@table.Cell(table.CellProps{Class: "font-mono text-xs uppercase"}) {
-							{ string(org.OrgType) }
-						}
-						@table.Cell() {
-							@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
-						}
-						@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
-							{ org.CreatedAt.Format("2006-01-02 15:04") }
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs uppercase"}) {
+								{ string(org.OrgType) }
+							}
+							@table.Cell() {
+								@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								{ org.CreatedAt.Format("2006-01-02 15:04") }
+							}
 						}
 					}
 				}

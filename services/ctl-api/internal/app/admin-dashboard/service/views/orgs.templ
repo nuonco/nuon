@@ -5,6 +5,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
 )
 
 templ Orgs(orgs []*app.Org) {
@@ -20,7 +21,16 @@ templ Orgs(orgs []*app.Org) {
 					}
 				}
 				@card.Content() {
-					@OrgsTable(orgs)
+					@search.SearchInput(search.Props{
+						Placeholder: "Search by organization name or ID...",
+						TargetURL:   "orgs/table",
+						TargetID:    "orgs-table",
+					})
+					if len(orgs) == 0 {
+						<div class="text-sm text-muted-foreground">No organizations found.</div>
+					} else {
+						@OrgsTable(orgs)
+					}
 				}
 			}
 		</div>

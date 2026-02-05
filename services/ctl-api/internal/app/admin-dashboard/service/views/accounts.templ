@@ -5,6 +5,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
 )
 
 templ Accounts(accounts []*app.Account) {
@@ -20,6 +21,11 @@ templ Accounts(accounts []*app.Account) {
 					}
 				}
 				@card.Content() {
+					@search.SearchInput(search.Props{
+						Placeholder: "Search by email or account ID...",
+						TargetURL:   "accounts/table",
+						TargetID:    "accounts-table",
+					})
 					if len(accounts) == 0 {
 						<div class="text-sm text-muted-foreground">No accounts found.</div>
 					} else {
