@@ -1,0 +1,73 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+)
+
+// AccountsTable renders the accounts table
+templ AccountsTable(accounts []*app.Account) {
+	<div
+		id="accounts-table"
+		hx-get="accounts/table"
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		if len(accounts) == 0 {
+			<div class="text-sm text-muted-foreground">No accounts found.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Account }
+						@table.Head() { Orgs }
+						@table.Head() { Type }
+						@table.Head() { Created At }
+						@table.Head() { Updated At }
+					}
+				}
+				@table.Body() {
+					for _, account := range accounts {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex flex-col gap-1">
+									<a href={ templ.URL("accounts/" + account.ID) } class="text-cyan hover:underline">
+										{ account.Email }
+									</a>
+									<div class="flex items-center gap-2">
+										<span id={ "account-id-" + account.ID } class="font-mono text-xs text-muted-foreground">{ account.ID }</span>
+										@copybutton.CopyButton(copybutton.Props{
+											TargetID: "account-id-" + account.ID,
+										})
+									</div>
+								</div>
+							}
+							@table.Cell() {
+								<div class="flex flex-col gap-1">
+									for _, org := range account.Orgs {
+										<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline text-sm">
+											{ org.Name }
+										</a>
+									}
+									if len(account.Orgs) == 0 {
+										<span class="text-muted-foreground text-sm">None</span>
+									}
+								</div>
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs uppercase"}) {
+								{ string(account.AccountType) }
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								{ account.CreatedAt.Format("2006-01-02 15:04") }
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								{ account.UpdatedAt.Format("2006-01-02 15:04") }
+							}
+						}
+					}
+				}
+			}
+		}
+	</div>
+}
