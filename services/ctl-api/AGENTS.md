@@ -55,6 +55,7 @@ Contains all database models and business logic:
 - `vcs_*.go` - Version control system integration
 
 Each domain follows a consistent structure:
+
 ```
 /internal/app/{domain}/
 ├── service/          # HTTP handlers and API endpoints
@@ -133,7 +134,8 @@ Helm chart templates for Kubernetes deployment:
 
 ## Helpers Pattern
 
-The ctl-api uses a helpers pattern to share domain-specific business logic across services while maintaining clean separation of concerns.
+The ctl-api uses a helpers pattern to share domain-specific business logic across services while maintaining clean
+separation of concerns.
 
 ### Structure
 
@@ -165,7 +167,7 @@ type Params struct {
 // 4. Use helper methods in service handlers
 func (s *service) CreateOrg(ctx *gin.Context) {
     // ... org creation logic ...
-    
+
     // Use accounts helper for cross-domain functionality
     if err := s.accountsHelpers.UpdateUserJourneyStepForFirstOrg(ctx, acct.ID); err != nil {
         s.l.Warn("failed to update user journey", zap.Error(err))
@@ -184,6 +186,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 ### Examples
 
 Current helpers implementations:
+
 - `accounts/helpers` - User journey management
 - `orgs/helpers` - Organization operations (hard delete, etc.)
 - `runners/helpers` - Runner job management
@@ -212,6 +215,7 @@ go run main.go
 When adding new API endpoints, follow this process to ensure proper documentation generation:
 
 1. **Create the endpoint handler** with proper Swagger annotations:
+
    ```go
    //	@ID						YourEndpointName
    //	@Summary				Brief description
@@ -228,6 +232,7 @@ When adding new API endpoints, follow this process to ensure proper documentatio
    ```
 
 2. **Register the route** in the appropriate service file:
+
    ```go
    api.METHOD("/v1/your/endpoint", s.YourEndpointHandler)
    ```
@@ -241,16 +246,19 @@ When adding new API endpoints, follow this process to ensure proper documentatio
 **Common Problem**: Missing markdown description files causing generation failures.
 
 **Symptoms**:
+
 - `ParseComment error: Unable to find markdown file` errors
 - API fails to start with swagger parsing errors
 - Documentation generation stops completely
 
 **Solution**:
+
 1. Check if referenced markdown files exist in `docs/public/descriptions/`
 2. Create any missing `.md` files (they can be empty initially)
 3. Restart the service - documentation will auto-generate
 
 **Important Notes**:
+
 - Generated files (`swagger.json`, `swagger.yaml`, `docs.go`) are **not tracked in git**
 - Only markdown description files in `docs/public/descriptions/` are version controlled
 - **DO NOT manually regenerate documentation** - the service handles this automatically
@@ -289,10 +297,11 @@ interface for users, runners, and administrative operations.
 The ctl-api implements a comprehensive user journey tracking system for guided onboarding:
 
 ### Journey Step Structure
+
 ```go
 type UserJourneyStep struct {
     Name      string `json:"name" gorm:"column:name"`
-    Title     string `json:"title" gorm:"column:title"`  
+    Title     string `json:"title" gorm:"column:title"`
     Complete  bool   `json:"complete" gorm:"column:complete;default:false"`
     AppID     string `json:"app_id,omitempty" gorm:"column:app_id"`        // For navigation
     InstallID string `json:"install_id,omitempty" gorm:"column:install_id"` // For navigation
@@ -300,21 +309,25 @@ type UserJourneyStep struct {
 ```
 
 ### Journey Helper Pattern
+
 Location: `internal/app/accounts/helpers/update_user_journey_step.go`
 
 Pattern for adding new journey step completion:
+
 ```go
 func (h *Helpers) UpdateUserJourneyStepForFirst[Entity](ctx context.Context, accountID, entityID string) error {
     // 1. Get account with journey data
     // 2. Find evaluation journey and specific step
-    // 3. Only update if step is incomplete (first-time only)  
+    // 3. Only update if step is incomplete (first-time only)
     // 4. Store entity ID for navigation
     // 5. Save with Select("user_journeys") for JSONB update
 }
 ```
 
 ### Integration Pattern
+
 In service endpoints after successful operations:
+
 ```go
 user, err := cctx.AccountFromGinContext(ctx)
 if err == nil {
@@ -326,18 +339,21 @@ if err == nil {
 ```
 
 ### Current Journey Steps
+
 - `account_created` - User signup complete
-- `org_created` - First organization created  
+- `org_created` - First organization created
 - `app_created` - First app synced via `nuon apps sync` (stores app ID)
 - `install_created` - First install created (stores install ID)
 
 ### Cross-Service Dependencies
+
 Services needing journey updates must include:
+
 ```go
 // In Params struct
 AccountsHelpers *accountshelpers.Helpers
 
-// In service struct  
+// In service struct
 accountsHelpers *accountshelpers.Helpers
 
 // In constructor
@@ -345,19 +361,21 @@ accountsHelpers: params.AccountsHelpers,
 ```
 
 ### Current Integrations
+
 - **App Config Sync**: `apps/service/create_app_config.go:74` - Updates `app_created` step
 - **Install Creation**: `installs/service/create_install.go:112` - Updates `install_created` step
 
 ## HTTP Handler Patterns
 
-The ctl-api follows a **domain-driven architecture** with clear separation of concerns for HTTP handlers and business logic.
+The ctl-api follows a **domain-driven architecture** with clear separation of concerns for HTTP handlers and business
+logic.
 
 ### Architecture Overview
 
 Each domain in `/internal/app/{domain}/` has:
 
 - **`service/`** - HTTP handlers and private domain-specific methods
-- **`helpers/`** - Methods shared across domains (cross-domain functionality only)  
+- **`helpers/`** - Methods shared across domains (cross-domain functionality only)
 - **`worker/`** - Temporal workflows and activities (optional)
 
 ### Business Logic Placement Rules
@@ -365,7 +383,7 @@ Each domain in `/internal/app/{domain}/` has:
 **Critical Rule**: Business logic placement depends on whether it needs to be shared across domains:
 
 - **Domain-specific logic** → Private service methods within the same service
-- **Cross-domain shared logic** → Helpers package  
+- **Cross-domain shared logic** → Helpers package
 - **HTTP concerns only** → Handler methods
 
 ### Handler Pattern Examples
@@ -375,6 +393,7 @@ Each domain in `/internal/app/{domain}/` has:
 Use this pattern when business logic is specific to the domain and doesn't need to be shared.
 
 **File**: `accounts/service/get_current_account.go`
+
 ```go
 // Handler focuses on HTTP concerns
 func (s *service) GetCurrentAccount(ctx *gin.Context) {
@@ -403,7 +422,7 @@ func (s *service) getAccount(ctx *gin.Context, accountID string) (*app.Account, 
         Preload("Roles.Org").
         Where("id = ?", accountID).
         First(&account)
-    
+
     // Domain-specific business logic here
     return &account, res.Error
 }
@@ -414,6 +433,7 @@ func (s *service) getAccount(ctx *gin.Context, accountID string) (*app.Account, 
 Use helpers when multiple domains need the same functionality.
 
 **File**: `orgs/service/create_org.go`
+
 ```go
 func (s *service) CreateOrg(ctx *gin.Context) {
     // ... org creation logic ...
@@ -426,6 +446,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 ```
 
 **Helper**: `accounts/helpers/update_user_journey_step.go`
+
 ```go
 // This helper is used by orgs, apps, and installs services
 func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountID string) error {
@@ -435,8 +456,9 @@ func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountI
 ```
 
 **Cross-domain usage evidence:**
+
 - `orgs/service/create_org.go:74`
-- `apps/service/create_app_config.go:74` 
+- `apps/service/create_app_config.go:74`
 - `installs/service/create_install.go:112`
 
 #### ❌ Bad: Inline Business Logic (Needs Refactoring)
@@ -459,6 +481,7 @@ func (s *service) ComplexHandler(ctx *gin.Context) {
 ```
 
 **Should be refactored to:**
+
 ```go
 // GOOD: Clean separation
 func (s *service) ComplexHandler(ctx *gin.Context) {
@@ -494,7 +517,7 @@ func (s *service) HandlerName(ctx *gin.Context) {
         ctx.Error(err)
         return
     }
-    
+
     // 2. Parse and validate request
     var req RequestType
     if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -512,7 +535,7 @@ func (s *service) HandlerName(ctx *gin.Context) {
     } else {
         result, err := s.domainSpecificOperation(ctx, &req)
     }
-    
+
     if err != nil {
         ctx.Error(fmt.Errorf("operation failed: %w", err))
         return
@@ -526,12 +549,14 @@ func (s *service) HandlerName(ctx *gin.Context) {
 ### When to Use Helpers vs Private Methods
 
 **Use Helpers when:**
+
 - Multiple domains need the same functionality
 - Logic involves updating entities from different domains
 - Common validation or processing logic is shared
 - Examples: User journey updates, cross-domain validation, shared calculations
 
 **Use Private Service Methods when:**
+
 - Logic is specific to the current domain
 - Database operations on domain entities
 - Domain-specific business rules
@@ -547,11 +572,13 @@ func (s *service) HandlerName(ctx *gin.Context) {
    - Private methods: `camelCase` describing operation (`getInstall`, `validateInputs`)
    - Helper methods: `PascalCase` describing business operation (`UpdateUserJourneyStep`)
 
-This pattern ensures clean separation of concerns, promotes code reuse where appropriate, and maintains clear domain boundaries.
+This pattern ensures clean separation of concerns, promotes code reuse where appropriate, and maintains clear domain
+boundaries.
 
 ## Account & Organization Permission System (RBAC)
 
-The ctl-api implements a sophisticated multi-tenant Role-Based Access Control (RBAC) system for managing user access to organizations.
+The ctl-api implements a sophisticated multi-tenant Role-Based Access Control (RBAC) system for managing user access to
+organizations.
 
 ### Account Creation & Authentication Flow
 
@@ -560,6 +587,7 @@ The ctl-api implements a sophisticated multi-tenant Role-Based Access Control (R
 The middleware automatically creates accounts during first login and distinguishes between two flows:
 
 1. **Self-Signup Flow** (No pending invite):
+
    - Calls `CreateAccountWithAutoOrg()` - creates account + trial org atomically
    - Trial org named with pattern: `${email}-trial`
    - User gets `DefaultEvaluationJourneyWithAutoOrg()` journey tracking
@@ -574,16 +602,19 @@ The middleware automatically creates accounts during first login and distinguish
 ### Permission Architecture (Three-Layer System)
 
 **Layer 1: Accounts** (`internal/app/account.go`)
+
 - Individual users or service accounts
 - Types: `Auth0`, `Service`, `Canary`, `Integration`
 - `AfterQuery` hook aggregates permissions from all roles
 
 **Layer 2: Roles** (`internal/app/role.go`)
+
 - Permission containers with specific purposes
 - Standard types: `OrgAdmin`, `Installer`, `Runner`
 - Created per organization via `authzClient.CreateOrgRoles()`
 
 **Layer 3: Policies** (`internal/app/policy.go`)
+
 - Actual permission sets attached to roles
 - Stored in PostgreSQL HSTORE format
 - Define granular permissions for resources
@@ -593,9 +624,11 @@ The middleware automatically creates accounts during first login and distinguish
 **AuthZ Client Operations** (`internal/pkg/authz/`):
 
 1. **Create Org Roles** (`create_org_roles.go`):
+
    ```go
    authzClient.CreateOrgRoles(ctx, orgID)
    ```
+
    - Creates `OrgAdmin`, `Installer`, `Runner` roles
    - Each role gets associated policies with permissions
    - Requires account context for audit trail
@@ -610,8 +643,8 @@ The middleware automatically creates accounts during first login and distinguish
 
 ### Critical Context Requirements
 
-**CreatedByID Audit Pattern**:
-All major entities (Org, Role, Policy, AccountRole) have `CreatedByID` fields populated by `BeforeCreate` hooks:
+**CreatedByID Audit Pattern**: All major entities (Org, Role, Policy, AccountRole) have `CreatedByID` fields populated
+by `BeforeCreate` hooks:
 
 ```go
 // REQUIRED before any authz operations
@@ -623,6 +656,7 @@ authzClient.AddAccountOrgRole(ctx, ..., ...)  // ✅ Works
 ```
 
 **Common Issue**: Calling authz methods without account context results in:
+
 - `CreatedByID` fields being empty/null
 - Potential constraint violations
 - Role creation failures
@@ -632,6 +666,7 @@ authzClient.AddAccountOrgRole(ctx, ..., ...)  // ✅ Works
 **Runtime Permission Aggregation** (`internal/app/account.go:57-85`):
 
 The `AfterQuery` hook automatically:
+
 1. Aggregates permissions from all account roles
 2. Builds `OrgIDs` array of accessible organizations
 3. Creates unified `AllPermissions` set for authorization
@@ -642,11 +677,13 @@ The `AfterQuery` hook automatically:
 **Key Files & Methods**:
 
 - `internal/pkg/account/create.go`:
+
   - `CreateAccountWithAutoOrg()` - Atomic account + org creation
   - `DefaultEvaluationJourneyWithAutoOrg()` - Journey with org step completed
   - Uses database transactions for consistency
 
 - `internal/middlewares/auth/account_token.go:85-104`:
+
   - Self-signup detection via pending invite check
   - Context setup for authz operations
   - Error handling with detailed messages
@@ -658,6 +695,7 @@ The `AfterQuery` hook automatically:
 ### Transaction Safety & Error Handling
 
 **Database Transactions**:
+
 ```go
 tx := m.db.WithContext(ctx).Begin()
 defer func() {
@@ -678,6 +716,7 @@ tx.Commit()
 ```
 
 **Error Patterns**:
+
 - Account creation errors: Return immediately with transaction rollback
 - Org creation errors: Return immediately with transaction rollback
 - Role creation errors: Return detailed error (org exists but no access)
@@ -686,12 +725,14 @@ tx.Commit()
 ### User Journey Integration
 
 **Updated Journey Steps**:
+
 1. `account_created` - Account signup (auto-completed)
 2. `org_created` - Trial org creation (auto-completed for self-signup)
 3. `app_created` - App sync via CLI (user action required)
 4. `install_created` - Install creation (user action required)
 
 **Cross-Service Updates**:
+
 - Journey updates via `accountsHelpers.UpdateUserJourneyStep*()`
 - Dependency injection pattern: helpers accessed in services
 - Non-blocking: Journey failures logged but don't break operations
@@ -699,12 +740,14 @@ tx.Commit()
 ### Testing & Debugging
 
 **Common Issues**:
+
 1. **Missing Context**: Roles created without `CreatedByID` - check context setup
 2. **Transaction Errors**: Org exists but user has no access - check role assignment
 3. **Journey Not Updated**: User sees org creation modal - check helper calls
 4. **Permission Errors**: User can't access org - check `AccountRole` records
 
 **Debug Queries**:
+
 ```sql
 -- Check account roles
 SELECT ar.*, r.role_type FROM account_roles ar
@@ -718,11 +761,13 @@ SELECT * FROM roles WHERE org_id = 'org_id';
 SELECT user_journeys FROM accounts WHERE id = 'account_id';
 ```
 
-This RBAC system enables Nuon's multi-tenant architecture while providing secure, auditable, and flexible permission management.
+This RBAC system enables Nuon's multi-tenant architecture while providing secure, auditable, and flexible permission
+management.
 
 ## Global Endpoint Configuration & Debugging
 
-The ctl-api uses a global middleware system to mark endpoints as "global" (not organization-scoped) while still requiring authentication.
+The ctl-api uses a global middleware system to mark endpoints as "global" (not organization-scoped) while still
+requiring authentication.
 
 ### Global Middleware Pattern
 
@@ -741,6 +786,7 @@ api.POST("/v1/account/user-journeys/:journey_name/complete", s.CompleteUserJourn
 ### Common Configuration Issues
 
 **Problem**: Route pattern mismatch between global middleware and route registration
+
 ```go
 // ❌ WRONG - Literal path in global middleware
 {"POST", "/v1/account/user-journeys/evaluation/complete"}: {},
@@ -750,6 +796,7 @@ api.POST("/v1/account/user-journeys/:journey_name/complete", s.CompleteUserJourn
 ```
 
 **Symptoms of Mismatch**:
+
 - API endpoints return 401/403 authentication errors
 - Requests fail organization context validation
 - Frontend experiences "silent failures" with no visible errors
@@ -758,11 +805,13 @@ api.POST("/v1/account/user-journeys/:journey_name/complete", s.CompleteUserJourn
 ### Debugging Global Endpoint Issues
 
 **Detection**: Check if endpoint is properly marked as global:
+
 1. Verify route pattern in global middleware matches route registration exactly
 2. Check middleware logs for "marking request as global" debug messages
 3. Test API endpoint with/without `X-Nuon-Org-ID` header
 
 **Resolution Pattern**:
+
 ```go
 // 1. Find route registration pattern
 api.METHOD("/v1/path/:param/endpoint", handler)
@@ -774,13 +823,137 @@ api.METHOD("/v1/path/:param/endpoint", handler)
 ### Authentication Context Requirements
 
 **Global Endpoints**:
+
 - Still require valid JWT authentication via `Authorization: Bearer <token>`
 - Do NOT require `X-Nuon-Org-ID` header
 - Marked as global via middleware for context validation bypass
 
 **Organization-Scoped Endpoints**:
+
 - Require both JWT authentication AND `X-Nuon-Org-ID` header
 - Subject to organization access validation
 - Account must have appropriate roles for the organization
 
 This global endpoint system enables account-level operations while maintaining the multi-tenant security model.
+
+## Service Registration Pattern (FX + Route Registration)
+
+The ctl-api uses **FX dependency injection** combined with a service interface pattern to automatically register HTTP routes. Understanding this pattern is critical when adding new endpoints or moving routes between authentication contexts.
+
+### How Route Registration Works
+
+Each domain gets its own package under `internal/app/<domain>/service/` that implements the `api.Service` interface:
+
+```go
+type Service interface {
+    RegisterPublicRoutes(api *gin.Engine) error      // Unauthenticated routes
+    RegisterRunnerRoutes(api *gin.Engine) error      // Runner-authenticated routes
+    RegisterAuthRoutes(api *gin.Engine) error        // User-authenticated routes
+    RegisterInternalRoutes(api *gin.Engine) error    // Internal/admin routes
+    RegisterAdminDashboardRoutes(api *gin.Engine) error
+}
+```
+
+Services are registered in `internal/fxmodules/services.go`:
+
+```go
+fx.Provide(api.AsService(myservice.New))
+```
+
+### Why Routes Must Be in Separate Packages
+
+**Critical pattern:** Routes are only registered if the package containing them is:
+
+1. Imported in `fxmodules/services.go`
+2. Registered via `fx.Provide(api.AsService(...))`
+
+If you add routes to an existing service's `Register*Routes()` method but that service isn't properly wired for that route type, **the routes won't be registered**. The solution is to create a dedicated service package for the new domain.
+
+### When to Create a New Service Package
+
+Create a new `internal/app/<domain>/service/` package when:
+
+- Adding routes for a new functional domain
+- Moving routes between authentication contexts (e.g., from auth routes to runner routes)
+- The existing package's service struct doesn't have the dependencies your handler needs
+
+### Service Package Structure
+
+```
+internal/app/<domain>/service/
+├── service.go          # Service struct, New(), Register*Routes() implementations
+├── handler_one.go      # Individual handler + request/response types
+└── handler_two.go      # Each handler can be its own file
+```
+
+**service.go template:**
+
+```go
+package service
+
+type Params struct {
+    fx.In
+    DB *gorm.DB `name:"psql"`
+    L  *zap.Logger
+    // ... other dependencies
+}
+
+type service struct {
+    db *gorm.DB
+    l  *zap.Logger
+}
+
+var _ api.Service = (*service)(nil)
+
+func New(params Params) *service {
+    return &service{db: params.DB, l: params.L}
+}
+
+func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+    group := api.Group("/v1/my-domain")
+    group.POST("/action", s.MyHandler)
+    return nil
+}
+
+// Implement other Register*Routes as no-ops if not needed
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error { return nil }
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error { return nil }
+func (s *service) RegisterInternalRoutes(api *gin.Engine) error { return nil }
+func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return nil }
+```
+
+### The Five Route Contexts
+
+| Method                          | Auth Required    | Use Case                           |
+| ------------------------------- | ---------------- | ---------------------------------- |
+| `RegisterPublicRoutes`          | None             | Health checks, public endpoints    |
+| `RegisterRunnerRoutes`          | Runner token     | Runner-to-API communication        |
+| `RegisterAuthRoutes`            | User API key+Org | Standard authenticated API         |
+| `RegisterInternalRoutes`        | Internal/admin   | Admin operations                   |
+| `RegisterAdminDashboardRoutes`  | Dashboard session| Dashboard-specific endpoints       |
+
+### After Creating a New Service
+
+1. Add import to `internal/fxmodules/services.go`
+2. Add `fx.Provide(api.AsService(yourservice.New))` to `sharedServices`
+3. Run `nctl scripts reset-generated-code` to regenerate swagger docs
+4. The ugly long model names in generated SDKs (e.g., `GithubComNuoncoNuon...`) are expected — swagger uses full package paths
+
+### Common Pitfalls
+
+**Routes not being registered:**
+
+- Service package not imported in `fxmodules/services.go`
+- Missing `fx.Provide(api.AsService(...))` registration
+- Routes added to wrong `Register*Routes` method for desired auth context
+
+**Handler dependencies missing:**
+
+- Service struct doesn't have required dependencies (e.g., `acctClient` for token creation)
+- Solution: Add dependency to `Params` struct and wire in constructor
+
+**Swagger model names are ugly:**
+
+- This is expected behavior — go-swagger uses full package paths for type disambiguation
+- Example: `GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest`
+- These names appear in generated SDK code but don't affect functionality
