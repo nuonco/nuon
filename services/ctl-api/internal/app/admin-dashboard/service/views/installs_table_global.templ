@@ -1,0 +1,79 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+)
+
+// InstallsTableGlobal renders the global installs table for all organizations
+templ InstallsTableGlobal(installs []*app.Install) {
+	<div
+		id="installs-table-global"
+		hx-get="installs/table"
+		hx-trigger="every 20s"
+		hx-swap="outerHTML"
+	>
+		if len(installs) == 0 {
+			<div class="text-sm text-muted-foreground">No installs found.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Install }
+						@table.Head() { Organization }
+						@table.Head() { App }
+						@table.Head() { Runner }
+						@table.Head() { Sandbox }
+						@table.Head() { Components }
+						@table.Head() { Created At }
+						@table.Head() { Updated At }
+					}
+				}
+				@table.Body() {
+					for _, install := range installs {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex flex-col gap-1">
+									<a href={ templ.URL("installs/" + install.ID) } class="text-cyan hover:underline">
+										{ install.Name }
+									</a>
+									<div class="flex items-center gap-2">
+										<span id={ "install-id-" + install.ID } class="font-mono text-xs text-muted-foreground">{ install.ID }</span>
+										@copybutton.CopyButton(copybutton.Props{
+											TargetID: "install-id-" + install.ID,
+										})
+									</div>
+								</div>
+							}
+							@table.Cell() {
+								<a href={ templ.URL("orgs/" + install.OrgID) } class="text-cyan hover:underline">
+									{ install.Org.Name }
+								</a>
+							}
+							@table.Cell(table.CellProps{Class: "text-sm"}) {
+								{ install.App.Name }
+							}
+							@table.Cell() {
+								@status.StatusAutoSimple(string(install.RunnerStatus))
+							}
+							@table.Cell() {
+								@status.StatusAutoSimple(string(install.SandboxStatus))
+							}
+							@table.Cell() {
+								@status.StatusAutoSimple(string(install.CompositeComponentStatus))
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								{ install.CreatedAt.Format("2006-01-02 15:04") }
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								{ install.UpdatedAt.Format("2006-01-02 15:04") }
+							}
+						}
+					}
+				}
+			}
+		}
+	</div>
+}

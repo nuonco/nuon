@@ -1,0 +1,34 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+)
+
+templ Installs(installs []*app.Install) {
+	@Layout("Installs") {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Installs
+					}
+					@card.Description() {
+						All installs across all organizations
+					}
+				}
+				@card.Content() {
+					if len(installs) == 0 {
+						<div class="text-sm text-muted-foreground">No installs found.</div>
+					} else {
+						@InstallsTableGlobal(installs)
+					}
+				}
+			}
+		</div>
+		@copybutton.Script()
+		@popover.Script()
+	}
+}
