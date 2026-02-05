@@ -148,7 +148,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       const workflowId = headers?.['x-nuon-install-workflow-id']
       if (install?.id && workflowId) {
         router.push(
-          `/${org?.id}/installs/${install.id}/workflows/${workflowId}?onboardingComplete=true`
+          `/${org?.id}/installs/${install.id}/workflows/${workflowId}${install?.install_number === 1 ? '?onboardingComplete=true' : ''}`
         )
       }
       removeModal(props.modalId)

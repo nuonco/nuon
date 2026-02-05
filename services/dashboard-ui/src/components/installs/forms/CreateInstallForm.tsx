@@ -86,7 +86,14 @@ export const CreateInstallForm = forwardRef<
         )
         modalId = addModal(modal)
       }
-    }, [hasDraft, draftTimestamp, restoreDraft, clearDraft, addModal, removeModal])
+    }, [
+      hasDraft,
+      draftTimestamp,
+      restoreDraft,
+      clearDraft,
+      addModal,
+      removeModal,
+    ])
 
     useServerActionToast({
       data,
@@ -104,83 +111,86 @@ export const CreateInstallForm = forwardRef<
       successHeading: 'Install created',
     })
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
 
-    const formData = new FormData(e.currentTarget)
+      const formData = new FormData(e.currentTarget)
 
-    if (onSubmit) {
-      try {
-        const result = await onSubmit(formData)
-        onSuccess?.(result)
-      } catch (err) {
-        console.error('Form submission error:', err)
-      }
-    } else {
-      execute({
-        appId,
-        orgId: org.id,
-        path,
-        formData,
-      })
-    }
-  }
-
-  return (
-    <form
-      key={formKey}
-      ref={(node) => {
-        formRef.current = node
-        if (typeof ref === 'function') {
-          ref(node)
-        } else if (ref) {
-          ref.current = node
+      if (onSubmit) {
+        try {
+          const result = await onSubmit(formData)
+          onSuccess?.(result)
+        } catch (err) {
+          console.error('Form submission error:', err)
         }
-      }}
-      onSubmit={handleSubmit}
-      className="flex flex-col min-h-[50vh] gap-8 justify-between focus:outline-none relative"
-    >
-      {error ? (
-        <Banner theme="error">
-          {error?.error || 'Unable to create install, please try again.'}
-        </Banner>
-      ) : null}
+      } else {
+        execute({
+          appId,
+          orgId: org.id,
+          path,
+          formData,
+        })
+      }
 
-      <div className="flex flex-col gap-8 max-w-4xl pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <span className="flex flex-col gap-0">
-            <Text variant="body" weight="strong">
-              Install name{' '}
-              <Text className="ml-1" variant="subtext" theme="error">
-                {'*'}
+      clearDraft()
+    }
+
+    return (
+      <form
+        key={formKey}
+        ref={(node) => {
+          formRef.current = node
+          if (typeof ref === 'function') {
+            ref(node)
+          } else if (ref) {
+            ref.current = node
+          }
+        }}
+        onSubmit={handleSubmit}
+        className="flex flex-col min-h-[50vh] gap-8 justify-between focus:outline-none relative"
+      >
+        {error ? (
+          <Banner theme="error">
+            {error?.error || 'Unable to create install, please try again.'}
+          </Banner>
+        ) : null}
+
+        <div className="flex flex-col gap-8 max-w-4xl pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <span className="flex flex-col gap-0">
+              <Text variant="body" weight="strong">
+                Install name{' '}
+                <Text className="ml-1" variant="subtext" theme="error">
+                  {'*'}
+                </Text>
               </Text>
-            </Text>
-            <Text variant="subtext" className="max-w-72">
-              A unique name for this install
-            </Text>
-          </span>
-          <Input
-            id="install-name"
-            name="name"
-            placeholder="Enter install name"
-            required
-            defaultValue={draftValues?.name || ''}
-          />
+              <Text variant="subtext" className="max-w-72">
+                A unique name for this install
+              </Text>
+            </span>
+            <Input
+              id="install-name"
+              name="name"
+              placeholder="Enter install name"
+              required
+              defaultValue={draftValues?.name || ''}
+            />
+          </div>
+
+          {platform && (
+            <PlatformFields platform={platform} draftValues={draftValues} />
+          )}
+
+          {inputConfig && (
+            <InputConfigFields
+              inputConfig={inputConfig}
+              draftValues={draftValues}
+            />
+          )}
         </div>
-
-        {platform && (
-          <PlatformFields platform={platform} draftValues={draftValues} />
-        )}
-
-        {inputConfig && (
-          <InputConfigFields
-            inputConfig={inputConfig}
-            draftValues={draftValues}
-          />
-        )}
-      </div>
-    </form>
-  )
-})
+      </form>
+    )
+  }
+)
 
 CreateInstallForm.displayName = 'CreateInstallForm'

@@ -78,7 +78,7 @@ const columns: ColumnDef<TAppRow>[] = [
     header: 'Config version',
     cell: (info) => (
       <Text family="mono" theme="neutral">
-        {info.getValue() as number}
+        {info.getValue<number>() === 0 ? "No config" : info.getValue<number>()}
       </Text>
     ),
     enableSorting: true,

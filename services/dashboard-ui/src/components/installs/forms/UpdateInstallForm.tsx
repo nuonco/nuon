@@ -24,7 +24,8 @@ const UpdateInstallOptions = () => {
       <legend className="flex flex-col gap-0 mb-4 pr-6">
         <span className="text-lg font-semibold">Update install resources</span>
         <span className="text-sm font-normal">
-          Reprovision sandbox and redeploy components after updating install settings
+          Reprovision sandbox and redeploy components after updating install
+          settings
         </span>
       </legend>
 
@@ -35,7 +36,8 @@ const UpdateInstallOptions = () => {
           defaultChecked
           labelProps={{
             labelText: 'Skip updating resources',
-            className: 'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-0 !w-fit'
+            className:
+              'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-0 !w-fit',
           }}
         />
         <RadioInput
@@ -43,7 +45,8 @@ const UpdateInstallOptions = () => {
           value="update"
           labelProps={{
             labelText: 'Update all resources',
-            className: 'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-0 !w-fit'
+            className:
+              'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-0 !w-fit',
           }}
         />
       </div>
@@ -51,7 +54,10 @@ const UpdateInstallOptions = () => {
   )
 }
 
-export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>(
+export const UpdateInstallForm = forwardRef<
+  HTMLFormElement,
+  IUpdateInstallForm
+>(
   (
     {
       install,
@@ -119,7 +125,14 @@ export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>
         )
         modalId = addModal(modal)
       }
-    }, [hasDraft, draftTimestamp, restoreDraft, clearDraft, addModal, removeModal])
+    }, [
+      hasDraft,
+      draftTimestamp,
+      restoreDraft,
+      clearDraft,
+      addModal,
+      removeModal,
+    ])
 
     useServerActionToast({
       data,
@@ -137,107 +150,110 @@ export const UpdateInstallForm = forwardRef<HTMLFormElement, IUpdateInstallForm>
       successHeading: 'Install updated',
     })
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
-    if (onFormSubmit) {
-      onFormSubmit()
-      return
-    }
-    
-    const formData = new FormData(e.currentTarget)
-    
-    if (onSubmit) {
-      try {
-        const result = await onSubmit(formData)
-        onSuccess?.(result)
-      } catch (err) {
-        console.error('Form submission error:', err)
-      }
-    } else {
-      // Convert FormData to the format expected by updateInstall
-      const formDataObj = Object.fromEntries(formData)
-      const inputs = Object.keys(formDataObj).reduce((acc, key) => {
-        if (key.includes('inputs:')) {
-          let value: any = formDataObj[key]
-          if (value === 'on' || value === 'off') {
-            value = Boolean(value === 'on').toString()
-          }
-          acc[key.replace('inputs:', '')] = value
-        }
-        return acc
-      }, {} as Record<string, any>)
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
 
-      let body: any = {
-        inputs,
-        metadata: install.metadata || {},
+      if (onFormSubmit) {
+        onFormSubmit()
+        return
       }
 
-      execute({
-        installId: install.id,
-        orgId: org.id,
-        path,
-        body,
-      })
-    }
-  }
+      const formData = new FormData(e.currentTarget)
 
-  // Expose submit method to parent
-  const submitForm = () => {
-    if (formRef.current) {
-      formRef.current.requestSubmit()
-    }
-  }
-
-  return (
-    <form
-      key={formKey}
-      ref={(node) => {
-        formRef.current = node
-        if (typeof ref === 'function') {
-          ref(node)
-        } else if (ref) {
-          ref.current = node
+      if (onSubmit) {
+        try {
+          const result = await onSubmit(formData)
+          onSuccess?.(result)
+        } catch (err) {
+          console.error('Form submission error:', err)
         }
-      }}
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-8 justify-between focus:outline-none relative"
-    >
-      {error ? (
-        <Banner theme="error">
-          {error?.error || 'Unable to update install, please try again.'}
-        </Banner>
-      ) : null}
-
-      <div className="flex flex-col gap-8 max-w-4xl pb-12">
-        <div className="flex flex-col gap-2">
-          <Text variant="h3" weight="strong">
-            Update {install.name}
-          </Text>
-          <Text variant="body" theme="neutral">
-            Modify the configuration for this install.
-          </Text>
-        </div>
-
-        
-        {inputConfig && (
-          <InputConfigFields
-            key={formKey}
-            inputConfig={inputConfig}
-            install={install}
-            draftValues={
-              draftValues && Object.keys(draftValues).length > 0
-                ? draftValues
-                : undefined
+      } else {
+        // Convert FormData to the format expected by updateInstall
+        const formDataObj = Object.fromEntries(formData)
+        const inputs = Object.keys(formDataObj).reduce(
+          (acc, key) => {
+            if (key.includes('inputs:')) {
+              let value: any = formDataObj[key]
+              if (value === 'on' || value === 'off') {
+                value = Boolean(value === 'on').toString()
+              }
+              acc[key.replace('inputs:', '')] = value
             }
-          />
-        )}
+            return acc
+          },
+          {} as Record<string, any>
+        )
 
-        <UpdateInstallOptions />
-      </div>
+        let body: any = {
+          inputs,
+          metadata: install.metadata || {},
+        }
 
-    </form>
-  )
-})
+        execute({
+          installId: install.id,
+          orgId: org.id,
+          path,
+          body,
+        })
+      }
+      clearDraft()
+    }
+
+    // Expose submit method to parent
+    const submitForm = () => {
+      if (formRef.current) {
+        formRef.current.requestSubmit()
+      }
+    }
+
+    return (
+      <form
+        key={formKey}
+        ref={(node) => {
+          formRef.current = node
+          if (typeof ref === 'function') {
+            ref(node)
+          } else if (ref) {
+            ref.current = node
+          }
+        }}
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-8 justify-between focus:outline-none relative"
+      >
+        {error ? (
+          <Banner theme="error">
+            {error?.error || 'Unable to update install, please try again.'}
+          </Banner>
+        ) : null}
+
+        <div className="flex flex-col gap-8 max-w-4xl pb-12">
+          <div className="flex flex-col gap-2">
+            <Text variant="h3" weight="strong">
+              Update {install.name}
+            </Text>
+            <Text variant="body" theme="neutral">
+              Modify the configuration for this install.
+            </Text>
+          </div>
+
+          {inputConfig && (
+            <InputConfigFields
+              key={formKey}
+              inputConfig={inputConfig}
+              install={install}
+              draftValues={
+                draftValues && Object.keys(draftValues).length > 0
+                  ? draftValues
+                  : undefined
+              }
+            />
+          )}
+
+          <UpdateInstallOptions />
+        </div>
+      </form>
+    )
+  }
+)
 
 UpdateInstallForm.displayName = 'UpdateInstallForm'
