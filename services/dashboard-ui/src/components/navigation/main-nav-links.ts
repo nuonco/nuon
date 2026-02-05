@@ -15,12 +15,7 @@ export const MAIN_LINKS: TNavLink[] = [
     iconVariant: 'Cube',
     path: `/installs`,
     text: 'Installs',
-  },
-  {
-    iconVariant: 'SneakerMove',
-    path: `/runner`,
-    text: 'Build runner',
-  },
+  }, 
 ]
 
 export const SETTINGS_LINKS: TNavLink[] = [
@@ -28,6 +23,11 @@ export const SETTINGS_LINKS: TNavLink[] = [
     iconVariant: 'UsersThree',
     path: `/team`,
     text: 'Team',
+  },
+   {
+    iconVariant: 'Hammer',
+    path: `/runner`,
+    text: 'Builds',
   },
 ]
 
