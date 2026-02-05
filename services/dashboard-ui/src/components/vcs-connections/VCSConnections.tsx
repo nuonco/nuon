@@ -1,7 +1,9 @@
 'use client'
 
+import { Status } from '@/components/common/Status'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
 import type { TVCSConnection, TVCSConnectionStatus } from '@/types'
@@ -10,15 +12,11 @@ import { getStatusTheme } from '@/utils/vcs-connection-utils'
 import { VCSManagementDropdown } from './management/VCSManagementDropdown'
 import { VCSAccountLink } from './VCSAccountLink'
 
-// old component
-import { RemoveVCSConnection } from './RemoveVCSConnection'
-
 export const VCSConnections = ({
   vcsConnections,
 }: {
   vcsConnections: TVCSConnection[]
 }) => {
-  const { org } = useOrg()
   return (
     <>
       {vcsConnections?.length &&
@@ -30,7 +28,9 @@ export const VCSConnections = ({
           >
             <VCSConnection vcs_connection={vcs} />
             <span className="self-end">
-              <VCSManagementDropdown vcs_connection={vcs} />
+              <Tooltip tipContent="More" position="left">
+                <VCSManagementDropdown vcs_connection={vcs} />
+              </Tooltip>
             </span>
           </Text>
         ))}
@@ -50,8 +50,13 @@ const VCSConnection = ({
 
   return (
     <span className="!flex gap-2 items-center w-full">
-      <Text theme={getStatusTheme(data?.status)}>
-        <Icon className={cn({ 'animate-pulse': isLoading })} variant="GitHub" />
+      <Status
+        className={cn({ 'animate-pulse': isLoading })}
+        status={getStatusTheme(data?.status)}
+        isWithoutText
+      />
+      <Text theme="neutral">
+        <Icon variant="GitHub" />
       </Text>
       <VCSAccountLink vcs_connection={vcs_connection} />
     </span>
