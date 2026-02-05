@@ -24,11 +24,24 @@ defaults:
     shell: bash
 
 jobs:
+  ast-grep:
+    name: ast-grep
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ast-grep
+        run: npm install -g @ast-grep/cli
+
+      - name: Run ast-grep scan
+        run: sg scan services/ pkg/ --filter no-fmt-println
+
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
     runs-on: ubuntu-latest
-    needs: []
+    needs: [ast-grep]
     steps:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1

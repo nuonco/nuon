@@ -2,7 +2,6 @@ package vars
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -13,7 +12,6 @@ import (
 )
 
 func (v *varsValidator) GetFakeState(ctx context.Context) (state.State, error) {
-	fmt.Println("GetFakeState")
 	fakeState := state.State{}
 	fakeState.ID = domains.NewInstallID()
 	fakeState.Name = "fake-state"
@@ -33,7 +31,6 @@ func (v *varsValidator) GetFakeState(ctx context.Context) (state.State, error) {
 
 	fakeState.Components = make(map[string]any, 0)
 	for _, comp := range v.cfg.Components {
-		fmt.Println("comp", comp.Name)
 		fakeComp, err := v.createFakeComponent(comp)
 		if err != nil {
 			return state.State{}, errors.Wrap(err, "unable to create fake component")
