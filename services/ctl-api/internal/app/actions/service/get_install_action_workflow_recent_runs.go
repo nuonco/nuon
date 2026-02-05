@@ -88,7 +88,6 @@ func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 }
 
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
-	fmt.Println("orgID", orgID)
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Where("id = ? and org_id = ?", installID, orgID).
