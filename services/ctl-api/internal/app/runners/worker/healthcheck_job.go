@@ -82,7 +82,6 @@ func (w *Workflows) HealthcheckJobRunner(ctx workflow.Context, req *HealthcheckJ
 	shouldRestart := false
 
 	outputs := job.ParsedOutputs
-	fmt.Println(outputs)
 	hc := &configs.HealthcheckOutputs{}
 	b, err := json.Marshal(outputs)
 	json.Unmarshal(b, hc)
