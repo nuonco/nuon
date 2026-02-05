@@ -62,7 +62,7 @@ type Client interface {
 	UnlockTerraformWorkspace(ctx context.Context, workspaceID string) error
 
 	// authentication
-	RunnerAuthAWS(ctx context.Context, req *models.ServiceRunnerAuthAWSRequest) (*models.ServiceRunnerAuthAWSResponse, error)
+	RunnerAuthAWS(ctx context.Context, req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSResponse, error)
 }
 
 var _ Client = (*client)(nil)

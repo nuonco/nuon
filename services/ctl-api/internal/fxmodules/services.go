@@ -13,6 +13,7 @@ import (
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	releasesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/service"
+	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
 	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/health"
@@ -35,6 +36,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(installsservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),
 	fx.Provide(api.AsService(runnersservice.New)),
+	fx.Provide(api.AsService(runnerauthservice.New)),
 	fx.Provide(api.AsService(releasesservice.New)),
 	fx.Provide(api.AsService(actionsservice.New)),
 	fx.Provide(api.AsService(admindashboardservice.New)),
