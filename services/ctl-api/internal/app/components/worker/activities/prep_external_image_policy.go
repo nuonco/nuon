@@ -29,7 +29,6 @@ type ExternalImagePolicyToEvaluate struct {
 	PolicyID      string `json:"policy_id" temporaljson:"policy_id,omitempty"`
 	Contents      string `json:"contents" temporaljson:"contents,omitempty"`
 	InputJSON     []byte `json:"input_json" temporaljson:"input_json,omitempty"`
-	InputIndex    int    `json:"input_index" temporaljson:"input_index,omitempty"`
 	InputIdentity string `json:"input_identity" temporaljson:"input_identity,omitempty"`
 }
 
@@ -140,7 +139,6 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 			PolicyID:      policy.ID,
 			Contents:      policy.Contents,
 			InputJSON:     inputJSON,
-			InputIndex:    0,
 			InputIdentity: imageIdentity,
 		})
 		policyIDs = append(policyIDs, policy.ID)

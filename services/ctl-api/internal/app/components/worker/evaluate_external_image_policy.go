@@ -131,7 +131,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 			PolicyID:      policy.PolicyID,
 			Contents:      policy.Contents,
 			InputJSON:     policy.InputJSON,
-			InputIndex:    policy.InputIndex,
+			InputIndex:    0,
 			InputIdentity: policy.InputIdentity,
 		})
 		futures = append(futures, fut)
