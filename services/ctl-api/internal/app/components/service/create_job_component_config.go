@@ -153,7 +153,6 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 		Checksum:           req.Checksum,
 		BuildTimeout:       req.BuildTimeout,
 		DeployTimeout:      req.DeployTimeout,
-		OperationRoles:     pgtype.Hstore(req.OperationRoles),
 		OperationRoles:     operationRoles,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {

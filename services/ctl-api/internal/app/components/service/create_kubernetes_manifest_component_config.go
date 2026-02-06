@@ -237,7 +237,6 @@ func (s *service) createKubernetesManifestComponentConfig(
 		ComponentDependencyIDs:            pq.StringArray(depIDs),
 		BuildTimeout:                      req.BuildTimeout,
 		DeployTimeout:                     req.DeployTimeout,
-		OperationRoles:                    pgtype.Hstore(req.OperationRoles),
 		OperationRoles:                    operationRoles,
 	}
 
