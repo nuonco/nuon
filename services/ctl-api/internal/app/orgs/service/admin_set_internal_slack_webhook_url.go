@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type SetSlackWebhookURLRequest struct {
@@ -37,20 +37,18 @@ func (s *service) AdminSetInternalSlackWebhookURLOrg(ctx *gin.Context) {
 
 	var req SetSlackWebhookURLRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error":       "invalid request format",
-			"user_error":  true,
-			"description": err.Error(),
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %v", err),
 		})
 		return
 	}
 
 	// Validate that name field was provided (but allow empty string)
 	if err := s.v.Struct(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error":       "validation failed",
-			"user_error":  true,
-			"description": err.Error(),
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("validation failed: %w", err),
+			Description: fmt.Sprintf("validation failed: %v", err),
 		})
 		return
 	}
@@ -83,7 +81,10 @@ func (s *service) setInternalOrgSlackWebhookURL(ctx context.Context, orgID strin
 		return fmt.Errorf("unable to update slack webhook url: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return fmt.Errorf("org notifications config not found %w", gorm.ErrRecordNotFound)
+		return stderr.ErrNotFound{
+			Err:         fmt.Errorf("org notifications config not found"),
+			Description: fmt.Sprintf("notifications config for org %s not found", orgID),
+		}
 	}
 
 	return nil

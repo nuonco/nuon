@@ -160,6 +160,7 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroup() {
 					ID:                domains.NewRunnerID(),
 					RunnerGroupID:     runnerGroup.ID,
 					OrgID:             s.testOrg.ID,
+					Name:              "runner-1",
 					Status:            app.RunnerStatusActive,
 					StatusDescription: "Running",
 				}
@@ -170,6 +171,7 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroup() {
 					ID:                domains.NewRunnerID(),
 					RunnerGroupID:     runnerGroup.ID,
 					OrgID:             s.testOrg.ID,
+					Name:              "runner-2",
 					Status:            app.RunnerStatusActive,
 					StatusDescription: "Running",
 				}
@@ -284,6 +286,7 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroup() {
 					ID:                domains.NewRunnerID(),
 					RunnerGroupID:     runnerGroup.ID,
 					OrgID:             s.testOrg.ID,
+					Name:              "active-runner",
 					Status:            app.RunnerStatusActive,
 					StatusDescription: "Active and running",
 				}
@@ -294,6 +297,7 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroup() {
 					ID:                domains.NewRunnerID(),
 					RunnerGroupID:     runnerGroup.ID,
 					OrgID:             s.testOrg.ID,
+					Name:              "offline-runner",
 					Status:            app.RunnerStatusOffline,
 					StatusDescription: "Connection issues",
 				}
@@ -304,6 +308,7 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroup() {
 					ID:                domains.NewRunnerID(),
 					RunnerGroupID:     runnerGroup.ID,
 					OrgID:             s.testOrg.ID,
+					Name:              "unknown-runner",
 					Status:            app.RunnerStatusUnknown,
 					StatusDescription: "Status unknown",
 				}
@@ -377,7 +382,7 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroupNotFound() {
 				s.service.DB.Unscoped().Where("owner_type = ? AND owner_id = ?", "orgs", s.testOrg.ID).
 					Delete(&app.RunnerGroup{})
 			},
-			expectedStatus: http.StatusInternalServerError, // gorm.ErrRecordNotFound wrapped in error
+			expectedStatus: http.StatusNotFound,
 		},
 	}
 

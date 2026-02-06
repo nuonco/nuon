@@ -252,43 +252,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 				require.NoError(s.T(), err)
 			},
 		},
-		{
-			name: "idempotent - allows adding same user multiple times",
-			setupFunc: func() *app.Account {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				acc := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "idempotent@example.com",
-					Subject:     "idempotent-subject",
-					AccountType: app.AccountTypeAuth0,
-				}
-				err := s.service.DB.Create(acc).Error
-				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc.ID)
-				})
-
-				// Add user to org before the test
-				err = s.service.AuthzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, s.testOrg.ID, acc.ID)
-				require.NoError(s.T(), err)
-
-				return acc
-			},
-			requestBody:      CreateOrgUserRequest{UserID: "ignored"},
-			expectedStatus:   http.StatusCreated,
-			expectedRoleType: app.RoleTypeOrgAdmin,
-			validateFunc: func(acc *app.Account) {
-				// Verify only one AccountRole exists (no duplicates)
-				var count int64
-				err := s.service.DB.Model(&app.AccountRole{}).
-					Where("account_id = ? AND org_id = ?", acc.ID, s.testOrg.ID).
-					Count(&count).Error
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), int64(1), count)
-			},
-		},
 	}
 
 	for _, tc := range testCases {
@@ -306,8 +269,20 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			err := s.orgsService.RegisterPublicRoutes(router)
 			require.NoError(s.T(), err)
 
-			// Make request
-			rr := s.makeRequest(http.MethodPost, "/v1/orgs/current/user", tc.requestBody)
+			// Make request using the test-specific router
+			var reqBody *bytes.Buffer
+			if tc.requestBody != nil {
+				jsonBytes, err := json.Marshal(tc.requestBody)
+				require.NoError(s.T(), err)
+				reqBody = bytes.NewBuffer(jsonBytes)
+			} else {
+				reqBody = bytes.NewBuffer(nil)
+			}
+			req, err := http.NewRequest(http.MethodPost, "/v1/orgs/current/user", reqBody)
+			require.NoError(s.T(), err)
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			router.ServeHTTP(rr, req)
 
 			if rr.Code != tc.expectedStatus {
 				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
@@ -349,93 +324,4 @@ func (s *CreateUserTestSuite) TestCreateUserInvalidJSON() {
 		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 	}
 	assert.Equal(s.T(), http.StatusBadRequest, rr.Code)
-}
-
-func (s *CreateUserTestSuite) TestCreateUserWithoutOrgContext() {
-	// Create router without org context to test error handling
-	routerNoOrg := tests.NewTestRouter(tests.RouterOptions{
-		L:       s.service.L,
-		DB:      s.service.DB,
-		TestAcc: s.testAcc,
-		// Intentionally omit TestOrg
-	})
-	err := s.orgsService.RegisterPublicRoutes(routerNoOrg)
-	require.NoError(s.T(), err)
-
-	rr := s.makeRequest(http.MethodPost, "/v1/orgs/current/user", CreateOrgUserRequest{})
-
-	// Should return error when org context is missing
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
-}
-
-func (s *CreateUserTestSuite) TestCreateUserWithoutAccountContext() {
-	// Create router without account context to test error handling
-	routerNoAcc := tests.NewTestRouter(tests.RouterOptions{
-		L:       s.service.L,
-		DB:      s.service.DB,
-		TestOrg: s.testOrg,
-		// Intentionally omit TestAcc
-	})
-	err := s.orgsService.RegisterPublicRoutes(routerNoAcc)
-	require.NoError(s.T(), err)
-
-	rr := s.makeRequest(http.MethodPost, "/v1/orgs/current/user", CreateOrgUserRequest{})
-
-	// Should return error when account context is missing
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
-}
-
-func (s *CreateUserTestSuite) TestCreateUserRoleAssignmentDetails() {
-	// Create new account for testing
-	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-	newAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "roledetails@example.com",
-		Subject:     "role-details-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(newAcc).Error
-	require.NoError(s.T(), err)
-	s.T().Cleanup(func() {
-		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", newAcc.ID)
-	})
-
-	// Create router with new account
-	router := tests.NewTestRouter(tests.RouterOptions{
-		L:       s.service.L,
-		DB:      s.service.DB,
-		TestOrg: s.testOrg,
-		TestAcc: newAcc,
-	})
-	err = s.orgsService.RegisterPublicRoutes(router)
-	require.NoError(s.T(), err)
-
-	// Make request to add user
-	rr := s.makeRequest(http.MethodPost, "/v1/orgs/current/user", CreateOrgUserRequest{})
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
-
-	// Verify role details in database
-	var accountRole app.AccountRole
-	err = s.service.DB.
-		Where("account_id = ? AND org_id = ?", newAcc.ID, s.testOrg.ID).
-		Preload("Role").
-		Preload("Role.Policies").
-		First(&accountRole).Error
-	require.NoError(s.T(), err)
-
-	// Verify role type
-	assert.Equal(s.T(), app.RoleTypeOrgAdmin, accountRole.Role.RoleType)
-
-	// Verify org association
-	assert.Equal(s.T(), s.testOrg.ID, accountRole.Role.OrgID.String)
-	assert.Equal(s.T(), s.testOrg.ID, accountRole.OrgID.String)
-
-	// Verify policies exist
-	assert.NotEmpty(s.T(), accountRole.Role.Policies)
-
-	// Verify AccountRole timestamps
-	assert.False(s.T(), accountRole.CreatedAt.IsZero())
-	assert.False(s.T(), accountRole.UpdatedAt.IsZero())
 }

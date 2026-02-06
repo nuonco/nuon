@@ -397,7 +397,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		require.NoError(s.T(), err)
 		s.T().Cleanup(func() {
 			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-			s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "org_id = ?", org.ID)
+			s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
 		})
 
 		// First update
@@ -413,7 +413,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 
 		// Verify final state is the second update
 		var notifConfig app.NotificationsConfig
-		err = s.service.DB.Where("org_id = ?", org.ID).First(&notifConfig).Error
+		err = s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 		require.NoError(s.T(), err)
 		assert.Equal(s.T(), "https://hooks.slack.com/second", notifConfig.InternalSlackWebhookURL)
 	})
@@ -436,12 +436,12 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		require.NoError(s.T(), err)
 		s.T().Cleanup(func() {
 			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-			s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "org_id = ?", org.ID)
+			s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
 		})
 
 		// Store original config ID for verification
 		var originalConfig app.NotificationsConfig
-		err = s.service.DB.Where("org_id = ?", org.ID).First(&originalConfig).Error
+		err = s.service.DB.Where("owner_id = ?", org.ID).First(&originalConfig).Error
 		require.NoError(s.T(), err)
 
 		// Update the webhook URL
@@ -456,7 +456,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		// 2. Webhook URL updated
 		// 3. UpdatedAt timestamp changed
 		var updatedConfig app.NotificationsConfig
-		err = s.service.DB.Where("org_id = ?", org.ID).First(&updatedConfig).Error
+		err = s.service.DB.Where("owner_id = ?", org.ID).First(&updatedConfig).Error
 		require.NoError(s.T(), err)
 
 		assert.Equal(s.T(), originalConfig.ID, updatedConfig.ID, "notification config ID should not change")
@@ -465,7 +465,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 
 		// Verify no new notification config records were created
 		var configCount int64
-		err = s.service.DB.Model(&app.NotificationsConfig{}).Where("org_id = ?", org.ID).Count(&configCount).Error
+		err = s.service.DB.Model(&app.NotificationsConfig{}).Where("owner_id = ?", org.ID).Count(&configCount).Error
 		require.NoError(s.T(), err)
 		assert.Equal(s.T(), int64(1), configCount, "should only have one notification config per org")
 	})

@@ -464,9 +464,10 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_UniqueConstraint() {
 	rr2 := s.makeRequest(http.MethodPost, "/v1/orgs/current/invites", req)
 
 	// Should fail due to unique constraint (org_id, email, deleted_at)
-	assert.Equal(s.T(), http.StatusInternalServerError, rr2.Code)
+	// Stderr middleware automatically returns 409 Conflict for duplicate keys
+	assert.Equal(s.T(), http.StatusConflict, rr2.Code)
 	body := rr2.Body.String()
-	assert.Contains(s.T(), body, "unable to create invite")
+	assert.Contains(s.T(), body, "duplicate key")
 }
 
 func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSameEmail() {
