@@ -375,7 +375,7 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 			requestBody:    "invalid-json",
 			expectedStatus: http.StatusBadRequest,
 			validateError: func(body string) {
-				assert.Contains(s.T(), body, "invalid request")
+				assert.Contains(s.T(), body, "unable to parse request")
 			},
 		},
 		{

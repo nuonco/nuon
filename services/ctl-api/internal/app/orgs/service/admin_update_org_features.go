@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -37,8 +38,11 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	var req AdminUpdateOrgFeaturesRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
+		})
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

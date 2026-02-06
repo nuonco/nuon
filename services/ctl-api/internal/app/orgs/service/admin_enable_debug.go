@@ -46,8 +46,11 @@ func (s *service) AdminDebugModeOrg(ctx *gin.Context) {
 	}
 
 	var req DebugModeRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
+		})
 		return
 	}
 
