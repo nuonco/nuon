@@ -72,7 +72,8 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
 		Example("30m").
-		Example("1h")
+		Example("1h").
+		Field("value").Deprecated("use values map instead")
 }
 
 type HelmRepoConfig struct {

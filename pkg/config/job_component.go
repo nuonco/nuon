@@ -55,7 +55,8 @@ func (j JobComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for job execution (e.g., \"30m\", \"1h\").").
 		Example("30m").
-		Example("1h")
+		Example("1h").
+		Field("env_var").Deprecated("use env_vars map instead")
 }
 
 func (t *JobComponentConfig) Validate() error {

@@ -42,7 +42,8 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("configmap").
 		Example("secret").
 		Field("init_script_url").Short("initialization script URL").
-		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh")
+		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh").
+		Field("env_var").Deprecated("use env_vars map instead")
 }
 
 func (a *AppRunnerConfig) parse() error {

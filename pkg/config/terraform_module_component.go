@@ -61,7 +61,9 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 		Field("deploy_timeout").Short("deploy operation timeout").
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
 		Example("30m").
-		Example("1h")
+		Example("1h").
+		Field("var").Deprecated("use vars map instead").
+		Field("env_var").Deprecated("use env_vars map instead")
 }
 
 func (t *TerraformModuleComponentConfig) Parse() error {
