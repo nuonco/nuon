@@ -66,7 +66,7 @@ type GetOrgInvitesParams struct {
 
 	   limit of results to return
 
-	   Default: 10
+	   Default: 60
 	*/
 	Limit *int64
 
@@ -100,7 +100,7 @@ func (o *GetOrgInvitesParams) WithDefaults() *GetOrgInvitesParams {
 // All values with no default are reset to their zero value.
 func (o *GetOrgInvitesParams) SetDefaults() {
 	var (
-		limitDefault = int64(10)
+		limitDefault = int64(60)
 
 		offsetDefault = int64(0)
 
