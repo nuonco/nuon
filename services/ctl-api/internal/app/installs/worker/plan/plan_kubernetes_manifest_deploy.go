@@ -77,6 +77,15 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 		return nil, errors.Wrap(err, "unable to render namespace")
 	}
 
+	manifest := cfg.Manifest
+	renderedManifest, err := render.RenderV2(manifest, stateData)
+	if err != nil {
+		l.Error("error rendering manifest",
+			zap.String("manifest", manifest),
+			zap.Error(err))
+		return nil, errors.Wrap(err, "unable to render namespace")
+	}
+
 	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get cluster info")
@@ -97,6 +106,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 	return &plantypes.KubernetesManifestDeployPlan{
 		ClusterInfo: clusterInfo,
 		Namespace:   renderedNamespace,
+		Manifest:    renderedManifest,
 		OCIArtifact: &plantypes.OCIArtifactReference{
 			URL:    ociArtifact.Repository,
 			Tag:    ociArtifact.Tag,
