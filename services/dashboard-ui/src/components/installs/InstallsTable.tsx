@@ -3,21 +3,26 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Button } from '@/components/common/Button'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
+import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Menu } from '@/components/common/Menu'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { type IPagination } from '@/components/common/Pagination'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstall, TCloudPlatform } from '@/types'
-import { CreateInstallButton } from "./CreateInstall"
+import { CreateInstallButton } from './CreateInstall'
 import { InstallStatuses } from './InstallStatuses'
+import { QuickManagementDropdown } from './management/QuickManagementDropdown'
 
 // Custom skeleton components for each column type
 const InstallNameSkeleton = () => (
@@ -29,9 +34,7 @@ const InstallNameSkeleton = () => (
   </span>
 )
 
-const AppNameSkeleton = () => (
-  <Skeleton height="16px" width="100px" />
-)
+const AppNameSkeleton = () => <Skeleton height="16px" width="100px" />
 
 const StatusesSkeleton = () => (
   <div className="flex items-center gap-2">
@@ -63,15 +66,17 @@ const ActionSkeleton = () => (
 )
 
 export type InstallRow = {
-  actionHref: string
+  action: ReactNode
   appHref: string
   appName: string
+  created_at: string
   installId: string
   name: string
   nameHref: string
   region?: ReactNode
   statuses: ReactNode
   platform: ReactNode
+  updated_at: string
 }
 
 function parseInstallsToTableData(
@@ -79,7 +84,6 @@ function parseInstallsToTableData(
   orgId: string
 ): InstallRow[] {
   return installs.map((install) => ({
-    actionHref: `/${orgId}/installs/${install.id}`,
     appHref: `/${install.org_id}/apps/${install.app_id}`,
     appName: install?.app?.name,
     name: install.name,
@@ -102,6 +106,9 @@ function parseInstallsToTableData(
         variant="subtext"
       />
     ),
+    created_at: install?.created_at,
+    updated_at: install?.updated_at,
+    action: <QuickManagementDropdown install={install} />,
   }))
 }
 
@@ -151,17 +158,27 @@ const columns: ColumnDef<InstallRow>[] = [
     enableSorting: true,
   },
   {
+    accessorKey: 'created_at',
+    header: 'Created',
+    cell: (info) => <Time time={info.getValue<string>()} variant="subtext" />,
+  },
+  {
+    accessorKey: 'updated_at',
+    header: 'Updated',
+    cell: (info) => (
+      <Time
+        time={info.getValue<string>()}
+        variant="subtext"
+        format="relative"
+      />
+    ),
+  },
+  {
     enableSorting: false,
-    accessorKey: 'actionHref',
+    accessorKey: 'action',
     id: 'action',
     header: '',
-    cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
-        </Link>
-      </Text>
-    ),
+    cell: (info) => info.getValue<ReactNode>(),
   },
 ]
 
@@ -206,7 +223,6 @@ export const InstallsTable = ({
 
 export const InstallsTableSkeleton = () => {
   const skeletonData = Array.from({ length: 5 }, (_, i) => ({
-    actionHref: '',
     appHref: '',
     appName: '',
     installId: '',
@@ -215,6 +231,9 @@ export const InstallsTableSkeleton = () => {
     region: <RegionSkeleton />,
     statuses: <StatusesSkeleton />,
     platform: <PlatformSkeleton />,
+    created_at: '',
+    updated_at: '',
+    action: '',
   }))
 
   const skeletonColumns: ColumnDef<InstallRow>[] = [
@@ -247,9 +266,22 @@ export const InstallsTableSkeleton = () => {
       cell: (info) => info.getValue() as ReactNode,
       enableSorting: true,
     },
+
+    {
+      accessorKey: 'created_at',
+      header: 'Created',
+      cell: () => <Skeleton height="16px" width="100px" />,
+      enableSorting: true,
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Updated',
+      cell: () => <Skeleton height="16px" width="100px" />,
+      enableSorting: true,
+    },
     {
       enableSorting: false,
-      accessorKey: 'actionHref',
+      accessorKey: 'action',
       id: 'action',
       header: '',
       cell: () => <ActionSkeleton />,
