@@ -92,7 +92,7 @@ func (s *AdminRenameOrgTestSuite) SetupTest() {
 		TestAcc: s.testAcc,
 	})
 
-	err := s.orgsService.RegisterPublicRoutes(s.router)
+	err := s.orgsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
 }
 
@@ -393,7 +393,7 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				TestOrg: org,
 				TestAcc: s.testAcc,
 			})
-			err := s.orgsService.RegisterPublicRoutes(s.router)
+			err := s.orgsService.RegisterInternalRoutes(s.router)
 			require.NoError(s.T(), err)
 
 			// Make request

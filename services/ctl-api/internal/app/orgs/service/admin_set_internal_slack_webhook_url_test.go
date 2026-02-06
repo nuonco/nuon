@@ -172,19 +172,19 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				require.NoError(s.T(), err)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "org_id = ?", org.ID)
+					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
 				})
 
 				return org
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: "https://hooks.slack.com/services/NEW/WEBHOOK/URL",
+				Name: stringPtr("https://hooks.slack.com/services/NEW/WEBHOOK/URL"),
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
 				// Verify database state was updated
 				var notifConfig app.NotificationsConfig
-				err := s.service.DB.Where("org_id = ?", org.ID).First(&notifConfig).Error
+				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), newURL, notifConfig.InternalSlackWebhookURL)
 			},
@@ -206,19 +206,19 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				require.NoError(s.T(), err)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "org_id = ?", org.ID)
+					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
 				})
 
 				return org
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: "https://hooks.slack.com/services/UPDATED/URL",
+				Name: stringPtr("https://hooks.slack.com/services/UPDATED/URL"),
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
 				// Verify old URL is replaced
 				var notifConfig app.NotificationsConfig
-				err := s.service.DB.Where("org_id = ?", org.ID).First(&notifConfig).Error
+				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), newURL, notifConfig.InternalSlackWebhookURL)
 				assert.NotEqual(s.T(), "https://hooks.slack.com/existing", notifConfig.InternalSlackWebhookURL)
@@ -241,19 +241,19 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				require.NoError(s.T(), err)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "org_id = ?", org.ID)
+					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
 				})
 
 				return org
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: "",
+				Name: stringPtr(""),
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
 				// Verify URL is cleared
 				var notifConfig app.NotificationsConfig
-				err := s.service.DB.Where("org_id = ?", org.ID).First(&notifConfig).Error
+				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "", notifConfig.InternalSlackWebhookURL)
 			},
@@ -275,7 +275,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				require.NoError(s.T(), err)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "org_id = ?", org.ID)
+					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
 				})
 
 				return org
@@ -285,7 +285,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			validateFunc: func(org *app.Org, newURL string) {
 				// Verify URL was not changed
 				var notifConfig app.NotificationsConfig
-				err := s.service.DB.Where("org_id = ?", org.ID).First(&notifConfig).Error
+				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "https://hooks.slack.com/unchanged", notifConfig.InternalSlackWebhookURL)
 			},
@@ -309,7 +309,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				}
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: "https://hooks.slack.com/new",
+				Name: stringPtr("https://hooks.slack.com/new"),
 			},
 			expectedStatus: http.StatusNotFound,
 			validateFunc:   nil, // No validation needed
@@ -331,19 +331,19 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				require.NoError(s.T(), err)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "org_id = ?", org.ID)
+					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
 				})
 
 				return org
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX",
+				Name: stringPtr("https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX"),
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
 				// Verify complex URL is stored correctly
 				var notifConfig app.NotificationsConfig
-				err := s.service.DB.Where("org_id = ?", org.ID).First(&notifConfig).Error
+				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), newURL, notifConfig.InternalSlackWebhookURL)
 			},
@@ -358,7 +358,9 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			// Extract URL from request body for validation
 			var newURL string
 			if req, ok := tc.requestBody.(SetSlackWebhookURLRequest); ok {
-				newURL = req.Name
+				if req.Name != nil {
+					newURL = *req.Name
+				}
 			}
 
 			// Make request
@@ -400,12 +402,12 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 
 		// First update
 		path := fmt.Sprintf("/v1/orgs/%s/admin-internal-slack-webhook-url", org.ID)
-		req1 := SetSlackWebhookURLRequest{Name: "https://hooks.slack.com/first"}
+		req1 := SetSlackWebhookURLRequest{Name: stringPtr("https://hooks.slack.com/first")}
 		rr1 := s.makeRequest(http.MethodPost, path, req1)
 		require.Equal(s.T(), http.StatusOK, rr1.Code)
 
 		// Second update (should overwrite first)
-		req2 := SetSlackWebhookURLRequest{Name: "https://hooks.slack.com/second"}
+		req2 := SetSlackWebhookURLRequest{Name: stringPtr("https://hooks.slack.com/second")}
 		rr2 := s.makeRequest(http.MethodPost, path, req2)
 		require.Equal(s.T(), http.StatusOK, rr2.Code)
 
@@ -445,7 +447,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		// Update the webhook URL
 		newURL := "https://hooks.slack.com/after"
 		path := fmt.Sprintf("/v1/orgs/%s/admin-internal-slack-webhook-url", org.ID)
-		req := SetSlackWebhookURLRequest{Name: newURL}
+		req := SetSlackWebhookURLRequest{Name: stringPtr(newURL)}
 		rr := s.makeRequest(http.MethodPost, path, req)
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 

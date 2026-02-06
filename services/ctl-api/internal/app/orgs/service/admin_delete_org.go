@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminDeleteOrgRequest struct {
@@ -29,9 +30,15 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	var req AdminDeleteOrgRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		// Allow empty request body (defaults to force=false)
+		if err.Error() != "EOF" {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("invalid request format"),
+				Description: err.Error(),
+			})
+			return
+		}
 	}
 
 	org, err := s.adminGetOrg(ctx, orgID)

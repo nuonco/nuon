@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminUpdateOrgFeaturesRequest struct {
@@ -27,14 +29,29 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	var req AdminUpdateOrgFeaturesRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %v", err),
+		})
+		return
+	}
+
+	// Validate required fields
+	if err := s.v.Struct(&req); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %v", err),
+		})
 		return
 	}
 
 	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable update org: %w", err))
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable update org: %w", err),
+			Description: fmt.Sprintf("unable update org: %v", err),
+		})
 		return
 	}
 

@@ -427,7 +427,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 			requestBody: AdminDeleteOrgRequest{
 				Force: false,
 			},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:  "returns error when org ID is invalid",
@@ -435,7 +435,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 			requestBody: AdminDeleteOrgRequest{
 				Force: false,
 			},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusNotFound,
 		},
 	}
 
@@ -473,7 +473,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 		{
 			name:           "handles invalid JSON",
 			requestBody:    "{invalid json}",
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "handles null request body",

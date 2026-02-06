@@ -19,6 +19,7 @@ import (
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -478,5 +479,5 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatab
 	assert.Equal(s.T(), org.OrgType, orgAfter.OrgType)
 	assert.Equal(s.T(), originalCreatedAt.Unix(), orgAfter.CreatedAt.Unix())
 	assert.Equal(s.T(), originalUpdatedAt.Unix(), orgAfter.UpdatedAt.Unix())
-	assert.Nil(s.T(), orgAfter.DeletedAt, "org should not be soft-deleted")
+	assert.Equal(s.T(), soft_delete.DeletedAt(0), orgAfter.DeletedAt, "org should not be soft-deleted")
 }

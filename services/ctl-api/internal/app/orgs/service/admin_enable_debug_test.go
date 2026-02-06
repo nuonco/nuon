@@ -346,9 +346,9 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 			requestBody: DebugModeRequest{
 				DebugMode: true,
 			},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusNotFound,
 			validateError: func(body string) {
-				assert.Contains(s.T(), body, "org not found")
+				assert.Contains(s.T(), body, "not found")
 			},
 		},
 		{
@@ -387,9 +387,9 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 			requestBody: DebugModeRequest{
 				DebugMode: true,
 			},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusNotFound,
 			validateError: func(body string) {
-				assert.Contains(s.T(), body, "unable to get org")
+				assert.Contains(s.T(), body, "not found")
 			},
 		},
 	}

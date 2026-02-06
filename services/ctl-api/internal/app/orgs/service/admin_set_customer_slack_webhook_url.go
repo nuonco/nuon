@@ -12,7 +12,7 @@ import (
 )
 
 type SetCustomerSlackWebhookURLRequest struct {
-	Name string `validate:"required"`
+	Name *string `json:"name" validate:"required"`
 }
 
 // @ID						AdminSetCustomerSlackWebhookURLOrg
@@ -36,12 +36,33 @@ func (s *service) AdminSetCustomerSlackWebhookURLOrg(ctx *gin.Context) {
 	}
 
 	var req SetCustomerSlackWebhookURLRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		// Unlike admin_delete_org, this endpoint requires a request body
+		// Both EOF (no body) and invalid JSON should return 400
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error":       "invalid request format",
+			"user_error":  true,
+			"description": err.Error(),
+		})
 		return
 	}
 
-	if err := s.setOrgSlackWebhookURL(ctx, orgID, req.Name); err != nil {
+	// Validate that name field was provided (but allow empty string)
+	if err := s.v.Struct(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error":       "validation failed",
+			"user_error":  true,
+			"description": err.Error(),
+		})
+		return
+	}
+
+	webhookURL := ""
+	if req.Name != nil {
+		webhookURL = *req.Name
+	}
+
+	if err := s.setOrgSlackWebhookURL(ctx, orgID, webhookURL); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -50,12 +71,16 @@ func (s *service) AdminSetCustomerSlackWebhookURLOrg(ctx *gin.Context) {
 }
 
 func (s *service) setOrgSlackWebhookURL(ctx context.Context, orgID string, webhookURL string) error {
+	// Use Select to force update even if value is empty string
 	res := s.db.WithContext(ctx).
+		Model(&app.NotificationsConfig{}).
 		Where(&app.NotificationsConfig{
 			OwnerID: orgID,
-		}).Updates(app.NotificationsConfig{
-		SlackWebhookURL: webhookURL,
-	})
+		}).
+		Select("slack_webhook_url").
+		Updates(app.NotificationsConfig{
+			SlackWebhookURL: webhookURL,
+		})
 	if res.Error != nil {
 		return fmt.Errorf("unable to update slack webhook url: %w", res.Error)
 	}

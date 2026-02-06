@@ -88,7 +88,7 @@ func (s *AdminGetOrgFeaturesTestSuite) SetupTest() {
 		TestAcc: s.testAcc,
 	})
 
-	err := s.service.OrgsService.RegisterPublicRoutes(s.router)
+	err := s.service.OrgsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
 }
 
@@ -273,11 +273,8 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeaturesHTTPMethods() {
 			method:       http.MethodDelete,
 			expectedCode: http.StatusNotFound,
 		},
-		{
-			name:         "PATCH method is not supported",
-			method:       http.MethodPatch,
-			expectedCode: http.StatusNotFound,
-		},
+		// Note: PATCH is actually supported on /admin-features (AdminUpdateOrgsFeatures endpoint)
+		// so it's not included in the "not supported" test cases
 	}
 
 	for _, tc := range testCases {
