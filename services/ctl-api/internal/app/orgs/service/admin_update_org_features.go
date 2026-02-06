@@ -29,20 +29,13 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	var req AdminUpdateOrgFeaturesRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("unable to parse request: %w", err),
-			Description: fmt.Sprintf("unable to parse request: %v", err),
-		})
+	if err := ctx.BindJSON(&req); err != nil {
 		return
 	}
 
 	// Validate required fields
 	if err := s.v.Struct(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("unable to parse request: %w", err),
-			Description: fmt.Sprintf("unable to parse request: %v", err),
-		})
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

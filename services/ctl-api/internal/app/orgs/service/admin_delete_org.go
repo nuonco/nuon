@@ -1,14 +1,12 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminDeleteOrgRequest struct {
@@ -33,10 +31,7 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		// Allow empty request body (defaults to force=false)
 		if err.Error() != "EOF" {
-			ctx.Error(stderr.ErrUser{
-				Err:         fmt.Errorf("invalid request format"),
-				Description: err.Error(),
-			})
+			ctx.Error(err)
 			return
 		}
 	}

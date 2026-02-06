@@ -36,24 +36,13 @@ func (s *service) AdminSetCustomerSlackWebhookURLOrg(ctx *gin.Context) {
 	}
 
 	var req SetCustomerSlackWebhookURLRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		// Unlike admin_delete_org, this endpoint requires a request body
-		// Both EOF (no body) and invalid JSON should return 400
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error":       "invalid request format",
-			"user_error":  true,
-			"description": err.Error(),
-		})
+	if err := ctx.BindJSON(&req); err != nil {
 		return
 	}
 
 	// Validate that name field was provided (but allow empty string)
 	if err := s.v.Struct(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error":       "validation failed",
-			"user_error":  true,
-			"description": err.Error(),
-		})
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

@@ -35,22 +35,13 @@ func (s *service) AdminRenameOrg(ctx *gin.Context) {
 	}
 
 	var req RenameOrgRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error":       "invalid request format",
-			"user_error":  true,
-			"description": err.Error(),
-		})
+	if err := ctx.BindJSON(&req); err != nil {
 		return
 	}
 
 	// Validate required fields
 	if err := s.v.Struct(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error":       "validation failed",
-			"user_error":  true,
-			"description": err.Error(),
-		})
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

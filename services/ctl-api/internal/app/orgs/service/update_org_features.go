@@ -54,18 +54,11 @@ func (s *service) UpdateOrgFeatures(ctx *gin.Context) {
 	}
 
 	var req UpdateOrgFeaturesRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("unable to parse request: %w", err),
-			Description: fmt.Sprintf("unable to parse request: %v", err),
-		})
+	if err := ctx.BindJSON(&req); err != nil {
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("unable to parse request: %w", err),
-			Description: fmt.Sprintf("unable to parse request: %v", err),
-		})
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
