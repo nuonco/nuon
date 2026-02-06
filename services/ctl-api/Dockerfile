@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
 
 FROM code AS unit-test
 RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
-    go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+    go test -v -race ./...
 
 FROM code AS lint
 
