@@ -162,7 +162,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			Input: *inp,
 		})
 		if err != nil {
-			return errors.Wrap(err, "unabel to render stack template")
+			return errors.Wrap(err, "unable to render stack template")
 		}
 
 		tmplByts = renderedTemplate.RAWJson
