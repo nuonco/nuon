@@ -15,6 +15,7 @@ export const ShowDriftScan = () => {
 
     const params = new URLSearchParams(searchParams.toString())
     params.set('drifts', checked ? 'true' : 'false')
+    params.delete('offset')
     router.replace(`?${params.toString()}`)
   }
 
