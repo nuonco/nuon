@@ -1,4 +1,5 @@
-import { ComponentConfiguration, Text } from '@/components'
+import { ComponentConfigCard, ComponentConfigCardSkeleton } from "@/components/components/ComponentConfigCard"
+import { EmptyState } from '@/components/common/EmptyState'
 import type { TComponentConfig } from '@/types'
 import { api } from '@/lib/api'
 
@@ -16,8 +17,18 @@ export const Config = async ({
   })
 
   return error ? (
-    <Text>{error?.error}</Text>
+    <ConfigError />
   ) : (
-    <ComponentConfiguration config={componentConfig} isNotTruncated />
+    <ComponentConfigCard config={componentConfig} />
   )
 }
+
+export const ConfigError = () => (
+  <EmptyState
+    variant="table"
+    emptyTitle="Unable to load component config"
+    emptyMessage="There was an error loading the component configuration."
+  />
+)
+
+export const ConfigSkeleton = ComponentConfigCardSkeleton
