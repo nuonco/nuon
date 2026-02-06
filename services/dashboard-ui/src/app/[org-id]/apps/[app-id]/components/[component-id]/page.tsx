@@ -2,10 +2,9 @@
 
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
@@ -15,16 +14,10 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getApp, getComponent, getOrg } from '@/lib'
 import { Builds, BuildsSkeleton, BuildsError } from './builds'
+import { Config, ConfigError, ConfigSkeleton } from './config'
 
 // NOTE: old layout stuff
-import { ErrorBoundary as OldErrorBoundary } from 'react-error-boundary'
-import {
-  ErrorFallback,
-  Loading,
-  Section,
-} from '@/components'
-
-import { Config } from './config'
+import { ErrorFallback, Loading, Section } from '@/components'
 import { Dependencies } from './dependencies'
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -114,48 +107,42 @@ export default async function AppComponent({ params, searchParams }) {
         <div className="divide-y flex flex-col md:col-span-8">
           {component?.dependencies && (
             <Section className="flex-initial" heading="Dependencies">
-              <OldErrorBoundary fallbackRender={ErrorFallback}>
-                <Suspense
-                  fallback={
-                    <Loading
-                      variant="stack"
-                      loadingText="Loading component dependencies..."
-                    />
-                  }
-                >
-                  <Dependencies component={component} orgId={orgId} />
-                </Suspense>
-              </OldErrorBoundary>
-            </Section>
-          )}
-
-          <Section heading="Latest config">
-            <OldErrorBoundary fallbackRender={ErrorFallback}>
-              <Suspense
-                fallback={
+              <AsyncBoundary
+                errorFallback={ErrorFallback}
+                loadingFallback={
                   <Loading
                     variant="stack"
-                    loadingText="Loading component config..."
+                    loadingText="Loading component dependencies..."
                   />
                 }
               >
-                <Config componentId={componentId} orgId={orgId} />
-              </Suspense>
-            </OldErrorBoundary>
-          </Section>
+                <Dependencies component={component} orgId={orgId} />
+              </AsyncBoundary>
+            </Section>
+          )}
+
+          <PageSection>
+            <AsyncBoundary
+              errorFallback={<ConfigError />}
+              loadingFallback={<ConfigSkeleton />}
+            >
+              <Config componentId={componentId} orgId={orgId} />
+            </AsyncBoundary>
+          </PageSection>
         </div>
         <div className="divide-y flex flex-col md:col-span-4">
-          <Section heading="Build history">
-            <ErrorBoundary fallback={<BuildsError />}>
-              <Suspense fallback={<BuildsSkeleton />}>
-                <Builds
-                  component={component}
-                  orgId={orgId}
-                  offset={sp['offset'] || '0'}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </Section>
+          <PageSection>
+            <AsyncBoundary
+              errorFallback={<BuildsError />}
+              loadingFallback={<BuildsSkeleton />}
+            >
+              <Builds
+                component={component}
+                orgId={orgId}
+                offset={sp['offset'] || '0'}
+              />
+            </AsyncBoundary>
+          </PageSection>
         </div>
       </div>
       {/* old page layout */}

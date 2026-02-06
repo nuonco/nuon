@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/common/EmptyState'
+import { Text } from '@/components/common/Text'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { BuildTimeline } from '@/components/builds/BuildTimeline'
 import { getComponentBuilds } from '@/lib'
@@ -35,6 +36,9 @@ export const Builds = async ({
     <BuildsError />
   ) : builds?.length ? (
     <>
+      <Text variant="base" weight="strong">
+        Build history
+      </Text>
       <BuildTimeline
         initBuilds={builds}
         componentId={component?.id}
