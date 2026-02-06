@@ -7,6 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 const mockVPCTemplateYAML = `
@@ -72,7 +75,7 @@ func TestExtractNestedStackParameters(t *testing.T) {
 	defer server.Close()
 
 	tpl := &Templates{}
-	params, defaultParams := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
+	params, defaultParams, reservedInTemplate := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
 
 	expectedParams := []string{
 		"VpcCIDR",
@@ -108,6 +111,12 @@ func TestExtractNestedStackParameters(t *testing.T) {
 			assert.False(t, ok, "defaultParams should not contain reserved param %s", paramName)
 		})
 	}
+
+	// verify reserved params are tracked
+	assert.True(t, reservedInTemplate["ClusterName"], "reservedInTemplate should contain ClusterName")
+	assert.True(t, reservedInTemplate["NuonInstallID"], "reservedInTemplate should contain NuonInstallID")
+	assert.True(t, reservedInTemplate["NuonOrgID"], "reservedInTemplate should contain NuonOrgID")
+	assert.True(t, reservedInTemplate["NuonAppID"], "reservedInTemplate should contain NuonAppID")
 
 	require.Contains(t, defaultParams, "VpcCIDR")
 	assert.Equal(t, "String", defaultParams["VpcCIDR"].Type)
@@ -167,7 +176,9 @@ func TestExtractNestedStackParameters_RunnerASG(t *testing.T) {
 	defer server.Close()
 
 	tpl := &Templates{}
-	params, defaultParams := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
+	params, defaultParams, reservedInTemplate := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
+
+	assert.Empty(t, reservedInTemplate, "runner ASG template should have no reserved params")
 
 	expectedParams := []string{
 		"SubnetId",
@@ -243,7 +254,11 @@ func TestExtractNestedStackParameters_BYOVPC(t *testing.T) {
 	defer server.Close()
 
 	tpl := &Templates{}
-	params, defaultParams := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
+	params, defaultParams, reservedInTemplate := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
+
+	// BYOVPC template has NuonInstallID, NuonOrgID, NuonAppID but no ClusterName
+	assert.False(t, reservedInTemplate["ClusterName"], "BYOVPC template should not have ClusterName")
+	assert.True(t, reservedInTemplate["NuonInstallID"], "BYOVPC template should have NuonInstallID")
 
 	expectedParams := []string{
 		"VpcID",
@@ -296,12 +311,72 @@ func TestExtractNestedStackParameters_BYOVPC(t *testing.T) {
 	assert.Equal(t, "String", defaultParams["PrivateSubnetIDs"].Type)
 }
 
+func TestGetVPCNestedStack_OmitsClusterNameWhenNotInTemplate(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/yaml")
+		w.Write([]byte(mockBYOVPCTemplateYAML))
+	}))
+	defer server.Close()
+
+	tpl := &Templates{}
+	inp := &stacks.TemplateInput{
+		Install: &app.Install{
+			ID:    "test-install-id",
+			AppID: "test-app-id",
+			OrgID: "test-org-id",
+		},
+		AppCfg: &app.AppConfig{
+			StackConfig: app.AppStackConfig{
+				VPCNestedTemplateURL: server.URL + "/stack.yaml",
+			},
+		},
+	}
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	stack, _ := tpl.getVPCNestedStack(inp, tb)
+
+	assert.NotContains(t, stack.Parameters, "ClusterName", "ClusterName should not be in stack parameters when template does not define it")
+	assert.Equal(t, inp.Install.ID, stack.Parameters["NuonInstallID"])
+	assert.Equal(t, inp.Install.AppID, stack.Parameters["NuonAppID"])
+	assert.Equal(t, inp.Install.OrgID, stack.Parameters["NuonOrgID"])
+}
+
+func TestGetVPCNestedStack_IncludesClusterNameWhenInTemplate(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/yaml")
+		w.Write([]byte(mockVPCTemplateYAML))
+	}))
+	defer server.Close()
+
+	tpl := &Templates{}
+	inp := &stacks.TemplateInput{
+		Install: &app.Install{
+			ID:    "test-install-id",
+			AppID: "test-app-id",
+			OrgID: "test-org-id",
+		},
+		AppCfg: &app.AppConfig{
+			StackConfig: app.AppStackConfig{
+				VPCNestedTemplateURL: server.URL + "/stack.yaml",
+			},
+		},
+	}
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	stack, _ := tpl.getVPCNestedStack(inp, tb)
+
+	assert.Contains(t, stack.Parameters, "ClusterName", "ClusterName should be in stack parameters when template defines it")
+	assert.Equal(t, inp.Install.ID, stack.Parameters["ClusterName"])
+	assert.Equal(t, inp.Install.ID, stack.Parameters["NuonInstallID"])
+}
+
 func TestExtractNestedStackParameters_InvalidURL(t *testing.T) {
 	tpl := &Templates{}
-	params, defaultParams := tpl.extractNestedStackParameters("http://invalid.localhost.test/template.yaml")
+	params, defaultParams, reservedInTemplate := tpl.extractNestedStackParameters("http://invalid.localhost.test/template.yaml")
 
 	assert.Empty(t, params)
 	assert.Empty(t, defaultParams)
+	assert.Empty(t, reservedInTemplate)
 }
 
 func TestExtractNestedStackParameters_InvalidTemplate(t *testing.T) {
@@ -311,8 +386,9 @@ func TestExtractNestedStackParameters_InvalidTemplate(t *testing.T) {
 	defer server.Close()
 
 	tpl := &Templates{}
-	params, defaultParams := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
+	params, defaultParams, reservedInTemplate := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
 
 	assert.Empty(t, params)
 	assert.Empty(t, defaultParams)
+	assert.Empty(t, reservedInTemplate)
 }
