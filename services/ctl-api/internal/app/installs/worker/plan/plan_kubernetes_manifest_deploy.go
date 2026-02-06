@@ -97,6 +97,8 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 	return &plantypes.KubernetesManifestDeployPlan{
 		ClusterInfo: clusterInfo,
 		Namespace:   renderedNamespace,
+		Manifest:    cfg.Manifest,
+		// FIXME: OCIArtifact may still have unrendered variables
 		OCIArtifact: &plantypes.OCIArtifactReference{
 			URL:    ociArtifact.Repository,
 			Tag:    ociArtifact.Tag,
