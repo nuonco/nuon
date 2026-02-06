@@ -39,16 +39,21 @@ func (tpl *Templates) getClusterName(inp *stacks.TemplateInput) string {
 
 // VPCNestedStack returns a nested stack template for VPC resources
 func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter) {
+	parameters, defaultParameters, reservedInTemplate := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
+
 	// these common params should always be set by nuon so they are explicitly
 	// set aside so they can override any template values
 	commonParams := map[string]string{
-		"ClusterName":   tpl.getClusterName(inp),
 		"NuonInstallID": inp.Install.ID,
 		"NuonAppID":     inp.Install.AppID,
 		"NuonOrgID":     inp.Install.OrgID,
 	}
 
-	parameters, defaultParameters := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
+	// only include ClusterName if the nested template defines it as a parameter,
+	// otherwise CloudFormation will fail with an unknown parameter error
+	if reservedInTemplate["ClusterName"] {
+		commonParams["ClusterName"] = tpl.getClusterName(inp)
+	}
 
 	// merge specific params into common params
 	maps.Copy(parameters, commonParams)
@@ -65,19 +70,20 @@ func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder)
 
 }
 
-func (tpl *Templates) extractNestedStackParameters(templateURL string) (map[string]string, map[string]cloudformation.Parameter) {
+func (tpl *Templates) extractNestedStackParameters(templateURL string) (map[string]string, map[string]cloudformation.Parameter, map[string]bool) {
 	params := map[string]string{}
 	defaultParams := map[string]cloudformation.Parameter{}
+	reservedInTemplate := map[string]bool{}
 
 	resp, err := http.Get(templateURL)
 	if err != nil {
-		return params, defaultParams
+		return params, defaultParams, reservedInTemplate
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return params, defaultParams
+		return params, defaultParams, reservedInTemplate
 	}
 
 	// TODO(fd): pretty sure we only support yaml atm
@@ -88,11 +94,12 @@ func (tpl *Templates) extractNestedStackParameters(templateURL string) (map[stri
 		tmpl, err = goformation.ParseYAML(body)
 	}
 	if err != nil {
-		return params, defaultParams
+		return params, defaultParams, reservedInTemplate
 	}
 
 	for paramName, param := range tmpl.Parameters {
 		if slices.Contains(ReservedParamNames, paramName) {
+			reservedInTemplate[paramName] = true
 			continue
 		}
 
@@ -105,5 +112,5 @@ func (tpl *Templates) extractNestedStackParameters(templateURL string) (map[stri
 		}
 	}
 
-	return params, defaultParams
+	return params, defaultParams, reservedInTemplate
 }
