@@ -233,7 +233,6 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		Checksum:                       req.Checksum,
 		BuildTimeout:                   req.BuildTimeout,
 		DeployTimeout:                  req.DeployTimeout,
-		OperationRoles:                 pgtype.Hstore(req.OperationRoles),
 		OperationRoles:                 operationRoles,
 	}
 	if req.DriftSchedule != nil {

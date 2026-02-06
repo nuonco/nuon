@@ -178,7 +178,6 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		Checksum:                     req.Checksum,
 		BuildTimeout:                 req.BuildTimeout,
 		DeployTimeout:                req.DeployTimeout,
-		OperationRoles:               pgtype.Hstore(req.OperationRoles),
 		OperationRoles:               operationRoles,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
