@@ -45,6 +45,8 @@ export const WorkflowTypeFilter = () => {
         params.delete(WORKFLOW_TYPE_PARAM)
       }
 
+      params.delete('offset')
+
       router.replace(`?${params.toString()}`)
     },
     [router, searchParams]

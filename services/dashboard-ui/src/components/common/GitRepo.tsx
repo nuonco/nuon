@@ -5,6 +5,7 @@ import { Text } from './Text'
 
 export interface IGitRepo {
   vcsConfig: TVCSGitHub | TVCSGit
+  isAutoGrid?: boolean
 }
 
 const buildDirectoryUrl = (
@@ -30,7 +31,7 @@ const buildDirectoryUrl = (
   return `${cleanRepo}/tree/${branch}/${directory}`
 }
 
-export const GitRepo = ({ vcsConfig }: IGitRepo) => {
+export const GitRepo = ({ vcsConfig, isAutoGrid = false }: IGitRepo) => {
   const isGitHub = 'repo_owner' in vcsConfig
 
   // Build directory URL if we have all required parts
@@ -48,18 +49,16 @@ export const GitRepo = ({ vcsConfig }: IGitRepo) => {
   if (vcsConfig?.directory) columnCount++
 
   // Build dynamic grid template: first column is 2fr, rest are 1fr
-  const gridTemplateColumns =
-    columnCount > 0
+  const gridTemplateColumns = isAutoGrid
+    ? 'auto auto auto'
+    : columnCount > 0
       ? `2fr ${Array(columnCount - 1)
           .fill('1fr')
           .join(' ')}`
       : undefined
 
   return (
-    <div
-      className="grid gap-6"
-      style={{ gridTemplateColumns }}
-    >
+    <div className="grid gap-6" style={{ gridTemplateColumns }}>
       {vcsConfig?.repo && (
         <LabeledValue label="Repository">
           <Text variant="subtext">
