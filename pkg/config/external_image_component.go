@@ -18,8 +18,8 @@ type PublicImageConfig struct {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type ExternalImageComponentConfig struct {
-	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=public"`
-	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=aws_ecr"`
+	AWSECRImageConfig *AWSECRConfig     `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty"`
+	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty"`
 
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
