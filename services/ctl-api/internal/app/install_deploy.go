@@ -62,6 +62,8 @@ type InstallDeploy struct {
 
 	ActionWorkflowRuns []InstallActionWorkflowRun `json:"action_workflow_runs,omitzero" gorm:"polymorphic:TriggeredBy;" temporaljson:"action_workflow_runs,omitzero,omitempty"`
 
+	PolicyReports []PolicyReport `json:"policy_reports,omitzero" gorm:"polymorphic:Owner;polymorphicValue:install_deploys" temporaljson:"policy_reports,omitzero,omitempty"`
+
 	ComponentBuildID string         `json:"build_id,omitzero" gorm:"notnull" temporaljson:"component_build_id,omitzero,omitempty"`
 	ComponentBuild   ComponentBuild `faker:"-" json:"component_build,omitzero" temporaljson:"component_build,omitzero,omitempty"`
 

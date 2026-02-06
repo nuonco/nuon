@@ -1,0 +1,18 @@
+id: gorm-jsonb-missing-default
+language: go
+message: "JSONB slice field missing default. Consider adding `default:'[]'` to avoid null vs empty array issues."
+severity: hint
+note: "JSONB array fields should default to empty array for consistent JSON serialization."
+
+rule:
+  kind: field_declaration
+  all:
+    - has:
+        kind: slice_type
+    - has:
+        kind: interpreted_string_literal
+        regex: "type:jsonb"
+    - not:
+        has:
+          kind: interpreted_string_literal
+          regex: "default:"

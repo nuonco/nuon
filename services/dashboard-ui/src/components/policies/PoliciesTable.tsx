@@ -47,7 +47,8 @@ function formatPolicyType(type: string): string {
 function parsePolicyToTableData(policies: TAppPolicyConfig[]): TPolicyRow[] {
   return policies.map((policy) => ({
     id: policy.id || '',
-    name: extractPolicyName(policy.contents || '', policy.engine || ''),
+    name:
+      policy.name || extractPolicyName(policy.contents || '', policy.engine || ''),
     type: policy.type || '',
     engine: policy.engine || '',
     components: policy.components || [],

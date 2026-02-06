@@ -105,9 +105,6 @@ cd services/wiki && npm run dev
 
 ### Infrastructure
 ```bash
-# Using nuonctl (administrative CLI)
-./bins/nuonctl/scripts/[script-name]
-
 # Terraform operations
 cd infra/[module] && terraform plan
 ```
@@ -122,10 +119,22 @@ cd services/dashboard-ui && npm test
 ```
 
 ### Code Generation
+
+Use `go generate` to regenerate code after making changes:
+
 ```bash
-# IMPORTANT: Run this after making changes to Go types, temporal activities, 
-# or any other code that has generated counterparts
-nctl scripts reset-generated-code
+# Temporal activities (ctl-api)
+go generate ./services/ctl-api/...
+
+# Temporal workflow types (executors)
+go generate ./pkg/workflows/types/executors/...
+
+# SDKs (nuon-go and nuon-runner-go)
+go generate ./sdks/nuon-go/...
+go generate ./sdks/nuon-runner-go/...
+
+# Regenerate all code in the monorepo
+go generate ./...
 ```
 
 **When to run code generation:**
@@ -135,79 +144,17 @@ nctl scripts reset-generated-code
 - When you see compilation errors about missing generated files
 - When generated files (`.activity_gen.go`, `.workflow_gen.go`, swagger docs) are out of sync
 
-## Running the Complete Stack Locally
+**Key `go:generate` locations:**
+- `services/ctl-api/main.go` - API types and swagger docs
+- `pkg/workflows/types/executors/gen.go` - Temporal activity/workflow generation
+- `sdks/nuon-go/client.go` - Go SDK client generation
+- `sdks/nuon-runner-go/client.go` - Runner SDK client generation
 
-The Nuon monorepo provides a sophisticated orchestration system for running the entire platform locally, including all microservices and their dependencies.
+## Running Services Locally
 
-### Quick Start: Full Stack
+Ask the user how to start the services to test your changes.
 
-**Run all services (RECOMMENDED):**
-```bash
-# First regenerate all code (Go types, temporal activities, swagger docs)
-nctl scripts reset-generated-code
-
-# Start infrastructure dependencies
-nctl scripts exec reset-dependencies
-
-# Then start all application services - SIMPLIFIED COMMAND
-nctl dev --dev-all
-```
-
-**Alternative service-specific orchestration (if needed):**
-```bash
-nctl services dev --dev-all --skip cli,runner
-```
-
-> **⚠️ Important**: The simplified `dev --dev-all` command is more reliable than the service-specific `services dev --dev-all` variant. It properly handles service startup orchestration and dependencies, especially for the ctl-api's critical code generation phase.
-
-### Complete Architecture
-
-When running the full stack, you get:
-
-**Application Services** (via `--dev-all`):
-- **`ctl-api`** - Core backend API (ports 8081, 8082, 8083)
-- **`dashboard-ui`** - Web frontend (port 4000)
-- **`cli`** - Public CLI tool
-- **`runner`** - Deployment execution engine
-- **`wiki`** - Internal documentation (port 4321)
-
-**Infrastructure Dependencies** (via Docker Compose):
-- **PostgreSQL** - Main database with multiple databases (`ctl_api`, `temporal`, `temporal_visibility`)
-- **ClickHouse Cluster** - Replicated analytics database (2 nodes + 3 keepers)
-- **Temporal** - Workflow engine with web UI
-- **PGAdmin** - Database management UI
-- **Development Tools** - Registry, profiling, tunneling
-
-### Step-by-Step Setup
-
-1. **Regenerate Code:**
-   ```bash
-   nctl scripts reset-generated-code
-   ```
-   This ensures all Go types, Temporal activities, and Swagger documentation are up-to-date.
-
-2. **Start Infrastructure Dependencies:**
-   ```bash
-   nctl scripts exec reset-dependencies
-   ```
-   This runs `docker-compose up` with all required databases and supporting services.
-
-3. **Start Application Services:**
-   ```bash
-   # RECOMMENDED: Simplified orchestration
-   nctl dev --dev-all
-
-   # Alternative: Service-specific orchestration
-   nctl services dev --dev-all --skip cli,runner
-   ```
-
-4. **Verify Services:**
-   - Dashboard UI: http://localhost:4000
-   - API Endpoints: http://localhost:8081 (public), http://localhost:8082 (admin)
-   - Temporal UI: http://localhost:8233
-   - Database UIs: http://localhost:8888 (PGAdmin), http://localhost:5521 (ClickHouse)
-
-### Port Map for Full Stack
+### Expected URLs
 
 ```
 Frontend Services:
@@ -224,52 +171,7 @@ Infrastructure:
 - ClickHouse:       localhost:9000 (native), localhost:8123 (HTTP)
 - Temporal:         localhost:7233
 - Temporal UI:      http://localhost:8233
-- PGAdmin:          http://localhost:8888
-- ClickHouse UI:    http://localhost:5521
 ```
-
-### Common Development Patterns
-
-**Backend-focused development:**
-```bash
-nctl services dev --dev ctl-api
-```
-
-**Frontend-focused development:**
-```bash
-nctl services dev --dev dashboard-ui,ctl-api
-```
-
-**Debug mode:**
-```bash
-nctl services dev --dev-all --debug
-```
-
-### Prerequisites for Full Stack
-
-1. **Docker/Podman** - For infrastructure services
-2. **Go 1.25+** - For Go services
-3. **Node.js** - For frontend services
-4. **AWS Credentials** - Services assume support role for real AWS access
-5. **Auth0 Configuration** - For dashboard authentication
-
-### Troubleshooting Full Stack
-
-**Command Selection Issues:**
-- **Use simplified command**: `nctl dev --dev-all` is more reliable than `services dev --dev-all`
-- **CTL-API startup problems**: The simplified command properly handles ctl-api's code generation dependencies
-- **Service orchestration**: Simplified command manages startup sequence and service dependencies automatically
-
-**If services fail to start:**
-- Check infrastructure: `docker ps`
-- Verify ports: `lsof -i :4000,8081,5432`
-- Check AWS access: `aws sts get-caller-identity`
-- Run with debug: `--debug` flag
-
-**Performance optimization:**
-- Skip unused services: `--skip cli,runner`
-- Disable file watching: `--watch=false`
-- Use user overrides in `~/.nuonctl-env.yml`
 
 ## Getting Started
 
@@ -524,230 +426,6 @@ When starting any new session to work on this monorepo, AI assistants should:
 - Document major architectural changes in relevant component files
 - Ensure root AGENTS.md reflects current monorepo structure
 - Archive context files in `/graveyard/` when services are fully deprecated
-
-## Local Development with nuonctl
-
-The Nuon monorepo uses a sophisticated development orchestration system built around the `nuonctl` CLI tool. Understanding this system is crucial for effective development and configuration management.
-
-### Development Command Structure
-
-**Primary Development Command:**
-```bash
-nctl services dev --dev <service-name>
-```
-
-**Common Usage Examples:**
-```bash
-# Run dashboard UI locally
-nctl services dev --dev dashboard-ui
-
-# Run multiple services
-nctl services dev --dev dashboard-ui,ctl-api
-
-# Run all services in development mode
-nctl services dev --dev-all
-
-# Skip specific services
-nctl services dev --dev-all --skip cli,runner
-```
-
-### Configuration Architecture
-
-Nuon uses a **two-tier configuration system** that provides both team consistency and individual flexibility:
-
-#### 1. Service Base Configuration (`service.yml`)
-
-Each service contains a `service.yml` file with default development settings:
-
-```yaml
-# /services/dashboard-ui/service.yml
-env:                    # Local development environment
-  NEXT_PUBLIC_API_URL: 'http://localhost:8081'
-  NUON_WORKFLOWS: true
-  FEATURE_FLAG_NAME: false
-
-docker_env:             # Docker container environment
-  NEXT_PUBLIC_API_URL: 'http://host.nuon.dev:8081'
-  FEATURE_FLAG_NAME: false
-
-local_cmds:             # Commands executed for local development
-  - npm run dev
-
-local_startup_cmds: []  # Commands run before service startup
-```
-
-**Key Sections:**
-- `env:` - Environment variables for local development
-- `docker_env:` - Environment variables when running in Docker containers
-- `local_cmds:` - Commands executed to start the service locally
-- `tests:` - Test configurations and Docker targets
-
-#### 2. User Override System (`~/.nuonctl-env.yml`)
-
-Individual developers can override any service configuration:
-
-```yaml
-# ~/.nuonctl-env.yml
-dashboard-ui:
-  NEXT_PUBLIC_ENABLE_FULL_SCREEN_ONBOARDING: true
-  NUON_WORKFLOWS: false
-  CUSTOM_DEBUG_FLAG: true
-
-ctl-api:
-  LOG_LEVEL: DEBUG
-  CHAOS_RATE: 1
-
-runner:
-  DISABLE_INSTALL_RUNNER: true
-```
-
-**Override Behavior:**
-- User overrides take **precedence** over service.yml values
-- Only specified values are overridden; others use service.yml defaults
-- Overrides are per-service using the service directory name as the key
-
-### Configuration Merge Process
-
-When `nuonctl services dev` runs:
-
-1. **Load Base Config**: Reads `/services/<service>/service.yml`
-2. **Load User Overrides**: Reads `~/.nuonctl-env.yml` (if exists)
-3. **Merge Configurations**: User overrides take precedence
-4. **Export Environment**: Combined environment variables are exported
-5. **Execute Commands**: Runs `local_cmds` with merged environment
-
-### Adding New Environment Variables
-
-**For Service Defaults (Team-Wide):**
-
-Edit the service's `service.yml` file in both sections:
-```yaml
-env:
-  NEW_FEATURE_FLAG: false        # Local development default
-
-docker_env:
-  NEW_FEATURE_FLAG: false        # Docker container default
-```
-
-**For Individual Testing:**
-
-Add to your personal `~/.nuonctl-env.yml`:
-```yaml
-service-name:
-  NEW_FEATURE_FLAG: true         # Personal override
-```
-
-### Service Management Commands
-
-**Service Discovery:**
-```bash
-# List all available services
-nctl services --help
-
-# Available services: ctl-api, dashboard-ui, cli, runner, wiki, docs, website
-```
-
-**Development Modes:**
-```bash
-# Local development (runs npm/go commands directly)
-nctl services dev --dev dashboard-ui --dev-type local
-
-# Docker development (runs services in containers)
-nctl services dev --dev dashboard-ui --dev-type docker
-```
-
-**Service Control:**
-```bash
-# Watch for file changes and auto-restart (default: enabled)
-nctl services dev --dev dashboard-ui --watch
-
-# Disable file watching
-nctl services dev --dev dashboard-ui --watch=false
-
-# Pull latest images instead of building locally
-nctl services dev --dev dashboard-ui --pull
-
-# Build images locally instead of pulling
-nctl services dev --dev dashboard-ui --pull=false
-```
-
-### Environment Variable Debugging
-
-**Enable Debug Mode:**
-```bash
-nctl services dev --dev dashboard-ui --debug
-```
-
-This will show:
-- All environment variables being set
-- Configuration merge results
-- Commands being executed
-- Override sources and values
-
-### Common Development Patterns
-
-#### Feature Flag Development
-```yaml
-# ~/.nuonctl-env.yml
-dashboard-ui:
-  NEXT_PUBLIC_NEW_FEATURE: true
-  NUON_EXPERIMENTAL_MODE: true
-```
-
-#### API Endpoint Switching
-```yaml
-# ~/.nuonctl-env.yml
-dashboard-ui:
-  NEXT_PUBLIC_API_URL: 'https://api.nuon-stage.co'  # Point to staging
-  NUON_API_URL: 'https://api.nuon-stage.co'
-```
-
-#### Multi-Service Development
-```bash
-# Run API and UI together with custom configs
-nctl services dev --dev ctl-api,dashboard-ui
-```
-
-### Troubleshooting Development Issues
-
-**Configuration Problems:**
-1. Run with `--debug` to see environment variable merge results
-2. Check `~/.nuonctl-env.yml` for conflicting overrides
-3. Verify service.yml syntax with a YAML validator
-
-**Service Startup Issues:**
-1. Check if ports are already in use (default: UI=4000, API=8081)
-2. Verify dependencies are running (e.g., database, temporal)
-3. Look for authentication issues (AWS SSO, Auth0)
-
-**File Change Detection:**
-1. NPM projects have file watching disabled by default
-2. Go services automatically restart on file changes
-3. Use `--watch=false` if auto-restart causes issues
-
-### Integration with Code Generation
-
-**Important**: Many services have code generation steps that must be run when making changes:
-
-```bash
-# Reset and regenerate all code
-nctl scripts reset-generated-code
-
-# This is required after:
-# - Adding/modifying Go struct types
-# - Adding @temporal-gen annotations
-# - Changing API endpoint definitions with swagger annotations
-```
-
-### Best Practices for Agents
-
-1. **Always check service.yml first** when working with environment variables
-2. **Use ~/.nuonctl-env.yml for testing** rather than modifying service.yml
-3. **Run with --debug** when troubleshooting configuration issues
-4. **Remember to run code generation** after significant changes
-5. **Check for existing overrides** in ~/.nuonctl-env.yml when debugging
-
-This development system provides powerful flexibility while maintaining team consistency. It allows for rapid iteration and testing without requiring changes to shared configuration files.
 
 ## Verifying OCI Artifacts from Local Development
 

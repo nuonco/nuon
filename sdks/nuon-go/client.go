@@ -82,10 +82,16 @@ type Client interface {
 	GetLatestAppBreakGlassConfig(ctx context.Context, appID string) (*models.AppAppBreakGlassConfig, error)
 	GetAppBreakGlassConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppBreakGlassConfig, error)
 
-	// app permissions config methods
+	// app policies config methods
 	CreateAppPoliciesConfig(ctx context.Context, appID string, req *models.ServiceCreateAppPoliciesConfigRequest) (*models.AppAppPoliciesConfig, error)
 	GetLatestAppPoliciesConfig(ctx context.Context, appID string) (*models.AppAppPoliciesConfig, error)
 	GetAppPoliciesConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppPoliciesConfig, error)
+	GetAppPoliciesConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppPoliciesConfig, bool, error)
+
+	// policy reports
+	GetPolicyReports(ctx context.Context, query *PolicyReportsQuery) ([]*models.AppPolicyReport, error)
+	GetPolicyReport(ctx context.Context, reportID string) (*models.AppPolicyReport, error)
+	ExportPolicyReport(ctx context.Context, reportID, format string) ([]byte, string, error)
 
 	// app secret methods
 	CreateAppSecret(ctx context.Context, appID string, req *models.ServiceCreateAppSecretRequest) (*models.AppAppSecret, error)
