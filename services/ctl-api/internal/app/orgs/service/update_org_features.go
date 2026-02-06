@@ -55,6 +55,7 @@ func (s *service) UpdateOrgFeatures(ctx *gin.Context) {
 
 	var req UpdateOrgFeaturesRequest
 	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

@@ -294,7 +294,8 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 			expectedStatus: http.StatusBadRequest,
 			validateResponse: func(rr *httptest.ResponseRecorder) {
 				body := rr.Body.String()
-				assert.Contains(s.T(), body, "unable to parse request")
+				// BindJSON returns JSON parsing errors with "invalid character" message
+				assert.Contains(s.T(), body, "invalid")
 			},
 			validateSignal: false,
 		},

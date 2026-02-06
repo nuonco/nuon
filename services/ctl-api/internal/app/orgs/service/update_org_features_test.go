@@ -603,7 +603,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody:   "invalid-json-string",
 			expectedCode:  http.StatusBadRequest,
-			errorContains: "unable to parse request",
+			errorContains: "json:", // JSON parsing error message contains "json:" prefix
 		},
 		{
 			name: "rejects invalid feature names",

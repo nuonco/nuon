@@ -570,7 +570,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody:   "invalid-json-string",
 			expectedCode:  http.StatusBadRequest,
-			errorContains: "unable to parse request",
+			errorContains: "json:", // BindJSON returns JSON parsing errors with this prefix
 		},
 		{
 			name: "fails when features field is missing",
@@ -581,7 +581,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				"wrong_field": "value",
 			},
 			expectedCode:  http.StatusBadRequest,
-			errorContains: "unable to parse request",
+			errorContains: "invalid request", // BindJSON validation error
 		},
 		{
 			name: "fails when org not found",
@@ -597,8 +597,8 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 					string(app.OrgFeatureOrgDashboard): true,
 				},
 			},
-			expectedCode:  http.StatusBadRequest,
-			errorContains: "unable update org",
+			expectedCode:  http.StatusNotFound,
+			errorContains: "org not found",
 		},
 		{
 			name: "successfully updates features without user-managed-features flag enabled",

@@ -5,11 +5,21 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type AdminUpdateOrgFeaturesRequest struct {
 	Features map[string]bool `json:"features" validate:"required"`
+}
+
+func (r *AdminUpdateOrgFeaturesRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(r); err != nil {
+		return validatorPkg.FormatValidationError(err)
+	}
+	return nil
 }
 
 // @ID						AdminUpdateOrgFeatures
@@ -31,10 +41,14 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
 
-	org, err := s.getOrg(ctx, orgID)
+	org, err := s.adminGetOrg(ctx, orgID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable update org: %w", err))
+		ctx.Error(err)
 		return
 	}
 
@@ -43,9 +57,9 @@ func (s *service) AdminUpdateOrgFeatures(ctx *gin.Context) {
 		return
 	}
 
-	org, err = s.getOrg(ctx, orgID)
+	org, err = s.adminGetOrg(ctx, orgID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable update org: %w", err))
+		ctx.Error(err)
 		return
 	}
 

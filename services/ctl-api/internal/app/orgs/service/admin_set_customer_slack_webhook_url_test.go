@@ -126,10 +126,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) setupTestData() {
 	s.testOrg = testOrg
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
 func (s *AdminSetCustomerSlackWebhookURLTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -182,7 +178,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				return org
 			},
 			requestBody: SetCustomerSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX"),
+				Name: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX",
 			},
 			expectedStatus:       http.StatusOK,
 			expectDatabaseUpdate: true,
@@ -214,7 +210,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				return org
 			},
 			requestBody: SetCustomerSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/new-webhook"),
+				Name: "https://hooks.slack.com/new-webhook",
 			},
 			expectedStatus:       http.StatusOK,
 			expectDatabaseUpdate: true,
@@ -224,7 +220,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 			},
 		},
 		{
-			name: "handles empty webhook URL",
+			name: "fails with empty webhook URL (required validation)",
 			setupFunc: func() *app.Org {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -246,17 +242,13 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				return org
 			},
 			requestBody: SetCustomerSlackWebhookURLRequest{
-				Name: stringPtr(""),
+				Name: "",
 			},
-			expectedStatus:       http.StatusOK,
-			expectDatabaseUpdate: true,
-			expectedWebhookURL:   "",
-			validateFunc: func(org *app.Org) {
-				require.Equal(s.T(), "", org.NotificationsConfig.SlackWebhookURL)
-			},
+			expectedStatus:       http.StatusBadRequest,
+			expectDatabaseUpdate: false,
 		},
 		{
-			name: "handles missing name field",
+			name: "fails with missing name field",
 			setupFunc: func() *app.Org {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -315,7 +307,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				}
 			},
 			requestBody: SetCustomerSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/webhook"),
+				Name: "https://hooks.slack.com/webhook",
 			},
 			expectedStatus:       http.StatusNotFound,
 			expectDatabaseUpdate: false,
@@ -343,7 +335,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				return org
 			},
 			requestBody: SetCustomerSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/customer"),
+				Name: "https://hooks.slack.com/customer",
 			},
 			expectedStatus:       http.StatusOK,
 			expectDatabaseUpdate: true,
@@ -448,7 +440,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 
 	// Make request
 	req := SetCustomerSlackWebhookURLRequest{
-		Name: stringPtr("https://hooks.slack.com/new-customer-webhook"),
+		Name: "https://hooks.slack.com/new-customer-webhook",
 	}
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs/"+org.ID+"/admin-customer-slack-webhook-url", req)
 

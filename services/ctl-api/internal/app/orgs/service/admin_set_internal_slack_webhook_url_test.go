@@ -125,7 +125,41 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) setupTestData() {
 	}
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
+
+	// Update OrgID on NotificationsConfig (mimics what CreateOrg does)
+	s.service.DB.Model(&testOrg.NotificationsConfig).
+		Where(&app.NotificationsConfig{OwnerID: testOrg.ID}).
+		Updates(app.NotificationsConfig{OrgID: testOrg.ID})
+
 	s.testOrg = testOrg
+}
+
+// createTestOrgWithNotificationsConfig creates an org and properly sets up the NotificationsConfig OrgID field
+func (s *AdminSetInternalSlackWebhookURLTestSuite) createTestOrgWithNotificationsConfig(name, webhookURL string) *app.Org {
+	ctx := context.Background()
+	ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+	org := &app.Org{
+		ID:   domains.NewOrgID(),
+		Name: name,
+		NotificationsConfig: app.NotificationsConfig{
+			InternalSlackWebhookURL: webhookURL,
+		},
+	}
+	err := s.service.DB.WithContext(ctx).Create(org).Error
+	require.NoError(s.T(), err)
+
+	// Update OrgID on NotificationsConfig (mimics what CreateOrg does)
+	s.service.DB.Model(&org.NotificationsConfig).
+		Where(&app.NotificationsConfig{OwnerID: org.ID}).
+		Updates(app.NotificationsConfig{OrgID: org.ID})
+
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
+		s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
+	})
+
+	return org
 }
 
 func (s *AdminSetInternalSlackWebhookURLTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -158,27 +192,10 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		{
 			name: "successfully sets internal slack webhook URL",
 			setupFunc: func() *app.Org {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-success",
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/old",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(org).Error
-				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
-				})
-
-				return org
+				return s.createTestOrgWithNotificationsConfig("test-org-success", "https://hooks.slack.com/old")
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/services/NEW/WEBHOOK/URL"),
+				Name: "https://hooks.slack.com/services/NEW/WEBHOOK/URL",
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
@@ -192,27 +209,10 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		{
 			name: "successfully updates existing webhook URL",
 			setupFunc: func() *app.Org {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-update",
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/existing",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(org).Error
-				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
-				})
-
-				return org
+				return s.createTestOrgWithNotificationsConfig("test-org-update", "https://hooks.slack.com/existing")
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/services/UPDATED/URL"),
+				Name: "https://hooks.slack.com/services/UPDATED/URL",
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
@@ -225,60 +225,26 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			},
 		},
 		{
-			name: "successfully sets empty URL",
+			name: "fails with empty URL (required validation)",
 			setupFunc: func() *app.Org {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-empty",
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/to-be-cleared",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(org).Error
-				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
-				})
-
-				return org
+				return s.createTestOrgWithNotificationsConfig("test-org-empty", "https://hooks.slack.com/to-be-cleared")
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: stringPtr(""),
+				Name: "",
 			},
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org, newURL string) {
-				// Verify URL is cleared
+				// URL should remain unchanged since validation failed
 				var notifConfig app.NotificationsConfig
 				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "", notifConfig.InternalSlackWebhookURL)
+				assert.Equal(s.T(), "https://hooks.slack.com/to-be-cleared", notifConfig.InternalSlackWebhookURL)
 			},
 		},
 		{
 			name: "fails with missing request body field",
 			setupFunc: func() *app.Org {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-no-field",
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/unchanged",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(org).Error
-				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
-				})
-
-				return org
+				return s.createTestOrgWithNotificationsConfig("test-org-no-field", "https://hooks.slack.com/unchanged")
 			},
 			requestBody:    map[string]interface{}{}, // Missing "name" field
 			expectedStatus: http.StatusBadRequest,
@@ -309,7 +275,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				}
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/new"),
+				Name: "https://hooks.slack.com/new",
 			},
 			expectedStatus: http.StatusNotFound,
 			validateFunc:   nil, // No validation needed
@@ -317,27 +283,10 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		{
 			name: "successfully handles URL with special characters",
 			setupFunc: func() *app.Org {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-special-chars",
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/old",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(org).Error
-				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-					s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
-				})
-
-				return org
+				return s.createTestOrgWithNotificationsConfig("test-org-special-chars", "https://hooks.slack.com/old")
 			},
 			requestBody: SetSlackWebhookURLRequest{
-				Name: stringPtr("https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX"),
+				Name: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX",
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
@@ -358,9 +307,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			// Extract URL from request body for validation
 			var newURL string
 			if req, ok := tc.requestBody.(SetSlackWebhookURLRequest); ok {
-				if req.Name != nil {
-					newURL = *req.Name
-				}
+				newURL = req.Name
 			}
 
 			// Make request
@@ -383,37 +330,22 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebhookURLConcurrentUpdates() {
 	// Test that concurrent updates to the same org's webhook URL are handled correctly
 	s.Run("handles concurrent updates", func() {
-		ctx := context.Background()
-		ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-		org := &app.Org{
-			ID:   domains.NewOrgID(),
-			Name: "test-org-concurrent",
-			NotificationsConfig: app.NotificationsConfig{
-				InternalSlackWebhookURL: "https://hooks.slack.com/initial",
-			},
-		}
-		err := s.service.DB.WithContext(ctx).Create(org).Error
-		require.NoError(s.T(), err)
-		s.T().Cleanup(func() {
-			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-			s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
-		})
+		org := s.createTestOrgWithNotificationsConfig("test-org-concurrent", "https://hooks.slack.com/initial")
 
 		// First update
 		path := fmt.Sprintf("/v1/orgs/%s/admin-internal-slack-webhook-url", org.ID)
-		req1 := SetSlackWebhookURLRequest{Name: stringPtr("https://hooks.slack.com/first")}
+		req1 := SetSlackWebhookURLRequest{Name: "https://hooks.slack.com/first"}
 		rr1 := s.makeRequest(http.MethodPost, path, req1)
 		require.Equal(s.T(), http.StatusOK, rr1.Code)
 
 		// Second update (should overwrite first)
-		req2 := SetSlackWebhookURLRequest{Name: stringPtr("https://hooks.slack.com/second")}
+		req2 := SetSlackWebhookURLRequest{Name: "https://hooks.slack.com/second"}
 		rr2 := s.makeRequest(http.MethodPost, path, req2)
 		require.Equal(s.T(), http.StatusOK, rr2.Code)
 
 		// Verify final state is the second update
 		var notifConfig app.NotificationsConfig
-		err = s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
+		err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 		require.NoError(s.T(), err)
 		assert.Equal(s.T(), "https://hooks.slack.com/second", notifConfig.InternalSlackWebhookURL)
 	})
@@ -422,32 +354,17 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebhookURLDatabaseStateVerification() {
 	// Test comprehensive database state verification
 	s.Run("verifies complete database state changes", func() {
-		ctx := context.Background()
-		ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-		org := &app.Org{
-			ID:   domains.NewOrgID(),
-			Name: "test-org-db-state",
-			NotificationsConfig: app.NotificationsConfig{
-				InternalSlackWebhookURL: "https://hooks.slack.com/before",
-			},
-		}
-		err := s.service.DB.WithContext(ctx).Create(org).Error
-		require.NoError(s.T(), err)
-		s.T().Cleanup(func() {
-			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
-			s.service.DB.Unscoped().Delete(&app.NotificationsConfig{}, "owner_id = ?", org.ID)
-		})
+		org := s.createTestOrgWithNotificationsConfig("test-org-db-state", "https://hooks.slack.com/before")
 
 		// Store original config ID for verification
 		var originalConfig app.NotificationsConfig
-		err = s.service.DB.Where("owner_id = ?", org.ID).First(&originalConfig).Error
+		err := s.service.DB.Where("owner_id = ?", org.ID).First(&originalConfig).Error
 		require.NoError(s.T(), err)
 
 		// Update the webhook URL
 		newURL := "https://hooks.slack.com/after"
 		path := fmt.Sprintf("/v1/orgs/%s/admin-internal-slack-webhook-url", org.ID)
-		req := SetSlackWebhookURLRequest{Name: stringPtr(newURL)}
+		req := SetSlackWebhookURLRequest{Name: newURL}
 		rr := s.makeRequest(http.MethodPost, path, req)
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
