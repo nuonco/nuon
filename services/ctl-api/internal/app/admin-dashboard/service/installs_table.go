@@ -19,7 +19,9 @@ func (s *service) InstallsTable(c *gin.Context) {
 		return
 	}
 
-	installs, err := s.getInstallsForOrg(ctx, orgID)
+	page := getPageFromQuery(c)
+
+	installs, totalPages, err := s.getInstallsForOrg(ctx, orgID, page)
 	if err != nil {
 		s.l.Error("failed to get installs for table", zap.String("org_id", orgID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})
@@ -27,6 +29,6 @@ func (s *service) InstallsTable(c *gin.Context) {
 	}
 
 	// Return just the table component
-	component := views.InstallsTable(orgID, installs)
+	component := views.InstallsTable(orgID, installs, page, totalPages)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }

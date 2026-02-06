@@ -14,8 +14,9 @@ import (
 func (s *service) OrgsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
+	page := getPageFromQuery(c)
 
-	orgs, err := s.getOrgs(ctx, search)
+	orgs, totalPages, err := s.getOrgs(ctx, search, page)
 	if err != nil {
 		s.l.Error("failed to get orgs for table", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})
@@ -23,6 +24,6 @@ func (s *service) OrgsTable(c *gin.Context) {
 	}
 
 	// Return just the table component
-	component := views.OrgsTable(orgs)
+	component := views.OrgsTable(orgs, page, totalPages, search)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }

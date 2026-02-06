@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 
@@ -19,6 +20,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
+const orgInstallsPerPage = 8
+
 func (s *service) OrgDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")
@@ -27,10 +30,13 @@ func (s *service) OrgDetail(c *gin.Context) {
 		return
 	}
 
+	page := getPageFromQuery(c)
+
 	// Fetch data in parallel
 	var (
 		org                         *app.Org
 		installs                    []*app.Install
+		installsTotalPages          int
 		recentApp                   *app.App
 		orgErr, installsErr, appErr error
 	)
@@ -43,7 +49,7 @@ func (s *service) OrgDetail(c *gin.Context) {
 	})
 
 	g.Go(func() error {
-		installs, installsErr = s.getInstallsForOrg(gCtx, orgID)
+		installs, installsTotalPages, installsErr = s.getInstallsForOrg(gCtx, orgID, page)
 		return installsErr
 	})
 
@@ -73,7 +79,7 @@ func (s *service) OrgDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.OrgDetail(org, installs, recentApp, graphDot)
+	component := views.OrgDetail(org, installs, recentApp, graphDot, page, installsTotalPages)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
@@ -91,23 +97,44 @@ func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 	return &org, nil
 }
 
-func (s *service) getInstallsForOrg(ctx context.Context, orgID string) ([]*app.Install, error) {
+func (s *service) getInstallsForOrg(ctx context.Context, orgID string, page int) ([]*app.Install, int, error) {
 	var installs []*app.Install
+	var totalCount int64
 
-	res := s.db.WithContext(ctx).
+	// Build base query
+	query := s.db.WithContext(ctx).
+		Model(&app.Install{}).
+		Where("org_id = ?", orgID)
+
+	// Get total count for pagination
+	if err := query.Count(&totalCount).Error; err != nil {
+		return nil, 0, fmt.Errorf("unable to count installs: %w", err)
+	}
+
+	// Calculate total pages
+	totalPages := int(math.Ceil(float64(totalCount) / float64(orgInstallsPerPage)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	// Calculate offset
+	offset := (page - 1) * orgInstallsPerPage
+
+	// Get paginated results
+	res := query.
 		Preload("App").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
-		Where("org_id = ?", orgID).
 		Order("created_at desc").
-		Limit(100).
+		Limit(orgInstallsPerPage).
+		Offset(offset).
 		Find(&installs)
 
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get installs: %w", res.Error)
+		return nil, 0, fmt.Errorf("unable to get installs: %w", res.Error)
 	}
 
-	return installs, nil
+	return installs, totalPages, nil
 }
 
 func (s *service) getMostRecentApp(ctx context.Context, orgID string) (*app.App, error) {
