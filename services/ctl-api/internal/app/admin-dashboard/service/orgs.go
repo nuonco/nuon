@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,9 @@ import (
 
 func (s *service) Orgs(c *gin.Context) {
 	ctx := c.Request.Context()
+	search := c.Query("search")
 
-	orgs, err := s.getOrgs(ctx)
+	orgs, err := s.getOrgs(ctx, search)
 	if err != nil {
 		s.l.Error("failed to get orgs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})
@@ -27,10 +29,22 @@ func (s *service) Orgs(c *gin.Context) {
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getOrgs(ctx context.Context) ([]*app.Org, error) {
+func (s *service) getOrgs(ctx context.Context, search string) ([]*app.Org, error) {
 	var orgs []*app.Org
 
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx)
+
+	// Apply search filter if provided
+	if search != "" {
+		search = strings.TrimSpace(search)
+		query = query.Where(
+			"name ILIKE ? OR id = ?",
+			"%"+search+"%",
+			search,
+		)
+	}
+
+	res := query.
 		Order("created_at desc").
 		Limit(100). // Reasonable limit for admin dashboard
 		Find(&orgs)

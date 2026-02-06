@@ -5,6 +5,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
 )
 
 templ Installs(installs []*app.Install) {
@@ -20,6 +21,11 @@ templ Installs(installs []*app.Install) {
 					}
 				}
 				@card.Content() {
+					@search.SearchInput(search.Props{
+						Placeholder: "Search by install name or ID...",
+						TargetURL:   "installs/table",
+						TargetID:    "installs-table-global",
+					})
 					if len(installs) == 0 {
 						<div class="text-sm text-muted-foreground">No installs found.</div>
 					} else {

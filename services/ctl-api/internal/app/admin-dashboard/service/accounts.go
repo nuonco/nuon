@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,9 @@ import (
 
 func (s *service) Accounts(c *gin.Context) {
 	ctx := c.Request.Context()
+	search := c.Query("search")
 
-	accounts, err := s.getAccounts(ctx)
+	accounts, err := s.getAccounts(ctx, search)
 	if err != nil {
 		s.l.Error("failed to get accounts", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch accounts"})
@@ -27,12 +29,24 @@ func (s *service) Accounts(c *gin.Context) {
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getAccounts(ctx context.Context) ([]*app.Account, error) {
+func (s *service) getAccounts(ctx context.Context, search string) ([]*app.Account, error) {
 	var accounts []*app.Account
 
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx).
 		Preload("Roles.Org").
-		Where("account_type IN ?", []app.AccountType{app.AccountTypeAuth0, app.AccountTypeAuth}).
+		Where("account_type IN ?", []app.AccountType{app.AccountTypeAuth0, app.AccountTypeAuth})
+
+	// Apply search filter if provided
+	if search != "" {
+		search = strings.TrimSpace(search)
+		query = query.Where(
+			"email ILIKE ? OR id = ?",
+			"%"+search+"%",
+			search,
+		)
+	}
+
+	res := query.
 		Order("created_at desc").
 		Limit(100).
 		Find(&accounts)
