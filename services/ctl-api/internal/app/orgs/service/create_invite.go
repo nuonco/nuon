@@ -44,6 +44,7 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 
 	var req CreateOrgInviteRequest
 	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 

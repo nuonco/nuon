@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -45,15 +44,7 @@ func (s *service) RemoveUser(ctx *gin.Context) {
 
 	var req RemoveOrgUserRequest
 	if err := ctx.BindJSON(&req); err != nil {
-		return
-	}
-
-	// Validate user_id is not empty
-	if req.UserID == "" {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("user_id is required"),
-			Description: "user_id is required",
-		})
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 

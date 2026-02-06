@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,12 +29,9 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	var req AdminDeleteOrgRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		// Allow empty request body (defaults to force=false)
-		if err.Error() != "EOF" {
-			ctx.Error(err)
-			return
-		}
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
 	}
 
 	org, err := s.adminGetOrg(ctx, orgID)
