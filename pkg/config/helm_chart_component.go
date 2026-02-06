@@ -37,9 +37,9 @@ type HelmChartComponentConfig struct {
 	ValuesMap   map[string]string `mapstructure:"values,omitempty" toml:"values,omitempty"`
 	ValuesFiles []HelmValuesFile  `mapstructure:"values_file,omitempty" toml:"values_file,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	HelmRepo      *HelmRepoConfig      `mapstructure:"helm_repo,omitempty" toml:"helm_repo,omitempty" jsonschema:"oneof_required=helm_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
+	HelmRepo      *HelmRepoConfig      `mapstructure:"helm_repo,omitempty" toml:"helm_repo,omitempty"`
 
 	Namespace     string `mapstructure:"namespace" toml:"namespace" features:"template"`
 	StorageDriver string `mapstructure:"storage_driver,omitempty" toml:"storage_driver,omitempty" features:"template"`
@@ -89,7 +89,21 @@ func (h HelmRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("version").Short("version of the chart to use").Example("79.4.1")
 }
 
+func (h *HelmRepoConfig) IsEmpty() bool {
+	return h == nil || (h.RepoURL == "" && h.Chart == "" && h.Version == "")
+}
+
 func (h *HelmChartComponentConfig) Parse() error {
+	if h.PublicRepo.IsEmpty() {
+		h.PublicRepo = nil
+	}
+	if h.ConnectedRepo.IsEmpty() {
+		h.ConnectedRepo = nil
+	}
+	if h.HelmRepo.IsEmpty() {
+		h.HelmRepo = nil
+	}
+
 	if len(h.Values) > 0 {
 		return ErrConfig{
 			Description: "the value array is deprecated, please use values instead.",

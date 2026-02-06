@@ -10,8 +10,8 @@ type DockerBuildComponentConfig struct {
 
 	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
@@ -23,6 +23,7 @@ type DockerBuildComponentConfig struct {
 
 func (d DockerBuildComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
+		OneOfGroup("vcs", "public_repo", "connected_repo").
 		Field("dockerfile").Short("path to the Dockerfile").Required().
 		Long("Path to the Dockerfile to build. Supports external file sources: HTTP(S) URLs (https://example.com/Dockerfile), git repositories (git::https://github.com/org/repo//Dockerfile), file paths (file:///path/to/Dockerfile), and relative paths (./Dockerfile)").
 		Example("Dockerfile").
@@ -32,9 +33,9 @@ func (d DockerBuildComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) 
 		Long("Map of environment variables to pass to the Docker build command. Available during the build process. Supports Go templating").
 		Example("GOLANG_VERSION").
 		Example("NODE_ENV").
-		Field("public_repo").Short("public repository containing Dockerfile").OneOfRequired("repository_source").
+		Field("public_repo").Short("public repository containing Dockerfile").
 		Long("Clone a public GitHub repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory").
-		Field("connected_repo").Short("connected repository containing Dockerfile").OneOfRequired("repository_source").
+		Field("connected_repo").Short("connected repository containing Dockerfile").
 		Long("Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory").
 		Field("build_timeout").Short("build operation timeout").
 		Long("Duration string for Docker build operations (e.g., \"30m\", \"1h\").").
@@ -51,5 +52,11 @@ func (t *DockerBuildComponentConfig) Validate() error {
 }
 
 func (t *DockerBuildComponentConfig) Parse() error {
+	if t.PublicRepo.IsEmpty() {
+		t.PublicRepo = nil
+	}
+	if t.ConnectedRepo.IsEmpty() {
+		t.ConnectedRepo = nil
+	}
 	return nil
 }

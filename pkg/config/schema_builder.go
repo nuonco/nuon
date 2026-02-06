@@ -46,6 +46,30 @@ func (sb *SchemaBuilder) Field(name string) *FieldBuilder {
 	}
 }
 
+// OneOfGroup adds a oneOf constraint group to the schema. It creates separate OneOf entries
+// for each field (each with Required containing just that field name), and sets
+// Extras["oneof_required"]=groupName on each field's property schema. This produces a
+// JSON Schema oneOf that enforces exactly one of the fields must be present.
+func (sb *SchemaBuilder) OneOfGroup(groupName string, fieldNames ...string) *SchemaBuilder {
+	for _, fieldName := range fieldNames {
+		oneOfEntry := &jsonschema.Schema{
+			Title:    groupName,
+			Required: []string{fieldName},
+		}
+		sb.schema.OneOf = append(sb.schema.OneOf, oneOfEntry)
+
+		fb := &FieldBuilder{schema: sb.schema, name: fieldName}
+		prop := fb.getProperty()
+		if prop.Extras == nil {
+			prop.Extras = map[string]interface{}{}
+		}
+		prop.Extras["oneof_required"] = groupName
+		fb.setProperty(prop)
+	}
+
+	return sb
+}
+
 // FieldBuilder provides a fluent API for building individual schema field properties.
 type FieldBuilder struct {
 	schema *jsonschema.Schema

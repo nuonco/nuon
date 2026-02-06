@@ -21,13 +21,17 @@ func NewDefaultReflector() *jsonschema.Reflector {
 }
 
 const (
-	StructTagOneofRequired                   = "oneof_required"
-	StructTagOneofRequiredGroupComponentType = "component_type"
-	StructTagOneofRequiredGroupGitRepository = "git_repository"
+	StructTagOneofRequired                    = "oneof_required"
+	StructTagOneofRequiredGroupComponentType  = "component_type"
+	StructTagOneofRequiredGroupVCS            = "vcs"
+	StructTagOneofRequiredGroupManifestSource = "manifest_source"
+	StructTagOneofRequiredGroupScriptSource   = "script_source"
+	StructTagOneofRequiredGroupImageSource    = "image_source"
+	StructTagOneofRequiredGroupValuesSource   = "values_source"
 )
 
 var (
-	StructTagOneOfRequiredGroups = []string{StructTagOneofRequiredGroupComponentType, StructTagOneofRequiredGroupGitRepository}
+	StructTagOneOfRequiredGroups = []string{StructTagOneofRequiredGroupComponentType, StructTagOneofRequiredGroupVCS, StructTagOneofRequiredGroupManifestSource, StructTagOneofRequiredGroupScriptSource, StructTagOneofRequiredGroupImageSource, StructTagOneofRequiredGroupValuesSource}
 	IgnoredProperties            = []string{
 		"source",
 		"helm_chart",
@@ -184,10 +188,11 @@ func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*st
 
 		oneOFGroups := make(map[string]map[string]bool)
 		for _, s := range schema.OneOf {
-			oneOFGroups[s.Title] = make(map[string]bool)
-			oneOfRequired := oneOFGroups[s.Title]
+			if _, exists := oneOFGroups[s.Title]; !exists {
+				oneOFGroups[s.Title] = make(map[string]bool)
+			}
 			for _, r := range s.Required {
-				oneOfRequired[r] = true
+				oneOFGroups[s.Title][r] = true
 			}
 		}
 

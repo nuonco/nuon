@@ -97,10 +97,12 @@ func (a ActionStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("bash -c 'curl https://example.com'").
 		Field("env_vars").Short("environment variables to pass to the step").
 		Long("Map of environment variables that will be available to the command. Supports Go templating for values").
-		Field("public_repo").Short("public repository containing the step script").OneOfRequired("script_source").
+		Field("public_repo").Short("public repository containing the step script").
 		Long("Clone a public GitHub repository to load scripts from. Requires 'repo', 'branch', and optionally 'directory' fields").
-		Field("connected_repo").Short("connected repository containing the step script").OneOfRequired("script_source").
+		OneOfRequired("script_source").
+		Field("connected_repo").Short("connected repository containing the step script").
 		Long("Use a Nuon-connected repository to load scripts from. Requires 'repo', 'branch', and optionally 'directory' fields").
+		OneOfRequired("script_source").
 		Field("inline_contents").Short("inline script contents").
 		Long("Embed script contents directly in the config file. Supports Go templating and external URLs: HTTP(S) (https://example.com/script.sh), git repositories (git::https://github.com/org/repo//path/to/script), file paths (file:///path/to/script.sh), and relative paths (./local/path)")
 }
@@ -108,6 +110,15 @@ func (a ActionStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (a *ActionConfig) parse() error {
 	if a == nil {
 		return nil
+	}
+
+	for _, step := range a.Steps {
+		if step.PublicRepo.IsEmpty() {
+			step.PublicRepo = nil
+		}
+		if step.ConnectedRepo.IsEmpty() {
+			step.ConnectedRepo = nil
+		}
 	}
 
 	if a.Timeout != "" {

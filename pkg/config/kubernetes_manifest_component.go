@@ -54,13 +54,13 @@ func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
+		OneOfGroup("manifest_source", "manifest", "kustomize").
+		OneOfGroup("vcs", "public_repo", "connected_repo").
 		Field("manifest").Short("Kubernetes manifest").
 		Long("YAML manifest content for Kubernetes resources. Supports templating with variables like {{.nuon.install.id}}").
 		Example("apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: app-config\ndata:\n  env: production").
-		OneOfRequired("manifest_source").
 		Field("kustomize").Short("Kustomize configuration (mutually exclusive with manifest)").
 		Long("Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest.").
-		OneOfRequired("manifest_source").
 		Field("namespace").Short("Kubernetes namespace").
 		Long("Kubernetes namespace where the manifest will be deployed. Supports template variables.").
 		Example("default").
@@ -115,5 +115,11 @@ func (t *KubernetesManifestComponentConfig) Validate() error {
 }
 
 func (k *KubernetesManifestComponentConfig) Parse() error {
+	if k.PublicRepo.IsEmpty() {
+		k.PublicRepo = nil
+	}
+	if k.ConnectedRepo.IsEmpty() {
+		k.ConnectedRepo = nil
+	}
 	return nil
 }

@@ -15,7 +15,7 @@ title: 'Runner'
 | `env_vars` | `object` | No | environment variables Map of environment variables to pass to the runner as key-value pairs | - | `"DEBUG=true"` |
 | `helm_driver` | `string` | No | Helm driver configuration Specifies the backend driver for Helm operations (e.g., 'configmap', 'secret') | - | `"configmap"` |
 | `init_script_url` | `string` | No | initialization script URL URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, g... | - | - |
-| `env_var` | `array` | No | - | - | - |
+| `env_var` | `array` | No | [DEPRECATED: use env_vars map instead] | - | - |
 
 ### Property Details
 

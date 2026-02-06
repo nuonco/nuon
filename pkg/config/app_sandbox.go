@@ -15,8 +15,8 @@ type AppSandboxConfig struct {
 	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
 	TerraformVersion string               `mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
-	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
+	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
 	DriftSchedule    *string              `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty"`
 
 	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
@@ -27,6 +27,7 @@ type AppSandboxConfig struct {
 
 func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
+		OneOfGroup("vcs", "connected_repo", "public_repo").
 		Field("source").Short("external configuration source").
 		Long("Path to an external file containing sandbox configuration (YAML, JSON, or TOML)").
 		Field("terraform_version").Short("Terraform version").Required().
@@ -53,6 +54,13 @@ func (a *AppSandboxConfig) parse() error {
 		return ErrConfig{
 			Description: "an app sandbox config is required",
 		}
+	}
+
+	if a.PublicRepo.IsEmpty() {
+		a.PublicRepo = nil
+	}
+	if a.ConnectedRepo.IsEmpty() {
+		a.ConnectedRepo = nil
 	}
 
 	references, err := refs.Parse(a)

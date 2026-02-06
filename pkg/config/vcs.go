@@ -10,6 +10,10 @@ type PublicRepoConfig struct {
 	Branch    string `mapstructure:"branch,omitempty" toml:"branch,omitempty" jsonschema:"required"`
 }
 
+func (p *PublicRepoConfig) IsEmpty() bool {
+	return p == nil || (p.Repo == "" && p.Directory == "" && p.Branch == "")
+}
+
 func (p PublicRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("repo").Short("repository URL").Required().
@@ -31,6 +35,10 @@ type ConnectedRepoConfig struct {
 	Repo      string `mapstructure:"repo,omitempty" toml:"repo,omitempty" jsonschema:"required"`
 	Directory string `mapstructure:"directory,omitempty" toml:"directory,omitempty" jsonschema:"required"`
 	Branch    string `mapstructure:"branch,omitempty" toml:"branch,omitempty" jsonschema:"required"`
+}
+
+func (c *ConnectedRepoConfig) IsEmpty() bool {
+	return c == nil || (c.Repo == "" && c.Directory == "" && c.Branch == "")
 }
 
 func (c ConnectedRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

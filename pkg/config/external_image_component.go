@@ -63,9 +63,10 @@ func (p PublicImageConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("aws_ecr").Short("AWS ECR image configuration").OneOfRequired("image_source").
+		OneOfGroup("image_source", "aws_ecr", "public").
+		Field("aws_ecr").Short("AWS ECR image configuration").
 		Long("Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories").
-		Field("public").Short("public registry image configuration").OneOfRequired("image_source").
+		Field("public").Short("public registry image configuration").
 		Long("Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc)").
 		Field("build_timeout").Short("build operation timeout").
 		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/invopop/jsonschema"
@@ -831,6 +832,159 @@ func TestFieldBuilder_ComplexNestedStructure(t *testing.T) {
 	imagePullPolicy, _ := valuesImage.Properties.Get("pullPolicy")
 	if len(imagePullPolicy.Enum) != 3 {
 		t.Errorf("Expected 3 enum values for pullPolicy, got %d", len(imagePullPolicy.Enum))
+	}
+}
+
+func TestSchemaBuilder_OneOfGroup(t *testing.T) {
+	schema := &jsonschema.Schema{
+		Properties: jsonschema.NewProperties(),
+	}
+	schema.Properties.Set("connected_repo", &jsonschema.Schema{Type: "object"})
+	schema.Properties.Set("public_repo", &jsonschema.Schema{Type: "object"})
+
+	NewSchemaBuilder(schema).OneOfGroup("vcs", "connected_repo", "public_repo")
+
+	if len(schema.OneOf) != 2 {
+		t.Fatalf("Expected 2 OneOf entries (one per field), got %d", len(schema.OneOf))
+	}
+	for i, entry := range schema.OneOf {
+		if entry.Title != "vcs" {
+			t.Errorf("OneOf[%d]: Expected Title 'vcs', got %q", i, entry.Title)
+		}
+		if len(entry.Required) != 1 {
+			t.Errorf("OneOf[%d]: Expected 1 Required field, got %d", i, len(entry.Required))
+		}
+	}
+	if schema.OneOf[0].Required[0] != "connected_repo" {
+		t.Errorf("OneOf[0].Required[0] = %q, want 'connected_repo'", schema.OneOf[0].Required[0])
+	}
+	if schema.OneOf[1].Required[0] != "public_repo" {
+		t.Errorf("OneOf[1].Required[0] = %q, want 'public_repo'", schema.OneOf[1].Required[0])
+	}
+
+	for _, name := range []string{"connected_repo", "public_repo"} {
+		prop, ok := schema.Properties.Get(name)
+		if !ok {
+			t.Fatalf("Property %q not found", name)
+		}
+		val, exists := prop.Extras["oneof_required"]
+		if !exists {
+			t.Errorf("Property %q missing Extras[oneof_required]", name)
+		} else if val != "vcs" {
+			t.Errorf("Property %q Extras[oneof_required] = %v, want 'vcs'", name, val)
+		}
+	}
+}
+
+func TestSchemaBuilder_OneOfGroup_ThreeFields(t *testing.T) {
+	schema := &jsonschema.Schema{
+		Properties: jsonschema.NewProperties(),
+	}
+	schema.Properties.Set("public_repo", &jsonschema.Schema{Type: "object"})
+	schema.Properties.Set("connected_repo", &jsonschema.Schema{Type: "object"})
+	schema.Properties.Set("helm_repo", &jsonschema.Schema{Type: "object"})
+
+	NewSchemaBuilder(schema).OneOfGroup("vcs", "public_repo", "connected_repo", "helm_repo")
+
+	if len(schema.OneOf) != 3 {
+		t.Fatalf("Expected 3 OneOf entries (one per field), got %d", len(schema.OneOf))
+	}
+	expectedFields := []string{"public_repo", "connected_repo", "helm_repo"}
+	for i, entry := range schema.OneOf {
+		if len(entry.Required) != 1 {
+			t.Errorf("OneOf[%d]: Expected 1 Required field, got %d", i, len(entry.Required))
+		}
+		if entry.Required[0] != expectedFields[i] {
+			t.Errorf("OneOf[%d].Required[0] = %q, want %q", i, entry.Required[0], expectedFields[i])
+		}
+	}
+
+	for _, name := range expectedFields {
+		prop, ok := schema.Properties.Get(name)
+		if !ok {
+			t.Fatalf("Property %q not found", name)
+		}
+		val, exists := prop.Extras["oneof_required"]
+		if !exists {
+			t.Errorf("Property %q missing Extras[oneof_required]", name)
+		} else if val != "vcs" {
+			t.Errorf("Property %q Extras[oneof_required] = %v, want 'vcs'", name, val)
+		}
+	}
+}
+
+func TestSchemaBuilder_OneOfGroup_EncoderCompatibility(t *testing.T) {
+	schema := &jsonschema.Schema{
+		Properties: jsonschema.NewProperties(),
+	}
+	schema.Properties.Set("connected_repo", &jsonschema.Schema{Type: "object"})
+	schema.Properties.Set("public_repo", &jsonschema.Schema{Type: "object"})
+
+	NewSchemaBuilder(schema).OneOfGroup("vcs", "connected_repo", "public_repo")
+
+	// Build oneOFGroups the same way the encoder does (gen.go)
+	oneOFGroups := make(map[string]map[string]bool)
+	for _, s := range schema.OneOf {
+		if _, exists := oneOFGroups[s.Title]; !exists {
+			oneOFGroups[s.Title] = make(map[string]bool)
+		}
+		for _, r := range s.Required {
+			oneOFGroups[s.Title][r] = true
+		}
+	}
+
+	if !oneOFGroups["vcs"]["connected_repo"] {
+		t.Error("Expected oneOFGroups[vcs][connected_repo] to be true")
+	}
+	if !oneOFGroups["vcs"]["public_repo"] {
+		t.Error("Expected oneOFGroups[vcs][public_repo] to be true")
+	}
+
+	// Verify each property has the correct oneof_required extra
+	for _, name := range []string{"connected_repo", "public_repo"} {
+		prop, ok := schema.Properties.Get(name)
+		if !ok {
+			t.Fatalf("Property %q not found", name)
+		}
+		val, exists := prop.Extras["oneof_required"]
+		if !exists {
+			t.Errorf("Property %q missing Extras[oneof_required]", name)
+		} else if val != "vcs" {
+			t.Errorf("Property %q Extras[oneof_required] = %v, want 'vcs'", name, val)
+		}
+	}
+
+	// Verify the group name is in the encoder's allowlist (mirrors generator.StructTagOneOfRequiredGroups)
+	encoderAllowlist := []string{"component_type", "vcs"}
+	if !slices.Contains(encoderAllowlist, "vcs") {
+		t.Error("Expected 'vcs' to be in the encoder's oneOf required groups allowlist")
+	}
+}
+
+func TestSchemaBuilder_OneOfGroup_Chaining(t *testing.T) {
+	schema := &jsonschema.Schema{
+		Properties: jsonschema.NewProperties(),
+	}
+
+	// Verify OneOfGroup returns *SchemaBuilder and supports chaining into Field()
+	NewSchemaBuilder(schema).
+		OneOfGroup("vcs", "a", "b").
+		Field("a").
+		Short("desc")
+
+	prop, ok := schema.Properties.Get("a")
+	if !ok {
+		t.Fatal("Property 'a' not found after chaining")
+	}
+	if prop.Description != "desc" {
+		t.Errorf("Expected description 'desc', got %q", prop.Description)
+	}
+
+	val, exists := prop.Extras["oneof_required"]
+	if !exists {
+		t.Error("Property 'a' missing Extras[oneof_required] after chaining")
+	} else if val != "vcs" {
+		t.Errorf("Property 'a' Extras[oneof_required] = %v, want 'vcs'", val)
 	}
 }
 

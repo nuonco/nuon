@@ -22,8 +22,8 @@ type TerraformModuleComponentConfig struct {
 	VarsMap        map[string]string        `mapstructure:"vars,omitempty" toml:"vars,omitempty"`
 	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
@@ -37,6 +37,7 @@ type TerraformModuleComponentConfig struct {
 
 func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
+		OneOfGroup("vcs", "public_repo", "connected_repo").
 		Field("terraform_version").Short("Terraform version").Required().
 		Long("Version of Terraform to use for deployments").
 		Example("1.5.0").
@@ -67,6 +68,12 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 }
 
 func (t *TerraformModuleComponentConfig) Parse() error {
+	if t.PublicRepo.IsEmpty() {
+		t.PublicRepo = nil
+	}
+	if t.ConnectedRepo.IsEmpty() {
+		t.ConnectedRepo = nil
+	}
 	return nil
 }
 
