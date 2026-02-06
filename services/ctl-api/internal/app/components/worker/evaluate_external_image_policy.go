@@ -128,9 +128,11 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	var futures []workflow.Future
 	for _, policy := range prepResult.Policies {
 		fut := workflow.ExecuteActivity(policyCtx, (&sharedactivities.Activities{}).EvaluateSinglePolicy, &sharedactivities.EvaluateSinglePolicyRequest{
-			PolicyID:  policy.PolicyID,
-			Contents:  policy.Contents,
-			InputJSON: policy.InputJSON,
+			PolicyID:      policy.PolicyID,
+			Contents:      policy.Contents,
+			InputJSON:     policy.InputJSON,
+			InputIndex:    0,
+			InputIdentity: policy.InputIdentity,
 		})
 		futures = append(futures, fut)
 	}
@@ -155,6 +157,34 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 			denyViolations = append(denyViolations, v)
 		case "warn":
 			warnViolations = append(warnViolations, v)
+		}
+	}
+
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		l.Warn("unable to get org id", zap.Error(err))
+	} else {
+		componentID := prepResult.ComponentID
+		policyInputCounts := make(map[string]int, len(prepResult.PolicyIDs))
+		for _, policyID := range prepResult.PolicyIDs {
+			policyInputCounts[policyID] = prepResult.InputCount
+		}
+		if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
+			OrgID:             orgID,
+			AppID:             prepResult.AppID,
+			ComponentID:       &componentID,
+			InstallSandboxID:  nil,
+			OwnerID:           buildID,
+			OwnerType:         string(app.PolicyReportOwnerTypeComponentBuild),
+			RunnerJobID:       &buildJobID,
+			Violations:        allViolations,
+			PolicyIDs:         prepResult.PolicyIDs,
+			PolicyInputCounts: policyInputCounts,
+			OrgName:           prepResult.OrgName,
+			AppName:           prepResult.AppName,
+			ComponentName:     prepResult.ComponentName,
+		}); err != nil {
+			l.Warn("failed to persist policy report", zap.Error(err))
 		}
 	}
 

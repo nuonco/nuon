@@ -53,6 +53,9 @@ type AppInstallSandboxRun struct {
 	// outputs
 	Outputs map[string]any `json:"outputs,omitempty"`
 
+	// policy reports
+	PolicyReports []*AppPolicyReport `json:"policy_reports"`
+
 	// run type
 	RunType AppSandboxRunType `json:"run_type,omitempty"`
 
@@ -95,6 +98,10 @@ func (m *AppInstallSandboxRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLogStream(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePolicyReports(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -219,6 +226,36 @@ func (m *AppInstallSandboxRun) validateLogStream(formats strfmt.Registry) error 
 	return nil
 }
 
+func (m *AppInstallSandboxRun) validatePolicyReports(formats strfmt.Registry) error {
+	if swag.IsZero(m.PolicyReports) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.PolicyReports); i++ {
+		if swag.IsZero(m.PolicyReports[i]) { // not required
+			continue
+		}
+
+		if m.PolicyReports[i] != nil {
+			if err := m.PolicyReports[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppInstallSandboxRun) validateRunType(formats strfmt.Registry) error {
 	if swag.IsZero(m.RunType) { // not required
 		return nil
@@ -333,6 +370,10 @@ func (m *AppInstallSandboxRun) ContextValidate(ctx context.Context, formats strf
 	}
 
 	if err := m.contextValidateLogStream(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePolicyReports(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -457,6 +498,35 @@ func (m *AppInstallSandboxRun) contextValidateLogStream(ctx context.Context, for
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallSandboxRun) contextValidatePolicyReports(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.PolicyReports); i++ {
+
+		if m.PolicyReports[i] != nil {
+
+			if swag.IsZero(m.PolicyReports[i]) { // not required
+				return nil
+			}
+
+			if err := m.PolicyReports[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

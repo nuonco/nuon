@@ -22,7 +22,13 @@ func TestEvaluateRule_TerraformPolicy(t *testing.T) {
 
 	policyPath := "testdata/sample_terraform_policy.rego"
 
-	inputs, err := a.prepareTerraformPolicyInputs([]byte(workerplan.FakeTerraformPlanDisplayContents))
+	pctx := &policyContext{
+		AppConfigID:   "test-app-config",
+		AppID:         "test-app",
+		ComponentName: "test-component",
+	}
+
+	inputs, _, err := a.prepareTerraformPolicyInputs([]byte(workerplan.FakeTerraformPlanDisplayContents), pctx)
 	require.NoError(t, err, "failed to prepare terraform policy inputs")
 	require.Len(t, inputs, 1, "expected exactly one input")
 

@@ -83,6 +83,15 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		return nil, errors.Wrap(err, "unable to convert to app config")
 	}
 
+	// Derive policy names from Contents paths BEFORE get.Parse() replaces Contents with actual file content.
+	// This allows policies defined in policies.toml with Contents like "./block-mutable-tags.rego" to derive
+	// their name as "block-mutable-tags" before the path is replaced with the file content.
+	if appCfg.Policies != nil {
+		for i := range appCfg.Policies.Policies {
+			appCfg.Policies.Policies[i].SetNameFromContents()
+		}
+	}
+
 	// parse all get functions
 	if err := get.Parse(ctx, appCfg, &get.Options{
 		FieldTimeout: defaultFieldGetTimeout,

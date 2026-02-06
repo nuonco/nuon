@@ -26,14 +26,23 @@ type ExternalImagePolicyViolation struct {
 }
 
 type ExternalImagePolicyToEvaluate struct {
-	PolicyID  string `json:"policy_id" temporaljson:"policy_id,omitempty"`
-	Contents  string `json:"contents" temporaljson:"contents,omitempty"`
-	InputJSON []byte `json:"input_json" temporaljson:"input_json,omitempty"`
+	PolicyID      string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	Contents      string `json:"contents" temporaljson:"contents,omitempty"`
+	InputJSON     []byte `json:"input_json" temporaljson:"input_json,omitempty"`
+	InputIdentity string `json:"input_identity" temporaljson:"input_identity,omitempty"`
 }
 
 type PrepExternalImagePolicyResult struct {
 	Policies    []ExternalImagePolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
 	HasPolicies bool                            `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	AppID       string                          `json:"app_id" temporaljson:"app_id,omitempty"`
+	ComponentID string                          `json:"component_id" temporaljson:"component_id,omitempty"`
+	PolicyIDs   []string                        `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
+	InputCount  int                             `json:"input_count" temporaljson:"input_count,omitempty"`
+	// Human-readable names for display in reports
+	OrgName       string `json:"org_name" temporaljson:"org_name,omitempty"`
+	AppName       string `json:"app_name" temporaljson:"app_name,omitempty"`
+	ComponentName string `json:"component_name" temporaljson:"component_name,omitempty"`
 }
 
 // @temporal-gen activity
@@ -52,12 +61,20 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 		return nil, errors.Wrap(err, "unable to get build with app config")
 	}
 
-	appConfigs := build.ComponentConfigConnection.Component.App.AppConfigs
+	component := build.ComponentConfigConnection.Component
+	appConfigs := component.App.AppConfigs
 	if len(appConfigs) == 0 {
 		l.Info("no app config found, skipping policy evaluation")
 		return &PrepExternalImagePolicyResult{
-			Policies:    []ExternalImagePolicyToEvaluate{},
-			HasPolicies: false,
+			Policies:      []ExternalImagePolicyToEvaluate{},
+			HasPolicies:   false,
+			AppID:         component.AppID,
+			ComponentID:   build.ComponentConfigConnection.ComponentID,
+			PolicyIDs:     []string{},
+			InputCount:    0,
+			OrgName:       component.App.Org.Name,
+			AppName:       component.App.Name,
+			ComponentName: component.Name,
 		}, nil
 	}
 	appConfigID := appConfigs[0].ID
@@ -68,12 +85,19 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 	if err != nil {
 		l.Info("no policies config found, skipping policy evaluation")
 		return &PrepExternalImagePolicyResult{
-			Policies:    []ExternalImagePolicyToEvaluate{},
-			HasPolicies: false,
+			Policies:      []ExternalImagePolicyToEvaluate{},
+			HasPolicies:   false,
+			AppID:         component.AppID,
+			ComponentID:   build.ComponentConfigConnection.ComponentID,
+			PolicyIDs:     []string{},
+			InputCount:    0,
+			OrgName:       component.App.Org.Name,
+			AppName:       component.App.Name,
+			ComponentName: component.Name,
 		}, nil
 	}
 
-	componentName := build.ComponentConfigConnection.Component.Name
+	componentName := component.Name
 	applicablePolicies := a.filterContainerImagePolicies(policiesConfig.Policies, componentName)
 
 	l.Info("filtered applicable container image policies", zap.Int("count", len(applicablePolicies)))
@@ -81,8 +105,15 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 	if len(applicablePolicies) == 0 {
 		l.Info("no applicable container image policies found")
 		return &PrepExternalImagePolicyResult{
-			Policies:    []ExternalImagePolicyToEvaluate{},
-			HasPolicies: false,
+			Policies:      []ExternalImagePolicyToEvaluate{},
+			HasPolicies:   false,
+			AppID:         component.AppID,
+			ComponentID:   build.ComponentConfigConnection.ComponentID,
+			PolicyIDs:     []string{},
+			InputCount:    0,
+			OrgName:       component.App.Org.Name,
+			AppName:       component.App.Name,
+			ComponentName: component.Name,
 		}, nil
 	}
 
@@ -99,13 +130,18 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 		return nil, errors.Wrap(err, "unable to marshal policy input")
 	}
 
+	imageIdentity := buildImageIdentity(req.ImageMetadata)
+
 	policies := make([]ExternalImagePolicyToEvaluate, 0, len(applicablePolicies))
+	policyIDs := make([]string, 0, len(applicablePolicies))
 	for _, policy := range applicablePolicies {
 		policies = append(policies, ExternalImagePolicyToEvaluate{
-			PolicyID:  policy.ID,
-			Contents:  policy.Contents,
-			InputJSON: inputJSON,
+			PolicyID:      policy.ID,
+			Contents:      policy.Contents,
+			InputJSON:     inputJSON,
+			InputIdentity: imageIdentity,
 		})
+		policyIDs = append(policyIDs, policy.ID)
 	}
 
 	l.Info("policy evaluation preparation complete",
@@ -113,8 +149,15 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 	)
 
 	return &PrepExternalImagePolicyResult{
-		Policies:    policies,
-		HasPolicies: true,
+		Policies:      policies,
+		HasPolicies:   true,
+		AppID:         component.AppID,
+		ComponentID:   build.ComponentConfigConnection.ComponentID,
+		PolicyIDs:     policyIDs,
+		InputCount:    1,
+		OrgName:       component.App.Org.Name,
+		AppName:       component.App.Name,
+		ComponentName: component.Name,
 	}, nil
 }
 
@@ -125,12 +168,30 @@ func (a *Activities) getBuildWithAppConfig(ctx context.Context, buildID string) 
 		Preload("ComponentConfigConnection.Component.App.AppConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("created_at DESC").Limit(1)
 		}).
+		Preload("ComponentConfigConnection.Component.App.Org").
 		First(&bld, "id = ?", buildID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get component build")
 	}
 
 	return &bld, nil
+}
+
+func buildImageIdentity(meta *metadata.ImageMetadata) string {
+	if meta == nil {
+		return "unknown-image"
+	}
+
+	if meta.Image != "" && meta.Tag != "" {
+		return meta.Image + ":" + meta.Tag
+	}
+	if meta.Image != "" && meta.Digest != "" {
+		return meta.Image + "@" + meta.Digest
+	}
+	if meta.Image != "" {
+		return meta.Image
+	}
+	return "unknown-image"
 }
 
 func (a *Activities) filterContainerImagePolicies(

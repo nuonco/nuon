@@ -74,6 +74,9 @@ type AppInstallDeploy struct {
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
 
+	// policy reports
+	PolicyReports []*AppPolicyReport `json:"policy_reports"`
+
 	// release id
 	ReleaseID string `json:"release_id,omitempty"`
 
@@ -124,6 +127,10 @@ func (m *AppInstallDeploy) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOciArtifact(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePolicyReports(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -288,6 +295,36 @@ func (m *AppInstallDeploy) validateOciArtifact(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstallDeploy) validatePolicyReports(formats strfmt.Registry) error {
+	if swag.IsZero(m.PolicyReports) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.PolicyReports); i++ {
+		if swag.IsZero(m.PolicyReports[i]) { // not required
+			continue
+		}
+
+		if m.PolicyReports[i] != nil {
+			if err := m.PolicyReports[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppInstallDeploy) validateRunnerJobs(formats strfmt.Registry) error {
 	if swag.IsZero(m.RunnerJobs) { // not required
 		return nil
@@ -389,6 +426,10 @@ func (m *AppInstallDeploy) ContextValidate(ctx context.Context, formats strfmt.R
 	}
 
 	if err := m.contextValidateOciArtifact(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePolicyReports(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -556,6 +597,35 @@ func (m *AppInstallDeploy) contextValidateOciArtifact(ctx context.Context, forma
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallDeploy) contextValidatePolicyReports(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.PolicyReports); i++ {
+
+		if m.PolicyReports[i] != nil {
+
+			if swag.IsZero(m.PolicyReports[i]) { // not required
+				return nil
+			}
+
+			if err := m.PolicyReports[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

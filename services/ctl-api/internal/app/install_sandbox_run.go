@@ -58,6 +58,8 @@ type InstallSandboxRun struct {
 	LogStream          LogStream                  `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 	ActionWorkflowRuns []InstallActionWorkflowRun `json:"action_workflow_runs,omitzero" gorm:"polymorphic:TriggeredBy;" temporaljson:"action_workflow_runs,omitzero,omitempty"`
 
+	PolicyReports []PolicyReport `json:"policy_reports,omitzero" gorm:"polymorphic:Owner;polymorphicValue:install_sandbox_runs" temporaljson:"policy_reports,omitzero,omitempty"`
+
 	// used for RLS
 	OrgID     string  `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org       Org     `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`

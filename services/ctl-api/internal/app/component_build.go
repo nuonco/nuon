@@ -39,6 +39,8 @@ type ComponentBuild struct {
 
 	LogStream LogStream `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
+	PolicyReports []PolicyReport `json:"policy_reports,omitzero" gorm:"polymorphic:Owner;polymorphicValue:component_builds" temporaljson:"policy_reports,omitzero,omitempty"`
+
 	// DEPRECATED: will retain the field to connect against the last component config connection that set this build
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id,omitzero" gorm:"notnull" temporaljson:"component_config_connection_id,omitzero,omitempty"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"component_config_connection,omitzero" temporaljson:"component_config_connection,omitzero,omitempty"`
