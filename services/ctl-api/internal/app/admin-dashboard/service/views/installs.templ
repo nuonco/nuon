@@ -1,6 +1,7 @@
 package views
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
@@ -8,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
 )
 
-templ Installs(installs []*app.Install) {
+templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery string) {
 	@Layout("Installs") {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
@@ -24,12 +25,12 @@ templ Installs(installs []*app.Install) {
 					@search.SearchInput(search.Props{
 						Placeholder: "Search by install name or ID...",
 						TargetURL:   "installs/table",
-						TargetID:    "installs-table-global",
+						TargetID:    "installs-table-wrapper",
 					})
 					if len(installs) == 0 {
 						<div class="text-sm text-muted-foreground">No installs found.</div>
 					} else {
-						@InstallsTableGlobal(installs)
+						@InstallsTableGlobal(installs, currentPage, totalPages, searchQuery)
 					}
 				}
 			}
@@ -37,4 +38,12 @@ templ Installs(installs []*app.Install) {
 		@copybutton.Script()
 		@popover.Script()
 	}
+}
+
+func buildPageURL(page int, search string) string {
+	url := fmt.Sprintf("installs/table?page=%d", page)
+	if search != "" {
+		url += fmt.Sprintf("&search=%s", search)
+	}
+	return url
 }
