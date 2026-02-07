@@ -20,8 +20,29 @@ func ParseLoose(text string) *TomlDocument {
 	lines := strings.Split(text, "\n")
 
 	currentTable := ""
+	inMultilineString := false
 
 	for lineNum, line := range lines {
+		// Track multi-line string state (""")
+		tripleQuoteCount := strings.Count(line, `"""`)
+		if tripleQuoteCount%2 == 1 {
+			// Odd number of triple quotes = toggle state
+			inMultilineString = !inMultilineString
+		}
+
+		// Skip lines inside multi-line strings
+		if inMultilineString {
+			// Check if this line closes the multi-line string
+			if tripleQuoteCount > 0 {
+				// Line contains """, might be closing
+				// After toggling above, if we're no longer in string, this was the closing line
+				if !inMultilineString {
+					continue // Skip this closing line too
+				}
+			}
+			continue
+		}
+
 		// Skip comments
 		if commentRegex.MatchString(line) {
 			continue
