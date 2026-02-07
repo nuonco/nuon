@@ -4,9 +4,21 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestExists(t *testing.T) {
+// ExistsTestSuite is the testify suite for exists tests
+type ExistsTestSuite struct {
+	suite.Suite
+}
+
+// TestExistsSuite runs the test suite
+func TestExistsSuite(t *testing.T) {
+	suite.Run(t, new(ExistsTestSuite))
+}
+
+func (s *ExistsTestSuite) TestExists() {
+	t := s.T()
 	testCases := map[string]struct {
 		input  map[string]any
 		lookup string
