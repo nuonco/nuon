@@ -2,6 +2,8 @@ package views
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -35,6 +37,13 @@ func DefaultTableName(db *gorm.DB, obj any, appendStr string) string {
 func DefaultViewName(db *gorm.DB, obj any, version int) string {
 	tableName := plugins.TableName(db, obj)
 	return fmt.Sprintf("%s_view_v%d", tableName, version)
+}
+
+// CurrentViewName returns the current view name for a ViewModel using its ViewVersion().
+// This provides a single source of truth for the current view version.
+func CurrentViewName(db *gorm.DB, obj ViewModel) string {
+	version, _ := strconv.Atoi(strings.TrimPrefix(obj.ViewVersion(), "v"))
+	return DefaultViewName(db, obj, version)
 }
 
 func CustomViewName(db *gorm.DB, obj any, name string) string {

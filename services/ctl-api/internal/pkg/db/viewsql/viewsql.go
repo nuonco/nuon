@@ -88,6 +88,9 @@ var PSQLTableSizesV1 string
 //go:embed install_audit_logs_view_v1.sql
 var InstallAuditLogsViewV1 string
 
+//go:embed install_audit_logs_view_v2.sql
+var InstallAuditLogsViewV2 string
+
 //go:embed ch_table_sizes_v1.sql
 var CHTableSizesV1 string
 
