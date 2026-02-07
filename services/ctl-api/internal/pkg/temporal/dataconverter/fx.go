@@ -21,6 +21,7 @@ type Params struct {
 
 	Gzip            converter.PayloadCodec `name:"gzip"`
 	LargePayload    converter.PayloadCodec `name:"largepayload"`
+	S3Payload       converter.PayloadCodec `name:"s3payload"`
 	SignalConverter *signaldb.PayloadConverter
 }
 
@@ -36,7 +37,8 @@ func New(params Params) converter.DataConverter {
 	)
 
 	return workflow.DataConverterWithoutDeadlockDetection(converter.NewCodecDataConverter(cdc,
-		params.LargePayload,
-		params.Gzip,
+		params.S3Payload,    // Try S3 first
+		params.LargePayload, // Fallback to DB storage
+		params.Gzip,         // Then compression
 	))
 }
