@@ -1,13 +1,15 @@
 package views
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 )
 
 // OrgsTable renders just the table for htmx updates
-templ OrgsTable(orgs []*app.Org) {
+templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string) {
 	<div
 		id="orgs-table"
 		hx-get="orgs/table"
@@ -57,5 +59,60 @@ templ OrgsTable(orgs []*app.Org) {
 				}
 			}
 		}
+		if totalPages > 1 {
+			<div class="mt-4">
+				@renderOrgsPagination(currentPage, totalPages, searchQuery)
+			</div>
+		}
 	</div>
+}
+
+templ renderOrgsPagination(currentPage, totalPages int, searchQuery string) {
+	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
+	@pagination.Pagination() {
+		@pagination.Content() {
+			@pagination.Item() {
+				@pagination.Previous(pagination.PreviousProps{
+					Href:     buildOrgsPageURL(currentPage-1, searchQuery),
+					Disabled: !paginationData.HasPrevious,
+					Label:    "Previous",
+					Attributes: templ.Attributes{
+						"hx-get":     buildOrgsPageURL(currentPage-1, searchQuery),
+						"hx-target":  "#orgs-table",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search']",
+					},
+				})
+			}
+			for _, pageNum := range paginationData.Pages {
+				@pagination.Item() {
+					@pagination.Link(pagination.LinkProps{
+						Href:     buildOrgsPageURL(pageNum, searchQuery),
+						IsActive: pageNum == currentPage,
+						Attributes: templ.Attributes{
+							"hx-get":     buildOrgsPageURL(pageNum, searchQuery),
+							"hx-target":  "#orgs-table",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search']",
+						},
+					}) {
+						{ fmt.Sprintf("%d", pageNum) }
+					}
+				}
+			}
+			@pagination.Item() {
+				@pagination.Next(pagination.NextProps{
+					Href:     buildOrgsPageURL(currentPage+1, searchQuery),
+					Disabled: !paginationData.HasNext,
+					Label:    "Next",
+					Attributes: templ.Attributes{
+						"hx-get":     buildOrgsPageURL(currentPage+1, searchQuery),
+						"hx-target":  "#orgs-table",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search']",
+					},
+				})
+			}
+		}
+	}
 }

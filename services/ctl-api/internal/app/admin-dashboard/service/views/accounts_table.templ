@@ -1,13 +1,15 @@
 package views
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 )
 
 // AccountsTable renders the accounts table
-templ AccountsTable(accounts []*app.Account) {
+templ AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQuery string) {
 	<div
 		id="accounts-table"
 		hx-get="accounts/table"
@@ -70,5 +72,60 @@ templ AccountsTable(accounts []*app.Account) {
 				}
 			}
 		}
+		if totalPages > 1 {
+			<div class="mt-4">
+				@renderAccountsPagination(currentPage, totalPages, searchQuery)
+			</div>
+		}
 	</div>
+}
+
+templ renderAccountsPagination(currentPage, totalPages int, searchQuery string) {
+	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
+	@pagination.Pagination() {
+		@pagination.Content() {
+			@pagination.Item() {
+				@pagination.Previous(pagination.PreviousProps{
+					Href:     buildAccountsPageURL(currentPage-1, searchQuery),
+					Disabled: !paginationData.HasPrevious,
+					Label:    "Previous",
+					Attributes: templ.Attributes{
+						"hx-get":     buildAccountsPageURL(currentPage-1, searchQuery),
+						"hx-target":  "#accounts-table",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search']",
+					},
+				})
+			}
+			for _, pageNum := range paginationData.Pages {
+				@pagination.Item() {
+					@pagination.Link(pagination.LinkProps{
+						Href:     buildAccountsPageURL(pageNum, searchQuery),
+						IsActive: pageNum == currentPage,
+						Attributes: templ.Attributes{
+							"hx-get":     buildAccountsPageURL(pageNum, searchQuery),
+							"hx-target":  "#accounts-table",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search']",
+						},
+					}) {
+						{ fmt.Sprintf("%d", pageNum) }
+					}
+				}
+			}
+			@pagination.Item() {
+				@pagination.Next(pagination.NextProps{
+					Href:     buildAccountsPageURL(currentPage+1, searchQuery),
+					Disabled: !paginationData.HasNext,
+					Label:    "Next",
+					Attributes: templ.Attributes{
+						"hx-get":     buildAccountsPageURL(currentPage+1, searchQuery),
+						"hx-target":  "#accounts-table",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search']",
+					},
+				})
+			}
+		}
+	}
 }

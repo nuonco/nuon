@@ -9,13 +9,15 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
 )
 
 // AccountsTable renders the accounts table
-func AccountsTable(accounts []*app.Account) templ.Component {
+func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQuery string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -268,7 +270,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var13 templ.SafeURL
 								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("accounts/" + account.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 36, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 38, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 								if templ_7745c5c3_Err != nil {
@@ -281,7 +283,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var14 string
 								templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(account.Email)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 37, Col: 25}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 39, Col: 25}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 								if templ_7745c5c3_Err != nil {
@@ -294,7 +296,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var15 string
 								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("account-id-" + account.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 40, Col: 47}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 42, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {
@@ -307,7 +309,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var16 string
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(account.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 40, Col: 110}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 42, Col: 110}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -361,7 +363,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 									var templ_7745c5c3_Var18 templ.SafeURL
 									templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + org.ID))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 50, Col: 47}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 52, Col: 47}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 									if templ_7745c5c3_Err != nil {
@@ -374,7 +376,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 									var templ_7745c5c3_Var19 string
 									templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(org.Name)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 51, Col: 21}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 53, Col: 21}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 									if templ_7745c5c3_Err != nil {
@@ -420,7 +422,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var21 string
 								templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(string(account.AccountType))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 60, Col: 37}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 62, Col: 37}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 								if templ_7745c5c3_Err != nil {
@@ -451,7 +453,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var23 string
 								templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(account.CreatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 63, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 65, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 								if templ_7745c5c3_Err != nil {
@@ -482,7 +484,7 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 								var templ_7745c5c3_Var25 string
 								templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(account.UpdatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 66, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 68, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 								if templ_7745c5c3_Err != nil {
@@ -514,7 +516,207 @@ func AccountsTable(accounts []*app.Account) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div>")
+		if totalPages > 1 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"mt-4\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = renderAccountsPagination(currentPage, totalPages, searchQuery).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func renderAccountsPagination(currentPage, totalPages int, searchQuery string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		paginationData := pagination.CreatePagination(currentPage, totalPages, 5)
+		templ_7745c5c3_Var27 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Var28 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+				if !templ_7745c5c3_IsBuffer {
+					defer func() {
+						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err == nil {
+							templ_7745c5c3_Err = templ_7745c5c3_BufErr
+						}
+					}()
+				}
+				ctx = templ.InitializeContext(ctx)
+				templ_7745c5c3_Var29 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+					if !templ_7745c5c3_IsBuffer {
+						defer func() {
+							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err == nil {
+								templ_7745c5c3_Err = templ_7745c5c3_BufErr
+							}
+						}()
+					}
+					ctx = templ.InitializeContext(ctx)
+					templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
+						Href:     buildAccountsPageURL(currentPage-1, searchQuery),
+						Disabled: !paginationData.HasPrevious,
+						Label:    "Previous",
+						Attributes: templ.Attributes{
+							"hx-get":     buildAccountsPageURL(currentPage-1, searchQuery),
+							"hx-target":  "#accounts-table",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search']",
+						},
+					}).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					return nil
+				})
+				templ_7745c5c3_Err = pagination.Item().Render(templ.WithChildren(ctx, templ_7745c5c3_Var29), templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for _, pageNum := range paginationData.Pages {
+					templ_7745c5c3_Var30 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						templ_7745c5c3_Var31 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+							templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+							templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+							if !templ_7745c5c3_IsBuffer {
+								defer func() {
+									templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err == nil {
+										templ_7745c5c3_Err = templ_7745c5c3_BufErr
+									}
+								}()
+							}
+							ctx = templ.InitializeContext(ctx)
+							var templ_7745c5c3_Var32 string
+							templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pageNum))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 112, Col: 34}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							return nil
+						})
+						templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
+							Href:     buildAccountsPageURL(pageNum, searchQuery),
+							IsActive: pageNum == currentPage,
+							Attributes: templ.Attributes{
+								"hx-get":     buildAccountsPageURL(pageNum, searchQuery),
+								"hx-target":  "#accounts-table",
+								"hx-swap":    "outerHTML",
+								"hx-include": "[name='search']",
+							},
+						}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var31), templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						return nil
+					})
+					templ_7745c5c3_Err = pagination.Item().Render(templ.WithChildren(ctx, templ_7745c5c3_Var30), templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Var33 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+					if !templ_7745c5c3_IsBuffer {
+						defer func() {
+							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err == nil {
+								templ_7745c5c3_Err = templ_7745c5c3_BufErr
+							}
+						}()
+					}
+					ctx = templ.InitializeContext(ctx)
+					templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
+						Href:     buildAccountsPageURL(currentPage+1, searchQuery),
+						Disabled: !paginationData.HasNext,
+						Label:    "Next",
+						Attributes: templ.Attributes{
+							"hx-get":     buildAccountsPageURL(currentPage+1, searchQuery),
+							"hx-target":  "#accounts-table",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search']",
+						},
+					}).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					return nil
+				})
+				templ_7745c5c3_Err = pagination.Item().Render(templ.WithChildren(ctx, templ_7745c5c3_Var33), templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				return nil
+			})
+			templ_7745c5c3_Err = pagination.Content().Render(templ.WithChildren(ctx, templ_7745c5c3_Var28), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = pagination.Pagination().Render(templ.WithChildren(ctx, templ_7745c5c3_Var27), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
