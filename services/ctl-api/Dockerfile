@@ -14,6 +14,7 @@ WORKDIR /src/services/${SERVICE}
 COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY docs ./docs/
+COPY tests ./tests/
 COPY main.go admin.go public.go runner.go ./
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
