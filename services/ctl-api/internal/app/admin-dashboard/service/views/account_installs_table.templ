@@ -9,17 +9,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 )
 
-// InstallsTableGlobal renders the global installs table for all organizations
-templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string) {
+templ AccountInstallsTable(accountID string, installs []*app.Install, currentPage, totalPages int) {
 	<div
-		id="installs-table-wrapper"
-		hx-get="installs/table"
+		id={ "installs-table-" + accountID }
+		hx-get={ "accounts/" + accountID + "/installs/table" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
-		hx-include="[name='search']"
 	>
 		if len(installs) == 0 {
-			<div class="text-sm text-muted-foreground">No installs found.</div>
+			<div class="text-sm text-muted-foreground">No installs created.</div>
 		} else {
 			@table.Table() {
 				@table.Header() {
@@ -31,7 +29,6 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 						@table.Head() { Sandbox }
 						@table.Head() { Components }
 						@table.Head() { Created At }
-						@table.Head() { Updated At }
 					}
 				}
 				@table.Body() {
@@ -39,7 +36,7 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("installs/" + install.ID) } class="text-cyan hover:underline">
+									<a href={ templ.URL("../installs/" + install.ID) } class="text-cyan hover:underline">
 										{ install.Name }
 									</a>
 									<div class="flex items-center gap-2">
@@ -51,7 +48,7 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 								</div>
 							}
 							@table.Cell() {
-								<a href={ templ.URL("orgs/" + install.OrgID) } class="text-cyan hover:underline">
+								<a href={ templ.URL("../orgs/" + install.OrgID) } class="text-cyan hover:underline">
 									{ install.Org.Name }
 								</a>
 							}
@@ -70,9 +67,6 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
 								{ install.CreatedAt.Format("2006-01-02 15:04") }
 							}
-							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
-								{ install.UpdatedAt.Format("2006-01-02 15:04") }
-							}
 						}
 					}
 				}
@@ -80,39 +74,37 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 		}
 		if totalPages > 1 {
 			<div class="mt-4">
-				@renderPagination(currentPage, totalPages, searchQuery)
+				@renderAccountInstallsPagination(accountID, currentPage, totalPages)
 			</div>
 		}
 	</div>
 }
 
-templ renderPagination(currentPage, totalPages int, searchQuery string) {
+templ renderAccountInstallsPagination(accountID string, currentPage, totalPages int) {
 	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
 	@pagination.Pagination() {
 		@pagination.Content() {
 			@pagination.Item() {
 				@pagination.Previous(pagination.PreviousProps{
-					Href:     buildPageURL(currentPage-1, searchQuery),
+					Href:     buildAccountInstallsPageURL(accountID, currentPage-1),
 					Disabled: !paginationData.HasPrevious,
 					Label:    "Previous",
 					Attributes: templ.Attributes{
-						"hx-get":    buildPageURL(currentPage-1, searchQuery),
-						"hx-target": "#installs-table-wrapper",
+						"hx-get":    buildAccountInstallsPageURL(accountID, currentPage-1),
+						"hx-target": "#installs-table-" + accountID,
 						"hx-swap":   "outerHTML",
-						"hx-include": "[name='search']",
 					},
 				})
 			}
 			for _, pageNum := range paginationData.Pages {
 				@pagination.Item() {
 					@pagination.Link(pagination.LinkProps{
-						Href:     buildPageURL(pageNum, searchQuery),
+						Href:     buildAccountInstallsPageURL(accountID, pageNum),
 						IsActive: pageNum == currentPage,
 						Attributes: templ.Attributes{
-							"hx-get":    buildPageURL(pageNum, searchQuery),
-							"hx-target": "#installs-table-wrapper",
+							"hx-get":    buildAccountInstallsPageURL(accountID, pageNum),
+							"hx-target": "#installs-table-" + accountID,
 							"hx-swap":   "outerHTML",
-							"hx-include": "[name='search']",
 						},
 					}) {
 						{ fmt.Sprintf("%d", pageNum) }
@@ -121,17 +113,20 @@ templ renderPagination(currentPage, totalPages int, searchQuery string) {
 			}
 			@pagination.Item() {
 				@pagination.Next(pagination.NextProps{
-					Href:     buildPageURL(currentPage+1, searchQuery),
+					Href:     buildAccountInstallsPageURL(accountID, currentPage+1),
 					Disabled: !paginationData.HasNext,
 					Label:    "Next",
 					Attributes: templ.Attributes{
-						"hx-get":    buildPageURL(currentPage+1, searchQuery),
-						"hx-target": "#installs-table-wrapper",
+						"hx-get":    buildAccountInstallsPageURL(accountID, currentPage+1),
+						"hx-target": "#installs-table-" + accountID,
 						"hx-swap":   "outerHTML",
-						"hx-include": "[name='search']",
 					},
 				})
 			}
 		}
 	}
+}
+
+func buildAccountInstallsPageURL(accountID string, page int) string {
+	return fmt.Sprintf("accounts/%s/installs/table?page=%d", accountID, page)
 }

@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
@@ -16,7 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
 )
 
-func Orgs(orgs []*app.Org) templ.Component {
+func Orgs(orgs []*app.Org, currentPage, totalPages int, searchQuery string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -165,7 +166,7 @@ func Orgs(orgs []*app.Org) templ.Component {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = OrgsTable(orgs).Render(ctx, templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = OrgsTable(orgs, currentPage, totalPages, searchQuery).Render(ctx, templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -222,6 +223,14 @@ func orgStatusClass(status app.OrgStatus) string {
 	default:
 		return "bg-muted text-muted-foreground border border-border"
 	}
+}
+
+func buildOrgsPageURL(page int, search string) string {
+	url := fmt.Sprintf("orgs/table?page=%d", page)
+	if search != "" {
+		url += fmt.Sprintf("&search=%s", search)
+	}
+	return url
 }
 
 var _ = templruntime.GeneratedTemplate
