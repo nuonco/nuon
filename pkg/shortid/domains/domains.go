@@ -365,3 +365,7 @@ func NewPolicyValidationID() string {
 func NewPolicyReportID() string {
 	return shortid.NewNanoID("pvr")
 }
+
+func NewBlobID() string {
+	return shortid.NewNanoID("blb")
+}
