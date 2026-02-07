@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -17,12 +18,18 @@ type InstallAuditLog struct {
 	LogLine   string    `json:"log_line,omitzero" gorm:"->;-:migration"`
 }
 
+const installAuditLogCurrentVersion = 2
+
 func (*InstallAuditLog) UseView() bool {
 	return true
 }
 
-func (*InstallAuditLog) ViewVersion() string {
-	return "v1"
+func (*InstallAuditLog) CurrentViewVersion() int {
+	return installAuditLogCurrentVersion
+}
+
+func (i *InstallAuditLog) ViewVersion() string {
+	return fmt.Sprintf("v%d", i.CurrentViewVersion())
 }
 
 func (i *InstallAuditLog) Views(db *gorm.DB) []migrations.View {
@@ -30,6 +37,10 @@ func (i *InstallAuditLog) Views(db *gorm.DB) []migrations.View {
 		{
 			Name: views.DefaultViewName(db, &InstallAuditLog{}, 1),
 			SQL:  viewsql.InstallAuditLogsViewV1,
+		},
+		{
+			Name: views.DefaultViewName(db, &InstallAuditLog{}, 2),
+			SQL:  viewsql.InstallAuditLogsViewV2,
 		},
 	}
 }
