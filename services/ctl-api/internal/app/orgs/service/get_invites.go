@@ -3,11 +3,9 @@ package service
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -18,7 +16,7 @@ import (
 // @Summary				Return org invites
 // @Description.markdown	get_org_invites.md
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
-// @Param					limit						query	int		false	"limit of results to return"	Default(10)
+// @Param					limit						query	int		false	"limit of results to return"	Default(60)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Tags					orgs
 // @Accept					json
@@ -39,18 +37,16 @@ func (s *service) GetOrgInvites(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: remove when pagination is enabled
-	limitStr := ctx.DefaultQuery("limit", "60")
-	limitVal, err := strconv.Atoi(limitStr)
-	if err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
-			Description: "invalid limit",
-		})
-		return
+	// Get pagination from context (set by middleware)
+	pagination := cctx.OffsetPaginationFromContext(ctx)
+
+	// If no limit query param was provided, use custom default of 60
+	if ctx.Query("limit") == "" && pagination != nil {
+		pagination.Limit = 60
+		cctx.SetOffPaginationGinCtx(ctx, *pagination)
 	}
 
-	orgs, err := s.getOrgInvites(ctx, org.ID, limitVal)
+	orgs, err := s.getOrgInvites(ctx, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -59,14 +55,14 @@ func (s *service) GetOrgInvites(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, orgs)
 }
 
-func (s *service) getOrgInvites(ctx *gin.Context, orgID string, limit int) ([]app.OrgInvite, error) {
+func (s *service) getOrgInvites(ctx *gin.Context, orgID string) ([]app.OrgInvite, error) {
 	var org *app.Org
 
 	res := s.db.WithContext(ctx).
 		Preload("Invites", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOffsetPagination).
-				Order("org_invites.created_at DESC").Limit(limit)
+				Order("org_invites.created_at DESC")
 		}).
 		First(&org, "id = ?", orgID)
 	if res.Error != nil {
@@ -78,6 +74,5 @@ func (s *service) getOrgInvites(ctx *gin.Context, orgID string, limit int) ([]ap
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
-	org.Invites = invites
-	return org.Invites, nil
+	return invites, nil
 }

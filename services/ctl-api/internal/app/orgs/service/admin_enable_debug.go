@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type DebugModeRequest struct {
@@ -29,6 +30,15 @@ type DebugModeRequest struct {
 func (s *service) AdminDebugModeOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
+	// Validate org_id is not empty
+	if orgID == "" {
+		ctx.Error(stderr.ErrNotFound{
+			Err:         fmt.Errorf("not found"),
+			Description: "org_id parameter is required",
+		})
+		return
+	}
+
 	org, err := s.adminGetOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(err)
@@ -36,8 +46,11 @@ func (s *service) AdminDebugModeOrg(ctx *gin.Context) {
 	}
 
 	var req DebugModeRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
+		})
 		return
 	}
 

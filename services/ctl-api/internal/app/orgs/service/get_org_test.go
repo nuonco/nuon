@@ -20,7 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// GetOrgTestSuite is the testify suite for get org endpoint.
+// GetOrgTestSuite is the test suite for get org endpointi.
 type GetOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
