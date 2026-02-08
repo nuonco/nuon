@@ -38,11 +38,11 @@ type RunnerJobExecutionResult struct {
 	ErrorMetadata pgtype.Hstore `json:"error_metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"error_metadata,omitzero,omitempty"`
 
 	Contents        string `json:"contents,omitzero" gorm:"string" swaggertype:"string" temporaljson:"contents"`
-	ContentsDisplay []byte `json:"contents_display,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
+	ContentsDisplay []byte `json:"contents_display,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"contents_display"`
 
 	// columns for storage of gzipped contents and plans
 	ContentsGzip        []byte `json:"contents_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"contents_binary"`
-	ContentsDisplayGzip []byte `json:"contents_display_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"-"`
+	ContentsDisplayGzip []byte `json:"contents_display_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"contents_display_binary"`
 }
 
 func (r *RunnerJobExecutionResult) Indexes(db *gorm.DB) []migrations.Index {
@@ -98,7 +98,6 @@ func (r *RunnerJobExecutionResult) GetContentsB64String() (string, error) {
 	// base64 encode
 	planB64 := base64.StdEncoding.EncodeToString(r.ContentsGzip) // NOTE(fd): internally we can use StdEncoding
 	return planB64, nil
-
 }
 
 func (r *RunnerJobExecutionResult) GetContentsDisplayString() (string, error) {
