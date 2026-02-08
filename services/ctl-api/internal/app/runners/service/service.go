@@ -104,6 +104,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	return nil
 }
+
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	// runners
 	runners := api.Group("/v1/runners")
@@ -197,9 +198,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
 
 	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
-	runnerJobs.GET("", s.GetRunnerJob)          //deprecated
-	runnerJobs.PATCH("", s.UpdateRunnerJob)     //deprecated
-	runnerJobs.GET("/plan", s.GetRunnerJobPlan) //deprecated
+	runnerJobs.GET("", s.GetRunnerJob)          // deprecated
+	runnerJobs.PATCH("", s.UpdateRunnerJob)     // deprecated
+	runnerJobs.GET("/plan", s.GetRunnerJobPlan) // deprecated
+	runnerJobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
 
 	executions := runnerJobs.Group("/executions")
 	executions.POST("", s.CreateRunnerJobExecution)
