@@ -1,13 +1,24 @@
 package views
 
 import (
+	"time"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/datepicker"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/calendar"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
 )
 
-templ AccountDetail(account *app.Account, apps []*app.App, installs []*app.Install, currentPage, totalPages int) {
+templ AccountDetail(
+	account *app.Account,
+	apps []*app.App,
+	installs []*app.Install,
+	auditLogs []*AuditLogEntry,
+	startDate, endDate time.Time,
+	currentPage, installsTotalPages, auditLogsTotalPages int,
+) {
 	@Layout("Account: " + account.Email) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
@@ -57,43 +68,123 @@ templ AccountDetail(account *app.Account, apps []*app.App, installs []*app.Insta
 				</div>
 			</div>
 
-			<!-- Organizations Section -->
-			@card.Card() {
-				@card.Header() {
-					@card.Title() {
-						Organizations
+			<!-- Activity Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Activity
+						}
+						@card.Description() {
+							All entities created by this account
+						}
 					}
-					@card.Description() {
-						Organizations this user belongs to
-					}
-				}
-				@card.Content() {
-					if len(account.Orgs) == 0 {
-						<div class="text-sm text-muted-foreground">No organizations found.</div>
-					} else {
-						<div class="space-y-2">
-							for _, org := range account.Orgs {
-								<div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-									<div class="flex flex-col gap-1">
-										<a href={ templ.URL("../orgs/" + org.ID) } class="text-cyan hover:underline font-medium">
-											{ org.Name }
-										</a>
-										<div class="flex items-center gap-2">
-											<span id={ "org-id-" + org.ID } class="font-mono text-xs text-muted-foreground">{ org.ID }</span>
-											@copybutton.CopyButton(copybutton.Props{
-												TargetID: "org-id-" + org.ID,
-											})
-										</div>
-									</div>
-									<div class="text-xs text-muted-foreground">
-										<span class="font-mono uppercase">{ string(org.OrgType) }</span>
-									</div>
-								</div>
-							}
+					@card.Content() {
+						<!-- Entity Type Filter -->
+						<div class="mb-4"
+							hx-get={ "accounts/" + account.ID + "/audit-logs/table" }
+							hx-trigger="change from:[name='entity_types'] delay:300ms"
+							hx-target={ "#audit-logs-table-" + account.ID }
+							hx-swap="outerHTML"
+							hx-include="[name='start_date'],[name='end_date'],[name='entity_types']"
+						>
+							<label class="text-sm font-medium mb-2 block">Filter by Type</label>
+							<div class="w-full">
+								@selectbox.SelectBox() {
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:      "entity_types",
+										ShowPills: true,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "Select types to filter",
+										})
+									}
+									@selectbox.Content() {
+										@selectbox.Group() {
+											@selectbox.Label() {
+												Event Types
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value: "app",
+												Class: "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												App
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value: "workflow",
+												Class: "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Workflow
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value: "runner_job",
+												Class: "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Runner Job
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value: "org",
+												Class: "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Organization
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value: "app_sync",
+												Class: "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												App Sync
+											}
+										}
+									}
+								}
+							</div>
 						</div>
+						<!-- Date Range Filters -->
+						<div class="flex gap-4 mb-4"
+							hx-get={ "accounts/" + account.ID + "/audit-logs/table" }
+							hx-trigger="change from:[name='start_date'], change from:[name='end_date'] delay:300ms"
+							hx-target={ "#audit-logs-table-" + account.ID }
+							hx-swap="outerHTML"
+							hx-include="[name='start_date'],[name='end_date'],[name='entity_types']"
+						>
+							@datepicker.DatePicker(datepicker.Props{
+								ID:          "start-date",
+								Name:        "start_date",
+								Placeholder: "Start date",
+								Value:       startDate,
+								Format:      datepicker.FormatLOCALE_SHORT,
+							})
+							@datepicker.DatePicker(datepicker.Props{
+								ID:          "end-date",
+								Name:        "end_date",
+								Placeholder: "End date",
+								Value:       endDate,
+								Format:      datepicker.FormatLOCALE_SHORT,
+							})
+						</div>
+
+						<!-- Audit Logs Table -->
+						@AccountAuditLogsTable(account.ID, auditLogs, startDate, endDate, currentPage, auditLogsTotalPages)
 					}
 				}
-			}
+			</div>
+
+			<!-- Installs Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Installs Created
+						}
+						@card.Description() {
+							Installs created by this user
+						}
+					}
+					@card.Content() {
+						@AccountInstallsTable(account.ID, installs, currentPage, installsTotalPages)
+					}
+				}
+			</div>
 
 			<!-- Apps Section -->
 			<div class="mt-6">
@@ -138,24 +229,50 @@ templ AccountDetail(account *app.Account, apps []*app.App, installs []*app.Insta
 				}
 			</div>
 
-			<!-- Installs Section -->
+			<!-- Organizations Section -->
 			<div class="mt-6">
 				@card.Card() {
 					@card.Header() {
 						@card.Title() {
-							Installs Created
+							Organizations
 						}
 						@card.Description() {
-							Installs created by this user
+							Organizations this user belongs to
 						}
 					}
 					@card.Content() {
-						@AccountInstallsTable(account.ID, installs, currentPage, totalPages)
+						if len(account.Orgs) == 0 {
+							<div class="text-sm text-muted-foreground">No organizations found.</div>
+						} else {
+							<div class="space-y-2">
+								for _, org := range account.Orgs {
+									<div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+										<div class="flex flex-col gap-1">
+											<a href={ templ.URL("../orgs/" + org.ID) } class="text-cyan hover:underline font-medium">
+												{ org.Name }
+											</a>
+											<div class="flex items-center gap-2">
+												<span id={ "org-id-" + org.ID } class="font-mono text-xs text-muted-foreground">{ org.ID }</span>
+												@copybutton.CopyButton(copybutton.Props{
+													TargetID: "org-id-" + org.ID,
+												})
+											</div>
+										</div>
+										<div class="text-xs text-muted-foreground">
+											<span class="font-mono uppercase">{ string(org.OrgType) }</span>
+										</div>
+									</div>
+								}
+							</div>
+						}
 					}
 				}
 			</div>
 		</div>
 		@copybutton.Script()
 		@popover.Script()
+		@calendar.Script()
+		@datepicker.Script()
+		@selectbox.Script()
 	}
 }
