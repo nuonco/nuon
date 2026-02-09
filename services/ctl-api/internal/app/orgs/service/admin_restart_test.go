@@ -1,0 +1,423 @@
+package service
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
+)
+
+// RestartOrgTestService holds all fx-injected dependencies for restart org tests.
+type RestartOrgTestService struct {
+	fx.In
+
+	DB              *gorm.DB `name:"psql"`
+	CHDB            *gorm.DB `name:"ch"`
+	V               *validator.Validate
+	L               *zap.Logger
+	OrgsHelpers     *orgshelpers.Helpers
+	RunnersHelpers  *runnershelpers.Helpers
+	AccountsHelpers *accountshelpers.Helpers
+}
+
+// RestartOrgTestSuite is the testify suite for restart org endpoint.
+type RestartOrgTestSuite struct {
+	tests.BaseDBTestSuite
+
+	app          *fxtest.App
+	service      RestartOrgTestService
+	router       *gin.Engine
+	testOrg      *app.Org
+	testAcc      *app.Account
+	mockEvClient *tests.FakeEventLoopClient
+	orgsService  *service
+}
+
+func TestRestartOrgSuite(t *testing.T) {
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
+
+	suite.Run(t, new(RestartOrgTestSuite))
+}
+
+func (s *RestartOrgTestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
+	gin.SetMode(gin.TestMode)
+
+	// Create fake event loop client for testing
+	s.mockEvClient = tests.NewFakeEventLoopClient()
+
+	options := append(
+		tests.CtlApiFXOptions(),
+		// Override eventloop.Client with mock
+		fx.Decorate(func() eventloop.Client {
+			return s.mockEvClient
+		}),
+		// service under test
+		fx.Provide(New),
+		fx.Populate(&s.service, &s.orgsService),
+	)
+
+	s.app = fxtest.New(s.T(), options...)
+	s.app.RequireStart()
+
+	// Store DB reference for automatic truncation
+	s.SetDB(s.service.DB)
+}
+
+func (s *RestartOrgTestSuite) SetupTest() {
+	s.BaseDBTestSuite.SetupTest()
+	s.setupTestData()
+
+	// Reset mock before each test
+	s.mockEvClient.Reset()
+
+	// Create test router with standard middlewares
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
+	})
+
+	err := s.orgsService.RegisterInternalRoutes(s.router)
+	require.NoError(s.T(), err)
+}
+
+func (s *RestartOrgTestSuite) TearDownSuite() {
+	s.app.RequireStop()
+}
+
+func (s *RestartOrgTestSuite) setupTestData() {
+	// Create test account
+	testAcc := &app.Account{
+		ID:          domains.NewAccountID(),
+		Email:       "test@example.com",
+		Subject:     "test-subject",
+		AccountType: app.AccountTypeAuth0,
+	}
+	err := s.service.DB.Create(testAcc).Error
+	require.NoError(s.T(), err)
+	s.testAcc = testAcc
+
+	// Create test org with account context (required by BeforeCreate hook)
+	ctx := context.Background()
+	ctx = cctx.SetAccountContext(ctx, testAcc)
+	testOrg := &app.Org{
+		ID:   domains.NewOrgID(),
+		Name: "test-org",
+		NotificationsConfig: app.NotificationsConfig{
+			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+		},
+	}
+	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
+	require.NoError(s.T(), err)
+	s.testOrg = testOrg
+}
+
+func (s *RestartOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
+	var reqBody *bytes.Buffer
+	if body != nil {
+		jsonData, err := json.Marshal(body)
+		require.NoError(s.T(), err)
+		reqBody = bytes.NewBuffer(jsonData)
+	} else {
+		reqBody = bytes.NewBuffer([]byte{})
+	}
+
+	req, err := http.NewRequest(method, path, reqBody)
+	require.NoError(s.T(), err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	s.router.ServeHTTP(rr, req)
+	return rr
+}
+
+func (s *RestartOrgTestSuite) TestRestartOrg() {
+	testCases := []struct {
+		name           string
+		setupFunc      func() *app.Org
+		requestBody    interface{}
+		expectedStatus int
+		validateSignal bool
+	}{
+		{
+			name: "successfully sends restart signal",
+			setupFunc: func() *app.Org {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				org := &app.Org{
+					ID:      domains.NewOrgID(),
+					Name:    "restart-org",
+					OrgType: app.OrgTypeDefault,
+					NotificationsConfig: app.NotificationsConfig{
+						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+					},
+				}
+				err := s.service.DB.WithContext(ctx).Create(org).Error
+				require.NoError(s.T(), err)
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
+				})
+
+				return org
+			},
+			requestBody:    RestartOrgRequest{},
+			expectedStatus: http.StatusOK,
+			validateSignal: true,
+		},
+		{
+			name: "handles empty request body",
+			setupFunc: func() *app.Org {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				org := &app.Org{
+					ID:      domains.NewOrgID(),
+					Name:    "empty-request-org",
+					OrgType: app.OrgTypeDefault,
+					NotificationsConfig: app.NotificationsConfig{
+						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+					},
+				}
+				err := s.service.DB.WithContext(ctx).Create(org).Error
+				require.NoError(s.T(), err)
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
+				})
+
+				return org
+			},
+			requestBody:    RestartOrgRequest{},
+			expectedStatus: http.StatusOK,
+			validateSignal: true,
+		},
+		{
+			name: "returns true on success",
+			setupFunc: func() *app.Org {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				org := &app.Org{
+					ID:      domains.NewOrgID(),
+					Name:    "success-org",
+					OrgType: app.OrgTypeDefault,
+					NotificationsConfig: app.NotificationsConfig{
+						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+					},
+				}
+				err := s.service.DB.WithContext(ctx).Create(org).Error
+				require.NoError(s.T(), err)
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
+				})
+
+				return org
+			},
+			requestBody:    RestartOrgRequest{},
+			expectedStatus: http.StatusOK,
+			validateSignal: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			// Setup test data
+			org := tc.setupFunc()
+
+			// Reset mock before test
+			s.mockEvClient.Reset()
+
+			// Make request
+			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), tc.requestBody)
+
+			if rr.Code != tc.expectedStatus {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), tc.expectedStatus, rr.Code)
+
+			// For successful requests, validate response is true
+			if tc.expectedStatus == http.StatusOK {
+				var response bool
+				err := json.Unmarshal(rr.Body.Bytes(), &response)
+				if err != nil {
+					s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+				}
+				require.NoError(s.T(), err)
+				assert.True(s.T(), response, "response should be true")
+			}
+
+			// Validate signal was sent
+			if tc.validateSignal {
+				signals := s.mockEvClient.GetSignals()
+				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
+
+				signal := signals[0]
+				assert.Equal(s.T(), org.ID, signal.ID, "signal should be sent to correct org ID")
+
+				// Type assert to get the actual signal
+				orgSignal, ok := signal.Signal.(*sigs.Signal)
+				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
+				assert.Equal(s.T(), sigs.OperationRestart, orgSignal.Type, "signal type should be OperationRestart")
+			}
+		})
+	}
+}
+
+func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
+	testCases := []struct {
+		name             string
+		setupFunc        func() string // Returns org ID to use
+		requestBody      interface{}
+		expectedStatus   int
+		shouldSendSignal bool
+	}{
+		{
+			name: "returns error when org_id not found",
+			setupFunc: func() string {
+				// Return non-existent org ID
+				return domains.NewOrgID()
+			},
+			requestBody:      RestartOrgRequest{},
+			expectedStatus:   http.StatusNotFound,
+			shouldSendSignal: false,
+		},
+		{
+			name: "handles invalid JSON",
+			setupFunc: func() string {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				org := &app.Org{
+					ID:      domains.NewOrgID(),
+					Name:    "invalid-json-org",
+					OrgType: app.OrgTypeDefault,
+					NotificationsConfig: app.NotificationsConfig{
+						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+					},
+				}
+				err := s.service.DB.WithContext(ctx).Create(org).Error
+				require.NoError(s.T(), err)
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
+				})
+
+				return org.ID
+			},
+			requestBody:      "invalid json",
+			expectedStatus:   http.StatusBadRequest,
+			shouldSendSignal: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			// Setup test data
+			orgID := tc.setupFunc()
+
+			// Reset mock before test
+			s.mockEvClient.Reset()
+
+			// Make request with invalid JSON if needed
+			var rr *httptest.ResponseRecorder
+			if tc.name == "handles invalid JSON" {
+				req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", orgID), bytes.NewBufferString("invalid json"))
+				require.NoError(s.T(), err)
+				req.Header.Set("Content-Type", "application/json")
+				rr = httptest.NewRecorder()
+				s.router.ServeHTTP(rr, req)
+			} else {
+				rr = s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", orgID), tc.requestBody)
+			}
+
+			if rr.Code != tc.expectedStatus {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), tc.expectedStatus, rr.Code)
+
+			// Validate no signal was sent for error cases
+			signals := s.mockEvClient.GetSignals()
+			if tc.shouldSendSignal {
+				assert.Greater(s.T(), len(signals), 0, "expected signal to be sent")
+			} else {
+				assert.Len(s.T(), signals, 0, "no signal should be sent on error")
+			}
+		})
+	}
+}
+
+func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
+	s.Run("verifies signal type is OperationRestart", func() {
+		ctx := context.Background()
+		ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+		org := &app.Org{
+			ID:      domains.NewOrgID(),
+			Name:    "signal-details-org",
+			OrgType: app.OrgTypeDefault,
+			NotificationsConfig: app.NotificationsConfig{
+				InternalSlackWebhookURL: "https://hooks.slack.com/foo",
+			},
+		}
+		err := s.service.DB.WithContext(ctx).Create(org).Error
+		require.NoError(s.T(), err)
+		s.T().Cleanup(func() {
+			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
+		})
+
+		// Reset mock before test
+		s.mockEvClient.Reset()
+
+		// Make request
+		rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), RestartOrgRequest{})
+
+		require.Equal(s.T(), http.StatusOK, rr.Code)
+
+		// Validate signal details
+		signals := s.mockEvClient.GetSignals()
+		require.Len(s.T(), signals, 1, "expected exactly one signal")
+
+		signal := signals[0]
+		assert.Equal(s.T(), org.ID, signal.ID, "signal ID should match org ID")
+
+		// Type assert and verify signal type
+		orgSignal, ok := signal.Signal.(*sigs.Signal)
+		require.True(s.T(), ok, "signal should be of type *sigs.Signal")
+		assert.Equal(s.T(), sigs.OperationRestart, orgSignal.Type, "signal type must be OperationRestart")
+
+		// Verify signal properties
+		assert.Equal(s.T(), string(sigs.OperationRestart), orgSignal.Name(), "signal name should match type")
+		assert.Equal(s.T(), sigs.TemporalNamespace, orgSignal.Namespace(), "signal namespace should be 'orgs'")
+		assert.True(s.T(), orgSignal.Restart(), "signal.Restart() should return true")
+		assert.False(s.T(), orgSignal.Stop(), "signal.Stop() should return false")
+		assert.False(s.T(), orgSignal.Start(), "signal.Start() should return false")
+	})
+}

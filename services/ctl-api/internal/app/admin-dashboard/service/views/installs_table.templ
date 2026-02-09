@@ -1,14 +1,16 @@
 package views
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 )
 
 // InstallsTable renders the installs table for an org with htmx polling
-templ InstallsTable(orgID string, installs []*app.Install) {
+templ InstallsTable(orgID string, installs []*app.Install, currentPage, totalPages int) {
 	<div
 		id={ "installs-table-" + orgID }
 		hx-get={ "orgs/" + orgID + "/installs/table" }
@@ -66,6 +68,61 @@ templ InstallsTable(orgID string, installs []*app.Install) {
 				}
 			}
 		}
+		if totalPages > 1 {
+			<div class="mt-4">
+				@renderOrgInstallsPagination(orgID, currentPage, totalPages)
+			</div>
+		}
 	</div>
 }
 
+templ renderOrgInstallsPagination(orgID string, currentPage, totalPages int) {
+	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
+	@pagination.Pagination() {
+		@pagination.Content() {
+			@pagination.Item() {
+				@pagination.Previous(pagination.PreviousProps{
+					Href:     buildOrgInstallsPageURL(orgID, currentPage-1),
+					Disabled: !paginationData.HasPrevious,
+					Label:    "Previous",
+					Attributes: templ.Attributes{
+						"hx-get":    buildOrgInstallsPageURL(orgID, currentPage-1),
+						"hx-target": "#installs-table-" + orgID,
+						"hx-swap":   "outerHTML",
+					},
+				})
+			}
+			for _, pageNum := range paginationData.Pages {
+				@pagination.Item() {
+					@pagination.Link(pagination.LinkProps{
+						Href:     buildOrgInstallsPageURL(orgID, pageNum),
+						IsActive: pageNum == currentPage,
+						Attributes: templ.Attributes{
+							"hx-get":    buildOrgInstallsPageURL(orgID, pageNum),
+							"hx-target": "#installs-table-" + orgID,
+							"hx-swap":   "outerHTML",
+						},
+					}) {
+						{ fmt.Sprintf("%d", pageNum) }
+					}
+				}
+			}
+			@pagination.Item() {
+				@pagination.Next(pagination.NextProps{
+					Href:     buildOrgInstallsPageURL(orgID, currentPage+1),
+					Disabled: !paginationData.HasNext,
+					Label:    "Next",
+					Attributes: templ.Attributes{
+						"hx-get":    buildOrgInstallsPageURL(orgID, currentPage+1),
+						"hx-target": "#installs-table-" + orgID,
+						"hx-swap":   "outerHTML",
+					},
+				})
+			}
+		}
+	}
+}
+
+func buildOrgInstallsPageURL(orgID string, page int) string {
+	return fmt.Sprintf("orgs/%s/installs/table?page=%d", orgID, page)
+}

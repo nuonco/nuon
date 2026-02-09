@@ -158,17 +158,16 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
 		}
 
-		// render the template
-		tmpl, awsChecksum, err := w.templates.Template(inp)
+		renderedTemplate, err := activities.AwaitRenderAWSStacTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
+			Input: *inp,
+		})
 		if err != nil {
-			return errors.Wrap(err, "unable to create cloudformation template")
+			return errors.Wrap(err, "unable to render stack template")
 		}
-		checksum = awsChecksum
 
-		tmplByts, err = tmpl.JSON()
-		if err != nil {
-			return errors.Wrap(err, "unable to get cloudformation json")
-		}
+		tmplByts = renderedTemplate.RAWJson
+		checksum = renderedTemplate.Checksum
+
 	case app.AppRunnerTypeAzure:
 		if cfg.RunnerConfig.InitScriptURL != "" {
 			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL

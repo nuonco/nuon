@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
 type Params struct {
@@ -34,6 +35,7 @@ type Params struct {
 	AcctClient        *account.Client
 	AuthzClient       *authz.Client
 	Cfg               *internal.Config
+	CFTemplates       *cloudformation.Templates
 	Features          *features.Features
 	L                 *zap.Logger
 	AccountsHelpers   *account.Client
@@ -43,6 +45,7 @@ type Activities struct {
 	v                 *validator.Validate
 	db                *gorm.DB
 	cfg               *internal.Config
+	cfTemplates       *cloudformation.Templates
 	appsHelpers       *appshelpers.Helpers
 	componentsHelpers *componentshelpers.Helpers
 	runnersHelpers    *runnershelpers.Helpers
@@ -62,6 +65,7 @@ func New(params Params) *Activities {
 		db:                params.DB,
 		v:                 params.V,
 		cfg:               params.Cfg,
+		cfTemplates:       params.CFTemplates,
 		appsHelpers:       params.AppsHelpers,
 		runnersHelpers:    params.RunnersHelpers,
 		actionHelpers:     params.ActionHelpers,

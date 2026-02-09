@@ -1,16 +1,18 @@
 package views
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 )
 
 // InstallsTableGlobal renders the global installs table for all organizations
-templ InstallsTableGlobal(installs []*app.Install) {
+templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string) {
 	<div
-		id="installs-table-global"
+		id="installs-table-wrapper"
 		hx-get="installs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
@@ -76,5 +78,60 @@ templ InstallsTableGlobal(installs []*app.Install) {
 				}
 			}
 		}
+		if totalPages > 1 {
+			<div class="mt-4">
+				@renderPagination(currentPage, totalPages, searchQuery)
+			</div>
+		}
 	</div>
+}
+
+templ renderPagination(currentPage, totalPages int, searchQuery string) {
+	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
+	@pagination.Pagination() {
+		@pagination.Content() {
+			@pagination.Item() {
+				@pagination.Previous(pagination.PreviousProps{
+					Href:     buildPageURL(currentPage-1, searchQuery),
+					Disabled: !paginationData.HasPrevious,
+					Label:    "Previous",
+					Attributes: templ.Attributes{
+						"hx-get":    buildPageURL(currentPage-1, searchQuery),
+						"hx-target": "#installs-table-wrapper",
+						"hx-swap":   "outerHTML",
+						"hx-include": "[name='search']",
+					},
+				})
+			}
+			for _, pageNum := range paginationData.Pages {
+				@pagination.Item() {
+					@pagination.Link(pagination.LinkProps{
+						Href:     buildPageURL(pageNum, searchQuery),
+						IsActive: pageNum == currentPage,
+						Attributes: templ.Attributes{
+							"hx-get":    buildPageURL(pageNum, searchQuery),
+							"hx-target": "#installs-table-wrapper",
+							"hx-swap":   "outerHTML",
+							"hx-include": "[name='search']",
+						},
+					}) {
+						{ fmt.Sprintf("%d", pageNum) }
+					}
+				}
+			}
+			@pagination.Item() {
+				@pagination.Next(pagination.NextProps{
+					Href:     buildPageURL(currentPage+1, searchQuery),
+					Disabled: !paginationData.HasNext,
+					Label:    "Next",
+					Attributes: templ.Attributes{
+						"hx-get":    buildPageURL(currentPage+1, searchQuery),
+						"hx-target": "#installs-table-wrapper",
+						"hx-swap":   "outerHTML",
+						"hx-include": "[name='search']",
+					},
+				})
+			}
+		}
+	}
 }

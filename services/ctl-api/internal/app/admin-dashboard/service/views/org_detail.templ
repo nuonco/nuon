@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 )
 
-templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string) {
+templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, currentPage, totalPages int) {
 	@Layout("Organization: " + org.Name) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
@@ -77,7 +77,7 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 					}
 				}
 				@card.Content() {
-					@InstallsTable(org.ID, installs)
+					@InstallsTable(org.ID, installs, currentPage, totalPages)
 				}
 			}
 		</div>

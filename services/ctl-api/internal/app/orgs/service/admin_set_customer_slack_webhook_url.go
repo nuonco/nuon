@@ -6,13 +6,23 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type SetCustomerSlackWebhookURLRequest struct {
-	Name string `validate:"required"`
+	Name string `json:"name" validate:"required"`
+}
+
+func (r *SetCustomerSlackWebhookURLRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(r); err != nil {
+		return validatorPkg.FormatValidationError(err)
+	}
+	return nil
 }
 
 // @ID						AdminSetCustomerSlackWebhookURLOrg
@@ -29,14 +39,21 @@ type SetCustomerSlackWebhookURLRequest struct {
 func (s *service) AdminSetCustomerSlackWebhookURLOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
-	_, err := s.getOrg(ctx, orgID)
+	_, err := s.adminGetOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
 	var req SetCustomerSlackWebhookURLRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
+		})
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}

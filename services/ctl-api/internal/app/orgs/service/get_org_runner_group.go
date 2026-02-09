@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -53,6 +55,12 @@ func (s *service) getOrgRunnerGroup(ctx context.Context, orgID string) (*app.Run
 		}).
 		First(&runnerGroup)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			return nil, stderr.ErrNotFound{
+				Err:         fmt.Errorf("runner group not found"),
+				Description: fmt.Sprintf("runner group for org %s not found", orgID),
+			}
+		}
 		return nil, fmt.Errorf("unable to get org runner group %s: %w", orgID, res.Error)
 	}
 

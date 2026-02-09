@@ -201,11 +201,14 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			zap.Error(policyErr))
 	}
 
-	if policyContext != nil && step.PolicyValidation != nil {
-		validationID := step.PolicyValidation.ID
+	if policyContext != nil {
 		policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
 		for _, policyID := range policyContext.PolicyIDs {
 			policyInputCounts[policyID] = policyContext.InputCount
+		}
+		var validationID *string
+		if step.PolicyValidation != nil {
+			validationID = &step.PolicyValidation.ID
 		}
 		if _, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
 			OrgID:                          policyContext.OrgID,
@@ -214,7 +217,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			InstallSandboxID:               policyContext.InstallSandboxID,
 			ComponentID:                    policyContext.ComponentID,
 			ComponentBuildID:               policyContext.ComponentBuildID,
-			WorkflowStepPolicyValidationID: &validationID,
+			WorkflowStepPolicyValidationID: validationID,
 			OwnerID:                        step.StepTargetID,
 			OwnerType:                      step.StepTargetType,
 			Violations:                     violations,

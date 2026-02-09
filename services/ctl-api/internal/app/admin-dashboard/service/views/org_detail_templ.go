@@ -17,7 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 )
 
-func OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string) templ.Component {
+func OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, currentPage, totalPages int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -262,7 +262,7 @@ func OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphD
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = InstallsTable(org.ID, installs).Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = InstallsTable(org.ID, installs, currentPage, totalPages).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

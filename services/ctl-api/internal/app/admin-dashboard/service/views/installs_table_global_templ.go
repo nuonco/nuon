@@ -9,14 +9,16 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
 )
 
 // InstallsTableGlobal renders the global installs table for all organizations
-func InstallsTableGlobal(installs []*app.Install) templ.Component {
+func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -37,7 +39,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"installs-table-global\" hx-get=\"installs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"installs-table-wrapper\" hx-get=\"installs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -347,7 +349,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var16 templ.SafeURL
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("installs/" + install.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 40, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 42, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -360,7 +362,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var17 string
 								templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(install.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 41, Col: 24}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 43, Col: 24}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 								if templ_7745c5c3_Err != nil {
@@ -373,7 +375,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var18 string
 								templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs("install-id-" + install.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 44, Col: 47}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 46, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 								if templ_7745c5c3_Err != nil {
@@ -386,7 +388,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var19 string
 								templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(install.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 44, Col: 110}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 46, Col: 110}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 								if templ_7745c5c3_Err != nil {
@@ -435,7 +437,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var21 templ.SafeURL
 								templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + install.OrgID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 52, Col: 52}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 54, Col: 52}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 								if templ_7745c5c3_Err != nil {
@@ -448,7 +450,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var22 string
 								templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(install.Org.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 53, Col: 27}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 55, Col: 27}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 								if templ_7745c5c3_Err != nil {
@@ -483,7 +485,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var24 string
 								templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(install.App.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 57, Col: 26}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 59, Col: 26}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 								if templ_7745c5c3_Err != nil {
@@ -592,7 +594,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var29 string
 								templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(install.CreatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 69, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 71, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 								if templ_7745c5c3_Err != nil {
@@ -623,7 +625,7 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 								var templ_7745c5c3_Var31 string
 								templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(install.UpdatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 72, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 74, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 								if templ_7745c5c3_Err != nil {
@@ -655,7 +657,207 @@ func InstallsTableGlobal(installs []*app.Install) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</div>")
+		if totalPages > 1 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"mt-4\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = renderPagination(currentPage, totalPages, searchQuery).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func renderPagination(currentPage, totalPages int, searchQuery string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var32 == nil {
+			templ_7745c5c3_Var32 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		paginationData := pagination.CreatePagination(currentPage, totalPages, 5)
+		templ_7745c5c3_Var33 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Var34 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+				if !templ_7745c5c3_IsBuffer {
+					defer func() {
+						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err == nil {
+							templ_7745c5c3_Err = templ_7745c5c3_BufErr
+						}
+					}()
+				}
+				ctx = templ.InitializeContext(ctx)
+				templ_7745c5c3_Var35 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+					if !templ_7745c5c3_IsBuffer {
+						defer func() {
+							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err == nil {
+								templ_7745c5c3_Err = templ_7745c5c3_BufErr
+							}
+						}()
+					}
+					ctx = templ.InitializeContext(ctx)
+					templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
+						Href:     buildPageURL(currentPage-1, searchQuery),
+						Disabled: !paginationData.HasPrevious,
+						Label:    "Previous",
+						Attributes: templ.Attributes{
+							"hx-get":     buildPageURL(currentPage-1, searchQuery),
+							"hx-target":  "#installs-table-wrapper",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search']",
+						},
+					}).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					return nil
+				})
+				templ_7745c5c3_Err = pagination.Item().Render(templ.WithChildren(ctx, templ_7745c5c3_Var35), templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				for _, pageNum := range paginationData.Pages {
+					templ_7745c5c3_Var36 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						templ_7745c5c3_Var37 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+							templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+							templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+							if !templ_7745c5c3_IsBuffer {
+								defer func() {
+									templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+									if templ_7745c5c3_Err == nil {
+										templ_7745c5c3_Err = templ_7745c5c3_BufErr
+									}
+								}()
+							}
+							ctx = templ.InitializeContext(ctx)
+							var templ_7745c5c3_Var38 string
+							templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pageNum))
+							if templ_7745c5c3_Err != nil {
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 118, Col: 34}
+							}
+							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+							return nil
+						})
+						templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
+							Href:     buildPageURL(pageNum, searchQuery),
+							IsActive: pageNum == currentPage,
+							Attributes: templ.Attributes{
+								"hx-get":     buildPageURL(pageNum, searchQuery),
+								"hx-target":  "#installs-table-wrapper",
+								"hx-swap":    "outerHTML",
+								"hx-include": "[name='search']",
+							},
+						}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var37), templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						return nil
+					})
+					templ_7745c5c3_Err = pagination.Item().Render(templ.WithChildren(ctx, templ_7745c5c3_Var36), templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Var39 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+					if !templ_7745c5c3_IsBuffer {
+						defer func() {
+							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err == nil {
+								templ_7745c5c3_Err = templ_7745c5c3_BufErr
+							}
+						}()
+					}
+					ctx = templ.InitializeContext(ctx)
+					templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
+						Href:     buildPageURL(currentPage+1, searchQuery),
+						Disabled: !paginationData.HasNext,
+						Label:    "Next",
+						Attributes: templ.Attributes{
+							"hx-get":     buildPageURL(currentPage+1, searchQuery),
+							"hx-target":  "#installs-table-wrapper",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search']",
+						},
+					}).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					return nil
+				})
+				templ_7745c5c3_Err = pagination.Item().Render(templ.WithChildren(ctx, templ_7745c5c3_Var39), templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				return nil
+			})
+			templ_7745c5c3_Err = pagination.Content().Render(templ.WithChildren(ctx, templ_7745c5c3_Var34), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = pagination.Pagination().Render(templ.WithChildren(ctx, templ_7745c5c3_Var33), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

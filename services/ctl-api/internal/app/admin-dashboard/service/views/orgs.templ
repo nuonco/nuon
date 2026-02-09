@@ -1,6 +1,7 @@
 package views
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
@@ -8,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
 )
 
-templ Orgs(orgs []*app.Org) {
+templ Orgs(orgs []*app.Org, currentPage, totalPages int, searchQuery string) {
 	@Layout("Organizations") {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
@@ -29,7 +30,7 @@ templ Orgs(orgs []*app.Org) {
 					if len(orgs) == 0 {
 						<div class="text-sm text-muted-foreground">No organizations found.</div>
 					} else {
-						@OrgsTable(orgs)
+						@OrgsTable(orgs, currentPage, totalPages, searchQuery)
 					}
 				}
 			}
@@ -54,4 +55,12 @@ func orgStatusClass(status app.OrgStatus) string {
 	default:
 		return "bg-muted text-muted-foreground border border-border"
 	}
+}
+
+func buildOrgsPageURL(page int, search string) string {
+	url := fmt.Sprintf("orgs/table?page=%d", page)
+	if search != "" {
+		url += fmt.Sprintf("&search=%s", search)
+	}
+	return url
 }

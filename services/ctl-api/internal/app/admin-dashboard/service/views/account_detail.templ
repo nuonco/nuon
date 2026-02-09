@@ -5,11 +5,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
 )
 
-templ AccountDetail(account *app.Account, apps []*app.App, installs []*app.Install) {
+templ AccountDetail(account *app.Account, apps []*app.App, installs []*app.Install, currentPage, totalPages int) {
 	@Layout("Account: " + account.Email) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
@@ -152,62 +150,7 @@ templ AccountDetail(account *app.Account, apps []*app.App, installs []*app.Insta
 						}
 					}
 					@card.Content() {
-						if len(installs) == 0 {
-							<div class="text-sm text-muted-foreground">No installs created.</div>
-						} else {
-							@table.Table() {
-								@table.Header() {
-									@table.Row() {
-										@table.Head() { Install }
-										@table.Head() { Organization }
-										@table.Head() { App }
-										@table.Head() { Runner }
-										@table.Head() { Sandbox }
-										@table.Head() { Components }
-										@table.Head() { Created At }
-									}
-								}
-								@table.Body() {
-									for _, install := range installs {
-										@table.Row() {
-											@table.Cell() {
-												<div class="flex flex-col gap-1">
-													<a href={ templ.URL("../installs/" + install.ID) } class="text-cyan hover:underline">
-														{ install.Name }
-													</a>
-													<div class="flex items-center gap-2">
-														<span id={ "install-id-" + install.ID } class="font-mono text-xs text-muted-foreground">{ install.ID }</span>
-														@copybutton.CopyButton(copybutton.Props{
-															TargetID: "install-id-" + install.ID,
-														})
-													</div>
-												</div>
-											}
-											@table.Cell() {
-												<a href={ templ.URL("../orgs/" + install.OrgID) } class="text-cyan hover:underline">
-													{ install.Org.Name }
-												</a>
-											}
-											@table.Cell(table.CellProps{Class: "text-sm"}) {
-												{ install.App.Name }
-											}
-											@table.Cell() {
-												@status.StatusAutoSimple(string(install.RunnerStatus))
-											}
-											@table.Cell() {
-												@status.StatusAutoSimple(string(install.SandboxStatus))
-											}
-											@table.Cell() {
-												@status.StatusAutoSimple(string(install.CompositeComponentStatus))
-											}
-											@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
-												{ install.CreatedAt.Format("2006-01-02 15:04") }
-											}
-										}
-									}
-								}
-							}
-						}
+						@AccountInstallsTable(account.ID, installs, currentPage, totalPages)
 					}
 				}
 			</div>
