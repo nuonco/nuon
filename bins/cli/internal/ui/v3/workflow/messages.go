@@ -17,15 +17,6 @@ func tick() tea.Msg {
 	return tickMsg{}
 }
 
-// exitCountdownTickMsg is sent every second during the exit countdown
-type exitCountdownTickMsg struct{}
-
-func exitCountdownTick() tea.Cmd {
-	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
-		return exitCountdownTickMsg{}
-	})
-}
-
 type workflowFetchedMsg struct {
 	workflow *models.AppWorkflow
 	stack    *models.AppInstallStack

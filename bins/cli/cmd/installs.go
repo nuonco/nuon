@@ -34,8 +34,6 @@ func (c *cli) installsCmd() *cobra.Command {
 		disable       bool
 		dryRun        bool
 		skipConfirm   bool
-		watch         bool
-		exitWait      int
 	)
 
 	installsCmds := &cobra.Command{
@@ -421,30 +419,15 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "Manage workflows",
 		Long: `Manage and view workflows by install ID.
 
-By default, launches an interactive TUI to view workflows.
-
-With --watch flag, polls the workflow status and exits when action is required:
-  - Exit code 0: Workflow completed successfully
-  - Exit code 1: Workflow failed or error occurred
-  - Exit code 2: Workflow was cancelled
-  - Exit code 3: Approval required for a step
-  - Exit code 4: A step failed
-  - Exit code 130: Interrupted (ctrl+c)
-
-Use --exit-wait with --watch to show a countdown before exiting.`,
+By default, launches an interactive TUI to view workflows.`,
 		Args: cobra.NoArgs,
-		Run: c.wrapCmdWithExitCode(func(cmd *cobra.Command, _ []string) (int, error) {
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			if watch {
-				return svc.WorkflowsTUIWatch(cmd.Context(), id, workflowID, exitWait)
-			}
-			return 0, svc.WorkflowsTUI(cmd.Context(), id, workflowID)
+			return svc.WorkflowsTUI(cmd.Context(), id, workflowID)
 		}),
 	}
 	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	workflowsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of a specific workflow to view")
-	workflowsCmd.Flags().BoolVar(&watch, "watch", false, "Watch workflow status and exit when action is required (step failure or approval)")
-	workflowsCmd.Flags().IntVar(&exitWait, "exit-wait", 10, "Seconds to wait before exiting in watch mode (0 for immediate exit)")
 	installsCmds.AddCommand(workflowsCmd)
 
 	workflowsListCmd := &cobra.Command{

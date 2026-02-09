@@ -1,8 +1,6 @@
 package workflow
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
@@ -57,11 +55,6 @@ func (m model) actionsOrMessage() string {
 		return m.spinner.View() + " Approving..."
 	}
 
-	// Show countdown message in watch mode exit waiting state
-	if m.exitWaiting {
-		return m.exitCountdownMessage()
-	}
-
 	cancellable := m.workflowIsCancellable()
 	approvable := m.workflowIsApprovable()
 	_, _, progress := m.getProgressPercentage()
@@ -76,28 +69,6 @@ func (m model) actionsOrMessage() string {
 		content += dangerousButtonStyle.Render("[C] Cancel Workflow") + " "
 	}
 	return content
-}
-
-func (m model) exitCountdownMessage() string {
-	errorStyle := lipgloss.NewStyle().Foreground(styles.ErrorColor)
-	var statusMsg string
-	switch m.exitCode {
-	case ExitCodeSuccess:
-		statusMsg = styles.TextSuccess.Render("Workflow completed successfully.")
-	case ExitCodeFailed:
-		statusMsg = errorStyle.Render("Workflow failed.")
-	case ExitCodeCancelled:
-		statusMsg = styles.TextWarning.Render("Workflow was cancelled.")
-	case ExitCodeApprovalRequired:
-		statusMsg = styles.TextWarning.Render("Approval required.")
-	case ExitCodeStepFailed:
-		statusMsg = errorStyle.Render("Step failed.")
-	default:
-		statusMsg = "Exiting."
-	}
-	return statusMsg + styles.TextSubtle.Render(" Exiting in ") +
-		styles.TextAccent.Render(fmt.Sprintf("%ds", m.exitCountdown)) +
-		styles.TextSubtle.Render("... (press q to exit now)")
 }
 
 func (m model) headerView() string {

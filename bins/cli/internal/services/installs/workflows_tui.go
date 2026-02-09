@@ -90,36 +90,3 @@ func (s *Service) WorkflowsWatchTUI(ctx context.Context, installID, workflowID s
 	exitCode := watch.WatchApp(ctx, s.cfg, s.api, resolvedInstallID)
 	return exitCode, nil
 }
-
-// WorkflowsTUIWatch runs the workflow TUI in watch mode.
-// It shows the same TUI as WorkflowsTUI but exits when action is required
-// (approval needed, step failed, or workflow completed).
-// If exitWait > 0, shows a countdown before exiting.
-// Returns an exit code and error for proper CLI exit handling.
-func (s *Service) WorkflowsTUIWatch(ctx context.Context, installID, wfID string, exitWait int) (int, error) {
-	resolvedInstallID, err := lookup.InstallID(ctx, s.api, installID)
-	if err != nil {
-		return workflow.ExitCodeFailed, ui.PrintError(err)
-	}
-
-	// If no workflow ID provided, get the latest workflow
-	if wfID == "" {
-		workflows, _, err := s.api.GetWorkflows(ctx, resolvedInstallID, &models.GetPaginatedQuery{Limit: 1, Offset: 0})
-		if err != nil {
-			return workflow.ExitCodeFailed, ui.PrintError(errors.Wrap(err, "failed to get workflows"))
-		}
-		if len(workflows) == 0 {
-			return workflow.ExitCodeFailed, ui.PrintError(errors.New("no workflows found for this install"))
-		}
-		wfID = workflows[0].ID
-	} else {
-		// Validate workflow ID exists
-		_, err := s.api.GetWorkflow(ctx, wfID)
-		if err != nil {
-			return workflow.ExitCodeFailed, ui.PrintError(errors.Wrap(err, "failed to get workflow"))
-		}
-	}
-
-	exitCode := workflow.WorkflowAppWatch(ctx, s.cfg, s.api, resolvedInstallID, wfID, exitWait)
-	return exitCode, nil
-}

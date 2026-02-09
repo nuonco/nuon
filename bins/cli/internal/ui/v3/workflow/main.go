@@ -47,16 +47,6 @@ type approvalContents struct {
 	helmDiff         map[string]any
 }
 
-// Exit codes for watch mode
-const (
-	ExitCodeSuccess          = 0
-	ExitCodeFailed           = 1
-	ExitCodeCancelled        = 2
-	ExitCodeApprovalRequired = 3
-	ExitCodeStepFailed       = 4
-	ExitCodeInterrupt        = 130
-)
-
 type model struct {
 	// common/base
 	ctx context.Context
@@ -121,23 +111,6 @@ type model struct {
 	error    error
 	quitting bool
 	loading  bool
-
-	// watch mode: exit when action required
-	watchMode      bool
-	exitCode       int
-	exitReason     exitReason
-	exitWait       int  // configured exit wait in seconds (0 = immediate)
-	exitCountdown  int  // current countdown value
-	exitWaiting    bool // whether we're in countdown state
-	actionInFlight bool // whether a user action is being processed (skip exit checks)
-}
-
-// exitReason captures details about why watch mode exited
-type exitReason struct {
-	stepName       string
-	stepID         string
-	errorMessage   string
-	workflowStatus string
 }
 
 func initialStepsList() list.Model {
@@ -424,26 +397,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case workflowFetchedMsg:
 		m.handleWorkflowFetched(msg)
-		// In watch mode, handle exit conditions
-		if m.watchMode {
-			if m.quitting {
-				return m, tea.Quit
-			}
-			// Start countdown timer if we just entered exit waiting state
-			if m.exitWaiting && m.exitCountdown == m.exitWait {
-				return m, exitCountdownTick()
-			}
-		}
 
-	case exitCountdownTickMsg:
-		if m.exitWaiting {
-			m.exitCountdown--
-			if m.exitCountdown <= 0 {
-				m.quitting = true
-				return m, tea.Quit
-			}
-			return m, exitCountdownTick()
-		}
 	case stackFetchedMsg:
 		m.handleStackFetched(msg)
 	case createWorkflowStepApprovalResponseMsg:
@@ -466,11 +420,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// handle keystrokes
 	case tea.KeyMsg:
-		// Reset exit countdown on any user interaction (except quit)
-		if !key.Matches(msg, m.keys.Quit) {
-			m.resetExitCountdown()
-		}
-
 		switch {
 		case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
 			m.setQuitting()
@@ -533,7 +482,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// data actions
 		case key.Matches(msg, m.keys.ApproveStep):
-			m.cancelExitCountdown()
 			if m.stepApprovalConf {
 				m.approvingStep = true
 				// Capture values needed for the API call before returning
@@ -543,14 +491,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.setApprovalConfirmation()
 			}
 		case key.Matches(msg, m.keys.CancelWorkflow):
-			m.cancelExitCountdown()
 			if !m.workflowCancelationConf {
 				m.setWorkflowCancelationConf()
 			} else if m.workflowCancelationConf {
 				cmds = append(cmds, m.cancelWorkflowCmd)
 			}
 		case key.Matches(msg, m.keys.ApproveAll):
-			m.cancelExitCountdown()
 			if m.workflowApprovalConf {
 				m.approvingStep = true
 				cmds = append(cmds, m.approveAllCmd)
@@ -656,75 +602,5 @@ func WorkflowApp(
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)
-	}
-}
-
-// WorkflowAppWatch runs the workflow TUI in watch mode.
-// It exits automatically when action is required (approval needed, step failed, or workflow completed).
-// If exitWait > 0, shows a countdown before exiting.
-// Returns an exit code indicating the reason for exit.
-func WorkflowAppWatch(
-	ctx context.Context,
-	cfg *config.Config,
-	api nuon.Client,
-	install_id string,
-	workflow_id string,
-	exitWait int,
-) int {
-	// initialize the model with watch mode enabled
-	m := initialModel(ctx, cfg, api, install_id, workflow_id)
-	m.watchMode = true
-	m.exitWait = exitWait
-
-	// initialize the program
-	p := tea.NewProgram(m, tea.WithAltScreen())
-	finalModel, err := p.Run()
-	if err != nil {
-		fmt.Printf("Something has gone terribly wrong: %v", err)
-		return ExitCodeFailed
-	}
-
-	// Extract exit code and print exit details from final model
-	if fm, ok := finalModel.(model); ok {
-		printExitDetails(fm.exitCode, fm.exitReason, fm.workflowID)
-		return fm.exitCode
-	}
-	return ExitCodeSuccess
-}
-
-// printExitDetails prints human-readable details about why watch mode exited
-func printExitDetails(exitCode int, reason exitReason, workflowID string) {
-	switch exitCode {
-	case ExitCodeApprovalRequired:
-		fmt.Printf("\n⏸  Approval required for step: %s\n", reason.stepName)
-		fmt.Printf("   Step ID: %s\n", reason.stepID)
-		fmt.Printf("   Workflow: %s\n", workflowID)
-		fmt.Println("\nTo approve this step, run:")
-		fmt.Printf("   nuon installs workflows steps approve -w %s -s %s\n", workflowID, reason.stepID)
-
-	case ExitCodeStepFailed:
-		fmt.Printf("\n✗  Step failed: %s\n", reason.stepName)
-		fmt.Printf("   Step ID: %s\n", reason.stepID)
-		if reason.errorMessage != "" {
-			fmt.Printf("   Error: %s\n", reason.errorMessage)
-		}
-		fmt.Printf("   Workflow: %s\n", workflowID)
-		fmt.Println("\nTo retry this step, run:")
-		fmt.Printf("   nuon installs workflows steps retry -w %s -s %s\n", workflowID, reason.stepID)
-
-	case ExitCodeSuccess:
-		fmt.Printf("\n✓  Workflow completed successfully\n")
-		fmt.Printf("   Workflow: %s\n", workflowID)
-
-	case ExitCodeFailed:
-		fmt.Printf("\n✗  Workflow failed\n")
-		if reason.errorMessage != "" {
-			fmt.Printf("   Error: %s\n", reason.errorMessage)
-		}
-		fmt.Printf("   Workflow: %s\n", workflowID)
-
-	case ExitCodeCancelled:
-		fmt.Printf("\n⊘  Workflow was cancelled\n")
-		fmt.Printf("   Workflow: %s\n", workflowID)
 	}
 }
