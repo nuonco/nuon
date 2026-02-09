@@ -67,12 +67,6 @@ type GetAppSecretsConfigParams struct {
 	*/
 	AppID string
 
-	/* AppSecretsConfigID.
-
-	   app secrets config ID
-	*/
-	AppSecretsConfigID string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -137,17 +131,6 @@ func (o *GetAppSecretsConfigParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
-// WithAppSecretsConfigID adds the appSecretsConfigID to the get app secrets config params
-func (o *GetAppSecretsConfigParams) WithAppSecretsConfigID(appSecretsConfigID string) *GetAppSecretsConfigParams {
-	o.SetAppSecretsConfigID(appSecretsConfigID)
-	return o
-}
-
-// SetAppSecretsConfigID adds the appSecretsConfigId to the get app secrets config params
-func (o *GetAppSecretsConfigParams) SetAppSecretsConfigID(appSecretsConfigID string) {
-	o.AppSecretsConfigID = appSecretsConfigID
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *GetAppSecretsConfigParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -158,11 +141,6 @@ func (o *GetAppSecretsConfigParams) WriteToRequest(r runtime.ClientRequest, reg 
 
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
-		return err
-	}
-
-	// path param app_secrets_config_id
-	if err := r.SetPathParam("app_secrets_config_id", o.AppSecretsConfigID); err != nil {
 		return err
 	}
 

@@ -67,11 +67,11 @@ type GetAppPoliciesConfigParams struct {
 	*/
 	AppID string
 
-	/* PoliciesConfigID.
+	/* AppPoliciesConfigID.
 
-	   input policies config ID
+	   app policies config ID
 	*/
-	PoliciesConfigID string
+	AppPoliciesConfigID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -137,15 +137,15 @@ func (o *GetAppPoliciesConfigParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
-// WithPoliciesConfigID adds the policiesConfigID to the get app policies config params
-func (o *GetAppPoliciesConfigParams) WithPoliciesConfigID(policiesConfigID string) *GetAppPoliciesConfigParams {
-	o.SetPoliciesConfigID(policiesConfigID)
+// WithAppPoliciesConfigID adds the appPoliciesConfigID to the get app policies config params
+func (o *GetAppPoliciesConfigParams) WithAppPoliciesConfigID(appPoliciesConfigID string) *GetAppPoliciesConfigParams {
+	o.SetAppPoliciesConfigID(appPoliciesConfigID)
 	return o
 }
 
-// SetPoliciesConfigID adds the policiesConfigId to the get app policies config params
-func (o *GetAppPoliciesConfigParams) SetPoliciesConfigID(policiesConfigID string) {
-	o.PoliciesConfigID = policiesConfigID
+// SetAppPoliciesConfigID adds the appPoliciesConfigId to the get app policies config params
+func (o *GetAppPoliciesConfigParams) SetAppPoliciesConfigID(appPoliciesConfigID string) {
+	o.AppPoliciesConfigID = appPoliciesConfigID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -161,8 +161,8 @@ func (o *GetAppPoliciesConfigParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 
-	// path param policies_config_id
-	if err := r.SetPathParam("policies_config_id", o.PoliciesConfigID); err != nil {
+	// path param app_policies_config_id
+	if err := r.SetPathParam("app_policies_config_id", o.AppPoliciesConfigID); err != nil {
 		return err
 	}
 
