@@ -5,7 +5,25 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
+	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
+	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
+	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
+	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
+	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
+	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
+	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
+	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
+	releasesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/service"
+	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
+	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
+	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
 	"github.com/nuonco/nuon/services/ctl-api/docs/admin"
 	"github.com/nuonco/nuon/services/ctl-api/docs/public"
@@ -156,6 +174,150 @@ func parseSwaggerSpec(t *testing.T, specJSON string, specName string) *SwaggerSp
 	require.NoError(t, err, "Failed to parse swagger spec JSON for %s", specName)
 
 	return &spec
+}
+
+// TestSwaggerRoutesRegisteredInGin validates that every route documented in the OpenAPI specs
+// is actually registered in the corresponding gin router. This catches cases where a swagger
+// annotation exists but the route was never wired up, or where the path doesn't match.
+func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Create a shared EndpointAudit for services that embed RouteRegister.
+	ea := api.NewEndpointAudit()
+
+	// Instantiate all domain services with zero-value params.
+	// Constructors are copy-only, so this is safe.
+	services := []api.Service{
+		accountsservice.New(accountsservice.Params{}),
+		actionsservice.New(actionsservice.Params{}),
+		appsservice.New(appsservice.Params{EndpointAudit: ea}),
+		componentsservice.New(componentsservice.Params{}),
+		generalservice.New(generalservice.Params{}),
+		identityprovidersservice.New(identityprovidersservice.Params{}),
+		installsservice.New(installsservice.Params{EndpointAudit: ea}),
+		orgsservice.New(orgsservice.Params{EndpointAudit: ea}),
+		policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}),
+		releasesservice.New(releasesservice.Params{}),
+		runnerauthservice.New(runnerauthservice.Params{}),
+		runnersservice.New(runnersservice.Params{}),
+		vcsservice.New(vcsservice.Params{}),
+	}
+
+	// Each swagger spec maps to one or more route-registration methods.
+	// The public spec includes routes from both RegisterPublicRoutes (unauthenticated)
+	// and RegisterAuthRoutes (authenticated) since they share the same swagger doc.
+	specs := []struct {
+		name      string
+		specJSON  string
+		registers []func(api.Service, *gin.Engine) error
+	}{
+		{
+			name:     "public",
+			specJSON: public.SwaggerInfo.ReadDoc(),
+			registers: []func(api.Service, *gin.Engine) error{
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterPublicRoutes(e) },
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterAuthRoutes(e) },
+			},
+		},
+		{
+			name:     "admin",
+			specJSON: admin.SwaggerInfoadmin.ReadDoc(),
+			registers: []func(api.Service, *gin.Engine) error{
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterInternalRoutes(e) },
+			},
+		},
+		{
+			name:     "runner",
+			specJSON: runner.SwaggerInforunner.ReadDoc(),
+			registers: []func(api.Service, *gin.Engine) error{
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterRunnerRoutes(e) },
+			},
+		},
+	}
+
+	for _, spec := range specs {
+		t.Run(spec.name, func(t *testing.T) {
+			// Build a gin engine with all domain service routes registered.
+			engine := gin.New()
+			for _, svc := range services {
+				for _, register := range spec.registers {
+					err := register(svc, engine)
+					require.NoError(t, err, "failed to register routes for %s", spec.name)
+				}
+			}
+
+			// Collect all registered gin routes as "METHOD /path" keys.
+			ginRoutes := make(map[string]struct{})
+			for _, route := range engine.Routes() {
+				key := route.Method + " " + route.Path
+				ginRoutes[key] = struct{}{}
+			}
+
+			// Parse the swagger spec.
+			swaggerSpec := parseSwaggerSpec(t, spec.specJSON, spec.name)
+
+			// Check every documented swagger route is registered in gin.
+			var missing []string
+			for path, pathItem := range swaggerSpec.Paths {
+				ginPath := swaggerPathToGinPath(path)
+				for _, method := range getPathMethods(pathItem) {
+					key := method + " " + ginPath
+					if _, ok := ginRoutes[key]; !ok {
+						missing = append(missing, key)
+					}
+				}
+			}
+
+			if len(missing) > 0 {
+				sort.Strings(missing)
+				msg := fmt.Sprintf("Found %d swagger route(s) in %s spec not registered in gin:\n", len(missing), spec.name)
+				for _, r := range missing {
+					msg += fmt.Sprintf("  - %s\n", r)
+				}
+				assert.Fail(t, msg)
+			}
+		})
+	}
+}
+
+// swaggerPathToGinPath converts swagger path parameters like {id} to gin-style :id.
+func swaggerPathToGinPath(path string) string {
+	var result strings.Builder
+	for i := 0; i < len(path); i++ {
+		if path[i] == '{' {
+			result.WriteByte(':')
+			i++ // skip '{'
+			for i < len(path) && path[i] != '}' {
+				result.WriteByte(path[i])
+				i++
+			}
+			// skip '}'
+		} else {
+			result.WriteByte(path[i])
+		}
+	}
+	return result.String()
+}
+
+// getPathMethods returns the HTTP methods defined on a swagger PathItem.
+func getPathMethods(p PathItem) []string {
+	var methods []string
+	if p.Get != nil {
+		methods = append(methods, "GET")
+	}
+	if p.Post != nil {
+		methods = append(methods, "POST")
+	}
+	if p.Put != nil {
+		methods = append(methods, "PUT")
+	}
+	if p.Patch != nil {
+		methods = append(methods, "PATCH")
+	}
+	if p.Delete != nil {
+		methods = append(methods, "DELETE")
+	}
+	return methods
 }
 
 // TestSwaggerSpecsExist validates that all required swagger spec files exist
