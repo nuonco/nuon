@@ -29,13 +29,26 @@ func exitCountdownTick() tea.Cmd {
 type workflowFetchedMsg struct {
 	workflow *models.AppWorkflow
 	stack    *models.AppInstallStack
+	policies *models.AppAppPoliciesConfig
 	err      error
 }
 
 func (m model) fetchWorkflowCmd() tea.Msg {
 	// This runs in a goroutine automatically
 	workflow, err := m.api.GetWorkflow(m.ctx, m.workflowID)
-	return workflowFetchedMsg{workflow: workflow, err: err}
+	if err != nil {
+		return workflowFetchedMsg{workflow: workflow, err: err}
+	}
+
+	var policiesConfig *models.AppAppPoliciesConfig
+	if workflow != nil && workflow.OwnerType == "installs" {
+		install, installErr := m.api.GetInstall(m.ctx, workflow.OwnerID)
+		if installErr == nil && install.AppID != "" {
+			policiesConfig, _ = m.api.GetLatestAppPoliciesConfig(m.ctx, install.AppID)
+		}
+	}
+
+	return workflowFetchedMsg{workflow: workflow, policies: policiesConfig, err: nil}
 }
 
 type stackFetchedMsg struct {

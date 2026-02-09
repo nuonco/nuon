@@ -60,6 +60,20 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 		return
 	}
 	m.workflow = workflow
+	if msg.policies != nil {
+		policyNames := make(map[string]string)
+		for _, policy := range msg.policies.Policies {
+			if policy == nil || policy.ID == "" {
+				continue
+			}
+			name := policy.Name
+			if name == "" {
+				name = policy.ID
+			}
+			policyNames[policy.ID] = name
+		}
+		m.policyNames = policyNames
+	}
 	// set progress from workflow steps
 	_, _, progress := m.getProgressPercentage()
 	m.progress.SetPercent(progress)

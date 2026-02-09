@@ -83,6 +83,7 @@ type model struct {
 	stackLoading bool
 
 	approvalContents approvalContents
+	policyNames      map[string]string
 
 	// ui components
 	// 1. layout
@@ -171,6 +172,7 @@ func initialModel(
 
 		// data
 		approvalContents: approvalContents,
+		policyNames:      map[string]string{},
 
 		header:     viewport.New(minRequiredWidth, 2),
 		stepsList:  stepsList,
@@ -188,6 +190,16 @@ func initialModel(
 	m.stepDetail.SetContent("Loading")
 
 	return m
+}
+
+func (m model) PolicyNameByID(id string) string {
+	if id == "" {
+		return ""
+	}
+	if name, ok := m.policyNames[id]; ok && name != "" {
+		return name
+	}
+	return id
 }
 
 func (m *model) toggleShowJson() {

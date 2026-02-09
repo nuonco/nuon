@@ -253,14 +253,6 @@ func (s *Service) WorkflowStepsGet(ctx context.Context, workflowID, stepID strin
 		fmt.Printf("  Type: %s\n", step.Approval.Type)
 	}
 
-	if step.PolicyValidation != nil {
-		fmt.Printf("\nPolicy Validation:\n")
-		fmt.Printf("  ID:     %s\n", step.PolicyValidation.ID)
-		fmt.Printf("  Status: %s\n", step.PolicyValidation.Status.Status)
-	}
-
-	displayPolicyViolationsIfPresent(step)
-
 	if len(step.Links) > 0 {
 		fmt.Printf("\nLinks:\n")
 		for key, value := range step.Links {
@@ -576,8 +568,14 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 
 	if plan == "" {
 		fmt.Println("No plan available")
-		displayPolicyViolationsIfPresent(step)
+		policyNames, _ := s.getPolicyNameMap(ctx, installID, workflowID)
+		displayPolicyViolationsIfPresent(step, policyNames)
 		return nil
+	}
+
+	var policyNames map[string]string
+	if !asJSON {
+		policyNames, _ = s.getPolicyNameMap(ctx, installID, workflowID)
 	}
 
 	if asJSON {
@@ -600,23 +598,23 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 	if err != nil {
 		// Fall back to raw plan output if formatting fails
 		fmt.Println(plan)
-		displayPolicyViolationsIfPresent(step)
+		displayPolicyViolationsIfPresent(step, policyNames)
 		return nil
 	}
 
 	fmt.Println(formatted)
-	displayPolicyViolationsIfPresent(step)
+	displayPolicyViolationsIfPresent(step, policyNames)
 	return nil
 }
 
 // displayPolicyViolationsIfPresent checks step metadata for policy violations and displays them.
-func displayPolicyViolationsIfPresent(step *models.AppWorkflowStep) {
+func displayPolicyViolationsIfPresent(step *models.AppWorkflowStep, policyNames map[string]string) {
 	if step.Status == nil || step.Status.Metadata == nil {
 		return
 	}
 
 	denyViolations, warnViolations := extractPolicyViolations(step.Status.Metadata)
-	output := formatPolicyViolationsDisplay(denyViolations, warnViolations)
+	output := formatPolicyViolationsDisplay(denyViolations, warnViolations, policyNames)
 	if output != "" {
 		fmt.Print(output)
 	}
@@ -728,9 +726,10 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 
 // policyViolation represents a policy violation from step metadata.
 type policyViolation struct {
-	PolicyID string `json:"policy_id"`
-	Message  string `json:"message"`
-	Severity string `json:"severity"`
+	PolicyID   string `json:"policy_id"`
+	PolicyName string `json:"policy_name"`
+	Message    string `json:"message"`
+	Severity   string `json:"severity"`
 }
 
 // extractPolicyViolations extracts deny and warn violations from step metadata.
@@ -761,7 +760,7 @@ func parsePolicyViolations(raw any) []policyViolation {
 }
 
 // formatPolicyViolationsDisplay formats policy violations for CLI output.
-func formatPolicyViolationsDisplay(denyViolations, warnViolations []policyViolation) string {
+func formatPolicyViolationsDisplay(denyViolations, warnViolations []policyViolation, policyNames map[string]string) string {
 	if len(denyViolations) == 0 && len(warnViolations) == 0 {
 		return ""
 	}
@@ -775,7 +774,8 @@ func formatPolicyViolationsDisplay(denyViolations, warnViolations []policyViolat
 	if len(denyViolations) > 0 {
 		output += fmt.Sprintf("\n%s\n", styles.TextError.Render(fmt.Sprintf("✗ DENY VIOLATIONS (%d)", len(denyViolations))))
 		for _, v := range denyViolations {
-			output += fmt.Sprintf("\n  %s %s\n", styles.TextSubtle.Render("Policy:"), styles.TextPrimary.Render(v.PolicyID))
+			name := policyDisplayName(v, policyNames)
+			output += fmt.Sprintf("\n  %s %s\n", styles.TextSubtle.Render("Policy:"), styles.TextPrimary.Render(name))
 			output += fmt.Sprintf("  %s %s\n", styles.TextSubtle.Render("Message:"), v.Message)
 		}
 	}
@@ -783,7 +783,8 @@ func formatPolicyViolationsDisplay(denyViolations, warnViolations []policyViolat
 	if len(warnViolations) > 0 {
 		output += fmt.Sprintf("\n%s\n", styles.TextWarning.Render(fmt.Sprintf("⚠ WARNINGS (%d)", len(warnViolations))))
 		for _, v := range warnViolations {
-			output += fmt.Sprintf("\n  %s %s\n", styles.TextSubtle.Render("Policy:"), styles.TextPrimary.Render(v.PolicyID))
+			name := policyDisplayName(v, policyNames)
+			output += fmt.Sprintf("\n  %s %s\n", styles.TextSubtle.Render("Policy:"), styles.TextPrimary.Render(name))
 			output += fmt.Sprintf("  %s %s\n", styles.TextSubtle.Render("Message:"), v.Message)
 		}
 	}
@@ -791,6 +792,67 @@ func formatPolicyViolationsDisplay(denyViolations, warnViolations []policyViolat
 	output += "\n" + endSeparator + "\n"
 
 	return output
+}
+
+func policyDisplayName(v policyViolation, policyNames map[string]string) string {
+	if v.PolicyName != "" {
+		if v.PolicyID != "" {
+			return fmt.Sprintf("%s (%s)", v.PolicyName, v.PolicyID)
+		}
+		return v.PolicyName
+	}
+	if v.PolicyID == "" {
+		return ""
+	}
+	if policyNames == nil {
+		return v.PolicyID
+	}
+	if name, ok := policyNames[v.PolicyID]; ok && name != "" {
+		return fmt.Sprintf("%s (%s)", name, v.PolicyID)
+	}
+	return v.PolicyID
+}
+
+func (s *Service) getPolicyNameMap(ctx context.Context, installID, workflowID string) (map[string]string, error) {
+	resolvedInstallID := installID
+	if resolvedInstallID == "" && workflowID != "" {
+		workflow, err := s.api.GetWorkflow(ctx, workflowID)
+		if err != nil {
+			return nil, err
+		}
+		if workflow.OwnerType == "installs" {
+			resolvedInstallID = workflow.OwnerID
+		}
+	}
+	if resolvedInstallID == "" {
+		return nil, nil
+	}
+
+	install, err := s.api.GetInstall(ctx, resolvedInstallID)
+	if err != nil {
+		return nil, err
+	}
+	if install.AppID == "" {
+		return nil, nil
+	}
+
+	policiesConfig, err := s.api.GetLatestAppPoliciesConfig(ctx, install.AppID)
+	if err != nil {
+		return nil, err
+	}
+	policyNames := make(map[string]string)
+	for _, policy := range policiesConfig.Policies {
+		if policy == nil || policy.ID == "" {
+			continue
+		}
+		name := policy.Name
+		if name == "" {
+			name = policy.ID
+		}
+		policyNames[policy.ID] = name
+	}
+
+	return policyNames, nil
 }
 
 // getPolicyColumnValue returns a formatted policy status string for table display.

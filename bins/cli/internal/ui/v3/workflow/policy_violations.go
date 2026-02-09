@@ -9,9 +9,14 @@ import (
 )
 
 type policyViolation struct {
-	PolicyID string `json:"policy_id"`
-	Message  string `json:"message"`
-	Severity string `json:"severity"`
+	PolicyID   string `json:"policy_id"`
+	PolicyName string `json:"policy_name"`
+	Message    string `json:"message"`
+	Severity   string `json:"severity"`
+}
+
+type policyNameLookup interface {
+	PolicyNameByID(id string) string
 }
 
 func parsePolicyViolations(raw any) []policyViolation {
@@ -57,36 +62,51 @@ func (m model) stepDetailViewPolicyViolations() string {
 	}
 
 	header := styles.TextBold.Render("Policy Violations")
+	lookup := policyNameLookup(m)
 	sections := []string{header}
 
 	if len(denyViolations) > 0 {
-		sections = append(sections, styles.TextError.Render(fmt.Sprintf("Deny violations (%d)", len(denyViolations))))
+		headerText := styles.TextError.Render(fmt.Sprintf("Deny violations (%d)", len(denyViolations)))
+		lines := []string{headerText}
 		for _, violation := range denyViolations {
-			line := fmt.Sprintf("- %s", violation.Message)
-			if violation.Message == "" {
-				line = "- Policy check failed"
-			}
-			if violation.PolicyID != "" {
-				line = fmt.Sprintf("%s %s", line, styles.TextSubtle.Render(fmt.Sprintf("(%s)", violation.PolicyID)))
-			}
-			sections = append(sections, line)
+			lines = append(lines, formatPolicyViolationLine(violation, lookup))
 		}
+		sections = append(sections, policyDenyStyle.Width(m.stepDetail.Width-2).Padding(1).Render(lipgloss.JoinVertical(lipgloss.Left, lines...)))
 	}
 
 	if len(warnViolations) > 0 {
-		sections = append(sections, styles.TextWarning.Render(fmt.Sprintf("Warnings (%d)", len(warnViolations))))
+		headerText := styles.TextWarning.Render(fmt.Sprintf("Warnings (%d)", len(warnViolations)))
+		lines := []string{headerText}
 		for _, violation := range warnViolations {
-			line := fmt.Sprintf("- %s", violation.Message)
-			if violation.Message == "" {
-				line = "- Policy warning"
-			}
-			if violation.PolicyID != "" {
-				line = fmt.Sprintf("%s %s", line, styles.TextSubtle.Render(fmt.Sprintf("(%s)", violation.PolicyID)))
-			}
-			sections = append(sections, line)
+			lines = append(lines, formatPolicyViolationLine(violation, lookup))
 		}
+		sections = append(sections, policyWarnStyle.Width(m.stepDetail.Width-2).Padding(1).Render(lipgloss.JoinVertical(lipgloss.Left, lines...)))
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
 	return policySectionStyle.Width(m.stepDetail.Width).Padding(1).Margin(0, 0, 1).Render(content)
+}
+
+func formatPolicyViolationLine(violation policyViolation, lookup policyNameLookup) string {
+	message := violation.Message
+	if message == "" {
+		if violation.Severity == "warn" {
+			message = "Policy warning"
+		} else {
+			message = "Policy check failed"
+		}
+	}
+
+	policyName := violation.PolicyName
+	if policyName == "" {
+		policyName = lookup.PolicyNameByID(violation.PolicyID)
+	}
+	if policyName != "" {
+		label := policyName
+		if violation.PolicyID != "" {
+			label = fmt.Sprintf("%s (%s)", policyName, violation.PolicyID)
+		}
+		return fmt.Sprintf("- %s %s", message, styles.TextSubtle.Render(fmt.Sprintf("[%s]", label)))
+	}
+	return fmt.Sprintf("- %s", message)
 }

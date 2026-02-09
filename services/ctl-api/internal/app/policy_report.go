@@ -22,6 +22,7 @@ const (
 // PolicyViolation represents a single policy violation from evaluation.
 type PolicyViolation struct {
 	PolicyID      string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	PolicyName    string `json:"policy_name,omitempty" temporaljson:"policy_name,omitempty"`
 	InputIndex    int    `json:"input_index" temporaljson:"input_index,omitempty"`
 	InputIdentity string `json:"input_identity,omitempty" temporaljson:"input_identity,omitempty"` // Human-readable input reference (e.g., "Deployment/default/nginx")
 	Message       string `json:"message" temporaljson:"message,omitempty"`
