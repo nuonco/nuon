@@ -58,6 +58,7 @@ func init() {
 	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
 	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
 
+	config.RegisterDefault("local_s3_endpoint", "http://localhost:8333")
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
@@ -73,6 +74,50 @@ func init() {
 
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
+
+	// defaults that allow local/sandbox startup without real infrastructure
+	config.RegisterDefault("git_ref", "local")
+	config.RegisterDefault("version", "local")
+	config.RegisterDefault("service_name", "ctl-api")
+	config.RegisterDefault("service_type", "api")
+	config.RegisterDefault("graceful_shutdown_timeout", "5s")
+	config.RegisterDefault("db_host", "localhost")
+	config.RegisterDefault("db_ssl_mode", "disable")
+	config.RegisterDefault("temporal_host", "localhost:7233")
+	config.RegisterDefault("github_app_id", "000000")
+	config.RegisterDefault("github_app_key", "placeholder")
+	config.RegisterDefault("auth0_issuer_url", "https://localhost/")
+	config.RegisterDefault("auth0_audience", "local")
+	config.RegisterDefault("auth0_client_id", "local")
+	config.RegisterDefault("app_url", "http://localhost:4000")
+	config.RegisterDefault("admin_api_url", "http://localhost:8082")
+	config.RegisterDefault("temporal_ui_url", "http://localhost:8233")
+	config.RegisterDefault("integration_github_install_id", "000000")
+	config.RegisterDefault("loops_api_key", "placeholder")
+	config.RegisterDefault("internal_slack_webhook_url", "https://hooks.slack.com/placeholder")
+	config.RegisterDefault("runner_container_image_tag", "latest")
+	config.RegisterDefault("runner_default_support_iam_role_arn", "arn:aws:iam::000000000000:role/placeholder")
+	config.RegisterDefault("management_iam_role_arn", "arn:aws:iam::000000000000:role/placeholder")
+	config.RegisterDefault("management_account_id", "000000000000")
+	config.RegisterDefault("management_ecr_registry_id", "000000000000")
+	config.RegisterDefault("management_ecr_registry_arn", "arn:aws:ecr:us-west-2:000000000000:registry")
+	config.RegisterDefault("org_runner_k8s_cluster_id", "placeholder")
+	config.RegisterDefault("org_runner_k8s_public_endpoint", "https://localhost:6443")
+	config.RegisterDefault("org_runner_k8s_ca_data", "placeholder")
+	config.RegisterDefault("org_runner_oidc_provider_url", "https://localhost")
+	config.RegisterDefault("org_runner_oidc_provider_arn", "arn:aws:iam::000000000000:oidc-provider/placeholder")
+	config.RegisterDefault("org_runner_region", "us-west-2")
+	config.RegisterDefault("org_runner_support_role_arn", "arn:aws:iam::000000000000:role/placeholder")
+	config.RegisterDefault("org_runner_k8s_iam_role_arn", "arn:aws:iam::000000000000:role/placeholder")
+	config.RegisterDefault("dns_management_iam_role_arn", "arn:aws:iam::000000000000:role/placeholder")
+	config.RegisterDefault("dns_zone_id", "Z00000000000000000000")
+	config.RegisterDefault("dns_root_domain", "local.nuon.dev")
+	config.RegisterDefault("segment_write_key", "placeholder")
+	config.RegisterDefault("clickhouse_db_host", "localhost")
+	config.RegisterDefault("clickhouse_db_port", "9000")
+	config.RegisterDefault("clickhouse_db_user", "ctl_api")
+	config.RegisterDefault("clickhouse_db_password", "ctl_api")
+	config.RegisterDefault("clickhouse_db_name", "ctl_api")
 
 	// Nuon Auth Service Configs
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
@@ -189,6 +234,11 @@ type Config struct {
 	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
 	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
 	UseLocalRunners         bool   `config:"use_local_runners"`
+
+	// UseLocal enables local development mode, pointing S3 operations at a local
+	// S3-compatible service (e.g., SeaweedFS) and bypassing real AWS calls.
+	UseLocal        bool   `config:"use_local"`
+	LocalS3Endpoint string `config:"local_s3_endpoint"`
 
 	// cloudformation phone home
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`

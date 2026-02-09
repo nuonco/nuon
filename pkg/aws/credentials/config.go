@@ -38,6 +38,11 @@ type Config struct {
 	// when cache ID is set, these credentials will be reused, up to the duration of the sessionTimeout (or default)
 	CacheID string `cty:"cache_id,optional" hcl:"cache_id,optional" json:"cache_id,omitempty" mapstructure:"cache_id,omitempty" temporaljson:"cache_id,omitempty"`
 	Region  string `cty:"region,optional" hcl:"region,optional" mapstructure:"region,omitempty" json:"region" temporaljson:"region"`
+
+	// S3Endpoint is an optional custom endpoint URL for S3-compatible services (e.g., SeaweedFS, MinIO).
+	S3Endpoint string `cty:"s3_endpoint,optional" hcl:"s3_endpoint,optional" mapstructure:"s3_endpoint,omitempty" json:"s3_endpoint,omitempty" temporaljson:"s3_endpoint,omitempty"`
+	// S3ForcePathStyle forces path-style addressing (http://host/bucket/key instead of http://bucket.host/key).
+	S3ForcePathStyle bool `cty:"s3_force_path_style,optional" hcl:"s3_force_path_style,optional" mapstructure:"s3_force_path_style,omitempty" json:"s3_force_path_style,omitempty" temporaljson:"s3_force_path_style,omitempty"`
 }
 
 func (c Config) String() string {

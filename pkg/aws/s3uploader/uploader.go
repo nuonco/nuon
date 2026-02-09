@@ -129,7 +129,7 @@ func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) (
 		return "", fmt.Errorf("unable to load aws config: %w", err)
 	}
 
-	client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(cfg, s.creds.S3Options()...)
 	uploader := manager.NewUploader(client)
 
 	f, err := os.Open(srcFp)
@@ -157,7 +157,7 @@ func (s *s3Uploader) UploadBlob(ctx context.Context, byts []byte, outputName str
 		return fmt.Errorf("unable to load aws config: %w", err)
 	}
 
-	client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(cfg, s.creds.S3Options()...)
 	uploader := manager.NewUploader(client)
 	f := bytes.NewReader(byts)
 

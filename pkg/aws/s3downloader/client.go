@@ -14,5 +14,5 @@ func (s *s3Downloader) getClient(ctx context.Context) (*s3.Client, error) {
 		return nil, fmt.Errorf("unable to fetch credentials: %w", err)
 	}
 
-	return s3.NewFromConfig(cfg), nil
+	return s3.NewFromConfig(cfg, s.Credentials.S3Options()...), nil
 }
