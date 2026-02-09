@@ -26,7 +26,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.AppBreakGlassConfig
-// @Router					/v1/apps/{app_id}/break-glass-configs/{break_glass_config_id} [get]
+// @Router					/v1/apps/{app_id}/break-glass-configs/{app_break_glass_config_id} [get]
 func (s *service) GetAppBreakGlassConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	appBreakGlassConfigID := ctx.Param("break_glass_config_id")

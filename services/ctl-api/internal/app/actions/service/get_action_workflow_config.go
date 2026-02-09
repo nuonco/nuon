@@ -18,7 +18,7 @@ import (
 // @Param					app_id				path	string	true	"app ID"
 // @Param					action_id			path	string	true	"action ID"
 // @Param					action_config_id	path	string	true	"action config ID"
-// @Tags					actions,actions/runner
+// @Tags					actions
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -29,7 +29,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.ActionWorkflowConfig
-// @Router					/v1/apps/{app_id}/actions/{action_id}/configs/{action_config_id} [get]
+// @Router					/v1/apps/{app_id}/actions/configs/{action_config_id} [get]
 func (s *service) GetAppActionConfig(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

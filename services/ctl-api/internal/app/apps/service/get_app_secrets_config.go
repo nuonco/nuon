@@ -14,7 +14,6 @@ import (
 // @Summary				get app secrets config
 // @Description.markdown	get_app_secrets_config.md
 // @Param					app_id	path	string	true	"app ID"
-// @Param app_secrets_config_id path string	true	"app secrets config ID"
 // @Tags					apps
 // @Accept					json
 // @Produce				json
@@ -26,7 +25,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.AppSecretsConfig
-// @Router					/v1/apps/{app_id}/secrets-configs/{app_secrets_config_id} [get]
+// @Router					/v1/apps/{app_id}/secrets-configs [get]
 func (s *service) GetAppSecretsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	appSecretsConfigID := ctx.Param("secrets_config_id")
