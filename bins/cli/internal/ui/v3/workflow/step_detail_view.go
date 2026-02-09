@@ -294,6 +294,11 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		sections = append(sections, banner)
 	}
 
+	policySection := m.stepDetailViewPolicyViolations()
+	if policySection != "" {
+		sections = append(sections, policySection)
+	}
+
 	// title
 	style := styles.GetStatusStyle(step.Status.Status)
 	title := style.

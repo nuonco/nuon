@@ -16,3 +16,7 @@ var appStyleBlur = lipgloss.NewStyle().
 var appStyleFocus = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(styles.BorderActiveColor)
+
+var policySectionStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(styles.BorderInactiveColor)

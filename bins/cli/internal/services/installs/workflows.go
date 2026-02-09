@@ -259,6 +259,8 @@ func (s *Service) WorkflowStepsGet(ctx context.Context, workflowID, stepID strin
 		fmt.Printf("  Status: %s\n", step.PolicyValidation.Status.Status)
 	}
 
+	displayPolicyViolationsIfPresent(step)
+
 	if len(step.Links) > 0 {
 		fmt.Printf("\nLinks:\n")
 		for key, value := range step.Links {
