@@ -14,7 +14,7 @@ import (
 // @Summary				get app policies config
 // @Description.markdown	get_app_policies_config.md
 // @Param					app_id	path	string	true	"app ID"
-// @Param policies_config_id path string	true	"input policies config ID"
+// @Param app_policies_config_id path string	true	"app policies config ID"
 // @Tags					apps
 // @Accept					json
 // @Produce				json

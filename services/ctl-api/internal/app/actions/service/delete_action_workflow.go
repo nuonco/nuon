@@ -15,6 +15,7 @@ import (
 // @ID						DeleteAction
 // @Summary				delete an action
 // @Description.markdown	delete_action_workflow.md
+// @Param					app_id		path	string	true	"app ID"
 // @Param					action_id	path	string	true	"action ID"
 // @Tags					actions
 // @Accept					json

@@ -14,7 +14,7 @@ import (
 // @Summary				get app break_glass config
 // @Description.markdown	get_app_break_glass_config.md
 // @Param					app_id	path	string	true	"app ID"
-// @Param break_glass_config_id path string	true	"app break glass config ID"
+// @Param app_break_glass_config_id path string	true	"app break glass config ID"
 // @Tags					apps
 // @Accept					json
 // @Produce				json
