@@ -130,8 +130,9 @@ func (s *RestartOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -175,9 +176,10 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "restart-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "restart-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -201,9 +203,10 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "empty-request-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "empty-request-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -227,9 +230,10 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "success-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "success-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -317,9 +321,10 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "invalid-json-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "invalid-json-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -380,9 +385,10 @@ func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 		ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 		org := &app.Org{
-			ID:      domains.NewOrgID(),
-			Name:    "signal-details-org",
-			OrgType: app.OrgTypeDefault,
+			ID:          domains.NewOrgID(),
+			Name:        "signal-details-org",
+			SandboxMode: true,
+			OrgType:     app.OrgTypeDefault,
 			NotificationsConfig: app.NotificationsConfig{
 				InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 			},
