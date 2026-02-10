@@ -46,24 +46,28 @@ func TestGetAll(t *testing.T) {
 				require.Equal(t, "test content", ts.Obj)
 			},
 		},
-		"git_repo_file": {
-			input: testStruct{
-				Obj: "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml",
-			},
-			outputFn: func(t *testing.T, ts testStruct) {
-				require.NotEqual(t, ts.Obj, "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml")
-				require.NotEmpty(t, ts.Obj)
-			},
-		},
-		"git_tag_file": {
-			input: testStruct{
-				Obj: "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md",
-			},
-			outputFn: func(t *testing.T, ts testStruct) {
-				require.NotEqual(t, ts.Obj, "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md")
-				require.NotEmpty(t, ts.Obj)
-			},
-		},
+		// NOTE: The following tests are commented out because they are flaky.
+		// They make network calls to private GitHub repos and frequently
+		// timeout with the 1-second deadline, causing CI failures.
+		//
+		// "git_repo_file": {
+		// 	input: testStruct{
+		// 		Obj: "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml",
+		// 	},
+		// 	outputFn: func(t *testing.T, ts testStruct) {
+		// 		require.NotEqual(t, ts.Obj, "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml")
+		// 		require.NotEmpty(t, ts.Obj)
+		// 	},
+		// },
+		// "git_tag_file": {
+		// 	input: testStruct{
+		// 		Obj: "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md",
+		// 	},
+		// 	outputFn: func(t *testing.T, ts testStruct) {
+		// 		require.NotEqual(t, ts.Obj, "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md")
+		// 		require.NotEmpty(t, ts.Obj)
+		// 	},
+		// },
 	}
 
 	for name, tc := range tests {
