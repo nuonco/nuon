@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -19,6 +20,9 @@ import (
 //
 // swagger:model service.CreateAppStackConfigRequest
 type ServiceCreateAppStackConfigRequest struct {
+
+	// additional nested stacks
+	AdditionalNestedStacks []*ConfigAdditionalNestedStack `json:"additional_nested_stacks"`
 
 	// app config id
 	// Required: true
@@ -47,6 +51,10 @@ type ServiceCreateAppStackConfigRequest struct {
 func (m *ServiceCreateAppStackConfigRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAdditionalNestedStacks(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateAppConfigID(formats); err != nil {
 		res = append(res, err)
 	}
@@ -66,6 +74,36 @@ func (m *ServiceCreateAppStackConfigRequest) Validate(formats strfmt.Registry) e
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceCreateAppStackConfigRequest) validateAdditionalNestedStacks(formats strfmt.Registry) error {
+	if swag.IsZero(m.AdditionalNestedStacks) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.AdditionalNestedStacks); i++ {
+		if swag.IsZero(m.AdditionalNestedStacks[i]) { // not required
+			continue
+		}
+
+		if m.AdditionalNestedStacks[i] != nil {
+			if err := m.AdditionalNestedStacks[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -128,6 +166,10 @@ func (m *ServiceCreateAppStackConfigRequest) validateType(formats strfmt.Registr
 func (m *ServiceCreateAppStackConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAdditionalNestedStacks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -135,6 +177,35 @@ func (m *ServiceCreateAppStackConfigRequest) ContextValidate(ctx context.Context
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceCreateAppStackConfigRequest) contextValidateAdditionalNestedStacks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.AdditionalNestedStacks); i++ {
+
+		if m.AdditionalNestedStacks[i] != nil {
+
+			if swag.IsZero(m.AdditionalNestedStacks[i]) { // not required
+				return nil
+			}
+
+			if err := m.AdditionalNestedStacks[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

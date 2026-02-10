@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -36,6 +37,8 @@ type AppStackConfig struct {
 	Description             string    `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
 	RunnerNestedTemplateURL string    `json:"runner_nested_template_url,omitzero" temporaljson:"runner_nested_template_url,omitzero,omitempty" features:"template"`
 	VPCNestedTemplateURL    string    `json:"vpc_nested_template_url,omitzero" temporaljson:"vpc_nested_template_url,omitzero,omitempty" features:"template"`
+
+	AdditionalNestedStacks []config.AdditionalNestedStack `json:"additional_nested_stacks,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"additional_nested_stacks,omitzero,omitempty"`
 }
 
 func (a *AppStackConfig) Indexes(db *gorm.DB) []migrations.Index {

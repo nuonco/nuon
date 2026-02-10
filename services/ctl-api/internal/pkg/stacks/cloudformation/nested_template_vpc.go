@@ -1,15 +1,17 @@
 package cloudformation
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"maps"
 	"net/http"
 	"slices"
 	"strings"
 
-	"github.com/awslabs/goformation/v7"
 	"github.com/awslabs/goformation/v7/cloudformation"
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
+	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -17,7 +19,7 @@ import (
 // these parameter values should never be provided by the customer. these are always provided by nuon.
 // as a result, if they are specified as input Params, we ensure the values are configurable only by us
 // by excluding them from the Parameters for the nested stack.
-var ReservedParamNames = []string{"ClusterName", "NuonInstallID", "NuonAppID", "NuonOrgID"}
+var ReservedParamNames = []string{"ClusterName", "Namespaces", "NuonInstallID", "NuonAppID", "NuonOrgID"}
 
 func (tpl *Templates) getClusterName(inp *stacks.TemplateInput) string {
 	// NOTE: we need to provide a cluster name to the eks vpc template in order to pre-tag the subnets
@@ -37,9 +39,22 @@ func (tpl *Templates) getClusterName(inp *stacks.TemplateInput) string {
 	return inp.Install.ID
 }
 
+func (tpl *Templates) getNamespaces(inp *stacks.TemplateInput) string {
+	if inp.Install.CurrentInstallInputs != nil {
+		if val, ok := inp.Install.CurrentInstallInputs.Values["namespaces"]; ok && val != nil {
+			return *val
+		}
+	}
+
+	return ""
+}
+
 // VPCNestedStack returns a nested stack template for VPC resources
-func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter) {
-	parameters, defaultParameters, reservedInTemplate := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
+func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, error) {
+	parameters, defaultParameters, reservedInTemplate, _, err := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
+	if err != nil {
+		return nil, nil, fmt.Errorf("VPC nested stack: %w", err)
+	}
 
 	// these common params should always be set by nuon so they are explicitly
 	// set aside so they can override any template values
@@ -66,51 +81,102 @@ func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder)
 		Tags: t.apply(nil, "vpc"),
 	}
 
-	return stack, defaultParameters
-
+	return stack, defaultParameters, nil
 }
 
-func (tpl *Templates) extractNestedStackParameters(templateURL string) (map[string]string, map[string]cloudformation.Parameter, map[string]bool) {
-	params := map[string]string{}
-	defaultParams := map[string]cloudformation.Parameter{}
-	reservedInTemplate := map[string]bool{}
+type cfnTemplateShape struct {
+	Parameters map[string]struct {
+		Type        string      `yaml:"Type" json:"Type"`
+		Description string      `yaml:"Description" json:"Description,omitempty"`
+		Default     interface{} `yaml:"Default" json:"Default,omitempty"`
+	} `yaml:"Parameters"`
+	Outputs map[string]struct{} `yaml:"Outputs"`
+}
 
+func (tpl *Templates) fetchTemplate(templateURL string) (*cfnTemplateShape, error) {
 	resp, err := http.Get(templateURL)
 	if err != nil {
-		return params, defaultParams, reservedInTemplate
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return params, defaultParams, reservedInTemplate
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, templateURL)
 	}
 
-	// TODO(fd): pretty sure we only support yaml atm
-	var tmpl *cloudformation.Template
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var tmpl cfnTemplateShape
 	if strings.HasSuffix(templateURL, ".json") {
-		tmpl, err = goformation.ParseJSON(body)
+		err = json.Unmarshal(body, &tmpl)
 	} else {
-		tmpl, err = goformation.ParseYAML(body)
+		err = yaml.Unmarshal(body, &tmpl)
 	}
 	if err != nil {
-		return params, defaultParams, reservedInTemplate
+		return nil, fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	return &tmpl, nil
+}
+
+func (tpl *Templates) extractNestedStackParameters(templateURL string, additionalReservedNames ...string) (map[string]string, map[string]cloudformation.Parameter, map[string]bool, map[string]struct{}, error) {
+	params := map[string]string{}
+	defaultParams := map[string]cloudformation.Parameter{}
+	reservedInTemplate := map[string]bool{}
+	templateOutputs := map[string]struct{}{}
+
+	tmpl, err := tpl.fetchTemplate(templateURL)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("failed to fetch template %s: %w", templateURL, err)
 	}
 
 	for paramName, param := range tmpl.Parameters {
-		if slices.Contains(ReservedParamNames, paramName) {
+		if slices.Contains(ReservedParamNames, paramName) || slices.Contains(additionalReservedNames, paramName) {
 			reservedInTemplate[paramName] = true
 			continue
 		}
 
 		params[paramName] = cloudformation.Ref(paramName)
 
-		defaultParams[paramName] = cloudformation.Parameter{
-			Type:        param.Type,
-			Description: param.Description,
-			Default:     param.Default,
+		cfnParam := cloudformation.Parameter{
+			Type:    param.Type,
+			Default: param.Default,
 		}
+		if param.Description != "" {
+			desc := param.Description
+			cfnParam.Description = &desc
+		}
+		defaultParams[paramName] = cfnParam
 	}
 
-	return params, defaultParams, reservedInTemplate
+	templateOutputs = tmpl.Outputs
+	return params, defaultParams, reservedInTemplate, templateOutputs, nil
+}
+
+type firstClassOutput struct {
+	resource   string
+	outputName string
+}
+
+func (tpl *Templates) extractFirstClassOutputs(templateURLs map[string]string) map[string]firstClassOutput {
+	outputs := map[string]firstClassOutput{}
+	for resourceName, templateURL := range templateURLs {
+		if templateURL == "" {
+			continue
+		}
+		tmpl, err := tpl.fetchTemplate(templateURL)
+		if err != nil {
+			continue
+		}
+		for outputName := range tmpl.Outputs {
+			outputs[outputName] = firstClassOutput{
+				resource:   resourceName,
+				outputName: outputName,
+			}
+		}
+	}
+	return outputs
 }

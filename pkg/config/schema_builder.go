@@ -320,6 +320,24 @@ func (fb *FieldBuilder) OneOfRequired(groupName string) *FieldBuilder {
 	return fb.setProperty(prop)
 }
 
+// TODO(fd): how have we avoided such a solution to date? a default value seems preferable.
+
+// Nullable allows the field to accept null in addition to its defined type.
+// This wraps the existing property schema in a oneOf with a null type alternative.
+func (fb *FieldBuilder) Nullable() *FieldBuilder {
+	prop := fb.getProperty()
+	existing := *prop
+	existing.Description = ""
+	*prop = jsonschema.Schema{
+		Description: prop.Description,
+		OneOf: []*jsonschema.Schema{
+			&existing,
+			{Type: "null"},
+		},
+	}
+	return fb.setProperty(prop)
+}
+
 // String returns a string representation of the field builder for debugging.
 func (fb *FieldBuilder) String() string {
 	return fmt.Sprintf("FieldBuilder{name=%q}", fb.name)

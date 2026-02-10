@@ -9,16 +9,25 @@ import (
 )
 
 func (s sync) getAppStackRequest() *models.ServiceCreateAppStackConfigRequest {
-	req := &models.ServiceCreateAppStackConfigRequest{
+	var additionalNestedStacks []*models.ConfigAdditionalNestedStack
+	for _, stack := range s.cfg.Stack.AdditionalNestedStacks {
+		additionalNestedStacks = append(additionalNestedStacks, &models.ConfigAdditionalNestedStack{
+			Name:        stack.Name,
+			TemplateURL: stack.TemplateURL,
+			Index:       int64(stack.Index),
+			Parameters:  stack.Parameters,
+		})
+	}
+
+	return &models.ServiceCreateAppStackConfigRequest{
 		AppConfigID:             generics.ToPtr(s.appConfigID),
 		Name:                    generics.ToPtr(s.cfg.Stack.Name),
 		Description:             generics.ToPtr(s.cfg.Stack.Description),
 		RunnerNestedTemplateURL: s.cfg.Stack.RunnerNestedTemplateURL,
 		VpcNestedTemplateURL:    s.cfg.Stack.VPCNestedTemplateURL,
 		Type:                    generics.ToPtr(models.AppStackType(s.cfg.Stack.Type)),
+		AdditionalNestedStacks:  additionalNestedStacks,
 	}
-
-	return req
 }
 
 func (s sync) syncAppCloudFormationStack(ctx context.Context, resource string) error {
