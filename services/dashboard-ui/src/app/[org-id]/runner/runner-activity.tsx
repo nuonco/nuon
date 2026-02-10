@@ -39,7 +39,6 @@ export async function RunnerActivity({
       <RunnerRecentActivity
         initJobs={jobs}
         pagination={pagination}
-        runnerId={runner?.id}
         shouldPoll
       />
     </>
