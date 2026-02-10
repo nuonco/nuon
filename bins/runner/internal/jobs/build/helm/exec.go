@@ -2,6 +2,7 @@ package helm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -10,6 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
 )
 
@@ -53,6 +55,21 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("writing job result")
 	resultReq := registry.ToAPIResult(res)
+	contentsDisplay := map[string]any{}
+	if policyInput, policyErr := h.buildPolicyInput(ctx, l); policyErr != nil {
+		h.errRecorder.Record("build policy input", policyErr)
+	} else if policyInput != nil {
+		contentsDisplay["policy_input"] = policyInput
+	}
+	if len(contentsDisplay) > 0 {
+		contentsJSON, err := json.Marshal(contentsDisplay)
+		if err != nil {
+			h.errRecorder.Record("marshal policy input", err)
+		} else {
+			resultReq.ContentsDisplayCompressed = jobloop.CompressForRunner(string(contentsJSON))
+			resultReq.ContentsDisplay = contentsDisplay
+		}
+	}
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}

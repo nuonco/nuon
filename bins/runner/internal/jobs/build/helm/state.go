@@ -26,4 +26,22 @@ type handlerState struct {
 	regCfg         *configs.OCIRegistryRepository
 
 	packagePath string
+	chartPath   string
+
+	policyInput []AdmissionReviewInput
+}
+
+type AdmissionReviewInput struct {
+	Review AdmissionReviewRequest `json:"review"`
+}
+
+type AdmissionReviewRequest struct {
+	Kind   AdmissionReviewKind    `json:"kind"`
+	Object map[string]interface{} `json:"object"`
+}
+
+type AdmissionReviewKind struct {
+	Kind    string `json:"kind"`
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
 }

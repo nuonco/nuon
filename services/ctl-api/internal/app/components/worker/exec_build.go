@@ -103,6 +103,12 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("build job failed: %w", err)
 	}
 
+	if comp.Type == app.ComponentTypeHelmChart {
+		if err := w.evaluateHelmBuildPolicy(ctx, buildID, runnerJob.ID, comp.Name); err != nil {
+			return err
+		}
+	}
+
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusActive, "build is active and ready to be deployed")
 	return nil
 }
