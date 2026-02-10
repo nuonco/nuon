@@ -6,16 +6,14 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 
-export const PruneRunnerTokensButton = ({
-  runnerId,
-  ...props
-}: IButtonAsButton & { runnerId: string }) => {
+export const PruneRunnerTokensButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <PruneRunnerTokensModal runnerId={runnerId} />
+  const modal = <PruneRunnerTokensModal />
   return (
     <Button
       onClick={() => {
@@ -30,12 +28,11 @@ export const PruneRunnerTokensButton = ({
   )
 }
 
-export const PruneRunnerTokensModal = ({
-  runnerId,
-  ...props
-}: IModal & { runnerId: string }) => {
+export const PruneRunnerTokensModal = ({ ...props }: IModal) => {
   const { org } = useOrg()
+  const { runner } = useRunner()
   const { removeModal } = useSurfaces()
+  const runnerId = runner?.id
 
   const { data, error, execute, isLoading } = useServerAction({
     action: pruneRunnerTokens,

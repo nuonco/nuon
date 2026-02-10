@@ -16,7 +16,6 @@ export async function RunnerHealth({ org }: { org: TOrg }) {
     <RunnerHealthCard
       className="flex-auto"
       initHealthchecks={healthchecks}
-      runnerId={runner.id}
       shouldPoll
     />
   ) : (

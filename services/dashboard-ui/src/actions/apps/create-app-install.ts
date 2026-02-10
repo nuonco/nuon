@@ -28,11 +28,16 @@ export async function createAppInstall({
     return acc
   }, {})
 
+  const autoApprove = formData?.['auto-approve'] === 'on'
+
   let body: TCreateAppInstallBody = {
     inputs,
     name: formData?.name as string,
     metadata: {
       managed_by: 'nuon/dashboard',
+    },
+    install_config: {
+      approval_option: autoApprove ? 'approve-all' : 'prompt',
     },
   }
 

@@ -21,6 +21,7 @@ export const ManagementDropdown = ({
   workflow: TWorkflow
 }) => {
   const { deploy } = useDeploy()
+  
   return (
     <Dropdown
       id={`component-${component.id}-mgmt`}
@@ -34,18 +35,18 @@ export const ManagementDropdown = ({
     >
       <Menu>
         <Text>Settings</Text>
-        {deploy?.runner_jobs?.length && deploy?.runner_jobs?.[0] ? (
-          <RunnerJobPlanButton
-            isMenuButton
-            buttonText="Sync plan"
-            runnerJobId={deploy?.runner_jobs?.[0]?.id}
-          />
-        ) : null}
         {deploy?.runner_jobs?.length && deploy?.runner_jobs?.[1] ? (
           <RunnerJobPlanButton
             isMenuButton
-            buttonText="Deploy plan"
+            buttonText="Sync plan"
             runnerJobId={deploy?.runner_jobs?.[1]?.id}
+          />
+        ) : null}
+        {deploy?.runner_jobs?.length && deploy?.runner_jobs?.[0] ? (
+          <RunnerJobPlanButton
+            isMenuButton
+            buttonText="Deploy plan"
+            runnerJobId={deploy?.runner_jobs?.[0]?.id}
           />
         ) : null}
         <hr />
