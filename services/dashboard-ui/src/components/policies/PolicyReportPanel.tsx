@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -80,9 +81,14 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
 
 interface IPolicyReportPanel extends IPanel {
   report: TPolicyReport
+  orgId: string
 }
 
-export const PolicyReportPanel = ({ report, ...props }: IPolicyReportPanel) => {
+export const PolicyReportPanel = ({
+  report,
+  orgId,
+  ...props
+}: IPolicyReportPanel) => {
   const { label: ownerTypeLabel, theme: ownerTypeTheme } = formatOwnerType(
     report.owner_type || ''
   )
@@ -227,10 +233,21 @@ export const PolicyReportPanel = ({ report, ...props }: IPolicyReportPanel) => {
                   <div key={policy.policy_id} className="flex flex-col">
                     <div className="flex items-center justify-between p-4">
                       <div className="flex flex-col gap-1">
-                        <Text variant="body">
-                          {policy.policy_name || policy.policy_id}
-                        </Text>
-                        {policy.policy_name && <ID>{policy.policy_id}</ID>}
+                        {policy.policy_id && report.app_id ? (
+                          <Link
+                            href={`/${orgId}/apps/${report.app_id}/policies/${policy.policy_id}`}
+                            className="hover:underline"
+                          >
+                            <Text variant="body">
+                              {policy.policy_name || policy.policy_id}
+                            </Text>
+                          </Link>
+                        ) : (
+                          <Text variant="body">
+                            {policy.policy_name || policy.policy_id}
+                          </Text>
+                        )}
+                        {policy.policy_id && <ID>{policy.policy_id}</ID>}
                       </div>
                       {getPolicyStatusBadge(policy)}
                     </div>
@@ -418,14 +435,16 @@ export const PolicyReportPanel = ({ report, ...props }: IPolicyReportPanel) => {
 
 interface IPolicyReportPanelButton extends IButtonAsButton {
   report: TPolicyReport
+  orgId: string
 }
 
 export const PolicyReportPanelButton = ({
   report,
+  orgId,
   ...props
 }: IPolicyReportPanelButton) => {
   const { addPanel } = useSurfaces()
-  const panel = <PolicyReportPanel report={report} />
+  const panel = <PolicyReportPanel report={report} orgId={orgId} />
 
   return (
     <Button

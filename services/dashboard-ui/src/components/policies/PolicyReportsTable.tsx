@@ -149,14 +149,15 @@ export const policyReportsTableColumns: ColumnDef<TPolicyReportRow>[] = [
     cell: (info) => <Time time={info.getValue() as string} format="relative" />,
     enableSorting: true,
   },
-  {
-    id: 'actions',
-    header: '',
-    cell: (info) => (
-      <PolicyReportPanelButton report={info.row.original.report} />
-    ),
-  },
 ]
+
+const createActionsColumn = (orgId: string): ColumnDef<TPolicyReportRow> => ({
+  id: 'actions',
+  header: '',
+  cell: (info) => (
+    <PolicyReportPanelButton report={info.row.original.report} orgId={orgId} />
+  ),
+})
 
 export const PolicyReportsTable = ({
   reports,
@@ -168,10 +169,11 @@ export const PolicyReportsTable = ({
   installId: string
 }) => {
   const data = parsePolicyReportsToTableData(reports)
+  const columns = [...policyReportsTableColumns, createActionsColumn(orgId)]
 
   return (
     <Table<TPolicyReportRow>
-      columns={policyReportsTableColumns}
+      columns={columns}
       data={data}
       emptyStateProps={{
         emptyMessage:
