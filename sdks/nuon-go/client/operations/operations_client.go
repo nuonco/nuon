@@ -6439,7 +6439,7 @@ func (a *Client) GetAppSecretsConfig(params *GetAppSecretsConfigParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppSecretsConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/secrets-configs",
+		PathPattern:        "/v1/apps/{app_id}/secrets-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

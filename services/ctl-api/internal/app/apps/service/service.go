@@ -100,7 +100,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		secretsConfigs := app.Group("/secrets-configs")
 		{
 			secretsConfigs.POST("", s.CreateAppSecretsConfig)
-			secretsConfigs.GET("", s.GetAppSecretsConfig)
+			secretsConfigs.GET("/:config_id", s.GetAppSecretsConfig)
 		}
 
 		// app stack configs

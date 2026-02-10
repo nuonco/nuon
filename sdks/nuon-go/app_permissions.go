@@ -35,7 +35,7 @@ func (c *client) GetLatestAppPermissionsConfig(ctx context.Context, appID string
 func (c *client) GetAppPermissionsConfig(ctx context.Context, appID, appPermissionsID string) (*models.AppAppPermissionsConfig, error) {
 	params := &operations.GetAppPermissionsConfigParams{
 		AppID:               appID,
-		PermissionsConfigID: appPermissionsID,
+		AppPermissionsConfigID: appPermissionsID,
 		Context:             ctx,
 	}
 

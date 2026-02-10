@@ -35,7 +35,7 @@ func (c *client) GetLatestAppPoliciesConfig(ctx context.Context, appID string) (
 func (c *client) GetAppPoliciesConfig(ctx context.Context, appID, appPoliciesID string) (*models.AppAppPoliciesConfig, error) {
 	params := &operations.GetAppPoliciesConfigParams{
 		AppID:            appID,
-		PoliciesConfigID: appPoliciesID,
+		AppPoliciesConfigID: appPoliciesID,
 		Context:          ctx,
 	}
 
