@@ -78,6 +78,10 @@ func init() {
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
+
+	// Blob storage configuration
+	config.RegisterDefault("blob_storage_bucket", "nuon-blobs")
+	config.RegisterDefault("blob_storage_region", "us-west-2")
 }
 
 type Config struct {
@@ -249,6 +253,10 @@ type Config struct {
 
 	EventLoopGeneralPurgeStaleDataCron        string        `config:"event_loop_general_purge_stale_data_cron"`
 	EventLoopGeneralPurgeStaleDataDurationAgo time.Duration `config:"event_loop_general_purge_stale_data_duration_ago" validate:"required"`
+
+	// Blob storage configuration
+	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
+	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {
