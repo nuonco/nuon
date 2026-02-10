@@ -7,6 +7,7 @@ import { ID } from '@/components/common/ID'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { PolicyReportPanelButton } from '@/components/policies/PolicyReportPanel'
 import type { TPolicyReport } from '@/types'
 
 type TPolicyReportRow = {
@@ -18,11 +19,13 @@ type TPolicyReportRow = {
   passCount: number
   evaluatedAt: string
   status: string
+  report: TPolicyReport
 }
 
-function formatOwnerType(
-  ownerType: string
-): { label: string; theme: 'info' | 'brand' | 'neutral' } {
+function formatOwnerType(ownerType: string): {
+  label: string
+  theme: 'info' | 'brand' | 'neutral'
+} {
   switch (ownerType) {
     case 'install_deploys':
       return { label: 'Deploy', theme: 'info' }
@@ -72,6 +75,7 @@ function parsePolicyReportsToTableData(
     passCount: report.pass_count || 0,
     evaluatedAt: report.evaluated_at || '',
     status: report.status?.status || '',
+    report,
   }))
 }
 
@@ -144,6 +148,13 @@ export const policyReportsTableColumns: ColumnDef<TPolicyReportRow>[] = [
     header: 'Evaluated',
     cell: (info) => <Time time={info.getValue() as string} format="relative" />,
     enableSorting: true,
+  },
+  {
+    id: 'actions',
+    header: '',
+    cell: (info) => (
+      <PolicyReportPanelButton report={info.row.original.report} />
+    ),
   },
 ]
 
