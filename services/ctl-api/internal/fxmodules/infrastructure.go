@@ -70,5 +70,4 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(analytics.New),
 	fx.Provide(analytics.NewTemporal),
 	fx.Provide(cloudformation.NewTemplates),
-	fx.Provide(queueclient.New),
 )
