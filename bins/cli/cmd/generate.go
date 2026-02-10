@@ -38,7 +38,7 @@ func (c *cli) initCmd() *cobra.Command {
 		initOverwrite      bool
 		interactive        bool
 		prebuildTemplate   string
-		skipNonRequired    bool
+		includeNonRequired bool
 	)
 
 	// Parent init command
@@ -58,7 +58,7 @@ func (c *cli) initCmd() *cobra.Command {
 				EnableDefaults:  initEnableDefaults,
 				EnableComments:  initEnableComments,
 				Overwrite:       initOverwrite,
-				SkipNonRequired: skipNonRequired,
+				SkipNonRequired: !includeNonRequired,
 			}
 			sampleComponentPArams := apps.SampleComponentParams{}
 			sampleActionsParams := apps.SampleActionsParams{}
@@ -121,7 +121,8 @@ func (c *cli) initCmd() *cobra.Command {
 	initCmd.PersistentFlags().StringVarP(&initPath, "path", "p", "./app-config", "path to create the app config directory")
 	initCmd.PersistentFlags().StringVarP(&prebuildTemplate, "prebuild-template", "t", "", "prebuild sample apps, aws-eks aws-ecs")
 	initCmd.PersistentFlags().BoolVar(&initEnableDefaults, "enable-defaults", false, "include default values from schema")
-	initCmd.PersistentFlags().BoolVar(&skipNonRequired, "skip-non-required", false, "skip parameters which are not required")
+	initCmd.PersistentFlags().BoolVar(&includeNonRequired, "include-non-required", false, "include parameters which are not required")
+	initCmd.Flags().MarkHidden("include-non-required")
 	initCmd.PersistentFlags().BoolVar(&initEnableComments, "enable-comments", false, "include comments with field descriptions")
 	initCmd.PersistentFlags().BoolVar(&initOverwrite, "overwrite", false, "overwrite existing directory contents")
 	initCmd.PersistentFlags().BoolVarP(&interactive, "interactive", "i", false, "interactive session")
