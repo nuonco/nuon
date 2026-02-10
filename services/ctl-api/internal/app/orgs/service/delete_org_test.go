@@ -127,8 +127,9 @@ func (s *DeleteOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -163,9 +164,10 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "default-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "default-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -190,9 +192,10 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "integration-org",
-					OrgType: app.OrgTypeIntegration,
+					ID:          domains.NewOrgID(),
+					Name:        "integration-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},

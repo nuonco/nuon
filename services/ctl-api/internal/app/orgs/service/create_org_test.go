@@ -470,8 +470,9 @@ func (s *CreateOrgTestSuite) TestCreateOrgDuplicateName() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	existingOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "duplicate-org",
+		ID:          domains.NewOrgID(),
+		Name:        "duplicate-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",
 		},

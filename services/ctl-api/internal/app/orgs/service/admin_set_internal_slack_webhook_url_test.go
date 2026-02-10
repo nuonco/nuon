@@ -117,8 +117,9 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/initial",
 		},
@@ -140,8 +141,9 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) createTestOrgWithNotification
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	org := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: name,
+		ID:          domains.NewOrgID(),
+		Name:        name,
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: webhookURL,
 		},
@@ -270,8 +272,9 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			setupFunc: func() *app.Org {
 				// Return a non-existent org
 				return &app.Org{
-					ID:   domains.NewOrgID(), // This org doesn't exist in the database
-					Name: "non-existent-org",
+					ID:          domains.NewOrgID(), // This org doesn't exist in the database
+					Name:        "non-existent-org",
+					SandboxMode: true,
 				}
 			},
 			requestBody: SetSlackWebhookURLRequest{
