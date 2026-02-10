@@ -1,289 +1,744 @@
-# Plan: Add GCP as a Third Supported Cloud Platform
+# Plan: Add GCP Support — Phases 1–3 (Backend, Backwards-Compatible)
 
-## Overview
+## Goal
 
-Add GCP (Google Cloud Platform) support to the Nuon BYOC platform, following the same patterns established by AWS and Azure. This involves changes across three main components: **ctl-api**, **dashboard-ui**, and **runner**.
+Add GCP as a third cloud platform across the ctl-api data models, API endpoints, workflow logic, and runner auth/registry packages. All changes are additive — existing AWS and Azure code paths are untouched. The dashboard (Phase 4), SDK codegen (Phase 5), and testing (Phase 6) follow separately.
 
 ---
 
-## Phase 1: Core Data Models & Types (ctl-api)
+## Phase 1: Core Data Models & Types
+
+All changes are additive new constants, new structs, and new pointer fields on existing structs. No existing fields are modified or removed.
 
 ### 1.1 CloudPlatform enum & GCP regions
 **File:** `services/ctl-api/internal/app/cloud_platform.go`
-- Add `CloudPlatformGCP CloudPlatform = "gcp"` constant
-- Add `gcpRegions()` method returning GCP region list (~40 regions: us-central1, us-east1, europe-west1, asia-east1, etc.)
-- Update `Regions()` switch to handle `CloudPlatformGCP`
-- Update `NewCloudPlatform()` to accept `"gcp"`
+
+**Changes:**
+- Add constant: `CloudPlatformGCP CloudPlatform = "gcp"`
+- Add method `gcpRegions() []CloudPlatformRegion` returning GCP region list. Initial set of ~40 regions:
+  ```
+  us-central1       (Council Bluffs, Iowa)        flag-US
+  us-east1          (Moncks Corner, S. Carolina)  flag-US
+  us-east4          (Ashburn, Virginia)            flag-US
+  us-east5          (Columbus, Ohio)               flag-US
+  us-south1         (Dallas, Texas)                flag-US
+  us-west1          (The Dalles, Oregon)           flag-US
+  us-west2          (Los Angeles, California)      flag-US
+  us-west3          (Salt Lake City, Utah)         flag-US
+  us-west4          (Las Vegas, Nevada)            flag-US
+  northamerica-northeast1 (Montréal, Canada)       flag-CA
+  northamerica-northeast2 (Toronto, Canada)        flag-CA
+  southamerica-east1      (São Paulo, Brazil)      flag-BR
+  southamerica-west1      (Santiago, Chile)        flag-CL
+  europe-central2   (Warsaw, Poland)               flag-PL
+  europe-north1     (Hamina, Finland)              flag-FI
+  europe-southwest1 (Madrid, Spain)                flag-ES
+  europe-west1      (St. Ghislain, Belgium)        flag-BE
+  europe-west2      (London, UK)                   flag-GB
+  europe-west3      (Frankfurt, Germany)           flag-DE
+  europe-west4      (Eemshaven, Netherlands)       flag-NL
+  europe-west6      (Zürich, Switzerland)          flag-CH
+  europe-west8      (Milan, Italy)                 flag-IT
+  europe-west9      (Paris, France)                flag-FR
+  europe-west10     (Berlin, Germany)              flag-DE
+  europe-west12     (Turin, Italy)                 flag-IT
+  asia-east1        (Changhua County, Taiwan)      flag-TW
+  asia-east2        (Hong Kong)                    flag-HK
+  asia-northeast1   (Tokyo, Japan)                 flag-JP
+  asia-northeast2   (Osaka, Japan)                 flag-JP
+  asia-northeast3   (Seoul, South Korea)           flag-KR
+  asia-south1       (Mumbai, India)                flag-IN
+  asia-south2       (Delhi, India)                 flag-IN
+  asia-southeast1   (Singapore)                    flag-SG
+  asia-southeast2   (Jakarta, Indonesia)           flag-ID
+  australia-southeast1 (Sydney, Australia)          flag-AU
+  australia-southeast2 (Melbourne, Australia)       flag-AU
+  me-central1       (Doha, Qatar)                  flag-QA
+  me-central2       (Dammam, Saudi Arabia)         flag-SA
+  me-west1          (Tel Aviv, Israel)             flag-IL
+  africa-south1     (Johannesburg, South Africa)   flag-ZA
+  ```
+- Update `Regions()`: add `case CloudPlatformGCP: return c.gcpRegions()`
+- Update `NewCloudPlatform()`: add `case "gcp": return CloudPlatformGCP, nil`
 
 ### 1.2 GCPAccount model
 **New file:** `services/ctl-api/internal/app/gcp_account.go`
-- Create `GCPAccount` struct following `AzureAccount` pattern with fields:
-  - Standard audit fields (ID, CreatedByID, CreatedAt, UpdatedAt, DeletedAt)
-  - `OrgID`, `InstallID` (tenant isolation)
-  - `Region` (string) - GCP region
-  - `ProjectID` (string) - GCP project ID
-- Add `BeforeCreate` hook using `domains.NewGCPAccountID()`
-- Add `Indexes` method for `org_id`
+
+Follow the exact pattern of `azure_account.go`:
+```go
+type GCPAccount struct {
+    ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+    CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+    CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+    CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+    UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+    DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+
+    OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+    Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
+
+    InstallID string  `json:"-" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
+    Install   Install `json:"-" temporaljson:"install,omitzero,omitempty"`
+
+    Region    string `json:"region,omitzero" gorm:"notnull" temporaljson:"region,omitzero,omitempty"`
+    ProjectID string `json:"project_id,omitzero" gorm:"not null;default null" temporaljson:"project_id,omitzero,omitempty"`
+}
+```
+- `BeforeCreate`: sets `ID = domains.NewGCPAccountID()`, `CreatedByID`, `OrgID` from context
+- `Indexes`: index on `org_id`
+
+**Design note:** GCPAccount is intentionally minimal at this stage. Only `Region` is required at install creation time (same as Azure's `Location`). `ProjectID` starts empty and gets populated from stack outputs after the customer runs the stack template in their GCP project — mirroring how Azure's `SubscriptionID` and `ServicePrincipalAppID` are empty at creation and populated by the phone-home flow.
 
 ### 1.3 Short ID domain
 **File:** `pkg/shortid/domains/domains.go`
-- Add `NewGCPAccountID()` returning `shortid.NewNanoID("gcp")`
+
+Add after `NewAzureAccountID`:
+```go
+func NewGCPAccountID() string {
+    return shortid.NewNanoID("gcp")
+}
+```
 
 ### 1.4 Install model
 **File:** `services/ctl-api/internal/app/install.go`
-- Add `GCPAccount *GCPAccount` pointer with `gorm:"constraint:OnDelete:CASCADE;"` (alongside AWSAccount and AzureAccount)
+
+Add one line after the `AzureAccount` pointer (line 58):
+```go
+GCPAccount   *GCPAccount   `json:"gcp_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"gcp_account,omitzero,omitempty"`
+```
+
+**Backwards compatibility:** This is a new nullable pointer. Existing installs have `gcp_account = nil` in JSON and no rows in the `gcp_accounts` table. GORM auto-migrates the new table.
 
 ### 1.5 AppRunnerConfig types
 **File:** `services/ctl-api/internal/app/app_runner_config.go`
-- Add `AppRunnerTypeGCP AppRunnerType = "gcp"`
-- Update `JobType()` switch: `AppRunnerTypeGCP` → `RunnerJobTypeRunnerLocal` (same as AWS independent runners)
-- Update `AfterQuery` switch: `AppRunnerTypeGCP` → `CloudPlatformGCP`
+
+- Add constant: `AppRunnerTypeGCP AppRunnerType = "gcp"` (line 31, after `AppRunnerTypeAzure`)
+- Update `JobType()` switch (line 34): add `AppRunnerTypeGCP` to the `AppRunnerTypeLocal, AppRunnerTypeAWS` case so it returns `RunnerJobTypeRunnerLocal`
+- Update `AfterQuery` switch (line 126): add `case AppRunnerTypeGCP: a.CloudPlatform = CloudPlatformGCP`
 
 ### 1.6 GCPStackOutputs
 **File:** `services/ctl-api/internal/app/install_stack_outputs.go`
-- Add `GCPStackOutputs` struct with fields:
-  - `ProjectID`, `Region`
-  - `NetworkID`, `NetworkName` (VPC)
-  - `PublicSubnetIDs[]`, `PublicSubnetNames[]`
-  - `PrivateSubnetIDs[]`, `PrivateSubnetNames[]`
-  - `ServiceAccountEmail` (for workload identity)
-- Add `GCPStackOutputs *GCPStackOutputs` pointer to `InstallStackOutputs`
-- Update `AfterQuery` to detect GCP outputs (e.g., by `project_id` key presence)
+
+Add struct (after `AzureStackOutputs`):
+```go
+type GCPStackOutputs struct {
+    ProjectID     string `json:"project_id,omitzero" mapstructure:"project_id" temporaljson:"project_id,omitzero,omitempty"`
+    ProjectNumber string `json:"project_number,omitzero" mapstructure:"project_number" temporaljson:"project_number,omitzero,omitempty"`
+    Region        string `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
+
+    NetworkID   string `json:"network_id,omitzero" mapstructure:"network_id" temporaljson:"network_id,omitzero,omitempty"`
+    NetworkName string `json:"network_name,omitzero" mapstructure:"network_name" temporaljson:"network_name,omitzero,omitempty"`
+
+    PublicSubnetIDs    []string `json:"public_subnet_ids,omitzero" mapstructure:"public_subnet_ids" temporaljson:"public_subnet_ids,omitzero,omitempty"`
+    PublicSubnetNames  []string `json:"public_subnet_names,omitzero" mapstructure:"public_subnet_names" temporaljson:"public_subnet_names,omitzero,omitempty"`
+    PrivateSubnetIDs   []string `json:"private_subnet_ids,omitzero" mapstructure:"private_subnet_ids" temporaljson:"private_subnet_ids,omitzero,omitempty"`
+    PrivateSubnetNames []string `json:"private_subnet_names,omitzero" mapstructure:"private_subnet_names" temporaljson:"private_subnet_names,omitzero,omitempty"`
+
+    ServiceAccountEmail string `json:"service_account_email,omitzero" mapstructure:"service_account_email" temporaljson:"service_account_email,omitzero,omitempty"`
+}
+```
+
+Add pointer to `InstallStackOutputs`:
+```go
+GCPStackOutputs   *GCPStackOutputs   `json:"gcp,omitzero" gorm:"-" temporaljson:"gcp_stack_outputs,omitzero,omitempty"`
+```
+
+Update `AfterQuery` — the current code checks `_, isAzure := a.Data["resource_group_id"]` to distinguish Azure from AWS. Add a GCP check before the Azure check:
+```go
+_, isGCP := a.Data["project_id"]
+if isGCP {
+    // decode into GCPStackOutputs using mapstructure (same pattern as Azure)
+} else if isAzure {
+    // existing Azure decode
+} else {
+    // existing AWS decode
+}
+```
+
+**Important:** The `project_id` key is unique to GCP outputs (AWS uses `account_id`, Azure uses `resource_group_id`), so this detection remains unambiguous.
 
 ### 1.7 State types
 **File:** `pkg/types/state/cloud_account.go`
-- Add `GCPCloudAccount` struct with `Region string` and `ProjectID string`
-- Add `GCP *GCPCloudAccount` pointer to `CloudAccount`
+
+Add struct and pointer:
+```go
+type GCPCloudAccount struct {
+    Region    string `json:"region"`
+    ProjectID string `json:"project_id"`
+}
+```
+Add to `CloudAccount`:
+```go
+GCP   *GCPCloudAccount   `json:"gcp"`
+```
 
 ---
 
-## Phase 2: API & Workflow Logic (ctl-api)
+## Phase 2: API & Workflow Logic
 
-### 2.1 Install creation
+### 2.1 Install creation — params & validation
 **File:** `services/ctl-api/internal/app/installs/helpers/create_install.go`
-- Add `GCPAccount *struct { Region string; ProjectID string }` to `CreateInstallParams`
-- Update validation: mutual exclusivity among AWS, Azure, **and** GCP
+
+Add to `CreateInstallParams` (after `AzureAccount`):
+```go
+GCPAccount *struct {
+    Region string `json:"region"`
+} `json:"gcp_account"`
+```
+
+Add GCPAccount handling in `CreateInstall()` (after the AzureAccount block, ~line 93):
+```go
+if req.GCPAccount != nil {
+    install.GCPAccount = &app.GCPAccount{
+        Region: req.GCPAccount.Region,
+    }
+}
+```
+
+Add GCP to the `InstallStack` creation switch (~line 103):
+```go
+case "gcp":
+    install.InstallStack = &app.InstallStack{
+        InstallStackOutputs: app.InstallStackOutputs{
+            Data: generics.ToHstore(map[string]string{}),
+        },
+    }
+```
 
 **File:** `services/ctl-api/internal/app/installs/service/create_install.go`
-- Handle GCPAccount in the install creation flow (create GCPAccount record, create InstallStack)
+
+Update `CreateInstallV2Request.Validate()` (~line 29):
+```go
+// Old: if c.AWSAccount == nil && c.AzureAccount == nil {
+// New:
+accounts := 0
+if c.AWSAccount != nil { accounts++ }
+if c.AzureAccount != nil { accounts++ }
+if c.GCPAccount != nil { accounts++ }
+if accounts != 1 {
+    return stderr.ErrUser{
+        Description: "exactly one of aws_account, azure_account, or gcp_account must be provided",
+        Err:         fmt.Errorf("exactly one cloud account must be provided"),
+    }
+}
+```
+
+Add GCP region validation (after the AWS region check):
+```go
+if c.GCPAccount != nil {
+    if c.GCPAccount.Region == "" {
+        return stderr.ErrUser{
+            Description: "GCPAccount region is required",
+            Err:         fmt.Errorf("GCPAccount region is required"),
+        }
+    }
+}
+```
+
+Apply the same changes to `CreateInstallRequest.Validate()` (~line 136).
+
+**Backwards compatibility:** The API now accepts `gcp_account` as a third option. Requests without it behave identically. The mutual-exclusivity check is stricter (exactly 1 instead of "at least 1 of aws/azure") which is also backwards-compatible since you could never successfully create an install with both before.
 
 ### 2.2 State conversion
 **File:** `services/ctl-api/internal/app/installs/worker/state/state_cloud.go`
-- Add GCP branch: if `install.GCPAccount != nil`, populate `st.GCP = &state.GCPCloudAccount{...}`
+
+Add after the AzureAccount block (~line 30):
+```go
+if install.GCPAccount != nil {
+    st.GCP = &state.GCPCloudAccount{
+        Region:    install.GCPAccount.Region,
+        ProjectID: install.GCPAccount.ProjectID,
+    }
+}
+```
 
 ### 2.3 Stack version generation
 **File:** `services/ctl-api/internal/app/installs/worker/stack/generate_install_stack_version.go`
-- Add `app.AppRunnerTypeGCP` to the allowed runner types list
-- Add GCP branch in the region switch: `case install.GCPAccount != nil: region = install.GCPAccount.Region`
-- Add `case app.AppRunnerTypeGCP:` for template generation (Terraform-based, since GCP doesn't have a Bicep equivalent)
-- Create GCP Terraform template rendering (new package `services/ctl-api/internal/pkg/stacks/gcptf/`)
-- Add `DefaultGCPRunnerInitScript` constant
+
+Add constant (~line 21):
+```go
+DefaultGCPRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
+```
+
+Update the allowed runner types check (~line 41) — add `app.AppRunnerTypeGCP`:
+```go
+if !generics.SliceContains(cfg.RunnerConfig.Type, []app.AppRunnerType{
+    app.AppRunnerTypeAWS,
+    app.AppRunnerTypeAzure,
+    app.AppRunnerTypeGCP,
+}) {
+    return nil
+}
+```
+
+Update the region switch (~line 95) — add GCP case:
+```go
+case install.GCPAccount != nil:
+    region = install.GCPAccount.Region
+```
+
+Add GCP template rendering case in the switch (~line 142):
+```go
+case app.AppRunnerTypeGCP:
+    if cfg.RunnerConfig.InitScriptURL != "" {
+        inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
+    } else {
+        inp.RunnerInitScriptURL = DefaultGCPRunnerInitScript
+    }
+
+    tmplByts, checksum, err = gcptf.Render(inp)
+    if err != nil {
+        return errors.Wrap(err, "unable to create gcp terraform template")
+    }
+```
+
+Add import: `"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcptf"`
 
 ### 2.4 GCP Terraform stack template
 **New package:** `services/ctl-api/internal/pkg/stacks/gcptf/`
-- Terraform template that provisions:
-  - VPC network with public/private subnets
-  - Cloud NAT + Cloud Router for egress
-  - Firewall rules
-  - Managed Instance Group (MIG) with runner VMs (e2-standard-2, Ubuntu 22.04)
-  - Service account with appropriate IAM roles (Editor, GKE Admin)
-  - Startup script that installs Docker and runs the Nuon runner
-  - Phone-home mechanism (HTTP POST via startup script, same pattern as AWS/Azure)
-- Accept same `stacks.TemplateInput` as AWS/Azure renderers
 
-### 2.5 Plan generation
+Two files:
+
+**`render.go`** — Entry point, same signature as `bicep.Render()`:
+```go
+func Render(inp *stacks.TemplateInput) ([]byte, string, error)
+```
+- Takes the `TemplateInput` (contains install, runner, settings, API token, init script URL)
+- Renders the embedded Terraform template with Go `text/template`
+- Returns rendered JSON bytes + SHA256 checksum
+- Template values: install ID, region, runner API URL, API token, init script URL, runner image/tag
+
+**`template.go`** — Embedded Terraform HCL template (`//go:embed template.tf`):
+
+The template provisions a minimal GCP infrastructure for the runner VM:
+- **google_compute_network** — VPC with auto subnets disabled
+- **google_compute_subnetwork** — Public + private subnets in the target region
+- **google_compute_router** + **google_compute_router_nat** — Cloud NAT for egress
+- **google_compute_firewall** — Allow SSH (22), runner API (8080), and egress
+- **google_service_account** — Runner service account
+- **google_project_iam_member** — roles/editor, roles/container.admin on the project
+- **google_compute_instance** — Single runner VM (e2-standard-2, Ubuntu 22.04 LTS)
+  - `metadata_startup_script` that curls the init script URL, then phones home with outputs
+- **null_resource** with `local-exec` — Phone-home POST to ctl-api with stack outputs (project_id, region, network_id, subnet IDs, service account email)
+
+**Design note:** This uses a single Compute Engine instance (not a MIG) to match the simplicity of the AWS CloudFormation single-instance pattern and the Azure Bicep VMSS pattern. The phone-home uses the same `/v1/install-stacks/{id}/outputs` endpoint.
+
+### 2.5 Plan generation — getAuth()
 **File:** `services/ctl-api/internal/app/installs/worker/plan/plan_sandbox_run.go`
-- Add `GCPAuth *gcpcredentials.Config` to `getAuth()` return values
-- Add `case outputs.GCPStackOutputs != nil:` branch that constructs GCP credentials
-- Pass `GCPAuth` through to `SandboxRunPlan`
-- Add GCP-specific env vars to `getSandboxRunEnvVars` (e.g., `GOOGLE_REGION`)
-- Add GCP-specific terraform vars to `getSandboxRunTerraformVars`
 
+Update `getAuth()` signature (~line 259) to return three values:
+```go
+func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (
+    *awscredentials.Config, *azurecredentials.Config, *gcpcredentials.Config, error,
+)
+```
+
+Add GCP case in the switch:
+```go
+case outputs.GCPStackOutputs != nil:
+    gcpOutputs := outputs.GCPStackOutputs
+    return nil, nil, &gcpcredentials.Config{
+        ProjectID:  gcpOutputs.ProjectID,
+        Region:     gcpOutputs.Region,
+        UseDefault: true,
+    }, nil
+```
+
+Update all callers of `getAuth` to accept 4 return values. The sandbox run plan constructor (~line 126):
+```go
+awsAuth, azureAuth, gcpAuth, err := p.getAuth(stack.InstallStackOutputs, run)
+```
+
+Add to the plan struct:
+```go
+GCPAuth: gcpAuth,
+```
+
+Update `getSandboxRunEnvVars` (~line 218) — add GCP env vars:
+```go
+if appCfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
+    envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+    envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
+    return envVars
+}
+```
+
+Update `getSandboxRunTerraformVars` (~line 234) — add GCP terraform vars:
+```go
+if appCfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
+    builtin := map[string]any{
+        "nuon_id":                "{{.nuon.install.id}}",
+        "region":                 "{{.nuon.install_stack.outputs.region}}",
+        "project_id":             "{{.nuon.install_stack.outputs.project_id}}",
+        "network_name":           "{{.nuon.install_stack.outputs.network_name}}",
+        "service_account_email":  "{{.nuon.install_stack.outputs.service_account_email}}",
+    }
+    for k, v := range builtin {
+        vars[k] = v
+    }
+    return vars, nil
+}
+```
+
+### 2.6 Plan generation — terraform deploy
 **File:** `services/ctl-api/internal/app/installs/worker/plan/plan_deploy_terraform_module.go`
-- Same pattern: add GCPAuth handling
 
+In `createTerraformDeployPlan` (~line 110), add GCP case to the auth switch:
+```go
+case stack.InstallStackOutputs.GCPStackOutputs != nil:
+    gcpAuth = &gcpcredentials.Config{
+        ProjectID:  stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+        Region:     stack.InstallStackOutputs.GCPStackOutputs.Region,
+        UseDefault: true,
+    }
+    envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
+    envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+```
+
+Declare `gcpAuth` alongside `awsAuth`/`azureAuth`, pass it to the plan struct.
+
+### 2.7 Plan generation — kube cluster info
 **File:** `services/ctl-api/internal/app/installs/worker/plan/kube_cluster_info.go`
-- Add GCP/GKE cluster info generation (endpoint, CA data, auth via gke-gcloud-auth-plugin)
 
-### 2.6 Plan types
-**File:** `pkg/plans/types/sandbox_run.go`
-- Add `GCPAuth *gcpcredentials.Config` field
-**File:** `pkg/plans/types/terraform_deploy_plan.go`
-- Add `GCPAuth *gcpcredentials.Config` field
-**File:** `pkg/plans/types/sync_secrets_plan.go`
-- Add `GCPAuth *gcpcredentials.Config` field
-**File:** `pkg/plans/types/action_workflow_run.go`
-- Add `GCPAuth *gcpcredentials.Config` field (if it has auth fields)
+Add GCP case in the switch (~line 64):
+```go
+case stack.InstallStackOutputs.GCPStackOutputs != nil:
+    obj = &kube.ClusterInfo{
+        ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
+        Endpoint: "{{.nuon.sandbox.outputs.cluster.endpoint}}",
+        CAData:   "{{.nuon.sandbox.outputs.cluster.ca_certificate}}",
+        GCPAuth: &gcpcredentials.Config{
+            ProjectID:  stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+            Region:     stack.InstallStackOutputs.GCPStackOutputs.Region,
+            UseDefault: true,
+        },
+    }
+```
 
-### 2.7 Proto definitions
+### 2.8 Plan generation — action workflows
+**File:** `services/ctl-api/internal/app/installs/worker/plan/plan_action_workflow_run.go`
+
+Add GCP auth case (~line 87). Currently only AWS is handled. Add after the AWS block:
+```go
+if !org.SandboxMode && stack.InstallStackOutputs.GCPStackOutputs != nil {
+    plan.GCPAuth = &gcpcredentials.Config{
+        ProjectID:  stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+        Region:     stack.InstallStackOutputs.GCPStackOutputs.Region,
+        UseDefault: true,
+    }
+}
+```
+
+### 2.9 Plan generation — sync secrets
+**File:** `services/ctl-api/internal/app/installs/worker/plan/plan_sync_secrets.go`
+
+Add GCP auth handling. Currently hardcoded to AWS (~line 83). Make it conditional:
+```go
+switch {
+case stack.InstallStackOutputs.AWSStackOutputs != nil:
+    plan.AWSAuth = &awscredentials.Config{...}  // existing code
+case stack.InstallStackOutputs.GCPStackOutputs != nil:
+    plan.GCPAuth = &gcpcredentials.Config{
+        ProjectID:  stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+        Region:     stack.InstallStackOutputs.GCPStackOutputs.Region,
+        UseDefault: true,
+    }
+}
+```
+
+### 2.10 Plan types — add GCPAuth field
+**File:** `pkg/plans/types/sandbox_run.go` — add: `GCPAuth *gcpcredentials.Config \`json:"gcp_auth"\``
+**File:** `pkg/plans/types/terraform_deploy_plan.go` — add: `GCPAuth *gcpcredentials.Config \`json:"gcp_auth"\``
+**File:** `pkg/plans/types/sync_secrets_plan.go` — add: `GCPAuth *gcpcredentials.Config \`json:"gcp_auth"\``
+**File:** `pkg/plans/types/action_workflow_run.go` — add: `GCPAuth *gcpcredentials.Config \`json:"gcp_auth"\``
+
+All with import `gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"`.
+
+**Backwards compatibility:** New nullable JSON fields. Existing plans with `gcp_auth: null` (or absent) are handled by the runner with nil checks, same as existing Azure auth.
+
+### 2.11 Proto definitions
 **File:** `pkg/types/components/context/v1/install_context.proto`
-- Add `GcpAccount` message with: `region`, `project_id`, `service_account_key_json`
-- Add `GcpAccount gcp_account = 3;` to `InstallContext`
-- Regenerate proto Go code
+
+Add message:
+```protobuf
+message GcpAccount {
+  string region = 1;
+  string project_id = 2;
+}
+```
+
+Add to `InstallContext`:
+```protobuf
+GcpAccount gcp_account = 3;
+```
+
+Regenerate: `protoc --go_out=. --go_opt=paths=source_relative install_context.proto`
 
 ---
 
-## Phase 3: GCP Credentials & Auth (runner + pkg)
+## Phase 3: GCP Credentials & Runner Integration
 
 ### 3.1 GCP credentials package
 **New package:** `pkg/gcp/credentials/`
-- `config.go` — `Config` struct with `ProjectID`, `Region`, `ServiceAccountKeyJSON` (optional), `UseDefault bool`
-- `client.go` — Wraps Google Cloud's Application Default Credentials (ADC) via `google.FindDefaultCredentials()`
-- `fetch_env.go` — Maps credentials to env vars: `GOOGLE_PROJECT`, `GOOGLE_REGION`, `CLOUDSDK_CORE_PROJECT`; if service account key is provided, writes to temp file and sets `GOOGLE_APPLICATION_CREDENTIALS`
+
+**`config.go`:**
+```go
+type Config struct {
+    ProjectID  string `json:"project_id" temporaljson:"project_id" hcl:"project_id" mapstructure:"project_id,omitempty" cty:"project_id"`
+    Region     string `json:"region" temporaljson:"region" hcl:"region" mapstructure:"region,omitempty" cty:"region"`
+    UseDefault bool   `json:"use_default" temporaljson:"use_default" hcl:"use_default,optional" mapstructure:"use_default,omitempty" cty:"use_default,optional"`
+}
+```
+
+**`fetch_env.go`:**
+```go
+func FetchEnv(ctx context.Context, cfg *Config) (map[string]string, error) {
+    env := map[string]string{}
+    if cfg.ProjectID != "" {
+        env["GOOGLE_PROJECT"] = cfg.ProjectID
+        env["CLOUDSDK_CORE_PROJECT"] = cfg.ProjectID
+        env["GCLOUD_PROJECT"] = cfg.ProjectID
+    }
+    if cfg.Region != "" {
+        env["GOOGLE_REGION"] = cfg.Region
+        env["CLOUDSDK_COMPUTE_REGION"] = cfg.Region
+    }
+    return env, nil
+}
+```
+
+**Design note:** GCP on runner VMs uses Workload Identity Federation or attached service accounts (ADC), so no explicit credential fetching is needed — just setting the project/region env vars is sufficient. This mirrors Azure's `UseDefault: true` pattern.
 
 ### 3.2 Terraform auth integration
 **File:** `pkg/terraform/variables/auth/auth.go`
-- Add `GCPAuth *gcpcredentials.Config` field to `auth` struct
-- Add `WithGCPAuth()` option function
+
+Add field and option:
+```go
+type auth struct {
+    v         *validator.Validate
+    AWSAuth   *credentials.Config
+    AzureAuth *azurecredentials.Config
+    GCPAuth   *gcpcredentials.Config          // new
+}
+
+func WithGCPAuth(cfg *gcpcredentials.Config) varsOption {
+    return func(v *auth) error {
+        v.GCPAuth = cfg
+        return nil
+    }
+}
+```
 
 **File:** `pkg/terraform/variables/auth/vars.go`
-- Add `case v.GCPAuth != nil:` branch that calls `gcpcredentials.FetchEnv()`
+
+Add GCP case in `GetEnv()`:
+```go
+case v.GCPAuth != nil:
+    envVars, err := gcpcredentials.FetchEnv(ctx, v.GCPAuth)
+    if err != nil {
+        return nil, fmt.Errorf("unable to fetch gcp environment vars: %w", err)
+    }
+    return envVars, nil
+```
 
 ### 3.3 Kubernetes (GKE) authentication
 **File:** `pkg/kube/cluster_info.go`
-- Add `GCPAuth *gcpcredentials.Config` to `ClusterInfo`
-- Add GCP branch in `ConfigForCluster()`: use `gke-gcloud-auth-plugin` as exec provider (same pattern as kubelogin for Azure)
+
+Add field to `ClusterInfo`:
+```go
+GCPAuth *gcpcredentials.Config `json:"gcp_auth" hcl:"gcp_auth,block"`
+```
+
+Add GCP branch in `ConfigForCluster()` (after the AzureAuth block, ~line 148):
+```go
+if cInfo.GCPAuth != nil {
+    cfg.ExecProvider = &clientcmdapi.ExecConfig{
+        APIVersion: "client.authentication.k8s.io/v1beta1",
+        Command:    "gke-gcloud-auth-plugin",
+        InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+    }
+}
+```
 
 **File:** `pkg/kube/env.go`
-- Add GCP credential env vars merge
+
+Add GCP env vars to the environment merge:
+```go
+if cInfo.GCPAuth != nil {
+    gcpEnv, err := gcpcredentials.FetchEnv(ctx, cInfo.GCPAuth)
+    if err != nil {
+        return nil, fmt.Errorf("unable to fetch gcp env: %w", err)
+    }
+    for k, v := range gcpEnv {
+        env[k] = v
+    }
+}
+```
 
 ### 3.4 OCI Registry — Google Artifact Registry
 **File:** `pkg/plugins/configs/registry_oci.go`
-- Add `OCIRegistryTypeGAR OCIRegistryType = "gar"` (Google Artifact Registry)
-- Add `GARAuth *gcpcredentials.Config` to `OCIRegistryRepository`
+
+Add type and field:
+```go
+OCIRegistryTypeGAR OCIRegistryType = "gar"
+```
+```go
+GARAuth *gcpcredentials.Config `hcl:"gar_auth,block"`
+```
 
 **New package:** `bins/runner/internal/pkg/registry/gar/`
-- `fetch.go` — Implement GAR token fetch using ADC; username `"oauth2accesstoken"`, password from `credentials.TokenSource.Token()`
+
+**`fetch.go`:**
+```go
+func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*registry.AccessInfo, error) {
+    if cfg.OCIAuth != nil {
+        // Use provided credentials directly (same pattern as ACR fallback)
+        return &registry.AccessInfo{
+            Image: cfg.Repository,
+            Auth: &registry.AccessInfoAuth{
+                Username:      cfg.OCIAuth.Username,
+                Password:      cfg.OCIAuth.Password,
+                ServerAddress: cfg.LoginServer,
+            },
+        }, nil
+    }
+
+    // Use Application Default Credentials to get an access token
+    tokenSource, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+    if err != nil {
+        return nil, fmt.Errorf("unable to get default token source: %w", err)
+    }
+    token, err := tokenSource.Token()
+    if err != nil {
+        return nil, fmt.Errorf("unable to get token: %w", err)
+    }
+
+    return &registry.AccessInfo{
+        Image: cfg.Repository,
+        Auth: &registry.AccessInfoAuth{
+            Username:      "oauth2accesstoken",
+            Password:      token.AccessToken,
+            ServerAddress: cfg.LoginServer,
+        },
+    }, nil
+}
+```
+
+**File:** `bins/runner/internal/pkg/oci/repo.go`
+
+Add case in `FetchAccessInfo` switch:
+```go
+case configs.OCIRegistryTypeGAR:
+    accessInfo, err = gar.FetchAccessInfo(ctx, cfg)
+```
 
 ### 3.5 Runner job integration
-**File:** `bins/runner/internal/jobs/sandbox/terraform/workspace.go`
-- Add `authvars.WithGCPAuth(plan.GCPAuth)` alongside AWS/Azure
-
 **File:** `bins/runner/internal/jobs/deploy/terraform/workspace.go`
-- Same: add `WithGCPAuth`
 
-**File:** `bins/runner/internal/jobs/sandbox/sync_secrets/sync_secret.go`
-- Add GCPAuth handling for Secret Manager access
+Update the auth vars construction to include GCP:
+```go
+authVars, err := authvars.New(p.v,
+    authvars.WithAWSAuth(p.state.plan.TerraformDeployPlan.AWSAuth),
+    authvars.WithAzureAuth(p.state.plan.TerraformDeployPlan.AzureAuth),
+    authvars.WithGCPAuth(p.state.plan.TerraformDeployPlan.GCPAuth),
+)
+```
+
+Apply the same change to the sandbox terraform workspace:
+**File:** `bins/runner/internal/jobs/sandbox/terraform/workspace.go`
 
 ### 3.6 Runner Dockerfile
-**File:** Runner Dockerfile
-- Add `gke-gcloud-auth-plugin` installation (similar to `kubelogin` for Azure)
-- Add `gcloud` CLI minimal installation (for `gke-gcloud-auth-plugin`)
+**File:** `bins/runner/Dockerfile`
 
----
+Add a build stage for `gke-gcloud-auth-plugin` (same pattern as kubelogin):
+```dockerfile
+FROM golang:1.25-alpine AS gke-auth-plugin
 
-## Phase 4: Dashboard UI (dashboard-ui)
-
-### 4.1 Type definitions
-**File:** `services/dashboard-ui/src/types/dashboard.types.ts`
-- `TCloudPlatform` already includes `'gcp'` — no change needed
-
-### 4.2 GCP region config
-**File:** `services/dashboard-ui/src/configs/cloud-regions.ts`
-- Add `GCP_REGIONS` array with ~40 GCP regions (us-central1, us-east1, europe-west1, asia-east1, etc.) with display names, values, and flag icons
-
-### 4.3 Install creation form
-**File:** `services/dashboard-ui/src/components/installs/forms/shared/PlatformFields.tsx`
-- Import `GCP_REGIONS`
-- Add `GCPFields` component with a "Select GCP region" dropdown and "GCP Project ID" text input
-- Add `if (platform === 'gcp')` branch in `PlatformFields`
-
-### 4.4 Install creation server action
-**File:** `services/dashboard-ui/src/actions/apps/create-app-install.ts`
-- Add GCP handling: when `formData.gcp_region` exists, construct `gcp_account: { region, project_id }` in the body
-
-### 4.5 Display components
-**File:** `services/dashboard-ui/src/components/common/CloudPlatform.tsx`
-- Already has GCP config — no change needed
-
-**File:** `services/dashboard-ui/src/components/common/CloudRegion.tsx`
-- Add `'gcp'` to the platform union type
-- Import `GCP_REGIONS`
-- Add `platform === 'gcp'` branch using `region` field to look up display name
-
-### 4.6 Install tables
-**Files:** `AppInstallsTable.tsx`, `InstallsTable.tsx`
-- Update platform detection: `install?.aws_account ? 'aws' : install?.azure_account ? 'azure' : install?.gcp_account ? 'gcp' : 'unknown'`
-
-### 4.7 Deployment instructions
-**New component:** `services/dashboard-ui/src/components/workflows/step-details/stack-details/AwaitGCPDetails.tsx`
-- Show GCP CLI commands for stack provisioning: `gcloud auth login`, `gcloud deployment-manager deployments create ...` (or Terraform init instructions)
-- Wire into stack step details switcher
-
-### 4.8 API types
-**File:** `services/dashboard-ui/src/types/ctl-api.types.ts` (or auto-generated from OpenAPI)
-- Add `TInstallGcpAccount` type
-
----
-
-## Phase 5: SDK & Code Generation
-
-### 5.1 Swagger annotations
-- Add GCP-related types to Swagger/OpenAPI annotations on endpoints
-
-### 5.2 Code generation
-```bash
-go generate ./services/ctl-api/...
-go generate ./sdks/nuon-go/...
-go generate ./sdks/nuon-runner-go/...
+RUN apk add --update --no-cache curl ca-certificates
+WORKDIR /bin
+RUN curl -LO https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz \
+    && tar -xzf google-cloud-cli-linux-x86_64.tar.gz \
+    && ./google-cloud-sdk/install.sh --quiet \
+    && ./google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet \
+    && cp ./google-cloud-sdk/bin/gke-gcloud-auth-plugin .
 ```
-- This regenerates SDK models (`AppCloudPlatform`, `GCPAccount`, etc.)
-- Regenerates Temporal activity/workflow wrappers
 
-### 5.3 CLI support
-**File:** `bins/cli/` — Update `nuon installs create` to accept `--gcp-region` and `--gcp-project-id` flags
+Add to final stage:
+```dockerfile
+COPY --from=gke-auth-plugin /bin/gke-gcloud-auth-plugin /usr/local/bin/gke-gcloud-auth-plugin
+```
 
----
+**Alternative (simpler):** Download the standalone binary directly:
+```dockerfile
+FROM golang:1.25-alpine AS gke-auth-plugin
+RUN apk add --update --no-cache curl
+RUN curl -Lo /usr/local/bin/gke-gcloud-auth-plugin \
+    https://dl.k8s.io/release/v0.31.0/bin/linux/amd64/kubectl-gke-gcloud-auth-plugin \
+    && chmod +x /usr/local/bin/gke-gcloud-auth-plugin
+```
 
-## Phase 6: Validation & Testing
-
-### 6.1 Azure settings validation analog
-**File:** `pkg/workflows/types/executors/shared_azure.go` → create `shared_gcp.go`
-- Add `GCPSettings` struct with region validation against known GCP regions
-
-### 6.2 Integration tests
-- Add GCP install creation test
-- Add GCP stack generation test
-- Add GCP auth credentials test
-
-### 6.3 SDK tests
-- Ensure generated SDK models include GCP types
+The exact approach depends on the distribution method Google uses at the time of implementation. The key requirement is that `gke-gcloud-auth-plugin` is available on `$PATH` in the runner container.
 
 ---
 
-## File Change Summary
+## Backwards Compatibility Summary
 
-| Category | Files to Modify | New Files |
-|----------|----------------|-----------|
-| **Data Models** | `cloud_platform.go`, `install.go`, `install_stack_outputs.go`, `app_runner_config.go`, `domains.go` | `gcp_account.go` |
-| **State/Plans** | `state_cloud.go`, `cloud_account.go`, `sandbox_run.go`, `terraform_deploy_plan.go`, `sync_secrets_plan.go` | — |
-| **Workflows** | `generate_install_stack_version.go`, `plan_sandbox_run.go`, `plan_deploy_terraform_module.go`, `kube_cluster_info.go` | — |
-| **GCP Stack** | — | `services/ctl-api/internal/pkg/stacks/gcptf/` (template + render) |
-| **Install API** | `create_install.go` (helpers + service) | — |
-| **Auth/Creds** | `auth.go`, `vars.go`, `cluster_info.go`, `env.go`, `registry_oci.go` | `pkg/gcp/credentials/`, `bins/runner/internal/pkg/registry/gar/` |
-| **Runner Jobs** | `workspace.go` (sandbox + deploy), `sync_secret.go`, `env.go` | — |
-| **Proto** | `install_context.proto` | — |
-| **Dashboard** | `PlatformFields.tsx`, `CloudRegion.tsx`, `create-app-install.ts`, install tables, `cloud-regions.ts` | `AwaitGCPDetails.tsx`, GCP region config |
-| **Dockerfile** | Runner Dockerfile | — |
-| **SDKs** | Auto-generated after `go generate` | — |
+| Change | Impact on existing AWS/Azure installs |
+|--------|--------------------------------------|
+| New `CloudPlatformGCP` constant | None — string enum, additive |
+| New `GCPAccount` model + table | None — new table, no schema changes to existing tables |
+| New `GCPAccount` pointer on Install | None — nullable, `nil` for all existing installs |
+| New `AppRunnerTypeGCP` | None — additive string constant |
+| New `GCPStackOutputs` | None — new nullable pointer on `InstallStackOutputs` |
+| New `GCPCloudAccount` on state | None — nullable, `nil` for existing states |
+| Validation change (exactly 1 account) | Compatible — was already impossible to send both aws+azure |
+| `getAuth()` 4 return values | Internal-only function — all callers updated in this PR |
+| `GCPAuth` on plan types | None — nullable JSON field, absent in existing plans |
+| GCP proto message | Additive — new field number 3 on `InstallContext` |
+| `OCIRegistryTypeGAR` | None — new constant, new switch case |
+| `WithGCPAuth()` option | None — new option, existing calls don't use it |
+| `gke-gcloud-auth-plugin` in Dockerfile | None — additive binary, doesn't affect existing tools |
+
+**No existing behavior is changed.** All GCP code paths are reachable only when an install is created with `gcp_account` or when `AppRunnerTypeGCP` is configured on an app.
 
 ---
 
-## Implementation Order
+## Files Changed (Phases 1–3)
 
-1. **Phase 1** (Core models) — Foundation, everything else depends on this
-2. **Phase 3.1** (GCP credentials package) — Needed before workflow/plan changes
-3. **Phase 2** (API & workflows) — Backend logic
-4. **Phase 3.2-3.6** (Runner integration) — Runner can execute GCP workloads
-5. **Phase 4** (Dashboard UI) — Users can create GCP installs
-6. **Phase 5** (SDK & codegen) — Generated clients stay in sync
-7. **Phase 6** (Testing) — Validate end-to-end
+### Modified files (18):
+1. `services/ctl-api/internal/app/cloud_platform.go` — GCP enum, regions, parser
+2. `services/ctl-api/internal/app/install.go` — GCPAccount pointer
+3. `services/ctl-api/internal/app/install_stack_outputs.go` — GCPStackOutputs
+4. `services/ctl-api/internal/app/app_runner_config.go` — GCP runner type + mappings
+5. `services/ctl-api/internal/app/installs/helpers/create_install.go` — GCPAccount param + creation
+6. `services/ctl-api/internal/app/installs/service/create_install.go` — Validation (both V1 + V2)
+7. `services/ctl-api/internal/app/installs/worker/state/state_cloud.go` — GCP state conversion
+8. `services/ctl-api/internal/app/installs/worker/stack/generate_install_stack_version.go` — GCP template generation
+9. `services/ctl-api/internal/app/installs/worker/plan/plan_sandbox_run.go` — GCP auth + env vars + terraform vars
+10. `services/ctl-api/internal/app/installs/worker/plan/plan_deploy_terraform_module.go` — GCP auth
+11. `services/ctl-api/internal/app/installs/worker/plan/plan_action_workflow_run.go` — GCP auth
+12. `services/ctl-api/internal/app/installs/worker/plan/plan_sync_secrets.go` — GCP auth
+13. `services/ctl-api/internal/app/installs/worker/plan/kube_cluster_info.go` — GKE cluster info
+14. `pkg/shortid/domains/domains.go` — NewGCPAccountID
+15. `pkg/types/state/cloud_account.go` — GCPCloudAccount
+16. `pkg/types/components/context/v1/install_context.proto` — GcpAccount message
+17. `pkg/plans/types/sandbox_run.go` — GCPAuth field
+18. `pkg/plans/types/terraform_deploy_plan.go` — GCPAuth field
+19. `pkg/plans/types/sync_secrets_plan.go` — GCPAuth field
+20. `pkg/plans/types/action_workflow_run.go` — GCPAuth field
+21. `pkg/terraform/variables/auth/auth.go` — GCPAuth field + WithGCPAuth
+22. `pkg/terraform/variables/auth/vars.go` — GCP env var dispatch
+23. `pkg/kube/cluster_info.go` — GCPAuth + gke-gcloud-auth-plugin exec
+24. `pkg/kube/env.go` — GCP env var merge
+25. `pkg/plugins/configs/registry_oci.go` — GAR type + GARAuth
+26. `bins/runner/internal/pkg/oci/repo.go` — GAR dispatch case
+27. `bins/runner/internal/jobs/deploy/terraform/workspace.go` — WithGCPAuth
+28. `bins/runner/internal/jobs/sandbox/terraform/workspace.go` — WithGCPAuth
+29. `bins/runner/Dockerfile` — gke-gcloud-auth-plugin
 
-## Key Design Decisions
-
-- **Mutual exclusivity**: Install gets exactly one of `AWSAccount`, `AzureAccount`, or `GCPAccount` (extend existing validation)
-- **Terraform for IaC**: GCP stack uses Terraform (not CloudFormation or Bicep), uploaded to S3 same as others
-- **Application Default Credentials**: GCP auth uses ADC with optional service account key JSON, matching the pattern where Azure uses `DefaultAzureCredential`
-- **GKE auth**: Uses `gke-gcloud-auth-plugin` exec provider, same pattern as `kubelogin` for AKS
-- **Artifact Registry**: New `gar` registry type alongside `ecr` and `acr`
-- **Phone-home**: GCP runner VMs use startup script to POST outputs back to the API (same mechanism as AWS/Azure)
+### New files (4):
+1. `services/ctl-api/internal/app/gcp_account.go` — GCPAccount model
+2. `services/ctl-api/internal/pkg/stacks/gcptf/render.go` — GCP stack renderer
+3. `services/ctl-api/internal/pkg/stacks/gcptf/template.tf` — Embedded Terraform template
+4. `pkg/gcp/credentials/config.go` + `fetch_env.go` — GCP credentials package
+5. `bins/runner/internal/pkg/registry/gar/fetch.go` — GAR registry auth
