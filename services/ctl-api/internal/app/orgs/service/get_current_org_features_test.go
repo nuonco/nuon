@@ -89,8 +89,9 @@ func (s *GetCurrentOrgFeaturesTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -140,8 +141,9 @@ func (s *GetCurrentOrgFeaturesTestSuite) TestGetCurrentOrgFeaturesResponseFormat
 		ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 		org := &app.Org{
-			ID:   domains.NewOrgID(),
-			Name: "org-json-format",
+			ID:          domains.NewOrgID(),
+			Name:        "org-json-format",
+			SandboxMode: true,
 			NotificationsConfig: app.NotificationsConfig{
 				InternalSlackWebhookURL: "https://hooks.slack.com/test",
 			},

@@ -143,15 +143,17 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org1 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-1",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-1",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
 				}
 				org2 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-2",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-2",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -186,15 +188,17 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org1 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "frontend-team",
+					ID:          domains.NewOrgID(),
+					Name:        "frontend-team",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
 				}
 				org2 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "backend-team",
+					ID:          domains.NewOrgID(),
+					Name:        "backend-team",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -229,8 +233,9 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				orgIDs := make([]string, 0, 15)
 				for i := 0; i < 15; i++ {
 					testOrg := &app.Org{
-						ID:   domains.NewOrgID(),
-						Name: fmt.Sprintf("test-org-%02d", i),
+						ID:          domains.NewOrgID(),
+						Name:        fmt.Sprintf("test-org-%02d", i),
+						SandboxMode: true,
 						NotificationsConfig: app.NotificationsConfig{
 							InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 						},
@@ -275,8 +280,9 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				ctx2 = cctx.SetAccountContext(ctx2, acc2)
 
 				myOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "my-org",
+					ID:          domains.NewOrgID(),
+					Name:        "my-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -288,8 +294,9 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				})
 
 				otherOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "other-org",
+					ID:          domains.NewOrgID(),
+					Name:        "other-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},

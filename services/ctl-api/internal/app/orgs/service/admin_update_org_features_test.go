@@ -116,8 +116,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) setupTestData() {
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "admin-update-features-test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "admin-update-features-test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",
 		},
@@ -170,8 +171,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-update-single-admin",
+					ID:          domains.NewOrgID(),
+					Name:        "test-update-single-admin",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -212,8 +214,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-update-multiple-admin",
+					ID:          domains.NewOrgID(),
+					Name:        "test-update-multiple-admin",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -261,8 +264,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-admin-managed-flag",
+					ID:          domains.NewOrgID(),
+					Name:        "test-admin-managed-flag",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -302,8 +306,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-admin-disable-flag",
+					ID:          domains.NewOrgID(),
+					Name:        "test-admin-disable-flag",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -343,8 +348,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-update-all-features",
+					ID:          domains.NewOrgID(),
+					Name:        "test-update-all-features",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -398,8 +404,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-preserve-features-admin",
+					ID:          domains.NewOrgID(),
+					Name:        "test-preserve-features-admin",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -448,8 +455,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-toggle-false-admin",
+					ID:          domains.NewOrgID(),
+					Name:        "test-toggle-false-admin",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -489,8 +497,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-toggle-true-admin",
+					ID:          domains.NewOrgID(),
+					Name:        "test-toggle-true-admin",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -530,8 +539,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-empty-features-admin",
+					ID:          domains.NewOrgID(),
+					Name:        "test-empty-features-admin",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -588,8 +598,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			setupFunc: func() *app.Org {
 				// Return org with ID that doesn't exist
 				return &app.Org{
-					ID:   domains.NewOrgID(), // Non-existent org ID
-					Name: "nonexistent",
+					ID:          domains.NewOrgID(), // Non-existent org ID
+					Name:        "nonexistent",
+					SandboxMode: true,
 				}
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
@@ -607,8 +618,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-no-user-managed-flag",
+					ID:          domains.NewOrgID(),
+					Name:        "test-no-user-managed-flag",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
