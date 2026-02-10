@@ -66,8 +66,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		if err != nil {
 			h.errRecorder.Record("marshal policy input", err)
 		} else {
-			resultReq.ContentsDisplayCompressed = jobloop.CompressForRunner(string(contentsJSON))
-			resultReq.ContentsDisplay = contentsDisplay
+			resultReq.ContentsCompressed = jobloop.CompressForRunner(string(contentsJSON))
 		}
 	}
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {

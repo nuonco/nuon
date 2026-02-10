@@ -42,14 +42,14 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
-	appConfigs := build.ComponentConfigConnection.Component.App.AppConfigs
-	if len(appConfigs) == 0 {
-		l.Info("no app config found, skipping helm policy evaluation")
+	appConfigID := build.ComponentConfigConnection.AppConfigID
+	if appConfigID == "" {
+		l.Info("no app config id found, skipping helm policy evaluation")
 		return nil
 	}
 
 	policiesConfig, err := activities.AwaitGetPoliciesConfigByAppConfigID(ctx, &activities.GetPoliciesConfigByAppConfigIDRequest{
-		AppConfigID: appConfigs[0].ID,
+		AppConfigID: appConfigID,
 	})
 	if err != nil {
 		l.Info("no policies config found, skipping helm policy evaluation")
@@ -222,7 +222,7 @@ func parseHelmBuildPolicyPayload(result *app.RunnerJobExecutionResult) (*helmBui
 		return &helmBuildPolicyPayload{}, nil
 	}
 
-	payloadBytes, err := result.GetContentsDisplayDecompressedBytes()
+	payloadBytes, err := result.GetContentsDecompressedBytes()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decompress helm policy payload")
 	}
