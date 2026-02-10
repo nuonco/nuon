@@ -18,6 +18,7 @@ import (
 //
 // swagger:model plantypes.PlanAuth
 type PlantypesPlanAuth struct {
+
 	// aws auth
 	AwsAuth *GithubComNuoncoNuonPkgAwsCredentialsConfig `json:"aws_auth,omitempty"`
 
@@ -108,6 +109,7 @@ func (m *PlantypesPlanAuth) ContextValidate(ctx context.Context, formats strfmt.
 }
 
 func (m *PlantypesPlanAuth) contextValidateAwsAuth(ctx context.Context, formats strfmt.Registry) error {
+
 	if m.AwsAuth != nil {
 
 		if swag.IsZero(m.AwsAuth) { // not required
@@ -132,6 +134,7 @@ func (m *PlantypesPlanAuth) contextValidateAwsAuth(ctx context.Context, formats 
 }
 
 func (m *PlantypesPlanAuth) contextValidateAzureAuth(ctx context.Context, formats strfmt.Registry) error {
+
 	if m.AzureAuth != nil {
 
 		if swag.IsZero(m.AzureAuth) { // not required
