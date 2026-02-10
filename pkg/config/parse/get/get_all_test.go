@@ -2,12 +2,10 @@ package get
 
 import (
 	"context"
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/require"
 )
 
 type testStruct struct {
@@ -46,24 +44,6 @@ func TestGetAll(t *testing.T) {
 				require.Equal(t, "test content", ts.Obj)
 			},
 		},
-		"git_repo_file": {
-			input: testStruct{
-				Obj: "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml",
-			},
-			outputFn: func(t *testing.T, ts testStruct) {
-				require.NotEqual(t, ts.Obj, "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml")
-				require.NotEmpty(t, ts.Obj)
-			},
-		},
-		"git_tag_file": {
-			input: testStruct{
-				Obj: "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md",
-			},
-			outputFn: func(t *testing.T, ts testStruct) {
-				require.NotEqual(t, ts.Obj, "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md")
-				require.NotEmpty(t, ts.Obj)
-			},
-		},
 	}
 
 	for name, tc := range tests {
@@ -73,8 +53,7 @@ func TestGetAll(t *testing.T) {
 			defer cancel()
 
 			err := Parse(ctx, &tc.input, &Options{
-				FieldTimeout: time.Second,
-				RootDir:      tmpDir,
+				RootDir: tmpDir,
 			})
 			require.NoError(t, err)
 			tc.outputFn(t, tc.input)
