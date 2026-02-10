@@ -10,19 +10,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
-	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
-	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
-	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
-	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
-	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
-	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
-	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
-	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
-	releasesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/service"
-	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
-	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
-	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
+	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
 	"github.com/nuonco/nuon/services/ctl-api/docs/admin"
@@ -182,26 +170,10 @@ func parseSwaggerSpec(t *testing.T, specJSON string, specName string) *SwaggerSp
 func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// Create a shared EndpointAudit for services that embed RouteRegister.
+	// All domain services are registered in fxmodules.domainServices — the single
+	// source of truth for both FX dependency injection and this test.
 	ea := api.NewEndpointAudit()
-
-	// Instantiate all domain services with zero-value params.
-	// Constructors are copy-only, so this is safe.
-	services := []api.Service{
-		accountsservice.New(accountsservice.Params{}),
-		actionsservice.New(actionsservice.Params{}),
-		appsservice.New(appsservice.Params{EndpointAudit: ea}),
-		componentsservice.New(componentsservice.Params{}),
-		generalservice.New(generalservice.Params{}),
-		identityprovidersservice.New(identityprovidersservice.Params{}),
-		installsservice.New(installsservice.Params{EndpointAudit: ea}),
-		orgsservice.New(orgsservice.Params{EndpointAudit: ea}),
-		policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}),
-		releasesservice.New(releasesservice.Params{}),
-		runnerauthservice.New(runnerauthservice.Params{}),
-		runnersservice.New(runnersservice.Params{}),
-		vcsservice.New(vcsservice.Params{}),
-	}
+	services := fxmodules.TestDomainServices(ea)
 
 	// Each swagger spec maps to one or more route-registration methods.
 	// The public spec includes routes from both RegisterPublicRoutes (unauthenticated)
