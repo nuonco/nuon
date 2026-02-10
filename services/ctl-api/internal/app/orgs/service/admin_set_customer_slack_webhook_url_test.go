@@ -115,8 +115,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -162,8 +163,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-set-webhook",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-set-webhook",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/internal",
 						SlackWebhookURL:         "",
@@ -194,8 +196,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-update-webhook",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-update-webhook",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/internal",
 						SlackWebhookURL:         "https://hooks.slack.com/old-webhook",
@@ -226,8 +229,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-empty-webhook",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-empty-webhook",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/internal",
 						SlackWebhookURL:         "https://hooks.slack.com/existing",
@@ -254,8 +258,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-missing-field",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-missing-field",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/internal",
 					},
@@ -279,8 +284,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-invalid-json",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-invalid-json",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/internal",
 					},
@@ -302,8 +308,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 			setupFunc: func() *app.Org {
 				// Create org but use non-existent ID for request
 				return &app.Org{
-					ID:   domains.NewOrgID(), // Non-existent ID
-					Name: "nonexistent-org",
+					ID:          domains.NewOrgID(), // Non-existent ID
+					Name:        "nonexistent-org",
+					SandboxMode: true,
 				}
 			},
 			requestBody: SetCustomerSlackWebhookURLRequest{
@@ -319,8 +326,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-preserve-internal",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-preserve-internal",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/internal-preserved",
 						SlackWebhookURL:         "",
@@ -408,8 +416,9 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	org := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org-verify-update",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org-verify-update",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL:  "https://hooks.slack.com/internal",
 			SlackWebhookURL:          "https://hooks.slack.com/old",

@@ -121,8 +121,9 @@ func (s *AppsTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org-" + domains.NewOrgID(),
+		ID:          domains.NewOrgID(),
+		Name:        "test-org-" + domains.NewOrgID(),
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -285,8 +286,9 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	otherOrg := &app.Org{
-		ID:   domains.NewOrgID(), // BeforeCreate adds "org" prefix
-		Name: "other-org-" + domains.NewOrgID(),
+		ID:          domains.NewOrgID(), // BeforeCreate adds "org" prefix
+		Name:        "other-org-" + domains.NewOrgID(),
+		SandboxMode: true,
 	}
 	err := s.service.DB.WithContext(ctx).Create(otherOrg).Error
 	require.NoError(s.T(), err)

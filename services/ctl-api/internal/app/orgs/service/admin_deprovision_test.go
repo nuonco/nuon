@@ -131,8 +131,9 @@ func (s *AdminDeprovisionOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -180,9 +181,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "deprovision-org-normal",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "deprovision-org-normal",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -209,9 +211,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "deprovision-org-force",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "deprovision-org-force",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -238,9 +241,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "deprovision-org-default",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "deprovision-org-default",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -263,8 +267,9 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 			setupFunc: func() *app.Org {
 				// Return non-existent org
 				return &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "non-existent-org",
+					ID:          domains.NewOrgID(),
+					Name:        "non-existent-org",
+					SandboxMode: true,
 				}
 			},
 			requestBody: AdminDeprovisionOrgRequest{
@@ -280,9 +285,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "invalid-json-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "invalid-json-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -306,9 +312,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "returns-true-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "returns-true-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -402,9 +409,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 			ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 			org := &app.Org{
-				ID:      domains.NewOrgID(),
-				Name:    fmt.Sprintf("signal-test-org-%v", tc.force),
-				OrgType: app.OrgTypeDefault,
+				ID:          domains.NewOrgID(),
+				Name:        fmt.Sprintf("signal-test-org-%v", tc.force),
+				SandboxMode: true,
+				OrgType:     app.OrgTypeDefault,
 				NotificationsConfig: app.NotificationsConfig{
 					InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 				},
@@ -442,9 +450,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatab
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	org := &app.Org{
-		ID:      domains.NewOrgID(),
-		Name:    "db-unchanged-org",
-		OrgType: app.OrgTypeDefault,
+		ID:          domains.NewOrgID(),
+		Name:        "db-unchanged-org",
+		SandboxMode: true,
+		OrgType:     app.OrgTypeDefault,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},

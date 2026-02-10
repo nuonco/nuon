@@ -116,8 +116,9 @@ func (s *UpdateOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -161,8 +162,9 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "original-name",
+					ID:          domains.NewOrgID(),
+					Name:        "original-name",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -229,8 +231,9 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 
 				// Create a second org
 				otherOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "other-org",
+					ID:          domains.NewOrgID(),
+					Name:        "other-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",
 					},
@@ -367,8 +370,9 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgInvalidJSON() {
 func (s *UpdateOrgTestSuite) TestUpdateOrgNonExistentOrg() {
 	// Create a non-existent org ID for context
 	nonExistentOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "non-existent",
+		ID:          domains.NewOrgID(),
+		Name:        "non-existent",
+		SandboxMode: true,
 	}
 
 	// Create router with non-existent org context

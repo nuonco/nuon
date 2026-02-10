@@ -95,8 +95,9 @@ func (s *GetOrgTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -129,9 +130,10 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:     domains.NewOrgID(),
-					Name:   "test-org-full",
-					Status: "active",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-full",
+					SandboxMode: true,
+					Status:      "active",
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
@@ -167,8 +169,9 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-vcs",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-vcs",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
