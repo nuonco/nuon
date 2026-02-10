@@ -43,10 +43,16 @@ var domainServices = []domainServiceEntry{
 	{appsservice.New, func(ea *api.EndpointAudit) api.Service { return appsservice.New(appsservice.Params{EndpointAudit: ea}) }},
 	{componentsservice.New, func(ea *api.EndpointAudit) api.Service { return componentsservice.New(componentsservice.Params{}) }},
 	{generalservice.New, func(ea *api.EndpointAudit) api.Service { return generalservice.New(generalservice.Params{}) }},
-	{identityprovidersservice.New, func(ea *api.EndpointAudit) api.Service { return identityprovidersservice.New(identityprovidersservice.Params{}) }},
-	{installsservice.New, func(ea *api.EndpointAudit) api.Service { return installsservice.New(installsservice.Params{EndpointAudit: ea}) }},
+	{identityprovidersservice.New, func(ea *api.EndpointAudit) api.Service {
+		return identityprovidersservice.New(identityprovidersservice.Params{})
+	}},
+	{installsservice.New, func(ea *api.EndpointAudit) api.Service {
+		return installsservice.New(installsservice.Params{EndpointAudit: ea})
+	}},
 	{orgsservice.New, func(ea *api.EndpointAudit) api.Service { return orgsservice.New(orgsservice.Params{EndpointAudit: ea}) }},
-	{policyreportsservice.New, func(ea *api.EndpointAudit) api.Service { return policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}) }},
+	{policyreportsservice.New, func(ea *api.EndpointAudit) api.Service {
+		return policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea})
+	}},
 	{releasesservice.New, func(ea *api.EndpointAudit) api.Service { return releasesservice.New(releasesservice.Params{}) }},
 	{runnerauthservice.New, func(ea *api.EndpointAudit) api.Service { return runnerauthservice.New(runnerauthservice.Params{}) }},
 	{runnersservice.New, func(ea *api.EndpointAudit) api.Service { return runnersservice.New(runnersservice.Params{}) }},
