@@ -135,8 +135,9 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "exact-match-org",
+					ID:          domains.NewOrgID(),
+					Name:        "exact-match-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/exact",
 					},
@@ -161,8 +162,9 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "partial-match-org",
+					ID:          domains.NewOrgID(),
+					Name:        "partial-match-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/partial",
 					},
@@ -188,8 +190,9 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "org-by-id",
+					ID:          domains.NewOrgID(),
+					Name:        "org-by-id",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/byid",
 					},
@@ -224,8 +227,9 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "org-with-runner-group",
+					ID:          domains.NewOrgID(),
+					Name:        "org-with-runner-group",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/runner",
 					},
@@ -264,8 +268,9 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "org-with-runners",
+					ID:          domains.NewOrgID(),
+					Name:        "org-with-runners",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/runners",
 					},
@@ -337,8 +342,9 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "soft-deleted-org",
+					ID:          domains.NewOrgID(),
+					Name:        "soft-deleted-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/deleted",
 					},

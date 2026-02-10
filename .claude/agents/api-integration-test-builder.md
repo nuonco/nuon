@@ -19,6 +19,8 @@ You create integration tests for ctl-api endpoints following these established p
 
 **CRITICAL: Always reference existing test files** - Use the Read tool to examine actual test implementations rather than relying on embedded examples. Patterns evolve, and real code is always current.
 
+**CRITICAL: All test orgs must use `SandboxMode: true`** - Every `&app.Org{}` struct literal created as test fixture data MUST include `SandboxMode: true`. This prevents integration tests from creating real resources (cloud infrastructure, runners, etc.). Never create a test org without sandbox mode enabled.
+
 ## 1. File Organization
 
 **CRITICAL: One Test File Per Handler File**
@@ -281,8 +283,9 @@ func (s *YourTestSuite) setupTestData() {
     ctx := context.Background()
     ctx = cctx.SetAccountContext(ctx, testAcc)
     testOrg := &app.Org{
-        ID:   domains.NewOrgID(),
-        Name: "test-org",
+        ID:          domains.NewOrgID(),
+        Name:        "test-org",
+        SandboxMode: true,
         NotificationsConfig: app.NotificationsConfig{
             InternalSlackWebhookURL: "https://hooks.slack.com/foo",
         },
@@ -541,6 +544,7 @@ With the one-to-one file mapping and separate test suites:
 - [ ] Pass `TestOrg` and `TestAcc` to router if endpoint needs context
 - [ ] **If testing across orgs**: Recreate router with new org context
 - [ ] **If creating orgs**: Set account context first (`cctx.SetAccountContext`)
+- [ ] **If creating orgs**: Include `SandboxMode: true` to prevent real resource creation
 - [ ] **If endpoint sends signals**: Use `tests.FakeEventLoopClient` and reset in `SetupTest()`
 - [ ] Test cleanup relies on `BaseDBTestSuite` automatic truncation (no manual `cleanupTestData()`)
 - [ ] `TearDownSuite()` only calls `s.app.RequireStop()` (no manual cleanup)
@@ -624,10 +628,11 @@ type GetInstallActionWorkflowsLatestRunsDeprecatedTestSuite struct {
 10. **Cross-Org Testing**: Recreate router when testing across different orgs
 11. **Type Safety**: OpenAPI types for HTTP responses, internal types for database
 12. **Context Management**: Set account context before creating orgs or audited entities
-13. **Cleanup**: Use `s.T().Cleanup()` in table-driven tests for automatic cleanup
-14. **Mock Signals**: Use `tests.FakeEventLoopClient` for workflow signal verification
-15. **Debug Logging**: Include status/body logging in all test assertions
-16. **State Verification**: Test both HTTP response AND database state changes
+13. **Sandbox Mode**: ALL test orgs MUST have `SandboxMode: true` to prevent real resource creation
+14. **Cleanup**: Use `s.T().Cleanup()` in table-driven tests for automatic cleanup
+15. **Mock Signals**: Use `tests.FakeEventLoopClient` for workflow signal verification
+16. **Debug Logging**: Include status/body logging in all test assertions
+17. **State Verification**: Test both HTTP response AND database state changes
 
 ## Key Files to Reference
 
