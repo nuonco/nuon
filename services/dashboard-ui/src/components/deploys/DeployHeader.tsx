@@ -131,7 +131,13 @@ export const DeployHeader = ({
           {deploy?.oci_artifact ? (
             <LabeledValue label="OCI Artifact">
               <OCIArtifactCard ociArtifact={deploy?.oci_artifact}>
-                <Text variant="subtext">{deploy?.oci_artifact?.tag}</Text>
+                <Text
+                  variant="subtext"
+                  className="!block truncate max-w-[80px]"
+                  theme="neutral"
+                >
+                  {deploy?.oci_artifact?.tag}
+                </Text>
               </OCIArtifactCard>
             </LabeledValue>
           ) : null}

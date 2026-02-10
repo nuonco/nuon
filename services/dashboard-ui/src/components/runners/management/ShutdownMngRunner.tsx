@@ -9,19 +9,15 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { trackEvent } from '@/lib/segment-analytics'
 
-export const ShutdownMngRunnerButton = ({
-  runnerId,
-  ...props
-}: IButtonAsButton & {
-  runnerId: string
-}) => {
+export const ShutdownMngRunnerButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <ShutdownMngRunnerModal runnerId={runnerId} />
+  const modal = <ShutdownMngRunnerModal />
   return (
     <Button
       onClick={() => {
@@ -36,15 +32,12 @@ export const ShutdownMngRunnerButton = ({
   )
 }
 
-export const ShutdownMngRunnerModal = ({
-  runnerId,
-  ...props
-}: IModal & {
-  runnerId: string
-}) => {
+export const ShutdownMngRunnerModal = ({ ...props }: IModal) => {
   const { user } = useAuth()
   const { org } = useOrg()
+  const { runner } = useRunner()
   const { removeModal } = useSurfaces()
+  const runnerId = runner?.id
 
   const {
     data: isShutdown,
