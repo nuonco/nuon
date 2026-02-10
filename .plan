@@ -1,0 +1,289 @@
+# Plan: Add GCP as a Third Supported Cloud Platform
+
+## Overview
+
+Add GCP (Google Cloud Platform) support to the Nuon BYOC platform, following the same patterns established by AWS and Azure. This involves changes across three main components: **ctl-api**, **dashboard-ui**, and **runner**.
+
+---
+
+## Phase 1: Core Data Models & Types (ctl-api)
+
+### 1.1 CloudPlatform enum & GCP regions
+**File:** `services/ctl-api/internal/app/cloud_platform.go`
+- Add `CloudPlatformGCP CloudPlatform = "gcp"` constant
+- Add `gcpRegions()` method returning GCP region list (~40 regions: us-central1, us-east1, europe-west1, asia-east1, etc.)
+- Update `Regions()` switch to handle `CloudPlatformGCP`
+- Update `NewCloudPlatform()` to accept `"gcp"`
+
+### 1.2 GCPAccount model
+**New file:** `services/ctl-api/internal/app/gcp_account.go`
+- Create `GCPAccount` struct following `AzureAccount` pattern with fields:
+  - Standard audit fields (ID, CreatedByID, CreatedAt, UpdatedAt, DeletedAt)
+  - `OrgID`, `InstallID` (tenant isolation)
+  - `Region` (string) - GCP region
+  - `ProjectID` (string) - GCP project ID
+- Add `BeforeCreate` hook using `domains.NewGCPAccountID()`
+- Add `Indexes` method for `org_id`
+
+### 1.3 Short ID domain
+**File:** `pkg/shortid/domains/domains.go`
+- Add `NewGCPAccountID()` returning `shortid.NewNanoID("gcp")`
+
+### 1.4 Install model
+**File:** `services/ctl-api/internal/app/install.go`
+- Add `GCPAccount *GCPAccount` pointer with `gorm:"constraint:OnDelete:CASCADE;"` (alongside AWSAccount and AzureAccount)
+
+### 1.5 AppRunnerConfig types
+**File:** `services/ctl-api/internal/app/app_runner_config.go`
+- Add `AppRunnerTypeGCP AppRunnerType = "gcp"`
+- Update `JobType()` switch: `AppRunnerTypeGCP` → `RunnerJobTypeRunnerLocal` (same as AWS independent runners)
+- Update `AfterQuery` switch: `AppRunnerTypeGCP` → `CloudPlatformGCP`
+
+### 1.6 GCPStackOutputs
+**File:** `services/ctl-api/internal/app/install_stack_outputs.go`
+- Add `GCPStackOutputs` struct with fields:
+  - `ProjectID`, `Region`
+  - `NetworkID`, `NetworkName` (VPC)
+  - `PublicSubnetIDs[]`, `PublicSubnetNames[]`
+  - `PrivateSubnetIDs[]`, `PrivateSubnetNames[]`
+  - `ServiceAccountEmail` (for workload identity)
+- Add `GCPStackOutputs *GCPStackOutputs` pointer to `InstallStackOutputs`
+- Update `AfterQuery` to detect GCP outputs (e.g., by `project_id` key presence)
+
+### 1.7 State types
+**File:** `pkg/types/state/cloud_account.go`
+- Add `GCPCloudAccount` struct with `Region string` and `ProjectID string`
+- Add `GCP *GCPCloudAccount` pointer to `CloudAccount`
+
+---
+
+## Phase 2: API & Workflow Logic (ctl-api)
+
+### 2.1 Install creation
+**File:** `services/ctl-api/internal/app/installs/helpers/create_install.go`
+- Add `GCPAccount *struct { Region string; ProjectID string }` to `CreateInstallParams`
+- Update validation: mutual exclusivity among AWS, Azure, **and** GCP
+
+**File:** `services/ctl-api/internal/app/installs/service/create_install.go`
+- Handle GCPAccount in the install creation flow (create GCPAccount record, create InstallStack)
+
+### 2.2 State conversion
+**File:** `services/ctl-api/internal/app/installs/worker/state/state_cloud.go`
+- Add GCP branch: if `install.GCPAccount != nil`, populate `st.GCP = &state.GCPCloudAccount{...}`
+
+### 2.3 Stack version generation
+**File:** `services/ctl-api/internal/app/installs/worker/stack/generate_install_stack_version.go`
+- Add `app.AppRunnerTypeGCP` to the allowed runner types list
+- Add GCP branch in the region switch: `case install.GCPAccount != nil: region = install.GCPAccount.Region`
+- Add `case app.AppRunnerTypeGCP:` for template generation (Terraform-based, since GCP doesn't have a Bicep equivalent)
+- Create GCP Terraform template rendering (new package `services/ctl-api/internal/pkg/stacks/gcptf/`)
+- Add `DefaultGCPRunnerInitScript` constant
+
+### 2.4 GCP Terraform stack template
+**New package:** `services/ctl-api/internal/pkg/stacks/gcptf/`
+- Terraform template that provisions:
+  - VPC network with public/private subnets
+  - Cloud NAT + Cloud Router for egress
+  - Firewall rules
+  - Managed Instance Group (MIG) with runner VMs (e2-standard-2, Ubuntu 22.04)
+  - Service account with appropriate IAM roles (Editor, GKE Admin)
+  - Startup script that installs Docker and runs the Nuon runner
+  - Phone-home mechanism (HTTP POST via startup script, same pattern as AWS/Azure)
+- Accept same `stacks.TemplateInput` as AWS/Azure renderers
+
+### 2.5 Plan generation
+**File:** `services/ctl-api/internal/app/installs/worker/plan/plan_sandbox_run.go`
+- Add `GCPAuth *gcpcredentials.Config` to `getAuth()` return values
+- Add `case outputs.GCPStackOutputs != nil:` branch that constructs GCP credentials
+- Pass `GCPAuth` through to `SandboxRunPlan`
+- Add GCP-specific env vars to `getSandboxRunEnvVars` (e.g., `GOOGLE_REGION`)
+- Add GCP-specific terraform vars to `getSandboxRunTerraformVars`
+
+**File:** `services/ctl-api/internal/app/installs/worker/plan/plan_deploy_terraform_module.go`
+- Same pattern: add GCPAuth handling
+
+**File:** `services/ctl-api/internal/app/installs/worker/plan/kube_cluster_info.go`
+- Add GCP/GKE cluster info generation (endpoint, CA data, auth via gke-gcloud-auth-plugin)
+
+### 2.6 Plan types
+**File:** `pkg/plans/types/sandbox_run.go`
+- Add `GCPAuth *gcpcredentials.Config` field
+**File:** `pkg/plans/types/terraform_deploy_plan.go`
+- Add `GCPAuth *gcpcredentials.Config` field
+**File:** `pkg/plans/types/sync_secrets_plan.go`
+- Add `GCPAuth *gcpcredentials.Config` field
+**File:** `pkg/plans/types/action_workflow_run.go`
+- Add `GCPAuth *gcpcredentials.Config` field (if it has auth fields)
+
+### 2.7 Proto definitions
+**File:** `pkg/types/components/context/v1/install_context.proto`
+- Add `GcpAccount` message with: `region`, `project_id`, `service_account_key_json`
+- Add `GcpAccount gcp_account = 3;` to `InstallContext`
+- Regenerate proto Go code
+
+---
+
+## Phase 3: GCP Credentials & Auth (runner + pkg)
+
+### 3.1 GCP credentials package
+**New package:** `pkg/gcp/credentials/`
+- `config.go` — `Config` struct with `ProjectID`, `Region`, `ServiceAccountKeyJSON` (optional), `UseDefault bool`
+- `client.go` — Wraps Google Cloud's Application Default Credentials (ADC) via `google.FindDefaultCredentials()`
+- `fetch_env.go` — Maps credentials to env vars: `GOOGLE_PROJECT`, `GOOGLE_REGION`, `CLOUDSDK_CORE_PROJECT`; if service account key is provided, writes to temp file and sets `GOOGLE_APPLICATION_CREDENTIALS`
+
+### 3.2 Terraform auth integration
+**File:** `pkg/terraform/variables/auth/auth.go`
+- Add `GCPAuth *gcpcredentials.Config` field to `auth` struct
+- Add `WithGCPAuth()` option function
+
+**File:** `pkg/terraform/variables/auth/vars.go`
+- Add `case v.GCPAuth != nil:` branch that calls `gcpcredentials.FetchEnv()`
+
+### 3.3 Kubernetes (GKE) authentication
+**File:** `pkg/kube/cluster_info.go`
+- Add `GCPAuth *gcpcredentials.Config` to `ClusterInfo`
+- Add GCP branch in `ConfigForCluster()`: use `gke-gcloud-auth-plugin` as exec provider (same pattern as kubelogin for Azure)
+
+**File:** `pkg/kube/env.go`
+- Add GCP credential env vars merge
+
+### 3.4 OCI Registry — Google Artifact Registry
+**File:** `pkg/plugins/configs/registry_oci.go`
+- Add `OCIRegistryTypeGAR OCIRegistryType = "gar"` (Google Artifact Registry)
+- Add `GARAuth *gcpcredentials.Config` to `OCIRegistryRepository`
+
+**New package:** `bins/runner/internal/pkg/registry/gar/`
+- `fetch.go` — Implement GAR token fetch using ADC; username `"oauth2accesstoken"`, password from `credentials.TokenSource.Token()`
+
+### 3.5 Runner job integration
+**File:** `bins/runner/internal/jobs/sandbox/terraform/workspace.go`
+- Add `authvars.WithGCPAuth(plan.GCPAuth)` alongside AWS/Azure
+
+**File:** `bins/runner/internal/jobs/deploy/terraform/workspace.go`
+- Same: add `WithGCPAuth`
+
+**File:** `bins/runner/internal/jobs/sandbox/sync_secrets/sync_secret.go`
+- Add GCPAuth handling for Secret Manager access
+
+### 3.6 Runner Dockerfile
+**File:** Runner Dockerfile
+- Add `gke-gcloud-auth-plugin` installation (similar to `kubelogin` for Azure)
+- Add `gcloud` CLI minimal installation (for `gke-gcloud-auth-plugin`)
+
+---
+
+## Phase 4: Dashboard UI (dashboard-ui)
+
+### 4.1 Type definitions
+**File:** `services/dashboard-ui/src/types/dashboard.types.ts`
+- `TCloudPlatform` already includes `'gcp'` — no change needed
+
+### 4.2 GCP region config
+**File:** `services/dashboard-ui/src/configs/cloud-regions.ts`
+- Add `GCP_REGIONS` array with ~40 GCP regions (us-central1, us-east1, europe-west1, asia-east1, etc.) with display names, values, and flag icons
+
+### 4.3 Install creation form
+**File:** `services/dashboard-ui/src/components/installs/forms/shared/PlatformFields.tsx`
+- Import `GCP_REGIONS`
+- Add `GCPFields` component with a "Select GCP region" dropdown and "GCP Project ID" text input
+- Add `if (platform === 'gcp')` branch in `PlatformFields`
+
+### 4.4 Install creation server action
+**File:** `services/dashboard-ui/src/actions/apps/create-app-install.ts`
+- Add GCP handling: when `formData.gcp_region` exists, construct `gcp_account: { region, project_id }` in the body
+
+### 4.5 Display components
+**File:** `services/dashboard-ui/src/components/common/CloudPlatform.tsx`
+- Already has GCP config — no change needed
+
+**File:** `services/dashboard-ui/src/components/common/CloudRegion.tsx`
+- Add `'gcp'` to the platform union type
+- Import `GCP_REGIONS`
+- Add `platform === 'gcp'` branch using `region` field to look up display name
+
+### 4.6 Install tables
+**Files:** `AppInstallsTable.tsx`, `InstallsTable.tsx`
+- Update platform detection: `install?.aws_account ? 'aws' : install?.azure_account ? 'azure' : install?.gcp_account ? 'gcp' : 'unknown'`
+
+### 4.7 Deployment instructions
+**New component:** `services/dashboard-ui/src/components/workflows/step-details/stack-details/AwaitGCPDetails.tsx`
+- Show GCP CLI commands for stack provisioning: `gcloud auth login`, `gcloud deployment-manager deployments create ...` (or Terraform init instructions)
+- Wire into stack step details switcher
+
+### 4.8 API types
+**File:** `services/dashboard-ui/src/types/ctl-api.types.ts` (or auto-generated from OpenAPI)
+- Add `TInstallGcpAccount` type
+
+---
+
+## Phase 5: SDK & Code Generation
+
+### 5.1 Swagger annotations
+- Add GCP-related types to Swagger/OpenAPI annotations on endpoints
+
+### 5.2 Code generation
+```bash
+go generate ./services/ctl-api/...
+go generate ./sdks/nuon-go/...
+go generate ./sdks/nuon-runner-go/...
+```
+- This regenerates SDK models (`AppCloudPlatform`, `GCPAccount`, etc.)
+- Regenerates Temporal activity/workflow wrappers
+
+### 5.3 CLI support
+**File:** `bins/cli/` — Update `nuon installs create` to accept `--gcp-region` and `--gcp-project-id` flags
+
+---
+
+## Phase 6: Validation & Testing
+
+### 6.1 Azure settings validation analog
+**File:** `pkg/workflows/types/executors/shared_azure.go` → create `shared_gcp.go`
+- Add `GCPSettings` struct with region validation against known GCP regions
+
+### 6.2 Integration tests
+- Add GCP install creation test
+- Add GCP stack generation test
+- Add GCP auth credentials test
+
+### 6.3 SDK tests
+- Ensure generated SDK models include GCP types
+
+---
+
+## File Change Summary
+
+| Category | Files to Modify | New Files |
+|----------|----------------|-----------|
+| **Data Models** | `cloud_platform.go`, `install.go`, `install_stack_outputs.go`, `app_runner_config.go`, `domains.go` | `gcp_account.go` |
+| **State/Plans** | `state_cloud.go`, `cloud_account.go`, `sandbox_run.go`, `terraform_deploy_plan.go`, `sync_secrets_plan.go` | — |
+| **Workflows** | `generate_install_stack_version.go`, `plan_sandbox_run.go`, `plan_deploy_terraform_module.go`, `kube_cluster_info.go` | — |
+| **GCP Stack** | — | `services/ctl-api/internal/pkg/stacks/gcptf/` (template + render) |
+| **Install API** | `create_install.go` (helpers + service) | — |
+| **Auth/Creds** | `auth.go`, `vars.go`, `cluster_info.go`, `env.go`, `registry_oci.go` | `pkg/gcp/credentials/`, `bins/runner/internal/pkg/registry/gar/` |
+| **Runner Jobs** | `workspace.go` (sandbox + deploy), `sync_secret.go`, `env.go` | — |
+| **Proto** | `install_context.proto` | — |
+| **Dashboard** | `PlatformFields.tsx`, `CloudRegion.tsx`, `create-app-install.ts`, install tables, `cloud-regions.ts` | `AwaitGCPDetails.tsx`, GCP region config |
+| **Dockerfile** | Runner Dockerfile | — |
+| **SDKs** | Auto-generated after `go generate` | — |
+
+---
+
+## Implementation Order
+
+1. **Phase 1** (Core models) — Foundation, everything else depends on this
+2. **Phase 3.1** (GCP credentials package) — Needed before workflow/plan changes
+3. **Phase 2** (API & workflows) — Backend logic
+4. **Phase 3.2-3.6** (Runner integration) — Runner can execute GCP workloads
+5. **Phase 4** (Dashboard UI) — Users can create GCP installs
+6. **Phase 5** (SDK & codegen) — Generated clients stay in sync
+7. **Phase 6** (Testing) — Validate end-to-end
+
+## Key Design Decisions
+
+- **Mutual exclusivity**: Install gets exactly one of `AWSAccount`, `AzureAccount`, or `GCPAccount` (extend existing validation)
+- **Terraform for IaC**: GCP stack uses Terraform (not CloudFormation or Bicep), uploaded to S3 same as others
+- **Application Default Credentials**: GCP auth uses ADC with optional service account key JSON, matching the pattern where Azure uses `DefaultAzureCredential`
+- **GKE auth**: Uses `gke-gcloud-auth-plugin` exec provider, same pattern as `kubelogin` for AKS
+- **Artifact Registry**: New `gar` registry type alongside `ecr` and `acr`
+- **Phone-home**: GCP runner VMs use startup script to POST outputs back to the API (same mechanism as AWS/Azure)
