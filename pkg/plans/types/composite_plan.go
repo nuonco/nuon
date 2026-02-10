@@ -60,8 +60,7 @@ func (cp CompositePlan) IsEmpty() bool {
 		cp.SyncSecretsPlan == nil &&
 		cp.SyncOCIPlan == nil &&
 		cp.FetchImageMetadataPlan == nil &&
-		cp.SandboxRunPlan == nil &&
-		cp.Auth == nil
+		cp.SandboxRunPlan == nil
 }
 
 func (cp *CompositePlan) Scan(value any) error {

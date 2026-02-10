@@ -18,7 +18,6 @@ import (
 //
 // swagger:model plantypes.SandboxRunPlan
 type PlantypesSandboxRunPlan struct {
-
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
@@ -29,7 +28,7 @@ type PlantypesSandboxRunPlan struct {
 	ApplyPlanContents string `json:"apply_plan_contents,omitempty"`
 
 	// This field is for storing a human legible plan or corollary representation
-	ApplyPlanDisplay []int64 `json:"apply_plan_display"`
+	ApplyPlanDisplay string `json:"apply_plan_display"`
 
 	// aws auth
 	AwsAuth *GithubComNuoncoNuonPkgAwsCredentialsConfig `json:"aws_auth,omitempty"`
@@ -340,7 +339,6 @@ func (m *PlantypesSandboxRunPlan) ContextValidate(ctx context.Context, formats s
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateAwsAuth(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.AwsAuth != nil {
 
 		if swag.IsZero(m.AwsAuth) { // not required
@@ -365,7 +363,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateAwsAuth(ctx context.Context, fo
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateAzureAuth(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.AzureAuth != nil {
 
 		if swag.IsZero(m.AzureAuth) { // not required
@@ -390,7 +387,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateAzureAuth(ctx context.Context, 
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateGitSource(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.GitSource != nil {
 
 		if swag.IsZero(m.GitSource) { // not required
@@ -415,7 +411,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateGitSource(ctx context.Context, 
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateHooks(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.Hooks != nil {
 
 		if swag.IsZero(m.Hooks) { // not required
@@ -440,7 +435,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateHooks(ctx context.Context, form
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateLocalArchive(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.LocalArchive != nil {
 
 		if swag.IsZero(m.LocalArchive) { // not required
@@ -465,7 +459,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateLocalArchive(ctx context.Contex
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateSandboxMode(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.SandboxMode != nil {
 
 		if swag.IsZero(m.SandboxMode) { // not required
@@ -490,7 +483,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateSandboxMode(ctx context.Context
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateState(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.State != nil {
 
 		if swag.IsZero(m.State) { // not required
@@ -515,7 +507,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateState(ctx context.Context, form
 }
 
 func (m *PlantypesSandboxRunPlan) contextValidateTerraformBackend(ctx context.Context, formats strfmt.Registry) error {
-
 	if m.TerraformBackend != nil {
 
 		if swag.IsZero(m.TerraformBackend) { // not required

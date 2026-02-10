@@ -93,7 +93,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
 		runPlan.ApplyPlanContents = planJob.Execution.Result.Contents
-		runPlan.ApplyPlanDisplay = planJob.Execution.Result.ContentsDisplay
+		runPlan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
 	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
 		l.Info(
 			"using the compressed contents from the runner job execution result",
@@ -114,7 +114,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents display bytes")
 		}
-		runPlan.ApplyPlanDisplay = applyPlanContentsDisplay
+		runPlan.ApplyPlanDisplay = string(applyPlanContentsDisplay)
 	}
 
 	planJSON, err := json.Marshal(runPlan)
