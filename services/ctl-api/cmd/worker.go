@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -10,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/profiles"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
+	"github.com/nuonco/nuon/services/ctl-api/internal/health"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 )
 
@@ -95,6 +97,21 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	if (namespace == "all" || namespace == "actions") && !shouldSkipNamespace("actions") {
 		providers = append(providers, fxmodules.ActionsWorkerModule)
 	}
+
+	// Add worker healthcheck server
+	providers = append(providers,
+		fx.Provide(health.NewWorkerHealthcheck),
+		fx.Invoke(func(lc fx.Lifecycle, hc *health.WorkerHealthcheckServer) {
+			lc.Append(fx.Hook{
+				OnStart: func(_ context.Context) error {
+					return hc.Start()
+				},
+				OnStop: func(ctx context.Context) error {
+					return hc.Stop(ctx)
+				},
+			})
+		}),
+	)
 
 	// Add final invocations
 	providers = append(providers,

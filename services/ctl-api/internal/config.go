@@ -20,6 +20,8 @@ func init() {
 	config.RegisterDefault("runner_http_port", "8083")
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8085")
+	config.RegisterDefault("worker_healthcheck_port", "8086")
+	config.RegisterDefault("worker_healthcheck_enabled", true)
 
 	// defaults for psql database
 	config.RegisterDefault("db_region", "us-west-2")
@@ -104,6 +106,9 @@ type Config struct {
 	RunnerHTTPPort         string `config:"runner_http_port" validate:"required"`
 	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
+
+	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
+	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
 
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
