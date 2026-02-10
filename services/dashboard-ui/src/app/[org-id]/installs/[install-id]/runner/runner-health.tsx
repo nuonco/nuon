@@ -19,7 +19,6 @@ export async function RunnerHealth({
     <RunnerHealthCard
       className="flex-auto"
       initHealthchecks={healthchecks}
-      runnerId={runnerId}
       shouldPoll
     />
   ) : (

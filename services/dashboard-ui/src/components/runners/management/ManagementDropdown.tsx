@@ -4,25 +4,25 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { useRunner } from '@/hooks/use-runner'
 import { UpdateRunnerButton } from './UpdateRunner'
 import { ShutdownRunnerButton } from './ShutdownRunner'
 import { ShutdownMngRunnerButton } from './ShutdownMngRunner'
 import { ShutdownInstanceButton } from './ShutdownInstance'
 import { DeprovisionRunnerButton } from './DeprovisionRunner'
 import { PruneRunnerTokensButton } from './PruneRunnerTokens'
-import type { TRunner, TRunnerSettings } from '@/types'
+import type { TRunnerSettings } from '@/types'
 
 export const ManagementDropdown = ({
   isInstallRunner = false,
   isManagedRunner = false,
-  runner,
   settings,
 }: {
   isInstallRunner?: boolean
   isManagedRunner?: boolean
-  runner: TRunner
   settings: TRunnerSettings
 }) => {
+  const { runner } = useRunner()
   return (
     <Dropdown
       id={`runner-${runner.id}-mgmt`}
@@ -37,26 +37,20 @@ export const ManagementDropdown = ({
       <Menu>
         <Text>Controls</Text>
         {settings ? (
-          <UpdateRunnerButton
-            runnerId={runner.id}
-            settings={settings}
-            isMenuButton
-          />
+          <UpdateRunnerButton settings={settings} isMenuButton />
         ) : null}
 
         {isInstallRunner && isManagedRunner ? (
-          <ShutdownMngRunnerButton runnerId={runner.id} isMenuButton />
+          <ShutdownMngRunnerButton isMenuButton />
         ) : (
-          <ShutdownRunnerButton runnerId={runner.id} isMenuButton />
+          <ShutdownRunnerButton isMenuButton />
         )}
 
         {isInstallRunner && isManagedRunner ? (
-          <ShutdownInstanceButton runnerId={runner.id} isMenuButton />
+          <ShutdownInstanceButton isMenuButton />
         ) : null}
 
-        {isInstallRunner ? (
-          <PruneRunnerTokensButton runnerId={runner.id} isMenuButton />
-        ) : null}
+        {isInstallRunner ? <PruneRunnerTokensButton isMenuButton /> : null}
 
         {isInstallRunner && <hr />}
 
