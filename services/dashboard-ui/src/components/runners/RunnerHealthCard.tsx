@@ -6,26 +6,26 @@ import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TRunnerHealthCheck } from '@/types'
 import { cn } from '@/utils/classnames'
 
 interface IRunnerHealthCard extends Omit<ICard, 'children'>, IPollingProps {
-  runnerId: string
   initHealthchecks: TRunnerHealthCheck[]
 }
 
 export const RunnerHealthCard = ({
   className,
   initHealthchecks,
-  runnerId,
   shouldPoll = false,
   pollInterval = 60000,
   ...props
 }: IRunnerHealthCard) => {
   const { org } = useOrg()
+  const { runner } = useRunner()
   const { data: healthchecks, error } = usePolling<TRunnerHealthCheck[]>({
-    path: `/api/orgs/${org?.id}/runners/${runnerId}/health-checks`,
+    path: `/api/orgs/${org?.id}/runners/${runner?.id}/health-checks`,
     shouldPoll,
     initData: initHealthchecks,
     pollInterval,
