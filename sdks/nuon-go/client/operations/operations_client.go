@@ -5005,7 +5005,7 @@ func (a *Client) GetAppBreakGlassConfig(params *GetAppBreakGlassConfigParams, au
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppBreakGlassConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/break-glass-configs/{app_break_glass_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/break-glass-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -6023,7 +6023,7 @@ func (a *Client) GetAppPermissionsConfig(params *GetAppPermissionsConfigParams, 
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppPermissionsConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/permissions-configs/{app_permissions_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/permissions-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -6069,7 +6069,7 @@ func (a *Client) GetAppPoliciesConfig(params *GetAppPoliciesConfigParams, authIn
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppPoliciesConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/policies-configs/{app_policies_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/policies-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

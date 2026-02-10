@@ -61,17 +61,17 @@ GetAppBreakGlassConfigParams contains all the parameters to send to the API endp
 */
 type GetAppBreakGlassConfigParams struct {
 
-	/* AppBreakGlassConfigID.
-
-	   app break glass config ID
-	*/
-	AppBreakGlassConfigID string
-
 	/* AppID.
 
 	   app ID
 	*/
 	AppID string
+
+	/* ConfigID.
+
+	   app break glass config ID
+	*/
+	ConfigID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -126,17 +126,6 @@ func (o *GetAppBreakGlassConfigParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithAppBreakGlassConfigID adds the appBreakGlassConfigID to the get app break glass config params
-func (o *GetAppBreakGlassConfigParams) WithAppBreakGlassConfigID(appBreakGlassConfigID string) *GetAppBreakGlassConfigParams {
-	o.SetAppBreakGlassConfigID(appBreakGlassConfigID)
-	return o
-}
-
-// SetAppBreakGlassConfigID adds the appBreakGlassConfigId to the get app break glass config params
-func (o *GetAppBreakGlassConfigParams) SetAppBreakGlassConfigID(appBreakGlassConfigID string) {
-	o.AppBreakGlassConfigID = appBreakGlassConfigID
-}
-
 // WithAppID adds the appID to the get app break glass config params
 func (o *GetAppBreakGlassConfigParams) WithAppID(appID string) *GetAppBreakGlassConfigParams {
 	o.SetAppID(appID)
@@ -148,6 +137,17 @@ func (o *GetAppBreakGlassConfigParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithConfigID adds the configID to the get app break glass config params
+func (o *GetAppBreakGlassConfigParams) WithConfigID(configID string) *GetAppBreakGlassConfigParams {
+	o.SetConfigID(configID)
+	return o
+}
+
+// SetConfigID adds the configId to the get app break glass config params
+func (o *GetAppBreakGlassConfigParams) SetConfigID(configID string) {
+	o.ConfigID = configID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetAppBreakGlassConfigParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -156,13 +156,13 @@ func (o *GetAppBreakGlassConfigParams) WriteToRequest(r runtime.ClientRequest, r
 	}
 	var res []error
 
-	// path param app_break_glass_config_id
-	if err := r.SetPathParam("app_break_glass_config_id", o.AppBreakGlassConfigID); err != nil {
+	// path param app_id
+	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
 	}
 
-	// path param app_id
-	if err := r.SetPathParam("app_id", o.AppID); err != nil {
+	// path param config_id
+	if err := r.SetPathParam("config_id", o.ConfigID); err != nil {
 		return err
 	}
 

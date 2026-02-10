@@ -61,7 +61,7 @@ func (s *service) GetInstallActionRunStep(ctx *gin.Context) {
 // @Success				200	{object}	app.InstallActionWorkflowRunStep
 // @Router					/v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id} [get]
 func (s *service) GetInstallActionWorkflowRunStep(ctx *gin.Context) {
-	workflowRunID := ctx.Param("workflow_run_id")
+	workflowRunID := ctx.Param("run_id")
 	stepID := ctx.Param("step_id")
 	installID := ctx.Param("install_id")
 
