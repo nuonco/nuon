@@ -11,19 +11,19 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-func TestValidateAdditionalNestedStackOutputs_NilStack(t *testing.T) {
-	err := ValidateAdditionalNestedStackOutputs(&config.AppConfig{})
+func TestValidateCustomNestedStackOutputs_NilStack(t *testing.T) {
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{})
 	assert.NoError(t, err)
 }
 
-func TestValidateAdditionalNestedStackOutputs_NoAdditionalStacks(t *testing.T) {
-	err := ValidateAdditionalNestedStackOutputs(&config.AppConfig{
+func TestValidateCustomNestedStackOutputs_NoAdditionalStacks(t *testing.T) {
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
 		Stack: &config.StackConfig{},
 	})
 	assert.NoError(t, err)
 }
 
-func TestValidateAdditionalNestedStackOutputs_NoCollisions(t *testing.T) {
+func TestValidateCustomNestedStackOutputs_NoCollisions(t *testing.T) {
 	templateA := `
 AWSTemplateFormatVersion: '2010-09-09'
 Outputs:
@@ -46,9 +46,9 @@ Outputs:
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	err := ValidateAdditionalNestedStackOutputs(&config.AppConfig{
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
 		Stack: &config.StackConfig{
-			AdditionalNestedStacks: []config.AdditionalNestedStack{
+			CustomNestedStacks: []config.CustomNestedStack{
 				{Name: "stack_a", TemplateURL: server.URL + "/a.yaml", Index: 0},
 				{Name: "stack_b", TemplateURL: server.URL + "/b.yaml", Index: 1},
 			},
@@ -57,7 +57,7 @@ Outputs:
 	assert.NoError(t, err)
 }
 
-func TestValidateAdditionalNestedStackOutputs_CollisionBetweenAdditionalStacks(t *testing.T) {
+func TestValidateCustomNestedStackOutputs_CollisionBetweenAdditionalStacks(t *testing.T) {
 	templateA := `
 AWSTemplateFormatVersion: '2010-09-09'
 Outputs:
@@ -80,9 +80,9 @@ Outputs:
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	err := ValidateAdditionalNestedStackOutputs(&config.AppConfig{
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
 		Stack: &config.StackConfig{
-			AdditionalNestedStacks: []config.AdditionalNestedStack{
+			CustomNestedStacks: []config.CustomNestedStack{
 				{Name: "stack_a", TemplateURL: server.URL + "/a.yaml", Index: 0},
 				{Name: "stack_b", TemplateURL: server.URL + "/b.yaml", Index: 1},
 			},
@@ -95,7 +95,7 @@ Outputs:
 	assert.Contains(t, err.Error(), "stack_b")
 }
 
-func TestValidateAdditionalNestedStackOutputs_CollisionWithFirstClass(t *testing.T) {
+func TestValidateCustomNestedStackOutputs_CollisionWithFirstClass(t *testing.T) {
 	vpcTemplate := `
 AWSTemplateFormatVersion: '2010-09-09'
 Outputs:
@@ -120,10 +120,10 @@ Outputs:
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	err := ValidateAdditionalNestedStackOutputs(&config.AppConfig{
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
 		Stack: &config.StackConfig{
 			VPCNestedTemplateURL: server.URL + "/vpc.yaml",
-			AdditionalNestedStacks: []config.AdditionalNestedStack{
+			CustomNestedStacks: []config.CustomNestedStack{
 				{Name: "my_stack", TemplateURL: server.URL + "/additional.yaml", Index: 0},
 			},
 		},
@@ -134,10 +134,10 @@ Outputs:
 	assert.Contains(t, err.Error(), "first-class output will take precedence")
 }
 
-func TestValidateAdditionalNestedStackOutputs_UnfetchableTemplateSkipped(t *testing.T) {
-	err := ValidateAdditionalNestedStackOutputs(&config.AppConfig{
+func TestValidateCustomNestedStackOutputs_UnfetchableTemplateSkipped(t *testing.T) {
+	err := ValidateCustomNestedStackOutputs(&config.AppConfig{
 		Stack: &config.StackConfig{
-			AdditionalNestedStacks: []config.AdditionalNestedStack{
+			CustomNestedStacks: []config.CustomNestedStack{
 				{Name: "my_stack", TemplateURL: "http://invalid.localhost.test/stack.yaml", Index: 0},
 			},
 		},

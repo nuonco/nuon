@@ -46,7 +46,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 
 	paramlabels := map[string]any{}
 
-	// build roles (before additional nested stacks so they can depend on them)
+	// build roles (before custom nested stacks so they can depend on them)
 	roles := t.getRolesResources(inp, tb)
 	maps.Copy(tmpl.Resources, roles)
 	roleParams := t.getRolesParameters(inp)
@@ -56,19 +56,19 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	roleParamLabels := t.getRolesParamLabels(inp)
 	maps.Copy(paramlabels, roleParamLabels)
 
-	// additional custom nested stacks
+	// custom nested stacks
 	existingResourceKeys := map[string]bool{}
 	for k := range tmpl.Resources {
 		existingResourceKeys[k] = true
 	}
-	additionalResult, err := t.getAdditionalNestedStacks(inp, tb, existingResourceKeys)
+	customResult, err := t.getCustomNestedStacks(inp, tb, existingResourceKeys)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range additionalResult.resources {
+	for k, v := range customResult.resources {
 		tmpl.Resources[k] = v
 	}
-	maps.Copy(tmpl.Parameters, additionalResult.params)
+	maps.Copy(tmpl.Parameters, customResult.params)
 
 	// build secrets
 	secrets := t.getSecretsResources(inp, tb)
@@ -121,8 +121,8 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		})
 	}
 
-	// add additional nested stack parameter groups
-	pgs = append(pgs, additionalResult.paramGroups...)
+	// add custom nested stack parameter groups
+	pgs = append(pgs, customResult.paramGroups...)
 
 	tmpl.Metadata["AWS::CloudFormation::Interface"] = map[string]any{
 		"ParameterLabels": paramlabels,

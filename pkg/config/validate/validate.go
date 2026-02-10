@@ -58,7 +58,7 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		},
 
 		func() error {
-			return ValidateAdditionalNestedStackOutputs(a)
+			return ValidateCustomNestedStackOutputs(a)
 		},
 	}
 

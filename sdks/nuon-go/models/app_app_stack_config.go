@@ -20,9 +20,6 @@ import (
 // swagger:model app.AppStackConfig
 type AppAppStackConfig struct {
 
-	// additional nested stacks
-	AdditionalNestedStacks []*ConfigAdditionalNestedStack `json:"additional_nested_stacks"`
-
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
@@ -34,6 +31,9 @@ type AppAppStackConfig struct {
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
+
+	// custom nested stacks
+	CustomNestedStacks []*ConfigCustomNestedStack `json:"custom_nested_stacks"`
 
 	// description
 	Description string `json:"description,omitempty"`
@@ -64,7 +64,7 @@ type AppAppStackConfig struct {
 func (m *AppAppStackConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAdditionalNestedStacks(formats); err != nil {
+	if err := m.validateCustomNestedStacks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -78,25 +78,25 @@ func (m *AppAppStackConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppAppStackConfig) validateAdditionalNestedStacks(formats strfmt.Registry) error {
-	if swag.IsZero(m.AdditionalNestedStacks) { // not required
+func (m *AppAppStackConfig) validateCustomNestedStacks(formats strfmt.Registry) error {
+	if swag.IsZero(m.CustomNestedStacks) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.AdditionalNestedStacks); i++ {
-		if swag.IsZero(m.AdditionalNestedStacks[i]) { // not required
+	for i := 0; i < len(m.CustomNestedStacks); i++ {
+		if swag.IsZero(m.CustomNestedStacks[i]) { // not required
 			continue
 		}
 
-		if m.AdditionalNestedStacks[i] != nil {
-			if err := m.AdditionalNestedStacks[i].Validate(formats); err != nil {
+		if m.CustomNestedStacks[i] != nil {
+			if err := m.CustomNestedStacks[i].Validate(formats); err != nil {
 				ve := new(errors.Validation)
 				if stderrors.As(err, &ve) {
-					return ve.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+					return ve.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
 				}
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
-					return ce.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+					return ce.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
 				}
 
 				return err
@@ -133,7 +133,7 @@ func (m *AppAppStackConfig) validateType(formats strfmt.Registry) error {
 func (m *AppAppStackConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateAdditionalNestedStacks(ctx, formats); err != nil {
+	if err := m.contextValidateCustomNestedStacks(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -147,24 +147,24 @@ func (m *AppAppStackConfig) ContextValidate(ctx context.Context, formats strfmt.
 	return nil
 }
 
-func (m *AppAppStackConfig) contextValidateAdditionalNestedStacks(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppAppStackConfig) contextValidateCustomNestedStacks(ctx context.Context, formats strfmt.Registry) error {
 
-	for i := 0; i < len(m.AdditionalNestedStacks); i++ {
+	for i := 0; i < len(m.CustomNestedStacks); i++ {
 
-		if m.AdditionalNestedStacks[i] != nil {
+		if m.CustomNestedStacks[i] != nil {
 
-			if swag.IsZero(m.AdditionalNestedStacks[i]) { // not required
+			if swag.IsZero(m.CustomNestedStacks[i]) { // not required
 				return nil
 			}
 
-			if err := m.AdditionalNestedStacks[i].ContextValidate(ctx, formats); err != nil {
+			if err := m.CustomNestedStacks[i].ContextValidate(ctx, formats); err != nil {
 				ve := new(errors.Validation)
 				if stderrors.As(err, &ve) {
-					return ve.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+					return ve.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
 				}
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
-					return ce.ValidateName("additional_nested_stacks" + "." + strconv.Itoa(i))
+					return ce.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
 				}
 
 				return err

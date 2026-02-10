@@ -8,24 +8,24 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-type AdditionalNestedStack struct {
+type CustomNestedStack struct {
 	Name        string            `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
 	TemplateURL string            `mapstructure:"template_url" toml:"template_url" json:"template_url" jsonschema:"required" features:"template"`
 	Index       int               `mapstructure:"index" toml:"index" json:"index" jsonschema:"required"`
 	Parameters  map[string]string `mapstructure:"parameters" toml:"parameters" json:"parameters,omitempty"`
 }
 
-func (a AdditionalNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
+func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("name").Short("nested stack name").Required().
-		Long("Unique name for this additional nested stack. Used as the CloudFormation logical ID and parameter group label.").
+		Long("Unique name for this custom nested stack. Used as the CloudFormation logical ID and parameter group label.").
 		Example("k8s_namespaces").
 		Example("eks_access_entries").
 		Field("template_url").Short("nested stack template URL").Required().
 		Long("URL to the CloudFormation nested template. Parameters are extracted and hoisted into the parent stack.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/k8s-namespaces.yaml").
 		Field("index").Short("execution order index").Required().
-		Long("Determines the execution order of additional nested stacks (ascending). Each stack must have a unique index. Lower indices execute first.").
+		Long("Determines the execution order of custom nested stacks (ascending). Each stack must have a unique index. Lower indices execute first.").
 		Field("parameters").Short("parameter-to-input mappings").
 		Long("Map of CloudFormation parameter names to Nuon install input references. Values must use the template format {{.nuon.install.inputs.<input_name>}}. Only vendor-provided inputs are supported.").
 		Example("Namespaces = \"{{.nuon.install.inputs.namespaces}}\"")
@@ -39,7 +39,7 @@ type StackConfig struct {
 	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" features:"template"`
 	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" features:"template"`
 
-	AdditionalNestedStacks []AdditionalNestedStack `mapstructure:"additional_nested_stacks" toml:"additional_nested_stacks"`
+	CustomNestedStacks []CustomNestedStack `mapstructure:"custom_nested_stacks" toml:"custom_nested_stacks"`
 }
 
 func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -60,8 +60,8 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("runner_nested_template_url").Short("runner nested template URL").
 		Long("URL to the CloudFormation nested template for the Nuon runner infrastructure").
 		Example("https://s3.amazonaws.com/bucket/runner-template.yaml").
-		Field("additional_nested_stacks").Short("additional nested stacks").
-		Long("Additional CloudFormation nested stack templates to include. Each entry has a name, template_url, index, and optional parameters. The index field determines execution order (ascending). The parameters field maps CloudFormation parameter names to Nuon install input references using {{.nuon.install.inputs.<name>}} syntax. Remaining parameters are hoisted into a top-level group named after the stack. Executed after first-class nested stacks.").
+		Field("custom_nested_stacks").Short("custom nested stacks").
+		Long("Custom CloudFormation nested stack templates to include. Each entry has a name, template_url, index, and optional parameters. The index field determines execution order (ascending). The parameters field maps CloudFormation parameter names to Nuon install input references using {{.nuon.install.inputs.<name>}} syntax. Remaining parameters are hoisted into a top-level group named after the stack. Executed after first-class nested stacks.").
 		Nullable()
 }
 
@@ -120,27 +120,27 @@ func (a *StackConfig) parse() error {
 			return err
 		}
 	}
-	for i, stack := range a.AdditionalNestedStacks {
+	for i, stack := range a.CustomNestedStacks {
 		if stack.Name == "" {
 			return ErrConfig{
-				Description: fmt.Sprintf("additional_nested_stacks[%d]: name is required", i),
-				Err:         fmt.Errorf("additional_nested_stacks[%d]: name is required", i),
+				Description: fmt.Sprintf("custom_nested_stacks[%d]: name is required", i),
+				Err:         fmt.Errorf("custom_nested_stacks[%d]: name is required", i),
 			}
 		}
 		if stack.TemplateURL == "" {
 			return ErrConfig{
-				Description: fmt.Sprintf("additional_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
-				Err:         fmt.Errorf("additional_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
+				Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
+				Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
 			}
 		}
-		if err := ValidateTemplateURL(stack.TemplateURL, fmt.Sprintf("additional_nested_stacks[%d] (%s): template_url", i, stack.Name)); err != nil {
+		if err := ValidateTemplateURL(stack.TemplateURL, fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url", i, stack.Name)); err != nil {
 			return err
 		}
 		for paramName, paramValue := range stack.Parameters {
 			if _, err := ParseInstallInputReference(paramValue); err != nil {
 				return ErrConfig{
-					Description: fmt.Sprintf("additional_nested_stacks[%d] (%s): parameter %q: %s", i, stack.Name, paramName, err),
-					Err:         fmt.Errorf("additional_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, paramName, err),
+					Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): parameter %q: %s", i, stack.Name, paramName, err),
+					Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, paramName, err),
 				}
 			}
 		}

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStackConfig_Parse_NoAdditionalNestedStacks(t *testing.T) {
+func TestStackConfig_Parse_NoCustomNestedStacks(t *testing.T) {
 	cfg := &StackConfig{
 		Type:        "aws-cloudformation",
 		Name:        "my-stack",
@@ -16,22 +16,22 @@ func TestStackConfig_Parse_NoAdditionalNestedStacks(t *testing.T) {
 	require.NoError(t, cfg.parse())
 }
 
-func TestStackConfig_Parse_EmptyAdditionalNestedStacks(t *testing.T) {
+func TestStackConfig_Parse_EmptyCustomNestedStacks(t *testing.T) {
 	cfg := &StackConfig{
-		Type:                   "aws-cloudformation",
-		Name:                   "my-stack",
-		Description:            "test stack",
-		AdditionalNestedStacks: []AdditionalNestedStack{},
+		Type:               "aws-cloudformation",
+		Name:               "my-stack",
+		Description:        "test stack",
+		CustomNestedStacks: []CustomNestedStack{},
 	}
 	require.NoError(t, cfg.parse())
 }
 
-func TestStackConfig_Parse_ValidAdditionalNestedStacks(t *testing.T) {
+func TestStackConfig_Parse_ValidCustomNestedStacks(t *testing.T) {
 	cfg := &StackConfig{
 		Type:        "aws-cloudformation",
 		Name:        "my-stack",
 		Description: "test stack",
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{Name: "k8s_namespaces", TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml", Index: 0},
 		},
 	}
@@ -40,7 +40,7 @@ func TestStackConfig_Parse_ValidAdditionalNestedStacks(t *testing.T) {
 
 func TestStackConfig_Parse_MissingName(t *testing.T) {
 	cfg := &StackConfig{
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml", Index: 0},
 		},
 	}
@@ -51,7 +51,7 @@ func TestStackConfig_Parse_MissingName(t *testing.T) {
 
 func TestStackConfig_Parse_MissingTemplateURL(t *testing.T) {
 	cfg := &StackConfig{
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", Index: 0},
 		},
 	}
@@ -62,7 +62,7 @@ func TestStackConfig_Parse_MissingTemplateURL(t *testing.T) {
 
 func TestStackConfig_Parse_InvalidTemplateURL(t *testing.T) {
 	cfg := &StackConfig{
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", TemplateURL: "not-a-url", Index: 0},
 		},
 	}
@@ -73,7 +73,7 @@ func TestStackConfig_Parse_InvalidTemplateURL(t *testing.T) {
 
 func TestStackConfig_Parse_TemplateURLMissingScheme(t *testing.T) {
 	cfg := &StackConfig{
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", TemplateURL: "example.com/template.yaml", Index: 0},
 		},
 	}
@@ -84,7 +84,7 @@ func TestStackConfig_Parse_TemplateURLMissingScheme(t *testing.T) {
 
 func TestStackConfig_Parse_NonS3URL(t *testing.T) {
 	cfg := &StackConfig{
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", TemplateURL: "https://example.com/template.yaml", Index: 0},
 		},
 	}
@@ -95,7 +95,7 @@ func TestStackConfig_Parse_NonS3URL(t *testing.T) {
 
 func TestStackConfig_Parse_HttpS3URLRejected(t *testing.T) {
 	cfg := &StackConfig{
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", TemplateURL: "http://s3.amazonaws.com/bucket/template.yaml", Index: 0},
 		},
 	}
@@ -138,7 +138,7 @@ func TestStackConfig_Parse_ValidParameters(t *testing.T) {
 		Type:        "aws-cloudformation",
 		Name:        "my-stack",
 		Description: "test stack",
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{
 				Name:        "k8s_namespaces",
 				TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml",
@@ -155,7 +155,7 @@ func TestStackConfig_Parse_ValidParameters(t *testing.T) {
 
 func TestStackConfig_Parse_InvalidParameterValue(t *testing.T) {
 	cfg := &StackConfig{
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{
 				Name:        "my_stack",
 				TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml",
@@ -177,7 +177,7 @@ func TestStackConfig_Parse_EmptyParameters(t *testing.T) {
 		Type:        "aws-cloudformation",
 		Name:        "my-stack",
 		Description: "test stack",
-		AdditionalNestedStacks: []AdditionalNestedStack{
+		CustomNestedStacks: []CustomNestedStack{
 			{
 				Name:        "my_stack",
 				TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml",

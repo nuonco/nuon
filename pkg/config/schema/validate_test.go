@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-func TestValidate_StackWithoutAdditionalNestedStacks(t *testing.T) {
+func TestValidate_StackWithoutCustomNestedStacks(t *testing.T) {
 	cfg := &config.AppConfig{
 		Stack: &config.StackConfig{
 			Type:                    "aws-cloudformation",
@@ -25,12 +25,12 @@ func TestValidate_StackWithoutAdditionalNestedStacks(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, e := range errs {
-		assert.NotContains(t, e.String(), "additional_nested_stacks",
-			"additional_nested_stacks should not cause validation errors when omitted, got: %s", e.String())
+		assert.NotContains(t, e.String(), "custom_nested_stacks",
+			"custom_nested_stacks should not cause validation errors when omitted, got: %s", e.String())
 	}
 }
 
-func TestValidate_StackWithAdditionalNestedStacks(t *testing.T) {
+func TestValidate_StackWithCustomNestedStacks(t *testing.T) {
 	cfg := &config.AppConfig{
 		Stack: &config.StackConfig{
 			Type:                    "aws-cloudformation",
@@ -38,7 +38,7 @@ func TestValidate_StackWithAdditionalNestedStacks(t *testing.T) {
 			Description:             "test",
 			VPCNestedTemplateURL:    "https://example.com/vpc.yaml",
 			RunnerNestedTemplateURL: "https://example.com/runner.yaml",
-			AdditionalNestedStacks: []config.AdditionalNestedStack{
+			CustomNestedStacks: []config.CustomNestedStack{
 				{Name: "k8s_namespaces", TemplateURL: "https://example.com/ns.yaml", Index: 0},
 			},
 		},
@@ -48,7 +48,7 @@ func TestValidate_StackWithAdditionalNestedStacks(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, e := range errs {
-		assert.NotContains(t, e.String(), "additional_nested_stacks",
-			"additional_nested_stacks should not cause validation errors when valid, got: %s", e.String())
+		assert.NotContains(t, e.String(), "custom_nested_stacks",
+			"custom_nested_stacks should not cause validation errors when valid, got: %s", e.String())
 	}
 }

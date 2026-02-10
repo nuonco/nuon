@@ -9,9 +9,9 @@ import (
 )
 
 func (s sync) getAppStackRequest() *models.ServiceCreateAppStackConfigRequest {
-	var additionalNestedStacks []*models.ConfigAdditionalNestedStack
-	for _, stack := range s.cfg.Stack.AdditionalNestedStacks {
-		additionalNestedStacks = append(additionalNestedStacks, &models.ConfigAdditionalNestedStack{
+	var customNestedStacks []*models.ConfigCustomNestedStack
+	for _, stack := range s.cfg.Stack.CustomNestedStacks {
+		customNestedStacks = append(customNestedStacks, &models.ConfigCustomNestedStack{
 			Name:        stack.Name,
 			TemplateURL: stack.TemplateURL,
 			Index:       int64(stack.Index),
@@ -26,7 +26,7 @@ func (s sync) getAppStackRequest() *models.ServiceCreateAppStackConfigRequest {
 		RunnerNestedTemplateURL: s.cfg.Stack.RunnerNestedTemplateURL,
 		VpcNestedTemplateURL:    s.cfg.Stack.VPCNestedTemplateURL,
 		Type:                    generics.ToPtr(models.AppStackType(s.cfg.Stack.Type)),
-		AdditionalNestedStacks:  additionalNestedStacks,
+		CustomNestedStacks:      customNestedStacks,
 	}
 }
 

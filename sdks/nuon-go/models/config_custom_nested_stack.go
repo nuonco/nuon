@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ConfigAdditionalNestedStack config additional nested stack
+// ConfigCustomNestedStack config custom nested stack
 //
-// swagger:model config.AdditionalNestedStack
-type ConfigAdditionalNestedStack struct {
+// swagger:model config.CustomNestedStack
+type ConfigCustomNestedStack struct {
 
 	// index
 	Index int64 `json:"index,omitempty"`
@@ -30,18 +30,18 @@ type ConfigAdditionalNestedStack struct {
 	TemplateURL string `json:"template_url,omitempty"`
 }
 
-// Validate validates this config additional nested stack
-func (m *ConfigAdditionalNestedStack) Validate(formats strfmt.Registry) error {
+// Validate validates this config custom nested stack
+func (m *ConfigCustomNestedStack) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this config additional nested stack based on context it is used
-func (m *ConfigAdditionalNestedStack) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this config custom nested stack based on context it is used
+func (m *ConfigCustomNestedStack) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *ConfigAdditionalNestedStack) MarshalBinary() ([]byte, error) {
+func (m *ConfigCustomNestedStack) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -49,8 +49,8 @@ func (m *ConfigAdditionalNestedStack) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ConfigAdditionalNestedStack) UnmarshalBinary(b []byte) error {
-	var res ConfigAdditionalNestedStack
+func (m *ConfigCustomNestedStack) UnmarshalBinary(b []byte) error {
+	var res ConfigCustomNestedStack
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

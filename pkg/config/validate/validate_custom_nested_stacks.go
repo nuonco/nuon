@@ -46,14 +46,14 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 	return tmpl.Outputs, nil
 }
 
-func ValidateAdditionalNestedStackOutputs(a *config.AppConfig) error {
-	if a.Stack == nil || len(a.Stack.AdditionalNestedStacks) == 0 {
+func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
+	if a.Stack == nil || len(a.Stack.CustomNestedStacks) == 0 {
 		return nil
 	}
 
-	sorted := make([]config.AdditionalNestedStack, len(a.Stack.AdditionalNestedStacks))
-	copy(sorted, a.Stack.AdditionalNestedStacks)
-	slices.SortStableFunc(sorted, func(a, b config.AdditionalNestedStack) int {
+	sorted := make([]config.CustomNestedStack, len(a.Stack.CustomNestedStacks))
+	copy(sorted, a.Stack.CustomNestedStacks)
+	slices.SortStableFunc(sorted, func(a, b config.CustomNestedStack) int {
 		return a.Index - b.Index
 	})
 
@@ -90,12 +90,12 @@ func ValidateAdditionalNestedStackOutputs(a *config.AppConfig) error {
 		for outputName := range outputs {
 			if fcResource, exists := fcOutputs[outputName]; exists {
 				warnings = append(warnings, fmt.Sprintf(
-					"additional_nested_stacks (%s): output %q collides with %s stack output (first-class output will take precedence)",
+					"custom_nested_stacks (%s): output %q collides with %s stack output (first-class output will take precedence)",
 					stack.Name, outputName, fcResource,
 				))
 			} else if prevStack, exists := additionalOutputs[outputName]; exists {
 				warnings = append(warnings, fmt.Sprintf(
-					"additional_nested_stacks (%s): output %q also declared by stack %q (earlier stack output will be used)",
+					"custom_nested_stacks (%s): output %q also declared by stack %q (earlier stack output will be used)",
 					stack.Name, outputName, prevStack,
 				))
 			}
@@ -115,6 +115,6 @@ func ValidateAdditionalNestedStackOutputs(a *config.AppConfig) error {
 	return config.ErrConfig{
 		Description: strings.Join(warnings, "; "),
 		Warning:     true,
-		Err:         fmt.Errorf("additional nested stack output warnings: %s", strings.Join(warnings, "; ")),
+		Err:         fmt.Errorf("custom nested stack output warnings: %s", strings.Join(warnings, "; ")),
 	}
 }

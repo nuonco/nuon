@@ -18,7 +18,7 @@ import (
 
 var logicalIDRegexp = regexp.MustCompile(`[^A-Za-z0-9]`)
 
-type additionalNestedStackResult struct {
+type customNestedStackResult struct {
 	resources   map[string]*nestedcloudformation.Stack
 	params      map[string]cloudformation.Parameter
 	paramGroups []map[string]any
@@ -29,25 +29,25 @@ func sanitizeLogicalID(name string) string {
 	return logicalIDRegexp.ReplaceAllString(camel, "")
 }
 
-func (tpl *Templates) getAdditionalNestedStacks(inp *stacks.TemplateInput, t tagBuilder, existingResourceKeys map[string]bool) (*additionalNestedStackResult, error) {
-	if len(inp.AppCfg.StackConfig.AdditionalNestedStacks) == 0 {
-		return &additionalNestedStackResult{
+func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuilder, existingResourceKeys map[string]bool) (*customNestedStackResult, error) {
+	if len(inp.AppCfg.StackConfig.CustomNestedStacks) == 0 {
+		return &customNestedStackResult{
 			resources:   map[string]*nestedcloudformation.Stack{},
 			params:      map[string]cloudformation.Parameter{},
 			paramGroups: nil,
 		}, nil
 	}
 
-	sorted := make([]config.AdditionalNestedStack, len(inp.AppCfg.StackConfig.AdditionalNestedStacks))
-	copy(sorted, inp.AppCfg.StackConfig.AdditionalNestedStacks)
-	slices.SortStableFunc(sorted, func(a, b config.AdditionalNestedStack) int {
+	sorted := make([]config.CustomNestedStack, len(inp.AppCfg.StackConfig.CustomNestedStacks))
+	copy(sorted, inp.AppCfg.StackConfig.CustomNestedStacks)
+	slices.SortStableFunc(sorted, func(a, b config.CustomNestedStack) int {
 		return a.Index - b.Index
 	})
 
 	seenIndices := map[int]string{}
 	for _, stack := range sorted {
 		if prev, exists := seenIndices[stack.Index]; exists {
-			return nil, fmt.Errorf("additional_nested_stacks: duplicate index %d for stacks %q and %q", stack.Index, prev, stack.Name)
+			return nil, fmt.Errorf("custom_nested_stacks: duplicate index %d for stacks %q and %q", stack.Index, prev, stack.Name)
 		}
 		seenIndices[stack.Index] = stack.Name
 	}
@@ -57,7 +57,7 @@ func (tpl *Templates) getAdditionalNestedStacks(inp *stacks.TemplateInput, t tag
 		"RunnerAutoScalingGroup": inp.AppCfg.StackConfig.RunnerNestedTemplateURL,
 	})
 
-	result := &additionalNestedStackResult{
+	result := &customNestedStackResult{
 		resources: map[string]*nestedcloudformation.Stack{},
 		params:    map[string]cloudformation.Parameter{},
 	}
@@ -67,31 +67,31 @@ func (tpl *Templates) getAdditionalNestedStacks(inp *stacks.TemplateInput, t tag
 
 	for i, stack := range sorted {
 		if stack.Name == "" {
-			return nil, fmt.Errorf("additional_nested_stacks[%d]: name is required", i)
+			return nil, fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
 		}
 		if stack.TemplateURL == "" {
-			return nil, fmt.Errorf("additional_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
+			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
 		}
 
 		logicalID := sanitizeLogicalID(stack.Name)
 		if logicalID == "" {
-			return nil, fmt.Errorf("additional_nested_stacks[%d] (%s): name produces invalid CloudFormation logical ID", i, stack.Name)
+			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name produces invalid CloudFormation logical ID", i, stack.Name)
 		}
 		if existingResourceKeys[logicalID] {
-			return nil, fmt.Errorf("additional_nested_stacks[%d] (%s): logical ID %q conflicts with existing resource", i, stack.Name, logicalID)
+			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): logical ID %q conflicts with existing resource", i, stack.Name, logicalID)
 		}
 		if _, exists := result.resources[logicalID]; exists {
-			return nil, fmt.Errorf("additional_nested_stacks[%d] (%s): duplicate logical ID %q", i, stack.Name, logicalID)
+			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): duplicate logical ID %q", i, stack.Name, logicalID)
 		}
 
-		nestedStack, defaultParams, templateOutputs, err := tpl.buildAdditionalNestedStack(inp, stack, t, logicalID, prevLogicalID, fcOutputs)
+		nestedStack, defaultParams, templateOutputs, err := tpl.buildCustomNestedStack(inp, stack, t, logicalID, prevLogicalID, fcOutputs)
 		if err != nil {
-			return nil, fmt.Errorf("additional_nested_stacks[%d] (%s): %w", i, stack.Name, err)
+			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
 		}
 
 		for paramName := range defaultParams {
 			if owner, exists := allParamNames[paramName]; exists {
-				return nil, fmt.Errorf("additional_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
+				return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
 			}
 			allParamNames[paramName] = stack.Name
 		}
@@ -123,7 +123,7 @@ func (tpl *Templates) getAdditionalNestedStacks(inp *stacks.TemplateInput, t tag
 	return result, nil
 }
 
-func (tpl *Templates) buildAdditionalNestedStack(inp *stacks.TemplateInput, stack config.AdditionalNestedStack, t tagBuilder, logicalID string, prevLogicalID string, fcOutputs map[string]firstClassOutput) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, map[string]struct{}, error) {
+func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack config.CustomNestedStack, t tagBuilder, logicalID string, prevLogicalID string, fcOutputs map[string]firstClassOutput) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, map[string]struct{}, error) {
 	// Build role param lookup so we can treat them as reserved during extraction.
 	type roleRef struct {
 		paramValue string

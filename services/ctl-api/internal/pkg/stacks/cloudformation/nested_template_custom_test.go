@@ -17,7 +17,7 @@ import (
 
 const mockAdditionalTemplateYAML = `
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Additional nested stack for k8s namespace setup
+Description: Custom nested stack for k8s namespace setup
 Parameters:
   NuonInstallID:
     Description: The Nuon Install ID.
@@ -44,7 +44,7 @@ Resources:
 
 const mockAdditionalTemplate2YAML = `
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Additional nested stack for EKS access entries
+Description: Custom nested stack for EKS access entries
 Parameters:
   NuonInstallID:
     Description: The Nuon Install ID.
@@ -63,7 +63,7 @@ Resources:
       PrincipalArn: !Ref AccessPrincipalArn
 `
 
-func newTestInput(serverURL string, additionalStacks []config.AdditionalNestedStack) *stacks.TemplateInput {
+func newTestInput(serverURL string, customStacks []config.CustomNestedStack) *stacks.TemplateInput {
 	return &stacks.TemplateInput{
 		Install: &app.Install{
 			ID:    "test-install-id",
@@ -72,26 +72,26 @@ func newTestInput(serverURL string, additionalStacks []config.AdditionalNestedSt
 		},
 		AppCfg: &app.AppConfig{
 			StackConfig: app.AppStackConfig{
-				VPCNestedTemplateURL:   serverURL + "/vpc.yaml",
-				AdditionalNestedStacks: additionalStacks,
+				VPCNestedTemplateURL: serverURL + "/vpc.yaml",
+				CustomNestedStacks:   customStacks,
 			},
 		},
 	}
 }
 
-func TestGetAdditionalNestedStacks_Empty(t *testing.T) {
+func TestGetCustomNestedStacks_Empty(t *testing.T) {
 	tpl := &Templates{}
 	inp := newTestInput("http://localhost", nil)
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
 	require.NoError(t, err)
 	assert.Empty(t, result.resources)
 	assert.Empty(t, result.params)
 	assert.Nil(t, result.paramGroups)
 }
 
-func TestGetAdditionalNestedStacks_SingleStack(t *testing.T) {
+func TestGetCustomNestedStacks_SingleStack(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/yaml")
 		w.Write([]byte(mockAdditionalTemplateYAML))
@@ -99,12 +99,12 @@ func TestGetAdditionalNestedStacks_SingleStack(t *testing.T) {
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "k8s_namespaces", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	assert.Len(t, result.resources, 1)
@@ -127,7 +127,7 @@ func TestGetAdditionalNestedStacks_SingleStack(t *testing.T) {
 	assert.Equal(t, "k8s_namespaces", label["default"])
 }
 
-func TestGetAdditionalNestedStacks_MultipleStacks_DependsOnChaining(t *testing.T) {
+func TestGetCustomNestedStacks_MultipleStacks_DependsOnChaining(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/template1.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateYAML))
@@ -139,13 +139,13 @@ func TestGetAdditionalNestedStacks_MultipleStacks_DependsOnChaining(t *testing.T
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "k8s_namespaces", TemplateURL: server.URL + "/template1.yaml", Index: 0},
 		{Name: "eks_access", TemplateURL: server.URL + "/template2.yaml", Index: 1},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	assert.Len(t, result.resources, 2)
@@ -163,85 +163,85 @@ func TestGetAdditionalNestedStacks_MultipleStacks_DependsOnChaining(t *testing.T
 	assert.Len(t, result.paramGroups, 2)
 }
 
-func TestGetAdditionalNestedStacks_MissingName(t *testing.T) {
+func TestGetCustomNestedStacks_MissingName(t *testing.T) {
 	tpl := &Templates{}
-	inp := newTestInput("http://localhost", []config.AdditionalNestedStack{
+	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "", TemplateURL: "http://example.com/stack.yaml", Index: 0},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	_, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{})
+	_, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "name is required")
 }
 
-func TestGetAdditionalNestedStacks_MissingTemplateURL(t *testing.T) {
+func TestGetCustomNestedStacks_MissingTemplateURL(t *testing.T) {
 	tpl := &Templates{}
-	inp := newTestInput("http://localhost", []config.AdditionalNestedStack{
+	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: "", Index: 0},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	_, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{})
+	_, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "template_url is required")
 }
 
-func TestGetAdditionalNestedStacks_ConflictWithExistingResource(t *testing.T) {
+func TestGetCustomNestedStacks_ConflictWithExistingResource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateYAML))
 	}))
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "vpc", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	_, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"Vpc": true})
+	_, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"Vpc": true})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "conflicts with existing resource")
 }
 
-func TestGetAdditionalNestedStacks_DuplicateNames(t *testing.T) {
+func TestGetCustomNestedStacks_DuplicateNames(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateYAML))
 	}))
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 1},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	_, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{})
+	_, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "duplicate logical ID")
 }
 
-func TestGetAdditionalNestedStacks_ParameterConflictBetweenStacks(t *testing.T) {
+func TestGetCustomNestedStacks_ParameterConflictBetweenStacks(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateYAML))
 	}))
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "stack_a", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 		{Name: "stack_b", TemplateURL: server.URL + "/stack.yaml", Index: 1},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	_, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{})
+	_, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "parameter")
 	assert.Contains(t, err.Error(), "conflicts with stack")
 }
 
-func TestGetAdditionalNestedStacks_IndexDeterminesOrder(t *testing.T) {
+func TestGetCustomNestedStacks_IndexDeterminesOrder(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/template1.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateYAML))
@@ -254,13 +254,13 @@ func TestGetAdditionalNestedStacks_IndexDeterminesOrder(t *testing.T) {
 
 	tpl := &Templates{}
 	// provide stacks in reverse index order — index 10 first, index 5 second
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "eks_access", TemplateURL: server.URL + "/template2.yaml", Index: 10},
 		{Name: "k8s_namespaces", TemplateURL: server.URL + "/template1.yaml", Index: 5},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	// k8s_namespaces (index 5) should be first → depends on VPC/Runner
@@ -269,15 +269,15 @@ func TestGetAdditionalNestedStacks_IndexDeterminesOrder(t *testing.T) {
 	assert.Equal(t, []string{"K8SNamespaces"}, result.resources["EksAccess"].AWSCloudFormationDependsOn)
 }
 
-func TestGetAdditionalNestedStacks_DuplicateIndex(t *testing.T) {
+func TestGetCustomNestedStacks_DuplicateIndex(t *testing.T) {
 	tpl := &Templates{}
-	inp := newTestInput("http://localhost", []config.AdditionalNestedStack{
+	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "stack_a", TemplateURL: "http://example.com/a.yaml", Index: 1},
 		{Name: "stack_b", TemplateURL: "http://example.com/b.yaml", Index: 1},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	_, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{})
+	_, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "duplicate index 1")
 }
@@ -326,7 +326,7 @@ Resources:
 
 const mockAdditionalTemplateWithVPCParamsYAML = `
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Additional stack that needs VPC outputs
+Description: Custom nested stack that needs VPC outputs
 Parameters:
   NuonInstallID:
     Type: String
@@ -381,7 +381,7 @@ Resources:
       Namespaces: !Ref Namespaces
 `
 
-func TestGetAdditionalNestedStacks_ExplicitParameterMapping(t *testing.T) {
+func TestGetCustomNestedStacks_ExplicitParameterMapping(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateWithNamespacesYAML))
 	}))
@@ -389,7 +389,7 @@ func TestGetAdditionalNestedStacks_ExplicitParameterMapping(t *testing.T) {
 
 	tpl := &Templates{}
 	nsVal := "sourdough,persimmon"
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
 			Name:        "my_stack",
 			TemplateURL: server.URL + "/stack.yaml",
@@ -404,7 +404,7 @@ func TestGetAdditionalNestedStacks_ExplicitParameterMapping(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -420,7 +420,7 @@ func TestGetAdditionalNestedStacks_ExplicitParameterMapping(t *testing.T) {
 	assert.NotContains(t, params, "Namespaces")
 }
 
-func TestGetAdditionalNestedStacks_ExplicitParameterMappingAcrossMultipleStacks(t *testing.T) {
+func TestGetCustomNestedStacks_ExplicitParameterMappingAcrossMultipleStacks(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateNamespacesOnlyYAML))
 	}))
@@ -428,7 +428,7 @@ func TestGetAdditionalNestedStacks_ExplicitParameterMappingAcrossMultipleStacks(
 
 	tpl := &Templates{}
 	nsVal := "sourdough,persimmon"
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
 			Name:        "stack_a",
 			TemplateURL: server.URL + "/stack.yaml",
@@ -451,7 +451,7 @@ func TestGetAdditionalNestedStacks_ExplicitParameterMappingAcrossMultipleStacks(
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	assert.Len(t, result.resources, 2)
@@ -461,14 +461,14 @@ func TestGetAdditionalNestedStacks_ExplicitParameterMappingAcrossMultipleStacks(
 	assert.Empty(t, result.paramGroups)
 }
 
-func TestGetAdditionalNestedStacks_ExplicitParameterEmptyWhenNoInstallInputs(t *testing.T) {
+func TestGetCustomNestedStacks_ExplicitParameterEmptyWhenNoInstallInputs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateNamespacesOnlyYAML))
 	}))
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
 			Name:        "my_stack",
 			TemplateURL: server.URL + "/stack.yaml",
@@ -480,7 +480,7 @@ func TestGetAdditionalNestedStacks_ExplicitParameterEmptyWhenNoInstallInputs(t *
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -490,7 +490,7 @@ func TestGetAdditionalNestedStacks_ExplicitParameterEmptyWhenNoInstallInputs(t *
 	assert.NotContains(t, result.params, "Namespaces")
 }
 
-func TestGetAdditionalNestedStacks_FirstClassOutputWiring(t *testing.T) {
+func TestGetCustomNestedStacks_FirstClassOutputWiring(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/vpc.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockVPCTemplateWithOutputsYAML))
@@ -515,7 +515,7 @@ func TestGetAdditionalNestedStacks_FirstClassOutputWiring(t *testing.T) {
 			StackConfig: app.AppStackConfig{
 				VPCNestedTemplateURL:    server.URL + "/vpc.yaml",
 				RunnerNestedTemplateURL: server.URL + "/runner.yaml",
-				AdditionalNestedStacks: []config.AdditionalNestedStack{
+				CustomNestedStacks: []config.CustomNestedStack{
 					{Name: "my_stack", TemplateURL: server.URL + "/additional.yaml", Index: 0},
 				},
 			},
@@ -523,7 +523,7 @@ func TestGetAdditionalNestedStacks_FirstClassOutputWiring(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -544,7 +544,7 @@ func TestGetAdditionalNestedStacks_FirstClassOutputWiring(t *testing.T) {
 	assert.NotContains(t, params, "RunnerSubnet")
 }
 
-func TestGetAdditionalNestedStacks_RunnerOutputWiring(t *testing.T) {
+func TestGetCustomNestedStacks_RunnerOutputWiring(t *testing.T) {
 	mockAdditionalWithRunnerParams := `
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
@@ -583,7 +583,7 @@ Resources:
 			StackConfig: app.AppStackConfig{
 				VPCNestedTemplateURL:    server.URL + "/vpc.yaml",
 				RunnerNestedTemplateURL: server.URL + "/runner.yaml",
-				AdditionalNestedStacks: []config.AdditionalNestedStack{
+				CustomNestedStacks: []config.CustomNestedStack{
 					{Name: "my_stack", TemplateURL: server.URL + "/additional.yaml", Index: 0},
 				},
 			},
@@ -591,7 +591,7 @@ Resources:
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -601,7 +601,7 @@ Resources:
 	assert.NotContains(t, result.params, "RunnerInstanceRole")
 }
 
-func TestGetAdditionalNestedStacks_ExplicitClusterNameMapping(t *testing.T) {
+func TestGetCustomNestedStacks_ExplicitClusterNameMapping(t *testing.T) {
 	mockTemplateWithClusterName := `
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
@@ -622,7 +622,7 @@ Resources:
 
 	tpl := &Templates{}
 	clusterVal := "my-cluster"
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
 			Name:        "sg_access",
 			TemplateURL: server.URL + "/stack.yaml",
@@ -637,7 +637,7 @@ Resources:
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["SgAccess"]
@@ -649,7 +649,7 @@ Resources:
 	assert.NotContains(t, result.params, "NuonInstallID")
 }
 
-func TestGetAdditionalNestedStacks_ReservedParamsNotInjectedWhenAbsent(t *testing.T) {
+func TestGetCustomNestedStacks_ReservedParamsNotInjectedWhenAbsent(t *testing.T) {
 	mockTemplateNoReservedParams := `
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
@@ -668,12 +668,12 @@ Resources:
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -689,7 +689,7 @@ Resources:
 	assert.Contains(t, result.params, "CustomParam")
 }
 
-func TestGetAdditionalNestedStacks_RoleParamInjectedWhenDeclared(t *testing.T) {
+func TestGetCustomNestedStacks_RoleParamInjectedWhenDeclared(t *testing.T) {
 	mockTemplateWithRoleParam := `
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
@@ -717,7 +717,7 @@ Resources:
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
 	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
@@ -731,7 +731,7 @@ Resources:
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -746,7 +746,7 @@ Resources:
 	assert.Contains(t, stack.AWSCloudFormationDependsOn, "RunnerProvisioner")
 }
 
-func TestGetAdditionalNestedStacks_RoleParamNotInjectedWhenAbsent(t *testing.T) {
+func TestGetCustomNestedStacks_RoleParamNotInjectedWhenAbsent(t *testing.T) {
 	mockTemplateNoRoleParam := `
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
@@ -767,7 +767,7 @@ Resources:
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
 	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
@@ -781,7 +781,7 @@ Resources:
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -793,7 +793,7 @@ Resources:
 	assert.Equal(t, []string{"VPC", "RunnerAutoScalingGroup"}, stack.AWSCloudFormationDependsOn)
 }
 
-func TestGetAdditionalNestedStacks_MultipleRolesPartialMatch(t *testing.T) {
+func TestGetCustomNestedStacks_MultipleRolesPartialMatch(t *testing.T) {
 	mockTemplateOneRole := `
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
@@ -812,7 +812,7 @@ Resources:
 	defer server.Close()
 
 	tpl := &Templates{}
-	inp := newTestInput(server.URL, []config.AdditionalNestedStack{
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
 	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
@@ -831,7 +831,7 @@ Resources:
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stack := result.resources["MyStack"]
@@ -903,7 +903,7 @@ Outputs:
     Value: final
 `
 
-func TestGetAdditionalNestedStacks_InterStackOutputWiring(t *testing.T) {
+func TestGetCustomNestedStacks_InterStackOutputWiring(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/vpc.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockVPCTemplateWithOutputsYAML))
@@ -927,7 +927,7 @@ func TestGetAdditionalNestedStacks_InterStackOutputWiring(t *testing.T) {
 		AppCfg: &app.AppConfig{
 			StackConfig: app.AppStackConfig{
 				VPCNestedTemplateURL: server.URL + "/vpc.yaml",
-				AdditionalNestedStacks: []config.AdditionalNestedStack{
+				CustomNestedStacks: []config.CustomNestedStack{
 					{Name: "stack_a", TemplateURL: server.URL + "/stack_a.yaml", Index: 0},
 					{Name: "stack_b", TemplateURL: server.URL + "/stack_b.yaml", Index: 1},
 				},
@@ -936,7 +936,7 @@ func TestGetAdditionalNestedStacks_InterStackOutputWiring(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stackB := result.resources["StackB"]
@@ -954,7 +954,7 @@ func TestGetAdditionalNestedStacks_InterStackOutputWiring(t *testing.T) {
 	assert.Contains(t, result.params, "CustomParamA")
 }
 
-func TestGetAdditionalNestedStacks_InterStackOutputWiring_ThreeStackChain(t *testing.T) {
+func TestGetCustomNestedStacks_InterStackOutputWiring_ThreeStackChain(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/vpc.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockVPCTemplateWithOutputsYAML))
@@ -981,7 +981,7 @@ func TestGetAdditionalNestedStacks_InterStackOutputWiring_ThreeStackChain(t *tes
 		AppCfg: &app.AppConfig{
 			StackConfig: app.AppStackConfig{
 				VPCNestedTemplateURL: server.URL + "/vpc.yaml",
-				AdditionalNestedStacks: []config.AdditionalNestedStack{
+				CustomNestedStacks: []config.CustomNestedStack{
 					{Name: "stack_a", TemplateURL: server.URL + "/stack_a.yaml", Index: 0},
 					{Name: "stack_b", TemplateURL: server.URL + "/stack_b.yaml", Index: 1},
 					{Name: "stack_c", TemplateURL: server.URL + "/stack_c.yaml", Index: 2},
@@ -991,7 +991,7 @@ func TestGetAdditionalNestedStacks_InterStackOutputWiring_ThreeStackChain(t *tes
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	assert.Len(t, result.resources, 3)
@@ -1004,7 +1004,7 @@ func TestGetAdditionalNestedStacks_InterStackOutputWiring_ThreeStackChain(t *tes
 	assert.Contains(t, result.params, "CustomParamC")
 }
 
-func TestGetAdditionalNestedStacks_FirstClassOutputWinsOverInterStack(t *testing.T) {
+func TestGetCustomNestedStacks_FirstClassOutputWinsOverInterStack(t *testing.T) {
 	mockTemplateOutputMatchingVPC := `
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
@@ -1059,7 +1059,7 @@ Resources:
 		AppCfg: &app.AppConfig{
 			StackConfig: app.AppStackConfig{
 				VPCNestedTemplateURL: server.URL + "/vpc.yaml",
-				AdditionalNestedStacks: []config.AdditionalNestedStack{
+				CustomNestedStacks: []config.CustomNestedStack{
 					{Name: "stack_a", TemplateURL: server.URL + "/stack_a.yaml", Index: 0},
 					{Name: "stack_b", TemplateURL: server.URL + "/stack_b.yaml", Index: 1},
 				},
@@ -1068,7 +1068,7 @@ Resources:
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	result, err := tpl.getAdditionalNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
 	stackB := result.resources["StackB"]
