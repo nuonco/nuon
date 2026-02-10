@@ -118,8 +118,9 @@ func (s *CreateUserTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},

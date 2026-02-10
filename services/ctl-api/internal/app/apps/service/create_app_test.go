@@ -122,8 +122,9 @@ func (s *CreateAppTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
+		ID:          domains.NewOrgID(),
+		Name:        "test-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -252,8 +253,9 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 		ctx := context.Background()
 		ctx = cctx.SetAccountContext(ctx, acc2)
 		org2 := &app.Org{
-			ID:   domains.NewOrgID(),
-			Name: "test-org-2",
+			ID:          domains.NewOrgID(),
+			Name:        "test-org-2",
+			SandboxMode: true,
 			NotificationsConfig: app.NotificationsConfig{
 				InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 			},
