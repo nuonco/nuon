@@ -7,25 +7,25 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
-import type { TRunner, TRunnerGroup, TRunnerMngHeartbeat } from '@/types'
+import type { TRunnerGroup, TRunnerMngHeartbeat } from '@/types'
 import { isLessThan15SecondsOld } from '@/utils/time-utils'
 
 interface IRunnerDetailsCard extends Omit<ICard, 'children'>, IPollingProps {
   initHeartbeat: TRunnerMngHeartbeat
-  runner: TRunner
   runnerGroup: TRunnerGroup
 }
 
 export const RunnerDetailsCard = ({
   initHeartbeat,
   pollInterval = 5000,
-  runner,
   runnerGroup,
   shouldPoll = false,
   ...props
 }: IRunnerDetailsCard) => {
   const { org } = useOrg()
+  const { runner } = useRunner()
   const { data: heartbeats } = usePolling<TRunnerMngHeartbeat>({
     path: `/api/orgs/${org?.id}/runners/${runner?.id}/heartbeat`,
     shouldPoll,
@@ -73,7 +73,7 @@ export const RunnerDetailsCard = ({
 
         <LabeledValue label="Platform">
           <Text variant="subtext" className="uppercase">
-            {runnerGroup?.platform}
+            {runnerGroup?.platform || runnerGroup?.['metadata']?.['runner.platform'] || "Unknown"}
           </Text>
         </LabeledValue>
 

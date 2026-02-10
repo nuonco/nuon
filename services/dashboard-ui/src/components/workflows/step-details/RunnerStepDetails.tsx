@@ -9,6 +9,7 @@ import { RunnerHealthCard } from '@/components/runners/RunnerHealthCard'
 import { RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCardSkeleton'
 import { useOrg } from '@/hooks/use-org'
 import { useQuery } from '@/hooks/use-query'
+import { RunnerProvider } from '@/providers/runner-provider'
 import type { IStepDetails } from './types'
 
 interface IRunnerStepDetails extends IStepDetails {}
@@ -47,22 +48,24 @@ export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
         {(isRunnerLoading || isHeartbeatLoading) && !runner ? (
           <RunnerDetailsCardSkeleton />
         ) : (
-          <RunnerDetailsCard
-            runner={runner}
-            initHeartbeat={runnerHeartbeat}
-            runnerGroup={{ platform: 'local' }}
-            shouldPoll
-          />
+          <RunnerProvider initRunner={runner}>
+            <RunnerDetailsCard
+              initHeartbeat={runnerHeartbeat}
+              runnerGroup={{ platform: 'local' }}
+              shouldPoll
+            />
+          </RunnerProvider>
         )}
 
         {(isHealthCheckLoading || !runnerHealthCheck) && !runner ? (
           <RunnerHealthCardSkeleton />
         ) : (
-          <RunnerHealthCard
-            runnerId={runner?.id}
-            initHealthchecks={runnerHealthCheck}
-            shouldPoll
-          />
+          <RunnerProvider initRunner={runner}>
+            <RunnerHealthCard
+              initHealthchecks={runnerHealthCheck}
+              shouldPoll
+            />
+          </RunnerProvider>
         )}
       </div>
     </div>

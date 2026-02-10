@@ -45,7 +45,7 @@ export const ManageRunnerDropdown = ({
           <ShutdownInstanceModal runnerId={runner?.id} />
         ) : null}
         {isInstallRunner ? (
-          <PruneRunnerTokensButton runnerId={runner?.id} />
+          <PruneRunnerTokensButton />
         ) : null}
 
         {isInstallRunner ? (

@@ -10,6 +10,7 @@ import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -17,15 +18,13 @@ import { trackEvent } from '@/lib/segment-analytics'
 import type { TRunnerSettings } from '@/types'
 
 export const UpdateRunnerButton = ({
-  runnerId,
   settings,
   ...props
 }: IButtonAsButton & {
-  runnerId: string
   settings: TRunnerSettings
 }) => {
   const { addModal } = useSurfaces()
-  const modal = <UpdateRunnerModal runnerId={runnerId} settings={settings} />
+  const modal = <UpdateRunnerModal settings={settings} />
   return (
     <Button
       onClick={() => {
@@ -41,17 +40,17 @@ export const UpdateRunnerButton = ({
 }
 
 export const UpdateRunnerModal = ({
-  runnerId,
   settings,
   ...props
 }: IModal & {
-  runnerId: string
   settings: TRunnerSettings
 }) => {
   const { user } = useAuth()
   const { org } = useOrg()
+  const { runner } = useRunner()
   const { removeModal } = useSurfaces()
   const formRef = useRef<HTMLFormElement>(null)
+  const runnerId = runner?.id
 
   const [tag, setTag] = useState('')
 

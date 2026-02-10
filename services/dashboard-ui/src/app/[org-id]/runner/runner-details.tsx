@@ -16,7 +16,6 @@ export async function RunnerDetails({ org }: { org: TOrg }) {
     <RunnerDetailsCard
       className="flex-initial"
       initHeartbeat={runnerHeartbeat}
-      runner={runner}
       runnerGroup={runnerGroup}
       shouldPoll
     />

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { createAppInstall } from '@/actions/apps/create-app-install'
 import { Banner } from '@/components/common/Banner'
 import { Input } from '@/components/common/form/Input'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
 import { useServerAction } from '@/hooks/use-server-action'
@@ -180,6 +181,37 @@ export const CreateInstallForm = forwardRef<
           {platform && (
             <PlatformFields platform={platform} draftValues={draftValues} />
           )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <span className="flex flex-col gap-0">
+              <Text variant="body" weight="strong">
+                Deployment approval
+              </Text>
+              <Text variant="subtext" className="max-w-72">
+                Choose how deployments should be approved
+              </Text>
+            </span>
+            <CheckboxInput
+              name="auto-approve"
+              className="mt-[6px]"
+              defaultChecked={draftValues?.['auto-approve'] === 'on' || false}
+              labelProps={{
+                className: 'items-start',
+                labelText: (
+                  <div className="flex flex-col gap-1">
+                    <Text variant="body" weight="stronger">
+                      Auto-approve changes
+                    </Text>
+                    <Text variant="subtext" theme="neutral">
+                      Automatically approve and apply all future changes without
+                      manual confirmation. You can change this later in the
+                      install settings.
+                    </Text>
+                  </div>
+                ),
+              }}
+            />
+          </div>
 
           {inputConfig && (
             <InputConfigFields

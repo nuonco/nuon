@@ -10,19 +10,15 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { useServerAction } from '@/hooks/use-server-action'
 import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { trackEvent } from '@/lib/segment-analytics'
 
-export const ShutdownRunnerButton = ({
-  runnerId,
-  ...props
-}: IButtonAsButton & {
-  runnerId: string
-}) => {
+export const ShutdownRunnerButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <ShutdownRunnerModal runnerId={runnerId} />
+  const modal = <ShutdownRunnerModal />
   return (
     <Button
       onClick={() => {
@@ -37,15 +33,12 @@ export const ShutdownRunnerButton = ({
   )
 }
 
-export const ShutdownRunnerModal = ({
-  runnerId,
-  ...props
-}: IModal & {
-  runnerId: string
-}) => {
+export const ShutdownRunnerModal = ({ ...props }: IModal) => {
   const { user } = useAuth()
   const { org } = useOrg()
+  const { runner } = useRunner()
   const { removeModal } = useSurfaces()
+  const runnerId = runner?.id
 
   const [force, setForce] = useState(false)
 
