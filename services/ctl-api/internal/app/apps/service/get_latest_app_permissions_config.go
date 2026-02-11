@@ -25,7 +25,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.AppPermissionsConfig
-// @Router					/v1/apps/{app_id}/latest-app-permissions-config [get]
+// @Router					/v1/apps/{app_id}/latest-permissions-config [get]
 func (s *service) GetLatestAppPermissionsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	currentApp, err := s.appByNameOrID(ctx, appID)

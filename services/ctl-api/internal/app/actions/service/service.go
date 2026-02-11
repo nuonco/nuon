@@ -77,7 +77,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			installActions.GET("", s.GetInstallActions)
 			installActions.GET("/:action_id/recent-runs", s.GetInstallActionRecentRuns)
 			installActions.GET("/latest-runs", s.GetInstallActionsLatestRuns)
-			installActions.POST("/:action_id", s.GetInstallAction)
+			installActions.GET("/:action_id", s.GetInstallAction)
 		}
 	}
 
@@ -121,7 +121,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			installActionWorkflows.GET("", s.GetInstallActionWorkflows)                                          // deprecated
 			installActionWorkflows.GET("/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns) // deprecated
 			installActionWorkflows.GET("/latest-runs", s.GetInstallActionWorkflowsLatestRuns)                    // deprecated
-			installActionWorkflows.POST("/:action_workflow_id", s.GetInstallActionWorkflow)                      // deprecated
+			installActionWorkflows.GET("/:action_workflow_id", s.GetInstallActionWorkflow)                       // deprecated
 		}
 	}
 

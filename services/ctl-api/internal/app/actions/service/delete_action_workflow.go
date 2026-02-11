@@ -15,6 +15,7 @@ import (
 // @ID						DeleteAction
 // @Summary				delete an action
 // @Description.markdown	delete_action_workflow.md
+// @Param					app_id		path	string	true	"app ID"
 // @Param					action_id	path	string	true	"action ID"
 // @Tags					actions
 // @Accept					json
@@ -27,7 +28,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{boolean}	true
-// @Router					/v1/actions/{action_id} [DELETE]
+// @Router					/v1/apps/{app_id}/actions/{action_id} [DELETE]
 func (s *service) DeleteAppAction(ctx *gin.Context) {
 	awID := ctx.Param("action_id")
 	org, err := cctx.OrgFromContext(ctx)

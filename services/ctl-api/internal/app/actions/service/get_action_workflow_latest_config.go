@@ -16,7 +16,7 @@ import (
 // @Description.markdown	get_action_workflow_latest_config.md
 // @Param					app_id				path	string	true	"app ID"
 // @Param					action_id	path	string	true	"action workflow ID"
-// @Tags					actions,actions/runner
+// @Tags					actions
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -43,7 +43,7 @@ func (s *service) GetAppActionLatestConfig(ctx *gin.Context) {
 //		@Summary				get an app action workflow's latest config
 //		@Description.markdown	get_action_workflow_latest_config.md
 //		@Param					action_workflow_id	path	string	true	"action workflow ID"
-//		@Tags					actions,actions/runner
+//		@Tags					actions
 //		@Accept					json
 //		@Produce				json
 //		@Security				APIKey

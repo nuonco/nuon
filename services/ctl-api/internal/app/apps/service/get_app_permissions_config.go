@@ -14,7 +14,7 @@ import (
 // @Summary				get app permissions config
 // @Description.markdown	get_app_permissions_config.md
 // @Param					app_id	path	string	true	"app ID"
-// @Param permissions_config_id path string	true	"input config ID"
+// @Param config_id path string	true	"app permissions config ID"
 // @Tags					apps
 // @Accept					json
 // @Produce				json
@@ -26,10 +26,10 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.AppPermissionsConfig
-// @Router /v1/apps/{app_id}/permissions-configs/{permissions_config_id} [get]
+// @Router /v1/apps/{app_id}/permissions-configs/{config_id} [get]
 func (s *service) GetAppPermissionsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
-	appPermissionsConfigID := ctx.Param("permissions_config_id")
+	appPermissionsConfigID := ctx.Param("config_id")
 
 	currentApp, err := s.appByNameOrID(ctx, appID)
 	if err != nil {

@@ -14,32 +14,6 @@ type AdminWorkflowStepApproveRequest struct {
 	StepID string `json:"step_id"`
 }
 
-// @ID						AdminWorkflowStepApprove
-// @Description.markdown	update_install_runner.md
-// @Tags					installs/admin
-// @Security				AdminEmail
-// @Accept					json
-// @Param					req	body	AdminWorkflowStepApproveRequest	true	"Input"
-// @Produce					json
-// @Success					200	{object}	app.WorkflowStepApprovalResponse
-// @Router					/v1/admin-workflow-step-approve [post]
-func (s *service) AdminWorkflowStepApprove(ctx *gin.Context) {
-	var req AdminWorkflowStepApproveRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
-
-	approvalResponse, err := s.approveWorkflowStep(ctx, req.StepID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, approvalResponse)
-
-}
-
 func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.WorkflowStepApprovalResponse, error) {
 	var installWorkflowStep *app.WorkflowStep
 	res := s.db.WithContext(ctx).

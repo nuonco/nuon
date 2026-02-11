@@ -34,9 +34,9 @@ func (c *client) GetLatestAppSecretsConfig(ctx context.Context, appID string) (*
 
 func (c *client) GetAppSecretsConfig(ctx context.Context, appID, appSecretsID string) (*models.AppAppSecretsConfig, error) {
 	params := &operations.GetAppSecretsConfigParams{
-		AppID:              appID,
-		AppSecretsConfigID: appSecretsID,
-		Context:            ctx,
+		AppID:    appID,
+		ConfigID: appSecretsID,
+		Context:  ctx,
 	}
 
 	resp, err := c.genClient.Operations.GetAppSecretsConfig(params, c.getOrgIDAuthInfo())

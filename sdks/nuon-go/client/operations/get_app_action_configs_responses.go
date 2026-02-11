@@ -62,7 +62,7 @@ func (o *GetAppActionConfigsReader) ReadResponse(response runtime.ClientResponse
 		}
 		return nil, result
 	default:
-		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/action/{action_id}/configs] GetAppActionConfigs", response, response.Code())
+		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/actions/{action_id}/configs] GetAppActionConfigs", response, response.Code())
 	}
 }
 
@@ -112,12 +112,12 @@ func (o *GetAppActionConfigsOK) Code() int {
 
 func (o *GetAppActionConfigsOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsOK %s", 200, payload)
 }
 
 func (o *GetAppActionConfigsOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsOK %s", 200, payload)
 }
 
 func (o *GetAppActionConfigsOK) GetPayload() []*models.AppActionWorkflowConfig {
@@ -180,12 +180,12 @@ func (o *GetAppActionConfigsBadRequest) Code() int {
 
 func (o *GetAppActionConfigsBadRequest) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsBadRequest %s", 400, payload)
 }
 
 func (o *GetAppActionConfigsBadRequest) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsBadRequest %s", 400, payload)
 }
 
 func (o *GetAppActionConfigsBadRequest) GetPayload() *models.StderrErrResponse {
@@ -250,12 +250,12 @@ func (o *GetAppActionConfigsUnauthorized) Code() int {
 
 func (o *GetAppActionConfigsUnauthorized) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppActionConfigsUnauthorized) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppActionConfigsUnauthorized) GetPayload() *models.StderrErrResponse {
@@ -320,12 +320,12 @@ func (o *GetAppActionConfigsForbidden) Code() int {
 
 func (o *GetAppActionConfigsForbidden) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsForbidden %s", 403, payload)
 }
 
 func (o *GetAppActionConfigsForbidden) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsForbidden %s", 403, payload)
 }
 
 func (o *GetAppActionConfigsForbidden) GetPayload() *models.StderrErrResponse {
@@ -390,12 +390,12 @@ func (o *GetAppActionConfigsNotFound) Code() int {
 
 func (o *GetAppActionConfigsNotFound) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsNotFound %s", 404, payload)
 }
 
 func (o *GetAppActionConfigsNotFound) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsNotFound %s", 404, payload)
 }
 
 func (o *GetAppActionConfigsNotFound) GetPayload() *models.StderrErrResponse {
@@ -460,12 +460,12 @@ func (o *GetAppActionConfigsInternalServerError) Code() int {
 
 func (o *GetAppActionConfigsInternalServerError) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppActionConfigsInternalServerError) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/action/{action_id}/configs][%d] getAppActionConfigsInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/actions/{action_id}/configs][%d] getAppActionConfigsInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppActionConfigsInternalServerError) GetPayload() *models.StderrErrResponse {
