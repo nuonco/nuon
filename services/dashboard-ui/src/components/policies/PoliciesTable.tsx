@@ -7,9 +7,7 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TAppPolicyConfig } from '@/types'
-import { PolicyModal } from './PolicyModal'
 
 type TPolicyRow = {
   id: string
@@ -133,15 +131,11 @@ export const PoliciesTable = ({
   policies,
   orgId,
   appId,
-  componentNameToId,
 }: {
   policies: TAppPolicyConfig[]
   orgId: string
   appId: string
-  componentNameToId: Record<string, string>
 }) => {
-  const { addModal } = useSurfaces()
-
   const data = parsePolicyToTableData(policies)
 
   const columns: ColumnDef<TPolicyRow>[] = policiesTableColumns.map((col) => {
@@ -152,16 +146,7 @@ export const PoliciesTable = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              addModal(
-                <PolicyModal
-                  orgId={orgId}
-                  appId={appId}
-                  componentNameToId={componentNameToId}
-                  policy={info.row.original}
-                />
-              )
-            }}
+            href={`/${orgId}/apps/${appId}/policies/${info.row.original.id}`}
           >
             View <Icon variant="CaretRightIcon" />
           </Button>
