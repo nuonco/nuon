@@ -107,6 +107,9 @@ var AuthServicesModule = fx.Module("auth-services",
 	fx.Provide(api.AsService(authservice.New)),
 )
 
+// AdminDashboardServicesModule provides services for the admin dashboard API.
+var AdminDashboardServicesModule = fx.Module("admin-dashboard-services", sharedServices)
+
 // AllServicesModule provides all services including authservice (for dev mode).
 var AllServicesModule = fx.Module("all-services",
 	sharedServices,
