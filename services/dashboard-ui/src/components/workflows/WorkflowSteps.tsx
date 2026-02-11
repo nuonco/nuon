@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { PolicyCountsBadge } from '@/components/workflows/step-details/PolicyCountsBadge'
 import { StepButtons } from '@/components/workflows/step-details/StepButtons'
 import { StepDetailPanelButton } from '@/components/workflows/step-details/StepDetailPanel'
 import { StepTitle } from '@/components/workflows/step-details/StepTitle'
@@ -34,11 +35,12 @@ export const WorkflowSteps = ({
   const { org } = useOrg()
   const { workflow } = useWorkflow()
   const [searchName, setSearchName] = useState<string>('')
-  
+
   // Stop polling if workflow is finished or cancelled
-  const shouldStopPolling = workflow?.finished || workflow?.status?.status === 'cancelled'
+  const shouldStopPolling =
+    workflow?.finished || workflow?.status?.status === 'cancelled'
   const effectiveShouldPoll = shouldPoll && !shouldStopPolling
-  
+
   const { data: workflowSteps } = usePolling<TWorkflowStep[]>({
     path: `/api/orgs/${org?.id}/workflows/${workflowId}/steps`,
     shouldPoll: effectiveShouldPoll,
@@ -75,6 +77,8 @@ export const WorkflowSteps = ({
                   {badgeConfig?.children ? (
                     <Badge {...badgeConfig} size="sm" />
                   ) : null}
+
+                  <PolicyCountsBadge step={step} />
 
                   {(step.execution_type === 'system' &&
                     !step.step_target_type) ||

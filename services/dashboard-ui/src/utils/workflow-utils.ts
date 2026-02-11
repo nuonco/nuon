@@ -153,3 +153,43 @@ export function getWorkflowStep({
     ? workflow?.steps?.filter((s) => s?.step_target_id === stepTargetId)?.at(-1)
     : null
 }
+
+export interface PolicyViolation {
+  policy_id: string
+  message: string
+  severity: 'deny' | 'warn'
+}
+
+export interface PolicyViolationCounts {
+  denyViolations: PolicyViolation[]
+  warnViolations: PolicyViolation[]
+  denyCount: number
+  warnCount: number
+  hasPolicyData: boolean
+  hasViolations: boolean
+}
+
+export function getPolicyViolationCounts(
+  step: TWorkflowStep
+): PolicyViolationCounts {
+  const metadata = step?.status?.metadata
+  const denyViolations =
+    (metadata?.deny_violations as PolicyViolation[]) || []
+  const warnViolations =
+    (metadata?.warn_violations as PolicyViolation[]) || []
+  const denyCount = denyViolations.length
+  const warnCount = warnViolations.length
+  const hasPolicyData =
+    metadata?.deny_violations !== undefined ||
+    metadata?.warn_violations !== undefined
+  const hasViolations = denyCount > 0 || warnCount > 0
+
+  return {
+    denyViolations,
+    warnViolations,
+    denyCount,
+    warnCount,
+    hasPolicyData,
+    hasViolations,
+  }
+}
