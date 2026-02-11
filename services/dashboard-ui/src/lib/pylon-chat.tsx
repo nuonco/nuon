@@ -1,10 +1,9 @@
 'use client'
 
-import { type FC, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { PYLON_APP_ID } from '@/configs/pylon'
 
-export const InitPylonChat: FC = () => {
+export const InitPylonChat = ({ PYLON_APP_ID }: { PYLON_APP_ID: string }) => {
   const { user, isLoading } = useAuth()
   const scriptLoadedRef = useRef(false)
 
@@ -43,7 +42,7 @@ export const InitPylonChat: FC = () => {
         e.setAttribute('async', 'true')
         e.setAttribute(
           'src',
-          `https://widget.usepylon.com/widget/${PYLON_APP_ID}`,
+          `https://widget.usepylon.com/widget/${PYLON_APP_ID}`
         )
         const n = t.getElementsByTagName('script')[0]
         if (n?.parentNode) {
