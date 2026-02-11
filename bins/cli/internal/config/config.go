@@ -25,11 +25,12 @@ const (
 type Config struct {
 	*viper.Viper
 
-	APIToken  string `mapstructure:"api_token"`
-	APIURL    string `mapstructure:"api_url"`
-	OrgID     string `mapstructure:"org_id"`
-	InstallID string `mapstructure:"install_id"`
-	AppID     string `mapstructure:"app_id"`
+	APIToken   string `mapstructure:"api_token"`
+	APIURL     string `mapstructure:"api_url"`
+	OrgID      string `mapstructure:"org_id"`
+	InstallID  string `mapstructure:"install_id"`
+	AppID      string `mapstructure:"app_id"`
+	WorkflowID string `mapstructure:"workflow_id"`
 
 	DisableTelemetry bool `mapstructure:"disable_telemetry"`
 	Debug            bool `mapstructure:"debug"`
@@ -77,6 +78,9 @@ func NewConfig(customFilepath string) (*Config, error) {
 	}
 	if cfg.GetString("app_id") != "" {
 		cfg.AppID = cfg.GetString("app_id")
+	}
+	if cfg.GetString("workflow_id") != "" {
+		cfg.WorkflowID = cfg.GetString("workflow_id")
 	}
 	if cfg.GetString("github_app_name") != "" {
 		cfg.GitHubAppName = cfg.GetString("github_app_name")

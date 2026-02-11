@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cockroachdb/errors/withstack"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
@@ -56,6 +57,12 @@ func PrintError(err error) error {
 		return err
 	}
 
+	// Handle any other API errors with a user-friendly message
+	if apiErrMsg, ok := nuon.ToAPIError(err); ok {
+		fmt.Println(bubbles.ErrorStyle.Render(apiErrMsg))
+		return err
+	}
+
 	var cfgErr config.ErrConfig
 	if errors.As(err, &cfgErr) {
 		msg := fmt.Sprintf("%s %s", cfgErr.Description, cfgErr.Error())
@@ -90,8 +97,32 @@ func PrintError(err error) error {
 		return parseErr
 	}
 
-	fmt.Println(bubbles.ErrorStyle.Render(err.Error()))
+	// Filter out ugly technical error messages that shouldn't be shown to users
+	errMsg := err.Error()
+	if containsTechnicalError(errMsg) {
+		fmt.Println(bubbles.ErrorStyle.Render(defaultUnknownErrorMessage))
+		return err
+	}
+
+	fmt.Println(bubbles.ErrorStyle.Render(errMsg))
 	return err
+}
+
+// containsTechnicalError checks if an error message contains technical details
+// that shouldn't be shown to end users
+func containsTechnicalError(msg string) bool {
+	technicalPatterns := []string{
+		"is not supported by the TextConsumer",
+		"(*models.",
+		"runtime.Consumer",
+		"go-openapi",
+	}
+	for _, pattern := range technicalPatterns {
+		if strings.Contains(msg, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func PrintRaw(msg string) {

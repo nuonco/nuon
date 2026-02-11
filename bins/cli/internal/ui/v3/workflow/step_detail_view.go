@@ -40,6 +40,13 @@ func (m model) StepDetailApprovalRequiredBanner() string {
 }
 
 func (m model) stepDetailViewApprovalConfirmationBanner() string {
+	if m.approvingStep {
+		s := lipgloss.JoinVertical(
+			lipgloss.Center,
+			m.spinner.View()+" Approving step...",
+		)
+		return styles.ApprovalConfirmation.Width(m.stepDetail.Width).Margin(0, 0, 1).Render(s)
+	}
 	s := lipgloss.JoinVertical(
 		lipgloss.Center,
 		"Are you sure you want to approve this step?",
@@ -268,8 +275,8 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		sections = append(sections, pendingMessage)
 	}
 
-	if step.Status.Status == models.AppStatusApprovalDashAwaiting {
-		if m.stepApprovalConf {
+	if step.Status.Status == models.AppStatusApprovalDashAwaiting || m.approvingStep {
+		if m.stepApprovalConf || m.approvingStep {
 			banner := m.stepDetailViewApprovalConfirmationBanner()
 			sections = append(sections, banner)
 		} else {
@@ -285,6 +292,11 @@ func (m *model) populateStepDetailView(goToTop bool) {
 			Margin(0, 0, 1).
 			Render(l1)
 		sections = append(sections, banner)
+	}
+
+	policySection := m.stepDetailViewPolicyViolations()
+	if policySection != "" {
+		sections = append(sections, policySection)
 	}
 
 	// title

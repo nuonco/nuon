@@ -59,6 +59,20 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 		return
 	}
 	m.workflow = workflow
+	if msg.policies != nil {
+		policyNames := make(map[string]string)
+		for _, policy := range msg.policies.Policies {
+			if policy == nil || policy.ID == "" {
+				continue
+			}
+			name := policy.Name
+			if name == "" {
+				name = policy.ID
+			}
+			policyNames[policy.ID] = name
+		}
+		m.policyNames = policyNames
+	}
 	// set progress from workflow steps
 	_, _, progress := m.getProgressPercentage()
 	m.progress.SetPercent(progress)
@@ -85,6 +99,7 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 
 	m.populateStepDetailView(false)
 	m.loading = false
+
 }
 
 func (m *model) handleStackFetched(msg stackFetchedMsg) {
@@ -105,6 +120,7 @@ func (m *model) handleWorkflowStepApprovalResponseCreated(msg createWorkflowStep
 	m.selectedStepApprovalResponse = resp
 	m.loading = false
 	m.stepApprovalConf = false
+	m.approvingStep = false
 	// after a step is approved, we want to immediately fetch the workflow to get the upated version
 	return m.fetchWorkflowCmd
 }
@@ -127,6 +143,7 @@ func (m *model) handleApproveAll(msg approveAllMsg) []tea.Cmd {
 		m.setLogMessage(fmt.Sprintf("%s", msg.err), "error")
 	}
 	m.workflowApprovalConf = false
+	m.approvingStep = false
 	m.populateStepDetailView(true)
 	if msg.approved > 0 {
 		m.setLogMessage(fmt.Sprintf("approved %02d workflows", msg.approved), "success")

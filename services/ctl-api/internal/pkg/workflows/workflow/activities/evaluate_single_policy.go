@@ -13,6 +13,7 @@ import (
 
 type EvaluateSinglePolicyRequest struct {
 	PolicyID      string `json:"policy_id" validate:"required"`
+	PolicyName    string `json:"policy_name"`
 	Contents      string `json:"contents" validate:"required"`
 	InputJSON     []byte `json:"input_json" validate:"required"`
 	InputIndex    int    `json:"input_index"`                // Index of the input document being evaluated
@@ -57,6 +58,7 @@ func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSing
 
 	for i := range violations {
 		violations[i].PolicyID = req.PolicyID
+		violations[i].PolicyName = req.PolicyName
 		violations[i].InputIndex = req.InputIndex
 		violations[i].InputIdentity = req.InputIdentity
 	}

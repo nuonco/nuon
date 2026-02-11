@@ -1,15 +1,12 @@
 package workflow
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
-
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 var buttonStyle = lipgloss.NewStyle().
@@ -23,16 +20,7 @@ func (m model) getProgressPercentage() (int, int, float64) {
 	if m.workflow == nil {
 		return 0, 0, 0
 	}
-	stepsTotal := len(m.workflow.Steps)
-	stepsFinished := 0
-	for _, step := range m.workflow.Steps {
-		if step.Finished {
-			stepsFinished++
-		}
-	}
-	stepsPending := stepsTotal - stepsFinished
-	progress := float64(stepsFinished) / float64(stepsTotal)
-	return stepsFinished, stepsPending, progress
+	return common.CalculateStepProgress(m.workflow.Steps)
 }
 
 // action checks for workflows
@@ -62,6 +50,11 @@ func (m model) workflowIsApprovable() bool {
 
 // Actual View Code
 func (m model) actionsOrMessage() string {
+	// Show approving indicator when approval is in flight
+	if m.approvingStep {
+		return m.spinner.View() + " Approving..."
+	}
+
 	cancellable := m.workflowIsCancellable()
 	approvable := m.workflowIsApprovable()
 	_, _, progress := m.getProgressPercentage()
@@ -95,46 +88,21 @@ func (m model) headerView() string {
 	stepsFinished, stepsPending, progress := m.getProgressPercentage()
 	m.progress.SetPercent(progress)
 
-	// top header row
-	// 1. title
-	style := styles.GetStatusStyle(m.workflow.Status.Status)
-	title := ""
-	if m.workflow.Status.Status == models.AppStatusInDashProgress {
-		title += m.spinner.View()
-	} else {
-		icon := getStatusIcon(m.workflow.Status.Status)
-		title += style.Render(fmt.Sprintf("%s ", icon))
-	}
+	content = common.RenderHeader(common.HeaderConfig{
+		Width:         m.header.Width,
+		Title:         m.workflow.Name,
+		Status:        m.workflow.Status.Status,
+		StepsTotal:    len(m.workflow.Steps),
+		StepsFinished: stepsFinished,
+		StepsPending:  stepsPending,
+		Progress:      progress,
+		ProgressBar:   m.progress,
+		Spinner:       m.spinner,
+		Actions:       m.actionsOrMessage(),
+		ShowPlanOnly:  m.workflow.PlanOnly,
+		ShowSpinner:   true,
+	})
 
-	title += fmt.Sprintf("%s ", m.workflow.Name)
-	if m.workflow.PlanOnly {
-		title += styles.TextDim.Render("[Plan Only] ")
-	}
-	title += fmt.Sprintf("(%02d steps)", len(m.workflow.Steps))
-
-	title += style.Render(fmt.Sprintf(" [%s]", m.workflow.Status.Status))
-
-	// 2. actions
-	actions := m.actionsOrMessage()
-	spacer := m.spinner.View()
-	spacerCount := m.header.Width - (lipgloss.Width(title) + lipgloss.Width(actions))
-	if spacerCount > 0 {
-		spacer = strings.Repeat(" ", spacerCount)
-	}
-	topRow := lipgloss.JoinHorizontal(lipgloss.Top, title, spacer, actions)
-
-	// bottom row
-	details := styles.TextDim.Render("  pending: ") + fmt.Sprintf("%02d ", stepsPending)
-	details += styles.TextDim.Render("total:  ") + fmt.Sprintf("%02d ", len(m.workflow.Steps))
-	details += styles.TextDim.Render("completed: ") + fmt.Sprintf("%02d", stepsFinished)
-	spacerBottom := ""
-	spacerBottomCount := m.header.Width - (lipgloss.Width(details) + m.progress.Width)
-	if spacerBottomCount > 0 {
-		spacerBottom = strings.Repeat(" ", spacerBottomCount)
-	}
-	bottomRow := lipgloss.JoinHorizontal(lipgloss.Top, details, spacerBottom, m.progress.ViewAs(progress))
-
-	content += lipgloss.JoinVertical(lipgloss.Center, topRow, bottomRow)
 	m.header.SetContent(content)
 	return appStyle.Render(m.header.View())
 }

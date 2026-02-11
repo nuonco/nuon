@@ -73,3 +73,15 @@ func (c *client) GetInstallDeploy(ctx context.Context, installID string, deployI
 
 	return resp.Payload, nil
 }
+
+func (c *client) GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error) {
+	resp, err := c.genClient.Operations.GetRunnerJobPlan(&operations.GetRunnerJobPlanParams{
+		RunnerJobID: runnerJobID,
+		Context:     ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Payload, nil
+}

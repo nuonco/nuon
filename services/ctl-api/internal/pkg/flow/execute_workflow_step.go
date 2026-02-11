@@ -814,6 +814,7 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 	for _, policy := range prepResult.Policies {
 		fut := workflow.ExecuteActivity(policyCtx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
 			PolicyID:      policy.PolicyID,
+			PolicyName:    policy.PolicyName,
 			Contents:      policy.Contents,
 			InputJSON:     policy.InputJSON,
 			InputIndex:    policy.InputIndex,
