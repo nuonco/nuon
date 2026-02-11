@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -88,6 +89,7 @@ type Org struct {
 	VCSConnections []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
 	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
 	Features       types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
+	Tags           pq.StringArray      `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
 
 	// Other relationships as part of the data model
 
