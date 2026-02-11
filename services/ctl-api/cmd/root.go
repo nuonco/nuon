@@ -15,6 +15,7 @@ func Execute() {
 	c.registerInternalAPI()
 	c.registerRunnerAPI()
 	c.registerAuthAPI()
+	c.registerAdminDashboardAPI()
 	c.registerWorker()
 	c.registerStartup()
 
