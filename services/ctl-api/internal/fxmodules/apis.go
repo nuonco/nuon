@@ -40,6 +40,14 @@ var AuthAPIModule = fx.Module("auth-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
+// AdminDashboardAPIModule provides the admin dashboard API server.
+var AdminDashboardAPIModule = fx.Module("admin-dashboard-api",
+	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(api.AsAPI(api.NewAdminDashboardAPI)),
+	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
+	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
+)
+
 // AllAPIsModule provides all API servers (for running all in one process).
 var AllAPIsModule = fx.Module("all-apis",
 	fx.Provide(api.NewEndpointAudit),
