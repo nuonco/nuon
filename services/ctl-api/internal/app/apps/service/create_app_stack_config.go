@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -20,12 +21,35 @@ type CreateAppStackConfigRequest struct {
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url"`
 	VPCNestedTemplateURL    string `json:"vpc_nested_template_url"`
 
+	CustomNestedStacks []config.CustomNestedStack `json:"custom_nested_stacks"`
+
 	AppConfigID string `json:"app_config_id" validate:"required"`
 }
 
 func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+	if c.VPCNestedTemplateURL != "" {
+		if err := config.ValidateTemplateURL(c.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
+			return err
+		}
+	}
+	if c.RunnerNestedTemplateURL != "" {
+		if err := config.ValidateTemplateURL(c.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
+			return err
+		}
+	}
+	for i, stack := range c.CustomNestedStacks {
+		if stack.Name == "" {
+			return fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
+		}
+		if stack.TemplateURL == "" {
+			return fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
+		}
+		if err := config.ValidateTemplateURL(stack.TemplateURL, fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url", i, stack.Name)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -78,6 +102,7 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		Description:             req.Description,
 		VPCNestedTemplateURL:    req.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
+		CustomNestedStacks:      req.CustomNestedStacks,
 	}
 	res := s.db.WithContext(ctx).
 		Create(&appCloudFormationStackConfig)

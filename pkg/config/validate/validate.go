@@ -56,6 +56,10 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		func() error {
 			return a.Permissions.Validate()
 		},
+
+		func() error {
+			return ValidateCustomNestedStackOutputs(a)
+		},
 	}
 
 	for _, fn := range fns {
