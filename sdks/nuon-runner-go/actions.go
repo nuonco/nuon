@@ -47,14 +47,3 @@ func (c *client) GetActionWorkflowConfig(ctx context.Context, actionWorkflowID s
 	return resp.Payload, nil
 }
 
-func (c *client) GetActionWorkflowLatestConfig(ctx context.Context, workflowID string) (*models.AppActionWorkflowConfig, error) {
-	resp, err := c.genClient.Operations.GetActionWorkflowLatestConfig(&operations.GetActionWorkflowLatestConfigParams{
-		ActionWorkflowID: workflowID,
-		Context:          ctx,
-	}, c.getAuthInfo())
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}

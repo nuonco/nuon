@@ -14,7 +14,7 @@ import (
 // @Summary				get app break_glass config
 // @Description.markdown	get_app_break_glass_config.md
 // @Param					app_id	path	string	true	"app ID"
-// @Param break_glass_config_id path string	true	"app break glass config ID"
+// @Param config_id path string	true	"app break glass config ID"
 // @Tags					apps
 // @Accept					json
 // @Produce				json
@@ -26,10 +26,10 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.AppBreakGlassConfig
-// @Router					/v1/apps/{app_id}/break-glass-configs/{break_glass_config_id} [get]
+// @Router					/v1/apps/{app_id}/break-glass-configs/{config_id} [get]
 func (s *service) GetAppBreakGlassConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
-	appBreakGlassConfigID := ctx.Param("break_glass_config_id")
+	appBreakGlassConfigID := ctx.Param("config_id")
 
 	currentApp, err := s.appByNameOrID(ctx, appID)
 	if err != nil {

@@ -62,7 +62,7 @@ func (o *RetryWorkflowStepReader) ReadResponse(response runtime.ClientResponse, 
 		}
 		return nil, result
 	default:
-		return nil, runtime.NewAPIError("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry] RetryWorkflowStep", response, response.Code())
+		return nil, runtime.NewAPIError("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry] RetryWorkflowStep", response, response.Code())
 	}
 }
 
@@ -112,12 +112,12 @@ func (o *RetryWorkflowStepCreated) Code() int {
 
 func (o *RetryWorkflowStepCreated) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepCreated %s", 201, payload)
 }
 
 func (o *RetryWorkflowStepCreated) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepCreated %s", 201, payload)
 }
 
 func (o *RetryWorkflowStepCreated) GetPayload() *models.ServiceRetryWorkflowByIDResponse {
@@ -182,12 +182,12 @@ func (o *RetryWorkflowStepBadRequest) Code() int {
 
 func (o *RetryWorkflowStepBadRequest) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepBadRequest %s", 400, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepBadRequest %s", 400, payload)
 }
 
 func (o *RetryWorkflowStepBadRequest) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepBadRequest %s", 400, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepBadRequest %s", 400, payload)
 }
 
 func (o *RetryWorkflowStepBadRequest) GetPayload() *models.StderrErrResponse {
@@ -252,12 +252,12 @@ func (o *RetryWorkflowStepUnauthorized) Code() int {
 
 func (o *RetryWorkflowStepUnauthorized) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepUnauthorized %s", 401, payload)
 }
 
 func (o *RetryWorkflowStepUnauthorized) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepUnauthorized %s", 401, payload)
 }
 
 func (o *RetryWorkflowStepUnauthorized) GetPayload() *models.StderrErrResponse {
@@ -322,12 +322,12 @@ func (o *RetryWorkflowStepForbidden) Code() int {
 
 func (o *RetryWorkflowStepForbidden) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepForbidden %s", 403, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepForbidden %s", 403, payload)
 }
 
 func (o *RetryWorkflowStepForbidden) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepForbidden %s", 403, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepForbidden %s", 403, payload)
 }
 
 func (o *RetryWorkflowStepForbidden) GetPayload() *models.StderrErrResponse {
@@ -392,12 +392,12 @@ func (o *RetryWorkflowStepNotFound) Code() int {
 
 func (o *RetryWorkflowStepNotFound) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepNotFound %s", 404, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepNotFound %s", 404, payload)
 }
 
 func (o *RetryWorkflowStepNotFound) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepNotFound %s", 404, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepNotFound %s", 404, payload)
 }
 
 func (o *RetryWorkflowStepNotFound) GetPayload() *models.StderrErrResponse {
@@ -462,12 +462,12 @@ func (o *RetryWorkflowStepInternalServerError) Code() int {
 
 func (o *RetryWorkflowStepInternalServerError) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepInternalServerError %s", 500, payload)
 }
 
 func (o *RetryWorkflowStepInternalServerError) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/step/{step_id}/retry][%d] retryWorkflowStepInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepInternalServerError %s", 500, payload)
 }
 
 func (o *RetryWorkflowStepInternalServerError) GetPayload() *models.StderrErrResponse {
