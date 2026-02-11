@@ -15,6 +15,7 @@ import { RunnerRecentActivitySkeleton } from '@/components/runners/RunnerRecentA
 import { ManagementDropdown } from '@/components/runners/management/ManagementDropdown'
 import { getRunner, getRunnerSettings, getOrg } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
+import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerError } from './runner-details'
 import { RunnerHealth, RunnerHealthError } from './runner-health'
@@ -50,63 +51,65 @@ export default async function OrgRunner({ params, searchParams }) {
 
   return (
     <RunnerProvider initRunner={runner} shouldPoll>
-      <PageLayout isScrollable>
-        <Breadcrumbs
-          breadcrumbs={[
-            {
-              path: `/${orgId}`,
-              text: org?.name,
-            },
-            {
-              path: `/${orgId}/runner`,
-              text: 'Builds',
-            },
-          ]}
-        />
-        <PageHeader>
-          <HeadingGroup>
-            <Text variant="h3" weight="strong" level={1}>
-              Builds
-            </Text>
-            <Text theme="neutral">
-              View your organizations build runner performance and activities.
-            </Text>
-          </HeadingGroup>
+      <SurfacesProvider>
+        <PageLayout isScrollable>
+          <Breadcrumbs
+            breadcrumbs={[
+              {
+                path: `/${orgId}`,
+                text: org?.name,
+              },
+              {
+                path: `/${orgId}/runner`,
+                text: 'Builds',
+              },
+            ]}
+          />
+          <PageHeader>
+            <HeadingGroup>
+              <Text variant="h3" weight="strong" level={1}>
+                Builds
+              </Text>
+              <Text theme="neutral">
+                View your organizations build runner performance and activities.
+              </Text>
+            </HeadingGroup>
 
-          <div className="flex items-center gap-4">
-            <TemporalLink namespace="runners" eventLoopId={runner?.id} />
-            <ManagementDropdown settings={settings} />
-          </div>
-        </PageHeader>
-        <PageContent>
-          <PageSection className="flex-row gap-6">
-            <AsyncBoundary
-              errorFallback={<RunnerError />}
-              loadingFallback={<RunnerDetailsCardSkeleton />}
-            >
-              <RunnerDetails org={org} />
-            </AsyncBoundary>
-
-            <AsyncBoundary
-              errorFallback={<RunnerHealthError />}
-              loadingFallback={<RunnerHealthCardSkeleton />}
-            >
-              <RunnerHealth org={org} />
-            </AsyncBoundary>
-          </PageSection>
-
-          <div className="flex gap-6">
-            <PageSection>
+            <div className="flex items-center gap-4">
+              <TemporalLink namespace="runners" eventLoopId={runner?.id} />
+              <ManagementDropdown settings={settings} />
+            </div>
+          </PageHeader>
+          <PageContent>
+            <PageSection className="flex-row gap-6">
               <AsyncBoundary
-                errorFallback={<RunnerActivityError />}
-                loadingFallback={<RunnerRecentActivitySkeleton />}
+                errorFallback={<RunnerError />}
+                loadingFallback={<RunnerDetailsCardSkeleton />}
               >
-                <RunnerActivity org={org} offset={sp['offset'] || '0'} />
+                <RunnerDetails org={org} />
+              </AsyncBoundary>
+
+              <AsyncBoundary
+                errorFallback={<RunnerHealthError />}
+                loadingFallback={<RunnerHealthCardSkeleton />}
+              >
+                <RunnerHealth org={org} />
               </AsyncBoundary>
             </PageSection>
-          </div>
-        </PageContent>
-      </PageLayout>
+
+            <div className="flex gap-6">
+              <PageSection>
+                <AsyncBoundary
+                  errorFallback={<RunnerActivityError />}
+                  loadingFallback={<RunnerRecentActivitySkeleton />}
+                >
+                  <RunnerActivity org={org} offset={sp['offset'] || '0'} />
+                </AsyncBoundary>
+              </PageSection>
+            </div>
+          </PageContent>
+        </PageLayout>
+      </SurfacesProvider>
     </RunnerProvider>
   )
 }
