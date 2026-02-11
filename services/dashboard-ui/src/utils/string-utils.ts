@@ -127,6 +127,15 @@ export function getFlagEmoji(countryCode: string = 'us'): string {
     .join('')
 }
 
+/**
+ * Convert a number to its ordinal form.
+ * Examples:
+ *   1 -> "1st"
+ *   2 -> "2nd"
+ *   3 -> "3rd"
+ *   11 -> "11th"
+ *   21 -> "21st"
+ */
 export function toOrdinal(n: number): string {
   const j = n % 10
   const k = n % 100
@@ -137,6 +146,13 @@ export function toOrdinal(n: number): string {
   return `${n}th`
 }
 
+/**
+ * Convert a zero-based array index to its ordinal form.
+ * Examples:
+ *   0 -> "1st"
+ *   1 -> "2nd"
+ *   2 -> "3rd"
+ */
 export function indexToOrdinal(idx: number): string {
   return toOrdinal(idx + 1)
 }
