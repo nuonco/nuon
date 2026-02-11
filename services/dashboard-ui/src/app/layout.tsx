@@ -12,6 +12,7 @@ import {
   InitSegmentAnalytics,
   SegmentAnalyticsIdentify,
 } from '@/lib/segment-analytics'
+import { InitPylonChat } from '@/lib/pylon-chat'
 import { AccountProvider } from '@/providers/account-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { UserJourneyProvider } from '@/providers/user-journey-provider'
@@ -82,6 +83,8 @@ export default async function RootLayout({
                 {children}
               </UserJourneyProvider>
             </AccountProvider>
+
+            <InitPylonChat />
 
             {process.env.SEGMENT_WRITE_KEY && (
               <Suspense>
