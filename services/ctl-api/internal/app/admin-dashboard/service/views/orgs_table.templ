@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
@@ -26,6 +27,7 @@ templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string
 						@table.Head() { Organization }
 						@table.Head() { Type }
 						@table.Head() { Status }
+						@table.Head() { Tags }
 						@table.Head() { Created At }
 					}
 				}
@@ -50,6 +52,19 @@ templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string
 							}
 							@table.Cell() {
 								@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
+							}
+							@table.Cell() {
+								<div class="flex flex-wrap gap-1 max-w-xs">
+									if len(org.Tags) == 0 {
+										<span class="text-xs text-muted-foreground italic">No tags</span>
+									} else {
+										for _, tag := range org.Tags {
+											@badge.Badge(badge.Props{Class: "text-xs"}) {
+												{ tag }
+											}
+										}
+									}
+								</div>
 							}
 							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
 								{ org.CreatedAt.Format("2006-01-02 15:04") }
