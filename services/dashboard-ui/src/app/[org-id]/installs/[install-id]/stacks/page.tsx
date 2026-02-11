@@ -1,11 +1,17 @@
 import type { Metadata } from 'next'
 import { AsyncBoundary } from '@/components/common/AsyncBoundary'
+import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstall, getOrg } from '@/lib'
 import { TPageProps } from '@/types'
+import {
+  StackConfig,
+  StackConfigError,
+  StackConfigSkeleton,
+} from './stack-config'
 import { InstallStacksTable, InstallStacksTableSkeleton } from './stacks-table'
 
 type TInstallPageProps = TPageProps<'org-id' | 'install-id'>
@@ -30,8 +36,9 @@ export default async function InstallStack({ params }: TInstallPageProps) {
     }),
   ])
 
+  const containerId = 'stack-page'
   return (
-    <PageSection isScrollable>
+    <PageSection id={containerId} className="!pb-24" isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -52,23 +59,35 @@ export default async function InstallStack({ params }: TInstallPageProps) {
           },
         ]}
       />
+
       <HeadingGroup>
         <Text variant="base" weight="strong">
           Install stacks
         </Text>
         <Text variant="subtext" theme="neutral">
-          View your install stack versions below.
+          View your install stack config and versions below.
         </Text>
       </HeadingGroup>
 
       <AsyncBoundary
-        loadingFallback={<InstallStacksTableSkeleton />}
-        errorFallback={
-          <span className="text-md">Unable to load install stacks</span>
-        }
+        loadingFallback={<StackConfigSkeleton />}
+        errorFallback={<StackConfigError />}
       >
-        <InstallStacksTable installId={install?.id} orgId={orgId} />
+        <StackConfig orgId={orgId} install={install} />
       </AsyncBoundary>
+
+      <div className="flex flex-col gap-4">
+        <Text weight="strong">Install stack versions</Text>
+        <AsyncBoundary
+          loadingFallback={<InstallStacksTableSkeleton />}
+          errorFallback={
+            <span className="text-md">Unable to load install stacks</span>
+          }
+        >
+          <InstallStacksTable installId={install?.id} orgId={orgId} />
+        </AsyncBoundary>
+      </div>
+      <BackToTop containerId={containerId} />
     </PageSection>
   )
 }

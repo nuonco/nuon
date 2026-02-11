@@ -126,3 +126,33 @@ export function getFlagEmoji(countryCode: string = 'us'): string {
     .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
     .join('')
 }
+
+/**
+ * Convert a number to its ordinal form.
+ * Examples:
+ *   1 -> "1st"
+ *   2 -> "2nd"
+ *   3 -> "3rd"
+ *   11 -> "11th"
+ *   21 -> "21st"
+ */
+export function toOrdinal(n: number): string {
+  const j = n % 10
+  const k = n % 100
+
+  if (j === 1 && k !== 11) return `${n}st`
+  if (j === 2 && k !== 12) return `${n}nd`
+  if (j === 3 && k !== 13) return `${n}rd`
+  return `${n}th`
+}
+
+/**
+ * Convert a zero-based array index to its ordinal form.
+ * Examples:
+ *   0 -> "1st"
+ *   1 -> "2nd"
+ *   2 -> "3rd"
+ */
+export function indexToOrdinal(idx: number): string {
+  return toOrdinal(idx + 1)
+}

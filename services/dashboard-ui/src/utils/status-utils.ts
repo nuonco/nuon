@@ -33,6 +33,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   outdated: 'warn',
   warn: 'warn',
   drifted: 'warn',
+  expired: 'warn',
 
   // Info
   executing: 'info',
@@ -50,6 +51,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   info: 'info',
   retried: 'info',
   applying: 'info',
+  "awaiting-user-run": 'info',
 
   // Neutral
   noop: 'neutral',

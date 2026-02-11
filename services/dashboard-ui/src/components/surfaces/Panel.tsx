@@ -18,6 +18,7 @@ type TPanelSize = 'default' | 'half' | '3/4' | 'full'
 export interface IPanel extends React.HTMLAttributes<HTMLDivElement> {
   childrenClassName?: string
   heading?: React.ReactNode
+  headerClassName?: string
   isVisible?: boolean
   onClose?: () => void
   panelId?: string
@@ -31,6 +32,7 @@ const PanelBase = ({
   children,
   childrenClassName,
   heading,
+  headerClassName,
   isVisible = false,
   onClose,
   panelId,
@@ -77,7 +79,12 @@ const PanelBase = ({
           tabIndex={-1}
           {...props}
         >
-          <header className="flex items-center justify-between shrink-0 h-18 px-4">
+          <header
+            className={cn(
+              'flex items-center justify-between shrink-0 h-18 px-4',
+              headerClassName
+            )}
+          >
             {heading ? (
               typeof heading === 'string' ? (
                 <HeadingGroup>
