@@ -16,7 +16,7 @@ type CreateTerraformWorkspaceRequest struct {
 // @Summary				create terraform workspace
 // @Description.markdown	create_terraform_workspace.md
 // @Param					req	body	CreateTerraformWorkspaceRequest	true	"Input"
-// @Tags					runners,runners/runner
+// @Tags					runners
 // @Accept					json
 // @Produce				json
 // @Security				APIKey

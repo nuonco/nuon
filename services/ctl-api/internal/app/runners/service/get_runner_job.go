@@ -59,7 +59,7 @@ func (s *service) getRunnerJob(ctx context.Context, runnerJobID string) (*app.Ru
 // @Description.markdown	get_runner_job.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Param					job_id	path	string	true	"job ID"
-// @Tags					runners,runners/runner
+// @Tags					runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey

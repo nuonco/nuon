@@ -18,7 +18,7 @@ import (
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
-// @Tags					runners,runners/runner
+// @Tags					runners
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -29,7 +29,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}	app.TerraformWorkspaceState
-// @Router					/v1/terraform-workspace/{workspace_id}/states [get]
+// @Router					/v1/terraform-workspaces/{workspace_id}/states [get]
 func (s *service) GetTerraformWorkspaceStatesV2(ctx *gin.Context) {
 	s.GetTerraformWorkspaceStates(ctx)
 }
@@ -41,7 +41,7 @@ func (s *service) GetTerraformWorkspaceStatesV2(ctx *gin.Context) {
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
-// @Tags					runners,runners/runner
+// @Tags					runners
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
