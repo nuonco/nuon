@@ -172,11 +172,11 @@
   --secondary: oklch(0.098 0.011 239.825);       /* Matches card */
   --secondary-foreground: oklch(0.927 0.006 283.516);
 
-  /* Borders - Nuon dark theme */
-  --border: oklch(0.189 0.015 238.872);          /* #253033 - border-default */
-  --border-subtle: oklch(0.145 0.013 239.146);   /* #1a2528 */
-  --border-hover: oklch(0.233 0.016 238.645);    /* #2d3b3f */
-  --input: oklch(0.189 0.015 238.872);
+  /* Borders - Nuon dark theme (lightened for better visibility) */
+  --border: oklch(0.25 0.015 238.872);           /* border-default - lighter */
+  --border-subtle: oklch(0.20 0.013 239.146);    /* subtle borders - lighter */
+  --border-hover: oklch(0.30 0.016 238.645);     /* hover state - lighter */
+  --input: oklch(0.25 0.015 238.872);
   --ring: var(--cyan);
 
   /* Status colors (same as light) */

@@ -2,11 +2,13 @@ package views
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/graphviewer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tagsinput"
 )
 
 templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, currentPage, totalPages int) {
@@ -19,45 +21,8 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 				</a>
 			</div>
 
-			<!-- Compact Org Header -->
-			<div class="bg-card border border-border rounded-lg p-6 mb-6">
-				<div class="flex items-start justify-between">
-					<!-- Left side: Name and ID -->
-					<div class="flex-1">
-						<h1 class="text-2xl font-bold mb-2">{ org.Name }</h1>
-						<div class="flex items-center gap-2">
-							<span class="text-xs text-muted-foreground uppercase">ID:</span>
-							<span id={ "org-detail-id-" + org.ID } class="font-mono text-xs text-foreground">
-								{ org.ID }
-							</span>
-							@copybutton.CopyButton(copybutton.Props{
-								TargetID: "org-detail-id-" + org.ID,
-							})
-						</div>
-					</div>
-
-					<!-- Right side: Status and timestamps -->
-					<div class="text-right space-y-2">
-						<!-- Status -->
-						<div class="flex items-center justify-end gap-2">
-							<span class="text-xs text-muted-foreground uppercase">Status:</span>
-							@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
-						</div>
-
-						<!-- Type -->
-						<div class="flex items-center justify-end gap-2">
-							<span class="text-xs text-muted-foreground uppercase">Type:</span>
-							<span class="font-mono text-xs uppercase">{ string(org.OrgType) }</span>
-						</div>
-
-						<!-- Timestamps -->
-						<div class="text-xs text-muted-foreground space-y-1">
-							<div>Created: <span class="font-mono">{ org.CreatedAt.Format("2006-01-02 15:04") }</span></div>
-							<div>Updated: <span class="font-mono">{ org.UpdatedAt.Format("2006-01-02 15:04") }</span></div>
-						</div>
-					</div>
-				</div>
-			</div>
+			<!-- Compact Org Header with Popover -->
+			@OrgHeaderWithPopover(org)
 
 			<!-- Most Recently Updated App Card -->
 			if recentApp != nil {
@@ -81,11 +46,167 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 				}
 			}
 		</div>
-		// Include the copybutton, popover, and graphviewer JavaScript
+		// Include the copybutton, popover, graphviewer, and tagsinput JavaScript
 		@copybutton.Script()
 		@popover.Script()
 		@graphviewer.Script()
+		@tagsinput.Script()
+
+		// Handle popover cleanup
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Close popover before swap
+			document.body.addEventListener('htmx:beforeSwap', function(event) {
+				if (event.detail.target.id === 'org-header-with-popover') {
+					const popover = document.querySelector('[data-tui-popover-id="tags-popover"]');
+					if (popover) {
+						popover.setAttribute('data-tui-popover-open', 'false');
+						popover.style.display = 'none';
+					}
+					const trigger = document.querySelector('[data-tui-popover-trigger="tags-popover"]');
+					if (trigger) {
+						trigger.setAttribute('data-tui-popover-open', 'false');
+					}
+				}
+			});
+
+			// Ensure popover is hidden after swap
+			document.body.addEventListener('htmx:afterSwap', function(event) {
+				if (event.detail.target.id === 'org-header-with-popover') {
+					setTimeout(function() {
+						const popover = document.querySelector('[data-tui-popover-id="tags-popover"]');
+						if (popover) {
+							popover.setAttribute('data-tui-popover-open', 'false');
+							popover.style.display = 'none';
+						}
+					}, 10);
+				}
+			});
+		</script>
 	}
+}
+
+templ OrgHeaderWithPopover(org *app.Org) {
+	<div id="org-header-with-popover">
+		@OrgHeader(org)
+		<!-- Tags Popover -->
+		@popover.Content(popover.ContentProps{
+			ID:        "tags-popover",
+			Placement: popover.PlacementBottomEnd,
+			ShowArrow: true,
+		}) {
+			<div class="p-4 w-80">
+				<h3 class="text-sm font-semibold mb-3">Manage Tags</h3>
+				<form
+					hx-post={ "/orgs/" + org.ID + "/tags" }
+					hx-target="#org-header-with-popover"
+					hx-swap="outerHTML"
+					hx-on::before-request="
+						const popover = document.querySelector('[data-tui-popover-id=tags-popover]');
+						if (popover) {
+							popover.setAttribute('data-tui-popover-open', 'false');
+							popover.style.display = 'none';
+						}
+						const trigger = document.querySelector('[data-tui-popover-trigger=tags-popover]');
+						if (trigger) trigger.setAttribute('data-tui-popover-open', 'false');
+					"
+					class="space-y-3"
+				>
+					@tagsinput.TagsInput(tagsinput.Props{
+						ID:          "tags-input",
+						Name:        "tags",
+						Value:       org.Tags,
+						Placeholder: "Type and press Enter...",
+					})
+					<button
+						type="submit"
+						class="w-full px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+					>
+						Save Tags
+					</button>
+				</form>
+			</div>
+		}
+	</div>
+}
+
+templ OrgHeader(org *app.Org) {
+	<div id="org-header-container" class="bg-card border border-border rounded-lg p-6 mb-6">
+		<div class="flex items-start justify-between">
+			<!-- Left side: Name and ID -->
+			<div class="flex-1">
+				<h1 class="text-2xl font-bold mb-2">{ org.Name }</h1>
+				<div class="flex items-center gap-2">
+					<span class="text-xs text-muted-foreground uppercase">ID:</span>
+					<span id={ "org-detail-id-" + org.ID } class="font-mono text-xs text-foreground">
+						{ org.ID }
+					</span>
+					@copybutton.CopyButton(copybutton.Props{
+						TargetID: "org-detail-id-" + org.ID,
+					})
+				</div>
+			</div>
+			<!-- Right side: Status and timestamps -->
+			<div class="text-right space-y-2">
+				<!-- Status -->
+				<div class="flex items-center justify-end gap-2">
+					<span class="text-xs text-muted-foreground uppercase">Status:</span>
+					@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
+				</div>
+				<!-- Type -->
+				<div class="flex items-center justify-end gap-2">
+					<span class="text-xs text-muted-foreground uppercase">Type:</span>
+					<span class="font-mono text-xs uppercase">{ string(org.OrgType) }</span>
+				</div>
+				<!-- Tags -->
+				<div class="flex items-center justify-end gap-2">
+					<span class="text-xs text-muted-foreground uppercase">Tags:</span>
+					<div id="tags-display-inline" class="flex items-center gap-1">
+						if len(org.Tags) == 0 {
+							<span class="text-xs text-muted-foreground italic">None</span>
+						} else {
+							for _, tag := range org.Tags {
+								@badge.Badge(badge.Props{Class: "text-xs"}) {
+									<span>{ tag }</span>
+									<button
+										type="button"
+										hx-post={ "/orgs/" + org.ID + "/tags/remove/" + tag }
+										hx-target="#org-header-with-popover"
+										hx-swap="outerHTML"
+										class="ml-1 text-current hover:text-destructive transition-colors cursor-pointer"
+										title="Remove tag"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+										</svg>
+									</button>
+								}
+							}
+						}
+						<!-- Add Tag Button with Popover -->
+						@popover.Trigger(popover.TriggerProps{
+							For:         "tags-popover",
+							TriggerType: popover.TriggerTypeClick,
+						}) {
+							<button
+								type="button"
+								class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+								title="Add tags"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+								</svg>
+							</button>
+						}
+					</div>
+				</div>
+				<!-- Timestamps -->
+				<div class="text-xs text-muted-foreground space-y-1">
+					<div>Created: <span class="font-mono">{ org.CreatedAt.Format("2006-01-02 15:04") }</span></div>
+					<div>Updated: <span class="font-mono">{ org.UpdatedAt.Format("2006-01-02 15:04") }</span></div>
+				</div>
+			</div>
+		</div>
+	</div>
 }
 
 // Note: orgStatusClass helper function is shared from orgs.templ
