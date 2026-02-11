@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { IS_BYOC } from '@/configs/app'
 import { API_URL } from '@/configs/api'
 import { USE_AUTH_SERVICE, AUTH_SERVICE_URL } from '@/configs/auth'
+import { PYLON_APP_ID } from "@/configs/pylon"
 import { getUserProfile } from '@/lib/auth-server'
 import { InitDatadogLogs } from '@/lib/datadog-logs'
 import { InitDatadogRUM } from '@/lib/datadog-rum'
@@ -12,6 +13,7 @@ import {
   InitSegmentAnalytics,
   SegmentAnalyticsIdentify,
 } from '@/lib/segment-analytics'
+import { InitPylonChat } from '@/lib/pylon-chat'
 import { AccountProvider } from '@/providers/account-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { UserJourneyProvider } from '@/providers/user-journey-provider'
@@ -82,6 +84,8 @@ export default async function RootLayout({
                 {children}
               </UserJourneyProvider>
             </AccountProvider>
+
+           {PYLON_APP_ID ?  <InitPylonChat PYLON_APP_ID={PYLON_APP_ID} /> : null}
 
             {process.env.SEGMENT_WRITE_KEY && (
               <Suspense>
