@@ -17,6 +17,10 @@ type step struct {
 }
 
 func (m *Migrator) Exec(ctx context.Context) error {
+	if err := m.migrationDB.WithContext(ctx).AutoMigrate(&MigrationModel{}); err != nil {
+		return errors.Wrap(err, "unable to ensure migrations table exists")
+	}
+
 	methods := []step{
 		{
 			"join-tables",
