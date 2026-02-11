@@ -22,6 +22,14 @@ resolve_repo_dir() {
 
 REPO_DIR="$(resolve_repo_dir)"
 
+ensure_codegen_tools() {
+  echo >&2 "Ensuring tool binaries are installed..."
+  go install github.com/swaggo/swag/cmd/swag@latest
+  go install github.com/go-swagger/go-swagger/cmd/swagger@v0.33.0
+  go install github.com/golang/mock/mockgen@latest
+  go install github.com/a-h/templ/cmd/templ@latest
+}
+
 if [[ "$#" == 1 && "$1" == "--help" ]]; then
   cat << EOF
   This script will reset your local generated code for both mono and nuon repositories.
@@ -44,6 +52,7 @@ if [[ "$#" == 1 && "$1" == "--sdk" ]]; then
   echo >&2 "========================================"
   echo >&2 "Ensuring dependencies are downloaded..."
   (cd "$REPO_DIR" && go mod download)
+  ensure_codegen_tools
   echo >&2 "Generating ctl-api public/runner specs..."
   (cd "$REPO_DIR/services/ctl-api" && go run cmd/gen/main.go --targets sdk)
   echo >&2 "Generating nuon-go SDK..."
@@ -93,6 +102,7 @@ generate_repo() {
 
   echo >&2 "Ensuring dependencies are downloaded..."
   go mod download
+  ensure_codegen_tools
 
   echo >&2 "Running go generate..."
   all_files=$(grep -r --include="*.go" -l "//go:generate" . | grep -v "sdks/nuon-go" | grep -v "sdks/nuon-runner-go" || true)
