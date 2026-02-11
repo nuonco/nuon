@@ -2,7 +2,7 @@ import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
-import { getStepBanner } from '@/utils/workflow-utils'
+import { getPolicyViolationCounts, getStepBanner } from '@/utils/workflow-utils'
 import { StepButtons } from './StepButtons'
 import { PolicyViolations } from './PolicyViolations'
 
@@ -15,9 +15,7 @@ export const StepBanner = ({
 }) => {
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
-  const hasPolicyViolations =
-    ((step?.status?.metadata?.deny_violations as unknown[])?.length || 0) > 0 ||
-    ((step?.status?.metadata?.warn_violations as unknown[])?.length || 0) > 0
+  const { hasViolations: hasPolicyViolations } = getPolicyViolationCounts(step)
 
   return (
     <>
