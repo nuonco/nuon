@@ -56,6 +56,9 @@ type AppOrg struct {
 	// status description
 	StatusDescription string `json:"status_description,omitempty"`
 
+	// tags
+	Tags []string `json:"tags"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
