@@ -53,6 +53,9 @@ func (s *Service) RegisterAuthRoutes(api *gin.Engine) error {
 }
 
 func (s *Service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
+	api.GET("/livez", s.GetLivezHandler)
+	api.GET("/readyz", s.GetReadyzHandler)
+	api.GET("/version", s.GetVersionHandler)
 	return nil
 }
 
