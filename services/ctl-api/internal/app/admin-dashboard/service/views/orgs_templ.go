@@ -149,7 +149,7 @@ func Orgs(orgs []*app.Org, currentPage, totalPages int, searchQuery string) temp
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = search.SearchInput(search.Props{
-						Placeholder: "Search by organization name or ID...",
+						Placeholder: "Search by name, ID, or tag...",
 						TargetURL:   "orgs/table",
 						TargetID:    "orgs-table",
 					}).Render(ctx, templ_7745c5c3_Buffer)

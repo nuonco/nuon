@@ -23,7 +23,7 @@ templ Orgs(orgs []*app.Org, currentPage, totalPages int, searchQuery string) {
 				}
 				@card.Content() {
 					@search.SearchInput(search.Props{
-						Placeholder: "Search by organization name or ID...",
+						Placeholder: "Search by name, ID, or tag...",
 						TargetURL:   "orgs/table",
 						TargetID:    "orgs-table",
 					})

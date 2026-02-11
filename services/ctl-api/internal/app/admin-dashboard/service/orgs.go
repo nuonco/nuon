@@ -44,8 +44,9 @@ func (s *service) getOrgs(ctx context.Context, search string, page int) ([]*app.
 	if search != "" {
 		search = strings.TrimSpace(search)
 		query = query.Where(
-			"name ILIKE ? OR id = ?",
+			"name ILIKE ? OR id = ? OR ? = ANY(tags)",
 			"%"+search+"%",
+			search,
 			search,
 		)
 	}
