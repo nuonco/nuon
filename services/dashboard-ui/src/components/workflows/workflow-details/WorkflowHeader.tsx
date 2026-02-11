@@ -22,7 +22,10 @@ export const WorkflowHeader = () => {
             variant="h3"
             weight="strong"
           >
-            {workflow.name || toSentenceCase(snakeToWords(workflow.type))}
+            {workflow?.name === undefined &&
+            workflow?.type === 'action_workflow_run'
+              ? `Action run (${workflow?.metadata?.install_action_workflow_name})`
+              : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
 
             {install?.drifted_objects?.length &&
             install?.drifted_objects?.find(
