@@ -71,3 +71,60 @@ func (c *client) UpdateWorkflow(ctx context.Context, workflowID string, req *mod
 
 	return resp.Payload, nil
 }
+
+func (c *client) GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error) {
+	resp, err := c.genClient.Operations.GetWorkflowSteps(&operations.GetWorkflowStepsParams{
+		WorkflowID: workflowID,
+		Context:    ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error) {
+	resp, err := c.genClient.Operations.GetWorkflowStep(&operations.GetWorkflowStepParams{
+		WorkflowID: workflowID,
+		StepID:     stepID,
+		Context:    ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error {
+	if req == nil {
+		req = &models.ServiceRetryWorkflowStepRequest{
+			Operation: "retry-step",
+		}
+	}
+	_, err := c.genClient.Operations.RetryWorkflowStep(&operations.RetryWorkflowStepParams{
+		WorkflowID: workflowID,
+		StepID:     stepID,
+		Req:        req,
+		Context:    ctx,
+	}, c.getOrgIDAuthInfo())
+	return err
+}
+
+func (c *client) RetryOwnerWorkflow(ctx context.Context, workflowID string, req *models.ServiceRetryWorkflowByIDRequest) (*models.ServiceRetryWorkflowByIDResponse, error) {
+	if req == nil {
+		req = &models.ServiceRetryWorkflowByIDRequest{
+			Operation: "retry-step",
+		}
+	}
+	resp, err := c.genClient.Operations.RetryOwnerWorkflowByID(&operations.RetryOwnerWorkflowByIDParams{
+		WorkflowID: workflowID,
+		Req:        req,
+		Context:    ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}

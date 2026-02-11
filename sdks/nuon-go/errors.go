@@ -92,3 +92,38 @@ func IsServerError(err error) bool {
 
 	return stderr.IsServerError()
 }
+
+// ToAPIError extracts a user-friendly error message from any API error response.
+// Unlike ToUserError, this returns a message for all API errors, not just user errors.
+// Returns the description if available, otherwise the error field, otherwise empty string and false.
+func ToAPIError(inputErr error) (string, bool) {
+	var (
+		stderr stderrResponse
+		ok     bool
+	)
+	for {
+		stderr, ok = inputErr.(stderrResponse)
+		if ok {
+			break
+		}
+
+		inputErr = errors.Unwrap(inputErr)
+		if inputErr == nil {
+			return "", false
+		}
+	}
+
+	payload := stderr.GetPayload()
+	if payload == nil {
+		return "", false
+	}
+
+	if payload.Description != "" {
+		return payload.Description, true
+	}
+	if payload.Error != "" {
+		return payload.Error, true
+	}
+
+	return "", false
+}

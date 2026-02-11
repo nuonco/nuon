@@ -254,3 +254,85 @@ Users can install via:
 - **Prompt**: Interactive user input
 
 This CLI serves as the primary interface for developers to interact with the Nuon platform, providing a powerful and intuitive command-line experience that complements the web dashboard and enables efficient development workflows.
+
+## TUI Conventions
+
+The CLI uses [Bubble Tea](https://github.com/charmbracelet/bubbletea) for interactive terminal user interfaces. Follow these conventions when adding or modifying commands:
+
+### TUI vs Non-TUI Command Pattern
+
+**Base command → TUI, subcommands → non-TUI:**
+
+```bash
+# TUI - launches interactive interface
+nuon installs workflows
+
+# Non-TUI - standard CLI output
+nuon installs workflows list
+nuon installs workflows get
+nuon installs workflows --help
+```
+
+**Convention:**
+- **Base command** (e.g., `nuon installs workflows`): Launches the full interactive TUI experience
+- **Subcommands** (e.g., `list`, `get`, `select`): Non-TUI, outputs JSON/table/text for scripting
+- **`--help` flag**: Always non-TUI, shows command documentation
+- **`--json` flag**: When available, forces non-TUI JSON output
+
+**Example implementation pattern:**
+```go
+workflowsCmd := &cobra.Command{
+    Use:   "workflows",
+    Short: "Manage workflows",
+    Long:  `By default, launches an interactive TUI...`,
+    Run: func(cmd *cobra.Command, _ []string) {
+        // Base command → TUI
+        svc.WorkflowsTUI(cmd.Context(), id, workflowID)
+    },
+}
+
+workflowsListCmd := &cobra.Command{
+    Use:   "list",
+    Short: "List workflows",
+    Run: func(cmd *cobra.Command, _ []string) {
+        // Subcommand → non-TUI output
+        svc.WorkflowsList(cmd.Context(), id, offset, limit, PrintJSON)
+    },
+}
+workflowsCmd.AddCommand(workflowsListCmd)
+```
+
+### Reusing TUI Components
+
+**IMPORTANT**: Always reuse existing TUI components from `internal/ui/`:
+
+| Component | Location | Use Case |
+|-----------|----------|----------|
+| Bubbles (shared) | `internal/ui/bubbles/` | Selector, confirm dialog, spinner, table |
+| v3 Common | `internal/ui/v3/common/` | Progress, header, status line, full-page dialog |
+| Workflow TUI | `internal/ui/v3/workflow/` | Workflow viewing/management |
+| Action TUI | `internal/ui/v3/action/` | Action workflows |
+| Install TUI | `internal/ui/v3/install/` | Install management |
+| Logs TUI | `internal/ui/v3/logs/` | Log streaming |
+
+**Before creating new components:**
+1. Check `internal/ui/bubbles/` for reusable primitives (selector, confirm, spinner)
+2. Check `internal/ui/v3/common/` for shared layouts (header, footer, progress)
+3. Look at existing TUI implementations for patterns (workflow, action, install)
+
+### TUI Structure Pattern
+
+New TUI features should follow the established v3 pattern:
+
+```
+internal/ui/v3/<feature>/
+├── main.go          # Entry point, Model definition, Init/Update/View
+├── keys.go          # Key bindings
+├── messages.go      # Custom message types
+├── styles.go        # Lipgloss styles
+├── actions.go       # Business logic commands
+├── data.go          # Data fetching/transformation
+├── footer.go        # Footer view component
+├── header.go        # Header view component
+└── selector/        # Sub-components if needed
+```

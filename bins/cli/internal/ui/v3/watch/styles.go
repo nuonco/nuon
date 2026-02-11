@@ -1,4 +1,4 @@
-package workflow
+package watch
 
 import (
 	"github.com/charmbracelet/lipgloss"
@@ -16,15 +16,3 @@ var appStyleBlur = lipgloss.NewStyle().
 var appStyleFocus = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(styles.BorderActiveColor)
-
-var policySectionStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(styles.BorderInactiveColor)
-
-var policyDenyStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(styles.ErrorColor)
-
-var policyWarnStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(styles.WarningColor)

@@ -16,6 +16,7 @@ func (c *client) CreateWorkflowStepApprovalResponse(
 ) (*models.ServiceCreateWorkflowStepApprovalResponseResponse, error) {
 	resp, err := c.genClient.Operations.CreateWorkflowStepApprovalResponse(&operations.CreateWorkflowStepApprovalResponseParams{
 		WorkflowID: workflowID,
+		StepID:     workflowStepID,
 		ApprovalID: workflowApprovalID,
 		Req:        req,
 		Context:    ctx,

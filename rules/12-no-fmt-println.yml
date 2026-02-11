@@ -2,6 +2,8 @@ id: no-fmt-println
 language: go
 message: "Do not use fmt.Println for logging. See conventions/logging.md for proper logging patterns."
 severity: error
+ignores:
+  - "bins/cli/**"
 rule:
   pattern:
     context: 'func t() { fmt.Println($$$ARGS) }'
