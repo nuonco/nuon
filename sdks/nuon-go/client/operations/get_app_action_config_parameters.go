@@ -67,12 +67,6 @@ type GetAppActionConfigParams struct {
 	*/
 	ActionConfigID string
 
-	/* ActionID.
-
-	   action ID
-	*/
-	ActionID string
-
 	/* AppID.
 
 	   app ID
@@ -143,17 +137,6 @@ func (o *GetAppActionConfigParams) SetActionConfigID(actionConfigID string) {
 	o.ActionConfigID = actionConfigID
 }
 
-// WithActionID adds the actionID to the get app action config params
-func (o *GetAppActionConfigParams) WithActionID(actionID string) *GetAppActionConfigParams {
-	o.SetActionID(actionID)
-	return o
-}
-
-// SetActionID adds the actionId to the get app action config params
-func (o *GetAppActionConfigParams) SetActionID(actionID string) {
-	o.ActionID = actionID
-}
-
 // WithAppID adds the appID to the get app action config params
 func (o *GetAppActionConfigParams) WithAppID(appID string) *GetAppActionConfigParams {
 	o.SetAppID(appID)
@@ -175,11 +158,6 @@ func (o *GetAppActionConfigParams) WriteToRequest(r runtime.ClientRequest, reg s
 
 	// path param action_config_id
 	if err := r.SetPathParam("action_config_id", o.ActionConfigID); err != nil {
-		return err
-	}
-
-	// path param action_id
-	if err := r.SetPathParam("action_id", o.ActionID); err != nil {
 		return err
 	}
 

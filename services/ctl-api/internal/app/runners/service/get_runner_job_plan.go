@@ -57,7 +57,7 @@ func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (str
 // @Description.markdown	get_runner_job_plan.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Param					job_id	path	string	true	"runner job ID"
-// @Tags					runners,runners/runner
+// @Tags					runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -68,7 +68,7 @@ func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (str
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	string
-// @Router					/v1/runner/{runner_id}/jobs/{job_id}/plan [get]
+// @Router					/v1/runners/{runner_id}/jobs/{job_id}/plan [get]
 func (s *service) GetRunnerJobPlanV2(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 	_, err := s.getRunner(ctx, runnerID)

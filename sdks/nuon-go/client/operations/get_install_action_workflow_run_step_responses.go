@@ -62,7 +62,7 @@ func (o *GetInstallActionWorkflowRunStepReader) ReadResponse(response runtime.Cl
 		}
 		return nil, result
 	default:
-		return nil, runtime.NewAPIError("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}] GetInstallActionWorkflowRunStep", response, response.Code())
+		return nil, runtime.NewAPIError("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}] GetInstallActionWorkflowRunStep", response, response.Code())
 	}
 }
 
@@ -112,12 +112,12 @@ func (o *GetInstallActionWorkflowRunStepOK) Code() int {
 
 func (o *GetInstallActionWorkflowRunStepOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepOK %s", 200, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepOK %s", 200, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepOK) GetPayload() *models.AppInstallActionWorkflowRunStep {
@@ -182,12 +182,12 @@ func (o *GetInstallActionWorkflowRunStepBadRequest) Code() int {
 
 func (o *GetInstallActionWorkflowRunStepBadRequest) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepBadRequest %s", 400, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepBadRequest) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepBadRequest %s", 400, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepBadRequest) GetPayload() *models.StderrErrResponse {
@@ -252,12 +252,12 @@ func (o *GetInstallActionWorkflowRunStepUnauthorized) Code() int {
 
 func (o *GetInstallActionWorkflowRunStepUnauthorized) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepUnauthorized %s", 401, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepUnauthorized) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepUnauthorized %s", 401, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepUnauthorized) GetPayload() *models.StderrErrResponse {
@@ -322,12 +322,12 @@ func (o *GetInstallActionWorkflowRunStepForbidden) Code() int {
 
 func (o *GetInstallActionWorkflowRunStepForbidden) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepForbidden %s", 403, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepForbidden) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepForbidden %s", 403, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepForbidden) GetPayload() *models.StderrErrResponse {
@@ -392,12 +392,12 @@ func (o *GetInstallActionWorkflowRunStepNotFound) Code() int {
 
 func (o *GetInstallActionWorkflowRunStepNotFound) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepNotFound %s", 404, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepNotFound) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepNotFound %s", 404, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepNotFound) GetPayload() *models.StderrErrResponse {
@@ -462,12 +462,12 @@ func (o *GetInstallActionWorkflowRunStepInternalServerError) Code() int {
 
 func (o *GetInstallActionWorkflowRunStepInternalServerError) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepInternalServerError %s", 500, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepInternalServerError) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}][%d] getInstallActionWorkflowRunStepInternalServerError %s", 500, payload)
 }
 
 func (o *GetInstallActionWorkflowRunStepInternalServerError) GetPayload() *models.StderrErrResponse {

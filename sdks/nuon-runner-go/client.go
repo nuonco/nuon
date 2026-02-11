@@ -27,8 +27,7 @@ type Client interface {
 	// jobs
 	GetJobs(ctx context.Context, grp models.AppRunnerJobGroup, status models.AppRunnerJobStatus, limit *int64) ([]*models.AppRunnerJob, error)
 	GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error)
-	GetJobPlanJSON(ctx context.Context, jobID string) (string, error) // DEPRECATED: Use GetJobCompositePlan instead
-	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
+	GetJobPlanJSON(ctx context.Context, jobID string) (string, error)
 	UpdateJob(ctx context.Context, jobID string, req *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error)
 
 	// job executions
@@ -48,7 +47,6 @@ type Client interface {
 	GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error)
 
 	GetActionWorkflowConfig(ctx context.Context, workflowConfigID string) (*models.AppActionWorkflowConfig, error)
-	GetActionWorkflowLatestConfig(ctx context.Context, workflowID string) (*models.AppActionWorkflowConfig, error)
 
 	// get an app config
 	GetAppConfig(ctx context.Context, appID, appConfigID string) (*models.AppAppConfig, error)
