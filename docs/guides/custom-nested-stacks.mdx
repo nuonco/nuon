@@ -1,0 +1,379 @@
+---
+title: 'Custom Nested CloudFormation Stacks'
+description: 'Extend the install stack with custom CloudFormation nested templates.'
+icon: layer-group
+---
+
+The install stack supports custom nested CloudFormation templates beyond the built-in VPC and runner stacks. This
+enables vendors to provision custom AWS or Kubernetes resources as part of the install stack itself — before the sandbox
+or any components run. This feature is useful for setting up resources that must exist before the sandbox provisions but
+that require permissions the vendor does not need to retain throughout the remainder of an app's lifetime.
+
+## Use Cases
+
+For BYO-EKS
+
+- Create Kubernetes namespaces in an existing EKS cluster.
+- Create EKS access entries for the runner IAM roles.
+- Grant the Runner Subnet Security Group access to an existing EKS Cluster.
+
+More generally, these custom nested stacks can be used to create core resources that do not change and need not be
+re-deployed via a Nuon component. This is particularly useful for networking components.
+
+- Create an dedicated RDS Subnet in the freshly created VPC.
+- Configure an AWS Transit VPC in addition to a dedicated VPC for a BYOC app.
+
+## Configuration
+
+Custom nested stacks are configured in `[[custom_nested_stacks]]` blocks in `stack.toml`:
+
+```toml
+# stack
+type        = "aws-cloudformation"
+name        = "byo-eks-{{.nuon.install.id}}"
+description = "Application deplyed into an existing AWS EKS k8s Cluster."
+
+vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/.../byo-vpc.yaml"
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/.../runner-asg.yaml"
+
+[[custom_nested_stacks]]
+name         = "k8s_namespaces"
+template_url = "https://vender.s3.amazonaws.com/templates/k8s-namespaces.yaml"
+index        = 0
+
+[custom_nested_stacks.parameters]
+Namespaces = "{{.nuon.install.inputs.namespaces}}"
+
+[[custom_nested_stacks]]
+name         = "eks_access_entries"
+template_url = "https://my-bucket.s3.amazonaws.com/templates/eks-access-entries.yaml"
+index        = 1
+
+[custom_nested_stacks.parameters]
+Namespaces = "{{.nuon.install.inputs.namespaces}}"
+
+[[custom_nested_stacks]]
+name         = "runner_sg_eks_access"
+template_url = "https://inlzqy4v3qyo0wagcmilgnxpry-byoc-nuon-install-templates.s3.eu-west-1.amazonaws.com/templates/runner-sg-eks-access.yaml"
+index        = 2
+
+[custom_nested_stacks.parameters]
+ClusterName = "{{.nuon.install.inputs.cluster_name}}"
+```
+
+### Properties
+
+| Property       | Type                | Required | Description                                                                                                                                   |
+| -------------- | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`         | `string`            | Yes      | Name of the nested stack. Used as the CloudFormation logical ID (converted to CamelCase) and parameter group label.                           |
+| `template_url` | `string`            | Yes      | S3 URL to the CloudFormation template YAML. Must be publicly accessible or accessible via the stack's execution role. Supports Go templating. |
+| `index`        | `int`               | Yes      | Execution order (ascending). Must be unique across all custom nested stacks.                                                                  |
+| `parameters`   | `map[string]string` | No       | Explicit parameter mappings from install inputs. See [Parameter Mapping](#parameter-mapping).                                                 |
+
+<!-- prettier-ignore-start -->
+> [!TIP]
+> The `template_url` field supports Go templating, so you can dynamically construct URLs if needed.
+<!-- prettier-ignore-end -->
+
+## Execution Order
+
+Custom nested stacks execute **after** the VPC and runner nested stacks. The `index` field determines the order among
+custom stacks:
+
+1. VPC nested stack
+2. Runner ASG nested stack
+3. Custom nested stacks ordered by `index`, ascending.
+
+The first custom nested stack (lowest index) depends on the `VPC` and `RunnerAutoScalingGroup` resources. Each
+subsequent stack depends on the previous one. This means stacks are provisioned sequentially, and a failure in one will
+prevent later stacks from executing.
+
+If your template declares any [role enable parameters](#role-enable-parameters), the corresponding IAM role resources
+are also added as dependencies — only for the stacks that actually reference them (see
+[Reserved Parameters](#Reserved-Parameters)).
+
+## Reserved Parameters
+
+Nuon automatically injects the following reserved parameters into your nested template if they are defined in the
+template's `Parameters` section. These are always set by Nuon and are never hoisted to the parent stack or exposed to
+the customer.
+
+### Nuon Identity Parameters
+
+| Parameter       | Value          |
+| --------------- | -------------- |
+| `NuonInstallID` | The install ID |
+| `NuonAppID`     | The app ID     |
+| `NuonOrgID`     | The org ID     |
+
+If your template defines any of these as parameters, Nuon populates them automatically. If your template does not define
+them, they are omitted — no error is raised.
+
+### Role Enable Parameters
+
+| Parameter                 | Value                           |
+| ------------------------- | ------------------------------- |
+| `EnableRunnerProvision`   | Runner Provision Role enabled   |
+| `EnableRunnerManagement`  | Runner Management Role enabled  |
+| `EnableRunnerDeprovision` | Runner Deprovision Role enabled |
+
+Your app's IAM role configuration (in `permissions/` and `break_glass/`) generates `Enable*` parameters in the parent
+stack (e.g., `EnableRunnerProvisioner`, `EnableRunnerDeprovisioner`). These are also treated as reserved parameters in
+custom nested stacks.
+
+If your template declares one of these parameters, Nuon will:
+
+1. Pass through the parent stack's parameter value (a `Ref` to the parent parameter).
+2. Add the corresponding IAM role resource as a dependency, so the role is created before your stack.
+
+If your template does not declare the parameter, no dependency is added and the role has no effect on your stack.
+
+This allows custom nested stacks to conditionally use IAM roles without creating a hard dependency on them:
+
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  NuonInstallID:
+    Type: String
+  EnableRunnerProvisioner:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+Conditions:
+  ProvisionerEnabled: !Equals [!Ref EnableRunnerProvisioner, 'true']
+
+Resources:
+  # Resources that depend on the provisioner role being enabled
+  MyResource:
+    Type: Custom::Resource
+    Condition: ProvisionerEnabled
+    Properties:
+      InstallId: !Ref NuonInstallID
+```
+
+## First-Class Output Wiring
+
+If a parameter in your custom template matches the name of an **output** from the VPC or runner nested stacks, Nuon
+automatically wires it using `!GetAtt`. This lets your template consume outputs from the built-in stacks without any
+explicit configuration.
+
+For example, if the VPC template outputs `VPC` and `RunnerSubnet`, and your custom template declares parameters with
+those same names, they will be automatically populated:
+
+```yaml
+Parameters:
+  VPC:
+    Description: VPC ID from the VPC stack
+    Type: String
+  RunnerSubnet:
+    Description: Subnet from the VPC stack
+    Type: String
+```
+
+These auto-wired parameters are not hoisted to the parent stack.
+
+## Inter-Stack Output Wiring
+
+Outputs from earlier custom nested stacks are automatically wired to matching parameters in later custom stacks, using
+the same mechanism as first-class output wiring. If stack A (index 0) declares an output called `SharedSubnetID`, and
+stack B (index 1) declares a parameter called `SharedSubnetID`, Nuon will automatically set the parameter value using
+`!GetAtt StackA.Outputs.SharedSubnetID`.
+
+This works across any number of stacks in the chain — stack C can consume outputs from both stack A and stack B.
+
+Auto-wired parameters from inter-stack outputs are not hoisted to the parent stack.
+
+**Precedence:** First-class outputs (from the VPC and runner stacks) always take priority over custom stack outputs. If
+both the VPC stack and a custom stack produce an output with the same name, the VPC stack output is used.
+
+```yaml
+# Stack A (index 0) - produces outputs
+Outputs:
+  SharedSubnetID:
+    Value: !Ref MySubnet
+
+# Stack B (index 1) - consumes outputs from Stack A
+Parameters:
+  SharedSubnetID:
+    Description: Automatically wired from Stack A
+    Type: String
+```
+
+## Parameter Hoisting
+
+Any non-reserved parameters defined in your nested template that are not auto-wired from first-class outputs and not
+explicitly mapped via `parameters` are **hoisted** into the parent CloudFormation stack. This means:
+
+- Parameters appear in the CloudFormation console UI when the customer creates or updates the stack.
+- Parameters are grouped under a label matching the stack `name`.
+- Default values from your template are preserved.
+- Parameter types (e.g., `AWS::EC2::VPC::Id`, `String`, `Number`) are preserved.
+
+**Important:** Parameter names must be unique across all nested stacks (including the VPC and runner stacks). If two
+stacks define a parameter with the same name, `nuon apps sync` will fail with a conflict error.
+
+## Parameter Mapping
+
+Use the `parameters` field to map a template parameter to an install input value. This is useful for passing
+customer-specific values from install inputs into your nested template without hoisting them to the CloudFormation UI.
+
+```toml
+[[custom_nested_stacks]]
+name         = "k8s_namespaces"
+template_url = "https://my-bucket.s3.amazonaws.com/templates/k8s-namespaces.yaml"
+index        = 0
+
+[custom_nested_stacks.parameters]
+Namespaces = "{{.nuon.install.inputs.namespaces}}"
+```
+
+Mapped parameters reference install inputs using the `{{.nuon.install.inputs.<name>}}` syntax. When a parameter is
+explicitly mapped:
+
+- Its value is resolved from the install's current inputs.
+- It is removed from the hoisted parameter set (not shown in the CloudFormation UI).
+- If the install input is not set, the parameter resolves to an empty string.
+
+## Authoring Templates
+
+### Template Structure
+
+Templates must be valid CloudFormation YAML. At minimum:
+
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: My custom nested stack
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Name of the EKS cluster
+
+Resources:
+  # Your resources here
+
+Outputs:
+  # Optional outputs
+```
+
+### Naming Conventions
+
+The `name` field in `stack.toml` is converted to a CamelCase CloudFormation logical ID. For example:
+
+| `name` value         | Logical ID         |
+| -------------------- | ------------------ |
+| `k8s_namespaces`     | `K8sNamespaces`    |
+| `eks_access_entries` | `EksAccessEntries` |
+| `my-custom-stack`    | `MyCustomStack`    |
+
+The logical ID must not conflict with existing resources in the parent stack (e.g., `VPC`, `RunnerAutoScalingGroup`).
+
+### Validation Rules
+
+The following conditions will cause a sync error:
+
+- Missing `name` or `template_url`
+- Duplicate `index` values across custom stacks
+- `name` that produces an empty or invalid CloudFormation logical ID
+- Logical ID that conflicts with an existing resource in the parent stack
+- Duplicate logical IDs across custom stacks
+- Parameter name conflicts across stacks
+
+### Using Lambda Custom Resources
+
+For resources that CloudFormation cannot manage natively (e.g., Kubernetes namespaces), use a Lambda-backed custom
+resource pattern:
+
+1. Define an IAM role with the minimum permissions needed
+2. Create a Lambda function inline (using `ZipFile`) or reference an S3 artifact
+3. Create a `Custom::` resource that invokes the Lambda
+
+```yaml
+Resources:
+  MyFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CustomAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:AccessKubernetesApi
+                Resource: !Sub arn:aws:eks:${AWS::Region}:${AWS::AccountId}:cluster/${ClusterName}
+
+  MyFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 120
+      Role: !GetAtt MyFunctionRole.Arn
+      Code:
+        ZipFile: |
+          # Your Lambda handler here
+          def handler(event, context):
+              ...
+
+  MyCustomResource:
+    Type: Custom::MyResource
+    Properties:
+      ServiceToken: !GetAtt MyFunction.Arn
+```
+
+### Handling Delete Events
+
+Lambda custom resources receive `Create`, `Update`, and `Delete` request types. Always handle the `Delete` event, even
+if it is a no-op. Failing to respond to a delete event will cause the CloudFormation stack deletion to hang.
+
+```python
+if event["RequestType"] == "Delete":
+    send_cfn_response(event, context, "SUCCESS")
+    return
+```
+
+## Hosting Templates
+
+Templates must be hosted on S3. CloudFormation requires that nested stack template URLs point to an S3 bucket — other
+URL types (e.g., GitHub raw URLs, arbitrary HTTPS endpoints) are not supported by CloudFormation.
+
+Upload your templates to an S3 bucket and reference them using the full S3 URL:
+
+```
+https://my-bucket.s3.amazonaws.com/templates/my-stack.yaml
+```
+
+## Example: Kubernetes Namespaces
+
+See the [byo-eks example app config](https://github.com/nuonco/example-app-configs/tree/main/byo-eks) for a complete
+working example that uses custom nested stacks to create Kubernetes namespaces and EKS access entries.
+
+## Permissions
+
+The CloudFormation stack execution role must have permission to create the resources defined in your nested templates.
+For Lambda-backed custom resources, this includes:
+
+- `iam:CreateRole`, `iam:PutRolePolicy`, `iam:AttachRolePolicy`, `iam:DeleteRole`, `iam:DeleteRolePolicy`,
+  `iam:DetachRolePolicy`
+- `lambda:CreateFunction`, `lambda:DeleteFunction`, `lambda:InvokeFunction`
+- Any permissions the Lambda function itself needs (passed via its IAM role)
+
+<!-- prettier-ignore-start -->
+> [!NOTE]
+> These permissions are distinct from the permissions in the `permissions/` directory in the app config. They are the
+> permissions the customer has at the moment they execute the CloudFormation template.
+<!-- prettier-ignore-end -->
