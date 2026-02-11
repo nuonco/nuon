@@ -70,13 +70,16 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	}
 	maps.Copy(tmpl.Parameters, customResult.params)
 
+	// NOTE(fd): if there are no secrets in the config, the section is not rendered.
 	// build secrets
-	secrets := t.getSecretsResources(inp, tb)
-	maps.Copy(tmpl.Resources, secrets)
-	secretParams := t.getSecretsParameters(inp)
-	maps.Copy(tmpl.Parameters, secretParams)
-	secretParamLabels := t.getSecretsParamLabels(inp)
-	maps.Copy(paramlabels, secretParamLabels)
+	if len(inp.AppCfg.SecretsConfig.Secrets) > 0 {
+		secrets := t.getSecretsResources(inp, tb)
+		maps.Copy(tmpl.Resources, secrets)
+		secretParams := t.getSecretsParameters(inp)
+		maps.Copy(tmpl.Parameters, secretParams)
+		secretParamLabels := t.getSecretsParamLabels(inp)
+		maps.Copy(paramlabels, secretParamLabels)
+	}
 
 	// build app input parameters for install_stack sourced inputs
 	installGroupParameters := t.getInstallInputGroupParameters(inp)
@@ -90,26 +93,29 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 
 	// parameter groups
 	var pgs []map[string]any
-	pgs = append(pgs, []map[string]any{
+	paramGroups := []map[string]any{
 		{
 			"Label": map[string]any{
 				"default": "VPC Configuration",
 			},
 			"Parameters": pkggenerics.MapToKeys(vpcParams),
 		},
-		{
+	}
+	if len(inp.AppCfg.SecretsConfig.Secrets) > 0 {
+		paramGroups = append(paramGroups, map[string]any{
 			"Label": map[string]any{
 				"default": "Application Secrets",
 			},
 			"Parameters": pkggenerics.MapToKeys(t.getSecretsParameters(inp)),
+		})
+	}
+	paramGroups = append(paramGroups, map[string]any{
+		"Label": map[string]any{
+			"default": "Access Permissions",
 		},
-		{
-			"Label": map[string]any{
-				"default": "Access Permissions",
-			},
-			"Parameters": pkggenerics.MapToKeys(t.getRolesParameters(inp)),
-		},
-	}...)
+		"Parameters": pkggenerics.MapToKeys(t.getRolesParameters(inp)),
+	})
+	pgs = append(pgs, paramGroups...)
 
 	// add app input parameter group if there are any install_stack sourced inputs
 	for groupName, installGroupParameters := range installGroupParameters {
