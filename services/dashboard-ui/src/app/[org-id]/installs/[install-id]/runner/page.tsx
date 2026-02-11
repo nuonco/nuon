@@ -16,6 +16,7 @@ import {
   getOrg,
 } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
+import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { TPageProps } from '@/types'
 import { RunnerActivity, RunnerActivityError } from './runner-activity'
 import { RunnerDetails, RunnerDetailsError } from './runner-details'
@@ -63,75 +64,79 @@ export default async function Runner({
 
   return (
     <RunnerProvider initRunner={runner} shouldPoll>
-      <PageSection className="@container" isScrollable>
-        <Breadcrumbs
-          breadcrumbs={[
-            {
-              path: `/${orgId}`,
-              text: org?.name,
-            },
-            {
-              path: `/${orgId}/installs`,
-              text: 'Installs',
-            },
-            {
-              path: `/${orgId}/installs/${installId}`,
-              text: install?.name,
-            },
-            {
-              path: `/${orgId}/installs/${installId}/runner`,
-              text: 'Runner',
-            },
-          ]}
-        />
-        <div className="flex gap-4 justify-between">
-          <hgroup>
-            <Text variant="base" weight="strong">
-              Install runner
-            </Text>
-          </hgroup>
-          <ManagementDropdown
-            settings={settings}
-            isInstallRunner
-            isManagedRunner={Boolean(heartbeat?.mng)}
+      <SurfacesProvider>
+        <PageSection className="@container" isScrollable>
+          <Breadcrumbs
+            breadcrumbs={[
+              {
+                path: `/${orgId}`,
+                text: org?.name,
+              },
+              {
+                path: `/${orgId}/installs`,
+                text: 'Installs',
+              },
+              {
+                path: `/${orgId}/installs/${installId}`,
+                text: install?.name,
+              },
+              {
+                path: `/${orgId}/installs/${installId}/runner`,
+                text: 'Runner',
+              },
+            ]}
           />
-        </div>
-
-        <div className="flex flex-col @min-4xl:flex-row gap-6">
-          <AsyncBoundary
-            errorFallback={<RunnerDetailsError />}
-            loadingFallback={
-              <RunnerDetailsCardSkeleton className="flex-initial" />
-            }
-          >
-            <RunnerDetails
-              orgId={orgId}
-              runnerId={install?.runner_id}
+          <div className="flex gap-4 justify-between">
+            <hgroup>
+              <Text variant="base" weight="strong">
+                Install runner
+              </Text>
+            </hgroup>
+            <ManagementDropdown
               settings={settings}
+              isInstallRunner
+              isManagedRunner={Boolean(heartbeat?.mng)}
             />
-          </AsyncBoundary>
+          </div>
 
-          <AsyncBoundary
-            errorFallback={<RunnerHealthError />}
-            loadingFallback={<RunnerHealthCardSkeleton className="flex-auto" />}
-          >
-            <RunnerHealth orgId={orgId} runnerId={install.runner_id} />
-          </AsyncBoundary>
-        </div>
+          <div className="flex flex-col @min-4xl:flex-row gap-6">
+            <AsyncBoundary
+              errorFallback={<RunnerDetailsError />}
+              loadingFallback={
+                <RunnerDetailsCardSkeleton className="flex-initial" />
+              }
+            >
+              <RunnerDetails
+                orgId={orgId}
+                runnerId={install?.runner_id}
+                settings={settings}
+              />
+            </AsyncBoundary>
 
-        <div className="flex flex-col gap-6">
-          <AsyncBoundary
-            errorFallback={<RunnerActivityError />}
-            loadingFallback={<RunnerRecentActivitySkeleton />}
-          >
-            <RunnerActivity
-              orgId={orgId}
-              offset={sp['offset'] || '0'}
-              runnerId={install.runner_id}
-            />
-          </AsyncBoundary>
-        </div>
-      </PageSection>
+            <AsyncBoundary
+              errorFallback={<RunnerHealthError />}
+              loadingFallback={
+                <RunnerHealthCardSkeleton className="flex-auto" />
+              }
+            >
+              <RunnerHealth orgId={orgId} runnerId={install.runner_id} />
+            </AsyncBoundary>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <AsyncBoundary
+              errorFallback={<RunnerActivityError />}
+              loadingFallback={<RunnerRecentActivitySkeleton />}
+            >
+              <RunnerActivity
+                orgId={orgId}
+                offset={sp['offset'] || '0'}
+                runnerId={install.runner_id}
+              />
+            </AsyncBoundary>
+          </div>
+        </PageSection>
+      </SurfacesProvider>
     </RunnerProvider>
   )
 }
