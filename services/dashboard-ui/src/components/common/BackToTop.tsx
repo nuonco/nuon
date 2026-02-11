@@ -61,7 +61,7 @@ export const BackToTop = ({ containerId, scrollOffset = 400 }: IBackToTop) => {
     <TransitionDiv className="fade" isVisible={isVisable}>
       <Button
         className={cn(
-          'absolute bottom-4 md:bottom-6 right-4 md:right-6 !p-3 drop-shadow-lg',
+          'absolute bottom-4 md:bottom-6 right-12 md:right-18 !p-3 drop-shadow-lg',
           'bg-btn-gradient-light bg-btn-bg-light dark:bg-btn-gradient-dark dark:bg-btn-bg-dark'
         )}
         onClick={() => {
