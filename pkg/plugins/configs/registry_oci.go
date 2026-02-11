@@ -3,6 +3,7 @@ package configs
 import (
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 )
 
 type OCIRegistryType string
@@ -10,6 +11,7 @@ type OCIRegistryType string
 const (
 	OCIRegistryTypeECR        OCIRegistryType = "ecr"
 	OCIRegistryTypeACR        OCIRegistryType = "acr"
+	OCIRegistryTypeGAR        OCIRegistryType = "gar"
 	OCIRegistryTypePrivateOCI OCIRegistryType = "private_oci"
 	OCIRegistryTypePublicOCI  OCIRegistryType = "public_oci"
 )
@@ -30,6 +32,7 @@ type OCIRegistryRepository struct {
 
 	ECRAuth *awscredentials.Config   `hcl:"ecr_auth,block"`
 	ACRAuth *azurecredentials.Config `hcl:"acr_auth,block"`
+	GARAuth *gcpcredentials.Config   `hcl:"gar_auth,block"`
 	OCIAuth *OCIRegistryAuth         `hcl:"ocr_auth,block"`
 
 	// based on the type of access, either the repository (ecr) or login server (acr) will be provided.

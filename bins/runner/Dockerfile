@@ -73,6 +73,16 @@ RUN curl -LO \
     && rm -r bin \
     && chmod +x kubelogin
 
+FROM golang:1.25-alpine AS gke-gcloud-auth-plugin
+
+RUN apk add --update --no-cache curl ca-certificates python3
+WORKDIR /bin
+# Install gcloud CLI and extract the gke-gcloud-auth-plugin
+RUN curl -sSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz | tar -xz -C /opt \
+    && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet \
+    && cp /opt/google-cloud-sdk/bin/gke-gcloud-auth-plugin /bin/gke-gcloud-auth-plugin \
+    && chmod +x /bin/gke-gcloud-auth-plugin
+
 FROM golang:1.25-alpine AS certs
 
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
@@ -189,6 +199,7 @@ COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
+COPY --from=gke-gcloud-auth-plugin /bin/gke-gcloud-auth-plugin /usr/local/bin/gke-gcloud-auth-plugin
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 COPY ./bundle /bundle

@@ -18,8 +18,14 @@ message AzureAccount {
   string client_secret = 5;
 }
 
+message GcpAccount {
+  string region = 1;
+  string project_id = 2;
+}
+
 // InstallContext is a context for passing information about an install
 message InstallContext {
   AzureAccount azure_account = 1;
   AwsAccount aws_account = 2;
+  GcpAccount gcp_account = 3;
 }

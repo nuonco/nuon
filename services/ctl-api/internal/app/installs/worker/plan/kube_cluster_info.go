@@ -8,6 +8,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -71,6 +72,17 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 					SubscriptionID:       stack.InstallStackOutputs.AzureStackOutputs.SubscriptionID,
 					SubscriptionTenantID: stack.InstallStackOutputs.AzureStackOutputs.SubscriptionTenantID,
 				},
+				UseDefault: true,
+			},
+		}
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		obj = &kube.ClusterInfo{
+			ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
+			Endpoint: "{{.nuon.sandbox.outputs.cluster.endpoint}}",
+			CAData:   "{{.nuon.sandbox.outputs.cluster.ca_certificate}}",
+			GCPAuth: &gcpcredentials.Config{
+				ProjectID:  stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+				Region:     stack.InstallStackOutputs.GCPStackOutputs.Region,
 				UseDefault: true,
 			},
 		}

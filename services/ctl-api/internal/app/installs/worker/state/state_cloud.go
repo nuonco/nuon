@@ -29,5 +29,12 @@ func (h *Workflows) toCloudAccount(ctx workflow.Context, installID string) (*sta
 		}
 	}
 
+	if install.GCPAccount != nil {
+		st.GCP = &state.GCPCloudAccount{
+			Region:    install.GCPAccount.Region,
+			ProjectID: install.GCPAccount.ProjectID,
+		}
+	}
+
 	return st, nil
 }

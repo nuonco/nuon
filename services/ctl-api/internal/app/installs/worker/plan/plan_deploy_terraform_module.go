@@ -14,6 +14,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
@@ -106,6 +107,7 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	// render platform-specific values
 	var awsAuth *awscredentials.Config
 	var azureAuth *azurecredentials.Config
+	var gcpAuth *gcpcredentials.Config
 	envVars := generics.ToStringMap(cfg.EnvVars)
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
@@ -122,6 +124,14 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 			UseDefault: true,
 		}
 		envVars["ARM_SUBSCRIPTION_ID"] = "{{.nuon.install_stack.outputs.subscription_id}}"
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		gcpAuth = &gcpcredentials.Config{
+			ProjectID:  stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+			Region:     stack.InstallStackOutputs.GCPStackOutputs.Region,
+			UseDefault: true,
+		}
+		envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
+		envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
 	}
 	if err := render.RenderMap(&envVars, stateData); err != nil {
 		l.Error("error rendering env-vars",
@@ -144,6 +154,7 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		},
 		AzureAuth:   azureAuth,
 		AWSAuth:     awsAuth,
+		GCPAuth:     gcpAuth,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,

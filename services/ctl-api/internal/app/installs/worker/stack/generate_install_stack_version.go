@@ -13,12 +13,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcptf"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const (
 	DefaultAzureRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#azure"
 	DefaultAWSRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#default"
+	DefaultGCPRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#gcp"
 )
 
 // @temporal-gen workflow
@@ -41,6 +43,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	if !generics.SliceContains(cfg.RunnerConfig.Type, []app.AppRunnerType{
 		app.AppRunnerTypeAWS,
 		app.AppRunnerTypeAzure,
+		app.AppRunnerTypeGCP,
 	}) {
 		return nil
 	}
@@ -97,6 +100,8 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		region = install.AWSAccount.Region
 	case install.AzureAccount != nil:
 		region = install.AzureAccount.Location
+	case install.GCPAccount != nil:
+		region = install.GCPAccount.Region
 	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
 		InstallID:      install.ID,
@@ -179,11 +184,23 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		if err != nil {
 			return errors.Wrap(err, "unable to create bicep template")
 		}
+
+	case app.AppRunnerTypeGCP:
+		if cfg.RunnerConfig.InitScriptURL != "" {
+			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
+		} else {
+			inp.RunnerInitScriptURL = DefaultGCPRunnerInitScript
+		}
+
+		tmplByts, checksum, err = gcptf.Render(inp)
+		if err != nil {
+			return errors.Wrap(err, "unable to create gcp terraform template")
+		}
 	}
 
-	// AWS and Azure converge here, after template generation is complete.
-	// We upload both types of stacks to S3.
-	// Even though Azure cannot use the AWS Quickcreate flow, the Azure CLI can still pull a bicep template file via HTTP.
+	// AWS, Azure, and GCP converge here, after template generation is complete.
+	// We upload all types of stacks to S3.
+	// Even though Azure/GCP cannot use the AWS Quickcreate flow, they can still pull a template file via HTTP.
 
 	// upload and publish the stack
 	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{

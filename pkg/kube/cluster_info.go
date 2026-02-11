@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 )
 
 type ClusterInfo struct {
@@ -36,6 +37,7 @@ type ClusterInfo struct {
 	// them in the environment.
 	AWSAuth   *awscredentials.Config   `json:"aws_auth" hcl:"aws_auth,block"`
 	AzureAuth *azurecredentials.Config `json:"azure_auth" hcl:"azure_auth,block"`
+	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth" hcl:"gcp_auth,block"`
 
 	// If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token
 	Inline bool `json:"inline"`
@@ -143,6 +145,14 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 				"--tenant-id",
 				cInfo.AzureAuth.ServicePrincipal.SubscriptionTenantID,
 			},
+			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+		}
+	}
+
+	if cInfo.GCPAuth != nil {
+		cfg.ExecProvider = &clientcmdapi.ExecConfig{
+			APIVersion:      "client.authentication.k8s.io/v1beta1",
+			Command:         "gke-gcloud-auth-plugin",
 			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
 		}
 	}

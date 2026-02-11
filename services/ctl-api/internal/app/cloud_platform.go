@@ -30,6 +30,7 @@ func (c CloudPlatform) String() string {
 const (
 	CloudPlatformAWS     CloudPlatform = "aws"
 	CloudPlatformAzure   CloudPlatform = "azure"
+	CloudPlatformGCP     CloudPlatform = "gcp"
 	CloudPlatformUnknown CloudPlatform = "unknown"
 )
 
@@ -735,12 +736,74 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 	}
 }
 
+func (c CloudPlatform) gcpRegions() []CloudPlatformRegion {
+	return []CloudPlatformRegion{
+		// us
+		{Name: "us-central1", Value: "us-central1", DisplayName: "US Central (Iowa)", Icon: "flag-US"},
+		{Name: "us-east1", Value: "us-east1", DisplayName: "US East (South Carolina)", Icon: "flag-US"},
+		{Name: "us-east4", Value: "us-east4", DisplayName: "US East (Virginia)", Icon: "flag-US"},
+		{Name: "us-east5", Value: "us-east5", DisplayName: "US East (Columbus)", Icon: "flag-US"},
+		{Name: "us-south1", Value: "us-south1", DisplayName: "US South (Dallas)", Icon: "flag-US"},
+		{Name: "us-west1", Value: "us-west1", DisplayName: "US West (Oregon)", Icon: "flag-US"},
+		{Name: "us-west2", Value: "us-west2", DisplayName: "US West (Los Angeles)", Icon: "flag-US"},
+		{Name: "us-west3", Value: "us-west3", DisplayName: "US West (Salt Lake City)", Icon: "flag-US"},
+		{Name: "us-west4", Value: "us-west4", DisplayName: "US West (Las Vegas)", Icon: "flag-US"},
+
+		// north america
+		{Name: "northamerica-northeast1", Value: "northamerica-northeast1", DisplayName: "Canada (Montréal)", Icon: "flag-CA"},
+		{Name: "northamerica-northeast2", Value: "northamerica-northeast2", DisplayName: "Canada (Toronto)", Icon: "flag-CA"},
+
+		// south america
+		{Name: "southamerica-east1", Value: "southamerica-east1", DisplayName: "South America (São Paulo)", Icon: "flag-BR"},
+		{Name: "southamerica-west1", Value: "southamerica-west1", DisplayName: "South America (Santiago)", Icon: "flag-CL"},
+
+		// europe
+		{Name: "europe-central2", Value: "europe-central2", DisplayName: "Europe (Warsaw)", Icon: "flag-PL"},
+		{Name: "europe-north1", Value: "europe-north1", DisplayName: "Europe (Finland)", Icon: "flag-FI"},
+		{Name: "europe-southwest1", Value: "europe-southwest1", DisplayName: "Europe (Madrid)", Icon: "flag-ES"},
+		{Name: "europe-west1", Value: "europe-west1", DisplayName: "Europe (Belgium)", Icon: "flag-BE"},
+		{Name: "europe-west2", Value: "europe-west2", DisplayName: "Europe (London)", Icon: "flag-GB"},
+		{Name: "europe-west3", Value: "europe-west3", DisplayName: "Europe (Frankfurt)", Icon: "flag-DE"},
+		{Name: "europe-west4", Value: "europe-west4", DisplayName: "Europe (Netherlands)", Icon: "flag-NL"},
+		{Name: "europe-west6", Value: "europe-west6", DisplayName: "Europe (Zürich)", Icon: "flag-CH"},
+		{Name: "europe-west8", Value: "europe-west8", DisplayName: "Europe (Milan)", Icon: "flag-IT"},
+		{Name: "europe-west9", Value: "europe-west9", DisplayName: "Europe (Paris)", Icon: "flag-FR"},
+		{Name: "europe-west10", Value: "europe-west10", DisplayName: "Europe (Berlin)", Icon: "flag-DE"},
+		{Name: "europe-west12", Value: "europe-west12", DisplayName: "Europe (Turin)", Icon: "flag-IT"},
+
+		// asia
+		{Name: "asia-east1", Value: "asia-east1", DisplayName: "Asia (Taiwan)", Icon: "flag-TW"},
+		{Name: "asia-east2", Value: "asia-east2", DisplayName: "Asia (Hong Kong)", Icon: "flag-HK"},
+		{Name: "asia-northeast1", Value: "asia-northeast1", DisplayName: "Asia (Tokyo)", Icon: "flag-JP"},
+		{Name: "asia-northeast2", Value: "asia-northeast2", DisplayName: "Asia (Osaka)", Icon: "flag-JP"},
+		{Name: "asia-northeast3", Value: "asia-northeast3", DisplayName: "Asia (Seoul)", Icon: "flag-KR"},
+		{Name: "asia-south1", Value: "asia-south1", DisplayName: "Asia (Mumbai)", Icon: "flag-IN"},
+		{Name: "asia-south2", Value: "asia-south2", DisplayName: "Asia (Delhi)", Icon: "flag-IN"},
+		{Name: "asia-southeast1", Value: "asia-southeast1", DisplayName: "Asia (Singapore)", Icon: "flag-SG"},
+		{Name: "asia-southeast2", Value: "asia-southeast2", DisplayName: "Asia (Jakarta)", Icon: "flag-ID"},
+
+		// australia
+		{Name: "australia-southeast1", Value: "australia-southeast1", DisplayName: "Australia (Sydney)", Icon: "flag-AU"},
+		{Name: "australia-southeast2", Value: "australia-southeast2", DisplayName: "Australia (Melbourne)", Icon: "flag-AU"},
+
+		// middle east
+		{Name: "me-central1", Value: "me-central1", DisplayName: "Middle East (Doha)", Icon: "flag-QA"},
+		{Name: "me-central2", Value: "me-central2", DisplayName: "Middle East (Dammam)", Icon: "flag-SA"},
+		{Name: "me-west1", Value: "me-west1", DisplayName: "Middle East (Tel Aviv)", Icon: "flag-IL"},
+
+		// africa
+		{Name: "africa-south1", Value: "africa-south1", DisplayName: "Africa (Johannesburg)", Icon: "flag-ZA"},
+	}
+}
+
 func (c CloudPlatform) Regions() []CloudPlatformRegion {
 	switch c {
 	case CloudPlatformAWS:
 		return c.awsRegions()
 	case CloudPlatformAzure:
 		return c.azureLocations()
+	case CloudPlatformGCP:
+		return c.gcpRegions()
 	default:
 	}
 
@@ -753,6 +816,8 @@ func NewCloudPlatform(platform string) (CloudPlatform, error) {
 		return CloudPlatformAWS, nil
 	case "azure":
 		return CloudPlatformAzure, nil
+	case "gcp":
+		return CloudPlatformGCP, nil
 	default:
 	}
 

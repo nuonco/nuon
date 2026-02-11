@@ -14,6 +14,7 @@ import (
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -123,7 +124,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	l.Info("getting auth")
-	awsAuth, azureAuth, err := p.getAuth(stack.InstallStackOutputs, run)
+	awsAuth, azureAuth, gcpAuth, err := p.getAuth(stack.InstallStackOutputs, run)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get sandbox run auth")
 	}
@@ -152,6 +153,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 		AzureAuth: azureAuth,
 		AWSAuth:   awsAuth,
+		GCPAuth:   gcpAuth,
 		// TODO(ja): provide both auth types to hooks
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: true,
@@ -215,11 +217,13 @@ func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string 
 		envVars[k] = v
 	}
 
-	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
-		return envVars
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		envVars["AWS_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+	case app.AppRunnerTypeGCP:
+		envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+		envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
 	}
-
-	envVars["AWS_REGION"] = "{{.nuon.install_stack.outputs.region}}"
 
 	return envVars
 }
@@ -231,32 +235,41 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 		vars[k] = v
 	}
 
-	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
-		return vars, nil
-	}
-
-	builtin := map[string]any{
-		"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
-		"nuon_id":                  "{{.nuon.install.id}}",
-		"region":                   "{{.nuon.install_stack.outputs.region}}",
-		"public_root_domain":       fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
-		"internal_root_domain":     fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
-		"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
-		"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
-		"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
-		"tags": map[string]string{
-			"NUON_INSTALL_ID": "{{.nuon.install.id}}",
-		},
-	}
-
-	for k, v := range builtin {
-		vars[k] = v
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		builtin := map[string]any{
+			"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
+			"nuon_id":                  "{{.nuon.install.id}}",
+			"region":                   "{{.nuon.install_stack.outputs.region}}",
+			"public_root_domain":       fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
+			"internal_root_domain":     fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
+			"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
+			"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
+			"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
+			"tags": map[string]string{
+				"NUON_INSTALL_ID": "{{.nuon.install.id}}",
+			},
+		}
+		for k, v := range builtin {
+			vars[k] = v
+		}
+	case app.AppRunnerTypeGCP:
+		builtin := map[string]any{
+			"nuon_id":               "{{.nuon.install.id}}",
+			"region":                "{{.nuon.install_stack.outputs.region}}",
+			"project_id":            "{{.nuon.install_stack.outputs.project_id}}",
+			"network_name":          "{{.nuon.install_stack.outputs.network_name}}",
+			"service_account_email": "{{.nuon.install_stack.outputs.service_account_email}}",
+		}
+		for k, v := range builtin {
+			vars[k] = v
+		}
 	}
 
 	return vars, nil
 }
 
-func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
+func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, *gcpcredentials.Config, error) {
 	switch {
 	case outputs.AWSStackOutputs != nil:
 		awsOutputs := outputs.AWSStackOutputs
@@ -274,7 +287,7 @@ func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandb
 				SessionName: fmt.Sprintf("sandbox-run-%s", run.ID),
 				RoleARN:     roleARN,
 			},
-		}, nil, nil
+		}, nil, nil, nil
 	case outputs.AzureStackOutputs != nil:
 		azureOutputs := outputs.AzureStackOutputs
 		return nil, &azurecredentials.Config{
@@ -283,10 +296,17 @@ func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandb
 				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
 			},
 			UseDefault: true,
+		}, nil, nil
+	case outputs.GCPStackOutputs != nil:
+		gcpOutputs := outputs.GCPStackOutputs
+		return nil, nil, &gcpcredentials.Config{
+			ProjectID:  gcpOutputs.ProjectID,
+			Region:     gcpOutputs.Region,
+			UseDefault: true,
 		}, nil
 	}
 
-	return nil, nil, errors.New("unable to get auth data from stack outputs")
+	return nil, nil, nil, errors.New("unable to get auth data from stack outputs")
 }
 
 // TODO(ja): flesh out sandbox mode for azure

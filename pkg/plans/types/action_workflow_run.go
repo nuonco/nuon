@@ -2,6 +2,7 @@ package plantypes
 
 import (
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
 )
 
@@ -18,6 +19,7 @@ type ActionWorkflowRunPlan struct {
 	// optional fields based on the configuration
 	ClusterInfo *kube.ClusterInfo      `json:"cluster_info,block"`
 	AWSAuth     *awscredentials.Config `json:"aws_auth"`
+	GCPAuth     *gcpcredentials.Config `json:"gcp_auth"`
 
 	MinSandboxMode
 }

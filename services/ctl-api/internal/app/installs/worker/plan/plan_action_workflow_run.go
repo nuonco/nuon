@@ -10,6 +10,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -117,6 +118,14 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 				SessionName: fmt.Sprintf("install-action-workflow-%s", run.ID),
 				RoleARN:     role,
 			},
+		}
+	}
+
+	if !org.SandboxMode && stack.InstallStackOutputs.GCPStackOutputs != nil {
+		plan.GCPAuth = &gcpcredentials.Config{
+			ProjectID:  stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+			Region:     stack.InstallStackOutputs.GCPStackOutputs.Region,
+			UseDefault: true,
 		}
 	}
 

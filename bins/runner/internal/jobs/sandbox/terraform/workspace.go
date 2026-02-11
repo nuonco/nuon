@@ -64,6 +64,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	authVars, err := authvars.New(h.v,
 		authvars.WithAWSAuth(plan.AWSAuth),
 		authvars.WithAzureAuth(plan.AzureAuth),
+		authvars.WithGCPAuth(plan.GCPAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)
@@ -148,6 +149,7 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 	authVars, err := authvars.New(h.v,
 		authvars.WithAWSAuth(plan.AWSAuth),
 		authvars.WithAzureAuth(plan.AzureAuth),
+		authvars.WithGCPAuth(plan.GCPAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)
