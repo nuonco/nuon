@@ -53,5 +53,6 @@ ENV GIT_REF=$GIT_REF
 
 COPY bundle /bundle
 COPY --from=build /bin/service /bin/service
+COPY --from=code /src/services/ctl-api/internal/app/admin-dashboard/assets ./internal/app/admin-dashboard/assets
 
 ENTRYPOINT ["/bin/service"]
