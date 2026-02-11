@@ -67,11 +67,11 @@ type GetAppPermissionsConfigParams struct {
 	*/
 	AppID string
 
-	/* PermissionsConfigID.
+	/* ConfigID.
 
-	   input config ID
+	   app permissions config ID
 	*/
-	PermissionsConfigID string
+	ConfigID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -137,15 +137,15 @@ func (o *GetAppPermissionsConfigParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
-// WithPermissionsConfigID adds the permissionsConfigID to the get app permissions config params
-func (o *GetAppPermissionsConfigParams) WithPermissionsConfigID(permissionsConfigID string) *GetAppPermissionsConfigParams {
-	o.SetPermissionsConfigID(permissionsConfigID)
+// WithConfigID adds the configID to the get app permissions config params
+func (o *GetAppPermissionsConfigParams) WithConfigID(configID string) *GetAppPermissionsConfigParams {
+	o.SetConfigID(configID)
 	return o
 }
 
-// SetPermissionsConfigID adds the permissionsConfigId to the get app permissions config params
-func (o *GetAppPermissionsConfigParams) SetPermissionsConfigID(permissionsConfigID string) {
-	o.PermissionsConfigID = permissionsConfigID
+// SetConfigID adds the configId to the get app permissions config params
+func (o *GetAppPermissionsConfigParams) SetConfigID(configID string) {
+	o.ConfigID = configID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -161,8 +161,8 @@ func (o *GetAppPermissionsConfigParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 
-	// path param permissions_config_id
-	if err := r.SetPathParam("permissions_config_id", o.PermissionsConfigID); err != nil {
+	// path param config_id
+	if err := r.SetPathParam("config_id", o.ConfigID); err != nil {
 		return err
 	}
 

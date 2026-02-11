@@ -100,7 +100,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		secretsConfigs := app.Group("/secrets-configs")
 		{
 			secretsConfigs.POST("", s.CreateAppSecretsConfig)
-			secretsConfigs.GET("", s.GetAppSecretsConfig)
+			secretsConfigs.GET("/:config_id", s.GetAppSecretsConfig)
 		}
 
 		// app stack configs
@@ -115,21 +115,21 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		{
 			policiesConfigs.GET("", s.GetAppPoliciesConfigs)
 			policiesConfigs.POST("", s.CreateAppPoliciesConfig)
-			policiesConfigs.GET("/:app_policies_config_id", s.GetAppPoliciesConfig)
+			policiesConfigs.GET("/:config_id", s.GetAppPoliciesConfig)
 		}
 
 		// app break glass
 		breakGlassConfigs := app.Group("/break-glass-configs")
 		{
 			breakGlassConfigs.POST("", s.CreateAppBreakGlasssConfig)
-			breakGlassConfigs.GET("/:app_break_glass_config_id", s.GetAppBreakGlassConfig)
+			breakGlassConfigs.GET("/:config_id", s.GetAppBreakGlassConfig)
 		}
 
 		// app permissions
 		permissionsConfigs := app.Group("/permissions-configs")
 		{
 			permissionsConfigs.POST("", s.CreateAppPermissionsConfig)
-			permissionsConfigs.GET("/:app_permissions_config_id", s.GetAppPermissionsConfig)
+			permissionsConfigs.GET("/:config_id", s.GetAppPermissionsConfig)
 		}
 
 		// app runner management

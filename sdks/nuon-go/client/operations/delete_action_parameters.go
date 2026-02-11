@@ -67,6 +67,12 @@ type DeleteActionParams struct {
 	*/
 	ActionID string
 
+	/* AppID.
+
+	   app ID
+	*/
+	AppID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -131,6 +137,17 @@ func (o *DeleteActionParams) SetActionID(actionID string) {
 	o.ActionID = actionID
 }
 
+// WithAppID adds the appID to the delete action params
+func (o *DeleteActionParams) WithAppID(appID string) *DeleteActionParams {
+	o.SetAppID(appID)
+	return o
+}
+
+// SetAppID adds the appId to the delete action params
+func (o *DeleteActionParams) SetAppID(appID string) {
+	o.AppID = appID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *DeleteActionParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -141,6 +158,11 @@ func (o *DeleteActionParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 
 	// path param action_id
 	if err := r.SetPathParam("action_id", o.ActionID); err != nil {
+		return err
+	}
+
+	// path param app_id
+	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
 	}
 

@@ -67,17 +67,17 @@ type GetInstallActionWorkflowRunStepParams struct {
 	*/
 	InstallID string
 
+	/* RunID.
+
+	   workflow run ID
+	*/
+	RunID string
+
 	/* StepID.
 
 	   step ID
 	*/
 	StepID string
-
-	/* WorkflowRunID.
-
-	   workflow run ID
-	*/
-	WorkflowRunID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -143,6 +143,17 @@ func (o *GetInstallActionWorkflowRunStepParams) SetInstallID(installID string) {
 	o.InstallID = installID
 }
 
+// WithRunID adds the runID to the get install action workflow run step params
+func (o *GetInstallActionWorkflowRunStepParams) WithRunID(runID string) *GetInstallActionWorkflowRunStepParams {
+	o.SetRunID(runID)
+	return o
+}
+
+// SetRunID adds the runId to the get install action workflow run step params
+func (o *GetInstallActionWorkflowRunStepParams) SetRunID(runID string) {
+	o.RunID = runID
+}
+
 // WithStepID adds the stepID to the get install action workflow run step params
 func (o *GetInstallActionWorkflowRunStepParams) WithStepID(stepID string) *GetInstallActionWorkflowRunStepParams {
 	o.SetStepID(stepID)
@@ -152,17 +163,6 @@ func (o *GetInstallActionWorkflowRunStepParams) WithStepID(stepID string) *GetIn
 // SetStepID adds the stepId to the get install action workflow run step params
 func (o *GetInstallActionWorkflowRunStepParams) SetStepID(stepID string) {
 	o.StepID = stepID
-}
-
-// WithWorkflowRunID adds the workflowRunID to the get install action workflow run step params
-func (o *GetInstallActionWorkflowRunStepParams) WithWorkflowRunID(workflowRunID string) *GetInstallActionWorkflowRunStepParams {
-	o.SetWorkflowRunID(workflowRunID)
-	return o
-}
-
-// SetWorkflowRunID adds the workflowRunId to the get install action workflow run step params
-func (o *GetInstallActionWorkflowRunStepParams) SetWorkflowRunID(workflowRunID string) {
-	o.WorkflowRunID = workflowRunID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -178,13 +178,13 @@ func (o *GetInstallActionWorkflowRunStepParams) WriteToRequest(r runtime.ClientR
 		return err
 	}
 
-	// path param step_id
-	if err := r.SetPathParam("step_id", o.StepID); err != nil {
+	// path param run_id
+	if err := r.SetPathParam("run_id", o.RunID); err != nil {
 		return err
 	}
 
-	// path param workflow_run_id
-	if err := r.SetPathParam("workflow_run_id", o.WorkflowRunID); err != nil {
+	// path param step_id
+	if err := r.SetPathParam("step_id", o.StepID); err != nil {
 		return err
 	}
 
