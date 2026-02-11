@@ -12,6 +12,8 @@
 *.test
 
 .env
+.env.local
+.env*.local
 coverage/
 node_modules/
 dist/
