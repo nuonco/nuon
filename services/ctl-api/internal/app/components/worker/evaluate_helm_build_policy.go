@@ -34,7 +34,7 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 
 	l.Info("starting helm policy evaluation", zap.String("build_id", buildID))
 
-	build, err := activities.AwaitGetComponentBuild(ctx, activities.GetComponentBuildRequest{
+	build, err := activities.AwaitGetComponentBuildForPolicyEval(ctx, activities.GetComponentBuildForPolicyEvalRequest{
 		ID: buildID,
 	})
 	if err != nil {
@@ -48,14 +48,8 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		return nil
 	}
 
-	policiesConfig, err := activities.AwaitGetPoliciesConfigByAppConfigID(ctx, &activities.GetPoliciesConfigByAppConfigIDRequest{
-		AppConfigID: appConfigID,
-	})
-	if err != nil {
-		l.Info("no policies config found, skipping helm policy evaluation")
-		return nil
-	}
-	if policiesConfig == nil {
+	policiesConfig := build.ComponentConfigConnection.AppConfig.PoliciesConfig
+	if policiesConfig.ID == "" {
 		l.Info("no policies config found, skipping helm policy evaluation")
 		return nil
 	}
