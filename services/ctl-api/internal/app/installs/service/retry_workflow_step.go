@@ -49,7 +49,7 @@ func (c *RetryWorkflowStepResponse) Validate(v *validator.Validate) error {
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					201	{object}	RetryWorkflowByIDResponse
-// @Router					/v1/workflows/{workflow_id}/step/{step_id}/retry [post]
+// @Router					/v1/workflows/{workflow_id}/steps/{step_id}/retry [post]
 func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

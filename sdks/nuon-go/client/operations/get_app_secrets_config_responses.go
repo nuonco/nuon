@@ -62,7 +62,7 @@ func (o *GetAppSecretsConfigReader) ReadResponse(response runtime.ClientResponse
 		}
 		return nil, result
 	default:
-		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}] GetAppSecretsConfig", response, response.Code())
+		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/secrets-configs/{config_id}] GetAppSecretsConfig", response, response.Code())
 	}
 }
 
@@ -112,12 +112,12 @@ func (o *GetAppSecretsConfigOK) Code() int {
 
 func (o *GetAppSecretsConfigOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigOK %s", 200, payload)
 }
 
 func (o *GetAppSecretsConfigOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigOK %s", 200, payload)
 }
 
 func (o *GetAppSecretsConfigOK) GetPayload() *models.AppAppSecretsConfig {
@@ -182,12 +182,12 @@ func (o *GetAppSecretsConfigBadRequest) Code() int {
 
 func (o *GetAppSecretsConfigBadRequest) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigBadRequest %s", 400, payload)
 }
 
 func (o *GetAppSecretsConfigBadRequest) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigBadRequest %s", 400, payload)
 }
 
 func (o *GetAppSecretsConfigBadRequest) GetPayload() *models.StderrErrResponse {
@@ -252,12 +252,12 @@ func (o *GetAppSecretsConfigUnauthorized) Code() int {
 
 func (o *GetAppSecretsConfigUnauthorized) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppSecretsConfigUnauthorized) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppSecretsConfigUnauthorized) GetPayload() *models.StderrErrResponse {
@@ -322,12 +322,12 @@ func (o *GetAppSecretsConfigForbidden) Code() int {
 
 func (o *GetAppSecretsConfigForbidden) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigForbidden %s", 403, payload)
 }
 
 func (o *GetAppSecretsConfigForbidden) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigForbidden %s", 403, payload)
 }
 
 func (o *GetAppSecretsConfigForbidden) GetPayload() *models.StderrErrResponse {
@@ -392,12 +392,12 @@ func (o *GetAppSecretsConfigNotFound) Code() int {
 
 func (o *GetAppSecretsConfigNotFound) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigNotFound %s", 404, payload)
 }
 
 func (o *GetAppSecretsConfigNotFound) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigNotFound %s", 404, payload)
 }
 
 func (o *GetAppSecretsConfigNotFound) GetPayload() *models.StderrErrResponse {
@@ -462,12 +462,12 @@ func (o *GetAppSecretsConfigInternalServerError) Code() int {
 
 func (o *GetAppSecretsConfigInternalServerError) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppSecretsConfigInternalServerError) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}][%d] getAppSecretsConfigInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/secrets-configs/{config_id}][%d] getAppSecretsConfigInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppSecretsConfigInternalServerError) GetPayload() *models.StderrErrResponse {

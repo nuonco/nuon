@@ -194,7 +194,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.POST("/metrics", s.OtelWriteMetrics)
 	runners.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
 	runners.GET("/jobs/:job_id", s.GetRunnerJobV2)
-	runners.PATCH("", s.UpdateRunnerJobV2)
+	runners.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
 
 	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
 	runnerJobs.GET("", s.GetRunnerJob)          //deprecated

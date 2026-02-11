@@ -62,7 +62,7 @@ func (o *GetAppPermissionsConfigReader) ReadResponse(response runtime.ClientResp
 		}
 		return nil, result
 	default:
-		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}] GetAppPermissionsConfig", response, response.Code())
+		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/permissions-configs/{config_id}] GetAppPermissionsConfig", response, response.Code())
 	}
 }
 
@@ -112,12 +112,12 @@ func (o *GetAppPermissionsConfigOK) Code() int {
 
 func (o *GetAppPermissionsConfigOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigOK %s", 200, payload)
 }
 
 func (o *GetAppPermissionsConfigOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigOK %s", 200, payload)
 }
 
 func (o *GetAppPermissionsConfigOK) GetPayload() *models.AppAppPermissionsConfig {
@@ -182,12 +182,12 @@ func (o *GetAppPermissionsConfigBadRequest) Code() int {
 
 func (o *GetAppPermissionsConfigBadRequest) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigBadRequest %s", 400, payload)
 }
 
 func (o *GetAppPermissionsConfigBadRequest) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigBadRequest %s", 400, payload)
 }
 
 func (o *GetAppPermissionsConfigBadRequest) GetPayload() *models.StderrErrResponse {
@@ -252,12 +252,12 @@ func (o *GetAppPermissionsConfigUnauthorized) Code() int {
 
 func (o *GetAppPermissionsConfigUnauthorized) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppPermissionsConfigUnauthorized) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppPermissionsConfigUnauthorized) GetPayload() *models.StderrErrResponse {
@@ -322,12 +322,12 @@ func (o *GetAppPermissionsConfigForbidden) Code() int {
 
 func (o *GetAppPermissionsConfigForbidden) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigForbidden %s", 403, payload)
 }
 
 func (o *GetAppPermissionsConfigForbidden) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigForbidden %s", 403, payload)
 }
 
 func (o *GetAppPermissionsConfigForbidden) GetPayload() *models.StderrErrResponse {
@@ -392,12 +392,12 @@ func (o *GetAppPermissionsConfigNotFound) Code() int {
 
 func (o *GetAppPermissionsConfigNotFound) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigNotFound %s", 404, payload)
 }
 
 func (o *GetAppPermissionsConfigNotFound) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigNotFound %s", 404, payload)
 }
 
 func (o *GetAppPermissionsConfigNotFound) GetPayload() *models.StderrErrResponse {
@@ -462,12 +462,12 @@ func (o *GetAppPermissionsConfigInternalServerError) Code() int {
 
 func (o *GetAppPermissionsConfigInternalServerError) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppPermissionsConfigInternalServerError) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{permissions_config_id}][%d] getAppPermissionsConfigInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/permissions-configs/{config_id}][%d] getAppPermissionsConfigInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppPermissionsConfigInternalServerError) GetPayload() *models.StderrErrResponse {

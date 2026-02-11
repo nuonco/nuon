@@ -67,11 +67,11 @@ type GetAppBreakGlassConfigParams struct {
 	*/
 	AppID string
 
-	/* BreakGlassConfigID.
+	/* ConfigID.
 
 	   app break glass config ID
 	*/
-	BreakGlassConfigID string
+	ConfigID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -137,15 +137,15 @@ func (o *GetAppBreakGlassConfigParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
-// WithBreakGlassConfigID adds the breakGlassConfigID to the get app break glass config params
-func (o *GetAppBreakGlassConfigParams) WithBreakGlassConfigID(breakGlassConfigID string) *GetAppBreakGlassConfigParams {
-	o.SetBreakGlassConfigID(breakGlassConfigID)
+// WithConfigID adds the configID to the get app break glass config params
+func (o *GetAppBreakGlassConfigParams) WithConfigID(configID string) *GetAppBreakGlassConfigParams {
+	o.SetConfigID(configID)
 	return o
 }
 
-// SetBreakGlassConfigID adds the breakGlassConfigId to the get app break glass config params
-func (o *GetAppBreakGlassConfigParams) SetBreakGlassConfigID(breakGlassConfigID string) {
-	o.BreakGlassConfigID = breakGlassConfigID
+// SetConfigID adds the configId to the get app break glass config params
+func (o *GetAppBreakGlassConfigParams) SetConfigID(configID string) {
+	o.ConfigID = configID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -161,8 +161,8 @@ func (o *GetAppBreakGlassConfigParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 
-	// path param break_glass_config_id
-	if err := r.SetPathParam("break_glass_config_id", o.BreakGlassConfigID); err != nil {
+	// path param config_id
+	if err := r.SetPathParam("config_id", o.ConfigID); err != nil {
 		return err
 	}
 

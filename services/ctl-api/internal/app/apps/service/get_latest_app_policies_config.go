@@ -25,7 +25,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.AppPoliciesConfig
-// @Router					/v1/apps/{app_id}/latest-app-policies-config [get]
+// @Router					/v1/apps/{app_id}/latest-policies-config [get]
 func (s *service) GetLatestAppPoliciesConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	currentApp, err := s.appByNameOrID(ctx, appID)

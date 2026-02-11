@@ -19,7 +19,7 @@ import (
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					runner_job_id				path	string	true	"runner job ID"
-// @Tags					runners/runner,runners
+// @Tags					runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey

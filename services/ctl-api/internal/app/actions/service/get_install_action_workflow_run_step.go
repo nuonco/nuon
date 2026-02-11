@@ -45,7 +45,7 @@ func (s *service) GetInstallActionRunStep(ctx *gin.Context) {
 // @Summary				get action workflow run step by install id and step id
 // @Description.markdown	get_install_action_workflow_run_step.md
 // @Param					install_id		path	string	true	"install ID"
-// @Param					workflow_run_id	path	string	true	"workflow run ID"
+// @Param					run_id			path	string	true	"workflow run ID"
 // @Param					step_id			path	string	true	"step ID"
 // @Tags					actions
 // @Accept					json
@@ -59,9 +59,9 @@ func (s *service) GetInstallActionRunStep(ctx *gin.Context) {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.InstallActionWorkflowRunStep
-// @Router					/v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id} [get]
+// @Router					/v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id} [get]
 func (s *service) GetInstallActionWorkflowRunStep(ctx *gin.Context) {
-	workflowRunID := ctx.Param("workflow_run_id")
+	workflowRunID := ctx.Param("run_id")
 	stepID := ctx.Param("step_id")
 	installID := ctx.Param("install_id")
 

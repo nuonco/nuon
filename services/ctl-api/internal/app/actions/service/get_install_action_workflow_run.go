@@ -16,7 +16,7 @@ import (
 // @Description.markdown	get_install_action_workflow_run.md
 // @Param					install_id	path	string	true	"install ID"
 // @Param					run_id		path	string	true	"run ID"
-// @Tags					actions, actions/runner
+// @Tags					actions
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
