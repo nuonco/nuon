@@ -60,6 +60,8 @@ spec: {}`)
 	first := inputs[0].Review
 	require.Equal(t, AdmissionReviewKind{Kind: "ConfigMap", Version: "v1"}, first.Kind)
 	require.Equal(t, map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "ConfigMap",
 		"metadata": map[string]interface{}{
 			"name":        "config",
 			"namespace":   "default",
@@ -71,9 +73,13 @@ spec: {}`)
 	second := inputs[1].Review
 	require.Equal(t, AdmissionReviewKind{Kind: "Deployment", Group: "apps", Version: "v1"}, second.Kind)
 	require.Equal(t, map[string]interface{}{
+		"apiVersion": "apps/v1",
+		"kind":       "Deployment",
 		"metadata": map[string]interface{}{
-			"name": "deploy",
+			"extra": "ignored",
+			"name":  "deploy",
 		},
+		"spec": map[string]interface{}{},
 	}, second.Object)
 }
 
@@ -119,6 +125,7 @@ func TestExtractMetadataObject(t *testing.T) {
 			"annotations": map[string]interface{}{"foo": "bar"},
 			"ignored":     "value",
 		},
+		"spec": map[string]interface{}{"replicas": 1},
 	})
 	require.Equal(t, map[string]interface{}{
 		"metadata": map[string]interface{}{
@@ -126,7 +133,9 @@ func TestExtractMetadataObject(t *testing.T) {
 			"namespace":   "default",
 			"labels":      map[string]interface{}{"app": "demo"},
 			"annotations": map[string]interface{}{"foo": "bar"},
+			"ignored":     "value",
 		},
+		"spec": map[string]interface{}{"replicas": 1},
 	}, obj)
 }
 

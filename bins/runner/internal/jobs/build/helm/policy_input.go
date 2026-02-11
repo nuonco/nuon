@@ -17,14 +17,17 @@ import (
 )
 
 var nuonTemplatePattern = regexp.MustCompile(`{{[^}]*\.nuon[^}]*}}`)
+var nuonTemplatePlaceholder = "__NUON_VALUE__"
 
 func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]AdmissionReviewInput, error) {
 	if h.state == nil || h.state.cfg == nil {
+		l.Debug("policy input skipped: missing state or config")
 		return nil, nil
 	}
 
 	chartPath := h.state.chartPath
 	if chartPath == "" {
+		l.Debug("policy input skipped: chart path missing")
 		return nil, nil
 	}
 	chart, err := loader.Load(chartPath)
@@ -36,6 +39,7 @@ func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]Admiss
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
+	l.Debug("policy input helm values loaded", zap.Int("values_files_count", len(h.state.cfg.ValuesFiles)), zap.Int("values_count", len(values)))
 	values = sanitizePolicyValues(values)
 
 	policyInputs, err := toPolicyAdmissionInputs(chart, values)
@@ -44,7 +48,7 @@ func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]Admiss
 	}
 
 	if len(policyInputs) == 0 {
-		l.Debug("no helm policy inputs generated")
+		l.Warn("no helm policy inputs generated")
 		return nil, nil
 	}
 
@@ -124,7 +128,7 @@ func sanitizePolicyValue(value interface{}) interface{} {
 		return typedValue
 	case string:
 		if strings.Contains(typedValue, "{{") && strings.Contains(typedValue, ".nuon") {
-			return nuonTemplatePattern.ReplaceAllString(typedValue, "")
+			return nuonTemplatePattern.ReplaceAllString(typedValue, nuonTemplatePlaceholder)
 		}
 		return typedValue
 	default:
@@ -153,16 +157,10 @@ func extractKindInfo(obj map[string]interface{}) AdmissionReviewKind {
 }
 
 func extractMetadataObject(obj map[string]interface{}) map[string]interface{} {
-	metadata := map[string]interface{}{}
-	if raw, ok := obj["metadata"].(map[string]interface{}); ok {
-		for _, key := range []string{"name", "namespace", "labels", "annotations"} {
-			if value, ok := raw[key]; ok {
-				metadata[key] = value
-			}
-		}
+	copy := make(map[string]interface{}, len(obj))
+	for key, value := range obj {
+		copy[key] = value
 	}
 
-	return map[string]interface{}{
-		"metadata": metadata,
-	}
+	return copy
 }

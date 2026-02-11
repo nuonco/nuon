@@ -69,8 +69,11 @@ func (h *handler) appendPolicyInputToResult(ctx context.Context, l *zap.Logger, 
 		return
 	}
 	if policyInput == nil {
+		l.Debug("policy input missing or empty")
 		return
 	}
+
+	l.Debug("policy input generated", zap.Int("policy_input_count", len(policyInput)))
 
 	contentsJSON, err := json.Marshal(map[string]any{
 		"policy_input": policyInput,
@@ -87,4 +90,5 @@ func (h *handler) appendPolicyInputToResult(ctx context.Context, l *zap.Logger, 
 	}
 
 	resultReq.ContentsCompressed = compressedContents
+	l.Debug("policy input appended to job result", zap.Int("compressed_bytes", len(compressedContents)))
 }
