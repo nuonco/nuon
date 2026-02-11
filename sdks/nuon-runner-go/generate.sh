@@ -5,12 +5,18 @@ set -o pipefail
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SWAGGER_FILE="${SCRIPT_DIR}/../../services/ctl-api/docs/runner/runner_swagger.json"
 STAMP_FILE="${SCRIPT_DIR}/.swagger.stamp"
 
 if [ ! -f "$SWAGGER_FILE" ]; then
   echo >&2 "runner_swagger.json not found at $SWAGGER_FILE"
-  echo >&2 "run 'go run cmd/gen/main.go' from services/ctl-api first"
+  echo >&2 "attempting to generate specs via services/ctl-api/cmd/gen"
+  (cd "$REPO_DIR/services/ctl-api" && go run cmd/gen/main.go --targets sdk)
+fi
+
+if [ ! -f "$SWAGGER_FILE" ]; then
+  echo >&2 "runner_swagger.json still missing after generation attempt"
   exit 1
 fi
 
@@ -22,7 +28,7 @@ fi
 
 if [ "$swagger_hash" != "$previous_hash" ]; then
   echo >&2 "generating with OAPI spec from $SWAGGER_FILE"
-  swagger \
+  go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.0 \
     generate \
     client \
     --skip-tag-packages \
@@ -33,7 +39,7 @@ else
 fi
 
 echo >&2 "generating mocks"
-mockgen \
+go run github.com/golang/mock/mockgen@latest \
   -destination=mock.go \
   -source=client.go \
   -package=nuonrunner
