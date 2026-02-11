@@ -105,6 +105,8 @@ func (r *RunnerJobExecutionResult) GetContentsDecompressedBytes() ([]byte, error
 	if len(r.ContentsGzip) == 0 {
 		return []byte{}, nil
 	}
+	// ContentsGzip is stored as raw gzip bytes (already base64-decoded on write).
+	// Use plans.DecompressPlan only when you still have the base64-encoded string.
 	cdBuffer := bytes.NewReader(r.ContentsGzip)
 	reader, err := gzip.NewReader(cdBuffer)
 	if err != nil {

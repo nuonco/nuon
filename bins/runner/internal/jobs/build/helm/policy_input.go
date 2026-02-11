@@ -3,6 +3,7 @@ package helm
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"go.uber.org/zap"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/helm"
 )
+
+var nuonTemplatePattern = regexp.MustCompile(`{{[^}]*\.nuon[^}]*}}`)
 
 func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]AdmissionReviewInput, error) {
 	if h.state == nil || h.state.cfg == nil {
@@ -33,6 +36,7 @@ func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]Admiss
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
+	values = sanitizePolicyValues(values)
 
 	policyInputs, err := toPolicyAdmissionInputs(chart, values)
 	if err != nil {
@@ -52,6 +56,8 @@ func toPolicyAdmissionInputs(chart *chart.Chart, values map[string]interface{}) 
 	if chart == nil {
 		return nil, nil
 	}
+
+	values = sanitizePolicyValues(values)
 
 	manifests, err := helm.TemplateChart(chart, values)
 	if err != nil {
@@ -88,6 +94,42 @@ func toPolicyAdmissionInputs(chart *chart.Chart, values map[string]interface{}) 
 	}
 
 	return inputs, nil
+}
+
+func sanitizePolicyValues(values map[string]interface{}) map[string]interface{} {
+	if len(values) == 0 {
+		return values
+	}
+
+	sanitizePolicyValue(values)
+	return values
+}
+
+func sanitizePolicyValue(value interface{}) interface{} {
+	switch typedValue := value.(type) {
+	case map[string]interface{}:
+		for key, item := range typedValue {
+			typedValue[key] = sanitizePolicyValue(item)
+		}
+		return typedValue
+	case map[interface{}]interface{}:
+		for key, item := range typedValue {
+			typedValue[key] = sanitizePolicyValue(item)
+		}
+		return typedValue
+	case []interface{}:
+		for idx, item := range typedValue {
+			typedValue[idx] = sanitizePolicyValue(item)
+		}
+		return typedValue
+	case string:
+		if strings.Contains(typedValue, "{{") && strings.Contains(typedValue, ".nuon") {
+			return nuonTemplatePattern.ReplaceAllString(typedValue, "")
+		}
+		return typedValue
+	default:
+		return value
+	}
 }
 
 func extractKindInfo(obj map[string]interface{}) AdmissionReviewKind {

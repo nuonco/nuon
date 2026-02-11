@@ -186,12 +186,14 @@ When working with Go code in this repository, agents should follow these practic
 
 ### Code Formatting
 - **Always run `go fmt` after editing Go files** to ensure consistent formatting
+- **Also run `goimports -w` on edited Go files** to keep imports clean and grouped
 - This prevents formatting inconsistencies and maintains code quality
 - Example workflow:
   ```bash
   # After making changes to a Go file
   go fmt ./path/to/file.go
-  
+  goimports -w ./path/to/file.go
+
   # Or format entire directory
   go fmt ./services/ctl-api/...
   ```

@@ -27,10 +27,6 @@ func compress(s string) string {
 	return b64
 }
 
-func CompressForRunner(s string) string {
-	return compress(s)
-}
-
 func (j *jobLoop) getSandboxModePlan(ctx context.Context, job *models.AppRunnerJob) (*plantypes.MinSandboxMode, error) {
 	var plan plantypes.MinSandboxMode
 

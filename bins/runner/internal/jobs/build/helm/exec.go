@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	"github.com/nuonco/nuon/pkg/plans"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -55,22 +55,36 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("writing job result")
 	resultReq := registry.ToAPIResult(res)
-	contentsDisplay := map[string]any{}
-	if policyInput, policyErr := h.buildPolicyInput(ctx, l); policyErr != nil {
-		h.errRecorder.Record("build policy input", policyErr)
-	} else if policyInput != nil {
-		contentsDisplay["policy_input"] = policyInput
-	}
-	if len(contentsDisplay) > 0 {
-		contentsJSON, err := json.Marshal(contentsDisplay)
-		if err != nil {
-			h.errRecorder.Record("marshal policy input", err)
-		} else {
-			resultReq.ContentsCompressed = jobloop.CompressForRunner(string(contentsJSON))
-		}
-	}
+	h.appendPolicyInputToResult(ctx, l, resultReq)
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
 	return nil
+}
+
+func (h *handler) appendPolicyInputToResult(ctx context.Context, l *zap.Logger, resultReq *models.ServiceCreateRunnerJobExecutionResultRequest) {
+	policyInput, policyErr := h.buildPolicyInput(ctx, l)
+	if policyErr != nil {
+		h.errRecorder.Record("build policy input", policyErr)
+		return
+	}
+	if policyInput == nil {
+		return
+	}
+
+	contentsJSON, err := json.Marshal(map[string]any{
+		"policy_input": policyInput,
+	})
+	if err != nil {
+		h.errRecorder.Record("marshal policy input", err)
+		return
+	}
+
+	compressedContents, err := plans.CompressPlan(contentsJSON)
+	if err != nil {
+		h.errRecorder.Record("compress policy input", err)
+		return
+	}
+
+	resultReq.ContentsCompressed = compressedContents
 }

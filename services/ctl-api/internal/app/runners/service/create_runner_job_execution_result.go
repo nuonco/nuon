@@ -82,6 +82,8 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		return nil, err
 	}
 
+	// Runner sends gzip-compressed payloads encoded as base64 strings.
+	// We decode once here and persist the raw gzip bytes for later decompression.
 	contentsGzip, err := base64.URLEncoding.DecodeString(req.ContentsCompressed)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode contents")
