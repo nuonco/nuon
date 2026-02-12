@@ -1,0 +1,15 @@
+# terraform
+name              = "dynamodb_table"
+type              = "terraform_module"
+terraform_version = "1.11.4"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "aws-lambda/src/components/dynamodb-table"
+branch    = "main"
+
+[vars]
+name       = "widgets-{{.nuon.install.id}}"
+hash_key   = "ID"
+install_id = "{{.nuon.install.id}}"
+region     = "{{.nuon.install_stack.outputs.region}}"

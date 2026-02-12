@@ -1,0 +1,19 @@
+# sample action usage
+name    = "endpoint_health_check"
+timeout = "30s"
+
+break_glass_role = "{{ .nuon.install.id }}-break-glass-role-1"
+
+role = "{{ .nuon.install.id }}-custom-role-2"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name    = "alb-healthcheck"
+command = "echo 'test'"
+
+[steps.env_vars]
+INGRESS_NAME      = "{{.nuon.install.id}}-public"
+INGRESS_NAMESPACE = "whoami"
+
