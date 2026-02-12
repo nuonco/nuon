@@ -50,12 +50,10 @@ jobs:
       - name: Determine next version
         id: semver
         if: ${{ !inputs.version }}
-        uses: ietf-tools/semver-action@v1
+        uses: ./.github/actions/cross-repo-semver
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.event.inputs.branch }}
-          minorList: ""
-          patchAll: true
+          sibling_repo: nuonco/mono
+          token: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
   start_slack_notifications:
     name: Update promotions channel
