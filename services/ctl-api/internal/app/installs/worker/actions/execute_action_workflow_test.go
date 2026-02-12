@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
@@ -361,12 +362,19 @@ func TestGetRoleForAction(t *testing.T) {
 				}
 			}
 
+			// Create mock install state for testing
+			installState := &state.State{
+				ID:   "test-install",
+				Name: "test-install",
+			}
+
 			// Execute the function under test
 			roleSelection, operation, err := w.getRoleForAction(
 				l,
 				appConfig,
 				run,
 				stack,
+				installState,
 			)
 
 			// Assertions

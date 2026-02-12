@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/stretchr/testify/assert"
@@ -362,6 +363,12 @@ func TestGetRoleForDeploy(t *testing.T) {
 				},
 			}
 
+			// Create mock install state for testing
+			installState := &state.State{
+				ID:   "test-install",
+				Name: "test-install",
+			}
+
 			roleSelection, operation, err := w.getRoleForDeploy(
 				zap.NewNop(),
 				appConfig,
@@ -369,6 +376,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 				build,
 				comp,
 				stack,
+				installState,
 			)
 
 			require.NoError(t, err, "getRoleForDeploy should not return error for test: %s", tt.description)

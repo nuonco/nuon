@@ -144,6 +144,15 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return errors.Wrap(err, "unable to get install stack")
 	}
 
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
 	// Create composite plan
 	compositePlan := plantypes.CompositePlan{
 		DeployPlan: plan,
@@ -157,6 +166,7 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		build,
 		&build.ComponentConfigConnection.Component,
 		stack,
+		installState,
 	)
 	if err != nil {
 		w.updateDeployStatus(
