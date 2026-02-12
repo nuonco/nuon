@@ -13,7 +13,6 @@ on:
           - dashboard-ui
           - runner
           - cli
-          - lsp
       branch:
         description: 'Branch to promote from'
         required: true
@@ -100,6 +99,21 @@ jobs:
       disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
 
+  lsp:
+    name: 🚢 lsp
+    needs:
+      - tag
+    if: ${{ github.event.inputs.service == 'cli' }}
+    uses: ./.github/workflows/service.yml
+    with:
+      service: lsp
+      tag: ${{ needs.tag.outputs.semver }}
+      prod: true
+      stage: false
+      is_promotion: true
+      disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
+    secrets: inherit
+
   bump_tag:
     name: Bump tag
     needs:
@@ -122,6 +136,7 @@ jobs:
     needs:
       - tag
       - service
+      - lsp
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -170,7 +185,8 @@ jobs:
       - tag
       - bump_tag
       - service
-    if: ${{ success() && !inputs.skip_post_promotion }}
+      - lsp
+    if: ${{ !failure() && !cancelled() && !inputs.skip_post_promotion }}
     uses: ./.github/workflows/promote_success.yml
     with:
       tag: ${{ needs.tag.outputs.semver }}
