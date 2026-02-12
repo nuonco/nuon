@@ -59,7 +59,7 @@ func AccountDetail(
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"w-full max-w-7xl mx-auto px-6\"><!-- Breadcrumb navigation --><div class=\"mb-6\"><a href=\"../accounts\" class=\"text-sm text-cyan hover:underline\">← Back to Accounts</a></div><!-- Account Header --><div class=\"bg-card border border-border rounded-lg p-6 mb-6\"><div class=\"flex items-start justify-between\"><!-- Left side: Email and ID --><div class=\"flex-1\"><h1 class=\"text-2xl font-bold mb-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"w-full max-w-7xl mx-auto px-6\"><!-- Breadcrumb navigation --><div class=\"mb-6\"><a href=\"/accounts\" class=\"text-sm text-cyan hover:underline\">← Back to Accounts</a></div><!-- Account Header --><div class=\"bg-card border border-border rounded-lg p-6 mb-6\"><div class=\"flex items-start justify-between\"><!-- Left side: Email and ID --><div class=\"flex-1\"><h1 class=\"text-2xl font-bold mb-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -273,9 +273,9 @@ func AccountDetail(
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var15 string
-					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("accounts/" + account.ID + "/audit-logs/table")
+					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("/accounts/" + account.ID + "/audit-logs/table")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 85, Col: 62}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 85, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -555,9 +555,9 @@ func AccountDetail(
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var27 string
-					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("accounts/" + account.ID + "/audit-logs/table")
+					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("/accounts/" + account.ID + "/audit-logs/table")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 144, Col: 62}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 144, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 					if templ_7745c5c3_Err != nil {
@@ -897,9 +897,9 @@ func AccountDetail(
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var42 templ.SafeURL
-							templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("../orgs/" + app.OrgID))
+							templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + app.OrgID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 217, Col: 54}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 217, Col: 52}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 							if templ_7745c5c3_Err != nil {
@@ -1067,9 +1067,9 @@ func AccountDetail(
 								return templ_7745c5c3_Err
 							}
 							var templ_7745c5c3_Var50 templ.SafeURL
-							templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("../orgs/" + org.ID))
+							templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + org.ID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 251, Col: 51}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 251, Col: 49}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 							if templ_7745c5c3_Err != nil {

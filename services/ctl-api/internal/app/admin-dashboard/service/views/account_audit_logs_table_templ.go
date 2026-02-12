@@ -72,9 +72,9 @@ func AccountAuditLogsTable(
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("accounts/%s/audit-logs/table?page=%d", accountID, currentPage))
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/accounts/%s/audit-logs/table?page=%d", accountID, currentPage))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_audit_logs_table.templ`, Line: 31, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_audit_logs_table.templ`, Line: 31, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -496,9 +496,9 @@ func AccountAuditLogsTable(
 										return templ_7745c5c3_Err
 									}
 									var templ_7745c5c3_Var26 templ.SafeURL
-									templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("../orgs/" + *entry.OrgID))
+									templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + *entry.OrgID))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_audit_logs_table.templ`, Line: 87, Col: 55}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_audit_logs_table.templ`, Line: 87, Col: 53}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 									if templ_7745c5c3_Err != nil {
@@ -794,7 +794,7 @@ func renderAuditLogsPagination(accountID string, startDate, endDate time.Time, c
 
 func buildAuditLogsTableURL(accountID string, startDate, endDate time.Time, page int) string {
 	return fmt.Sprintf(
-		"accounts/%s/audit-logs/table?start_date=%s&end_date=%s&page=%d",
+		"/accounts/%s/audit-logs/table?start_date=%s&end_date=%s&page=%d",
 		accountID,
 		startDate.Format("2006-01-02"),
 		endDate.Format("2006-01-02"),
@@ -805,7 +805,7 @@ func buildAuditLogsTableURL(accountID string, startDate, endDate time.Time, page
 func getEntityDetailURL(entityType, entityID string) string {
 	switch entityType {
 	case "app":
-		return "../apps/" + entityID
+		return "/apps/" + entityID
 	case "workflow":
 		// Workflows don't have a detail page in admin dashboard yet
 		return "#"
@@ -813,7 +813,7 @@ func getEntityDetailURL(entityType, entityID string) string {
 		// Runner jobs don't have a detail page in admin dashboard yet
 		return "#"
 	case "org":
-		return "../orgs/" + entityID
+		return "/orgs/" + entityID
 	case "app_sync":
 		// App syncs don't have a detail page
 		return "#"
