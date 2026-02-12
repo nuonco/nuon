@@ -64,12 +64,33 @@ jobs:
       - name: Determine next version
         id: semver
         if: ${{ !inputs.version }}
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.event.inputs.branch }}
-          minorList: ""
-          patchAll: true
+        env:
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
+        run: |
+          # Get latest semver tag from this repo
+          LOCAL_LATEST=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+          # Get latest semver tag from sibling repo (nuonco/mono - private)
+          SIBLING_LATEST=$(gh api repos/nuonco/mono/tags --paginate --jq '.[].name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+          echo "Local latest: ${LOCAL_LATEST:-none}"
+          echo "Sibling latest: ${SIBLING_LATEST:-none}"
+
+          # Take the highest version across both repos
+          MAX_VERSION=$(printf '%s\n' "${LOCAL_LATEST:-v0.0.0}" "${SIBLING_LATEST:-v0.0.0}" | sort -V | tail -1)
+          echo "Max version across repos: ${MAX_VERSION}"
+
+          # Bump patch version
+          VERSION="${MAX_VERSION#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+
+          echo "Next version: ${NEXT_VERSION}"
+          echo "nextStrict=${NEXT_VERSION}" >> $GITHUB_OUTPUT
 
   start_slack_notifications:
     name: Update promotions channel
