@@ -18,17 +18,6 @@ on:
         description: 'Branch to promote from'
         required: true
         default: 'main'
-      version:
-        description: 'Version tag (leave empty to auto-generate)'
-        required: false
-      stage:
-        description: 'Deploy to stage'
-        type: boolean
-        default: true
-      prod:
-        description: 'Deploy to prod'
-        type: boolean
-        default: false
       skip_post_promotion:
         description: 'Skip post-promotion tasks (SDK updates, homebrew, BYOC)'
         type: boolean
@@ -69,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       git_ref: ${{ steps.git_ref.outputs.git_ref }}
-      semver: ${{ inputs.version || steps.semver.outputs.nextStrict }}
+      semver: ${{ steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -83,7 +72,6 @@ jobs:
 
       - name: Determine next version
         id: semver
-        if: ${{ !inputs.version }}
         uses: ./.github/actions/cross-repo-semver
         with:
           sibling_repo: nuonco/mono
@@ -108,8 +96,6 @@ jobs:
             ⛴  *SINGLE SERVICE PROMOTION* `${{ github.event.inputs.service }}` from branch `${{ github.event.inputs.branch }}` `${{ needs.tag.outputs.git_ref }}` to `${{ needs.tag.outputs.semver }}`
             *version* - ${{ needs.tag.outputs.semver }}
             *service* - ${{ github.event.inputs.service }}
-            *stage* - ${{ inputs.stage }}
-            *prod* - ${{ inputs.prod }}
             *triggered by* - ${{ github.actor }}
 
   service:
@@ -120,8 +106,8 @@ jobs:
     with:
       service: ${{ github.event.inputs.service }}
       tag: ${{ needs.tag.outputs.semver }}
-      prod: ${{ inputs.prod }}
-      stage: ${{ inputs.stage }}
+      prod: true
+      stage: false
       is_promotion: true
       disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
