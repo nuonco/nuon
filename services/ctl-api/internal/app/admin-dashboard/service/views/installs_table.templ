@@ -124,5 +124,5 @@ templ renderOrgInstallsPagination(orgID string, currentPage, totalPages int) {
 }
 
 func buildOrgInstallsPageURL(orgID string, page int) string {
-	return fmt.Sprintf("orgs/%s/installs/table?page=%d", orgID, page)
+	return fmt.Sprintf("/orgs/%s/installs/table?page=%d", orgID, page)
 }
