@@ -20,15 +20,14 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // CreateAppTestService holds all fx-injected dependencies for create app tests.
@@ -45,6 +44,7 @@ type CreateAppTestService struct {
 	InstallsHelpers *installshelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	AppsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // CreateAppTestSuite is the testify suite for CreateApp endpoint.
@@ -54,6 +54,7 @@ type CreateAppTestSuite struct {
 	app     *fxtest.App
 	service CreateAppTestService
 	router  *gin.Engine
+	ctx     context.Context
 	testOrg *app.Org
 	testAcc *app.Account
 }
@@ -75,11 +76,11 @@ func (s *CreateAppTestSuite) SetupSuite() {
 		tests.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
+		fx.Provide(testseed.New),
 		fx.Populate(&s.service),
 	)
 
 	s.app = fxtest.New(s.T(), options...)
-
 	s.app.RequireStart()
 
 	// Store DB reference for automatic truncation
@@ -107,31 +108,9 @@ func (s *CreateAppTestSuite) TearDownSuite() {
 }
 
 func (s *CreateAppTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "user@example.com",
-		Subject:     "subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create test org with account context (required by BeforeCreate hook)
-	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
-		SandboxMode: true,
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	s.ctx = context.Background()
+	s.ctx, s.testAcc = s.service.Seeder.EnsureAccount(s.ctx, s.T())
+	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
 }
 
 func (s *CreateAppTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -214,82 +193,35 @@ func (s *CreateAppTestSuite) TestCreateAppValidationError() {
 }
 
 func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
-	appName := "test-app"
-
-	// Create existing app
-	existingApp := &app.App{
-		Name:        appName,
-		OrgID:       s.testOrg.ID,
-		CreatedByID: s.testAcc.ID,
-	}
-	err := s.service.DB.Create(existingApp).Error
-	require.NoError(s.T(), err)
-
 	s.Run("within org", func() {
+		existingApp := s.service.Seeder.CreateApp(s.ctx, s.T())
+
 		// Try to create duplicate app
-		req := CreateAppRequest{Name: appName}
+		req := CreateAppRequest{Name: existingApp.Name}
 		rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
 
+		// Validate 409 within org
 		if rr.Code != http.StatusConflict {
 			s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 		}
-
-		// Validate 409 within org
 		require.Equal(s.T(), http.StatusConflict, rr.Code)
 	})
 
 	s.Run("across orgs", func() {
-		// Create a second org with a different account
-		acc2 := &app.Account{
-			ID:          domains.NewAccountID(),
-			Email:       "test2@example.com",
-			Subject:     "subject",
-			AccountType: app.AccountTypeAuth0,
+		// Create app in a different org
+		ctx2 := context.Background()
+		ctx2, _ = s.service.Seeder.EnsureAccount(ctx2, s.T())
+		ctx2, _ = s.service.Seeder.EnsureOrg(ctx2, s.T())
+		existingApp := s.service.Seeder.CreateApp(ctx2, s.T())
+
+		// Create app with same name in test org — should succeed (different org)
+		req := CreateAppRequest{Name: existingApp.Name}
+		rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
+
+		// Verify 201
+		if rr.Code != http.StatusCreated {
+			s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 		}
-		err := s.service.DB.Create(acc2).Error
-		require.NoError(s.T(), err)
-		defer s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
-
-		ctx := context.Background()
-		ctx = cctx.SetAccountContext(ctx, acc2)
-		org2 := &app.Org{
-			ID:          domains.NewOrgID(),
-			Name:        "test-org-2",
-			SandboxMode: true,
-			NotificationsConfig: app.NotificationsConfig{
-				InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-			},
-		}
-		err = s.service.DB.WithContext(ctx).Create(org2).Error
-		require.NoError(s.T(), err)
-		defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
-
-		// Recreate router with new org context
-		router := tests.NewTestRouter(tests.RouterOptions{
-			L:       s.service.L,
-			DB:      s.service.DB,
-			TestOrg: org2,
-			TestAcc: acc2,
-		})
-		err = s.service.AppsService.RegisterPublicRoutes(router)
-		require.NoError(s.T(), err)
-
-		// Try to create duplicate app across orgs
-		req := CreateAppRequest{Name: appName}
-
-		var reqBody *bytes.Buffer
-		jsonBytes, err := json.Marshal(req)
-		require.NoError(s.T(), err)
-		reqBody = bytes.NewBuffer(jsonBytes)
-
-		httpReq, err := http.NewRequest(http.MethodPost, "/v1/apps", reqBody)
-		require.NoError(s.T(), err)
-		httpReq.Header.Set("Content-Type", "application/json")
-
-		rr := httptest.NewRecorder()
-		router.ServeHTTP(rr, httpReq)
-
-		// Validate 201
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
 	})
 }
