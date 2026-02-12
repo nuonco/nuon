@@ -55,9 +55,9 @@ func InstallRunnerStatusBadge(install *app.Install) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("installs/" + install.ID + "/status/runner")
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/installs/" + install.ID + "/status/runner")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_runner_status_badge.templ`, Line: 26, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_runner_status_badge.templ`, Line: 26, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
