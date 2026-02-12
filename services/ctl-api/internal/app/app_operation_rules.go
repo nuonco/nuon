@@ -25,6 +25,7 @@ var ValidOperations = []OperationType{
 	OperationDeprovision,
 	OperationReprovision,
 	OperationDeploy,
+	OperationTeardown,
 	OperationReprovision,
 	OperationTrigger,
 }
