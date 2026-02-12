@@ -7,30 +7,12 @@ templ Layout(title string) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
-			<!-- Auto-detect base path from current URL -->
-			<script>
-				(function() {
-					// Detect if we're under a subpath (e.g., /admin)
-					var path = window.location.pathname;
-					var basePath = '/';
-
-					// Check if path starts with /admin
-					if (path.indexOf('/admin') === 0) {
-						basePath = '/admin/';
-					}
-
-					// Set base href dynamically
-					var base = document.createElement('base');
-					base.href = basePath;
-					document.head.appendChild(base);
-				})();
-			</script>
-			<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"/>
+			<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"/>
 			<!-- Google Fonts: Inter + JetBrains Mono -->
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-			<link rel="stylesheet" href="assets/css/output.css"/>
+			<link rel="stylesheet" href="/assets/css/output.css"/>
 			<!-- htmx for dynamic updates -->
 			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
 		</head>
@@ -39,10 +21,10 @@ templ Layout(title string) {
 			<nav class="border-b border-border bg-card">
 				<div class="max-w-7xl mx-auto px-6 py-4">
 					<div class="flex items-center space-x-8">
-						<a href="" class="text-lg font-semibold text-cyan">Nuon Admin</a>
-						<a href="orgs" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Organizations</a>
-						<a href="accounts" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Accounts</a>
-						<a href="installs" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Installs</a>
+						<a href="/" class="text-lg font-semibold text-cyan">Nuon Admin</a>
+						<a href="/orgs" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Organizations</a>
+						<a href="/accounts" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Accounts</a>
+						<a href="/installs" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Installs</a>
 						<a href="/livez" class="text-sm text-muted-foreground hover:text-cyan transition-colors">Health</a>
 					</div>
 				</div>
