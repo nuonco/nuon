@@ -26,7 +26,7 @@ func orgStatusToVariant(orgStatus app.OrgStatus) status.Variant {
 templ OrgStatusBadge(orgID string, orgStatus app.OrgStatus, statusDescription string) {
 	<div
 		id={ "org-status-" + orgID }
-		hx-get={ "orgs/" + orgID + "/status" }
+		hx-get={ "/orgs/" + orgID + "/status" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
