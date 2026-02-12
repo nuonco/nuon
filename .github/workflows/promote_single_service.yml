@@ -1,9 +1,30 @@
 ---
-name: promote
+name: Promote Single Service
+
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to promote to production'
+        required: true
+        type: choice
+        options:
+          - ctl-api
+          - dashboard-ui
+          - runner
+          - cli
+          - lsp
+      branch:
+        description: 'Branch to promote from'
+        required: true
+        default: 'main'
+      version:
+        description: 'Version tag (leave empty to auto-generate)'
+        required: false
+      skip_post_promotion:
+        description: 'Skip post-promotion tasks (SDK updates, homebrew, BYOC)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -15,7 +36,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  group: promote-${{ github.event.inputs.service }}-${{ github.event.inputs.branch }}
   cancel-in-progress: false
 
 defaults:
@@ -23,38 +44,17 @@ defaults:
     shell: bash
 
 jobs:
-  # we use the merged pr to see if the PR was labeled "promote", but since this _only_ runs after the PR is merged
-  # (on main), we have to use an action to pull it from the github api.
-  merged_pr:
-    name: Get merged PR
-    runs-on: ubuntu-latest
-    outputs:
-      promote: ${{steps.output.outputs.promote}}
-    steps:
-      - uses: actions-ecosystem/action-get-merged-pull-request@v1
-        name: get merged pr
-        id: merged_pr
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: update promote output
-        id: output
-        if: contains( steps.merged_pr.outputs.labels, 'promote-all' )
-        run: echo "promote=true" >> "$GITHUB_OUTPUT"
-
   tag:
-    name: Determine short ref
-    needs:
-      - merged_pr
+    name: Setup promotion
     runs-on: ubuntu-latest
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     outputs:
-      git_ref: ${{steps.git_ref.outputs.git_ref}}
-      semver: ${{ steps.semver.outputs.nextStrict }}
+      git_ref: ${{ steps.git_ref.outputs.git_ref }}
+      semver: ${{ inputs.version || steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
 
       - name: Set git_ref output
@@ -63,20 +63,21 @@ jobs:
 
       - name: Determine next version
         id: semver
+        if: ${{ !inputs.version }}
         uses: ./.github/actions/cross-repo-semver
         with:
           sibling_repo: nuonco/mono
           token: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
   start_slack_notifications:
-    name: update promotions channel
+    name: Update promotions channel
     needs:
       - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.branch }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
@@ -84,47 +85,38 @@ jobs:
           SLACK_USERNAME: github-bot
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_MESSAGE: |
-            ⛴  promoting `${{ needs.tag.outputs.git_ref }}` to `${{needs.tag.outputs.semver}}`
+            ⛴  *SINGLE SERVICE PROMOTION* `${{ github.event.inputs.service }}` from branch `${{ github.event.inputs.branch }}` `${{ needs.tag.outputs.git_ref }}` to `${{ needs.tag.outputs.semver }}`
+            *version* - ${{ needs.tag.outputs.semver }}
+            *service* - ${{ github.event.inputs.service }}
             *stage* - true
             *prod* - true
+            *triggered by* - ${{ github.actor }}
 
-  services:
-    # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
-    name: 🚢
+  service:
+    name: 🚢 ${{ github.event.inputs.service }}
     needs:
       - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - ctl-api
-          - dashboard-ui
-          - runner
-          - cli
-          - lsp
-
-          # need to be updated to use nctl
-          # - workers-infra-tests
     uses: ./.github/workflows/service.yml
     with:
-      service: ${{matrix.service}}
+      service: ${{ github.event.inputs.service }}
       tag: ${{ needs.tag.outputs.semver }}
       prod: true
-      stage: false
+      stage: true
       is_promotion: true
       disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
 
   bump_tag:
-    name: bump tag
+    name: Bump tag
     needs:
       - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
       - name: Push tag
         uses: mathieudutour/github-tag-action@v6.1
         with:
@@ -132,28 +124,33 @@ jobs:
           custom_tag: ${{ needs.tag.outputs.semver }}
 
   update_statuses:
-    name: update statuses
-    if: needs.merged_pr.outputs.promote == 'true' && always()
+    name: Update statuses
     needs:
       - tag
-      - services
-      - merged_pr
+      - service
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
       - uses: martialonline/workflow-status@v4.2
         id: check
+
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON_EMOJI: 🤖
           SLACK_USERNAME: github-bot
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
-          SLACK_COLOR: ${{steps.check.outputs.status}}
+          SLACK_COLOR: ${{ steps.check.outputs.status }}
           SLACK_MESSAGE: |
-            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting `${{ needs.tag.outputs.git_ref }}` to `${{ needs.tag.outputs.semver }}`
-            *prod* - true
-            *status* - ${{steps.check.outputs.status}}
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} *SINGLE SERVICE PROMOTION* finished `${{ github.event.inputs.service }}` from branch `${{ github.event.inputs.branch }}` `${{ needs.tag.outputs.git_ref }}` to `${{ needs.tag.outputs.semver }}`
+            *version* - ${{ needs.tag.outputs.semver }}
+            *service* - ${{ github.event.inputs.service }}
+            *status* - ${{ steps.check.outputs.status }}
+            *triggered by* - ${{ github.actor }}
 
       - name: Update datadog
         uses: masci/datadog@v1
@@ -166,18 +163,20 @@ jobs:
               value: 1.0
               host: ${{ github.repository_owner }}
               tags:
-                - "branch:${{ github.head_ref }}"
+                - "branch:${{ github.event.inputs.branch }}"
                 - "status:${{ steps.check.outputs.status }}"
                 - "version:${{ needs.tag.outputs.semver }}"
+                - "service:${{ github.event.inputs.service }}"
+                - "type:single-service"
+                - "env:prod"
 
   promote_success:
-    name: promote_success
+    name: Promote success
     needs:
       - tag
       - bump_tag
-      - merged_pr
-      - services
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+      - service
+    if: ${{ success() && !inputs.skip_post_promotion }}
     uses: ./.github/workflows/promote_success.yml
     with:
       tag: ${{ needs.tag.outputs.semver }}
