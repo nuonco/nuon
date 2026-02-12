@@ -21,6 +21,14 @@ on:
       version:
         description: 'Version tag (leave empty to auto-generate)'
         required: false
+      stage:
+        description: 'Deploy to stage'
+        type: boolean
+        default: true
+      prod:
+        description: 'Deploy to prod'
+        type: boolean
+        default: false
       skip_post_promotion:
         description: 'Skip post-promotion tasks (SDK updates, homebrew, BYOC)'
         type: boolean
@@ -44,8 +52,20 @@ defaults:
     shell: bash
 
 jobs:
+  validate:
+    name: Validate inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure at least one environment is selected
+        if: ${{ !inputs.stage && !inputs.prod }}
+        run: |
+          echo "::error::At least one of 'stage' or 'prod' must be selected"
+          exit 1
+
   tag:
     name: Setup promotion
+    needs:
+      - validate
     runs-on: ubuntu-latest
     outputs:
       git_ref: ${{ steps.git_ref.outputs.git_ref }}
@@ -88,8 +108,8 @@ jobs:
             ⛴  *SINGLE SERVICE PROMOTION* `${{ github.event.inputs.service }}` from branch `${{ github.event.inputs.branch }}` `${{ needs.tag.outputs.git_ref }}` to `${{ needs.tag.outputs.semver }}`
             *version* - ${{ needs.tag.outputs.semver }}
             *service* - ${{ github.event.inputs.service }}
-            *stage* - true
-            *prod* - true
+            *stage* - ${{ inputs.stage }}
+            *prod* - ${{ inputs.prod }}
             *triggered by* - ${{ github.actor }}
 
   service:
@@ -100,8 +120,8 @@ jobs:
     with:
       service: ${{ github.event.inputs.service }}
       tag: ${{ needs.tag.outputs.semver }}
-      prod: true
-      stage: true
+      prod: ${{ inputs.prod }}
+      stage: ${{ inputs.stage }}
       is_promotion: true
       disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
