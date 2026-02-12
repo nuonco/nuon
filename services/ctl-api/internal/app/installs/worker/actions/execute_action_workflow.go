@@ -10,11 +10,12 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -234,11 +235,20 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		return errors.Wrap(err, "unable to get install stack")
 	}
 
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: run.Install.ID,
+	})
+	if err != nil {
+		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
 	compositePlan := plantypes.CompositePlan{
 		ActionWorkflowRunPlan: runPlan,
 	}
 
-	roleSelection, operation, err := w.getRoleForAction(l, appConfig, run, stack)
+	roleSelection, operation, err := w.getRoleForAction(l, appConfig, run, stack, installState)
 	if err != nil {
 		w.updateActionRunStatus(
 			ctx,
@@ -294,7 +304,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 
 	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	_, err = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
 		InstallID:       installID,
 		TriggeredByID:   actionWorkflowRunID,
 		TriggeredByType: plugins.TableName(w.db, run),
@@ -311,6 +321,7 @@ func (w *Workflows) getRoleForAction(
 	appConfig *app.AppConfig,
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,
+	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
 	operation := app.OperationTrigger
 
@@ -347,6 +358,7 @@ func (w *Workflows) getRoleForAction(
 			AppConfig:      appConfig,
 			StackOutputs:   &stack.InstallStackOutputs,
 			BreakGlassRole: breakGlassRole,
+			InstallState:   installState,
 		}, l)
 	if err != nil {
 		return nil, "", err

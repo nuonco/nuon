@@ -135,11 +135,20 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return errors.Wrap(err, "unable to get install stack")
 	}
 
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
 	compositePlan := plantypes.CompositePlan{
 		SandboxRunPlan: runPlan,
 	}
 
-	roleSelection, op, err := w.getRoleForSandbox(l, appConfig, installRun, stack)
+	roleSelection, op, err := w.getRoleForSandbox(l, appConfig, installRun, stack, installState)
 	if err != nil {
 		w.updateRunStatus(
 			ctx,

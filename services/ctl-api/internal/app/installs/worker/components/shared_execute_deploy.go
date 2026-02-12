@@ -10,6 +10,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	pkgplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -100,11 +101,20 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
 	compositePlan := plantypes.CompositePlan{
 		DeployPlan: plan,
 	}
 
-	roleSelection, operation, err := w.getRoleForDeploy(l, appConfig, installDeploy, build, comp, stack)
+	roleSelection, operation, err := w.getRoleForDeploy(l, appConfig, installDeploy, build, comp, stack, installState)
 	if err != nil {
 		w.updateDeployStatusWithoutStatusSync(
 			ctx,
@@ -220,6 +230,7 @@ func (w *Workflows) getRoleForDeploy(
 	build *app.ComponentBuild,
 	comp *app.Component,
 	stack *app.InstallStack,
+	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
 	operation := app.OperationDeploy
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
@@ -239,6 +250,7 @@ func (w *Workflows) getRoleForDeploy(
 			DefaultRole:  appConfig.PermissionsConfig.MaintenanceRole.Name,
 			AppConfig:    appConfig,
 			StackOutputs: &stack.InstallStackOutputs,
+			InstallState: installState,
 		}, l)
 	if err != nil {
 		return nil, "", err

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.uber.org/zap"
 )
@@ -501,7 +502,7 @@ func TestSelectRole(t *testing.T) {
 				StackOutputs:  baseStackOutputs,
 			},
 			expectError:   true,
-			errorContains: "runtime role \"invalid-role\"",
+			errorContains: "unable to resolve runtime role arn \"invalid-role\"",
 		},
 		{
 			name: "wildcard matrix rule matches component",
@@ -930,6 +931,93 @@ func TestSelectRole(t *testing.T) {
 				}
 				if result.Source != tt.expectedSource {
 					t.Errorf("expected source %q, got %q", tt.expectedSource, result.Source)
+				}
+			}
+		})
+	}
+}
+
+func TestRenderRoleName(t *testing.T) {
+	tests := []struct {
+		name          string
+		roleName      string
+		installState  *state.State
+		expectedName  string
+		expectError   bool
+		errorContains string
+	}{
+		{
+			name:     "role name with template resolves install name",
+			roleName: "{{.nuon.install.name}}-role",
+			installState: &state.State{
+				Install: &state.InstallState{
+					Name: "production",
+				},
+			},
+			expectedName: "production-role",
+			expectError:  false,
+		},
+		{
+			name:     "role name without template returns unchanged",
+			roleName: "maintenance-role",
+			installState: &state.State{
+				Install: &state.InstallState{
+					Name: "production",
+				},
+			},
+			expectedName: "maintenance-role",
+			expectError:  false,
+		},
+		{
+			name:         "nil install state returns role name unchanged",
+			roleName:     "{{.nuon.install.name}}-role",
+			installState: nil,
+			expectedName: "{{.nuon.install.name}}-role",
+			expectError:  false,
+		},
+		{
+			name:     "empty role name returns empty",
+			roleName: "",
+			installState: &state.State{
+				Install: &state.InstallState{
+					Name: "production",
+				},
+			},
+			expectedName: "",
+			expectError:  false,
+		},
+		{
+			name:     "invalid template syntax returns error",
+			roleName: "{{.nuon.install.name",
+			installState: &state.State{
+				Install: &state.InstallState{
+					Name: "production",
+				},
+			},
+			expectError:   true,
+			errorContains: "unable to render role name template",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := renderRoleName(tt.roleName, tt.installState)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error but got none")
+					return
+				}
+				if tt.errorContains != "" && !strings.Contains(err.Error(), tt.errorContains) {
+					t.Errorf("expected error to contain %q, got %q", tt.errorContains, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+					return
+				}
+				if result != tt.expectedName {
+					t.Errorf("expected %q, got %q", tt.expectedName, result)
 				}
 			}
 		})

@@ -11,6 +11,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -76,11 +77,20 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return errors.Wrap(err, "unable to get install stack")
 	}
 
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
 	compositePlan := plantypes.CompositePlan{
 		SandboxRunPlan: runPlan,
 	}
 
-	roleSelection, operation, err := w.getRoleForSandbox(l, appConfig, sandboxRun, stack)
+	roleSelection, operation, err := w.getRoleForSandbox(l, appConfig, sandboxRun, stack, installState)
 	if err != nil {
 		w.updateRunStatusWithoutStatusSync(
 			ctx,
@@ -158,6 +168,7 @@ func (w *Workflows) getRoleForSandbox(
 	appConfig *app.AppConfig,
 	sandboxRun *app.InstallSandboxRun,
 	stack *app.InstallStack,
+	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
 	// Determine operation type based on run type
 	var operation app.OperationType
@@ -191,6 +202,7 @@ func (w *Workflows) getRoleForSandbox(
 			DefaultRole:  defaultRole,
 			AppConfig:    appConfig,
 			StackOutputs: &stack.InstallStackOutputs,
+			InstallState: installState,
 		}, l)
 	if err != nil {
 		return nil, "", err
