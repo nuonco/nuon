@@ -26,8 +26,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-const TestDBName = "ctl_api_test"
-
 var createDBOnce sync.Once
 
 // dbConfig holds just the database connection fields we need.
@@ -38,6 +36,7 @@ type dbConfig struct {
 	DBUser     string `config:"db_user"`
 	DBPassword string `config:"db_password"`
 	DBSSLMode  string `config:"db_ssl_mode"`
+	DBName     string `config:"db_name"`
 }
 
 // SkipIfNotIntegration skips the test if INTEGRATION != "true".
@@ -50,10 +49,15 @@ func SkipIfNotIntegration(t *testing.T) {
 
 // CreateTestDatabase creates the test database if it doesn't exist and runs migrations.
 // Uses the same config system as the service to get connection parameters.
+// The DB_NAME environment variable must be set (e.g. via nuonctl-test-env.yml).
 func CreateTestDatabase() error {
 	var cfg dbConfig
 	if err := config.LoadInto(nil, &cfg); err != nil {
 		return fmt.Errorf("failed to load db config: %w", err)
+	}
+
+	if cfg.DBName == "" {
+		return fmt.Errorf("DB_NAME must be set in the environment")
 	}
 
 	// Connect to the default 'postgres' database to create our test database
@@ -75,13 +79,13 @@ func CreateTestDatabase() error {
 
 	// Check if database exists
 	var exists bool
-	err = db.Raw("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = ?)", TestDBName).Scan(&exists).Error
+	err = db.Raw("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = ?)", cfg.DBName).Scan(&exists).Error
 	if err != nil {
 		return fmt.Errorf("failed to check database existence: %w", err)
 	}
 
 	if !exists {
-		if err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", TestDBName)).Error; err != nil {
+		if err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", cfg.DBName)).Error; err != nil {
 			return fmt.Errorf("failed to create test database: %w", err)
 		}
 	}
@@ -97,7 +101,7 @@ func CreateTestDatabase() error {
 // migrateTestDatabase connects to the test database and runs GORM AutoMigrate on all models.
 func migrateTestDatabase(cfg dbConfig) error {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, TestDBName, cfg.DBSSLMode)
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
@@ -187,8 +191,9 @@ type BaseDBTestSuite struct {
 	db *gorm.DB
 }
 
-// SetupSuite creates the test database if needed and sets DB_NAME env var.
+// SetupSuite creates the test database if needed.
 // Call this at the start of your SetupSuite if you override it.
+// DB_NAME must already be set in the environment (e.g. via nuonctl-test-env.yml).
 func (s *BaseDBTestSuite) SetupSuite() {
 	// Create test database if it doesn't exist (only once per test run)
 	createDBOnce.Do(func() {
@@ -196,9 +201,6 @@ func (s *BaseDBTestSuite) SetupSuite() {
 			s.T().Fatalf("failed to create test database: %v", err)
 		}
 	})
-
-	// Set DB_NAME so fx app connects to test database
-	os.Setenv("DB_NAME", TestDBName)
 }
 
 // SetDB stores the database connection for use in truncation.

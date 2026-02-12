@@ -23,7 +23,7 @@ func sandboxStatusToVariant(sandboxStatus app.InstallSandboxStatus) status.Varia
 
 templ InstallSandboxStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "installs/" + install.ID + "/status/sandbox" }
+		hx-get={ "/installs/" + install.ID + "/status/sandbox" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
