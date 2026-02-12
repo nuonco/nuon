@@ -56,9 +56,9 @@ func AccountInstallsTable(accountID string, installs []*app.Install, currentPage
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("accounts/" + accountID + "/installs/table")
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("/accounts/" + accountID + "/installs/table")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_installs_table.templ`, Line: 15, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_installs_table.templ`, Line: 15, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -346,9 +346,9 @@ func AccountInstallsTable(accountID string, installs []*app.Install, currentPage
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var17 templ.SafeURL
-								templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("../installs/" + install.ID))
+								templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/installs/" + install.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_installs_table.templ`, Line: 39, Col: 57}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_installs_table.templ`, Line: 39, Col: 55}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 								if templ_7745c5c3_Err != nil {
@@ -434,9 +434,9 @@ func AccountInstallsTable(accountID string, installs []*app.Install, currentPage
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var22 templ.SafeURL
-								templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("../orgs/" + install.OrgID))
+								templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + install.OrgID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_installs_table.templ`, Line: 51, Col: 55}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_installs_table.templ`, Line: 51, Col: 53}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 								if templ_7745c5c3_Err != nil {
@@ -831,7 +831,7 @@ func renderAccountInstallsPagination(accountID string, currentPage, totalPages i
 }
 
 func buildAccountInstallsPageURL(accountID string, page int) string {
-	return fmt.Sprintf("accounts/%s/installs/table?page=%d", accountID, page)
+	return fmt.Sprintf("/accounts/%s/installs/table?page=%d", accountID, page)
 }
 
 var _ = templruntime.GeneratedTemplate

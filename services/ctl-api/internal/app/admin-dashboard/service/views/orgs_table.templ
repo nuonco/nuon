@@ -13,7 +13,7 @@ import (
 templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string) {
 	<div
 		id="orgs-table"
-		hx-get="orgs/table"
+		hx-get="/orgs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 		hx-include="[name='search']"
