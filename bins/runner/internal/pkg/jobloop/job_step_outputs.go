@@ -15,6 +15,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/sandboxctl"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
@@ -53,6 +54,39 @@ func (j *jobLoop) sandboxOutputs(ctx context.Context, job *models.AppRunnerJob) 
 	}
 
 	return plan.SandboxMode.Outputs, nil
+}
+
+// jobTypeToCategory maps a runner job type to a sandboxctl fixture category.
+func jobTypeToCategory(jobType models.AppRunnerJobType) (sandboxctl.JobCategory, bool) {
+	switch jobType {
+	case models.AppRunnerJobTypeTerraformDashDeploy,
+		models.AppRunnerJobTypeTerraformDashModuleDashBuild,
+		models.AppRunnerJobTypeSandboxDashTerraform:
+		return sandboxctl.CategoryTerraform, true
+	case models.AppRunnerJobTypeHelmDashChartDashDeploy,
+		models.AppRunnerJobTypeHelmDashChartDashBuild:
+		return sandboxctl.CategoryHelm, true
+	case models.AppRunnerJobTypeKubernetesDashManifestDashDeploy,
+		models.AppRunnerJobTypeKubernetesDashManifestDashBuild:
+		return sandboxctl.CategoryKubernetes, true
+	default:
+		return "", false
+	}
+}
+
+// getSandboxCtlFixture returns the fixture for a job from the sandboxctl registry, or nil.
+func (j *jobLoop) getSandboxCtlFixture(job *models.AppRunnerJob) *sandboxctl.Fixture {
+	if j.sandboxCtl == nil || !j.sandboxCtl.Active() {
+		return nil
+	}
+
+	cat, ok := jobTypeToCategory(job.Type)
+	if !ok {
+		return nil
+	}
+
+	variant := j.sandboxCtl.State().GetVariant(cat)
+	return j.sandboxCtl.Fixtures().Get(cat, variant)
 }
 
 func (j *jobLoop) writeTerraformSandboxMode(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution, plan *plantypes.TerraformSandboxMode) error {
@@ -160,10 +194,17 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 	// write outputs to the api for the job
 	var outputs map[string]interface{}
 	if j.isSandbox(job) {
-		outputs, err = j.sandboxOutputs(ctx, job)
-		if err != nil {
-			l.Error("unable to get sandbox outputs", zap.Error(err))
-			return errors.Wrap(err, "unable to get sandbox outputs")
+		// Check if sandboxctl has a fixture override for this job type
+		fixture := j.getSandboxCtlFixture(job)
+		if fixture != nil && len(fixture.Outputs) > 0 {
+			l.Info("using sandboxctl fixture for outputs")
+			outputs = fixture.Outputs
+		} else {
+			outputs, err = j.sandboxOutputs(ctx, job)
+			if err != nil {
+				l.Error("unable to get sandbox outputs", zap.Error(err))
+				return errors.Wrap(err, "unable to get sandbox outputs")
+			}
 		}
 	} else {
 		outputs, err = handler.Outputs(ctx)
@@ -181,24 +222,60 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 
 	// for additional sandbox job outputs, make custom requests to fill in data
 	if j.isSandbox(job) {
-		plan, err := j.getSandboxModePlan(ctx, job)
-		if err != nil {
-			return errors.Wrap(err, "unable to get sandbox mode plan")
-		}
+		// Check if sandboxctl provides fixture-based plan data
+		fixture := j.getSandboxCtlFixture(job)
+		if fixture != nil && len(fixture.PlanContents) > 0 {
+			l.Info("using sandboxctl fixture for plan data")
+			cat, _ := jobTypeToCategory(job.Type)
+			switch cat {
+			case sandboxctl.CategoryTerraform:
+				tfPlan := &plantypes.TerraformSandboxMode{
+					PlanContents:        fixture.PlanContents,
+					PlanDisplayContents: fixture.PlanDisplayContents,
+					StateJSON:           []byte(fixture.StateJSON),
+					WorkspaceID:         "sandbox-workspace",
+				}
+				if err := j.writeTerraformSandboxMode(ctx, job, jobExecution, tfPlan); err != nil {
+					return errors.Wrap(err, "unable to write sandboxctl terraform fixture")
+				}
+			case sandboxctl.CategoryHelm:
+				helmPlan := &plantypes.HelmSandboxMode{
+					PlanContents:        fixture.PlanContents,
+					PlanDisplayContents: fixture.PlanDisplayContents,
+				}
+				if err := j.writeHelmSandboxMode(ctx, job, jobExecution, helmPlan); err != nil {
+					return errors.Wrap(err, "unable to write sandboxctl helm fixture")
+				}
+			case sandboxctl.CategoryKubernetes:
+				k8sPlan := &plantypes.KubernetesSandboxMode{
+					PlanContents:        fixture.PlanContents,
+					PlanDisplayContents: fixture.PlanDisplayContents,
+				}
+				if err := j.writeKubernetesManifestSandboxMode(ctx, job, jobExecution, k8sPlan); err != nil {
+					return errors.Wrap(err, "unable to write sandboxctl kubernetes fixture")
+				}
+			}
+		} else {
+			// Fall through to existing API-based behavior
+			plan, err := j.getSandboxModePlan(ctx, job)
+			if err != nil {
+				return errors.Wrap(err, "unable to get sandbox mode plan")
+			}
 
-		if plan.SandboxMode != nil && plan.SandboxMode.Terraform != nil {
-			if err := j.writeTerraformSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Terraform); err != nil {
-				return errors.Wrap(err, "unable to write sandbox mode terraform")
+			if plan.SandboxMode != nil && plan.SandboxMode.Terraform != nil {
+				if err := j.writeTerraformSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Terraform); err != nil {
+					return errors.Wrap(err, "unable to write sandbox mode terraform")
+				}
 			}
-		}
-		if plan.SandboxMode != nil && plan.SandboxMode.Helm != nil {
-			if err := j.writeHelmSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Helm); err != nil {
-				return errors.Wrap(err, "unable to write sandbox mode helm")
+			if plan.SandboxMode != nil && plan.SandboxMode.Helm != nil {
+				if err := j.writeHelmSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Helm); err != nil {
+					return errors.Wrap(err, "unable to write sandbox mode helm")
+				}
 			}
-		}
-		if plan.SandboxMode != nil && plan.SandboxMode.KubernetesManifest != nil {
-			if err := j.writeKubernetesManifestSandboxMode(ctx, job, jobExecution, plan.SandboxMode.KubernetesManifest); err != nil {
-				return errors.Wrap(err, "unable to write sandbox mode kubernetes_manifest")
+			if plan.SandboxMode != nil && plan.SandboxMode.KubernetesManifest != nil {
+				if err := j.writeKubernetesManifestSandboxMode(ctx, job, jobExecution, plan.SandboxMode.KubernetesManifest); err != nil {
+					return errors.Wrap(err, "unable to write sandbox mode kubernetes_manifest")
+				}
 			}
 		}
 	}

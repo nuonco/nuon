@@ -1,0 +1,9 @@
+{
+  "plan_contents": "\u001b[0;32mapp, app, Namespace (v1) to be added.\u001b[0m\n\u001b[0;32mapp, app, ServiceAccount (v1) to be added.\u001b[0m\n\u001b[0;32mapp, app, ConfigMap (v1) to be added.\u001b[0m\n\u001b[0;32mapp, app, Secret (v1) to be added.\u001b[0m\n\u001b[0;32mapp, app, ClusterRole (rbac.authorization.k8s.io) to be added.\u001b[0m\n\u001b[0;32mapp, app, ClusterRoleBinding (rbac.authorization.k8s.io) to be added.\u001b[0m\n\u001b[0;32mapp, app, Deployment (apps) to be added.\u001b[0m\n\u001b[0;32mapp, app, Service (v1) to be added.\u001b[0m\n\u001b[0;32mapp, app, Ingress (networking.k8s.io) to be added.\u001b[0m\n\u001b[0;32mapp, app, NetworkPolicy (networking.k8s.io) to be added.\u001b[0m",
+  "plan_display_contents": "{\"op\":\"apply\",\"plan\":\"\\u001b[0;32mapp, app, Namespace (v1) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, ServiceAccount (v1) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, ConfigMap (v1) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, Secret (v1) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, ClusterRole (rbac.authorization.k8s.io) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, ClusterRoleBinding (rbac.authorization.k8s.io) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, Deployment (apps) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, Service (v1) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, Ingress (networking.k8s.io) to be added.\\u001b[0m\\n\\u001b[0;32mapp, app, NetworkPolicy (networking.k8s.io) to be added.\\u001b[0m\"}",
+  "outputs": {
+    "applied": "true",
+    "resources": "10",
+    "namespace": "app"
+  }
+}

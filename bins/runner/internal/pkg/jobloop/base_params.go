@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/sandboxctl"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/pkg/metrics"
 )
@@ -23,5 +24,6 @@ type BaseParams struct {
 	ErrRecorder *errs.Recorder
 	MW          metrics.Writer
 
-	L *zap.Logger `name:"system"`
+	L          *zap.Logger        `name:"system"`
+	SandboxCtl *sandboxctl.Server `optional:"true"`
 }

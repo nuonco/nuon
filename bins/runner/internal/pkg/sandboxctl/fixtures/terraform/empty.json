@@ -1,0 +1,6 @@
+{
+  "plan_contents": "No changes. Your infrastructure matches the configuration.\n\nTerraform has compared your real infrastructure against your configuration\nand found no differences, so no changes are needed.",
+  "plan_display_contents": "{\"format_version\":\"1.2\",\"terraform_version\":\"1.6.0\",\"resource_changes\":[]}",
+  "state_json": "{\"version\":4,\"terraform_version\":\"1.6.0\",\"serial\":0,\"lineage\":\"sandbox-empty\",\"outputs\":{},\"resources\":[]}",
+  "outputs": {}
+}

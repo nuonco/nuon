@@ -1,0 +1,8 @@
+{
+  "plan_contents": "\u001b[0;32mctl-api, ctl-api, ClusterRole (rbac.authorization.k8s.io) to be added.\u001b[0m",
+  "plan_display_contents": "{\"op\":\"apply\",\"plan\":\"\\u001b[0;32mctl-api, ctl-api, ClusterRole (rbac.authorization.k8s.io) to be added.\\u001b[0m\"}",
+  "outputs": {
+    "applied": "true",
+    "resources": "1"
+  }
+}

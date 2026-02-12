@@ -1,0 +1,10 @@
+{
+  "plan_contents": "\u001b[0;32mwhoami, whoami, Deployment (apps) to be added.\u001b[0m\n\u001b[0;32mwhoami, whoami, Service (v1) to be added.\u001b[0m\nPlan: 2 to add, 0 to change, 0 to destroy.\n",
+  "plan_display_contents": "{\"plan\":\"\\u001b[0;32mwhoami, whoami, Deployment (apps) to be added.\\u001b[0m\\n\\u001b[0;32mwhoami, whoami, Service (v1) to be added.\\u001b[0m\\nPlan: 2 to add, 0 to change, 0 to destroy.\\n\",\"op\":\"install\",\"helm_content_diff\":[{\"api\":\"v1\",\"name\":\"whoami\",\"namespace\":\"whoami\",\"kind\":\"Service\",\"before\":\"\",\"after\":\"apiVersion: v1\\nkind: Service\\nmetadata:\\n  name: whoami\\n  namespace: whoami\\nspec:\\n  ports:\\n  - name: http-whoami\\n    port: 80\\n    protocol: TCP\\n    targetPort: 8000\\n  selector:\\n    app: whoami\\n  type: ClusterIP\\n\"},{\"api\":\"apps\",\"name\":\"whoami\",\"namespace\":\"whoami\",\"kind\":\"Deployment\",\"before\":\"\",\"after\":\"apiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  labels:\\n    app: whoami\\n  name: whoami\\n  namespace: whoami\\nspec:\\n  replicas: 1\\n  selector:\\n    matchLabels:\\n      app: whoami\\n  template:\\n    metadata:\\n      labels:\\n        app: whoami\\n    spec:\\n      containers:\\n      - image: traefik/whoami:latest\\n        name: whoami\\n        ports:\\n        - containerPort: 8000\\n\"}]}",
+  "outputs": {
+    "release_name": "whoami",
+    "namespace": "whoami",
+    "revision": "1",
+    "status": "deployed"
+  }
+}

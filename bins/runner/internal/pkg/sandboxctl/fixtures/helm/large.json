@@ -1,0 +1,11 @@
+{
+  "plan_contents": "\u001b[0;32mnginx, nginx, Deployment (apps) to be added.\u001b[0m\n\u001b[0;32mnginx, nginx, Service (v1) to be added.\u001b[0m\n\u001b[0;32mnginx, nginx, ConfigMap (v1) to be added.\u001b[0m\n\u001b[0;32mnginx, nginx, ServiceAccount (v1) to be added.\u001b[0m\n\u001b[0;32mnginx, nginx, HorizontalPodAutoscaler (autoscaling) to be added.\u001b[0m\n\u001b[0;32mnginx, nginx, Ingress (networking.k8s.io) to be added.\u001b[0m\n\u001b[0;32mnginx, nginx, PodDisruptionBudget (policy) to be added.\u001b[0m\n\u001b[0;32mnginx, nginx, NetworkPolicy (networking.k8s.io) to be added.\u001b[0m\nPlan: 8 to add, 0 to change, 0 to destroy.\n",
+  "plan_display_contents": "{\"plan\":\"\\u001b[0;32mnginx, nginx, Deployment (apps) to be added.\\u001b[0m\\n\\u001b[0;32mnginx, nginx, Service (v1) to be added.\\u001b[0m\\n\\u001b[0;32mnginx, nginx, ConfigMap (v1) to be added.\\u001b[0m\\n\\u001b[0;32mnginx, nginx, ServiceAccount (v1) to be added.\\u001b[0m\\n\\u001b[0;32mnginx, nginx, HorizontalPodAutoscaler (autoscaling) to be added.\\u001b[0m\\n\\u001b[0;32mnginx, nginx, Ingress (networking.k8s.io) to be added.\\u001b[0m\\n\\u001b[0;32mnginx, nginx, PodDisruptionBudget (policy) to be added.\\u001b[0m\\n\\u001b[0;32mnginx, nginx, NetworkPolicy (networking.k8s.io) to be added.\\u001b[0m\\nPlan: 8 to add, 0 to change, 0 to destroy.\\n\",\"op\":\"install\",\"helm_content_diff\":[{\"api\":\"v1\",\"name\":\"nginx\",\"namespace\":\"nginx\",\"kind\":\"ServiceAccount\"},{\"api\":\"v1\",\"name\":\"nginx-config\",\"namespace\":\"nginx\",\"kind\":\"ConfigMap\"},{\"api\":\"apps\",\"name\":\"nginx\",\"namespace\":\"nginx\",\"kind\":\"Deployment\"},{\"api\":\"v1\",\"name\":\"nginx\",\"namespace\":\"nginx\",\"kind\":\"Service\"},{\"api\":\"autoscaling\",\"name\":\"nginx\",\"namespace\":\"nginx\",\"kind\":\"HorizontalPodAutoscaler\"},{\"api\":\"networking.k8s.io\",\"name\":\"nginx\",\"namespace\":\"nginx\",\"kind\":\"Ingress\"},{\"api\":\"policy\",\"name\":\"nginx\",\"namespace\":\"nginx\",\"kind\":\"PodDisruptionBudget\"},{\"api\":\"networking.k8s.io\",\"name\":\"nginx\",\"namespace\":\"nginx\",\"kind\":\"NetworkPolicy\"}]}",
+  "outputs": {
+    "release_name": "nginx",
+    "namespace": "nginx",
+    "revision": "1",
+    "status": "deployed",
+    "resources_created": "8"
+  }
+}

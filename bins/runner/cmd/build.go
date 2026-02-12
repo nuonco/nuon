@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/sandboxctl"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )
@@ -50,6 +51,9 @@ func (c *cli) runBuild(cmd *cobra.Command, _ []string) {
 		[]fx.Option{
 			// provide process for the heartbeater
 			fx.Supply(fx.Annotate("build", fx.ResultTags(`name:"process"`))),
+			// sandbox control server
+			fx.Provide(sandboxctl.New),
+			fx.Invoke(func(*sandboxctl.Server) {}),
 			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),

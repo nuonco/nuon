@@ -1,0 +1,5 @@
+{
+  "plan_contents": "No changes. All resources are up to date.\nPlan: 0 to add, 0 to change, 0 to destroy.\n",
+  "plan_display_contents": "{\"plan\":\"No changes. All resources are up to date.\\nPlan: 0 to add, 0 to change, 0 to destroy.\\n\",\"op\":\"install\",\"helm_content_diff\":[]}",
+  "outputs": {}
+}

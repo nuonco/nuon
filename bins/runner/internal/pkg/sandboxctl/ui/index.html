@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandbox Control</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1117;
+    color: #e1e4e8;
+    padding: 24px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 24px; margin-bottom: 8px; color: #fff; }
+  .subtitle { color: #8b949e; margin-bottom: 24px; font-size: 14px; }
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .status-ok { background: #1b4332; color: #40c057; }
+  .status-err { background: #4a1515; color: #ff6b6b; }
+  .card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: #c9d1d9;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 8px;
+  }
+  .form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .form-row label {
+    min-width: 120px;
+    font-size: 14px;
+    color: #8b949e;
+  }
+  select, input[type="text"] {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e1e4e8;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 180px;
+  }
+  select:focus, input:focus { outline: none; border-color: #58a6ff; }
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #30363d;
+    border-radius: 12px;
+    transition: 0.2s;
+  }
+  .toggle .slider::before {
+    content: "";
+    position: absolute;
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background: #e1e4e8;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .toggle input:checked + .slider { background: #238636; }
+  .toggle input:checked + .slider::before { transform: translateX(20px); }
+  .warning {
+    background: #3d2200;
+    border: 1px solid #d29922;
+    color: #e3b341;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 8px;
+    display: none;
+  }
+  .warning.visible { display: block; }
+  .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+  button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-primary {
+    background: #238636;
+    color: #fff;
+    border-color: #238636;
+  }
+  .btn-primary:hover { background: #2ea043; }
+  .btn-secondary {
+    background: #21262d;
+    color: #c9d1d9;
+  }
+  .btn-secondary:hover { background: #30363d; }
+  .preview-card {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .preview-card pre {
+    font-size: 12px;
+    font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #8b949e;
+  }
+  .preview-select {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 12px;
+  }
+  .last-update { color: #484f58; font-size: 12px; margin-top: 16px; }
+</style>
+</head>
+<body>
+  <h1>Sandbox Control <span id="health-badge" class="status-badge status-ok">connected</span></h1>
+  <p class="subtitle">Control sandbox mode behavior: response variants, failure modes, and timing.</p>
+
+  <div class="card">
+    <h2>Response Variants</h2>
+    <div class="form-row">
+      <label>Terraform</label>
+      <select id="variant-terraform">
+        <option value="default">default</option>
+        <option value="empty">empty</option>
+        <option value="large">large</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Helm</label>
+      <select id="variant-helm">
+        <option value="default">default</option>
+        <option value="empty">empty</option>
+        <option value="large">large</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Kubernetes</label>
+      <select id="variant-kubernetes">
+        <option value="default">default</option>
+        <option value="empty">empty</option>
+        <option value="large">large</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Failure Mode</h2>
+    <div class="form-row">
+      <label>Mode</label>
+      <select id="failure-mode">
+        <option value="none">none</option>
+        <option value="error">error - jobs return an error</option>
+        <option value="panic">panic - jobs panic (recovered by catcher)</option>
+        <option value="shutdown">shutdown - triggers runner shutdown</option>
+      </select>
+    </div>
+    <div id="failure-warning" class="warning">
+      This failure mode may disrupt the runner process. Use with caution.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Timing &amp; Faults</h2>
+    <div class="form-row">
+      <label>Job Duration</label>
+      <input type="text" id="job-duration" placeholder="e.g. 10s, 1m (empty = config default)">
+    </div>
+    <div class="form-row">
+      <label>Random Faults</label>
+      <label class="toggle">
+        <input type="checkbox" id="faults-enabled">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" onclick="applyState()">Apply</button>
+    <button class="btn-secondary" onclick="resetState()">Reset to Defaults</button>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Fixture Preview</h2>
+    <div class="preview-select">
+      <select id="preview-category">
+        <option value="terraform">terraform</option>
+        <option value="helm">helm</option>
+        <option value="kubernetes">kubernetes</option>
+      </select>
+      <select id="preview-variant">
+        <option value="default">default</option>
+        <option value="empty">empty</option>
+        <option value="large">large</option>
+      </select>
+      <button class="btn-secondary" onclick="loadPreview()">Preview</button>
+    </div>
+    <div id="preview-content" class="preview-card" style="display:none">
+      <pre id="preview-text"></pre>
+    </div>
+  </div>
+
+  <div class="last-update" id="last-update"></div>
+
+<script>
+  const API = '/api/v1';
+  let pollTimer;
+
+  function readForm() {
+    return {
+      variants: {
+        terraform: document.getElementById('variant-terraform').value,
+        helm: document.getElementById('variant-helm').value,
+        kubernetes: document.getElementById('variant-kubernetes').value
+      },
+      failure_mode: document.getElementById('failure-mode').value,
+      job_duration: document.getElementById('job-duration').value,
+      faults_enabled: document.getElementById('faults-enabled').checked
+    };
+  }
+
+  function writeForm(state) {
+    if (state.variants) {
+      if (state.variants.terraform) document.getElementById('variant-terraform').value = state.variants.terraform;
+      if (state.variants.helm) document.getElementById('variant-helm').value = state.variants.helm;
+      if (state.variants.kubernetes) document.getElementById('variant-kubernetes').value = state.variants.kubernetes;
+    }
+    document.getElementById('failure-mode').value = state.failure_mode || 'none';
+    document.getElementById('job-duration').value = state.job_duration || '';
+    document.getElementById('faults-enabled').checked = !!state.faults_enabled;
+    updateWarning();
+  }
+
+  function updateWarning() {
+    const mode = document.getElementById('failure-mode').value;
+    const warning = document.getElementById('failure-warning');
+    warning.classList.toggle('visible', mode === 'panic' || mode === 'shutdown');
+  }
+
+  document.getElementById('failure-mode').addEventListener('change', updateWarning);
+
+  async function fetchState() {
+    try {
+      const resp = await fetch(API + '/state');
+      if (!resp.ok) throw new Error('fetch failed');
+      const state = await resp.json();
+      writeForm(state);
+      document.getElementById('health-badge').className = 'status-badge status-ok';
+      document.getElementById('health-badge').textContent = 'connected';
+      document.getElementById('last-update').textContent = 'Last poll: ' + new Date().toLocaleTimeString();
+    } catch (e) {
+      document.getElementById('health-badge').className = 'status-badge status-err';
+      document.getElementById('health-badge').textContent = 'disconnected';
+    }
+  }
+
+  async function applyState() {
+    try {
+      const resp = await fetch(API + '/state', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(readForm())
+      });
+      if (!resp.ok) throw new Error('apply failed');
+      const state = await resp.json();
+      writeForm(state);
+    } catch (e) {
+      alert('Failed to apply state: ' + e.message);
+    }
+  }
+
+  async function resetState() {
+    writeForm({
+      variants: {terraform: 'default', helm: 'default', kubernetes: 'default'},
+      failure_mode: 'none',
+      job_duration: '',
+      faults_enabled: false
+    });
+    await applyState();
+  }
+
+  async function loadPreview() {
+    const cat = document.getElementById('preview-category').value;
+    const variant = document.getElementById('preview-variant').value;
+    try {
+      const resp = await fetch(API + '/fixtures/' + cat + '/' + variant);
+      if (!resp.ok) throw new Error('not found');
+      const data = await resp.json();
+      document.getElementById('preview-text').textContent = JSON.stringify(data, null, 2);
+      document.getElementById('preview-content').style.display = 'block';
+    } catch (e) {
+      document.getElementById('preview-text').textContent = 'Error: ' + e.message;
+      document.getElementById('preview-content').style.display = 'block';
+    }
+  }
+
+  // Initial load and poll
+  fetchState();
+  pollTimer = setInterval(fetchState, 2000);
+</script>
+</body>
+</html>

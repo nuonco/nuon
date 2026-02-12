@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/sandboxctl"
 )
 
 func init() {
@@ -26,14 +27,50 @@ func (j *jobLoop) execSandboxStep(ctx context.Context) error {
 		return err
 	}
 
-	duration := j.cfg.SandboxJobDuration / totalSteps
+	// Check for failure mode from sandboxctl
+	if j.sandboxCtl != nil && j.sandboxCtl.Active() {
+		state := j.sandboxCtl.State()
+		switch state.GetFailureMode() {
+		case sandboxctl.FailureModeError:
+			time.Sleep(500 * time.Millisecond)
+			l.Error("sandbox control: failure mode is error, returning error")
+			return errors.New("sandbox control: simulated error failure")
+		case sandboxctl.FailureModePanic:
+			time.Sleep(500 * time.Millisecond)
+			l.Error("sandbox control: failure mode is panic, panicking")
+			panic("sandbox control: simulated panic failure")
+		case sandboxctl.FailureModeShutdown:
+			time.Sleep(500 * time.Millisecond)
+			l.Error("sandbox control: failure mode is shutdown, shutting down")
+			j.shutdowner.Shutdown()
+			return errors.New("sandbox control: simulated shutdown failure")
+		}
+	}
+
+	// Determine job duration: sandboxctl override > config default
+	jobDuration := j.cfg.SandboxJobDuration
+	if j.sandboxCtl != nil && j.sandboxCtl.Active() {
+		if override := j.sandboxCtl.State().GetJobDuration(); override > 0 {
+			jobDuration = override
+		}
+	}
+
+	duration := jobDuration / totalSteps
 	l.Info("sandbox mode enabled, faking job output",
 		zap.String("step", "initialize"),
-		zap.Duration("duration", j.cfg.SandboxJobDuration),
+		zap.Duration("duration", jobDuration),
 	)
 
+	// Determine faults: sandboxctl override > config default
+	faultsEnabled := j.cfg.SandboxModeFaultsEnabled
+	if j.sandboxCtl != nil && j.sandboxCtl.Active() {
+		faultsEnabled = j.sandboxCtl.State().GetFaultsEnabled()
+	}
+
 	shouldFault := rand.Intn(10) == 0
-	l.Error("sandbox mode fault randomly selected, will return an error at the end of this job")
+	if shouldFault && faultsEnabled {
+		l.Error("sandbox mode fault randomly selected, will return an error at the end of this job")
+	}
 
 	timeout := time.NewTimer(duration)
 	ticker := time.NewTicker(logPeriod)
@@ -57,7 +94,7 @@ BREAK:
 		zap.Any("obj", map[string]interface{}{}),
 	)
 
-	if shouldFault && j.cfg.SandboxModeFaultsEnabled {
+	if shouldFault && faultsEnabled {
 		return errors.New("Sandbox Mode Fault Injected")
 	}
 

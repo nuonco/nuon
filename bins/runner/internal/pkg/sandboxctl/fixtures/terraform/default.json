@@ -1,0 +1,9 @@
+{
+  "plan_contents": "Terraform will perform the following actions:\n\n  # aws_instance.web will be created\n  + resource \"aws_instance\" \"web\" {\n      + ami                          = \"ami-0c55b159cbfafe1f0\"\n      + instance_type                = \"t2.micro\"\n      + tags                         = {\n          + \"Name\" = \"sandbox-web\"\n        }\n    }\n\n  # aws_security_group.web will be created\n  + resource \"aws_security_group\" \"web\" {\n      + name        = \"sandbox-web-sg\"\n      + description = \"Allow HTTP traffic\"\n    }\n\nPlan: 2 to add, 0 to change, 0 to destroy.",
+  "plan_display_contents": "{\"format_version\":\"1.2\",\"terraform_version\":\"1.6.0\",\"resource_changes\":[{\"address\":\"aws_instance.web\",\"mode\":\"managed\",\"type\":\"aws_instance\",\"name\":\"web\",\"change\":{\"actions\":[\"create\"],\"before\":null,\"after\":{\"ami\":\"ami-0c55b159cbfafe1f0\",\"instance_type\":\"t2.micro\",\"tags\":{\"Name\":\"sandbox-web\"}}}},{\"address\":\"aws_security_group.web\",\"mode\":\"managed\",\"type\":\"aws_security_group\",\"name\":\"web\",\"change\":{\"actions\":[\"create\"],\"before\":null,\"after\":{\"name\":\"sandbox-web-sg\",\"description\":\"Allow HTTP traffic\"}}}]}",
+  "state_json": "{\"version\":4,\"terraform_version\":\"1.6.0\",\"serial\":1,\"lineage\":\"sandbox-default\",\"outputs\":{},\"resources\":[{\"mode\":\"managed\",\"type\":\"aws_instance\",\"name\":\"web\",\"provider\":\"provider[\\\"registry.terraform.io/hashicorp/aws\\\"]\",\"instances\":[{\"schema_version\":1,\"attributes\":{\"ami\":\"ami-0c55b159cbfafe1f0\",\"instance_type\":\"t2.micro\",\"id\":\"i-0sandbox12345\",\"tags\":{\"Name\":\"sandbox-web\"}}}]}]}",
+  "outputs": {
+    "instance_id": "i-0sandbox12345",
+    "public_ip": "10.0.0.1"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "plan_contents": "No changes. All Kubernetes resources are up to date.",
+  "plan_display_contents": "{\"op\":\"apply\",\"plan\":\"No changes. All Kubernetes resources are up to date.\"}",
+  "outputs": {}
+}
