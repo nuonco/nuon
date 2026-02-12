@@ -116,6 +116,7 @@ templ OrgHeaderWithPopover(org *app.Org) {
 						Name:        "tags",
 						Value:       org.Tags,
 						Placeholder: "Type and press Enter...",
+						Suggestions: []string{"Trial", "Inactive", "Priority", "Demo"},
 					})
 					<button
 						type="submit"

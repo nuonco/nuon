@@ -19,6 +19,7 @@ type Props struct {
 	Attributes  templ.Attributes
 	Disabled    bool
 	Readonly    bool
+	Suggestions []string
 }
 
 templ TagsInput(props ...Props) {
@@ -77,10 +78,21 @@ templ TagsInput(props ...Props) {
 			Disabled:    p.Disabled,
 			Readonly:    p.Readonly,
 			Attributes: utils.MergeAttributes(
-				templ.Attributes{"data-tui-tagsinput-text-input": ""},
+				templ.Attributes{
+					"data-tui-tagsinput-text-input": "",
+					"list":                          utils.If(len(p.Suggestions) > 0, p.ID+"-suggestions"),
+					"autocomplete":                  "off",
+				},
 				p.Attributes,
 			),
 		})
+		if len(p.Suggestions) > 0 {
+			<datalist id={ p.ID + "-suggestions" }>
+				for _, suggestion := range p.Suggestions {
+					<option value={ suggestion }></option>
+				}
+			</datalist>
+		}
 		<div data-tui-tagsinput-hidden-inputs>
 			for _, tag := range p.Value {
 				<input type="hidden" name={ p.Name } value={ tag }/>

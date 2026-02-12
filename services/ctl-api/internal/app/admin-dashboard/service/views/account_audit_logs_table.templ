@@ -28,7 +28,7 @@ templ AccountAuditLogsTable(
 ) {
 	<div
 		id={ "audit-logs-table-" + accountID }
-		hx-get={ fmt.Sprintf("accounts/%s/audit-logs/table?page=%d", accountID, currentPage) }
+		hx-get={ fmt.Sprintf("/accounts/%s/audit-logs/table?page=%d", accountID, currentPage) }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 		hx-include="[name='start_date'],[name='end_date'],[name='entity_types']"
@@ -84,7 +84,7 @@ templ AccountAuditLogsTable(
 							}
 							@table.Cell() {
 								if entry.OrgID != nil && entry.OrgName != nil {
-									<a href={ templ.URL("../orgs/" + *entry.OrgID) } class="text-cyan hover:underline">
+									<a href={ templ.URL("/orgs/" + *entry.OrgID) } class="text-cyan hover:underline">
 										{ *entry.OrgName }
 									</a>
 								} else {
@@ -159,7 +159,7 @@ templ renderAuditLogsPagination(accountID string, startDate, endDate time.Time, 
 
 func buildAuditLogsTableURL(accountID string, startDate, endDate time.Time, page int) string {
 	return fmt.Sprintf(
-		"accounts/%s/audit-logs/table?start_date=%s&end_date=%s&page=%d",
+		"/accounts/%s/audit-logs/table?start_date=%s&end_date=%s&page=%d",
 		accountID,
 		startDate.Format("2006-01-02"),
 		endDate.Format("2006-01-02"),
@@ -170,7 +170,7 @@ func buildAuditLogsTableURL(accountID string, startDate, endDate time.Time, page
 func getEntityDetailURL(entityType, entityID string) string {
 	switch entityType {
 	case "app":
-		return "../apps/" + entityID
+		return "/apps/" + entityID
 	case "workflow":
 		// Workflows don't have a detail page in admin dashboard yet
 		return "#"
@@ -178,7 +178,7 @@ func getEntityDetailURL(entityType, entityID string) string {
 		// Runner jobs don't have a detail page in admin dashboard yet
 		return "#"
 	case "org":
-		return "../orgs/" + entityID
+		return "/orgs/" + entityID
 	case "app_sync":
 		// App syncs don't have a detail page
 		return "#"
