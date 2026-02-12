@@ -48,12 +48,21 @@ templ AccountsTable(accounts []*app.Account, currentPage, totalPages int, search
 							}
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									for _, org := range account.Orgs {
-										<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline text-sm">
-											{ org.Name }
-										</a>
+									{{ maxOrgs := 3 }}
+									{{ totalOrgs := len(account.Orgs) }}
+									for i, org := range account.Orgs {
+										if i < maxOrgs {
+											<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline text-sm">
+												{ org.Name }
+											</a>
+										}
 									}
-									if len(account.Orgs) == 0 {
+									if totalOrgs > maxOrgs {
+										<span class="text-muted-foreground text-sm">
+											+{ fmt.Sprintf("%d", totalOrgs - maxOrgs) } more
+										</span>
+									}
+									if totalOrgs == 0 {
 										<span class="text-muted-foreground text-sm">None</span>
 									}
 								</div>
