@@ -23,7 +23,7 @@ func componentStatusToVariant(componentStatus app.InstallComponentStatus) status
 
 templ InstallComponentStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "installs/" + install.ID + "/status/component" }
+		hx-get={ "/installs/" + install.ID + "/status/component" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>

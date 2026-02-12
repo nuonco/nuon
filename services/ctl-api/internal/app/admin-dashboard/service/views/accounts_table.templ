@@ -12,7 +12,7 @@ import (
 templ AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQuery string) {
 	<div
 		id="accounts-table"
-		hx-get="accounts/table"
+		hx-get="/accounts/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 		hx-include="[name='search']"

@@ -39,7 +39,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string)
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"orgs-table\" hx-get=\"orgs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"orgs-table\" hx-get=\"/orgs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

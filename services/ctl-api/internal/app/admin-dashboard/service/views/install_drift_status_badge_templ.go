@@ -42,9 +42,9 @@ func InstallDriftStatusBadge(install *app.Install) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("installs/" + install.ID + "/status/drift")
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/installs/" + install.ID + "/status/drift")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_drift_status_badge.templ`, Line: 13, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_drift_status_badge.templ`, Line: 13, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
