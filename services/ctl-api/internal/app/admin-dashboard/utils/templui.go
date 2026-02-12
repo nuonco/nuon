@@ -70,5 +70,9 @@ var ScriptVersion = fmt.Sprintf("%d", time.Now().Unix())
 //	    }
 //	}
 var ScriptURL = func(path string) string {
+	// Ensure path starts with / for absolute URLs
+	if len(path) > 0 && path[0] != '/' {
+		path = "/" + path
+	}
 	return path + "?v=" + ScriptVersion
 }
