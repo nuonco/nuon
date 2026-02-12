@@ -25,6 +25,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // TestService holds all fx-injected dependencies for orgs endpoint tests.
@@ -39,6 +40,7 @@ type TestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	OrgsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // OrgsTestSuite is the testify suite for orgs endpoints.
@@ -99,16 +101,8 @@ func (s *OrgsTestSuite) TearDownSuite() {
 }
 
 func (s *OrgsTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
+	ctx := context.Background()
+	_, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 }
 
 func (s *OrgsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
