@@ -8,6 +8,7 @@ const (
 	InstallCreated Event = "install_created"
 
 	InviteSent     Event = "invite_sent"
+	InviteResent   Event = "invite_resent"
 	InviteAccepted Event = "invite_accepted"
 
 	OrgCreated Event = "org_created"
