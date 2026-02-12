@@ -4,7 +4,12 @@ import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { Text } from '@/components/common/Text'
+import { Tabs } from '@/components/common/Tabs'
 // import type { } from "@/types";
+
+// NOTE(nnnat): old code that needs refactored
+import { BackendModal } from '@/components/old/InstallSandbox/BackendModal'
+import { UnlockModal } from '@/components/old/InstallSandbox/UnlockStateModal'
 
 function getTerraformOutputsFromState(state) {
   return state?.values?.outputs || {}
@@ -18,14 +23,23 @@ export const TerraformState = ({
   terraformState,
 }: {
   terraformState: Record<string, any>
+  locked?: boolean
 }) => {
   const tfOutputs = getTerraformOutputsFromState(terraformState)
   const tfResources = getTerraformResourcessFromState(terraformState)
 
   return (
     <div className="flex flex-col gap-6 pb-14">
+      <div className="flex items-center justify-between">
+        <Text weight="strong">Terraform state</Text>
+
+        <div className="flex items-center gap-4"></div>
+      </div>
+
       <Card className="flex flex-col gap-2">
-        <Text weight="strong">Terraform outputs</Text>
+        <Text variant="body" weight="strong">
+          Terraform outputs
+        </Text>
         <KeyValueList
           values={Object?.keys(tfOutputs)?.map((key) => ({
             key,
@@ -78,7 +92,7 @@ const ResourceHeading = ({ resource }) => {
       <div className="flex items-center justify-between">
         <span className="flex flex-col gap-2 text-left">
           <Text weight="strong">{resource?.address}</Text>
-          <Text className="flex items-center gap-6" theme="neutral">
+          <Text className="!flex items-center gap-4 flex-wrap" theme="neutral">
             <Text variant="subtext">
               <b>Name:</b> {resource?.name}
             </Text>
@@ -129,7 +143,7 @@ const ResourceDetails = ({ resource }) => {
   return (
     <div className="p-6 border-t flex flex-col gap-6">
       {resource?.depends_on && (
-        <Text className="flex items-center gap-2 flex-wrap">
+        <Text className="!flex items-center gap-2 flex-wrap">
           <b>Depends on:</b>{' '}
           {resource?.depends_on?.map((d) => (
             <Badge variant="code" size="sm" key={d}>

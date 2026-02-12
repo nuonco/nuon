@@ -6,8 +6,15 @@ import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
-import { getInstall, getInstallDriftedObjects, getOrg } from '@/lib'
-import type { TPageProps } from '@/types'
+import { TerraformState } from '@/components/terraform-workspace/TerraformState'
+import {
+  getInstall,
+  getInstallDriftedObjects,
+  getOrg,
+  getTerraformState,
+  getTerraformStates,
+} from '@/lib'
+import type { TPageProps, TInstall } from '@/types'
 import { Runs, RunsError, RunsSkeleton } from './runs'
 
 // NOTE: old layout stuff
@@ -112,10 +119,7 @@ export default async function InstallSandboxPage({
             </AsyncBoundary>
           </Section>
 
-          <Section
-            className="flex-initial"
-            childrenClassName="flex flex-col gap-4"
-          >
+          <div className="p-6">
             <AsyncBoundary
               loadingFallback={
                 <Loading
@@ -129,12 +133,9 @@ export default async function InstallSandboxPage({
                 </span>
               }
             >
-              <TerraformWorkspace
-                orgId={orgId}
-                workspace={install?.sandbox?.terraform_workspace}
-              />
+              <TFState install={install} />
             </AsyncBoundary>
-          </Section>
+          </div>
         </div>
 
         <div className="divide-y flex flex-col md:col-span-4">
@@ -161,4 +162,18 @@ export default async function InstallSandboxPage({
       {/* old layout stuff*/}
     </PageSection>
   )
+}
+
+const TFState = async ({ install }: { install: TInstall }) => {
+  const { data: states, error } = await getTerraformStates({
+    orgId: install.org_id,
+    workspaceId: install?.sandbox?.terraform_workspace?.id,
+  })
+  const { data: state } = await getTerraformState({
+    orgId: install.org_id,
+    workspaceId: install?.sandbox?.terraform_workspace?.id,
+    stateId: states?.at(-1)?.id,
+  })
+
+  return <TerraformState terraformState={state} />
 }
