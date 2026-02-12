@@ -12,7 +12,7 @@ import (
 templ AccountInstallsTable(accountID string, installs []*app.Install, currentPage, totalPages int) {
 	<div
 		id={ "installs-table-" + accountID }
-		hx-get={ "accounts/" + accountID + "/installs/table" }
+		hx-get={ "/accounts/" + accountID + "/installs/table" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
@@ -36,7 +36,7 @@ templ AccountInstallsTable(accountID string, installs []*app.Install, currentPag
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("../installs/" + install.ID) } class="text-cyan hover:underline">
+									<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
 										{ install.Name }
 									</a>
 									<div class="flex items-center gap-2">
@@ -48,7 +48,7 @@ templ AccountInstallsTable(accountID string, installs []*app.Install, currentPag
 								</div>
 							}
 							@table.Cell() {
-								<a href={ templ.URL("../orgs/" + install.OrgID) } class="text-cyan hover:underline">
+								<a href={ templ.URL("/orgs/" + install.OrgID) } class="text-cyan hover:underline">
 									{ install.Org.Name }
 								</a>
 							}
@@ -128,5 +128,5 @@ templ renderAccountInstallsPagination(accountID string, currentPage, totalPages 
 }
 
 func buildAccountInstallsPageURL(accountID string, page int) string {
-	return fmt.Sprintf("accounts/%s/installs/table?page=%d", accountID, page)
+	return fmt.Sprintf("/accounts/%s/installs/table?page=%d", accountID, page)
 }

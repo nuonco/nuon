@@ -10,7 +10,7 @@ import (
 
 templ InstallDriftStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "installs/" + install.ID + "/status/drift" }
+		hx-get={ "/installs/" + install.ID + "/status/drift" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>

@@ -806,7 +806,7 @@ func renderOrgInstallsPagination(orgID string, currentPage, totalPages int) temp
 }
 
 func buildOrgInstallsPageURL(orgID string, page int) string {
-	return fmt.Sprintf("orgs/%s/installs/table?page=%d", orgID, page)
+	return fmt.Sprintf("/orgs/%s/installs/table?page=%d", orgID, page)
 }
 
 var _ = templruntime.GeneratedTemplate
