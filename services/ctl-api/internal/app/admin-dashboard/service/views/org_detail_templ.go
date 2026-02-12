@@ -52,7 +52,7 @@ func OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphD
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"w-full max-w-7xl mx-auto px-6\"><!-- Breadcrumb navigation --><div class=\"mb-6\"><a href=\"../orgs\" class=\"text-sm text-cyan hover:underline\">← Back to Organizations</a></div><!-- Compact Org Header with Popover -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"w-full max-w-7xl mx-auto px-6\"><!-- Breadcrumb navigation --><div class=\"mb-6\"><a href=\"/orgs\" class=\"text-sm text-cyan hover:underline\">← Back to Organizations</a></div><!-- Compact Org Header with Popover -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

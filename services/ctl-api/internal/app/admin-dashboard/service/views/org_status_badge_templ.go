@@ -70,9 +70,9 @@ func OrgStatusBadge(orgID string, orgStatus app.OrgStatus, statusDescription str
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("orgs/" + orgID + "/status")
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("/orgs/" + orgID + "/status")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/org_status_badge.templ`, Line: 29, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/org_status_badge.templ`, Line: 29, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {

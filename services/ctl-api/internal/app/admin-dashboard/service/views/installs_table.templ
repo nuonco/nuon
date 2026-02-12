@@ -13,7 +13,7 @@ import (
 templ InstallsTable(orgID string, installs []*app.Install, currentPage, totalPages int) {
 	<div
 		id={ "installs-table-" + orgID }
-		hx-get={ "orgs/" + orgID + "/installs/table" }
+		hx-get={ "/orgs/" + orgID + "/installs/table" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
