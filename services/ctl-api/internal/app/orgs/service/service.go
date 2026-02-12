@@ -84,6 +84,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			{
 				invites.GET("", s.GetOrgInvites)
 				invites.POST("", s.CreateOrgInvite)
+				invites.POST("/:invite_id/resend", s.ResendOrgInvite)
 			}
 
 			// runners
