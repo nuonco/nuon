@@ -2,8 +2,13 @@ package shutdown
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/fidiego/systemctl"
+	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
@@ -29,6 +34,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 	l.Info("preparing to gracefully shutting down the runner process")
+
+	l.Info("updating image config", zap.String("image_tag", h.settings.ContainerImageTag))
+	monitor.EnsureImageConfigFile(ctx, l, h.settings)
+
+	l.Info(fmt.Sprintf("restarting %s", monitor.RunnerServiceName))
+	if err := systemctl.Restart(ctx, monitor.RunnerServiceName, systemctl.Options{}); err != nil {
+		l.Error("failed to restart runner service", zap.Error(err))
+	}
 
 	return nil
 }
