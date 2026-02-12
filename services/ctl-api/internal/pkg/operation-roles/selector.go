@@ -115,7 +115,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 			ctx.StackOutputs,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("runtime role %q: %w", ctx.RuntimeRole, err)
+			return nil, fmt.Errorf("unable to resolve runtime role arn %q: %w", ctx.RuntimeRole, err)
 		}
 		return &RoleSelection{
 			RoleName: ctx.RuntimeRole,
@@ -151,7 +151,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 	if roleName := findEntityRole(ctx.EntityRoles, ctx.Operation); roleName != "" {
 		roleARN, err := resolveRoleARN(roleName, ctx.AppConfig, ctx.StackOutputs)
 		if err != nil {
-			return nil, fmt.Errorf("entity role %q: %w", roleName, err)
+			return nil, fmt.Errorf("unable to resolve entity role %q: %w", roleName, err)
 		}
 		return &RoleSelection{
 			RoleName: roleName,
@@ -168,7 +168,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		ctx.Operation); found {
 		roleARN, err := resolveRoleARN(roleName, ctx.AppConfig, ctx.StackOutputs)
 		if err != nil {
-			return nil, fmt.Errorf("matrix role %q: %w", roleName, err)
+			return nil, fmt.Errorf("unable to resolve matrix role %q: %w", roleName, err)
 		}
 		return &RoleSelection{
 			RoleName: roleName,

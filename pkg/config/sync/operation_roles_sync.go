@@ -13,7 +13,7 @@ func (s sync) getOperationRulesRequest() *models.ServiceCreateAppOperationRoleCo
 	for _, rule := range s.cfg.OperationRoles.RuleMatrix {
 		rules = append(rules, &models.ServiceOperationRoleRuleRequest{
 			Principal: generics.ToPtr(rule.Principal),
-			Operation: generics.ToPtr((rule.Operation)),
+			Operation: generics.ToPtr(models.AppOperationType(rule.Operation)),
 			Role:      generics.ToPtr(rule.RoleName),
 		})
 	}
