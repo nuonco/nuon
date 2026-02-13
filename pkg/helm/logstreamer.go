@@ -61,20 +61,21 @@ func getPodState(pod *corev1.Pod) string {
 	return "Running"
 }
 
-// podStateSummary builds a summary string and counts map of pod states.
-func podStateSummary(pods []*corev1.Pod) (string, map[string]int) {
-	counts := map[string]int{}
+// podStateSummary builds a summary string and a map of state → pod names.
+func podStateSummary(pods []*corev1.Pod) (string, map[string][]string) {
+	byState := map[string][]string{}
 	for _, pod := range pods {
-		counts[getPodState(pod)]++
+		state := getPodState(pod)
+		byState[state] = append(byState[state], pod.Name)
 	}
 	var summary string
-	for state, count := range counts {
+	for state, names := range byState {
 		if summary != "" {
 			summary += " "
 		}
-		summary += fmt.Sprintf("%d %s", count, state)
+		summary += fmt.Sprintf("%d %s", len(names), state)
 	}
-	return summary, counts
+	return summary, byState
 }
 
 // this is the entrypoint
