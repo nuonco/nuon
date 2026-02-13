@@ -17,31 +17,41 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 	step *app.InstallActionWorkflowRunStep,
 	stateMap map[string]any,
 	installID string,
+	isAdHoc bool,
 ) (*plantypes.ActionWorkflowRunStepPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	var stepConfig *app.ActionWorkflowStepConfig
+	if isAdHoc {
+		cfg := app.ActionWorkflowStepConfig(*step.AdHocConfig)
+		stepConfig = &cfg
+	} else {
+		stepConfig = &step.Step
+	}
+
 	plan := &plantypes.ActionWorkflowRunStepPlan{
 		ID: step.ID,
 		Attrs: map[string]string{
-			"step.name": step.Step.Name,
-			"step.id":   step.Step.ID,
+			"step.name": stepConfig.Name,
+			"step.id":   stepConfig.ID,
 		},
 		InterpolatedEnvVars: make(map[string]string, 0),
 	}
 
-	// step 1 - fetch token for repo
-	l.Debug("creating git source for config")
-	gitSource, err := activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, step.Step.ID)
-	if err != nil {
-		l.Error("unable to  configure git source for step", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to get git source")
+	if !isAdHoc {
+		l.Debug("creating git source for config")
+		gitSource, err := activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, stepConfig.ID)
+		if err != nil {
+			l.Error("unable to  configure git source for step", zap.Error(err))
+			return nil, errors.Wrap(err, "unable to get git source")
+		}
+		plan.GitSource = gitSource
 	}
-	plan.GitSource = gitSource
 
-	for k, v := range step.Step.EnvVars {
+	for k, v := range stepConfig.EnvVars {
 		renderedVal, err := render.Render(*v, stateMap)
 		if err != nil {
 			l.Error("error rendering env-var",
@@ -53,12 +63,12 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 		plan.InterpolatedEnvVars[k] = renderedVal
 	}
 
-	if step.Step.InlineContents != "" {
+	if stepConfig.InlineContents != "" {
 		l.Debug("rendering inline contents")
-		renderedVal, err := render.Render(step.Step.InlineContents, stateMap)
+		renderedVal, err := render.Render(stepConfig.InlineContents, stateMap)
 		if err != nil {
 			l.Error("error rendering inline contents",
-				zap.String("input", step.Step.InlineContents),
+				zap.String("input", stepConfig.InlineContents),
 				zap.Any("state", stateMap),
 				zap.Error(err),
 			)
@@ -69,12 +79,12 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 		plan.InterpolatedInlineContents = renderedVal
 	}
 
-	if step.Step.Command != "" {
+	if stepConfig.Command != "" {
 		l.Debug("rendering command")
-		renderedVal, err := render.Render(step.Step.Command, stateMap)
+		renderedVal, err := render.Render(stepConfig.Command, stateMap)
 		if err != nil {
 			l.Error("error rendering command",
-				zap.String("command", step.Step.Command),
+				zap.String("command", stepConfig.Command),
 				zap.Any("state", stateMap),
 				zap.Error(err),
 			)
@@ -82,7 +92,7 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 		}
 
 		l.Debug("successfully rendered command", zap.String("rendered", renderedVal))
-		step.Step.Command = renderedVal
+		stepConfig.Command = renderedVal
 	}
 
 	return plan, nil

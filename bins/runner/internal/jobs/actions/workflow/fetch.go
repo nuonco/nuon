@@ -43,13 +43,15 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.run = run
 
-	// fetch the workflow config
-	l.Info("fetching actions workflow config")
-	cfg, err := h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get action workflow run")
+	// fetch the workflow config (skip for adhoc runs)
+	if run.ActionWorkflowConfigID != nil && run.ActionWorkflowConfigID.Valid && run.ActionWorkflowConfigID.String != "" {
+		l.Info("fetching actions workflow config")
+		cfg, err := h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID.String)
+		if err != nil {
+			return errors.Wrap(err, "unable to get action workflow config")
+		}
+		h.state.workflowCfg = cfg
 	}
-	h.state.workflowCfg = cfg
 
 	return nil
 }

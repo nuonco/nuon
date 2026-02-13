@@ -41,23 +41,42 @@ func (h *jobLoop) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
 
-	// fetch the workflow config
-	l.Info("fetching actions workflow config")
-	cfg, err := h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get action workflow run")
+	isAdhoc := run.ActionWorkflowConfigID == nil || !run.ActionWorkflowConfigID.Valid || run.ActionWorkflowConfigID.String == ""
+
+	var cfg *models.AppActionWorkflowConfig
+	if !isAdhoc {
+		l.Info("fetching actions workflow config")
+		cfg, err = h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID.String)
+		if err != nil {
+			return errors.Wrap(err, "unable to get action workflow config")
+		}
 	}
 
 	for idx, step := range run.Steps {
-		stepCfg := cfg.Steps[idx]
+		var stepName string
+		var actionWorkflowID string
+
+		if isAdhoc {
+			if step.AdhocConfig != nil {
+				stepName = step.AdhocConfig.Name
+			} else {
+				stepName = "adhoc step"
+			}
+			actionWorkflowID = run.ID
+		} else {
+			stepCfg := cfg.Steps[idx]
+			stepName = stepCfg.Name
+			actionWorkflowID = cfg.ActionWorkflowID
+		}
+
 		l = l.With(
-			zap.String("workflow_step_name", stepCfg.Name),
+			zap.String("workflow_step_name", stepName),
 			zap.String("step_run_id", step.ID),
 		)
 
-		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepCfg.Name, idx+1, len(run.Steps)))
+		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepName, idx+1, len(run.Steps)))
 
-		_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, plan.InstallID, cfg.ActionWorkflowID, step.ID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
+		_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, plan.InstallID, actionWorkflowID, step.ID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
 			Status:            models.AppInstallActionWorkflowRunStepStatusFinished,
 			ExecutionDuration: int64(time.Second * 5),
 		})
