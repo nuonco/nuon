@@ -142,7 +142,8 @@
           "concepts/runners",
           "concepts/app-inputs",
           "concepts/app-variables",
-          "concepts/app-secrets"
+          "concepts/app-secrets",
+          "concepts/policies"
         ]
       },
       {
