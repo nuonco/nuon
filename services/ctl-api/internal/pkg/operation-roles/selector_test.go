@@ -11,11 +11,19 @@ import (
 )
 
 func TestResolveRoleARN(t *testing.T) {
+	// Create a basic install state for tests
+	installState := &state.State{
+		Install: &state.InstallState{
+			Name: "test-install",
+		},
+	}
+
 	tests := []struct {
 		name          string
 		roleName      string
 		appCfg        *app.AppConfig
 		stackOutputs  *app.InstallStackOutputs
+		installState  *state.State
 		expectedARN   string
 		expectError   bool
 		errorContains string
@@ -25,20 +33,23 @@ func TestResolveRoleARN(t *testing.T) {
 			roleName:      "some-role",
 			appCfg:        &app.AppConfig{},
 			stackOutputs:  nil,
+			installState:  installState,
 			expectedARN:   "",
 			expectError:   true,
-			errorContains: "no AWS stack outputs available",
+			errorContains: "stack outputs are required",
 		},
 		{
-			name:     "nil AWS stack outputs",
+			name:     "nil AWS and Azure stack outputs",
 			roleName: "some-role",
 			appCfg:   &app.AppConfig{},
 			stackOutputs: &app.InstallStackOutputs{
-				AWSStackOutputs: nil,
+				AWSStackOutputs:   nil,
+				AzureStackOutputs: nil,
 			},
+			installState:  installState,
 			expectedARN:   "",
 			expectError:   true,
-			errorContains: "no AWS stack outputs available",
+			errorContains: "stack outputs must have either AWS or Azure outputs",
 		},
 		{
 			name:     "role found in provision role",
@@ -65,8 +76,9 @@ func TestResolveRoleARN(t *testing.T) {
 					BreakGlassRoleARNs:    make(map[string]string),
 				},
 			},
-			expectedARN: "arn:aws:iam::123456789012:role/provision-role",
-			expectError: false,
+			installState: installState,
+			expectedARN:  "arn:aws:iam::123456789012:role/provision-role",
+			expectError:  false,
 		},
 		{
 			name:     "role found in maintenance role",
@@ -93,8 +105,9 @@ func TestResolveRoleARN(t *testing.T) {
 					BreakGlassRoleARNs:    make(map[string]string),
 				},
 			},
-			expectedARN: "arn:aws:iam::123456789012:role/maintenance-role",
-			expectError: false,
+			installState: installState,
+			expectedARN:  "arn:aws:iam::123456789012:role/maintenance-role",
+			expectError:  false,
 		},
 		{
 			name:     "role found in deprovision role",
@@ -121,8 +134,9 @@ func TestResolveRoleARN(t *testing.T) {
 					BreakGlassRoleARNs:    make(map[string]string),
 				},
 			},
-			expectedARN: "arn:aws:iam::123456789012:role/deprovision-role",
-			expectError: false,
+			installState: installState,
+			expectedARN:  "arn:aws:iam::123456789012:role/deprovision-role",
+			expectError:  false,
 		},
 		{
 			name:     "role found in custom roles",
@@ -156,8 +170,9 @@ func TestResolveRoleARN(t *testing.T) {
 					BreakGlassRoleARNs: make(map[string]string),
 				},
 			},
-			expectedARN: "arn:aws:iam::123456789012:role/custom-db",
-			expectError: false,
+			installState: installState,
+			expectedARN:  "arn:aws:iam::123456789012:role/custom-db",
+			expectError:  false,
 		},
 		{
 			name:     "role found in break glass roles",
@@ -193,8 +208,9 @@ func TestResolveRoleARN(t *testing.T) {
 					},
 				},
 			},
-			expectedARN: "arn:aws:iam::123456789012:role/emergency",
-			expectError: false,
+			installState: installState,
+			expectedARN:  "arn:aws:iam::123456789012:role/emergency",
+			expectError:  false,
 		},
 		{
 			name:     "role not found in any category",
@@ -221,6 +237,7 @@ func TestResolveRoleARN(t *testing.T) {
 					BreakGlassRoleARNs:    make(map[string]string),
 				},
 			},
+			installState:  installState,
 			expectedARN:   "",
 			expectError:   true,
 			errorContains: "role \"nonexistent-role\" not found in install stack outputs",
@@ -253,6 +270,7 @@ func TestResolveRoleARN(t *testing.T) {
 					BreakGlassRoleARNs:    make(map[string]string),
 				},
 			},
+			installState:  installState,
 			expectedARN:   "",
 			expectError:   true,
 			errorContains: "role \"custom-missing-role\" not found in install stack outputs",
@@ -261,7 +279,7 @@ func TestResolveRoleARN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			arn, err := resolveRoleARN(tt.roleName, tt.appCfg, tt.stackOutputs)
+			arn, err := resolveRoleARN(tt.roleName, tt.appCfg, tt.stackOutputs, tt.installState)
 
 			if tt.expectError {
 				if err == nil {
@@ -285,19 +303,27 @@ func TestResolveRoleARN(t *testing.T) {
 }
 
 func TestSelectRole(t *testing.T) {
+	// Create a basic install state for tests
+	baseInstallState := &state.State{
+		Install: &state.InstallState{
+			Name: "test-install",
+			ID:   "1234",
+		},
+	}
+
 	baseAppConfig := &app.AppConfig{
 		PermissionsConfig: app.AppPermissionsConfig{
 			ProvisionRole: app.AppAWSIAMRoleConfig{
-				Name: "provision",
+				Name: "{{.nuon.install.name}}-provision",
 			},
 			MaintenanceRole: app.AppAWSIAMRoleConfig{
-				Name: "maintenance",
+				Name: "{{.nuon.install.name}}-maintenance",
 			},
 			DeprovisionRole: app.AppAWSIAMRoleConfig{
-				Name: "deprovision",
+				Name: "{{.nuon.install.name}}-deprovision",
 			},
 			CustomRoles: []app.AppAWSIAMRoleConfig{
-				{Name: "custom-db-role"},
+				{Name: "{{.nuon.install.id}}-custom-db-role"},
 			},
 		},
 		BreakGlassConfig: app.AppBreakGlassConfig{
@@ -309,11 +335,11 @@ func TestSelectRole(t *testing.T) {
 
 	baseStackOutputs := &app.InstallStackOutputs{
 		AWSStackOutputs: &app.AWSStackOutputs{
-			ProvisionIAMRoleARN:   "arn:aws:iam::123456789012:role/provision-role",
-			MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/maintenance-role",
-			DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/deprovision-role",
+			ProvisionIAMRoleARN:   "arn:aws:iam::123456789012:role/test-install-provision",
+			MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-maintenance",
+			DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-deprovision",
 			CustomRoleARNs: map[string]string{
-				"custom-db-role": "arn:aws:iam::123456789012:role/custom-db",
+				"1234-custom-db-role": "arn:aws:iam::123456789012:role/custom-db",
 			},
 			BreakGlassRoleARNs: map[string]string{
 				"emergency-access": "arn:aws:iam::123456789012:role/emergency",
@@ -352,6 +378,7 @@ func TestSelectRole(t *testing.T) {
 				DefaultRole:  "provision",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -366,16 +393,17 @@ func TestSelectRole(t *testing.T) {
 				PrincipalName: "database",
 				RuntimeRole:   "",
 				EntityRoles: EntityOperationRoleMap{
-					app.OperationDeploy: "custom-db-role",
+					app.OperationDeploy: "{{.nuon.install.id}}-custom-db-role",
 				},
 				MatrixRules: []*app.OperationRoleRule{
-					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
+					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
-				DefaultRole:  "provision",
+				DefaultRole:  "{{.nuon.install.name}}-provision",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
-			expectedRoleName: "custom-db-role",
+			expectedRoleName: "1234-custom-db-role",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/custom-db",
 			expectedSource:   RoleSelectionSourceEntity,
 			expectError:      false,
@@ -389,14 +417,15 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules: []*app.OperationRoleRule{
-					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
+					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
-				DefaultRole:  "provision",
+				DefaultRole:  "{{.nuon.install.name}}-provision",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
-			expectedRoleName: "maintenance",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/maintenance-role",
+			expectedRoleName: "test-install-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceMatrix,
 			expectError:      false,
 		},
@@ -409,12 +438,13 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules:   nil,
-				DefaultRole:   "provision",
+				DefaultRole:   "{{.nuon.install.name}}-provision",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
-			expectedRoleName: "provision",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/provision-role",
+			expectedRoleName: "test-install-provision",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-provision",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -427,12 +457,13 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules:   nil,
-				DefaultRole:   "provision",
+				DefaultRole:   "{{.nuon.install.name}}-provision",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
-			expectedRoleName: "provision",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/provision-role",
+			expectedRoleName: "test-install-provision",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-provision",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -445,12 +476,13 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules:   nil,
-				DefaultRole:   "deprovision",
+				DefaultRole:   "{{.nuon.install.name}}-deprovision",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
-			expectedRoleName: "deprovision",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/deprovision-role",
+			expectedRoleName: "test-install-deprovision",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-deprovision",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -463,12 +495,13 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules:   nil,
-				DefaultRole:   "maintenance",
+				DefaultRole:   "{{.nuon.install.name}}-maintenance",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
-			expectedRoleName: "maintenance",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/maintenance-role",
+			expectedRoleName: "test-install-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -484,9 +517,10 @@ func TestSelectRole(t *testing.T) {
 				DefaultRole:   "nonexistent-role",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
 			expectError:   true,
-			errorContains: "default role \"nonexistent-role\"",
+			errorContains: "role \"nonexistent-role\" not found",
 		},
 		{
 			name: "error when runtime role not found",
@@ -500,9 +534,10 @@ func TestSelectRole(t *testing.T) {
 				DefaultRole:   "provision",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
 			expectError:   true,
-			errorContains: "unable to resolve runtime role arn \"invalid-role\"",
+			errorContains: "role \"invalid-role\" not found",
 		},
 		{
 			name: "wildcard matrix rule matches component",
@@ -513,14 +548,15 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules: []*app.OperationRoleRule{
-					{PrincipalType: "component", PrincipalName: "*", Operation: app.OperationDeploy, Role: "maintenance"},
+					{PrincipalType: "component", PrincipalName: "*", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
-				DefaultRole:  "provision",
+				DefaultRole:  "{{.nuon.install.name}}-provision",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
-			expectedRoleName: "maintenance",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/maintenance-role",
+			expectedRoleName: "test-install-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceMatrix,
 			expectError:      false,
 		},
@@ -538,6 +574,7 @@ func TestSelectRole(t *testing.T) {
 				DefaultRole:  "maintenance",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -561,6 +598,7 @@ func TestSelectRole(t *testing.T) {
 						SubscriptionID: "test-subscription-id",
 					},
 				},
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
@@ -587,6 +625,7 @@ func TestSelectRole(t *testing.T) {
 						SubscriptionID: "test-subscription-id",
 					},
 				},
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
@@ -604,12 +643,13 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules:   nil,
-				DefaultRole:   "provision",
+				DefaultRole:   "{{.nuon.install.name}}-provision",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
-			expectedRoleName: "provision",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/provision-role",
+			expectedRoleName: "test-install-provision",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-provision",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -626,6 +666,7 @@ func TestSelectRole(t *testing.T) {
 				DefaultRole:   "maintenance",
 				AppConfig:     baseAppConfig,
 				StackOutputs:  baseStackOutputs,
+				InstallState:  baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -641,15 +682,16 @@ func TestSelectRole(t *testing.T) {
 				PrincipalName: "database",
 				RuntimeRole:   "",
 				EntityRoles: EntityOperationRoleMap{
-					app.OperationDeploy: "custom-db-role",
+					app.OperationDeploy: "{{.nuon.install.id}}-custom-db-role",
 				},
 				MatrixRules:  nil,
-				DefaultRole:  "maintenance",
+				DefaultRole:  "{{.nuon.install.name}}-maintenance",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
-			expectedRoleName: "maintenance",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/maintenance-role",
+			expectedRoleName: "test-install-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -663,14 +705,15 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules: []*app.OperationRoleRule{
-					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "custom-db-role"},
+					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.id}}-custom-db-role"},
 				},
-				DefaultRole:  "maintenance",
+				DefaultRole:  "{{.nuon.install.name}}-maintenance",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
-			expectedRoleName: "maintenance",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/maintenance-role",
+			expectedRoleName: "test-install-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -681,18 +724,19 @@ func TestSelectRole(t *testing.T) {
 				Operation:     app.OperationDeploy,
 				PrincipalType: principal.TypeComponent,
 				PrincipalName: "database",
-				RuntimeRole:   "custom-db-role",
+				RuntimeRole:   "1234-custom-db-role",
 				EntityRoles: EntityOperationRoleMap{
 					app.OperationDeploy: "emergency-access",
 				},
 				MatrixRules: []*app.OperationRoleRule{
-					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
+					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
-				DefaultRole:  "provision",
+				DefaultRole:  "{{.nuon.install.name}}-provision",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
-			expectedRoleName: "custom-db-role",
+			expectedRoleName: "1234-custom-db-role",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/custom-db",
 			expectedSource:   RoleSelectionSourceRuntime,
 			expectError:      false,
@@ -708,12 +752,13 @@ func TestSelectRole(t *testing.T) {
 				BreakGlassRole: "emergency-access",
 				EntityRoles:    nil,
 				MatrixRules:    nil,
-				DefaultRole:    "maintenance",
+				DefaultRole:    "{{.nuon.install.name}}-maintenance",
 				AppConfig:      baseAppConfig,
 				StackOutputs:   baseStackOutputs,
+				InstallState:   baseInstallState,
 			},
-			expectedRoleName: "maintenance",
-			expectedRoleARN:  "arn:aws:iam::123456789012:role/maintenance-role",
+			expectedRoleName: "test-install-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectError:      false,
 		},
@@ -731,6 +776,7 @@ func TestSelectRole(t *testing.T) {
 				DefaultRole:    "maintenance",
 				AppConfig:      baseAppConfig,
 				StackOutputs:   baseStackOutputs,
+				InstallState:   baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -746,12 +792,13 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:    "",
 				BreakGlassRole: "emergency-access",
 				EntityRoles: EntityOperationRoleMap{
-					app.OperationDeploy: "custom-db-role",
+					app.OperationDeploy: "{{.nuon.install.id}}-custom-db-role",
 				},
 				MatrixRules:  nil,
-				DefaultRole:  "maintenance",
+				DefaultRole:  "{{.nuon.install.name}}-maintenance",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -768,11 +815,12 @@ func TestSelectRole(t *testing.T) {
 				BreakGlassRole: "emergency-access",
 				EntityRoles:    nil,
 				MatrixRules: []*app.OperationRoleRule{
-					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
+					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
-				DefaultRole:  "provision",
+				DefaultRole:  "{{.nuon.install.name}}-provision",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -789,9 +837,10 @@ func TestSelectRole(t *testing.T) {
 				BreakGlassRole: "emergency-access",
 				EntityRoles:    nil,
 				MatrixRules:    nil,
-				DefaultRole:    "maintenance",
+				DefaultRole:    "{{.nuon.install.name}}-maintenance",
 				AppConfig:      baseAppConfig,
 				StackOutputs:   baseStackOutputs,
+				InstallState:   baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -804,15 +853,16 @@ func TestSelectRole(t *testing.T) {
 				Operation:      app.OperationDeploy,
 				PrincipalType:  principal.TypeComponent,
 				PrincipalName:  "database",
-				RuntimeRole:    "custom-db-role",
+				RuntimeRole:    "1234-custom-db-role",
 				BreakGlassRole: "emergency-access",
 				EntityRoles:    nil,
 				MatrixRules:    nil,
-				DefaultRole:    "maintenance",
+				DefaultRole:    "{{.nuon.install.name}}-maintenance",
 				AppConfig:      baseAppConfig,
 				StackOutputs:   baseStackOutputs,
+				InstallState:   baseInstallState,
 			},
-			expectedRoleName: "custom-db-role",
+			expectedRoleName: "1234-custom-db-role",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/custom-db",
 			expectedSource:   RoleSelectionSourceRuntime,
 			expectError:      false,
@@ -830,9 +880,10 @@ func TestSelectRole(t *testing.T) {
 				DefaultRole:    "maintenance",
 				AppConfig:      baseAppConfig,
 				StackOutputs:   baseStackOutputs,
+				InstallState:   baseInstallState,
 			},
 			expectError:   true,
-			errorContains: "unable to resolve break glass role \"nonexistent-break-glass\"",
+			errorContains: "role \"nonexistent-break-glass\" not found",
 		},
 		{
 			name: "break glass role with all other rules present",
@@ -843,14 +894,15 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:    "",
 				BreakGlassRole: "emergency-access",
 				EntityRoles: EntityOperationRoleMap{
-					app.OperationDeploy: "custom-db-role",
+					app.OperationDeploy: "{{.nuon.install.id}}-custom-db-role",
 				},
 				MatrixRules: []*app.OperationRoleRule{
-					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
+					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
-				DefaultRole:  "provision",
+				DefaultRole:  "{{.nuon.install.name}}-provision",
 				AppConfig:    baseAppConfig,
 				StackOutputs: baseStackOutputs,
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
@@ -875,6 +927,7 @@ func TestSelectRole(t *testing.T) {
 						SubscriptionID: "test-subscription-id",
 					},
 				},
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
@@ -898,6 +951,7 @@ func TestSelectRole(t *testing.T) {
 						SubscriptionID: "test-subscription-id",
 					},
 				},
+				InstallState: baseInstallState,
 			},
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
@@ -932,6 +986,317 @@ func TestSelectRole(t *testing.T) {
 				if result.Source != tt.expectedSource {
 					t.Errorf("expected source %q, got %q", tt.expectedSource, result.Source)
 				}
+			}
+		})
+	}
+}
+
+func TestSelectRoleWithTemplateRendering(t *testing.T) {
+	// Create install state with realistic values for template rendering
+	installState := &state.State{
+		Install: &state.InstallState{
+			ID:   "ins_abc123xyz",
+			Name: "production",
+		},
+		Org: &state.OrgState{
+			ID:   "org_def456uvw",
+			Name: "acme-corp",
+		},
+	}
+
+	// AppConfig with templated role names (realistic production scenario)
+	templatedAppConfig := &app.AppConfig{
+		PermissionsConfig: app.AppPermissionsConfig{
+			ProvisionRole: app.AppAWSIAMRoleConfig{
+				Name: "{{.nuon.install.id}}-provision",
+			},
+			MaintenanceRole: app.AppAWSIAMRoleConfig{
+				Name: "{{.nuon.install.name}}-maintenance",
+			},
+			DeprovisionRole: app.AppAWSIAMRoleConfig{
+				Name: "{{.nuon.org.name}}-deprovision",
+			},
+			CustomRoles: []app.AppAWSIAMRoleConfig{
+				{Name: "{{.nuon.install.id}}-custom-db"},
+				{Name: "{{.nuon.install.name}}-custom-api"},
+			},
+		},
+		BreakGlassConfig: app.AppBreakGlassConfig{
+			Roles: []app.AppAWSIAMRoleConfig{
+				{Name: "{{.nuon.install.id}}-emergency"},
+			},
+		},
+	}
+
+	// Stack outputs with rendered role ARNs matching the templates above
+	templatedStackOutputs := &app.InstallStackOutputs{
+		AWSStackOutputs: &app.AWSStackOutputs{
+			ProvisionIAMRoleARN:   "arn:aws:iam::123456789012:role/ins_abc123xyz-provision",
+			MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/production-maintenance",
+			DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/acme-corp-deprovision",
+			CustomRoleARNs: map[string]string{
+				"ins_abc123xyz-custom-db": "arn:aws:iam::123456789012:role/ins_abc123xyz-custom-db",
+				"production-custom-api":   "arn:aws:iam::123456789012:role/production-custom-api",
+			},
+			BreakGlassRoleARNs: map[string]string{
+				"ins_abc123xyz-emergency": "arn:aws:iam::123456789012:role/ins_abc123xyz-emergency",
+			},
+		},
+	}
+
+	tests := []struct {
+		name             string
+		ctx              *SelectionContext
+		expectedRoleName string
+		expectedRoleARN  string
+		expectedSource   RoleSelectionSource
+		expectError      bool
+	}{
+		{
+			name: "default provision role with install.id template renders correctly",
+			ctx: &SelectionContext{
+				Operation:     app.OperationProvision,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "api",
+				RuntimeRole:   "",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.install.id}}-provision",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectedRoleName: "ins_abc123xyz-provision",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/ins_abc123xyz-provision",
+			expectedSource:   RoleSelectionSourceDefault,
+			expectError:      false,
+		},
+		{
+			name: "default maintenance role with install.name template renders correctly",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeploy,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "api",
+				RuntimeRole:   "",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.install.name}}-maintenance",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectedRoleName: "production-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/production-maintenance",
+			expectedSource:   RoleSelectionSourceDefault,
+			expectError:      false,
+		},
+		{
+			name: "default deprovision role with org.name template renders correctly",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeprovision,
+				PrincipalType: principal.TypeSandbox,
+				PrincipalName: "",
+				RuntimeRole:   "",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.org.name}}-deprovision",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectedRoleName: "acme-corp-deprovision",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/acme-corp-deprovision",
+			expectedSource:   RoleSelectionSourceDefault,
+			expectError:      false,
+		},
+		{
+			name: "runtime role with template renders correctly",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeploy,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "database",
+				RuntimeRole:   "{{.nuon.install.id}}-emergency",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.install.id}}-provision",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectedRoleName: "ins_abc123xyz-emergency",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/ins_abc123xyz-emergency",
+			expectedSource:   RoleSelectionSourceRuntime,
+			expectError:      false,
+		},
+		{
+			name: "entity role with template renders correctly",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeploy,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "database",
+				RuntimeRole:   "",
+				EntityRoles: EntityOperationRoleMap{
+					app.OperationDeploy: "{{.nuon.install.id}}-custom-db",
+				},
+				MatrixRules:  nil,
+				DefaultRole:  "{{.nuon.install.id}}-provision",
+				AppConfig:    templatedAppConfig,
+				StackOutputs: templatedStackOutputs,
+				InstallState: installState,
+			},
+			expectedRoleName: "ins_abc123xyz-custom-db",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/ins_abc123xyz-custom-db",
+			expectedSource:   RoleSelectionSourceEntity,
+			expectError:      false,
+		},
+		{
+			name: "matrix rule role with template renders correctly",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeploy,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "api",
+				RuntimeRole:   "",
+				EntityRoles:   nil,
+				MatrixRules: []*app.OperationRoleRule{
+					{
+						PrincipalType: principal.TypeComponent,
+						PrincipalName: "api",
+						Operation:     app.OperationDeploy,
+						Role:          "{{.nuon.install.name}}-custom-api",
+					},
+				},
+				DefaultRole:  "{{.nuon.install.id}}-provision",
+				AppConfig:    templatedAppConfig,
+				StackOutputs: templatedStackOutputs,
+				InstallState: installState,
+			},
+			expectedRoleName: "production-custom-api",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/production-custom-api",
+			expectedSource:   RoleSelectionSourceMatrix,
+			expectError:      false,
+		},
+		{
+			name: "break glass role with template renders correctly",
+			ctx: &SelectionContext{
+				Operation:      app.OperationTrigger,
+				PrincipalType:  principal.TypeAction,
+				PrincipalName:  "emergency-deploy",
+				RuntimeRole:    "",
+				BreakGlassRole: "{{.nuon.install.id}}-emergency",
+				EntityRoles:    nil,
+				MatrixRules:    nil,
+				DefaultRole:    "{{.nuon.install.id}}-provision",
+				AppConfig:      templatedAppConfig,
+				StackOutputs:   templatedStackOutputs,
+				InstallState:   installState,
+			},
+			expectedRoleName: "ins_abc123xyz-emergency",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/ins_abc123xyz-emergency",
+			expectedSource:   RoleSelectionSourceBreakGlass,
+			expectError:      false,
+		},
+		{
+			name: "sandbox mode with templated default role renders correctly",
+			ctx: &SelectionContext{
+				SandboxMode:   true,
+				Operation:     app.OperationProvision,
+				PrincipalType: principal.TypeSandbox,
+				PrincipalName: "",
+				RuntimeRole:   "",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.install.name}}-maintenance",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectedRoleName: "production-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/production-maintenance",
+			expectedSource:   RoleSelectionSourceDefault,
+			expectError:      false,
+		},
+		{
+			name: "complex template with multiple variables renders correctly",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeploy,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "api",
+				RuntimeRole:   "",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.install.name}}-maintenance",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectedRoleName: "production-maintenance",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/production-maintenance",
+			expectedSource:   RoleSelectionSourceDefault,
+			expectError:      false,
+		},
+		{
+			name: "template rendering fails gracefully with invalid template",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeploy,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "api",
+				RuntimeRole:   "",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.install.name",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectError: true,
+		},
+		{
+			name: "mixed: template in DefaultRole, plain text in RuntimeRole",
+			ctx: &SelectionContext{
+				Operation:     app.OperationDeploy,
+				PrincipalType: principal.TypeComponent,
+				PrincipalName: "api",
+				RuntimeRole:   "ins_abc123xyz-emergency",
+				EntityRoles:   nil,
+				MatrixRules:   nil,
+				DefaultRole:   "{{.nuon.install.id}}-provision",
+				AppConfig:     templatedAppConfig,
+				StackOutputs:  templatedStackOutputs,
+				InstallState:  installState,
+			},
+			expectedRoleName: "ins_abc123xyz-emergency",
+			expectedRoleARN:  "arn:aws:iam::123456789012:role/ins_abc123xyz-emergency",
+			expectedSource:   RoleSelectionSourceRuntime,
+			expectError:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := SelectRole(tt.ctx, zap.NewNop())
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			if result.RoleName != tt.expectedRoleName {
+				t.Errorf("expected role name %q, got %q", tt.expectedRoleName, result.RoleName)
+			}
+
+			if result.RoleARN != tt.expectedRoleARN {
+				t.Errorf("expected role ARN %q, got %q", tt.expectedRoleARN, result.RoleARN)
+			}
+
+			if result.Source != tt.expectedSource {
+				t.Errorf("expected source %q, got %q", tt.expectedSource, result.Source)
 			}
 		})
 	}

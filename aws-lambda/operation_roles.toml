@@ -15,7 +15,7 @@ role = "{{.nuon.install.id}}-custom-role-2"
 [[rules]]
 principal = "nuon::component:*"
 operation = "teardown"
-role = "{{ .nuon.install.id }}-custom-role-2"
+role = "{{.nuon.install.id}}-custom-role-2"
 
 # Sandbox operations using different roles
 [[rules]]
