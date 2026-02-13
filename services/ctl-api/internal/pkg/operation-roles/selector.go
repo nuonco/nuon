@@ -2,13 +2,13 @@
 package operationroles
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -112,6 +112,37 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		return nil, fmt.Errorf("selection context is required")
 	}
 
+	selection, err := selectRole(ctx)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "unable to select role for input context")
+	}
+
+	// If RoleARN is already set (e.g., Azure placeholder), return as-is
+	if selection.RoleARN != "" {
+		return selection, nil
+	}
+
+	renderedRoleName, err := renderRoleName(selection.RoleName, ctx.InstallState)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to render default role name")
+	}
+
+	roleARN, err := resolveRoleARN(renderedRoleName, ctx.AppConfig, ctx.StackOutputs, ctx.InstallState)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve role ARN for %q: %w", renderedRoleName, err)
+	}
+
+	selection.RoleARN = roleARN
+
+	return selection, nil
+}
+
+func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
+	// Add nil check for StackOutputs before dereferencing
+	if ctx.StackOutputs == nil {
+		return nil, fmt.Errorf("stack outputs are required")
+	}
+
 	// early exit for azure since architecturally azure uses single tenant<> sub id combination
 	if ctx.StackOutputs.AzureStackOutputs != nil {
 		return &RoleSelection{
@@ -122,19 +153,10 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		}, nil
 	}
 
-	// Render default role name with install state
+	// Render default role name with install state (fixes template rendering in sandbox and default paths)
 	renderedDefaultRole, err := renderRoleName(ctx.DefaultRole, ctx.InstallState)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render default role name: %w", err)
-	}
-
-	defaultRoleARN, err := resolveRoleARN(
-		renderedDefaultRole,
-		ctx.AppConfig,
-		ctx.StackOutputs,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to resolve default role %q: %w", renderedDefaultRole, err)
 	}
 
 	// 1. Runtime override (highest precedence)
@@ -143,17 +165,8 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to render runtime role name: %w", err)
 		}
-		roleARN, err := resolveRoleARN(
-			renderedRuntimeRole,
-			ctx.AppConfig,
-			ctx.StackOutputs,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("unable to resolve runtime role arn %q: %w", renderedRuntimeRole, err)
-		}
 		return &RoleSelection{
 			RoleName: renderedRuntimeRole,
-			RoleARN:  roleARN,
 			Source:   RoleSelectionSourceRuntime,
 		}, nil
 	}
@@ -162,9 +175,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 	if ctx.SandboxMode {
 		return &RoleSelection{
 			RoleName: renderedDefaultRole,
-			// replace this with role arn
-			RoleARN: defaultRoleARN,
-			Source:  RoleSelectionSourceDefault,
+			Source:   RoleSelectionSourceDefault,
 		}, nil
 	}
 
@@ -174,13 +185,8 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to render break glass role name: %w", err)
 		}
-		roleARN, err := resolveRoleARN(renderedBreakGlassRole, ctx.AppConfig, ctx.StackOutputs)
-		if err != nil {
-			return nil, fmt.Errorf("unable to resolve break glass role %q: %w", renderedBreakGlassRole, err)
-		}
 		return &RoleSelection{
 			RoleName: renderedBreakGlassRole,
-			RoleARN:  roleARN,
 			Source:   RoleSelectionSourceBreakGlass,
 		}, nil
 	}
@@ -191,13 +197,8 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to render entity role name: %w", err)
 		}
-		roleARN, err := resolveRoleARN(renderedEntityRole, ctx.AppConfig, ctx.StackOutputs)
-		if err != nil {
-			return nil, fmt.Errorf("unable to resolve entity role %q: %w", renderedEntityRole, err)
-		}
 		return &RoleSelection{
 			RoleName: renderedEntityRole,
-			RoleARN:  roleARN,
 			Source:   RoleSelectionSourceEntity,
 		}, nil
 	}
@@ -212,20 +213,14 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to render matrix role name: %w", err)
 		}
-		roleARN, err := resolveRoleARN(renderedMatrixRole, ctx.AppConfig, ctx.StackOutputs)
-		if err != nil {
-			return nil, fmt.Errorf("unable to resolve matrix role %q: %w", renderedMatrixRole, err)
-		}
 		return &RoleSelection{
 			RoleName: renderedMatrixRole,
-			RoleARN:  roleARN,
 			Source:   RoleSelectionSourceMatrix,
 		}, nil
 	}
 
 	return &RoleSelection{
 		RoleName: renderedDefaultRole,
-		RoleARN:  defaultRoleARN,
 		Source:   RoleSelectionSourceDefault,
 	}, nil
 }
@@ -272,46 +267,77 @@ func findMatrixRole(
 	return "", false
 }
 
-func resolveRoleARN(roleName string, appCfg *app.AppConfig, stackOutputs *app.InstallStackOutputs) (string, error) {
-	// todo(sk): implement this for azure as well
-	if stackOutputs == nil || stackOutputs.AWSStackOutputs == nil {
-		return "", fmt.Errorf("no AWS stack outputs available")
+// resolveRoleARN resolves role name into its arn from stack output, currently mostly does heavy  lifting for aws since azure is not yet supported
+func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, stackOutputs *app.InstallStackOutputs, installState *state.State) (string, error) {
+	if stackOutputs == nil {
+		return "", fmt.Errorf("stack outputs are required")
 	}
 
-	availableRoles := make(map[string]string)
-	if stackOutputs.AWSStackOutputs != nil {
-		availableRoles = getAWSRoleMap(appCfg, stackOutputs.AWSStackOutputs)
-	} else if stackOutputs.AzureStackOutputs != nil {
+	var availableRoles map[string]string
+	var err error
+
+	// Try Azure first
+	if stackOutputs.AzureStackOutputs != nil {
 		availableRoles = getAzureRoleMap(appCfg, stackOutputs.AzureStackOutputs)
+	} else if stackOutputs.AWSStackOutputs != nil {
+		// Try AWS second
+		availableRoles, err = getAWSRoleMap(appCfg, stackOutputs.AWSStackOutputs, installState)
+		if err != nil {
+			return "", fmt.Errorf("unable to get AWS role map: %w", err)
+		}
 	} else {
-		return "", errors.New("Install stack output nil for both aws and azure")
+		return "", errors.New("stack outputs must have either AWS or Azure outputs")
 	}
 
-	roleARN, ok := availableRoles[roleName]
+	roleARN, ok := availableRoles[renderedRoleName]
 	if !ok {
-		return "", fmt.Errorf("role %q not found in install stack outputs", roleName)
+		return "", fmt.Errorf("role %q not found in install stack outputs", renderedRoleName)
 	}
 
 	return roleARN, nil
 }
 
-func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs) map[string]string {
-	availableRoles := make(map[string]string)
-	for _, role := range appCfg.PermissionsConfig.CustomRoles {
-		if arn, exists := stackOutputs.CustomRoleARNs[role.Name]; exists {
-			availableRoles[role.Name] = arn
-		}
+// getAWSRoleMAP returns a map of renderRoleName role name to role arn
+func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs, installState *state.State) (map[string]string, error) {
+	if appCfg == nil {
+		return nil, fmt.Errorf("app config is required")
 	}
-	for _, role := range appCfg.BreakGlassConfig.Roles {
-		if arn, exists := stackOutputs.BreakGlassRoleARNs[role.Name]; exists {
-			availableRoles[role.Name] = arn
-		}
+	if installState == nil {
+		return nil, fmt.Errorf("install state is required for role rendering")
 	}
-	availableRoles[appCfg.PermissionsConfig.ProvisionRole.Name] = stackOutputs.ProvisionIAMRoleARN
-	availableRoles[appCfg.PermissionsConfig.DeprovisionRole.Name] = stackOutputs.DeprovisionIAMRoleARN
-	availableRoles[appCfg.PermissionsConfig.MaintenanceRole.Name] = stackOutputs.MaintenanceIAMRoleARN
 
-	return availableRoles
+	availableRoles := make(map[string]string)
+	for role, roleARN := range stackOutputs.CustomRoleARNs {
+		availableRoles[role] = roleARN
+	}
+	for role, roleARN := range stackOutputs.BreakGlassRoleARNs {
+		availableRoles[role] = roleARN
+	}
+
+	stateMap, err := installState.AsMap()
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert install state to map: %w", err)
+	}
+
+	renderedProvisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.ProvisionRole.Name, err)
+	}
+	availableRoles[renderedProvisionRoleName] = stackOutputs.ProvisionIAMRoleARN
+
+	renderedDeprovisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.DeprovisionRole.Name, err)
+	}
+	availableRoles[renderedDeprovisionRoleName] = stackOutputs.DeprovisionIAMRoleARN
+
+	renderedMaintenanceRoleName, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.MaintenanceRole.Name, err)
+	}
+	availableRoles[renderedMaintenanceRoleName] = stackOutputs.MaintenanceIAMRoleARN
+
+	return availableRoles, nil
 }
 
 func getAzureRoleMap(appCfg *app.AppConfig, stackOutputs *app.AzureStackOutputs) map[string]string {

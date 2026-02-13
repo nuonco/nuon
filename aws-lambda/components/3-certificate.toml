@@ -21,5 +21,5 @@ operation = "deploy"
 role = "{{.nuon.install.id}}-maintenance"
 
 [[operation_roles]]
-operation = "teardowm"
+operation = "teardown"
 role = "{{.nuon.install.id}}-custom-role-2"
