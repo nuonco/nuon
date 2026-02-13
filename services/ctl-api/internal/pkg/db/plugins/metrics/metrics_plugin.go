@@ -19,8 +19,10 @@ import (
 type contextKey string
 
 const (
-	defaultContextKey contextKey    = "gorm_metrics_plugin"
-	targetLatency     time.Duration = time.Millisecond * 50
+	defaultContextKey    contextKey    = "gorm_metrics_plugin"
+	targetLatency        time.Duration = time.Millisecond * 50
+	maxEventTextLen      int           = 4096
+	eventTextTruncSuffix string        = "... [truncated]"
 )
 
 var _ gorm.Plugin = (*metricsWriterPlugin)(nil)
@@ -163,15 +165,20 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		return
 	}
 
+	eventText := fmt.Sprintf("Slow query identified for table %s and endpoint %s\n\nPrepared SQL: %s\nVars: %v\n",
+		schema.Table,
+		metricCtx.Endpoint,
+		tx.Statement.SQL.String(),
+		tx.Statement.Vars,
+	)
+	if len(eventText) > maxEventTextLen {
+		eventText = eventText[:maxEventTextLen-len(eventTextTruncSuffix)] + eventTextTruncSuffix
+	}
+
 	m.metricsWriter.Event(&statsd.Event{
 		Title: "Slow query" + metricCtx.Endpoint,
-		Text: fmt.Sprintf("Slow query identified for table %s and endpoint %s\n\nPrepared SQL: %s\nVars: %v\n",
-			schema.Table,
-			metricCtx.Endpoint,
-			tx.Statement.SQL.String(),
-			tx.Statement.Vars,
-		),
-		Tags: tags,
+		Text:  eventText,
+		Tags:  tags,
 	})
 
 	// Log slow queries
