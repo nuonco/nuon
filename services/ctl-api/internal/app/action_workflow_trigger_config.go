@@ -21,6 +21,9 @@ const (
 	// run on a hook
 	ActionWorkflowTriggerTypeCron ActionWorkflowTriggerType = "cron"
 
+	// NEW: For ad-hoc one-off actions without permanent workflow definitions
+	ActionWorkflowTriggerTypeAdHoc ActionWorkflowTriggerType = "adhoc"
+
 	// individaul component ones
 	ActionWorkflowTriggerTypePreDeployComponent  ActionWorkflowTriggerType = "pre-deploy-component"
 	ActionWorkflowTriggerTypePostDeployComponent ActionWorkflowTriggerType = "post-deploy-component"
@@ -70,6 +73,7 @@ var AllActionWorkflowComponentTriggerTypes = []ActionWorkflowTriggerType{
 var AllActionWorkflowTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypeManual,
 	ActionWorkflowTriggerTypeCron,
+	ActionWorkflowTriggerTypeAdHoc,
 	ActionWorkflowTriggerTypePreDeployComponent,
 	ActionWorkflowTriggerTypePostDeployComponent,
 	ActionWorkflowTriggerTypePreTeardownComponent,

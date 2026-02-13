@@ -19,6 +19,9 @@ import (
 // swagger:model app.InstallActionWorkflowRunStep
 type AppInstallActionWorkflowRunStep struct {
 
+	// adhoc config
+	AdhocConfig *AppAdHocStepConfig `json:"adhoc_config,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -38,7 +41,7 @@ type AppInstallActionWorkflowRunStep struct {
 	Status AppInstallActionWorkflowRunStepStatus `json:"status,omitempty"`
 
 	// step id
-	StepID string `json:"step_id,omitempty"`
+	StepID *GenericsNullString `json:"step_id,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
@@ -48,13 +51,44 @@ type AppInstallActionWorkflowRunStep struct {
 func (m *AppInstallActionWorkflowRunStep) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAdhocConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateStatus(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStepID(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRunStep) validateAdhocConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.AdhocConfig) { // not required
+		return nil
+	}
+
+	if m.AdhocConfig != nil {
+		if err := m.AdhocConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("adhoc_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("adhoc_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -79,17 +113,73 @@ func (m *AppInstallActionWorkflowRunStep) validateStatus(formats strfmt.Registry
 	return nil
 }
 
+func (m *AppInstallActionWorkflowRunStep) validateStepID(formats strfmt.Registry) error {
+	if swag.IsZero(m.StepID) { // not required
+		return nil
+	}
+
+	if m.StepID != nil {
+		if err := m.StepID.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("step_id")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("step_id")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app install action workflow run step based on the context it is used
 func (m *AppInstallActionWorkflowRunStep) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAdhocConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStepID(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRunStep) contextValidateAdhocConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AdhocConfig != nil {
+
+		if swag.IsZero(m.AdhocConfig) { // not required
+			return nil
+		}
+
+		if err := m.AdhocConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("adhoc_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("adhoc_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -110,6 +200,31 @@ func (m *AppInstallActionWorkflowRunStep) contextValidateStatus(ctx context.Cont
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRunStep) contextValidateStepID(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.StepID != nil {
+
+		if swag.IsZero(m.StepID) { // not required
+			return nil
+		}
+
+		if err := m.StepID.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("step_id")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("step_id")
+			}
+
+			return err
+		}
 	}
 
 	return nil
