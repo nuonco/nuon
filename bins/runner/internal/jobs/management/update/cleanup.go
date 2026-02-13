@@ -29,6 +29,12 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		h.errRecorder.Record("update job execution", err)
 	}
 
+	if _, err = h.apiClient.UpdateJob(ctx, job.ID, &models.ServiceUpdateRunnerJobRequest{
+		Status: models.AppRunnerJobStatusFinished,
+	}); err != nil {
+		h.errRecorder.Record("update job status", err)
+	}
+
 	if err := h.shutdowner.Shutdown(fx.ExitCode(0)); err != nil {
 		h.errRecorder.Record("unable to shut down", err)
 	}
