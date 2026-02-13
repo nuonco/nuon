@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
@@ -29,7 +33,7 @@ func init() {
 
 func generateRunnerSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag",
+		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
 		"--instanceName", "runner",
 		"--output", "docs/runner",
@@ -59,7 +63,7 @@ func generateRunnerSchema(ctx context.Context) error {
 
 func generateAdminSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag",
+		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
 		"--instanceName", "admin",
 		"--output", "docs/admin",
@@ -90,7 +94,7 @@ func generateAdminSchema(ctx context.Context) error {
 
 func generatePublicSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag",
+		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
 		"--parseDependency",
 		"--output", "docs/public",
@@ -274,35 +278,67 @@ func compileToTemp(ctx context.Context, path string) (string, error) {
 }
 
 func main() {
+	targetsFlag := flag.String("targets", "", "comma-separated targets: public,public-v3,runner,admin,temporal")
+	flag.Parse()
+
+	targets := parseTargets(*targetsFlag)
+	if targets.isEmpty() {
+		log.Fatal("no generation targets specified")
+	}
+	if targets.has("public-v3") {
+		targets.add("public")
+	}
+
 	ctx := context.Background()
 	ctx, cancelFn := context.WithCancel(ctx)
 	defer cancelFn()
 
 	// Phase 1: Run independent tasks in parallel
+	recorder := newTimingRecorder()
 	eg, ctx := errgroup.WithContext(ctx)
-	parallelFns := []func(context.Context) error{
-		generateRunnerSchema,
-		generateAdminSchema,
-		runTemporalGen,
-	}
-
-	for _, fn := range parallelFns {
+	if targets.has("runner") {
 		eg.Go(func() error {
-			return fn(ctx)
+			return recorder.time("Runner schema", func() error {
+				return generateRunnerSchema(ctx)
+			})
+		})
+	}
+	if targets.has("admin") {
+		eg.Go(func() error {
+			return recorder.time("Admin schema", func() error {
+				return generateAdminSchema(ctx)
+			})
+		})
+	}
+	if targets.has("temporal") {
+		eg.Go(func() error {
+			return recorder.time("Temporal", func() error {
+				return runTemporalGen(ctx)
+			})
 		})
 	}
 
-	// Phase 2: Generate public schema first, then convert to v3
-	eg.Go(func() error {
-		if err := generatePublicSchema(ctx); err != nil {
-			return err
-		}
-		return generatePublicOAPI3Spec(ctx)
-	})
+	if targets.has("public") {
+		eg.Go(func() error {
+			if err := recorder.time("Public schema", func() error {
+				return generatePublicSchema(ctx)
+			}); err != nil {
+				return err
+			}
+			if targets.has("public-v3") {
+				return recorder.time("Public v3", func() error {
+					return generatePublicOAPI3Spec(ctx)
+				})
+			}
+			return nil
+		})
+	}
 
 	if err := eg.Wait(); err != nil {
 		log.Fatal(err)
 	}
+
+	recorder.printSummary(os.Stdout)
 }
 
 func LoadPublicOAPI2Spec() (*openapi2.T, error) {
@@ -318,4 +354,107 @@ func LoadPublicOAPI2Spec() (*openapi2.T, error) {
 	}
 
 	return &doc, nil
+}
+
+type targetSet map[string]struct{}
+
+func parseTargets(flagValue string) targetSet {
+	value := strings.TrimSpace(flagValue)
+	if value == "" {
+		value = strings.TrimSpace(os.Getenv("NUON_GEN_TARGETS"))
+	}
+
+	set := targetSet{}
+	if value == "" {
+		for _, target := range []string{"public", "public-v3", "runner", "admin", "temporal"} {
+			set.add(target)
+		}
+		return set
+	}
+
+	for _, part := range strings.Split(value, ",") {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		if trimmed == "sdk" {
+			set.add("public")
+			set.add("runner")
+			continue
+		}
+		set.add(trimmed)
+	}
+
+	return set
+}
+
+func (t targetSet) add(target string) {
+	if t != nil {
+		t[target] = struct{}{}
+	}
+}
+
+func (t targetSet) has(target string) bool {
+	_, ok := t[target]
+	return ok
+}
+
+func (t targetSet) isEmpty() bool {
+	return len(t) == 0
+}
+
+func (t targetSet) String() string {
+	keys := make([]string, 0, len(t))
+	for key := range t {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, ",")
+}
+
+type timingRecorder struct {
+	mu      sync.Mutex
+	timings map[string]time.Duration
+}
+
+func newTimingRecorder() *timingRecorder {
+	return &timingRecorder{timings: make(map[string]time.Duration)}
+}
+
+func (r *timingRecorder) time(name string, fn func() error) error {
+	start := time.Now()
+	err := fn()
+	r.mu.Lock()
+	r.timings[name] = time.Since(start)
+	r.mu.Unlock()
+	return err
+}
+
+func (r *timingRecorder) printSummary(out *os.File) {
+	entries := make([]timingEntry, 0, len(r.timings))
+	for name, duration := range r.timings {
+		entries = append(entries, timingEntry{name: name, duration: duration})
+	}
+	if len(entries) == 0 {
+		return
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].duration > entries[j].duration
+	})
+
+	fmt.Fprintln(out, "")
+	fmt.Fprintf(out, "%-22s | %10s\n", "Step", "Seconds")
+	fmt.Fprintf(out, "%-22s-+-%10s\n", "----------------------", "----------")
+	for _, entry := range entries {
+		fmt.Fprintf(out, "%-22s | %10.1f\n", entry.name, entry.duration.Seconds())
+	}
+
+	longest := entries[0]
+	fmt.Fprintf(out, "\nLongest: %s (%.1fs)\n", longest.name, longest.duration.Seconds())
+}
+
+type timingEntry struct {
+	name     string
+	duration time.Duration
 }

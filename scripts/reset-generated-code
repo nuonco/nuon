@@ -1,9 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+resolve_repo_dir() {
+  local candidate="${NUON_DIR:-}"
+  if [ -n "$candidate" ] && [ -f "$candidate/go.mod" ]; then
+    echo "$candidate"
+    return
+  fi
+
+  local git_root
+  git_root=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)
+  if [ -n "$git_root" ] && [ -f "$git_root/go.mod" ]; then
+    echo "$git_root"
+    return
+  fi
+
+  echo "$(cd "$SCRIPT_DIR/.." && pwd)"
+}
+
+REPO_DIR="$(resolve_repo_dir)"
+
+ensure_codegen_tools() {
+  echo >&2 "Ensuring tool binaries are installed..."
+  go run github.com/swaggo/swag/cmd/swag@latest --version >/dev/null
+  go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.0 version >/dev/null
+  go run github.com/golang/mock/mockgen@latest -version >/dev/null
+  go run github.com/a-h/templ/cmd/templ@latest version >/dev/null
+}
+
 if [[ "$#" == 1 && "$1" == "--help" ]]; then
   cat << EOF
   This script will reset your local generated code for both mono and nuon repositories.
+  Use --sdk to generate only the ctl-api specs plus nuon-go and nuon-runner-go SDKs.
 EOF
   exit 0
 fi
@@ -11,13 +41,36 @@ fi
 if [[ "$#" == 1 && "$1" == "--usage" ]]; then
   cat << EOF
 usage: nuonctl scripts exec reset-generated-code
+       nuonctl scripts exec reset-generated-code --sdk
 EOF
+  exit 0
+fi
+
+if [[ "$#" == 1 && "$1" == "--sdk" ]]; then
+  echo >&2 "========================================"
+  echo >&2 "Generating SDKs only..."
+  echo >&2 "========================================"
+  echo >&2 "Ensuring dependencies are downloaded..."
+  (cd "$REPO_DIR" && go mod download)
+  ensure_codegen_tools
+  echo >&2 "Generating ctl-api public/runner specs..."
+  (cd "$REPO_DIR/services/ctl-api" && go run cmd/gen/main.go --targets sdk)
+  echo >&2 "Generating nuon-go SDK..."
+  (cd "$REPO_DIR/sdks/nuon-go" && ./generate.sh)
+  echo >&2 "Generating nuon-runner-go SDK..."
+  (cd "$REPO_DIR/sdks/nuon-runner-go" && ./generate.sh)
+  echo >&2 "========================================"
+  echo >&2 "SDK generation complete!"
+  echo >&2 "========================================"
   exit 0
 fi
 
 generate_repo() {
   local repo_dir="$1"
   local repo_name="$2"
+  local all_files
+  local bucket
+  local remaining
 
   echo >&2 "========================================"
   echo >&2 "Processing $repo_name repo..."
@@ -49,45 +102,88 @@ generate_repo() {
 
   echo >&2 "Ensuring dependencies are downloaded..."
   go mod download
+  ensure_codegen_tools
 
   echo >&2 "Running go generate..."
-  grep -r --include="*.go" -l "//go:generate" . | grep -v "sdks/nuon-go" | grep -v "sdks/nuon-runner-go" | xargs -n 1 -P 10 go generate
+  all_files=$(grep -r --include="*.go" -l "//go:generate" . | grep -v "sdks/nuon-go" | grep -v "sdks/nuon-runner-go" || true)
+  remaining="$all_files"
+
+  remaining=$(printf "%s\n" "$remaining" | grep -v "services/ctl-api/main.go" || true)
+
+  ordered_files=(
+    "pkg/workflows/types/executors/gen.go"
+    "pkg/config/schema/gen.go"
+    "pkg/types/components/components.go"
+    "bins/runner/main.go"
+  )
+
+  for ordered_file in "${ordered_files[@]}"; do
+    if ! printf "%s\n" "$remaining" | grep -q "$ordered_file"; then
+      echo >&2 "missing expected generator file: $ordered_file"
+      return 1
+    fi
+  done
+
+  bucket=$(printf "%s\n" "$remaining" | grep "pkg/workflows/types/executors/gen.go" || true)
+  remaining=$(printf "%s\n" "$remaining" | grep -v "pkg/workflows/types/executors/gen.go" || true)
+  if [ -n "$bucket" ]; then
+    printf "%s\n" "$bucket" | xargs -n 1 -P 10 go generate
+  fi
+
+  bucket=$(printf "%s\n" "$remaining" | grep "pkg/config/schema/gen.go" || true)
+  remaining=$(printf "%s\n" "$remaining" | grep -v "pkg/config/schema/gen.go" || true)
+  if [ -n "$bucket" ]; then
+    printf "%s\n" "$bucket" | xargs -n 1 -P 10 go generate
+  fi
+
+  bucket=$(printf "%s\n" "$remaining" | grep "pkg/types/components/components.go" || true)
+  remaining=$(printf "%s\n" "$remaining" | grep -v "pkg/types/components/components.go" || true)
+  if [ -n "$bucket" ]; then
+    printf "%s\n" "$bucket" | xargs -n 1 -P 10 go generate
+  fi
+
+  bucket=$(printf "%s\n" "$remaining" | grep "bins/runner/main.go" || true)
+  remaining=$(printf "%s\n" "$remaining" | grep -v "bins/runner/main.go" || true)
+  if [ -n "$bucket" ]; then
+    printf "%s\n" "$bucket" | xargs -n 1 -P 10 go generate
+  fi
+
+  if [ -n "$remaining" ]; then
+    printf "%s\n" "$remaining" | xargs -n 1 -P 10 go generate
+  fi
 
   echo >&2 "Done with $repo_name!"
 }
 
-# Generate for mono repo
-generate_repo "$MONO_DIR" "mono"
-
 # Generate for nuon repo
-generate_repo "$NUON_DIR" "nuon"
+generate_repo "$REPO_DIR" "nuon"
 
 # Generate for nuon-go repo (must be last as it depends on types from other repos)
-if [ -d "$NUON_DIR/sdks/nuon-go" ]; then
+if [ -d "$REPO_DIR/sdks/nuon-go" ]; then
   echo >&2 "========================================"
   echo >&2 "Processing nuon-go repo..."
   echo >&2 "========================================"
-  cd "$NUON_DIR/sdks/nuon-go"
+  cd "$REPO_DIR/sdks/nuon-go"
   echo >&2 "root: $(pwd)"
   echo >&2 "Running go generate..."
   grep -r --include="*.go" -l "//go:generate" . | xargs -n 1 -P 10 go generate
   echo >&2 "Done with nuon-go!"
 else
-  echo >&2 "Skipping nuon-go (directory not found: $NUON_DIR/sdks/nuon-go)"
+  echo >&2 "Skipping nuon-go (directory not found: $REPO_DIR/sdks/nuon-go)"
 fi
 
 # Generate for nuon-runner-go (must be after other repos as it may depend on types)
-if [ -d "$NUON_DIR/sdks/nuon-runner-go" ]; then
+if [ -d "$REPO_DIR/sdks/nuon-runner-go" ]; then
   echo >&2 "========================================"
   echo >&2 "Processing nuon-runner-go repo..."
   echo >&2 "========================================"
-  cd "$NUON_DIR/sdks/nuon-runner-go"
+  cd "$REPO_DIR/sdks/nuon-runner-go"
   echo >&2 "root: $(pwd)"
   echo >&2 "Running go generate..."
   grep -r --include="*.go" -l "//go:generate" . | xargs -n 1 -P 10 go generate
   echo >&2 "Done with nuon-runner-go!"
 else
-  echo >&2 "Skipping nuon-runner-go (directory not found: $NUON_DIR/sdks/nuon-runner-go)"
+  echo >&2 "Skipping nuon-runner-go (directory not found: $REPO_DIR/sdks/nuon-runner-go)"
 fi
 
 echo >&2 ""
