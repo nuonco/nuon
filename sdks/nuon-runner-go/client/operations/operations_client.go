@@ -94,6 +94,8 @@ type ClientService interface {
 
 	GetRunnerJob(params *GetRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobOK, error)
 
+	GetRunnerJobCompositePlan(params *GetRunnerJobCompositePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobCompositePlanOK, error)
+
 	GetRunnerJobExecution(params *GetRunnerJobExecutionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobExecutionOK, error)
 
 	GetRunnerJobExecutions(params *GetRunnerJobExecutionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobExecutionsOK, error)
@@ -1016,6 +1018,52 @@ func (a *Client) GetRunnerJob(params *GetRunnerJobParams, authInfo runtime.Clien
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetRunnerJob: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRunnerJobCompositePlan gets runner job composite plan
+
+Return a plan for a runner job.
+*/
+func (a *Client) GetRunnerJobCompositePlan(params *GetRunnerJobCompositePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobCompositePlanOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunnerJobCompositePlanParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunnerJobCompositePlan",
+		Method:             "GET",
+		PathPattern:        "/v1/runner-jobs/{runner_job_id}/composite-plan",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunnerJobCompositePlanReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunnerJobCompositePlanOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunnerJobCompositePlan: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

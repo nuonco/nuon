@@ -18,7 +18,7 @@ import (
 //
 // swagger:model plantypes.TerraformBackend
 type PlantypesTerraformBackend struct {
-	// testing
+
 	// workspace ID
 	// Required: true
 	WorkspaceID *string `json:"workspaceID"`
@@ -39,6 +39,7 @@ func (m *PlantypesTerraformBackend) Validate(formats strfmt.Registry) error {
 }
 
 func (m *PlantypesTerraformBackend) validateWorkspaceID(formats strfmt.Registry) error {
+
 	if err := validate.Required("workspaceID", "body", m.WorkspaceID); err != nil {
 		return err
 	}

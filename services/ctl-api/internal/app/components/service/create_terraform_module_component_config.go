@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -50,6 +51,14 @@ const MinTerraformVersion = "1.8.0"
 func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Validate, latestVersion string) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
 	}
 
 	if c.Version != "" {
@@ -219,8 +228,11 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 	}
 
 	var operationRoles pgtype.Hstore
-	for operation, role := range req.OperationRoles {
-		operationRoles[string(operation)] = role
+	if req.OperationRoles != nil {
+		operationRoles = make(pgtype.Hstore)
+		for operation, role := range req.OperationRoles {
+			operationRoles[string(operation)] = role
+		}
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
