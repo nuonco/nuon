@@ -11,6 +11,7 @@ import { EnableConfigSyncButton } from './EnableConfigSync'
 import { ForgetButton } from './Forget'
 import { GenerateInstallConfigButton } from './GenerateInstallConfig'
 import { ReprovisionButton } from './Reprovision'
+import { RunAdhocActionButton } from './RunAdhocAction'
 import { SyncSecretsButton } from './SyncSecrets'
 import { ViewStateButton } from './ViewState'
 
@@ -42,6 +43,7 @@ export const InstallManagementDropdown = () => {
           Controls
         </Text>
         <ReprovisionButton isMenuButton />
+        <RunAdhocActionButton isMenuButton />
         <SyncSecretsButton isMenuButton />
         <DeprovisionButton isMenuButton />
         <DeprovisionStackButton isMenuButton />
