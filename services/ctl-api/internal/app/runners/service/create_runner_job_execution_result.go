@@ -58,15 +58,15 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 
 	// branch on wether or not the content received is compressed.
 	var jobExecution *app.RunnerJobExecutionResult
-	if req.Contents != "" {
-		_, err := s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
+	var err error
+	if req.ContentsCompressed != "" || req.ContentsDisplayCompressed != "" {
+		jobExecution, err = s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
 		}
-	}
-	if req.ContentsCompressed != "" {
-		_, err := s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
+	} else {
+		jobExecution, err = s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
@@ -82,6 +82,8 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		return nil, err
 	}
 
+	// Runner sends gzip-compressed payloads encoded as base64 strings.
+	// We decode once here and persist the raw gzip bytes for later decompression.
 	contentsGzip, err := base64.URLEncoding.DecodeString(req.ContentsCompressed)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode contents")
