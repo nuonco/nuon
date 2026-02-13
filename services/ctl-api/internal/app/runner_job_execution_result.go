@@ -101,6 +101,26 @@ func (r *RunnerJobExecutionResult) GetContentsB64String() (string, error) {
 
 }
 
+func (r *RunnerJobExecutionResult) GetContentsDecompressedBytes() ([]byte, error) {
+	if len(r.ContentsGzip) == 0 {
+		return []byte{}, nil
+	}
+	// ContentsGzip is stored as raw gzip bytes (already base64-decoded on write).
+	// Use plans.DecompressPlan only when you still have the base64-encoded string.
+	cdBuffer := bytes.NewReader(r.ContentsGzip)
+	reader, err := gzip.NewReader(cdBuffer)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "unable to read contents into gzip reader")
+	}
+	defer reader.Close()
+
+	decompressedBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "unable to read contents from gzip reader")
+	}
+	return decompressedBytes, nil
+}
+
 func (r *RunnerJobExecutionResult) GetContentsDisplayString() (string, error) {
 	byts, err := r.GetContentsDisplayDecompressedBytes()
 	if err != nil {
