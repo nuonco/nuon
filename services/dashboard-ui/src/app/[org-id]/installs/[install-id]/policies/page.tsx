@@ -15,10 +15,7 @@ import {
   PolicyReportsTableSkeleton,
 } from './policy-reports-table'
 
-type TInstallPoliciesPageProps = TPageProps<
-  'org-id' | 'install-id',
-  'status' | 'owner_type'
->
+type TInstallPoliciesPageProps = TPageProps<'org-id' | 'install-id'>
 
 export async function generateMetadata({
   params,
