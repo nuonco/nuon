@@ -28,7 +28,7 @@ type AdminCreateServiceAccountRequest struct{}
 // @Router					/v1/orgs/{org_id}/admin-service-account [POST]
 func (s *service) AdminCreateServiceAccount(ctx *gin.Context) {
 	var req AdminCreateServiceAccountRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

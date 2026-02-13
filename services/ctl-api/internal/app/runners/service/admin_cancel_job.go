@@ -24,7 +24,7 @@ func (s *service) AdminCancelRunnerJob(ctx *gin.Context) {
 	runnerJobID := ctx.Param("runner_job_id")
 
 	var req AdminCancelRunnerJobRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

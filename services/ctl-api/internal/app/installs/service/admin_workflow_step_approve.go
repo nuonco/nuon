@@ -62,7 +62,7 @@ func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.Wor
 // @Router					/v1/admin-install-workflow-step-approve [post]
 func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 	var req AdminWorkflowStepApproveRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

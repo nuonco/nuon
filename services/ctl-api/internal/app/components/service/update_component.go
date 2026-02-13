@@ -42,7 +42,7 @@ func (s *service) UpdateAppComponent(ctx *gin.Context) {
 
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
 		return
 	}
@@ -108,7 +108,7 @@ func (s *service) UpdateComponent(ctx *gin.Context) {
 
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
 		return
 	}

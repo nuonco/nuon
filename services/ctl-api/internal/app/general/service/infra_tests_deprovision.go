@@ -35,7 +35,7 @@ type InfraTestsDeprovisionRequest struct {
 // @Router					/v1/general/infra-tests/deprovision [post]
 func (c *service) InfraTestsDeprovision(ctx *gin.Context) {
 	var req InfraTestsDeprovisionRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

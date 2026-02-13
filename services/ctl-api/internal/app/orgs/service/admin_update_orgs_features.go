@@ -27,7 +27,7 @@ type AdminUpdateOrgsFeaturesRequest struct {
 // @Router					/v1/orgs/admin-features  [PATCH]
 func (s *service) AdminUpdateOrgsFeatures(ctx *gin.Context) {
 	var req AdminUpdateOrgsFeaturesRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

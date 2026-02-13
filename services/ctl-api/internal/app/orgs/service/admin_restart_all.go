@@ -24,7 +24,7 @@ type RestartAllOrgRequest struct{}
 // @Router					/v1/orgs/admin-restart-all [POST]
 func (s *service) RestartAllOrgs(ctx *gin.Context) {
 	var req RestartAllOrgRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

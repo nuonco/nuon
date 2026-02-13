@@ -46,7 +46,7 @@ func (s *service) UpdateInstallConfig(ctx *gin.Context) {
 	configID := ctx.Param("config_id")
 
 	var req UpdateInstallConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

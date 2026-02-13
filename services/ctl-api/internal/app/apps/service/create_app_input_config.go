@@ -119,7 +119,7 @@ func (s *service) CreateAppInputsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppInputConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

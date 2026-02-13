@@ -51,7 +51,7 @@ func (s *service) LockTerraformWorkspace(ctx *gin.Context) {
 	}
 
 	var lock app.TerraformLock
-	if err := ctx.BindJSON(&lock); err != nil {
+	if err := ctx.ShouldBindJSON(&lock); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

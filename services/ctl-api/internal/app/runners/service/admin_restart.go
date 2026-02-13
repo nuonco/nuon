@@ -26,7 +26,7 @@ func (s *service) RestartRunner(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	var req RestartRunnerRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

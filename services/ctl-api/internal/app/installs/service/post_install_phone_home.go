@@ -48,7 +48,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	phoneHomeID := ctx.Param("phone_home_id")
 
 	var req InstallPhoneHomeRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(err)
 		return
 	}

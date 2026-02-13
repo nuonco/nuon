@@ -51,7 +51,7 @@ func (s *service) UpdateApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req UpdateAppRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
 		return
 	}

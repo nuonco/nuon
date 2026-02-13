@@ -44,7 +44,7 @@ type StaticTokenResponse struct {
 // @Router					/v1/general/admin-static-token [POST]
 func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 	var req StaticTokenRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

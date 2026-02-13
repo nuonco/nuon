@@ -35,7 +35,7 @@ func (s *service) CreateRunnerHealthCheck(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	var req CreateRunnerHealthCheckRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

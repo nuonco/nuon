@@ -52,7 +52,7 @@ func (s *service) CreateAppAction(ctx *gin.Context) {
 	}
 
 	var req CreateAppActionWorkflowRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
@@ -123,7 +123,7 @@ func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 	}
 
 	var req CreateAppActionWorkflowRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

@@ -44,7 +44,7 @@ func (s *service) AdminMigrateOrg(ctx *gin.Context) {
 	cctx.SetAccountGinContext(ctx, &org.CreatedBy)
 
 	var req AdminMigrateOrg
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}

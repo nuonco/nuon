@@ -35,7 +35,7 @@ func (c *AdminDeleteAccountRequest) Validate(v *validator.Validate) error {
 // @Router					/v1/general/admin-delete-account [POST]
 func (s *service) AdminDeleteAccount(ctx *gin.Context) {
 	var req AdminDeleteAccountRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

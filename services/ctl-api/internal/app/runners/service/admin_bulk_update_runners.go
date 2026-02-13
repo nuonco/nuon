@@ -33,7 +33,7 @@ type AdminBulkUpdateRunnersResponse struct {
 // @Router					/v1/runners/bulk-update [PATCH]
 func (s *service) AdminBulkUpdateRunners(ctx *gin.Context) {
 	var req AdminBulkUpdateRunnersRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

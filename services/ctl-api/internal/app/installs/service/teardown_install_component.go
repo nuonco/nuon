@@ -55,7 +55,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 
 	var req TeardownInstallComponentRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

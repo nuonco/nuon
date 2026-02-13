@@ -50,7 +50,7 @@ func (s *service) CreateRunnerJobExecutionOutputs(ctx *gin.Context) {
 	}
 
 	var req CreateRunnerJobExecutionOutputsRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to parse request"))
 		return
 	}

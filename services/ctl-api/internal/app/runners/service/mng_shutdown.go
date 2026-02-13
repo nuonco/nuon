@@ -42,7 +42,7 @@ func (s *service) MngShutDown(ctx *gin.Context) {
 	}
 
 	var req MngShutDownRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

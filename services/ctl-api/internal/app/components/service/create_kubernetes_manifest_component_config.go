@@ -152,7 +152,7 @@ func (s *service) CreateKubernetesManifestComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
 	var req CreateKubernetesManifestComponentConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

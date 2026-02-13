@@ -55,7 +55,7 @@ func (s *service) AdminAddPriority(ctx *gin.Context) {
 	}
 
 	var req AdminAddPriorityRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}

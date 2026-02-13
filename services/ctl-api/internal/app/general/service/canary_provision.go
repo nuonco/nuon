@@ -26,7 +26,7 @@ type ProvisionCanaryRequest struct {
 // @Router					/v1/general/provision-canary [post]
 func (c *service) ProvisionCanary(ctx *gin.Context) {
 	var req ProvisionCanaryRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

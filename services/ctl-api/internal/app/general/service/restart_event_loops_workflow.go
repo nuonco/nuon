@@ -22,7 +22,7 @@ type RestartGeneralEventLoopRequest struct{}
 // @Router					/v1/general/restart-event-loop [post]
 func (s *service) RestartGeneralEventLoop(ctx *gin.Context) {
 	var req RestartGeneralEventLoopRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

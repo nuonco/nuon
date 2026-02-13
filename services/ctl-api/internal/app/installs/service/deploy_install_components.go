@@ -35,7 +35,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	var req DeployInstallComponentsRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

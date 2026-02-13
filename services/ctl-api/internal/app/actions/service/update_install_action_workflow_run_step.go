@@ -41,7 +41,7 @@ func (s *service) UpdateInstallActionWorkflowRunStep(ctx *gin.Context) {
 	stepID := ctx.Param("step_id")
 
 	var req UpdateInstallActionWorkflowRunStepRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

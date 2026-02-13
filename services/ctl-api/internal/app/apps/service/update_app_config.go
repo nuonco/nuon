@@ -51,7 +51,7 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 	appConfigID := ctx.Param("config_id")
 
 	var req UpdateAppConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
@@ -104,7 +104,7 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 	appConfigID := ctx.Param("app_config_id")
 
 	var req UpdateAppConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

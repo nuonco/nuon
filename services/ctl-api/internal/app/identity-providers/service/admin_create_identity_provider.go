@@ -63,7 +63,7 @@ func (r *AdminCreateIdentityProviderRequest) Validate(v *validator.Validate) err
 // @Router					/v1/auth/identity-providers [POST]
 func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 	var req AdminCreateIdentityProviderRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

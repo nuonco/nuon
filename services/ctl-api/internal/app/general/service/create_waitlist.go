@@ -36,7 +36,7 @@ func (c *WaitlistRequest) Validate(v *validator.Validate) error {
 // @Router					/v1/general/waitlist [POST]
 func (s *service) CreateWaitlist(ctx *gin.Context) {
 	var req WaitlistRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

@@ -25,7 +25,7 @@ type DeprovisionCanaryRequest struct {
 // @Router					/v1/general/deprovision-canary [post]
 func (c *service) DeprovisionCanary(ctx *gin.Context) {
 	var req DeprovisionCanaryRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

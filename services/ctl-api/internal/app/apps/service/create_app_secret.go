@@ -45,7 +45,7 @@ func (s *service) CreateAppSecretV2(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppSecretRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
@@ -85,7 +85,7 @@ func (s *service) CreateAppSecret(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppSecretRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

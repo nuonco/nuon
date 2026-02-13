@@ -26,7 +26,7 @@ type InfraTestsRequests struct {
 // @Router					/v1/general/infra-tests [post]
 func (c *service) InfraTests(ctx *gin.Context) {
 	var req InfraTestsRequests
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

@@ -44,7 +44,7 @@ func (s *service) UpdateWorkflow(ctx *gin.Context) {
 	workflowID := ctx.Param("workflow_id")
 
 	var req UpdateWorkflowRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
 		return
 	}
@@ -85,7 +85,7 @@ func (s *service) UpdateInstallWorkflow(ctx *gin.Context) {
 	installWorkflowID := ctx.Param("install_workflow_id")
 
 	var req UpdateWorkflowRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
 		return
 	}

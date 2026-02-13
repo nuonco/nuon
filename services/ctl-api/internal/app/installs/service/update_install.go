@@ -56,7 +56,7 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	var req UpdateInstallRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
 		return
 	}

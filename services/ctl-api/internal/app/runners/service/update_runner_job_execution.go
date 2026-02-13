@@ -37,7 +37,7 @@ func (s *service) UpdateRunnerJobExecution(ctx *gin.Context) {
 	runnerJobExecutionID := ctx.Param("runner_job_execution_id")
 
 	var req UpdateRunnerJobExecutionRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

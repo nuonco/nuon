@@ -23,7 +23,7 @@ type StopCanaryCronRequest struct {
 // @Router			/v1/general/stop-canary-cron [post]
 func (c *service) StopCanaryCron(ctx *gin.Context) {
 	var req StopCanaryCronRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

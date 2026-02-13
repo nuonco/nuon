@@ -36,7 +36,7 @@ type StartCanaryCronRequest struct {
 // @Router					/v1/general/start-canary-cron [post]
 func (c *service) StartCanaryCron(ctx *gin.Context) {
 	var req StartCanaryCronRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}

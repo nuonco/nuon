@@ -32,7 +32,7 @@ type AdminRestartRunnersResponse struct {
 // @Router					/v1/runners/restart [POST]
 func (s *service) AdminRestartRunners(ctx *gin.Context) {
 	var req AdminRestartRunnersRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

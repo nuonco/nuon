@@ -25,7 +25,7 @@ func (s *service) RestartRelease(ctx *gin.Context) {
 	releaseID := ctx.Param("release_id")
 
 	var req RestartReleaseReleaseRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

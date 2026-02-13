@@ -31,7 +31,7 @@ func (s *service) AdminAddVCSConnection(ctx *gin.Context) {
 	nameOrID := ctx.Param("org_id")
 
 	var req AdminAddVCSConnectionRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

@@ -33,7 +33,7 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 	}
 
 	var req AdminDeprovisionOrgRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

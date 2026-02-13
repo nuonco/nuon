@@ -63,7 +63,7 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 // @Router					/v1/installs [post]
 func (s *service) CreateInstallV2(ctx *gin.Context) {
 	var req CreateInstallV2Request
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
@@ -174,7 +174,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateInstallRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

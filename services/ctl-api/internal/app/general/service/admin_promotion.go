@@ -28,7 +28,7 @@ type AdminPromotionRequest struct {
 // @Router					/v1/general/promotion [POST]
 func (s *service) AdminPromotion(ctx *gin.Context) {
 	var req AdminPromotionRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to promote"))
 		return
 	}

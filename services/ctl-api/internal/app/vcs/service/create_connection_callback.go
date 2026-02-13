@@ -42,7 +42,7 @@ func (c *CreateConnectionCallbackRequest) Validate(v *validator.Validate) error 
 // @Router					/v1/vcs/connection-callback [post]
 func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 	var req CreateConnectionCallbackRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

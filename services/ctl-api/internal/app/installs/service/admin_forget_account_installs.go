@@ -40,7 +40,7 @@ func (c *AdminForgetAccountInstallsRequest) Validate(v *validator.Validate) erro
 // @Router					/v1/installs/admin-forget-account-installs [POST]
 func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 	var req AdminForgetAccountInstallsRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

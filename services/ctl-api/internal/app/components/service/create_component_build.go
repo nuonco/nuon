@@ -52,7 +52,7 @@ func (s *service) CreateAppComponentBuild(ctx *gin.Context) {
 	}
 
 	var req CreateComponentBuildRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
@@ -109,7 +109,7 @@ func (s *service) CreateComponentBuild(ctx *gin.Context) {
 	}
 
 	var req CreateComponentBuildRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

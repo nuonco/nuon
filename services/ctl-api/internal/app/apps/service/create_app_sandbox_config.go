@@ -59,7 +59,7 @@ func (s *service) CreateAppSandboxConfigV2(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppSandboxConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
@@ -103,7 +103,7 @@ func (s *service) CreateAppSandboxConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppSandboxConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}

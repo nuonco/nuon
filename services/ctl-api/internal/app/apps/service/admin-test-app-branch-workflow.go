@@ -27,7 +27,7 @@ type AdminTestAppBranchWorkflowRequest struct {
 // @Router					/v1/app-branches/{app_branch_id}/admin-test-app-branch-workflow [POST]
 func (s *service) AdminTestAppBranchWorkflow(ctx *gin.Context) {
 	var req AdminTestAppBranchWorkflowRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to bind request: %w", err))
 		return
 	}

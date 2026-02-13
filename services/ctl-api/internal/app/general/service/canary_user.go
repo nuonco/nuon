@@ -40,7 +40,7 @@ type CreateCanaryUserResponse struct {
 // @Router					/v1/general/canary-user [post]
 func (s *service) CreateCanaryUser(ctx *gin.Context) {
 	var req CreateCanaryUserRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request input: %w", err))
 		return
 	}
