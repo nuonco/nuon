@@ -26,6 +26,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // UpdateOrgFeaturesTestService holds all fx-injected dependencies for update org features tests.
@@ -40,6 +41,7 @@ type UpdateOrgFeaturesTestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	OrgsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // UpdateOrgFeaturesTestSuite is the testify suite for the UpdateOrgFeatures endpoint.
@@ -101,20 +103,11 @@ func (s *UpdateOrgFeaturesTestSuite) TearDownSuite() {
 }
 
 func (s *UpdateOrgFeaturesTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "update-features-test@example.com",
-		Subject:     "update-features-test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create test org with account context (required for BeforeCreate hook)
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+
+	// Create test org with account context (required by BeforeCreate hook)
+	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	testOrg := &app.Org{
 		ID:          domains.NewOrgID(),
@@ -127,7 +120,7 @@ func (s *UpdateOrgFeaturesTestSuite) setupTestData() {
 			string(app.OrgFeatureUserManagedFeatures): false, // Disabled by default
 		},
 	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
+	err := s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
 }
