@@ -76,7 +76,6 @@ func (s *CreateAppTestSuite) SetupSuite() {
 		tests.CtlApiFXOptions(),
 		// service under test
 		fx.Provide(New),
-		fx.Provide(testseed.New),
 		fx.Populate(&s.service),
 	)
 

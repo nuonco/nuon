@@ -16,9 +16,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -79,47 +77,18 @@ func (s *AppConfigTypesTestSuite) TearDownSuite() {
 }
 
 func (s *AppConfigTypesTestSuite) setupTestData() {
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "user@example.com",
-		Subject:     "subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
-		SandboxMode: true,
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
+	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 
-	testApp := &app.App{
-		Name:        "test-app",
-		OrgID:       s.testOrg.ID,
-		CreatedByID: s.testAcc.ID,
-	}
-	err = s.service.DB.Create(testApp).Error
-	require.NoError(s.T(), err)
-	s.testApp = testApp
-
-	ctx = cctx.SetOrgContext(ctx, testOrg)
 	testAppConfig := &app.AppConfig{
 		OrgID:             s.testOrg.ID,
 		AppID:             s.testApp.ID,
 		Status:            app.AppConfigStatusPending,
 		StatusDescription: "test",
 	}
-	err = s.service.DB.WithContext(ctx).Create(testAppConfig).Error
+	err := s.service.DB.WithContext(ctx).Create(testAppConfig).Error
 	require.NoError(s.T(), err)
 	s.testAppConfig = testAppConfig
 }
