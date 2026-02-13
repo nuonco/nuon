@@ -1,6 +1,9 @@
 package app
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -10,6 +13,25 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
+
+type AdHocStepConfig ActionWorkflowStepConfig
+
+func (a *AdHocStepConfig) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(bytes, a)
+}
+
+func (a AdHocStepConfig) Value() (driver.Value, error) {
+	return json.Marshal(a)
+}
 
 type InstallActionWorkflowRunStepStatus string
 
@@ -38,8 +60,10 @@ type InstallActionWorkflowRunStep struct {
 	InstallActionWorkflowRunID string                   `json:"install_action_workflow_run_id,omitzero" temporaljson:"install_action_workflow_run_id,omitzero,omitempty"`
 	InstallActionWorkflowRun   InstallActionWorkflowRun `json:"-" temporaljson:"install_action_workflow_run,omitzero,omitempty"`
 
-	StepID string                   `json:"step_id,omitzero" temporaljson:"step_id,omitzero,omitempty"`
+	StepID *string                  `json:"step_id,omitzero" temporaljson:"step_id,omitzero,omitempty"`
 	Step   ActionWorkflowStepConfig `json:"-" temporaljson:"step,omitzero,omitempty"`
+
+	AdHocConfig *AdHocStepConfig `json:"adhoc_config,omitzero" gorm:"type:jsonb" temporaljson:"adhoc_config,omitzero,omitempty"`
 
 	ExecutionDuration time.Duration `json:"execution_duration,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"execution_duration,omitzero,omitempty"`
 }

@@ -122,6 +122,19 @@ func (w *Workflows) subloopSuffix(ctx workflow.Context, sreq signals.RequestSign
 	}
 
 	if _, has := w.subwfActions.GetHandlers()[sreq.Type]; has {
+		if sreq.Type == signals.OperationActionWorkflowRun {
+			if sreq.ActionWorkflowRunID == "" {
+				panic("missing action workflow run ID")
+			}
+			run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, sreq.ActionWorkflowRunID)
+			if err != nil {
+				return "", errors.Wrap(err, "unable to get action workflow run")
+			}
+			if run.TriggerType == app.ActionWorkflowTriggerTypeAdHoc {
+				return "", nil
+			}
+			return fmt.Sprintf("action-%s", sreq.ActionWorkflowRunID), nil
+		}
 		if sreq.InstallActionWorkflowTrigger.InstallActionWorkflowID == "" {
 			panic("missing action workflow run ID")
 		}

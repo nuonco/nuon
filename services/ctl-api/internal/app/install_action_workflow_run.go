@@ -46,7 +46,7 @@ type InstallActionWorkflowRun struct {
 	InstallID string  `json:"install_id,omitzero" gorm:"not null;default null;index:idx_install_action_runs_query,priority:1" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `swaggerignore:"true" json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	InstallActionWorkflowID string                `json:"install_action_workflow_id,omitzero" gorm:"index:idx_install_action_runs_query,priority:2" temporaljson:"install_action_workflow_id,omitzero,omitempty"`
+	InstallActionWorkflowID *string               `json:"install_action_workflow_id,omitzero" gorm:"index:idx_install_action_runs_query,priority:2" temporaljson:"install_action_workflow_id,omitzero,omitempty"`
 	InstallActionWorkflow   InstallActionWorkflow `json:"install_action_workflow,omitzero" temporaljson:"install_action_workflow,omitzero,omitempty"`
 
 	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
@@ -58,7 +58,7 @@ type InstallActionWorkflowRun struct {
 	TriggeredByID   string `json:"triggered_by_id,omitzero" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26" temporaljson:"triggered_by_id,omitzero,omitempty"`
 	TriggeredByType string `json:"triggered_by_type,omitzero" gorm:"type:text;" temporaljson:"triggered_by_type,omitzero,omitempty"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" gorm:"notnull" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
+	ActionWorkflowConfigID *string              `json:"action_workflow_config_id,omitzero" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"config,omitzero" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
 	Steps []InstallActionWorkflowRunStep `json:"steps,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`

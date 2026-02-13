@@ -19,6 +19,9 @@ import (
 // swagger:model app.InstallActionWorkflowRunStep
 type AppInstallActionWorkflowRunStep struct {
 
+	// adhoc config
+	AdhocConfig *AppAdHocStepConfig `json:"adhoc_config,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -48,6 +51,10 @@ type AppInstallActionWorkflowRunStep struct {
 func (m *AppInstallActionWorkflowRunStep) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAdhocConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -55,6 +62,29 @@ func (m *AppInstallActionWorkflowRunStep) Validate(formats strfmt.Registry) erro
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRunStep) validateAdhocConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.AdhocConfig) { // not required
+		return nil
+	}
+
+	if m.AdhocConfig != nil {
+		if err := m.AdhocConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("adhoc_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("adhoc_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -83,6 +113,10 @@ func (m *AppInstallActionWorkflowRunStep) validateStatus(formats strfmt.Registry
 func (m *AppInstallActionWorkflowRunStep) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAdhocConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -90,6 +124,31 @@ func (m *AppInstallActionWorkflowRunStep) ContextValidate(ctx context.Context, f
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRunStep) contextValidateAdhocConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AdhocConfig != nil {
+
+		if swag.IsZero(m.AdhocConfig) { // not required
+			return nil
+		}
+
+		if err := m.AdhocConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("adhoc_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("adhoc_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
