@@ -44,5 +44,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "092-backfill-org-id",
 			Fn:   m.Migration092BackfillOrgID,
 		},
+		{
+			Name: "093-add-adhoc-actions",
+			Fn:   m.Migration093AddAdhocActions,
+		},
 	}
 }

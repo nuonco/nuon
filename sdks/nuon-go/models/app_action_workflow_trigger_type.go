@@ -36,6 +36,9 @@ const (
 	// AppActionWorkflowTriggerTypeCron captures enum value "cron"
 	AppActionWorkflowTriggerTypeCron AppActionWorkflowTriggerType = "cron"
 
+	// AppActionWorkflowTriggerTypeAdhoc captures enum value "adhoc"
+	AppActionWorkflowTriggerTypeAdhoc AppActionWorkflowTriggerType = "adhoc"
+
 	// AppActionWorkflowTriggerTypePreDashDeployDashComponent captures enum value "pre-deploy-component"
 	AppActionWorkflowTriggerTypePreDashDeployDashComponent AppActionWorkflowTriggerType = "pre-deploy-component"
 
@@ -108,7 +111,7 @@ var appActionWorkflowTriggerTypeEnum []any
 
 func init() {
 	var res []AppActionWorkflowTriggerType
-	if err := json.Unmarshal([]byte(`["manual","cron","pre-deploy-component","post-deploy-component","pre-teardown-component","post-teardown-component","pre-secrets-sync","post-secrets-sync","pre-provision","post-provision","pre-reprovision","post-reprovision","pre-deprovision","post-deprovision","pre-deploy-all-components","post-deploy-all-components","pre-teardown-all-components","post-teardown-all-components","pre-deprovision-sandbox","post-deprovision-sandbox","pre-reprovision-sandbox","post-reprovision-sandbox","pre-update-inputs","post-update-inputs"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["manual","cron","adhoc","pre-deploy-component","post-deploy-component","pre-teardown-component","post-teardown-component","pre-secrets-sync","post-secrets-sync","pre-provision","post-provision","pre-reprovision","post-reprovision","pre-deprovision","post-deprovision","pre-deploy-all-components","post-deploy-all-components","pre-teardown-all-components","post-teardown-all-components","pre-deprovision-sandbox","post-deprovision-sandbox","pre-reprovision-sandbox","post-reprovision-sandbox","pre-update-inputs","post-update-inputs"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

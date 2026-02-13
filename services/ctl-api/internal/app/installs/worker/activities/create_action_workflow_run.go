@@ -47,6 +47,18 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	triggeredByType string,
 	runEnvVars map[string]*string,
 ) (*app.InstallActionWorkflowRun, error) {
+	if triggerType == app.ActionWorkflowTriggerTypeAdHoc {
+		var existingRun app.InstallActionWorkflowRun
+		err := a.db.WithContext(ctx).
+			Where("install_workflow_id = ? AND trigger_type = ?", installWorkflowID, app.ActionWorkflowTriggerTypeAdHoc).
+			Preload("Steps").
+			First(&existingRun).Error
+
+		if err == nil {
+			return &existingRun, nil
+		}
+	}
+
 	install, err := a.getInstall(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
@@ -61,14 +73,14 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	for _, step := range cfg.Steps {
 		steps = append(steps, app.InstallActionWorkflowRunStep{
 			Status: app.InstallActionWorkflowRunStepStatusPending,
-			StepID: step.ID,
+			StepID: generics.NewNullString(step.ID),
 		})
 	}
 
 	newRun := app.InstallActionWorkflowRun{
-		InstallActionWorkflowID: installActionWorkflowID,
+		InstallActionWorkflowID: generics.NewNullString(installActionWorkflowID),
 		InstallID:               installID,
-		ActionWorkflowConfigID:  cfg.ID,
+		ActionWorkflowConfigID:  generics.NewNullString(cfg.ID),
 		TriggerType:             triggerType,
 		Status:                  app.InstallActionRunStatusQueued,
 		StatusDescription:       "Queued",
