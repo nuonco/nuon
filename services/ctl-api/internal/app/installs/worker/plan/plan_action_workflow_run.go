@@ -81,7 +81,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		OverrideEnvVars: overrideEnvVars,
 	}
 
-	if run.ActionWorkflowConfigID != nil {
+	if run.ActionWorkflowConfigID.Valid {
 		plan.Attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
 		plan.Attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
 	} else {
@@ -96,7 +96,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
 		role := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
 
-		if run.ActionWorkflowConfigID != nil && !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
+		if run.ActionWorkflowConfigID.Valid && !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
 			if run.TriggerType != app.ActionWorkflowTriggerTypeManual {
 				return nil, fmt.Errorf("break glass role can only be used for manual action triggers")
 			}
@@ -136,7 +136,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	}
 
 	if org.SandboxMode {
-		if run.ActionWorkflowConfigID != nil {
+		if run.ActionWorkflowConfigID.Valid {
 			targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
 			plan.SandboxMode = &plantypes.SandboxMode{
 				Enabled: true,

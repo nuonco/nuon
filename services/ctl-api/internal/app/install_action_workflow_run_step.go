@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -29,6 +30,8 @@ func (a *AdHocStepConfig) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, a)
 }
 
+// Value implements driver.Valuer for database serialization to JSONB.
+// See queue/signal/db/signal.go for a more complex example with Type() info.
 func (a AdHocStepConfig) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }
@@ -60,7 +63,7 @@ type InstallActionWorkflowRunStep struct {
 	InstallActionWorkflowRunID string                   `json:"install_action_workflow_run_id,omitzero" temporaljson:"install_action_workflow_run_id,omitzero,omitempty"`
 	InstallActionWorkflowRun   InstallActionWorkflowRun `json:"-" temporaljson:"install_action_workflow_run,omitzero,omitempty"`
 
-	StepID *string                  `json:"step_id,omitzero" temporaljson:"step_id,omitzero,omitempty"`
+	StepID generics.NullString      `json:"step_id,omitzero" temporaljson:"step_id,omitzero,omitempty"`
 	Step   ActionWorkflowStepConfig `json:"-" temporaljson:"step,omitzero,omitempty"`
 
 	AdHocConfig *AdHocStepConfig `json:"adhoc_config,omitzero" gorm:"type:jsonb" temporaljson:"adhoc_config,omitzero,omitempty"`

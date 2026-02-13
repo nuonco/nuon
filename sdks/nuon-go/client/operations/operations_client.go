@@ -1152,7 +1152,7 @@ func (a *Client) CreateAdHocAction(params *CreateAdHocActionParams, authInfo run
 	op := &runtime.ClientOperation{
 		ID:                 "CreateAdHocAction",
 		Method:             "POST",
-		PathPattern:        "/v1/installs/{install_id}/actions/adhoc",
+		PathPattern:        "/v1/installs/{install_id}/actions/adhoc-run",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

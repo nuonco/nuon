@@ -62,7 +62,7 @@ func (o *CreateAdHocActionReader) ReadResponse(response runtime.ClientResponse, 
 		}
 		return nil, result
 	default:
-		return nil, runtime.NewAPIError("[POST /v1/installs/{install_id}/actions/adhoc] CreateAdHocAction", response, response.Code())
+		return nil, runtime.NewAPIError("[POST /v1/installs/{install_id}/actions/adhoc-run] CreateAdHocAction", response, response.Code())
 	}
 }
 
@@ -112,12 +112,12 @@ func (o *CreateAdHocActionCreated) Code() int {
 
 func (o *CreateAdHocActionCreated) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionCreated %s", 201, payload)
 }
 
 func (o *CreateAdHocActionCreated) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionCreated %s", 201, payload)
 }
 
 func (o *CreateAdHocActionCreated) GetPayload() *models.ServiceCreateAdHocActionResponse {
@@ -182,12 +182,12 @@ func (o *CreateAdHocActionBadRequest) Code() int {
 
 func (o *CreateAdHocActionBadRequest) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionBadRequest %s", 400, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionBadRequest %s", 400, payload)
 }
 
 func (o *CreateAdHocActionBadRequest) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionBadRequest %s", 400, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionBadRequest %s", 400, payload)
 }
 
 func (o *CreateAdHocActionBadRequest) GetPayload() *models.StderrErrResponse {
@@ -252,12 +252,12 @@ func (o *CreateAdHocActionUnauthorized) Code() int {
 
 func (o *CreateAdHocActionUnauthorized) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionUnauthorized %s", 401, payload)
 }
 
 func (o *CreateAdHocActionUnauthorized) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionUnauthorized %s", 401, payload)
 }
 
 func (o *CreateAdHocActionUnauthorized) GetPayload() *models.StderrErrResponse {
@@ -322,12 +322,12 @@ func (o *CreateAdHocActionForbidden) Code() int {
 
 func (o *CreateAdHocActionForbidden) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionForbidden %s", 403, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionForbidden %s", 403, payload)
 }
 
 func (o *CreateAdHocActionForbidden) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionForbidden %s", 403, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionForbidden %s", 403, payload)
 }
 
 func (o *CreateAdHocActionForbidden) GetPayload() *models.StderrErrResponse {
@@ -392,12 +392,12 @@ func (o *CreateAdHocActionNotFound) Code() int {
 
 func (o *CreateAdHocActionNotFound) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionNotFound %s", 404, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionNotFound %s", 404, payload)
 }
 
 func (o *CreateAdHocActionNotFound) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionNotFound %s", 404, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionNotFound %s", 404, payload)
 }
 
 func (o *CreateAdHocActionNotFound) GetPayload() *models.StderrErrResponse {
@@ -462,12 +462,12 @@ func (o *CreateAdHocActionInternalServerError) Code() int {
 
 func (o *CreateAdHocActionInternalServerError) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionInternalServerError %s", 500, payload)
 }
 
 func (o *CreateAdHocActionInternalServerError) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc][%d] createAdHocActionInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionInternalServerError %s", 500, payload)
 }
 
 func (o *CreateAdHocActionInternalServerError) GetPayload() *models.StderrErrResponse {

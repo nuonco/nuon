@@ -8,12 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -31,10 +31,16 @@ func (c *CreateAdHocActionRequest) Validate(v *validator.Validate) error {
 	}
 
 	if c.InlineContents != "" && c.Command != "" {
-		return fmt.Errorf("provide either inline_contents or command, not both")
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("provide either inline_contents or command, not both"),
+			Description: "invalid request input",
+		}
 	}
 	if c.InlineContents == "" && c.Command == "" {
-		return fmt.Errorf("either inline_contents or command is required")
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("either inline_contents or command is required"),
+			Description: "invalid request input",
+		}
 	}
 
 	if c.Timeout == 0 {
@@ -70,7 +76,7 @@ type CreateAdHocActionResponse struct {
 // @Failure                  404 {object} stderr.ErrResponse
 // @Failure                  500 {object} stderr.ErrResponse
 // @Success                  201 {object} CreateAdHocActionResponse
-// @Router                   /v1/installs/{install_id}/actions/adhoc [post]
+// @Router                   /v1/installs/{install_id}/actions/adhoc-run [post]
 func (s *service) CreateAdHocAction(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
@@ -84,10 +90,7 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 	}
 
 	if err := req.Validate(s.v); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         err,
-			Description: "invalid request input",
-		})
+		ctx.Error(err)
 		return
 	}
 
@@ -174,7 +177,7 @@ func (s *service) createAdHocActionRun(
 	stepConfig := app.ActionWorkflowStepConfig{
 		InlineContents: req.InlineContents,
 		Command:        req.Command,
-		EnvVars:        convertToHstore(req.EnvVars),
+		EnvVars:        dbgenerics.ToHstore(req.EnvVars),
 		Name:           req.Name,
 		Idx:            0,
 	}
@@ -201,7 +204,7 @@ func (s *service) createAdHocActionRun(
 		Status:            app.InstallActionRunStatusQueued,
 		StatusDescription: "Queued for execution",
 		Steps:             []app.InstallActionWorkflowRunStep{runStep},
-		RunEnvVars:        convertToHstore(req.EnvVars),
+		RunEnvVars:        dbgenerics.ToHstore(req.EnvVars),
 	}
 
 	if err := s.db.WithContext(ctx).Create(&run).Error; err != nil {
@@ -209,18 +212,4 @@ func (s *service) createAdHocActionRun(
 	}
 
 	return &run, nil
-}
-
-func convertToHstore(envVars map[string]string) pgtype.Hstore {
-	if envVars == nil {
-		return pgtype.Hstore{}
-	}
-
-	result := make(map[string]*string)
-	for k, v := range envVars {
-		val := v
-		result[k] = &val
-	}
-
-	return pgtype.Hstore(result)
 }

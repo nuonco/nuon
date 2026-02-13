@@ -190,7 +190,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		"action_workflow_run_id": run.ID,
 	}
 
-	if run.ActionWorkflowConfigID != nil {
+	if run.ActionWorkflowConfigID.Valid {
 		metadata["action_workflow_name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
 		metadata["action_workflow_id"] = run.ActionWorkflowConfig.ActionWorkflowID
 	} else {

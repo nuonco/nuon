@@ -73,14 +73,14 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	for _, step := range cfg.Steps {
 		steps = append(steps, app.InstallActionWorkflowRunStep{
 			Status: app.InstallActionWorkflowRunStepStatusPending,
-			StepID: generics.ToPtr(step.ID),
+			StepID: generics.NewNullString(step.ID),
 		})
 	}
 
 	newRun := app.InstallActionWorkflowRun{
-		InstallActionWorkflowID: generics.ToPtr(installActionWorkflowID),
+		InstallActionWorkflowID: generics.NewNullString(installActionWorkflowID),
 		InstallID:               installID,
-		ActionWorkflowConfigID:  generics.ToPtr(cfg.ID),
+		ActionWorkflowConfigID:  generics.NewNullString(cfg.ID),
 		TriggerType:             triggerType,
 		Status:                  app.InstallActionRunStatusQueued,
 		StatusDescription:       "Queued",
