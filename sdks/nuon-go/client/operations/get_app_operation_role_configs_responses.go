@@ -62,7 +62,7 @@ func (o *GetAppOperationRoleConfigsReader) ReadResponse(response runtime.ClientR
 		}
 		return nil, result
 	default:
-		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}] GetAppOperationRoleConfigs", response, response.Code())
+		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}] GetAppOperationRoleConfigs", response, response.Code())
 	}
 }
 
@@ -112,12 +112,12 @@ func (o *GetAppOperationRoleConfigsOK) Code() int {
 
 func (o *GetAppOperationRoleConfigsOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsOK %s", 200, payload)
 }
 
 func (o *GetAppOperationRoleConfigsOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsOK %s", 200, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsOK %s", 200, payload)
 }
 
 func (o *GetAppOperationRoleConfigsOK) GetPayload() []*models.AppAppOperationRoleConfig {
@@ -180,12 +180,12 @@ func (o *GetAppOperationRoleConfigsBadRequest) Code() int {
 
 func (o *GetAppOperationRoleConfigsBadRequest) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsBadRequest %s", 400, payload)
 }
 
 func (o *GetAppOperationRoleConfigsBadRequest) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsBadRequest %s", 400, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsBadRequest %s", 400, payload)
 }
 
 func (o *GetAppOperationRoleConfigsBadRequest) GetPayload() *models.StderrErrResponse {
@@ -250,12 +250,12 @@ func (o *GetAppOperationRoleConfigsUnauthorized) Code() int {
 
 func (o *GetAppOperationRoleConfigsUnauthorized) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppOperationRoleConfigsUnauthorized) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsUnauthorized %s", 401, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsUnauthorized %s", 401, payload)
 }
 
 func (o *GetAppOperationRoleConfigsUnauthorized) GetPayload() *models.StderrErrResponse {
@@ -320,12 +320,12 @@ func (o *GetAppOperationRoleConfigsForbidden) Code() int {
 
 func (o *GetAppOperationRoleConfigsForbidden) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsForbidden %s", 403, payload)
 }
 
 func (o *GetAppOperationRoleConfigsForbidden) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsForbidden %s", 403, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsForbidden %s", 403, payload)
 }
 
 func (o *GetAppOperationRoleConfigsForbidden) GetPayload() *models.StderrErrResponse {
@@ -390,12 +390,12 @@ func (o *GetAppOperationRoleConfigsNotFound) Code() int {
 
 func (o *GetAppOperationRoleConfigsNotFound) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsNotFound %s", 404, payload)
 }
 
 func (o *GetAppOperationRoleConfigsNotFound) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsNotFound %s", 404, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsNotFound %s", 404, payload)
 }
 
 func (o *GetAppOperationRoleConfigsNotFound) GetPayload() *models.StderrErrResponse {
@@ -460,12 +460,12 @@ func (o *GetAppOperationRoleConfigsInternalServerError) Code() int {
 
 func (o *GetAppOperationRoleConfigsInternalServerError) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppOperationRoleConfigsInternalServerError) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs{operation_role_config_id}][%d] getAppOperationRoleConfigsInternalServerError %s", 500, payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}][%d] getAppOperationRoleConfigsInternalServerError %s", 500, payload)
 }
 
 func (o *GetAppOperationRoleConfigsInternalServerError) GetPayload() *models.StderrErrResponse {

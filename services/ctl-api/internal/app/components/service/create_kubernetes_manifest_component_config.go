@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -58,6 +59,14 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
 	}
 
 	// Exactly one of manifest or kustomize must be set
