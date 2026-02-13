@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -62,6 +63,12 @@ func (s *service) GetTerraformWorkspaceStates(ctx *gin.Context) {
 			Err: errors.New("workspace_id was not set"),
 		})
 
+		return
+	}
+
+	// Validate workspace belongs to org
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
 		return
 	}
 

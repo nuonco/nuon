@@ -26,6 +26,12 @@ import (
 func (s *service) GetTerraformCurrentStateData(ctx *gin.Context) {
 	workspaceID := ctx.Query("workspace_id")
 
+	// Validate workspace belongs to org
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	state, err := s.helpers.GetTerraformState(ctx, workspaceID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.Error(err)

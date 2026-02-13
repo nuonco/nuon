@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -33,6 +34,12 @@ import (
 // @Success				200	{object}	app.Component
 // @Router					/v1/apps/{app_id}/components/{component_id} [PATCH]
 func (s *service) UpdateAppComponent(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -41,6 +48,13 @@ func (s *service) UpdateAppComponent(ctx *gin.Context) {
 	}
 	if err := req.Validate(s.v); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	// Validate component belongs to org before updating
+	_, err = s.findComponent(ctx, org.ID, componentID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))
 		return
 	}
 
@@ -86,6 +100,12 @@ func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
 // @Success				200	{object}	app.Component
 // @Router					/v1/components/{component_id} [PATCH]
 func (s *service) UpdateComponent(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -94,6 +114,13 @@ func (s *service) UpdateComponent(ctx *gin.Context) {
 	}
 	if err := req.Validate(s.v); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	// Validate component belongs to org before updating
+	_, err = s.findComponent(ctx, org.ID, componentID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))
 		return
 	}
 

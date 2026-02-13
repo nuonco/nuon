@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -121,6 +122,11 @@ func (s *service) GetComponentBuilds(ctx *gin.Context) {
 }
 
 func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app.ComponentBuild, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	blds := []app.ComponentBuild{}
 
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
@@ -132,7 +138,7 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 		Preload("ComponentConfigConnection.Component").
 		Joins("JOIN component_config_connections ON component_config_connections.id=component_builds.component_config_connection_id").
 		Joins("JOIN components ON components.id=component_config_connections.component_id").
-		Where("components.app_id = ?", appID).
+		Where("components.app_id = ? AND components.org_id = ?", appID, orgID).
 		Limit(limit).
 		Order("created_at DESC").
 		Find(&blds)
@@ -140,7 +146,7 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 		return nil, fmt.Errorf("unable to get app builds: %w", res.Error)
 	}
 
-	blds, err := db.HandlePaginatedResponse(ctx, blds)
+	blds, err = db.HandlePaginatedResponse(ctx, blds)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
@@ -149,6 +155,11 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 }
 
 func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.ComponentBuild, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	cmp := app.Component{}
 
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
@@ -166,7 +177,7 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.Component").
 		Preload("ComponentConfigs.ComponentBuilds.CreatedBy").
-		First(&cmp, "id = ?", cmpID)
+		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
@@ -176,7 +187,7 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 		blds = append(blds, cfg.ComponentBuilds...)
 	}
 
-	blds, err := db.HandlePaginatedResponse(ctx, blds)
+	blds, err = db.HandlePaginatedResponse(ctx, blds)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}

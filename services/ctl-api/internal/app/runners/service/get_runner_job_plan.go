@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRunnerJobPlan
@@ -39,12 +40,42 @@ func (s *service) GetRunnerJobPlan(ctx *gin.Context) {
 	ctx.String(http.StatusOK, plan)
 }
 
+func (s *service) GetRunnerJobPlanPublic(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	runnerJobID := ctx.Param("runner_job_id")
+
+	plan, err := s.getOrgRunnerJobPlan(ctx, runnerJobID, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
+		return
+	}
+
+	ctx.String(http.StatusOK, plan)
+}
+
 func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error) {
 	var runnerPlan app.RunnerJobPlan
 
 	res := s.db.WithContext(ctx).Where(app.RunnerJobPlan{
 		RunnerJobID: runnerJobID,
 	}).First(&runnerPlan)
+	if res.Error != nil {
+		return "", fmt.Errorf("unable to get job plan: %w", res.Error)
+	}
+
+	return runnerPlan.PlanJSON, nil
+}
+
+func (s *service) getOrgRunnerJobPlan(ctx context.Context, runnerJobID string, orgID string) (string, error) {
+	var runnerPlan app.RunnerJobPlan
+
+	res := s.db.WithContext(ctx).
+		Where("runner_job_id = ? AND org_id = ?", runnerJobID, orgID).
+		First(&runnerPlan)
 	if res.Error != nil {
 		return "", fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
