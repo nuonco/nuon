@@ -47,8 +47,11 @@ func (s *service) MngShutDown(ctx *gin.Context) {
 		return
 	}
 
+	// Send MngUpdate instead of MngShutDown so the monitor writes the latest
+	// image config and calls systemctl.Restart on the runner service, which
+	// does a docker-pull to pick up any new image before restarting.
 	s.evClient.Send(ctx, runner.ID, &signals.Signal{
-		Type: signals.OperationMngShutDown,
+		Type: signals.OperationMngUpdate,
 	})
 
 	ctx.JSON(http.StatusCreated, true)
