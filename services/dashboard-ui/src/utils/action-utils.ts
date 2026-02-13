@@ -28,6 +28,6 @@ export function hydrateActionRunSteps({
 
   return steps.map((step) => ({
     ...step,
-    ...configMap[step.step_id], // name and idx from config
+    ...configMap[String(step.step_id)], // name and idx from config
   }))
 }

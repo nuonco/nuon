@@ -12,6 +12,7 @@ import { WorkflowActionButtons } from './WorkflowActionButtons'
 export const WorkflowHeader = () => {
   const { install } = useInstall()
   const { workflow } = useWorkflow()
+
   return (
     <div className="flex flex-wrap items-center gap-3 justify-between w-full">
       <div className="flex flex-col gap-4">
@@ -22,9 +23,9 @@ export const WorkflowHeader = () => {
             variant="h3"
             weight="strong"
           >
-            {workflow?.name === undefined &&
-            workflow?.type === 'action_workflow_run'
-              ? `Action run (${workflow?.metadata?.install_action_workflow_name})`
+            {workflow?.type === 'action_workflow_run' &&
+            workflow?.metadata?.adhoc_action
+              ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
               : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
 
             {install?.drifted_objects?.length &&
