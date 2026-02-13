@@ -65,9 +65,9 @@ export const AdhocActionDetails = ({ actionRun }: IAdhocActionDetails) => {
             </LabeledValue>
           )}
 
-          {adhocConfig?.timeout && (
+          {(adhocConfig as any)?.timeout && (
             <LabeledValue label="Timeout">
-              <Time seconds={adhocConfig.timeout} format="relative" />
+              <Time seconds={(adhocConfig as any).timeout} format="relative" />
             </LabeledValue>
           )}
 

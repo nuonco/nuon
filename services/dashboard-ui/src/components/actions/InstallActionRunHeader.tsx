@@ -66,8 +66,8 @@ export const InstallActionRunHeader = ({
           </Text>
           <span className="flex items-center gap-4">
             <ID>{actionId}</ID>{' '}
-            {isAdmin ? (
-              <ID>{installActionRun?.install_action_workflow_id}</ID>
+            {isAdmin && installActionRun?.install_action_workflow_id ? (
+              <ID>{String(installActionRun.install_action_workflow_id)}</ID>
             ) : null}
           </span>
           <Time
