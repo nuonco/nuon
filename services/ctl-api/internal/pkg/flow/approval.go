@@ -76,6 +76,11 @@ func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.C
 			}
 
 			if latestFlw.ApprovalOption == app.InstallApprovalOptionApproveAll {
+				// Check if response already exists (handles retry scenarios)
+				if stp.Approval.Response != nil {
+					return nil
+				}
+
 				if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: latestFlw.ID,
 					Status: app.CompositeStatus{
