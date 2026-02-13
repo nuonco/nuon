@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -45,6 +46,15 @@ func (s *service) MngShutDown(ctx *gin.Context) {
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
+	}
+
+	// For install runners on VMs, send a management update signal first to pull
+	// the latest image. When the management process shuts down and systemd restarts
+	// the runner service, it will come back with the new image.
+	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+		s.evClient.Send(ctx, runner.ID, &signals.Signal{
+			Type: signals.OperationMngUpdate,
+		})
 	}
 
 	s.evClient.Send(ctx, runner.ID, &signals.Signal{
