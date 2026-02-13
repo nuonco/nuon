@@ -139,11 +139,11 @@
           "concepts/installs",
           "concepts/actions",
           "concepts/workflows",
+          "concepts/policies",
           "concepts/runners",
           "concepts/app-inputs",
           "concepts/app-variables",
-          "concepts/app-secrets",
-          "concepts/policies"
+          "concepts/app-secrets"
         ]
       },
       {
