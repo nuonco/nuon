@@ -48,14 +48,13 @@ func (s *service) MngShutDown(ctx *gin.Context) {
 		return
 	}
 
-	// For install runners on VMs, send a graceful shutdown to the install runner
-	// process instead of just restarting the management process. The install runner's
-	// job loop will finish any in-flight work before picking up the shutdown job.
-	// When the runner exits, systemd Restart=always kicks in and ExecStartPre does
-	// docker pull, which fetches the latest image for the floating tag (e.g. main).
+	// For install runners on VMs, send a management update signal to pull the
+	// latest image and restart the runner service. This goes through the management
+	// process (which runs on the host, not in Docker) so it works regardless of
+	// the install runner's connectivity state.
 	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
 		s.evClient.Send(ctx, runner.ID, &signals.Signal{
-			Type: signals.OperationGracefulShutdown,
+			Type: signals.OperationMngUpdate,
 		})
 	}
 

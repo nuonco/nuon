@@ -148,14 +148,14 @@ export const ShutdownMngRunnerModal = ({ ...props }: IModal) => {
             theme="neutral"
             className="leading-relaxed max-w-md"
           >
-            The managed runner will be gracefully restarted after completing any
-            queued jobs.
+            The managed runner will be restarted with the latest version.
+            Running jobs may be interrupted during the restart.
           </Text>
 
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
-            <li>All running jobs will be completed before restart</li>
-            <li>Causes all jobs to queue while the runner restarts</li>
             <li>Any new version updates will be applied</li>
+            <li>Running jobs may be interrupted during restart</li>
+            <li>New jobs will queue while the runner restarts</li>
           </ul>
         </div>
       </div>
