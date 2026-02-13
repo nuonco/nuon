@@ -23,6 +23,8 @@ func (a *Activities) getComponentBuild(ctx context.Context, buildID string) (*ap
 		Preload("CreatedBy").
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
+		Preload("ComponentConfigConnection.Component.App").
+		Preload("ComponentConfigConnection.Component.App.Org").
 		First(&bld, "id = ?", buildID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
