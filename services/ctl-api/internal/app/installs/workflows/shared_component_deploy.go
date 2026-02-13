@@ -21,6 +21,12 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 	}
 }
 
+func WithExecutionType(executionType app.WorkflowStepExecutionType) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.ExecutionType = executionType
+	}
+}
+
 type stepGroup struct {
 	idx int
 }
