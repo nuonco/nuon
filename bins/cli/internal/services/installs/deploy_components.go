@@ -8,13 +8,13 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) DeployComponents(ctx context.Context, installID string, planOnly bool, asJSON bool) error {
+func (s *Service) DeployComponents(ctx context.Context, installID string, roleName string, planOnly bool, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
-	err = s.api.DeployInstallComponents(ctx, installID, planOnly)
+	err = s.api.DeployInstallComponents(ctx, installID, roleName, planOnly)
 	if err != nil {
 		fmt.Printf("deploy components err: %+s\n", err)
 		return ui.PrintJSONError(err)
