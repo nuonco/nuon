@@ -34,11 +34,10 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 
 func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
-	installActionWorkflowID, ok := flw.Metadata["install_action_workflow_id"]
 	sg := newStepGroup()
 
 	steps := make([]*app.WorkflowStep, 0)
-	sg.nextGroup() // generate install state
+	sg.nextGroup()
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationGenerateState,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -48,6 +47,12 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 	steps = append(steps, step)
 
+	adhocActionRunID, isAdhoc := flw.Metadata["adhoc_action_run_id"]
+	if isAdhoc {
+		return handleAdhocActionRun(ctx, flw, installID, adhocActionRunID, sg, steps)
+	}
+
+	installActionWorkflowID, ok := flw.Metadata["install_action_workflow_id"]
 	if !ok {
 		return nil, errors.New("install action workflow is not set on the install workflow for a manual deploy")
 	}
@@ -66,7 +71,6 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 	for key, value := range flw.Metadata {
 		if strings.HasPrefix(key, prefix) {
-			// Remove the prefix and add to result map
 			newKey := key[len(prefix):]
 			runEnvVars[newKey] = *value
 		}
@@ -76,6 +80,33 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 
 	sg.nextGroup()
 	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, sg)
+	if err != nil {
+		return nil, err
+	}
+
+	steps = append(steps, step)
+	return steps, nil
+}
+
+func handleAdhocActionRun(ctx workflow.Context, flw *app.Workflow, installID string, adhocActionRunID *string, sg *stepGroup, steps []*app.WorkflowStep) ([]*app.WorkflowStep, error) {
+	actionName := generics.FromPtrStr(flw.Metadata["install_action_workflow_name"])
+	if actionName == "" {
+		actionName = "Adhoc action"
+	}
+
+	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, generics.FromPtrStr(adhocActionRunID))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get adhoc action run")
+	}
+
+	sig := &signals.Signal{
+		Type:                signals.OperationActionWorkflowRun,
+		ActionWorkflowRunID: run.ID,
+	}
+
+	sg.nextGroup()
+	stepName := fmt.Sprintf("Running adhoc action %s", actionName)
+	step, err := sg.installSignalStep(ctx, installID, stepName, pgtype.Hstore{}, sig, flw.PlanOnly, WithExecutionType(app.WorkflowStepExecutionTypeUser))
 	if err != nil {
 		return nil, err
 	}

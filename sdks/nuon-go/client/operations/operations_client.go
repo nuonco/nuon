@@ -104,6 +104,8 @@ type ClientService interface {
 
 	CreateActionWorkflowConfig(params *CreateActionWorkflowConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateActionWorkflowConfigCreated, error)
 
+	CreateAdHocAction(params *CreateAdHocActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdHocActionCreated, error)
+
 	CreateApp(params *CreateAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppCreated, error)
 
 	CreateAppAction(params *CreateAppActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppActionCreated, error)
@@ -1081,6 +1083,105 @@ func (a *Client) CreateActionWorkflowConfig(params *CreateActionWorkflowConfigPa
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateActionWorkflowConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	CreateAdHocAction creates an adhoc action run for an install
+
+	# Create AdHoc Action
+
+Creates and executes a one-time action on an install without creating a permanent action workflow definition.
+
+## Use Cases
+
+- Running ad-hoc debugging scripts
+- Executing maintenance commands
+- Testing bash snippets before creating permanent actions
+- Quick data exports or transformations
+
+## Request Body
+
+Provide **either** `inline_contents` (for multi-line bash scripts) **or** `command` (for single-line commands), but not both.
+
+### Fields
+
+- `inline_contents` (string, optional): Multi-line bash script to execute
+- `command` (string, optional): Single-line shell command to execute
+- `env_vars` (object, optional): Environment variables as key-value pairs
+- `timeout` (integer, optional): Execution timeout in seconds (1-3600, default: 300)
+- `name` (string, optional): Display name for the action (max 255 chars)
+
+## Response
+
+Returns the created adhoc action run with status information.
+
+## Example
+
+```bash
+
+	curl -X POST https://api.nuon.co/v1/installs/{install_id}/actions/adhoc \
+	  -H "Authorization: Bearer $API_KEY" \
+	  -H "X-Nuon-Org-ID: $ORG_ID" \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "inline_contents": "#!/bin/bash\necho \"Hello from adhoc action\"\nenv | grep NUON",
+	    "env_vars": {
+	      "DEBUG": "true",
+	      "LOG_LEVEL": "info"
+	    },
+	    "timeout": 300,
+	    "name": "Debug Script"
+	  }'
+
+```
+
+## Notes
+
+- AdHoc actions are marked with `trigger_type: "adhoc"`
+- They appear in action run history and can be filtered via trigger_type
+- Execution happens on the install's runner using the same infrastructure as permanent actions
+- Logs are preserved and can be viewed via the action runs API
+- AdHoc runs are kept indefinitely (same retention as regular action runs)
+*/
+func (a *Client) CreateAdHocAction(params *CreateAdHocActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdHocActionCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAdHocActionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAdHocAction",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/actions/adhoc-run",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAdHocActionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAdHocActionCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAdHocAction: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
