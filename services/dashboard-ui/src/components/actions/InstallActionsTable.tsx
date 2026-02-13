@@ -14,6 +14,7 @@ import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { type IPagination } from '@/components/common/Pagination'
+import { RunAdhocActionButton } from "@/components/installs/management/RunAdhocAction"
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
@@ -181,6 +182,7 @@ export const InstallActionsTable = ({
             namespace="installs"
             eventLoopId={`${install?.id}-action-workflows`}
           />
+          <RunAdhocActionButton className="!p-2 !h-fit" variant="ghost" />
           <TriggeredByFilter />
         </div>
       }
