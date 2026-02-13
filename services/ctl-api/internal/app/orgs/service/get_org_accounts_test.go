@@ -27,6 +27,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // GetOrgAccountsTestService holds all fx-injected dependencies for get org accounts tests.
@@ -41,6 +42,7 @@ type GetOrgAccountsTestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	AuthzClient     *authz.Client
+	Seeder          *testseed.Seeder
 }
 
 // GetOrgAccountsTestSuite is the testify suite for GET /v1/orgs/current/accounts endpoint.
@@ -103,33 +105,9 @@ func (s *GetOrgAccountsTestSuite) TearDownSuite() {
 }
 
 func (s *GetOrgAccountsTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Set account context for org creation
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-
-	// Create test org
-	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
-		SandboxMode: true,
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 }
 
 func (s *GetOrgAccountsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -370,6 +348,30 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				var adminRole app.Role
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", s.testOrg.ID, app.RoleTypeOrgAdmin).First(&adminRole).Error
 				require.NoError(s.T(), err)
+
+				// Create a non-nuon requesting user account for this test
+				nonNuonAcc := &app.Account{
+					ID:          domains.NewAccountID(),
+					Email:       "requester@example.com",
+					Subject:     "requester-subject",
+					AccountType: app.AccountTypeAuth0,
+				}
+				err = s.service.DB.Create(nonNuonAcc).Error
+				require.NoError(s.T(), err)
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", nonNuonAcc.ID)
+				})
+
+				// Recreate router with non-nuon account context
+				testRouter := tests.NewTestRouter(tests.RouterOptions{
+					L:       s.service.L,
+					DB:      s.service.DB,
+					TestOrg: s.testOrg,
+					TestAcc: nonNuonAcc,
+				})
+				err = s.orgsService.RegisterPublicRoutes(testRouter)
+				require.NoError(s.T(), err)
+				s.router = testRouter
 
 				// Create regular user account
 				acc1 := &app.Account{
