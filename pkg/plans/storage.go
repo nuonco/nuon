@@ -24,7 +24,10 @@ func CompressPlan(data []byte) (string, error) {
 	return encodedString, nil
 }
 
-// DecompressPlan decodes and decompresses a base64-encoded plan content
+// DecompressPlan decodes and decompresses a base64-encoded plan content.
+// Use this when you have the encoded string returned by CompressPlan. If your
+// storage already decoded base64 and only kept the raw gzip bytes, decompress
+// those bytes directly instead.
 func DecompressPlan(encodedPlan string) ([]byte, error) {
 	// Try to decode using URL-safe encoding
 	decodedBytes, err := base64.URLEncoding.DecodeString(encodedPlan)
