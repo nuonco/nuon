@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
@@ -35,15 +34,6 @@ func (s *service) RestartRunner(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get runner: %w", err))
 		return
-	}
-
-	// For install runners on VMs, also send a management update signal to pull the
-	// latest image before restarting. Without this, restart only restarts the Temporal
-	// event loop but the Docker container keeps running the old image.
-	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
-		s.evClient.Send(ctx, runner.ID, &signals.Signal{
-			Type: signals.OperationMngUpdate,
-		})
 	}
 
 	s.evClient.Send(ctx, runner.ID, &signals.Signal{

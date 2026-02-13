@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
 type RestartInstallRequest struct{}
@@ -40,17 +39,6 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 		return
 	}
 
-	// For install runners on VMs, send a management update signal to the runner
-	// to pull the latest image. The install event loop restart alone only restarts
-	// the Temporal workflow — it doesn't update the runner's Docker container.
-	if install.RunnerGroup.Type == app.RunnerGroupTypeInstall {
-		for _, runner := range install.RunnerGroup.Runners {
-			s.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
-				Type: runnersignals.OperationMngUpdate,
-			})
-		}
-	}
-
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type: signals.OperationRestart,
 	})
@@ -60,8 +48,6 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 func (s *service) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
-		Preload("RunnerGroup").
-		Preload("RunnerGroup.Runners").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("App").
