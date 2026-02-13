@@ -958,6 +958,10 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return n
 - Example: `GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest`
 - These names appear in generated SDK code but don't affect functionality
 
+## Query Path Optimization
+
+Before adding multi-step lookups or separate Temporal activity calls, trace the GORM model relationships to find the most direct query path. Prefer a single query with `Preload()` chains over multiple activity round-trips when the data model supports it (e.g., `ComponentBuild → ComponentConfigConnection.AppConfigID → AppConfig.PoliciesConfig.Policies` instead of fetching the build then separately fetching policies config). Also prefer pinned foreign keys (e.g., `ComponentConfigConnection.AppConfigID`) over re-deriving associations via `ORDER BY created_at DESC LIMIT 1`.
+
 ## Logging Conventions
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.
