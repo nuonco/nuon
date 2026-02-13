@@ -34,7 +34,12 @@ func (h *handler) packageChart(l *zap.Logger) (string, error) {
 		chartDir := h.state.workspace.Source().AbsPath()
 		dstDir := h.state.arch.TmpDir()
 
-		return h.loadAndPackageChart(l, chartDir, dstDir)
+		packagePath, err := h.loadAndPackageChart(l, chartDir, dstDir)
+		if err != nil {
+			return "", err
+		}
+		h.state.chartPath = chartDir
+		return packagePath, nil
 	}
 
 	l.Info("packaging chart from repo config", zap.String("chart", h.state.cfg.HelmRepoConfig.Chart), zap.String("url", h.state.cfg.HelmRepoConfig.RepoURL))
@@ -69,7 +74,12 @@ func (h *handler) packageChartFromRepoConfig(l *zap.Logger) (string, error) {
 
 	dstDir := h.state.arch.TmpDir()
 
-	return h.loadAndPackageChart(l, chartPath, dstDir)
+	packagePath, err := h.loadAndPackageChart(l, chartPath, dstDir)
+	if err != nil {
+		return "", err
+	}
+	h.state.chartPath = chartPath
+	return packagePath, nil
 }
 
 // loadAndPackageChart loads a chart from the given directory, handles dependencies, and packages it
