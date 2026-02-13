@@ -24,6 +24,36 @@ import (
 // @temporal-gen workflow
 // @execution-timeout 60m
 // @task-timeout 30m
+func (w *Workflows) ExecuteActionWorkflowRun(ctx workflow.Context, req signals.RequestSignal) error {
+	if req.ActionWorkflowRunID == "" {
+		return errors.New("action workflow run ID is required")
+	}
+
+	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, req.ActionWorkflowRunID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get action workflow run")
+	}
+
+	if req.WorkflowStepID != "" {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         req.WorkflowStepID,
+			StepTargetID:   run.ID,
+			StepTargetType: plugins.TableName(w.db, run),
+		}); err != nil {
+			return errors.Wrap(err, "unable to update workflow step target")
+		}
+	}
+
+	if err := w.executeActionWorkflowRun(ctx, run.InstallID, run.ID); err != nil {
+		return errors.Wrap(err, "unable to execute action workflow run")
+	}
+
+	return nil
+}
+
+// @temporal-gen workflow
+// @execution-timeout 60m
+// @task-timeout 30m
 func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.RequestSignal) error {
 	installActionWorkflow, err := activities.AwaitGetInstallActionWorkflowByID(ctx, req.InstallActionWorkflowTrigger.InstallActionWorkflowID)
 	if err != nil {
@@ -155,16 +185,28 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 
 	// execute job
 	l.Info("creating runner job to execute action")
+	metadata := map[string]string{
+		"install_id":             installID,
+		"action_workflow_run_id": run.ID,
+	}
+
+	if run.ActionWorkflowConfigID.Valid {
+		metadata["action_workflow_name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
+		metadata["action_workflow_id"] = run.ActionWorkflowConfig.ActionWorkflowID
+	} else {
+		actionName := "Adhoc action"
+		if len(run.Steps) > 0 && run.Steps[0].AdHocConfig != nil && run.Steps[0].AdHocConfig.Name != "" {
+			actionName = run.Steps[0].AdHocConfig.Name
+		}
+		metadata["action_workflow_name"] = actionName
+		metadata["action_workflow_id"] = ""
+	}
+
 	runnerJob, err := activities.AwaitCreateActionWorkflowRunRunnerJob(ctx, &activities.CreateActionWorkflowRunRunnerJob{
 		ActionWorkflowRunID: actionWorkflowRunID,
 		RunnerID:            run.Install.RunnerID,
 		LogStreamID:         ls.ID,
-		Metadata: map[string]string{
-			"install_id":             installID,
-			"action_workflow_name":   run.ActionWorkflowConfig.ActionWorkflow.Name,
-			"action_workflow_run_id": run.ID,
-			"action_workflow_id":     run.ActionWorkflowConfig.ActionWorkflowID,
-		},
+		Metadata:            metadata,
 	})
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
