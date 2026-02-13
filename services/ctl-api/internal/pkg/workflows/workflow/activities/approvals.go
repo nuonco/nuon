@@ -18,9 +18,17 @@ type CreateStepApprovalResponseRequest struct {
 // @start-to-close-timeout 10s
 func (a *Activities) CreateApprovalResponse(ctx context.Context, req CreateStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
 	approval := app.WorkflowStepApproval{}
-	res := a.db.WithContext(ctx).Where(app.WorkflowStepApproval{ID: req.StepApprovalID}).First(&approval)
+	res := a.db.WithContext(ctx).
+		Where(app.WorkflowStepApproval{ID: req.StepApprovalID}).
+		Preload("Response").
+		First(&approval)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find approval with ID %s: %w", req.StepApprovalID, res.Error)
+	}
+
+	if approval.Response != nil {
+		// An approval response already exists for this approval, return it without creating a new one.
+		return approval.Response, nil
 	}
 
 	approvalResponse := app.WorkflowStepApprovalResponse{
