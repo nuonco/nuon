@@ -8,6 +8,11 @@ import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { PolicyReportPanelButton } from '@/components/policies/PolicyReportPanel'
+import { PolicyReportsFilter } from '@/components/policies/PolicyReportsFilter'
+import type {
+  TPolicyReportOwnerType,
+  TPolicyReportStatus,
+} from '@/lib/ctl-api/installs/get-install-policy-reports'
 import type { TPolicyReport } from '@/types'
 
 type TPolicyReportRow = {
@@ -163,22 +168,36 @@ export const PolicyReportsTable = ({
   reports,
   orgId,
   installId,
+  currentStatus,
+  currentOwnerType,
 }: {
   reports: TPolicyReport[]
   orgId: string
   installId: string
+  currentStatus?: TPolicyReportStatus
+  currentOwnerType?: TPolicyReportOwnerType
 }) => {
   const data = parsePolicyReportsToTableData(reports)
   const columns = [...policyReportsTableColumns, createActionsColumn(orgId)]
+
+  const hasActiveFilters = currentStatus || currentOwnerType
 
   return (
     <Table<TPolicyReportRow>
       columns={columns}
       data={data}
+      enableSearch={false}
+      filterActions={
+        <PolicyReportsFilter
+          currentStatus={currentStatus}
+          currentOwnerType={currentOwnerType}
+        />
+      }
       emptyStateProps={{
-        emptyMessage:
-          'Policy evaluations will appear here after deploys or sandbox runs.',
-        emptyTitle: 'No policy evaluations',
+        emptyMessage: hasActiveFilters
+          ? 'No reports match the current filters.'
+          : 'Policy evaluations will appear here after deploys or sandbox runs.',
+        emptyTitle: hasActiveFilters ? 'No matching reports' : 'No policy evaluations',
       }}
       pagination={{
         limit: data.length || 10,
