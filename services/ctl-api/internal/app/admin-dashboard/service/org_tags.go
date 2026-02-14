@@ -1,10 +1,6 @@
 package service
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -44,25 +40,14 @@ func (s *service) UpdateOrgTags(c *gin.Context) {
 		return
 	}
 
-	// Determine which tags to add and which to remove
-	tagsToAdd, tagsToRemove := calculateTagChanges(org.Tags, newTags)
+	// Update tags directly in database
+	org.Tags = newTags
 
-	// Call admin API to add tags if needed
-	if len(tagsToAdd) > 0 {
-		if err := s.callAdminAddTags(c, orgID, tagsToAdd); err != nil {
-			s.l.Error("failed to add tags", zap.String("org_id", orgID), zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add tags"})
-			return
-		}
-	}
-
-	// Call admin API to remove tags if needed
-	if len(tagsToRemove) > 0 {
-		if err := s.callAdminRemoveTags(c, orgID, tagsToRemove); err != nil {
-			s.l.Error("failed to remove tags", zap.String("org_id", orgID), zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove tags"})
-			return
-		}
+	// Update only the tags field (using Select to only update tags)
+	if err := s.db.WithContext(ctx).Model(org).Select("tags").Updates(org).Error; err != nil {
+		s.l.Error("failed to update org tags", zap.String("org_id", orgID), zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tags"})
+		return
 	}
 
 	// Fetch updated org
@@ -91,9 +76,28 @@ func (s *service) RemoveSingleTag(c *gin.Context) {
 		return
 	}
 
-	// Call admin API to remove the tag
-	if err := s.callAdminRemoveTags(c, orgID, []string{tagToRemove}); err != nil {
-		s.l.Error("failed to remove tag", zap.String("org_id", orgID), zap.String("tag", tagToRemove), zap.Error(err))
+	// Get current org
+	org, err := s.getOrg(ctx, orgID)
+	if err != nil {
+		s.l.Error("failed to get org", zap.String("org_id", orgID), zap.Error(err))
+		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
+		return
+	}
+
+	// Remove the tag from the list
+	var newTags []string
+	for _, tag := range org.Tags {
+		if tag != tagToRemove {
+			newTags = append(newTags, tag)
+		}
+	}
+
+	// Update org with new tags
+	org.Tags = newTags
+
+	// Update only the tags field (using Select to only update tags)
+	if err := s.db.WithContext(ctx).Model(org).Select("tags").Updates(org).Error; err != nil {
+		s.l.Error("failed to update org tags", zap.String("org_id", orgID), zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove tag"})
 		return
 	}
@@ -109,105 +113,4 @@ func (s *service) RemoveSingleTag(c *gin.Context) {
 	// Render the updated org header with popover
 	component := views.OrgHeaderWithPopover(updatedOrg)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
-}
-
-// calculateTagChanges determines which tags need to be added and removed
-func calculateTagChanges(currentTags, newTags []string) (toAdd, toRemove []string) {
-	currentSet := make(map[string]bool)
-	for _, tag := range currentTags {
-		currentSet[tag] = true
-	}
-
-	newSet := make(map[string]bool)
-	for _, tag := range newTags {
-		newSet[tag] = true
-	}
-
-	// Find tags to add (in new but not in current)
-	for _, tag := range newTags {
-		if !currentSet[tag] {
-			toAdd = append(toAdd, tag)
-		}
-	}
-
-	// Find tags to remove (in current but not in new)
-	for _, tag := range currentTags {
-		if !newSet[tag] {
-			toRemove = append(toRemove, tag)
-		}
-	}
-
-	return toAdd, toRemove
-}
-
-// callAdminAddTags calls the admin API to add tags to an organization
-func (s *service) callAdminAddTags(c *gin.Context, orgID string, tags []string) error {
-	url := fmt.Sprintf("http://localhost:%s/v1/orgs/%s/admin-add-tags", s.cfg.InternalHTTPPort, orgID)
-
-	requestBody := map[string]interface{}{
-		"tags": tags,
-	}
-
-	jsonBody, err := json.Marshal(requestBody)
-	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", url, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Nuon-Admin-Email", "admin@nuon.co") // Admin dashboard has admin privileges
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("admin API returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
-}
-
-// callAdminRemoveTags calls the admin API to remove tags from an organization
-func (s *service) callAdminRemoveTags(c *gin.Context, orgID string, tags []string) error {
-	url := fmt.Sprintf("http://localhost:%s/v1/orgs/%s/admin-remove-tags", s.cfg.InternalHTTPPort, orgID)
-
-	requestBody := map[string]interface{}{
-		"tags": tags,
-	}
-
-	jsonBody, err := json.Marshal(requestBody)
-	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", url, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Nuon-Admin-Email", "admin@nuon.co") // Admin dashboard has admin privileges
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("admin API returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
 }

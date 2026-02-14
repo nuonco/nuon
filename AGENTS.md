@@ -173,6 +173,27 @@ Infrastructure:
 - Temporal UI:      http://localhost:8233
 ```
 
+### Local Debugging via Docker
+
+Use Docker to inspect Temporal, Postgres, and ClickHouse when services are running locally.
+
+```bash
+# Temporal CLI (components namespace)
+temporal workflow list --namespace components
+temporal workflow show --namespace components --workflow-id <workflow_id> --run-id <run_id> --output json
+
+# Postgres (ctl-api)
+docker exec -i mono-postgres-1 psql -U ctl_api -d ctl_api
+
+# Example Postgres query
+docker exec -i mono-postgres-1 psql -U ctl_api -d ctl_api \
+  -c "select id, status, status_description from runner_jobs order by created_at desc limit 5;"
+
+# ClickHouse (ctl-api logs)
+docker exec -i clickhouse-01 clickhouse-client \
+  --query "select timestamp, severity_text, body from ctl_api.otel_log_records order by timestamp desc limit 50"
+```
+
 ## Getting Started
 
 1. **Prerequisites**: Go 1.25+, Node.js, Docker, Terraform, kubectl
@@ -186,12 +207,14 @@ When working with Go code in this repository, agents should follow these practic
 
 ### Code Formatting
 - **Always run `go fmt` after editing Go files** to ensure consistent formatting
+- **Also run `goimports -w` on edited Go files** to keep imports clean and grouped
 - This prevents formatting inconsistencies and maintains code quality
 - Example workflow:
   ```bash
   # After making changes to a Go file
   go fmt ./path/to/file.go
-  
+  goimports -w ./path/to/file.go
+
   # Or format entire directory
   go fmt ./services/ctl-api/...
   ```

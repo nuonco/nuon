@@ -31,7 +31,7 @@ func (s *service) RestartAllOrgs(ctx *gin.Context) {
 
 	orgs, err := s.getAllOrgs(ctx, "")
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create org: %w", err))
+		ctx.Error(fmt.Errorf("unable to get orgs: %w", err))
 		return
 	}
 

@@ -16,7 +16,7 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
 			<div class="mb-6">
-				<a href="../orgs" class="text-sm text-cyan hover:underline">
+				<a href="/orgs" class="text-sm text-cyan hover:underline">
 					← Back to Organizations
 				</a>
 			</div>
@@ -116,6 +116,7 @@ templ OrgHeaderWithPopover(org *app.Org) {
 						Name:        "tags",
 						Value:       org.Tags,
 						Placeholder: "Type and press Enter...",
+						Suggestions: []string{"Trial", "Inactive", "Priority", "Demo"},
 					})
 					<button
 						type="submit"

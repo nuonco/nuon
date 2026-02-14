@@ -81,6 +81,11 @@ func (w *Workflows) waitForApprovalResponse(ctx workflow.Context, workflowID, st
 			}
 
 			if latestFlw.ApprovalOption == app.InstallApprovalOptionApproveAll {
+				// Check if response already exists (handles Continue-As-New and retry scenarios)
+				if stp.Approval.Response != nil {
+					return nil
+				}
+
 				if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: latestFlw.ID,
 					Status: app.CompositeStatus{

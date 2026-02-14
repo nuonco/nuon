@@ -30,7 +30,7 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 
 		// deploy timeouts
 		app.RunnerJobTypeTerraformDeploy:          time.Minute * 60,
-		app.RunnerJobTypeHelmChartDeploy:          time.Minute * 15,
+		app.RunnerJobTypeHelmChartDeploy:          time.Minute * 30,
 		app.RunnerJobTypeKubrenetesManifestDeploy: time.Minute * 15,
 		app.RunnerJobTypeJobDeploy:                time.Minute * 15,
 

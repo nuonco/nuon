@@ -13,7 +13,7 @@ import (
 templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string) {
 	<div
 		id="installs-table-wrapper"
-		hx-get="installs/table"
+		hx-get="/installs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 		hx-include="[name='search']"

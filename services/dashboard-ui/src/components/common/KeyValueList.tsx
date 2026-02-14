@@ -55,9 +55,11 @@ export const KeyValueList = ({
               variant="subtext"
               family="mono"
             >
-              {value ? (
+              {typeof value === 'number' ? (
+                <ClickToCopy>{value}</ClickToCopy>
+              ) : value ? (
                 type === 'object' || type === 'array' ? (
-                  <JSONViewer 
+                  <JSONViewer
                     data={JSON.parse(value)}
                     expanded={1}
                     showDataTypes={false}
@@ -65,9 +67,7 @@ export const KeyValueList = ({
                     className="!border-0 !rounded-none"
                   />
                 ) : (
-                  <ClickToCopy>
-                    {value}
-                  </ClickToCopy>
+                  <ClickToCopy>{value}</ClickToCopy>
                 )
               ) : (
                 <Text variant="subtext" theme="neutral">

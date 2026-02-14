@@ -2,6 +2,7 @@ package helm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -11,6 +12,7 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	"github.com/nuonco/nuon/pkg/plans"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -53,8 +55,40 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("writing job result")
 	resultReq := registry.ToAPIResult(res)
+	h.appendPolicyInputToResult(ctx, l, resultReq)
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
 	return nil
+}
+
+func (h *handler) appendPolicyInputToResult(ctx context.Context, l *zap.Logger, resultReq *models.ServiceCreateRunnerJobExecutionResultRequest) {
+	policyInput, policyErr := h.buildPolicyInput(ctx, l)
+	if policyErr != nil {
+		h.errRecorder.Record("build policy input", policyErr)
+		return
+	}
+	if policyInput == nil {
+		l.Debug("policy input missing or empty")
+		return
+	}
+
+	l.Debug("policy input generated", zap.Int("policy_input_count", len(policyInput)))
+
+	contentsJSON, err := json.Marshal(map[string]any{
+		"policy_input": policyInput,
+	})
+	if err != nil {
+		h.errRecorder.Record("marshal policy input", err)
+		return
+	}
+
+	compressedContents, err := plans.CompressPlan(contentsJSON)
+	if err != nil {
+		h.errRecorder.Record("compress policy input", err)
+		return
+	}
+
+	resultReq.ContentsCompressed = compressedContents
+	l.Debug("policy input appended to job result", zap.Int("compressed_bytes", len(compressedContents)))
 }

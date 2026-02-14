@@ -23,7 +23,7 @@ templ AccountDetail(
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
 			<div class="mb-6">
-				<a href="../accounts" class="text-sm text-cyan hover:underline">
+				<a href="/accounts" class="text-sm text-cyan hover:underline">
 					← Back to Accounts
 				</a>
 			</div>
@@ -82,7 +82,7 @@ templ AccountDetail(
 					@card.Content() {
 						<!-- Entity Type Filter -->
 						<div class="mb-4"
-							hx-get={ "accounts/" + account.ID + "/audit-logs/table" }
+							hx-get={ "/accounts/" + account.ID + "/audit-logs/table" }
 							hx-trigger="change from:[name='entity_types'] delay:300ms"
 							hx-target={ "#audit-logs-table-" + account.ID }
 							hx-swap="outerHTML"
@@ -141,7 +141,7 @@ templ AccountDetail(
 						</div>
 						<!-- Date Range Filters -->
 						<div class="flex gap-4 mb-4"
-							hx-get={ "accounts/" + account.ID + "/audit-logs/table" }
+							hx-get={ "/accounts/" + account.ID + "/audit-logs/table" }
 							hx-trigger="change from:[name='start_date'], change from:[name='end_date'] delay:300ms"
 							hx-target={ "#audit-logs-table-" + account.ID }
 							hx-swap="outerHTML"
@@ -214,7 +214,7 @@ templ AccountDetail(
 											</div>
 										</div>
 										<div class="flex flex-col items-end gap-1">
-											<a href={ templ.URL("../orgs/" + app.OrgID) } class="text-cyan hover:underline text-sm">
+											<a href={ templ.URL("/orgs/" + app.OrgID) } class="text-cyan hover:underline text-sm">
 												{ app.Org.Name }
 											</a>
 											<div class="text-xs text-muted-foreground">
@@ -248,7 +248,7 @@ templ AccountDetail(
 								for _, org := range account.Orgs {
 									<div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
 										<div class="flex flex-col gap-1">
-											<a href={ templ.URL("../orgs/" + org.ID) } class="text-cyan hover:underline font-medium">
+											<a href={ templ.URL("/orgs/" + org.ID) } class="text-cyan hover:underline font-medium">
 												{ org.Name }
 											</a>
 											<div class="flex items-center gap-2">

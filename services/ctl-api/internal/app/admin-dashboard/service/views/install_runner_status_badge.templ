@@ -23,7 +23,7 @@ func runnerStatusToVariant(runnerStatus app.RunnerStatus) status.Variant {
 
 templ InstallRunnerStatusBadge(install *app.Install) {
 	<div
-		hx-get={ "installs/" + install.ID + "/status/runner" }
+		hx-get={ "/installs/" + install.ID + "/status/runner" }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
 	>
