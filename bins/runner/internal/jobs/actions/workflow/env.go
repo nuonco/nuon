@@ -4,11 +4,6 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
-	"github.com/pkg/errors"
-
-	"github.com/nuonco/nuon/pkg/aws/credentials"
-	"github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/kube/config"
 )
 
 const (
@@ -24,26 +19,26 @@ func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkfl
 		rootEnvVar:    h.state.workspace.Root(),
 	}
 
-	if h.state.plan.ClusterInfo != nil {
-		path := h.state.workspace.AbsPath(config.DefaultKubeConfigFilename)
-		if err := config.WriteConfig(ctx, h.state.plan.ClusterInfo, path); err != nil {
-			return nil, errors.Wrap(err, "unable to write kube config")
-		}
+	//if h.state.plan.ClusterInfo != nil {
+		//path := h.state.workspace.AbsPath(config.DefaultKubeConfigFilename)
+		//if err := config.WriteConfig(ctx, h.state.plan.ClusterInfo, path); err != nil {
+			//return nil, errors.Wrap(err, "unable to write kube config")
+		//}
 
-		env[config.DefaultKubeConfigEnvVar] = path
-		env[hasKubeConfigEnvVar] = "true"
-	} else {
-		env[hasKubeConfigEnvVar] = "false"
-	}
+		//env[config.DefaultKubeConfigEnvVar] = path
+		//env[hasKubeConfigEnvVar] = "true"
+	//} else {
+		//env[hasKubeConfigEnvVar] = "false"
+	//}
 
-	if h.state.plan.AWSAuth != nil {
-		awsEnv, err := credentials.FetchEnv(ctx, h.state.plan.AWSAuth)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get AWS credentials")
-		}
+	//if h.state.plan.AWSAuth != nil {
+		//awsEnv, err := credentials.FetchEnv(ctx, h.state.plan.AWSAuth)
+		//if err != nil {
+			//return nil, errors.Wrap(err, "unable to get AWS credentials")
+		//}
 
-		env = generics.MergeMap(env, awsEnv)
-	}
+		//env = generics.MergeMap(env, awsEnv)
+	//}
 
 	return env, nil
 }
