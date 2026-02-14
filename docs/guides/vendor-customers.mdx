@@ -6,7 +6,7 @@ icon: "book"
 
 Bring Your Own Cloud (BYOC) — or allowing vendors to install and manage their software in their customers’ cloud accounts — introduces scrutiny and questions from those customers. This is reasonable and to be expected since BYOC is a newer software deployment paradigm and allowing an external party to do anything in a customer cloud should be managed carefully.
 
-### Secrets and Sensitive Salues
+### Secrets and Sensitive Values
 
 In Nuon, secrets and sensitive values are entered by the customer, not the vendor, when they deploy the AWS CloudFormation stack.  They are then stored in AWS Secrets Manager and are retrieved programmatically by the Nuon runner in the customer cloud account to insert into components as the vendor’s software is provisioned or updated.
 
@@ -27,6 +27,15 @@ If vendors implement the customer dashboard, audit logs can be exposed to the cu
 Inputs are a Nuon concept where dynamic values specific to an install are entered and then referenced into the install provision workflow. With Nuon, inputs can be configured to be vendor-entered, or customer-entered. Vendor inputs may be the Kubernetes and vendor app release versions or the compute node size. Customer inputs could be an AI or vendor license key.
 
 Customers enter inputs in the customer dashboard and and can be updated over time. Vendors conversely enter their inputs either in the vendor dashboard or with the Nuon CLI.
+
+### Customer Cloud Permissions
+
+When customers deploy the vendor's application through Nuon, they run a CloudFormation stack in your own AWS account that creates the IAM roles and policies defining what Nuon's runner can do. The runner is a lightweight agent deployed entirely within their cloud account that connects outbound-only to Nuon's control plane—no VPN tunnels, no cross-account access, and no inbound connections required.
+
+The vendor's app config defines three scoped IAM roles with different permission levels: provision (for initial setup), deprovision (for removal, automatically disabled after use), and maintenance (for ongoing updates and monitoring). Customers control these permissions directly through the CloudFormation stack and can toggle them on or off at any time.
+
+For emergency access, break-glass permissions work the same way. Customers grant or revoke elevated access by updating parameters in their CloudFormation stack, giving them complete control over when emergency permissions are enabled. All runner actions are logged for complete audit visibility. This architecture ensures the vendor's software can be deployed and managed in the customers' environment without ever exposing their cloud credentials to external parties.
+
 
 ### Nuon Deployment Options
 
