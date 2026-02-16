@@ -63,7 +63,7 @@ type InstallActionWorkflowRunStep struct {
 	InstallActionWorkflowRunID string                   `json:"install_action_workflow_run_id,omitzero" temporaljson:"install_action_workflow_run_id,omitzero,omitempty"`
 	InstallActionWorkflowRun   InstallActionWorkflowRun `json:"-" temporaljson:"install_action_workflow_run,omitzero,omitempty"`
 
-	StepID generics.NullString      `json:"step_id,omitzero" temporaljson:"step_id,omitzero,omitempty"`
+	StepID generics.NullString      `json:"step_id,omitzero" swaggertype:"string" temporaljson:"step_id,omitzero,omitempty"`
 	Step   ActionWorkflowStepConfig `json:"-" temporaljson:"step,omitzero,omitempty"`
 
 	AdHocConfig *AdHocStepConfig `json:"adhoc_config,omitzero" gorm:"type:jsonb" temporaljson:"adhoc_config,omitzero,omitempty"`
