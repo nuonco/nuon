@@ -35,8 +35,6 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.New("component id is not set on the install workflow for a manual deploy")
 	}
 
-	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
-
 	steps := make([]*app.WorkflowStep, 0)
 	sg.nextGroup() // await runner health
 	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
@@ -64,7 +62,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: generics.FromPtrStr(componentID),
-				Role:        role,
+				Role:        flw.Role,
 			},
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
@@ -76,7 +74,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			Type: signals.OperationExecuteTeardownComponentApplyPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: generics.FromPtrStr(componentID),
-				Role:        role,
+				Role:        flw.Role,
 			},
 		}, flw.PlanOnly)
 		if err != nil {

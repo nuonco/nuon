@@ -47,13 +47,12 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeReprovisionSandbox,
-		map[string]string{
-			"role": req.Role,
-		},
+		map[string]string{},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)

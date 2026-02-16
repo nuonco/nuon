@@ -75,7 +75,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		installID,
 		app.WorkflowTypeManualDeploy,
 		map[string]string{
@@ -84,6 +84,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 		},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -159,7 +160,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		installID,
 		app.WorkflowTypeManualDeploy,
 		map[string]string{
@@ -168,6 +169,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 		},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)

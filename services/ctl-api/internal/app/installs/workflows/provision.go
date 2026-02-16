@@ -14,9 +14,6 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
 
-	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
-
 	sg := newStepGroup()
 
 	sg.nextGroup() // generate install state
@@ -80,7 +77,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 	step, err = sg.installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionSandboxPlan,
 		SandboxSubSignal: signals.SandboxSubSignal{
-			Role: role,
+			Role: flw.Role,
 		},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
@@ -93,7 +90,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 		step, err = sg.installSignalStep(ctx, installID, "provision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationProvisionSandboxApplyPlan,
 			SandboxSubSignal: signals.SandboxSubSignal{
-				Role: role,
+				Role: flw.Role,
 			},
 		}, flw.PlanOnly)
 		if err != nil {

@@ -83,7 +83,6 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	prependRunEnvVars := PrependRunEnvPrefix(req.RunEnvVars)
 
 	workflowMetadata := make(map[string]string)
-	workflowMetadata["role"] = req.Role
 	workflowMetadata["install_action_workflow_id"] = installActionWorkflow.ID
 	workflowMetadata["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
 
@@ -103,6 +102,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		installActionWorkflow.InstallID,
 		app.WorkflowTypeActionWorkflowRun,
 		workflowMetadata,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -132,7 +132,7 @@ func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 	return result
 }
 
-func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string) (*app.Workflow, error) {
+func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string, role string) (*app.Workflow, error) {
 	installWorkflow := app.Workflow{
 		Type:              workflowType,
 		OwnerID:           installID,
@@ -140,6 +140,7 @@ func (s *service) CreateWorkflow(ctx context.Context, installID string, workflow
 		Metadata:          generics.ToHstore(metadata),
 		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
+		Role:              role,
 	}
 
 	res := s.db.WithContext(ctx).Create(&installWorkflow)
