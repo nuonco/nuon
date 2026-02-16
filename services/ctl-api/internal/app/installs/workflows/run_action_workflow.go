@@ -67,9 +67,6 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, err
 	}
 
-	// Extract role from workflow metadata if present
-	role := generics.FromPtrStr(flw.Metadata[app.WorkflowMetadataKeyRole])
-
 	prefix := "RUNENV_"
 	runEnvVars := map[string]string{}
 
@@ -83,7 +80,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
 	sg.nextGroup()
-	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, role, sg)
+	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, flw.Role, sg)
 	if err != nil {
 		return nil, err
 	}

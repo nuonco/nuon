@@ -9,11 +9,47 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-func (s *Helpers) CreateWorkflow(ctx context.Context,
+func (s *Helpers) CreateWorkflowWithRole(
+	ctx context.Context,
 	installID string,
 	workflowType app.WorkflowType,
 	metadata map[string]string,
 	planOnly bool,
+	role string,
+) (*app.Workflow, error) {
+	return s.createWorkflow(
+		ctx,
+		installID,
+		workflowType,
+		metadata,
+		planOnly,
+		role,
+	)
+}
+
+func (s *Helpers) CreateWorkflow(
+	ctx context.Context,
+	installID string,
+	workflowType app.WorkflowType,
+	metadata map[string]string,
+	planOnly bool,
+) (*app.Workflow, error) {
+	return s.createWorkflow(
+		ctx,
+		installID,
+		workflowType,
+		metadata,
+		planOnly,
+		"",
+	)
+}
+
+func (s *Helpers) createWorkflow(ctx context.Context,
+	installID string,
+	workflowType app.WorkflowType,
+	metadata map[string]string,
+	planOnly bool,
+	role string,
 ) (*app.Workflow, error) {
 	approvalOption := app.InstallApprovalOptionPrompt
 	installConfig, err := s.GetLatestInstallConfig(ctx, installID)
@@ -36,6 +72,7 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
+		Role:              role,
 	}
 
 	res := s.db.WithContext(ctx).Create(&installWorkflow)
