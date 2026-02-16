@@ -53,6 +53,9 @@ type AppRunnerJob struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// json
+	JSON *AppRunnerJobPlan `json:"json,omitempty"`
+
 	// log stream id
 	LogStreamID string `json:"log_stream_id,omitempty"`
 
@@ -114,6 +117,10 @@ func (m *AppRunnerJob) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateGroup(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateJSON(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -181,6 +188,29 @@ func (m *AppRunnerJob) validateGroup(formats strfmt.Registry) error {
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppRunnerJob) validateJSON(formats strfmt.Registry) error {
+	if swag.IsZero(m.JSON) { // not required
+		return nil
+	}
+
+	if m.JSON != nil {
+		if err := m.JSON.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("json")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("json")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -261,6 +291,10 @@ func (m *AppRunnerJob) ContextValidate(ctx context.Context, formats strfmt.Regis
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateJSON(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOperation(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -325,6 +359,31 @@ func (m *AppRunnerJob) contextValidateGroup(ctx context.Context, formats strfmt.
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppRunnerJob) contextValidateJSON(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.JSON != nil {
+
+		if swag.IsZero(m.JSON) { // not required
+			return nil
+		}
+
+		if err := m.JSON.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("json")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("json")
+			}
+
+			return err
+		}
 	}
 
 	return nil

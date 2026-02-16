@@ -346,6 +346,8 @@ type ClientService interface {
 
 	GetAuthMe(params *GetAuthMeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAuthMeOK, error)
 
+	GetAvailableRoles(params *GetAvailableRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAvailableRolesOK, error)
+
 	GetBuild(params *GetBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBuildOK, error)
 
 	GetCLIConfig(params *GetCLIConfigParams, opts ...ClientOption) (*GetCLIConfigOK, error)
@@ -6703,6 +6705,60 @@ func (a *Client) GetAuthMe(params *GetAuthMeParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAuthMe: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetAvailableRoles gets available i a m roles for a specific operation
+
+	Returns a list of available IAM roles that can be used for a specific operation on an install.
+
+The endpoint filters roles based on the operation type:
+- **provision/reprovision**: Custom roles, break glass roles, provision IAM role
+- **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
+- **deploy**: Custom roles, break glass roles, maintenance IAM role
+- **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+
+Roles are sourced from the install's stack outputs.
+*/
+func (a *Client) GetAvailableRoles(params *GetAvailableRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAvailableRolesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAvailableRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAvailableRoles",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/available-roles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAvailableRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAvailableRolesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAvailableRoles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
