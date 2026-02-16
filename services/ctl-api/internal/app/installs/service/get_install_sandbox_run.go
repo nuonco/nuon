@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetInstallSandboxRunV2
@@ -60,6 +61,11 @@ func (s *service) GetInstallSandboxRun(ctx *gin.Context) {
 }
 
 func (s *service) getInstallSandboxRun(ctx *gin.Context, runID string) (*app.InstallSandboxRun, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	var installSandboxRun app.InstallSandboxRun
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfig").
@@ -72,9 +78,7 @@ func (s *service) getInstallSandboxRun(ctx *gin.Context, runID string) (*app.Ins
 			return db.Order("runner_jobs_view_v2.created_at DESC")
 		}).
 		Preload("LogStream").
-		Where(app.InstallSandboxRun{
-			ID: runID,
-		}).
+		Where("id = ? AND org_id = ?", runID, orgID).
 		First(&installSandboxRun)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install sandbox run: %w", res.Error)
