@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation'
 import React, {
-  useCallback,
   useEffect,
   type ReactElement,
   type ReactNode,
@@ -15,13 +14,13 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import type { TWorkflowStep } from '@/types'
+import { ActionRunStepDetails } from './action-run-details/ActionRunStepDetails'
 import { DeployStepDetails } from './deploy-details/DeployStepDetails'
 import { SandboxRunStepDetails } from './sandbox-run-details/SandboxRunStepDetails'
 import { StackStepDetails } from './stack-details/StackStepDetails'
 import { StepBanner } from './StepBanner'
 import { StepTitle } from './StepTitle'
 import { StepMetadata } from './StepMetadata'
-import { ActionRunStepDetails } from './ActionRunStepDetails'
 import { RunnerStepDetails } from './RunnerStepDetails'
 
 type TPanelSize = IPanel['size']

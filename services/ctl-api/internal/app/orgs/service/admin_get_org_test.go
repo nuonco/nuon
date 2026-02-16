@@ -25,6 +25,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // AdminGetOrgTestService holds all fx-injected dependencies for AdminGetOrg endpoint tests.
@@ -39,6 +40,7 @@ type AdminGetOrgTestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	OrgsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // AdminGetOrgTestSuite is the testify suite for AdminGetOrg endpoint.
@@ -100,16 +102,8 @@ func (s *AdminGetOrgTestSuite) TearDownSuite() {
 }
 
 func (s *AdminGetOrgTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "admin@example.com",
-		Subject:     "admin-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
+	ctx := context.Background()
+	_, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 }
 
 func (s *AdminGetOrgTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {

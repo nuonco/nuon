@@ -37,6 +37,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
 	validatorpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // CtlApiFXOptions returns the common FX options used across all ctl-api integration tests.
@@ -104,6 +105,9 @@ func CtlApiFXOptions() []fx.Option {
 
 		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),
+
+		// Test fixtures
+		fx.Provide(testseed.New),
 
 		// Invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),

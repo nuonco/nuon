@@ -74,6 +74,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		// install actions
 		installActions := installs.Group("/actions")
 		{
+			installActions.POST("/adhoc-run", s.CreateAdHocAction)
 			installActions.GET("", s.GetInstallActions)
 			installActions.GET("/:action_id/recent-runs", s.GetInstallActionRecentRuns)
 			installActions.GET("/latest-runs", s.GetInstallActionsLatestRuns)
