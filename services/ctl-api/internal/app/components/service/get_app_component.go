@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetAppComponent
@@ -41,9 +42,14 @@ func (s *service) GetAppComponent(ctx *gin.Context) {
 }
 
 func (s *service) getAppComponent(ctx context.Context, appID, componentNameOrID string) (*app.Component, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	component := app.Component{}
 	res := s.db.WithContext(ctx).
-		Where("app_id = ?", appID).
+		Where("app_id = ? AND org_id = ?", appID, orgID).
 		Where(
 			s.db.Where("id = ?", componentNameOrID).
 				Or("name = ?", componentNameOrID),
