@@ -11,6 +11,7 @@ export * from './get-install-state'
 export * from './get-install-current-inputs'
 export * from './get-install-readme'
 export * from './get-install-drifted-objects'
+export * from './get-available-roles'
 
 // workflows
 export * from './get-install-workflows'

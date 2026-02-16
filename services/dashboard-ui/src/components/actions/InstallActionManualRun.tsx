@@ -5,6 +5,7 @@ import React, { useRef, useState, type FormEvent } from 'react'
 import { runAction } from '@/actions/installs/run-action'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Expand } from '@/components/common/Expand'
+import { RoleSelector } from '@/components/common/form/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -54,6 +55,7 @@ export const InstallActionManualRunModal = ({
   const envVars = normalizeEnvVars(config?.steps || [])
 
   const [customVars, setCustomVars] = useState<number[]>([])
+  const [selectedRole, setSelectedRole] = useState<string>('')
   const formRef = useRef<HTMLFormElement>(null)
 
   const { data, error, isLoading, execute, headers } = useServerAction({
@@ -141,6 +143,7 @@ export const InstallActionManualRunModal = ({
       body: {
         action_workflow_config_id: actionConfigId,
         ...(vars && Object.keys(vars)?.length > 0 && { run_env_vars: vars }),
+        ...(selectedRole && { role: selectedRole }),
       },
       installId: install?.id,
       orgId: org?.id,
@@ -174,11 +177,16 @@ export const InstallActionManualRunModal = ({
       }}
       {...props}
     >
-      <Text>
-        Are you sure you want to run the action {action?.name}?
-      </Text>
 
       <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <RoleSelector
+          installId={install?.id}
+          operationType="trigger"
+          principalType="action"
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          name="role"
+        />
         <Expand
           id="action-env-vars"
           heading={<Text weight="strong">Edit environment variables</Text>}
@@ -272,6 +280,7 @@ export const InstallActionManualRunModal = ({
             </div>
           </div>
         </Expand>
+
       </form>
     </Modal>
   )

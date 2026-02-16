@@ -9,6 +9,7 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
+import { RoleSelector } from '@/components/common/form/RoleSelector'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -54,6 +55,7 @@ export const TeardownComponentModal = ({
   const { removeModal } = useSurfaces()
 
   const [confirmName, setConfirmName] = useState('')
+  const [selectedRole, setSelectedRole] = useState<string>('')
 
   const {
     data: teardown,
@@ -92,6 +94,7 @@ export const TeardownComponentModal = ({
       body: {
         plan_only: false,
         error_behavior: 'continue',
+        ...(selectedRole && { role: selectedRole }),
       },
       componentId: component.id,
       installId: install.id,
@@ -222,6 +225,15 @@ export const TeardownComponentModal = ({
               <strong>Important:</strong> This action cannot be undone. All infrastructure provisioned by this component will be permanently destroyed.
             </Text>
           </Banner>
+
+          <RoleSelector
+            installId={install?.id}
+            operationType="teardown"
+            principalType="component"
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            name="role"
+          />
         </div>
       </div>
     </Modal>

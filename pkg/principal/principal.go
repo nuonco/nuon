@@ -15,6 +15,12 @@ const (
 	TypeAction    Type = "action"
 )
 
+var ValidTypes = []Type{
+	TypeComponent,
+	TypeSandbox,
+	TypeAction,
+}
+
 type Principal struct {
 	Type Type
 	Name string
