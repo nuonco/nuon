@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 const (
@@ -33,9 +35,14 @@ type RunnerConnectionStatus struct {
 // @Success					200	{object}	RunnerConnectionStatus
 // @Router					/v1/runners/{runner_id}/connected [get]
 func (s *service) GetRunnerConnectStatus(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerID := ctx.Param("runner_id")
 
-	_, err := s.getRunner(ctx, runnerID)
+	_, err = s.getOrgRunner(ctx, runnerID, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return

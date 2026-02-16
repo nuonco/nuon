@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type CancelRunnerJobRequest struct{}
@@ -30,11 +31,23 @@ type CancelRunnerJobRequest struct{}
 // @Success				202	{object}	app.RunnerJob
 // @Router					/v1/runner-jobs/{runner_job_id}/cancel [POST]
 func (s *service) CancelRunnerJob(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerJobID := ctx.Param("runner_job_id")
+
+	// Verify job belongs to org before cancelling
+	_, err = s.getOrgRunnerJob(ctx, runnerJobID, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to cancel runner job: %w", err))
+		return
+	}
 
 	runnerJob, err := s.cancelRunnerJob(ctx, runnerJobID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
+		ctx.Error(fmt.Errorf("unable to cancel runner job: %w", err))
 		return
 	}
 

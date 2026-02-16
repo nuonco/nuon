@@ -40,9 +40,16 @@ const (
 func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	logStreamID := ctx.Param("log_stream_id")
 
-	_, err := s.getLogStream(ctx, logStreamID)
+	// Read logs from chDB
+	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get runner"))
+		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
+		return
+	}
+
+	_, err = s.getOrgLogStream(ctx, logStreamID, orgID)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get log stream"))
 		return
 	}
 
@@ -63,13 +70,6 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 			return
 		}
 		cursor = cursorVal
-	}
-
-	// Read logs from chDB
-	orgID, err := cctx.OrgIDFromContext(ctx)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
-		return
 	}
 
 	logs, headers, readErr := s.getLogStreamLogs(ctx, logStreamID, orgID, cursor, order)

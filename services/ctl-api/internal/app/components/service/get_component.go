@@ -49,8 +49,8 @@ func (s *service) GetComponent(ctx *gin.Context) {
 func (s *service) findComponent(ctx context.Context, orgID, componentID string) (*app.Component, error) {
 	component := app.Component{}
 	res := s.db.WithContext(ctx).
-		Where("id = ?", componentID).
-		Or("name = ? AND org_id = ?", componentID, orgID).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("id = ?", componentID).Or("name = ?", componentID)).
 		Preload("ComponentConfigs").
 		Preload("Dependencies").
 		Preload("App").
@@ -65,6 +65,11 @@ func (s *service) findComponent(ctx context.Context, orgID, componentID string) 
 }
 
 func (s *service) getComponentWithParents(ctx context.Context, cmpID string) (*app.Component, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	parentCmp := app.Component{}
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs").
@@ -72,7 +77,7 @@ func (s *service) getComponentWithParents(ctx context.Context, cmpID string) (*a
 		Preload("App.Org").
 		Preload("App.Org.VCSConnections").
 		Scopes(helpers.PreloadLatestConfig).
-		First(&parentCmp, "id = ?", cmpID)
+		First(&parentCmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}

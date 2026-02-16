@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRunner
@@ -27,9 +28,14 @@ import (
 // @Success				200	{object}	app.Runner
 // @Router					/v1/runners/{runner_id} [get]
 func (s *service) GetRunnerCtlAPI(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerID := ctx.Param("runner_id")
 
-	runner, err := s.getRunnerCtlAPI(ctx, runnerID)
+	runner, err := s.getOrgRunnerCtlAPI(ctx, runnerID, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -45,6 +51,20 @@ func (s *service) getRunnerCtlAPI(ctx context.Context, runnerID string) (*app.Ru
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
 		First(&runner, "id = ?", runnerID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
+	}
+
+	return &runner, nil
+}
+
+func (s *service) getOrgRunnerCtlAPI(ctx context.Context, runnerID string, orgID string) (*app.Runner, error) {
+	runner := app.Runner{}
+	res := s.db.WithContext(ctx).
+		Preload("Org").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Settings").
+		First(&runner, "id = ? AND org_id = ?", runnerID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
 	}
