@@ -36,6 +36,12 @@ func (s *service) UnlockTerraformWorkspace(ctx *gin.Context) {
 		return
 	}
 
+	// Validate workspace belongs to org
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
+		return
+	}
+
 	var lock app.TerraformLock
 	if err := ctx.BindJSON(&lock); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))

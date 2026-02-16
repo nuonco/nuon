@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -42,6 +44,11 @@ func (s *service) GetAppReleases(ctx *gin.Context) {
 }
 
 func (s *service) getAppReleases(ctx *gin.Context, appID string) ([]app.ComponentRelease, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	var releases []app.ComponentRelease
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -49,14 +56,14 @@ func (s *service) getAppReleases(ctx *gin.Context, appID string) ([]app.Componen
 		Joins("JOIN component_builds ON component_builds.id=component_releases.component_build_id").
 		Joins("JOIN component_config_connections ON component_config_connections.id=component_builds.component_config_connection_id").
 		Joins("JOIN components ON components.id=component_config_connections.component_id").
-		Where("components.app_id = ?", appID).
+		Where("components.app_id = ? AND components.org_id = ?", appID, orgID).
 		Order("created_at DESC").
 		Find(&releases)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to load component releases")
 	}
 
-	releases, err := db.HandlePaginatedResponse(ctx, releases)
+	releases, err = db.HandlePaginatedResponse(ctx, releases)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
