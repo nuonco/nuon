@@ -29,6 +29,12 @@ type AppRunnerGroup struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// leader runner
+	LeaderRunner *AppRunner `json:"leader_runner,omitempty"`
+
+	// leader runner id
+	LeaderRunnerID string `json:"leader_runner_id,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
@@ -58,6 +64,10 @@ type AppRunnerGroup struct {
 func (m *AppRunnerGroup) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateLeaderRunner(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validatePlatform(formats); err != nil {
 		res = append(res, err)
 	}
@@ -77,6 +87,29 @@ func (m *AppRunnerGroup) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunnerGroup) validateLeaderRunner(formats strfmt.Registry) error {
+	if swag.IsZero(m.LeaderRunner) { // not required
+		return nil
+	}
+
+	if m.LeaderRunner != nil {
+		if err := m.LeaderRunner.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("leader_runner")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("leader_runner")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -179,6 +212,10 @@ func (m *AppRunnerGroup) validateType(formats strfmt.Registry) error {
 func (m *AppRunnerGroup) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateLeaderRunner(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePlatform(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -198,6 +235,31 @@ func (m *AppRunnerGroup) ContextValidate(ctx context.Context, formats strfmt.Reg
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunnerGroup) contextValidateLeaderRunner(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LeaderRunner != nil {
+
+		if swag.IsZero(m.LeaderRunner) { // not required
+			return nil
+		}
+
+		if err := m.LeaderRunner.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("leader_runner")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("leader_runner")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
