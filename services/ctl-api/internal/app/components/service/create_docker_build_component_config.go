@@ -178,7 +178,7 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		EnvVars:    pgtype.Hstore(req.EnvVars),
 	}
 
-	var operationRoles pgtype.Hstore
+	operationRoles := make(pgtype.Hstore)
 	for operation, role := range req.OperationRoles {
 		operationRoles[string(operation)] = role
 	}

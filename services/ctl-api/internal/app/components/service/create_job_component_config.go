@@ -151,7 +151,7 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 		Args:     req.Args,
 	}
 
-	var operationRoles pgtype.Hstore
+	operationRoles := make(pgtype.Hstore)
 	for operation, role := range req.OperationRoles {
 		operationRoles[string(operation)] = role
 	}
