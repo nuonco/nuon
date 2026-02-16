@@ -31,7 +31,8 @@ const TYPE_OPTIONS: {
 }[] = [
   { value: 'install_deploys', label: 'Deploy', theme: 'info' },
   { value: 'install_sandbox_runs', label: 'Sandbox', theme: 'brand' },
-  { value: 'component_builds', label: 'Build', theme: 'neutral' },
+  // Installs don't have reports where owner_type is 'component_builds', so this filter option is currently hidden.
+  // { value: 'component_builds', label: 'Build', theme: 'neutral' },
 ]
 
 interface IPolicyReportsFilter {
