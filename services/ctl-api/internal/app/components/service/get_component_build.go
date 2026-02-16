@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -82,6 +83,11 @@ func (s *service) GetComponentBuild(ctx *gin.Context) {
 }
 
 func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*app.ComponentBuild, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	var bld app.ComponentBuild
 
 	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
@@ -96,7 +102,7 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 			return db.Scopes(scopes.WithDisableViews)
 		}).
 		Preload("LogStream").
-		First(&bld, "id = ?", bldID)
+		First(&bld, "id = ? AND org_id = ?", bldID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
 	}

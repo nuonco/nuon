@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetAppComponentConfig
@@ -71,6 +72,11 @@ func (s *service) GetComponentConfig(ctx *gin.Context) {
 }
 
 func (s *service) getComponentConfig(ctx *gin.Context, cmpID, cfgID string) (*app.ComponentConfigConnection, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	cfg := app.ComponentConfigConnection{}
 	res := s.db.WithContext(ctx).
 		// preload all terraform configs
@@ -100,7 +106,7 @@ func (s *service) getComponentConfig(ctx *gin.Context, cmpID, cfgID string) (*ap
 
 		// preload all job configs
 		Preload("KubernetesManifestComponentConfig").
-		First(&cfg, "id = ? and component_id = ?", cfgID, cmpID)
+		First(&cfg, "id = ? AND component_id = ? AND org_id = ?", cfgID, cmpID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component config connection: %w", res.Error)
 	}
