@@ -4,6 +4,7 @@ import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { Code } from '@/components/common/Code'
 import { Duration } from '@/components/common/Duration'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
@@ -89,7 +90,7 @@ export const InstallActionRunHeader = ({
       </div>
 
       <Card>
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           <LabeledValue
             label={`Triggered via ${installActionRun?.triggered_by_type}`}
           >
@@ -112,6 +113,22 @@ export const InstallActionRunHeader = ({
 
           <LabeledValue label={`Total duration`}>
             <Duration nanoseconds={installActionRun?.execution_time} />
+          </LabeledValue>
+
+          <LabeledValue label="Execution role">
+            {installActionRun?.runner_job?.json?.composite_plan?.plan_auth
+              ?.aws_auth?.assume_role?.role_arn ? (
+              <Code variant="inline" className="text-xs">
+                {
+                  installActionRun.runner_job.json.composite_plan.plan_auth
+                    .aws_auth.assume_role.role_arn
+                }
+              </Code>
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                —
+              </Text>
+            )}
           </LabeledValue>
         </div>
       </Card>

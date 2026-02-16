@@ -207,7 +207,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		},
 	}
 
-	var operationRoles pgtype.Hstore
+	operationRoles := make(pgtype.Hstore)
 	for operation, role := range req.OperationRoles {
 		operationRoles[string(operation)] = role
 	}

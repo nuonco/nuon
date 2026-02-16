@@ -232,7 +232,7 @@ func (s *service) createKubernetesManifestComponentConfig(
 		}
 	}
 
-	var operationRoles pgtype.Hstore
+	operationRoles := make(pgtype.Hstore)
 	for operation, role := range req.OperationRoles {
 		operationRoles[string(operation)] = role
 	}

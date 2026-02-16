@@ -12,22 +12,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type EntityOperationRoleMap map[app.OperationType]string
-
-func EntityOperationRoleMapFromHstore(hstore map[string]*string) EntityOperationRoleMap {
-	if hstore == nil {
-		return nil
-	}
-
-	result := make(EntityOperationRoleMap, len(hstore))
-	for key, value := range hstore {
-		if value != nil {
-			result[app.OperationType(key)] = *value
-		}
-	}
-	return result
-}
-
 // SelectionContext contains all information needed for role selection
 type SelectionContext struct {
 	// under sandbox mode make sure to choose either provision deprovision or maintenance
@@ -80,25 +64,6 @@ type RoleSelection struct {
 	RoleName string
 	RoleARN  string
 	Source   RoleSelectionSource
-}
-
-// renderRoleName renders a role name template using install state
-func renderRoleName(roleName string, installState *state.State) (string, error) {
-	if installState == nil || roleName == "" {
-		return roleName, nil
-	}
-
-	stateMap, err := installState.AsMap()
-	if err != nil {
-		return roleName, fmt.Errorf("unable to convert install state to map: %w", err)
-	}
-
-	rendered, err := render.RenderV2(roleName, stateMap)
-	if err != nil {
-		return roleName, fmt.Errorf("unable to render role name template %q: %w", roleName, err)
-	}
-
-	return rendered, nil
 }
 
 // SelectRole determines which role to use based on precedence rules
@@ -265,6 +230,25 @@ func findMatrixRole(
 	}
 
 	return "", false
+}
+
+// renderRoleName renders a role name template using install state
+func renderRoleName(roleName string, installState *state.State) (string, error) {
+	if installState == nil || roleName == "" {
+		return roleName, nil
+	}
+
+	stateMap, err := installState.AsMap()
+	if err != nil {
+		return roleName, fmt.Errorf("unable to convert install state to map: %w", err)
+	}
+
+	rendered, err := render.RenderV2(roleName, stateMap)
+	if err != nil {
+		return roleName, fmt.Errorf("unable to render role name template %q: %w", roleName, err)
+	}
+
+	return rendered, nil
 }
 
 // resolveRoleARN resolves role name into its arn from stack output, currently mostly does heavy  lifting for aws since azure is not yet supported

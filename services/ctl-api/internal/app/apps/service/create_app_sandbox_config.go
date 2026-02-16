@@ -161,7 +161,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get public git config: %w", err)
 	}
 
-	var operationRoles pgtype.Hstore
+	operationRoles := make(pgtype.Hstore)
 	for operation, role := range req.OperationRoles {
 		operationRoles[string(operation)] = role
 	}

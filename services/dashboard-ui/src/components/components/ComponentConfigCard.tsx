@@ -6,6 +6,7 @@ import { Cron } from '@/components/common/Cron'
 import { GitRepo } from '@/components/common/GitRepo'
 import { Hash } from '@/components/common/Hash'
 import { LabeledValue } from '@/components/common/LabeledValue'
+import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
@@ -185,6 +186,18 @@ export const ComponentConfigCard = ({
             </LabeledValue>
           ))}
         </div>
+
+        {displayData.operationRoles &&
+          Object.keys(displayData.operationRoles).length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Text variant="body" weight="strong" level={5}>
+                Operation Roles
+              </Text>
+              <OperationRolesList
+                operationRoles={displayData.operationRoles}
+              />
+            </div>
+          )}
 
         {vcsInfo?.vcsConfig && (
           <div className="pt-6 border-t">
