@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -63,6 +64,18 @@ func (s *service) GetRunnerJobs(ctx *gin.Context) {
 }
 
 func (s *service) getRunnerJobs(ctx *gin.Context, runnerID string, status app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
+	var runner app.Runner
+	if res := s.db.WithContext(ctx).Preload("RunnerGroup").First(&runner, "id = ?", runnerID); res.Error != nil {
+		s.l.Warn("failed to load runner for leader check, returning empty jobs",
+			zap.Error(res.Error),
+			zap.String("runner_id", runnerID),
+		)
+		return []*app.RunnerJob{}, nil
+	}
+	if runner.RunnerGroup.LeaderRunnerID != nil && *runner.RunnerGroup.LeaderRunnerID != runnerID {
+		return []*app.RunnerJob{}, nil
+	}
+
 	runnerJobs := []*app.RunnerJob{}
 
 	where := app.RunnerJob{

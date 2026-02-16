@@ -34,6 +34,9 @@ type RunnerGroup struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"index:idx_runner_group_owner;notnull;default null" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"notnull;default null" temporaljson:"owner_type,omitzero,omitempty"`
 
+	LeaderRunnerID *string `json:"leader_runner_id,omitzero" gorm:"default:null" temporaljson:"leader_runner_id,omitzero,omitempty"`
+	LeaderRunner   *Runner `json:"leader_runner,omitzero" gorm:"foreignKey:LeaderRunnerID" temporaljson:"leader_runner,omitzero,omitempty"`
+
 	Runners  []Runner            `json:"runners,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runners,omitzero,omitempty"`
 	Settings RunnerGroupSettings `json:"settings,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"settings,omitzero,omitempty"`
 	Type     RunnerGroupType     `json:"type,omitzero" gorm:"notnull;defaultnull" temporaljson:"type,omitzero,omitempty"`

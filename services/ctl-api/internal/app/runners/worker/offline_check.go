@@ -107,6 +107,18 @@ func (w *Workflows) checkOffline(ctx workflow.Context, runnerID string) error {
 		}); err != nil {
 			return errors.Wrap(err, "unable to update runner status")
 		}
+
+		// If the runner going offline was the group leader, trigger election.
+		if runner.RunnerGroup.LeaderRunnerID != nil && *runner.RunnerGroup.LeaderRunnerID == runner.ID {
+			l.Info("offline leader detected, triggering leader election",
+				zap.String("runner_group_id", runner.RunnerGroupID),
+			)
+			if err := activities.AwaitElectLeader(ctx, activities.ElectLeaderRequest{
+				RunnerGroupID: runner.RunnerGroupID,
+			}); err != nil {
+				l.Error("unable to elect leader", zap.Error(err))
+			}
+		}
 	}
 
 	return nil

@@ -102,6 +102,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
 	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
 
+	// runner group leader
+	api.GET("/v1/runner-groups/:runner_group_id/leader", s.GetRunnerGroupLeader)
+	api.PUT("/v1/runner-groups/:runner_group_id/leader", s.UpdateRunnerGroupLeader)
+
 	return nil
 }
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
@@ -151,6 +155,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	runnerGroups := api.Group("/v1/runner-groups/:runner_group_id")
 	{
 		runnerGroups.GET("", s.AdminGetRunnerGroup)
+		runnerGroups.GET("/leader", s.GetRunnerGroupLeader)
+		runnerGroups.PUT("/leader", s.UpdateRunnerGroupLeader)
 	}
 
 	// runner job management
