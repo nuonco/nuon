@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -76,6 +77,11 @@ func (s *service) GetComponentLatestBuild(ctx *gin.Context) {
 }
 
 func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.ComponentBuild, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	cmp := app.Component{}
 
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
@@ -88,7 +94,7 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 			return db.Order("component_builds.created_at DESC").Limit(1)
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
-		First(&cmp, "id = ?", cmpID)
+		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}

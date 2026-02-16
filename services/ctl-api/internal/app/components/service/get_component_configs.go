@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -77,6 +78,11 @@ func (s *service) GetComponentConfigs(ctx *gin.Context) {
 }
 
 func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.ComponentConfigConnection, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	cmp := app.Component{}
 	res := s.db.WithContext(ctx).
 		// preload configs
@@ -114,7 +120,7 @@ func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.Com
 
 		// preload all kubernetes configs
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
-		First(&cmp, "id = ?", cmpID)
+		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -34,9 +35,14 @@ import (
 // @Success				200	{array}		app.RunnerHealthCheck
 // @Router					/v1/runners/{runner_id}/recent-health-checks [get]
 func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerID := ctx.Param("runner_id")
 
-	_, err := s.getRunner(ctx, runnerID)
+	_, err = s.getOrgRunner(ctx, runnerID, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return

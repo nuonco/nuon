@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRelease
@@ -37,13 +39,18 @@ func (s *service) GetRelease(ctx *gin.Context) {
 }
 
 func (s *service) getRelease(ctx context.Context, releaseID string) (*app.ComponentRelease, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	release := app.ComponentRelease{}
 	res := s.db.WithContext(ctx).
 		Preload("ComponentBuild").
 		Preload("ComponentReleaseSteps").
 		Preload("ComponentReleaseSteps.InstallDeploys").
 		Preload("ComponentReleaseSteps.InstallDeploys.InstallComponent").
-		First(&release, "id = ?", releaseID)
+		First(&release, "id = ? AND org_id = ?", releaseID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get release: %w", res.Error)
 	}

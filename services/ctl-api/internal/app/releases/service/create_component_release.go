@@ -15,6 +15,7 @@ import (
 	componentsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/releases/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -116,6 +117,11 @@ func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponen
 }
 
 func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateComponentReleaseRequest) (*app.ComponentRelease, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	// fetch the component, app, installs and the build
 	cmp := app.Component{}
 	res := s.db.WithContext(ctx).
@@ -124,7 +130,7 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 		Preload("App.Installs.InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
-		First(&cmp, "id = ?", cmpID)
+		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}

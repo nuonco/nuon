@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
-	"gorm.io/gorm"
 )
 
 // @ID						GetReleaseSteps
@@ -42,6 +44,11 @@ func (s *service) GetReleaseSteps(ctx *gin.Context) {
 }
 
 func (s *service) getReleaseSteps(ctx *gin.Context, releaseID string) ([]app.ComponentReleaseStep, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	var release app.ComponentRelease
 	res := s.db.WithContext(ctx).
 		Preload("ComponentReleaseSteps", func(db *gorm.DB) *gorm.DB {
@@ -50,7 +57,7 @@ func (s *service) getReleaseSteps(ctx *gin.Context, releaseID string) ([]app.Com
 				Order("component_release_steps.created_at DESC")
 		}).
 		Preload("ComponentReleaseSteps.InstallDeploys").
-		First(&release, "id = ?", releaseID)
+		First(&release, "id = ? AND org_id = ?", releaseID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get release: %w", res.Error)
 	}

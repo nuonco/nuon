@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetLogStream
@@ -27,9 +28,14 @@ import (
 // @Success				200	{object}	app.LogStream
 // @Router					/v1/log-streams/{log_stream_id} [get]
 func (s *service) GetLogStream(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	logStreamID := ctx.Param("log_stream_id")
 
-	logStream, err := s.getLogStream(ctx, logStreamID)
+	logStream, err := s.getOrgLogStream(ctx, logStreamID, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -42,6 +48,17 @@ func (s *service) getLogStream(ctx context.Context, logStreamID string) (*app.Lo
 	logStream := app.LogStream{}
 	res := s.db.WithContext(ctx).
 		First(&logStream, "id = ?", logStreamID)
+	if res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get log stream")
+	}
+
+	return &logStream, nil
+}
+
+func (s *service) getOrgLogStream(ctx context.Context, logStreamID string, orgID string) (*app.LogStream, error) {
+	logStream := app.LogStream{}
+	res := s.db.WithContext(ctx).
+		First(&logStream, "id = ? AND org_id = ?", logStreamID, orgID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get log stream")
 	}

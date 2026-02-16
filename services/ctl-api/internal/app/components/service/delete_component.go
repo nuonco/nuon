@@ -1,11 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						DeleteAppComponent
@@ -27,9 +29,22 @@ import (
 // @Success				200	{boolean}	true
 // @Router					/v1/apps/{app_id}/components/{component_id} [DELETE]
 func (s *service) DeleteAppComponent(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	componentID := ctx.Param("component_id")
 
-	err := s.appsHelpers.DeleteAppComponent(ctx, componentID)
+	// Validate component belongs to org before deleting
+	_, err = s.findComponent(ctx, org.ID, componentID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))
+		return
+	}
+
+	err = s.appsHelpers.DeleteAppComponent(ctx, componentID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -59,9 +74,22 @@ func (s *service) DeleteAppComponent(ctx *gin.Context) {
 // @Success				200	{boolean}	true
 // @Router					/v1/components/{component_id} [DELETE]
 func (s *service) DeleteComponent(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	componentID := ctx.Param("component_id")
 
-	err := s.appsHelpers.DeleteAppComponent(ctx, componentID)
+	// Validate component belongs to org before deleting
+	_, err = s.findComponent(ctx, org.ID, componentID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))
+		return
+	}
+
+	err = s.appsHelpers.DeleteAppComponent(ctx, componentID)
 	if err != nil {
 		ctx.Error(err)
 		return
