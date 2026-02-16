@@ -36,6 +36,12 @@ func (s *service) GetTerraformWorkspaceLock(ctx *gin.Context) {
 		return
 	}
 
+	// Validate workspace belongs to org
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
+		return
+	}
+
 	tfl, err := s.getTerraformWorkspaceLock(ctx, workspaceID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to lock workspace: %w", err))

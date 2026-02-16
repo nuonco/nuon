@@ -10,6 +10,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRunnerJobCompositePlan
@@ -29,9 +30,14 @@ import (
 // @Success				200	{object}	plantypes.CompositePlan
 // @Router					/v1/runner-jobs/{runner_job_id}/composite-plan [get]
 func (s *service) GetRunnerJobCompositePlan(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerJobID := ctx.Param("runner_job_id")
 
-	cp, err := s.getRunnerJobCompositePlan(ctx, runnerJobID)
+	cp, err := s.getOrgRunnerJobCompositePlan(ctx, runnerJobID, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
 		return
@@ -65,6 +71,38 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get job: %w", res.Error)
 	}
+
+	return s.deriveCompositePlan(&runnerPlan, &runnerJob)
+}
+
+func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID string, orgID string) (*plantypes.CompositePlan, error) {
+	var runnerPlan app.RunnerJobPlan
+
+	res := s.db.WithContext(ctx).
+		Where("runner_job_id = ? AND org_id = ?", runnerJobID, orgID).
+		First(&runnerPlan)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get job plan: %w", res.Error)
+	}
+
+	if !runnerPlan.CompositePlan.IsEmpty() {
+		return &runnerPlan.CompositePlan, nil
+	}
+
+	// if empty derive from plan json
+
+	var runnerJob app.RunnerJob
+	res = s.db.WithContext(ctx).
+		Where("id = ? AND org_id = ?", runnerJobID, orgID).
+		First(&runnerJob)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get job: %w", res.Error)
+	}
+
+	return s.deriveCompositePlan(&runnerPlan, &runnerJob)
+}
+
+func (s *service) deriveCompositePlan(runnerPlan *app.RunnerJobPlan, runnerJob *app.RunnerJob) (*plantypes.CompositePlan, error) {
 
 	var compositePlan plantypes.CompositePlan
 	switch runnerJob.Group {

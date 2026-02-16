@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -38,7 +39,18 @@ import (
 // @Success				200	{array}		app.RunnerJob
 // @Router					/v1/runners/{runner_id}/jobs [get]
 func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerID := ctx.Param("runner_id")
+
+	_, err = s.getOrgRunner(ctx, runnerID, org.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	groups := []app.RunnerJobGroup{}
 	groupStr := ctx.DefaultQuery("group", "")
