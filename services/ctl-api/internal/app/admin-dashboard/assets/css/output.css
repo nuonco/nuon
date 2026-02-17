@@ -1122,6 +1122,9 @@
   .underline-offset-4 {
     text-underline-offset: 4px;
   }
+  .accent-cyan {
+    accent-color: var(--cyan);
+  }
   .opacity-0 {
     opacity: 0%;
   }
@@ -1285,6 +1288,16 @@
       }
     }
   }
+  .hover\:border-cyan\/30 {
+    &:hover {
+      @media (hover: hover) {
+        border-color: var(--cyan);
+        @supports (color: color-mix(in lab, red, red)) {
+          border-color: color-mix(in oklab, var(--cyan) 30%, transparent);
+        }
+      }
+    }
+  }
   .hover\:bg-accent {
     &:hover {
       @media (hover: hover) {
@@ -1303,6 +1316,16 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-blue-700);
+      }
+    }
+  }
+  .hover\:bg-cyan\/10 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--cyan);
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--cyan) 10%, transparent);
+        }
       }
     }
   }
