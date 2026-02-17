@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
-// UpdateOrgTags handles the form submission from the tags input component
+// UpdateOrgTags handles the form submission from the selectbox component
 func (s *service) UpdateOrgTags(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")
@@ -21,14 +21,14 @@ func (s *service) UpdateOrgTags(c *gin.Context) {
 		return
 	}
 
-	// Parse form data - tagsinput sends multiple values with the same name
+	// Parse form data - checkboxes send multiple values with the same name
 	if err := c.Request.ParseForm(); err != nil {
 		s.l.Error("failed to parse form", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form"})
 		return
 	}
 
-	// Get all tags from the form (tagsinput sends multiple hidden inputs with name="tags")
+	// Get all tags from the form (checkboxes send multiple values with name="tags")
 	newTags := c.Request.Form["tags"]
 	s.l.Info("Parsed form tags", zap.Strings("new_tags", newTags), zap.Any("form", c.Request.Form))
 
