@@ -26,12 +26,11 @@ var ValidOperations = []OperationType{
 	OperationReprovision,
 	OperationDeploy,
 	OperationTeardown,
-	OperationReprovision,
 	OperationTrigger,
 }
 
-// OperationRoleRule represents a single rule mapping principal + operation -> role
-type OperationRoleRule struct {
+// AppOperationRoleRule represents a single rule mapping principal + operation -> role
+type AppOperationRoleRule struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
@@ -42,8 +41,8 @@ type OperationRoleRule struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"org" gorm:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppOperationRoleConfigID string                 `json:"app_operation_role_config" gorm:"app_operation_role_config"`
-	AppOperationRoleConfig   AppOperationRoleConfig `json:"app_operation" gorm:"-"`
+	AppOperationRoleConfigID string                 `json:"app_operation_role_config_id" gorm:"app_operation_role_config_id"`
+	AppOperationRoleConfig   AppOperationRoleConfig `json:"app_operation_role_config" gorm:"-"`
 
 	PrincipalType principal.Type `json:"principal_type" gorm:"column:principal_type;not null;index" swaggertype:"string"`
 	PrincipalName string         `json:"principal_name" gorm:"column:principal_name;index"`
@@ -51,7 +50,7 @@ type OperationRoleRule struct {
 	Role          string         `json:"role" gorm:"column:role;not null"`
 }
 
-func (o *OperationRoleRule) BeforeCreate(tx *gorm.DB) error {
+func (o *AppOperationRoleRule) BeforeCreate(tx *gorm.DB) error {
 	if o.ID == "" {
 		o.ID = domains.NewAppID()
 	}

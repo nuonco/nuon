@@ -56,9 +56,7 @@ func (s *service) getAppOperationRoleConfig(ctx *gin.Context, appID string, oper
 			ID:    operationRoleConfigID,
 		}).
 		Preload("Rules").
-		Order("created_at desc").
-		Limit(1).
-		Find(&appOperationRoleConfig)
+		First(&appOperationRoleConfig)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find operation role configs: %w", res.Error)
 	}
