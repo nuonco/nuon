@@ -88,7 +88,7 @@ export const InstallActionRunOutputs = () => {
                     </Text>
                   </Text>
                   <JSONViewer
-                    className="border-none !rounded-t-none"
+                    className="border-none !rounded-t-none max-h-[600px] overflow-auto"
                     data={outputs}
                     expanded={3}
                   />
