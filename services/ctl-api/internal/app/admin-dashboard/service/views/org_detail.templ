@@ -11,7 +11,7 @@ import (
 )
 
 templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, currentPage, totalPages int) {
-	@Layout("Organization: " + org.Name) {
+	@Layout("Organization: " + org.Name, ActivePageOrgs) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
 			<div class="mb-6">

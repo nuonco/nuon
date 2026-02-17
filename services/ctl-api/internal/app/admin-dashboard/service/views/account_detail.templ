@@ -19,7 +19,7 @@ templ AccountDetail(
 	startDate, endDate time.Time,
 	currentPage, installsTotalPages, auditLogsTotalPages int,
 ) {
-	@Layout("Account: " + account.Email) {
+	@Layout("Account: " + account.Email, ActivePageAccounts) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
 			<div class="mb-6">
