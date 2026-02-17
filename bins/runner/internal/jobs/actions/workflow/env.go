@@ -3,12 +3,12 @@ package workflow
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/kube/config"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 const (

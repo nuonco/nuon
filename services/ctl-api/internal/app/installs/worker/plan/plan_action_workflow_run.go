@@ -10,6 +10,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -72,31 +73,29 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get override env vars")
 	}
 
+	var attrs map[string]string = make(map[string]string, 0)
+	if !run.ActionWorkflowConfigID.Empty() {
+		attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
+		attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
+	} else {
+		name := generics.FirstNonEmptyString(run.Steps[0].AdHocConfig.Name, "Adhoc Action")
+		attrs["action.name"] = name
+		attrs["action.id"] = run.ID
+	}
+
 	plan := &plantypes.ActionWorkflowRunPlan{
 		InstallID:       run.InstallID,
 		ID:              runID,
-		Attrs:           make(map[string]string),
 		Steps:           make([]*plantypes.ActionWorkflowRunStepPlan, 0),
 		BuiltinEnvVars:  builtInEnvVars,
 		OverrideEnvVars: overrideEnvVars,
-	}
-
-	if run.ActionWorkflowConfigID.Valid {
-		plan.Attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
-		plan.Attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
-	} else {
-		actionName := "Adhoc action"
-		if len(run.Steps) > 0 && run.Steps[0].AdHocConfig != nil && run.Steps[0].AdHocConfig.Name != "" {
-			actionName = run.Steps[0].AdHocConfig.Name
-		}
-		plan.Attrs["action.name"] = actionName
-		plan.Attrs["action.id"] = run.ID
+		Attrs:           attrs,
 	}
 
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
 		role := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
 
-		if run.ActionWorkflowConfigID.Valid && !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
+		if !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
 			if run.TriggerType != app.ActionWorkflowTriggerTypeManual {
 				return nil, fmt.Errorf("break glass role can only be used for manual action triggers")
 			}
@@ -125,28 +124,30 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		plan.ClusterInfo = clusterInfo
 	}
 
-	for idx, stepCfg := range run.Steps {
-		l.Debug(fmt.Sprintf("creating plan for step %d", idx))
-		stepPlan, err := p.createStepPlan(ctx, &stepCfg, stateMap, run.InstallID, run.TriggerType == app.ActionWorkflowTriggerTypeAdHoc)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unable to create plan for step %d", idx))
-		}
+	if !run.ActionWorkflowConfigID.Empty() {
+		for idx, stepCfg := range run.Steps {
+			l.Debug(fmt.Sprintf("creating plan for step %d", idx))
+			stepPlan, err := p.createStepPlan(ctx, &stepCfg, stateMap, run.InstallID)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to create plan for step %d", idx))
+			}
 
+			plan.Steps = append(plan.Steps, stepPlan)
+		}
+	} else {
+		stepPlan, err := p.createAdhocStepPlan(ctx, &run.Steps[0], stateMap, run.InstallID)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to create adhoc step plan"))
+		}
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 
 	if org.SandboxMode {
-		if run.ActionWorkflowConfigID.Valid {
-			targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
-			plan.SandboxMode = &plantypes.SandboxMode{
-				Enabled: true,
-				Outputs: refs.GetFakeRefs(targetRefs),
-			}
-		} else {
-			plan.SandboxMode = &plantypes.SandboxMode{
-				Enabled: true,
-				Outputs: map[string]any{},
-			}
+		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
+
+		plan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+			Outputs: refs.GetFakeRefs(targetRefs),
 		}
 	}
 
