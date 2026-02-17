@@ -40,7 +40,8 @@ export const StatusBadge: FC<IStatusBadge> = ({
     status === 'ok' ||
     status === 'finished' ||
     status === 'healthy' ||
-    status === 'connected'
+    status === 'connected' ||
+    status === 'provisioned'
   const isError =
     status === 'failed' ||
     status === 'error' ||
