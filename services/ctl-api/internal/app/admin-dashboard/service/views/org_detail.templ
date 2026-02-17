@@ -8,11 +8,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/graphviewer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/tagsinput"
 )
 
 templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, currentPage, totalPages int) {
-	@Layout("Organization: " + org.Name) {
+	@Layout("Organization: " + org.Name, ActivePageOrgs) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
 			<div class="mb-6">
@@ -46,21 +45,30 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 				}
 			}
 		</div>
-		// Include the copybutton, popover, graphviewer, and tagsinput JavaScript
+		// Include the copybutton, popover, and graphviewer JavaScript
 		@copybutton.Script()
 		@popover.Script()
 		@graphviewer.Script()
-		@tagsinput.Script()
 
 		// Handle popover cleanup
 		<script nonce={ templ.GetNonce(ctx) }>
 			// Close popover before swap
 			document.body.addEventListener('htmx:beforeSwap', function(event) {
 				if (event.detail.target.id === 'org-header-with-popover') {
+					// Force close using the global closePopover function if available
+					if (window.closePopover) {
+						window.closePopover('tags-popover');
+					}
+
+					// Also manually clean up
 					const popover = document.querySelector('[data-tui-popover-id="tags-popover"]');
 					if (popover) {
 						popover.setAttribute('data-tui-popover-open', 'false');
 						popover.style.display = 'none';
+						// Remove positioning styles that might cause issues
+						popover.style.top = '';
+						popover.style.left = '';
+						popover.style.transform = '';
 					}
 					const trigger = document.querySelector('[data-tui-popover-trigger="tags-popover"]');
 					if (trigger) {
@@ -72,13 +80,15 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 			// Ensure popover is hidden after swap
 			document.body.addEventListener('htmx:afterSwap', function(event) {
 				if (event.detail.target.id === 'org-header-with-popover') {
-					setTimeout(function() {
-						const popover = document.querySelector('[data-tui-popover-id="tags-popover"]');
-						if (popover) {
-							popover.setAttribute('data-tui-popover-open', 'false');
-							popover.style.display = 'none';
-						}
-					}, 10);
+					// Clean up any orphaned popovers
+					const allPopovers = document.querySelectorAll('[data-tui-popover-id="tags-popover"]');
+					allPopovers.forEach(function(popover) {
+						popover.setAttribute('data-tui-popover-open', 'false');
+						popover.style.display = 'none';
+						popover.style.top = '';
+						popover.style.left = '';
+						popover.style.transform = '';
+					});
 				}
 			});
 		</script>
@@ -111,13 +121,40 @@ templ OrgHeaderWithPopover(org *app.Org) {
 					"
 					class="space-y-3"
 				>
-					@tagsinput.TagsInput(tagsinput.Props{
-						ID:          "tags-input",
-						Name:        "tags",
-						Value:       org.Tags,
-						Placeholder: "Type and press Enter...",
-						Suggestions: []string{"Trial", "Inactive", "Priority", "Demo"},
-					})
+					<div class="space-y-2">
+						<label class="flex items-center gap-2 cursor-pointer hover:bg-cyan/10 hover:border-cyan/30 border border-transparent rounded px-2 py-1.5 transition-all">
+							<input type="checkbox" name="tags" value="Trial" class="rounded border-input accent-cyan"
+								if contains(org.Tags, "Trial") {
+									checked
+								}
+							/>
+							<span class="text-sm">Trial</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer hover:bg-cyan/10 hover:border-cyan/30 border border-transparent rounded px-2 py-1.5 transition-all">
+							<input type="checkbox" name="tags" value="Inactive" class="rounded border-input accent-cyan"
+								if contains(org.Tags, "Inactive") {
+									checked
+								}
+							/>
+							<span class="text-sm">Inactive</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer hover:bg-cyan/10 hover:border-cyan/30 border border-transparent rounded px-2 py-1.5 transition-all">
+							<input type="checkbox" name="tags" value="Priority" class="rounded border-input accent-cyan"
+								if contains(org.Tags, "Priority") {
+									checked
+								}
+							/>
+							<span class="text-sm">Priority</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer hover:bg-cyan/10 hover:border-cyan/30 border border-transparent rounded px-2 py-1.5 transition-all">
+							<input type="checkbox" name="tags" value="Demo" class="rounded border-input accent-cyan"
+								if contains(org.Tags, "Demo") {
+									checked
+								}
+							/>
+							<span class="text-sm">Demo</span>
+						</label>
+					</div>
 					<button
 						type="submit"
 						class="w-full px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
@@ -211,6 +248,16 @@ templ OrgHeader(org *app.Org) {
 }
 
 // Note: orgStatusClass helper function is shared from orgs.templ
+
+// Helper function to check if a tag is in the list
+func contains(tags []string, tag string) bool {
+	for _, t := range tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
+}
 
 templ MostRecentAppCard(app *app.App, graphDot string) {
 	@card.Card() {

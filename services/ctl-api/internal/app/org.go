@@ -111,6 +111,10 @@ type Org struct {
 	// after query
 
 	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
+
+	// Transient fields for counts (not persisted to database)
+	AppCount     int `json:"app_count,omitempty" gorm:"-"`
+	InstallCount int `json:"install_count,omitempty" gorm:"-"`
 }
 
 func (o *Org) AfterQuery(tx *gorm.DB) error {

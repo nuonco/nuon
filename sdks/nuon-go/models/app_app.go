@@ -26,6 +26,9 @@ type AppApp struct {
 	// cloud platform
 	CloudPlatform string `json:"cloud_platform,omitempty"`
 
+	// Transient field for config count (not persisted to database)
+	ConfigCount int64 `json:"config_count,omitempty"`
+
 	// config directory
 	ConfigDirectory string `json:"config_directory,omitempty"`
 
