@@ -204,9 +204,11 @@ Policies are part of your app configuration. To create or update policies, sync 
 nuon apps sync
 ```
 
+![Policies list](../images/concepts/policies/policies-list.png)
+
 Policies are synced along with components, actions, and app metadata. If you change or add policies, run `nuon apps sync` again to upload the changes.
 
-Unlike components, policies do not need to be built—they are evaluated directly during build and deploy workflows.
+Note that unlike components, policies do not need to be built, they are evaluated directly during build and deploy workflows.
 
 ## Policy Evaluation
 
@@ -250,6 +252,13 @@ Policy violations are displayed in the workflow step details. The Policy Evaluat
 - **Warnings**: Policy warnings that were logged but didn't block (orange)
 
 Each violation includes the policy name and the specific message from your `deny` or `warn` rule.
+
+![Workflow policy violations](../images/concepts/policies/workflow-policy-violations.png)
+
+You can also view a list of all policy evaluations for an install, or filter by their status, type etc.
+
+![Policy evaluations list](../images/concepts/policies/policy-evaluations-list.png)
+
 
 ### CLI
 
