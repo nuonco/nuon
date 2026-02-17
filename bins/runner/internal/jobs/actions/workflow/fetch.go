@@ -44,9 +44,9 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state.run = run
 
 	// fetch the workflow config (skip for adhoc runs)
-	if run.ActionWorkflowConfigID != nil && run.ActionWorkflowConfigID.Valid && run.ActionWorkflowConfigID.String != "" {
+	if run.ActionWorkflowConfigID != "" {
 		l.Info("fetching actions workflow config")
-		cfg, err := h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID.String)
+		cfg, err := h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get action workflow config")
 		}
