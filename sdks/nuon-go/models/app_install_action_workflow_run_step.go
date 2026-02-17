@@ -41,7 +41,7 @@ type AppInstallActionWorkflowRunStep struct {
 	Status AppInstallActionWorkflowRunStepStatus `json:"status,omitempty"`
 
 	// step id
-	StepID *GenericsNullString `json:"step_id,omitempty"`
+	StepID string `json:"step_id,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
@@ -56,10 +56,6 @@ func (m *AppInstallActionWorkflowRunStep) Validate(formats strfmt.Registry) erro
 	}
 
 	if err := m.validateStatus(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateStepID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -113,29 +109,6 @@ func (m *AppInstallActionWorkflowRunStep) validateStatus(formats strfmt.Registry
 	return nil
 }
 
-func (m *AppInstallActionWorkflowRunStep) validateStepID(formats strfmt.Registry) error {
-	if swag.IsZero(m.StepID) { // not required
-		return nil
-	}
-
-	if m.StepID != nil {
-		if err := m.StepID.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("step_id")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("step_id")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
 // ContextValidate validate this app install action workflow run step based on the context it is used
 func (m *AppInstallActionWorkflowRunStep) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -145,10 +118,6 @@ func (m *AppInstallActionWorkflowRunStep) ContextValidate(ctx context.Context, f
 	}
 
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateStepID(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -200,31 +169,6 @@ func (m *AppInstallActionWorkflowRunStep) contextValidateStatus(ctx context.Cont
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *AppInstallActionWorkflowRunStep) contextValidateStepID(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.StepID != nil {
-
-		if swag.IsZero(m.StepID) { // not required
-			return nil
-		}
-
-		if err := m.StepID.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("step_id")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("step_id")
-			}
-
-			return err
-		}
 	}
 
 	return nil
