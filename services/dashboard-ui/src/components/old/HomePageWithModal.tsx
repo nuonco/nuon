@@ -6,6 +6,7 @@ import { LogoLight } from '@/components/common/Logo/LogoLight'
 import { LogoDark } from '@/components/common/Logo/LogoDark'
 import { Text } from '@/components/common/Text'
 import { USE_AUTH_SERVICE, AUTH_SERVICE_URL, APP_URL } from '@/configs/auth'
+import { LEDMarquee } from '@/components/old/LEDMarquee'
 import ossHeroImage from '@/assets/oss-hero.png'
 
 interface HomePageWithModalProps {
@@ -76,6 +77,7 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
               Sign in
             </Button>
           )}
+
         </div>
 
         {/* Learn More Link */}
@@ -90,15 +92,115 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
         </Button>
       </div>
 
-      {/* Right Side - Branded Background */}
-      <div className="hidden lg:flex relative flex-1 overflow-hidden">
-        <Image
-          src={ossHeroImage}
-          alt="Nuon branded background"
-          fill
-          className="object-cover"
-          priority
-        />
+      {/* Right Side - Branded Background with Demo Preview */}
+      <div className="hidden lg:flex flex-col flex-1 overflow-hidden">
+        {/* Image - 2/3 of height */}
+        <div className="relative overflow-hidden" style={{ flex: '2 1 0%' }}>
+          <Image
+            src={ossHeroImage}
+            alt="Nuon branded background"
+            fill
+            className="object-cover object-top"
+            priority
+          />
+        </div>
+
+        {/* Demo section - 1/3 of height */}
+        <div className="flex flex-col" style={{ flex: '1 1 0%' }}>
+          {/* LED Marquee Divider */}
+          <LEDMarquee text="See What Your Customers See" />
+
+          {/* Dark Demo CTA */}
+          <div
+            className="demo-section relative flex flex-col items-center justify-center gap-5 px-10 flex-1 overflow-hidden"
+          >
+            <h3 className="demo-heading">
+              Experience the customer installer
+            </h3>
+            <p className="demo-subtext">
+              See a live installation flow powered by Nuon — exactly what your end customers will use.
+            </p>
+            <a
+              href="https://customers.nuon.co/admin/login/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="demo-cta-btn"
+            >
+              Launch Live Demo
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 12L12 4M12 4H5M12 4V11" />
+              </svg>
+            </a>
+          </div>
+          <style>{`
+            .demo-section {
+              background:
+                radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.06) 0%, transparent 70%),
+                #0a0a0a;
+            }
+            .demo-section::before {
+              content: '';
+              position: absolute;
+              inset: 0;
+              background-image:
+                linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+              background-size: 24px 24px;
+              pointer-events: none;
+            }
+            .demo-heading {
+              position: relative;
+              color: #ffffff;
+              font-family: monospace;
+              font-size: 22px;
+              font-weight: 700;
+              text-align: center;
+              letter-spacing: -0.5px;
+              line-height: 1.3;
+            }
+            .demo-subtext {
+              position: relative;
+              color: rgba(34, 211, 238, 0.55);
+              font-family: monospace;
+              font-size: 14px;
+              text-align: center;
+              max-width: 360px;
+              line-height: 1.5;
+            }
+            .demo-cta-btn {
+              position: relative;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              background: rgba(34, 211, 238, 0.15);
+              border: 1px solid rgba(34, 211, 238, 0.5);
+              color: #22d3ee;
+              font-family: monospace;
+              font-size: 15px;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              padding: 0 32px;
+              height: 50px;
+              transition: all 0.2s ease;
+            }
+            .demo-cta-btn:hover {
+              background: rgba(34, 211, 238, 0.25);
+              border-color: rgba(34, 211, 238, 0.8);
+              box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+            }
+          `}</style>
+        </div>
       </div>
     </div>
   )
