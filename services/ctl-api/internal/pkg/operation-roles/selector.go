@@ -30,7 +30,7 @@ type SelectionContext struct {
 	// Component/sandbox/action config
 	EntityRoles EntityOperationRoleMap
 	// App-level rules from DB
-	MatrixRules []*app.OperationRoleRule
+	MatrixRules []*app.AppOperationRoleRule
 	// DefaultRole is the role selected if none of the rules assiciate with the pricipal and operation
 	DefaultRole string
 	// Break Glass role
@@ -202,7 +202,7 @@ func findEntityRole(roles EntityOperationRoleMap, operation app.OperationType) s
 }
 
 func findMatrixRole(
-	rules []*app.OperationRoleRule,
+	rules []*app.AppOperationRoleRule,
 	principalType principal.Type,
 	principalName string,
 	operation app.OperationType,
