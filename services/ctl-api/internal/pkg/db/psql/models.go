@@ -56,7 +56,7 @@ func AllModels() []any {
 		&app.AppBreakGlassConfig{},
 		&app.AppStackConfig{},
 		&app.AppOperationRoleConfig{},
-		&app.OperationRoleRule{},
+		&app.AppOperationRoleRule{},
 
 		// installs
 		&app.AWSAccount{},
