@@ -84,7 +84,7 @@ export function TableBase<TData extends object>({
       <div className="flex flex-row flex-wrap items-center justify-between">
         {enableSearch ? <DebouncedSearchInput placeholder={searchPlaceholder} /> : null}
         {filterActions ? (
-          <div className="flex gap-4 md:gap-6">{filterActions}</div>
+          <div className={`flex gap-4 md:gap-6 ${!enableSearch ? 'w-full justify-end' : ''}`}>{filterActions}</div>
         ) : null}
       </div>
       <div className={`rounded-lg border ${className}`}>
