@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -50,7 +52,7 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 	}
 
 	var req DeprovisionInstallSandboxRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

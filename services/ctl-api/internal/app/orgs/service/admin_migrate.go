@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -44,7 +45,7 @@ func (s *service) AdminMigrateOrg(ctx *gin.Context) {
 	cctx.SetAccountGinContext(ctx, &org.CreatedBy)
 
 	var req AdminMigrateOrg
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +29,7 @@ type ProvisionCanaryRequest struct {
 // @Router					/v1/general/provision-canary [post]
 func (c *service) ProvisionCanary(ctx *gin.Context) {
 	var req ProvisionCanaryRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

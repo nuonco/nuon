@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +35,7 @@ type AdminRestartRunnersResponse struct {
 // @Router					/v1/runners/restart [POST]
 func (s *service) AdminRestartRunners(ctx *gin.Context) {
 	var req AdminRestartRunnersRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

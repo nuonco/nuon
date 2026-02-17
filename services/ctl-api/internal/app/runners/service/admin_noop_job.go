@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -32,7 +33,7 @@ func (s *service) AdminCreateNoopJob(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	var req AdminCreateNoopJobRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
@@ -64,7 +65,7 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.R
 		OrgID:     runner.OrgID,
 	}
 	if res := s.db.WithContext(ctx).Create(&logStream); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create log stream")
+		return nil, fmt.Errorf("unable to create log stream: %w", res.Error)
 	}
 
 	status := app.RunnerJobStatusQueued

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,7 @@ type AdminCreateServiceAccountRequest struct{}
 // @Router					/v1/orgs/{org_id}/admin-service-account [POST]
 func (s *service) AdminCreateServiceAccount(ctx *gin.Context) {
 	var req AdminCreateServiceAccountRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

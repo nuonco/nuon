@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +32,7 @@ func (s *service) AdminCreateInstallRunnerqShutDownJob(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	var req AdminCreateInstallRunnerShutDownJobRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

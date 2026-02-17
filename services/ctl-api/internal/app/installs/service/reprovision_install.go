@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -41,7 +43,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 	}
 
 	var req ReprovisionInstallRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +25,7 @@ type AdminTerminateEventLoopsRequest struct{}
 // @Router					/v1/general/terminate-event-loops [POST]
 func (s *service) AdminTerminateEventLoops(ctx *gin.Context) {
 	var req AdminTerminateEventLoopsRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

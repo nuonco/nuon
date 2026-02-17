@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +26,7 @@ type StopCanaryCronRequest struct {
 // @Router			/v1/general/stop-canary-cron [post]
 func (c *service) StopCanaryCron(ctx *gin.Context) {
 	var req StopCanaryCronRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

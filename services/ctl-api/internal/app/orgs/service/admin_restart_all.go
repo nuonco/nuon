@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +27,7 @@ type RestartAllOrgRequest struct{}
 // @Router					/v1/orgs/admin-restart-all [POST]
 func (s *service) RestartAllOrgs(ctx *gin.Context) {
 	var req RestartAllOrgRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

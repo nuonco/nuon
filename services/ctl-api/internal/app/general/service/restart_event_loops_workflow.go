@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +24,7 @@ type RestartGeneralEventLoopRequest struct{}
 // @Router					/v1/general/restart-event-loop [post]
 func (s *service) RestartGeneralEventLoop(ctx *gin.Context) {
 	var req RestartGeneralEventLoopRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}

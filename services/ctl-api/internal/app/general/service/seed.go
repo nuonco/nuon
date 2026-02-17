@@ -1,6 +1,9 @@
 package service
 
 import (
+	"errors"
+	"io"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
@@ -20,7 +23,7 @@ type SeedRequest struct{}
 // @Router					/v1/general/seed [post]
 func (s *service) Seed(ctx *gin.Context) {
 	var req RestartGeneralEventLoopRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
