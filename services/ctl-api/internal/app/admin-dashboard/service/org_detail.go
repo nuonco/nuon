@@ -123,8 +123,9 @@ func (s *service) getInstallsForOrg(ctx context.Context, orgID string, page int)
 	// Get paginated results
 	res := query.
 		Preload("App").
-		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
+		Preload("AppConfig").
+		Preload("AppRunnerConfig").
 		Order("created_at desc").
 		Limit(orgInstallsPerPage).
 		Offset(offset).

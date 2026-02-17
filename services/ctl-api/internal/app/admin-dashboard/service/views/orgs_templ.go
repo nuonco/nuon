@@ -201,7 +201,7 @@ func Orgs(orgs []*app.Org, currentPage, totalPages int, searchQuery string) temp
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Layout("Organizations").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Layout("Organizations", ActivePageOrgs).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

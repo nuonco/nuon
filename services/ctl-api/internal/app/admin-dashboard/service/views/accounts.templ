@@ -10,7 +10,7 @@ import (
 )
 
 templ Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery string) {
-	@Layout("Accounts") {
+	@Layout("Accounts", ActivePageAccounts) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
 				@card.Header() {

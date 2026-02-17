@@ -69,7 +69,9 @@ func (s *service) getInstalls(ctx context.Context, search string, page int) ([]*
 	res := query.
 		Preload("Org").
 		Preload("App").
-		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
+		Preload("AppConfig").
+		Preload("AppRunnerConfig").
 		Order("created_at desc").
 		Limit(installsPerPage).
 		Offset(offset).
