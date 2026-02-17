@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -58,7 +59,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 	}
 	var req CreateInstallDeployRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 
@@ -141,7 +142,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 
 	var req CreateInstallDeployRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

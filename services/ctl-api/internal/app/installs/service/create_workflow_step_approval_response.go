@@ -63,7 +63,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 
 	var req CreateWorkflowStepApprovalResponseRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

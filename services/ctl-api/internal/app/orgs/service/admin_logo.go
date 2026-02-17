@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type OrgAddLogoRequest struct {
@@ -37,7 +38,7 @@ func (s *service) AdminAddLogo(ctx *gin.Context) {
 
 	var req OrgAddLogoRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

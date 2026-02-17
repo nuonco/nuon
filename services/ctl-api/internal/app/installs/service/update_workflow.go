@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 	"gorm.io/gorm"
 )
@@ -45,7 +46,7 @@ func (s *service) UpdateWorkflow(ctx *gin.Context) {
 
 	var req UpdateWorkflowRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -86,7 +87,7 @@ func (s *service) UpdateInstallWorkflow(ctx *gin.Context) {
 
 	var req UpdateWorkflowRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

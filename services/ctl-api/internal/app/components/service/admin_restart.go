@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type RestartComponentRequest struct{}
@@ -28,7 +29,7 @@ func (s *service) RestartComponent(ctx *gin.Context) {
 
 	var req RestartComponentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 	component, err := s.getComponent(ctx, componentID)

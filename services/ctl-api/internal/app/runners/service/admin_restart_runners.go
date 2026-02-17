@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +34,7 @@ type AdminRestartRunnersResponse struct {
 func (s *service) AdminRestartRunners(ctx *gin.Context) {
 	var req AdminRestartRunnersRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

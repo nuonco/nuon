@@ -1,13 +1,13 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type ReprovisionInstallRequest struct {
@@ -42,7 +42,7 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 
 	var req ReprovisionInstallRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	generalsig "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
 	installsig "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -29,7 +30,7 @@ type AdminPromotionRequest struct {
 func (s *service) AdminPromotion(ctx *gin.Context) {
 	var req AdminPromotionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to promote"))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

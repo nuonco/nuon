@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -32,7 +33,7 @@ func (s *service) AdminAddVCSConnection(ctx *gin.Context) {
 
 	var req AdminAddVCSConnectionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

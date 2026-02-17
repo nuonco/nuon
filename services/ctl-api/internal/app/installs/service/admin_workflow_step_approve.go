@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminWorkflowStepApproveRequest struct {
@@ -63,7 +64,7 @@ func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.Wor
 func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 	var req AdminWorkflowStepApproveRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

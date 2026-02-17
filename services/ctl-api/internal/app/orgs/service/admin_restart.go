@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type RestartOrgRequest struct{}
@@ -28,7 +29,7 @@ func (s *service) RestartOrg(ctx *gin.Context) {
 
 	var req RestartOrgRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 	org, err := s.getOrg(ctx, orgID)

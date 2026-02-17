@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminTerminateEventLoopsRequest struct{}
@@ -24,7 +24,7 @@ type AdminTerminateEventLoopsRequest struct{}
 func (s *service) AdminTerminateEventLoops(ctx *gin.Context) {
 	var req AdminTerminateEventLoopsRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to promote"))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

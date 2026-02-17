@@ -1,10 +1,10 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminForgetOrgRequest struct{}
@@ -25,7 +25,7 @@ func (s *service) AdminForgetOrg(ctx *gin.Context) {
 
 	var req AdminForgetOrgRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

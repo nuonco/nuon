@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type CreateRunnerHeartBeatRequest struct {
@@ -42,7 +43,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 
 	var req CreateRunnerHeartBeatRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

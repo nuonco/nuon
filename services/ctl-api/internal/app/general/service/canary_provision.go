@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/pkg/types/workflows/canary"
 	"github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -27,7 +28,7 @@ type ProvisionCanaryRequest struct {
 func (c *service) ProvisionCanary(ctx *gin.Context) {
 	var req ProvisionCanaryRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

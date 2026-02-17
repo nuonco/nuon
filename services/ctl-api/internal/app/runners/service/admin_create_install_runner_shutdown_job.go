@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminCreateInstallRunnerShutDownJobRequest struct{}
@@ -30,7 +31,7 @@ func (s *service) AdminCreateInstallRunnerqShutDownJob(ctx *gin.Context) {
 
 	var req AdminCreateInstallRunnerShutDownJobRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

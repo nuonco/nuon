@@ -1,11 +1,10 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type SeedRequest struct{}
@@ -22,7 +21,7 @@ type SeedRequest struct{}
 func (s *service) Seed(ctx *gin.Context) {
 	var req RestartGeneralEventLoopRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

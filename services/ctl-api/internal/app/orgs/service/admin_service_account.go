@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
@@ -29,7 +30,7 @@ type AdminCreateServiceAccountRequest struct{}
 func (s *service) AdminCreateServiceAccount(ctx *gin.Context) {
 	var req AdminCreateServiceAccountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 

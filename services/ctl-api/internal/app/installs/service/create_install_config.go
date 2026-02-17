@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -44,7 +45,7 @@ func (s *service) CreateInstallConfig(ctx *gin.Context) {
 
 	var req CreateInstallConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminUpdateSandboxRequest struct{}
@@ -29,7 +30,7 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 
 	var req AdminUpdateSandboxRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		ctx.Error(stderr.ErrInvalidRequest{Err: err})
 		return
 	}
 
