@@ -14,7 +14,13 @@ import (
 )
 
 func (h *handler) updateStepStatus(ctx context.Context, stepID string, startTS time.Time, status models.AppInstallActionWorkflowRunStepStatus) error {
-	_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, h.state.plan.InstallID, h.state.workflowCfg.ActionWorkflowID, stepID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
+	// For adhoc runs, workflowCfg is nil - use run ID as action workflow ID
+	actionWorkflowID := h.state.run.ID
+	if h.state.workflowCfg != nil {
+		actionWorkflowID = h.state.workflowCfg.ActionWorkflowID
+	}
+
+	_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, h.state.plan.InstallID, actionWorkflowID, stepID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
 		Status:            status,
 		ExecutionDuration: time.Since(startTS).Nanoseconds(),
 	})
