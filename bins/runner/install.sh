@@ -11,8 +11,19 @@ set -u
 
 BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner
 NAME=runner
-RUNNER_VERSION="${1:-latest}"
-DIR="${2:-/usr/local/bin}"
+NO_INPUT=false
+
+# Parse flags and positional arguments
+positional=()
+for arg in "$@"; do
+  case "$arg" in
+    --no-input) NO_INPUT=true ;;
+    *) positional+=("$arg") ;;
+  esac
+done
+
+RUNNER_VERSION="${positional[0]:-latest}"
+DIR="${positional[1]:-/usr/local/bin}"
 
 # Function to fetch and install the binary
 fetch_binary() {
@@ -52,11 +63,13 @@ if [ ! -d "$DIR" ]; then
   fi
 fi
 
-read -ep "Installing runner into $DIR, would you like to proceed? " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-    exit 1
+if [ "$NO_INPUT" = false ]; then
+  read -ep "Installing runner into $DIR, would you like to proceed? " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+      exit 1
+  fi
 fi
 
 echo "checking OS and Architecture..."
