@@ -53,14 +53,29 @@ func (s *service) AccountDetail(c *gin.Context) {
 		return
 	}
 
-	// Get apps created by this account
-	var apps []*app.App
+	// Get apps created by this account with config count
+	type AppWithConfigCount struct {
+		app.App
+		ConfigCount int `gorm:"column:config_count"`
+	}
+
+	var appsWithCount []AppWithConfigCount
 	appRes := s.db.WithContext(ctx).
+		Model(&app.App{}).
+		Select("apps.*, "+
+			"(SELECT COUNT(*) FROM app_configs WHERE app_configs.app_id = apps.id) as config_count").
 		Preload("Org").
-		Where("created_by_id = ?", accountID).
-		Order("created_at desc").
+		Where("apps.created_by_id = ?", accountID).
+		Order("apps.created_at desc").
 		Limit(100).
-		Find(&apps)
+		Find(&appsWithCount)
+
+	// Convert to []*app.App
+	apps := make([]*app.App, len(appsWithCount))
+	for i := range appsWithCount {
+		appsWithCount[i].App.ConfigCount = appsWithCount[i].ConfigCount
+		apps[i] = &appsWithCount[i].App
+	}
 
 	if appRes.Error != nil {
 		s.l.Error("failed to get apps for account", zap.Error(appRes.Error), zap.String("account_id", accountID))
@@ -132,7 +147,9 @@ func (s *service) getInstallsForAccount(ctx context.Context, accountID string, p
 	res := query.
 		Preload("Org").
 		Preload("App").
-		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
+		Preload("AppConfig").
+		Preload("AppRunnerConfig").
 		Order("created_at desc").
 		Limit(accountInstallsPerPage).
 		Offset(offset).
