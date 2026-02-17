@@ -10,7 +10,7 @@ import (
 )
 
 templ Orgs(orgs []*app.Org, currentPage, totalPages int, searchQuery string) {
-	@Layout("Organizations") {
+	@Layout("Organizations", ActivePageOrgs) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
 				@card.Header() {

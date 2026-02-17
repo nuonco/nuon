@@ -3,7 +3,7 @@ package views
 import "github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
 
 templ Index(title, message string) {
-	@Layout(title) {
+	@Layout(title, ActivePageHome) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<div class="max-w-2xl mx-auto">
 				<div class="bg-card text-card-foreground rounded-lg border border-border p-8">

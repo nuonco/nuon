@@ -66,6 +66,9 @@ type App struct {
 	CloudPlatform CloudPlatform `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
 	RunnerType    AppRunnerType `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
 
+	// Transient field for config count (not persisted to database)
+	ConfigCount int `json:"config_count,omitempty" gorm:"-"`
+
 	ConfigRepo      string `json:"config_repo,omitzero" temporaljson:"config_repo,omitzero,omitempty"`
 	ConfigDirectory string `json:"config_directory,omitzero" temporaljson:"config_directory,omitzero,omitempty"`
 
