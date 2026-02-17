@@ -5,6 +5,10 @@ import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { getInstall, getOrg } from '@/lib'
+import type {
+  TPolicyReportOwnerType,
+  TPolicyReportStatus,
+} from '@/lib/ctl-api/installs/get-install-policy-reports'
 import type { TPageProps } from '@/types'
 import {
   PolicyReportsTable,
@@ -26,8 +30,15 @@ export async function generateMetadata({
 
 export default async function InstallPoliciesPage({
   params,
+  searchParams,
 }: TInstallPoliciesPageProps) {
   const { ['org-id']: orgId, ['install-id']: installId } = await params
+  const resolvedSearchParams = await searchParams
+  const status = resolvedSearchParams?.status as TPolicyReportStatus | undefined
+  const ownerType = resolvedSearchParams?.owner_type as
+    | TPolicyReportOwnerType
+    | undefined
+
   const [{ data: install }, { data: org }] = await Promise.all([
     getInstall({ installId, orgId }),
     getOrg({ orgId }),
@@ -70,7 +81,12 @@ export default async function InstallPoliciesPage({
           }
           loadingFallback={<PolicyReportsTableSkeleton />}
         >
-          <PolicyReportsTable installId={installId} orgId={orgId} />
+          <PolicyReportsTable
+            installId={installId}
+            orgId={orgId}
+            status={status}
+            ownerType={ownerType}
+          />
         </AsyncBoundary>
       </div>
     </PageSection>
