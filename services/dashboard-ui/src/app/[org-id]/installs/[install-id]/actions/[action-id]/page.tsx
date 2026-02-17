@@ -222,23 +222,11 @@ export default async function InstallActionPage({
                 </div>
               }
             >
-              <Text variant="body" weight="strong" level={5}>
-                Access Permissions
-              </Text>
-              <Text>
-                Break Glass Role must be enabled in install stack before running this action.
-                <Code variant="default">
-                  {
-                    installAction?.action_workflow?.configs?.[0]
-                      ?.break_glass_role_arn
-                  }
-                </Code>
-              </Text>
               <br></br>
               {breakGlassRoleArns[installActionBreakGlassRole]!! ? (
                 <div className="flex flex-col gap-2">
                   <Text variant="body" weight="strong">
-                    Role ARN
+                    Role assumed while running this action 
                   </Text>
                   <Code variant='default'>
                     {
@@ -246,7 +234,23 @@ export default async function InstallActionPage({
                     }
                   </Code>
                 </div>
-              ) : null}
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Text variant="body" weight="strong" level={5}>
+                    Access Permissions
+                  </Text>
+                  <Text>
+                    Break Glass Role must be enabled in install stack before running this action.
+                    <Code variant="default">
+                      {
+                        installAction?.action_workflow?.configs?.[0]
+                          ?.break_glass_role_arn
+                      }
+                    </Code>
+                  </Text>
+                </div>
+              )
+            }
             </Section>
           ) : null}
           <Section className="flex-initial" heading="Latest configured steps">
