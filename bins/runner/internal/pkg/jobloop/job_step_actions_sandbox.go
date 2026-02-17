@@ -41,12 +41,12 @@ func (h *jobLoop) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
 
-	isAdhoc := run.ActionWorkflowConfigID == nil || !run.ActionWorkflowConfigID.Valid || run.ActionWorkflowConfigID.String == ""
+	isAdhoc := run.ActionWorkflowConfigID == ""
 
 	var cfg *models.AppActionWorkflowConfig
 	if !isAdhoc {
 		l.Info("fetching actions workflow config")
-		cfg, err = h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID.String)
+		cfg, err = h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get action workflow config")
 		}
