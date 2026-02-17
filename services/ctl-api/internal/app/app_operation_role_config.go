@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -24,7 +25,7 @@ type AppOperationRoleConfig struct {
 	AppID       string `json:"app_id,omitzero" temporaljson:"app_id,omitzero,omitempty"`
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	Rules []*OperationRoleRule `json:"rules,omitempty" gorm:"foreignKey:app_operation_role_config_id"`
+	Rules []*AppOperationRoleRule `json:"rules,omitempty" gorm:"foreignKey:AppOperationRoleConfigID"`
 }
 
 func (a *AppOperationRoleConfig) Indexes(db *gorm.DB) []migrations.Index {
@@ -41,5 +42,16 @@ func (a *AppOperationRoleConfig) BeforeCreate(tx *gorm.DB) error {
 	if a.OrgID == "" {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+
+	if a.AppID != "" && a.OrgID != "" {
+		var count int64
+		if err := tx.Model(&App{}).Where("id = ? AND org_id = ?", a.AppID, a.OrgID).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return fmt.Errorf("app %s does not belong to org %s", a.AppID, a.OrgID)
+		}
+	}
+
 	return nil
 }

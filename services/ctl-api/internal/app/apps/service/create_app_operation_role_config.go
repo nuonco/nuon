@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -60,30 +61,38 @@ func (s *service) CreateAppOperationRoleConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Create rule config
-	cfg, err := s.createAppOperationRoleConfigRecord(ctx, &req)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create operation role config: %w", err))
-		return
-	}
+	var cfg *app.AppOperationRoleConfig
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Create rule config
+		var err error
+		cfg, err = s.createAppOperationRoleConfigRecord(ctx, tx, &req)
+		if err != nil {
+			return fmt.Errorf("unable to create operation role config: %w", err)
+		}
 
-	// Create rules
-	rules, err := s.createOperationRoleRules(ctx, cfg, &req)
+		// Create operation role rules
+		rules, err := s.createOperationRoleRules(ctx, tx, cfg, &req)
+		if err != nil {
+			return fmt.Errorf("unable to create operation role rules: %w", err)
+		}
+		cfg.Rules = rules
+
+		return nil
+	})
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create operation role rules: %w", err))
+		ctx.Error(err)
 		return
 	}
-	cfg.Rules = rules
 
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
-func (s *service) createAppOperationRoleConfigRecord(ctx context.Context, req *CreateAppOperationRoleConfigRequest) (*app.AppOperationRoleConfig, error) {
+func (s *service) createAppOperationRoleConfigRecord(ctx context.Context, tx *gorm.DB, req *CreateAppOperationRoleConfigRequest) (*app.AppOperationRoleConfig, error) {
 	cfg := app.AppOperationRoleConfig{
 		AppConfigID: req.AppConfigID,
 	}
 
-	res := s.db.WithContext(ctx).Create(&cfg)
+	res := tx.Create(&cfg)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create operation role config: %w", res.Error)
 	}
@@ -91,15 +100,14 @@ func (s *service) createAppOperationRoleConfigRecord(ctx context.Context, req *C
 	return &cfg, nil
 }
 
-func (s *service) createOperationRoleRules(ctx context.Context, cfg *app.AppOperationRoleConfig, req *CreateAppOperationRoleConfigRequest) ([]*app.OperationRoleRule, error) {
+func (s *service) createOperationRoleRules(ctx context.Context, tx *gorm.DB, cfg *app.AppOperationRoleConfig, req *CreateAppOperationRoleConfigRequest) ([]*app.AppOperationRoleRule, error) {
 	if len(req.Rules) == 0 {
-		return []*app.OperationRoleRule{}, nil
+		return []*app.AppOperationRoleRule{}, nil
 	}
 
-	rules := make([]*app.OperationRoleRule, 0, len(req.Rules))
+	rules := make([]*app.AppOperationRoleRule, 0, len(req.Rules))
 
 	for _, ruleReq := range req.Rules {
-		// Validate operation type
 		operationType := app.OperationType(ruleReq.Operation)
 
 		if !slices.Contains(app.ValidOperations, operationType) {
@@ -112,7 +120,7 @@ func (s *service) createOperationRoleRules(ctx context.Context, cfg *app.AppOper
 			return nil, fmt.Errorf("invalid principal %q: %w", ruleReq.Principal, err)
 		}
 
-		rules = append(rules, &app.OperationRoleRule{
+		rules = append(rules, &app.AppOperationRoleRule{
 			AppOperationRoleConfigID: cfg.ID,
 			PrincipalType:            p.Type,
 			PrincipalName:            p.Name,
@@ -121,7 +129,7 @@ func (s *service) createOperationRoleRules(ctx context.Context, cfg *app.AppOper
 		})
 	}
 
-	res := s.db.WithContext(ctx).Create(&rules)
+	res := tx.Create(&rules)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create operation role rules: %w", res.Error)
 	}

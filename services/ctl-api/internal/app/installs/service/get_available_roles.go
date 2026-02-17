@@ -50,7 +50,6 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	principalType := ctx.Query("principal_type")
 	operationType := ctx.Query("operation_type")
 
-	// Validate principal_type
 	if err := validatePrincipalType(principalType); err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err:         err,
@@ -59,7 +58,6 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	// Validate operation_type
 	if err := validateOperationType(operationType); err != nil {
 		ctx.Error(stderr.ErrUser{
 			Err:         err,
@@ -68,7 +66,6 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	// Get install stack outputs
 	installStack, err := s.getInstallStack(ctx, installID, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install stack: %w", err))
@@ -80,7 +77,6 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	// Build available roles based on operation type
 	roles := buildAvailableRoles(installStack.InstallStackOutputs.AWSStackOutputs, operationType)
 
 	ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: roles})
@@ -109,7 +105,6 @@ func buildAvailableRoles(aws *app.AWSStackOutputs, operationType string) []Avail
 		})
 	}
 
-	// Operation-specific default roles
 	switch operationType {
 	case "provision", "reprovision":
 		if aws.ProvisionIAMRoleARN != "" {
@@ -136,7 +131,6 @@ func buildAvailableRoles(aws *app.AWSStackOutputs, operationType string) []Avail
 			})
 		}
 	case "trigger":
-		// Actions can use provision or maintenance roles
 		if aws.MaintenanceIAMRoleARN != "" {
 			roles = append(roles, AvailableRole{
 				Name:     "maintenance",
