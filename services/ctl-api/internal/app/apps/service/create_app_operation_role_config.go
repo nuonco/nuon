@@ -61,11 +61,13 @@ func (s *service) CreateAppOperationRoleConfig(ctx *gin.Context) {
 		return
 	}
 
+	appID := ctx.Param("app_id")
+
 	var cfg *app.AppOperationRoleConfig
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Create rule config
 		var err error
-		cfg, err = s.createAppOperationRoleConfigRecord(ctx, tx, &req)
+		cfg, err = s.createAppOperationRoleConfigRecord(ctx, tx, appID, &req)
 		if err != nil {
 			return fmt.Errorf("unable to create operation role config: %w", err)
 		}
@@ -87,9 +89,10 @@ func (s *service) CreateAppOperationRoleConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
-func (s *service) createAppOperationRoleConfigRecord(ctx context.Context, tx *gorm.DB, req *CreateAppOperationRoleConfigRequest) (*app.AppOperationRoleConfig, error) {
+func (s *service) createAppOperationRoleConfigRecord(ctx context.Context, tx *gorm.DB, appID string, req *CreateAppOperationRoleConfigRequest) (*app.AppOperationRoleConfig, error) {
 	cfg := app.AppOperationRoleConfig{
 		AppConfigID: req.AppConfigID,
+		AppID:       appID,
 	}
 
 	res := tx.Create(&cfg)

@@ -24,7 +24,7 @@ func TestGetRoleForAction(t *testing.T) {
 		actionConfigRole   string // Entity-level role from ActionWorkflowConfig
 		breakGlassRoleARN  string // Simple string - converted to NullString when building test data
 		runtimeRole        string // Runtime role from run.Role
-		matrixRules        []*app.OperationRoleRule
+		matrixRules        []*app.AppOperationRoleRule
 		useAzure           bool
 		expectedOperation  app.OperationType
 		expectedRoleSource operationroles.RoleSelectionSource
@@ -81,7 +81,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionConfigRole:  "",
 			breakGlassRoleARN: "",
 			runtimeRole:       "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",
@@ -101,7 +101,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionConfigRole:  "",
 			breakGlassRoleARN: "",
 			runtimeRole:       "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",
@@ -121,7 +121,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionConfigRole:  "",
 			breakGlassRoleARN: "",
 			runtimeRole:       "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",
@@ -148,7 +148,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionConfigRole:  "ActionConfigRole",
 			breakGlassRoleARN: "",
 			runtimeRole:       "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",
@@ -183,7 +183,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionConfigRole:  "",
 			breakGlassRoleARN: "EmergencyRole",
 			runtimeRole:       "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",
@@ -203,7 +203,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionConfigRole:  "ActionConfigRole",
 			breakGlassRoleARN: "EmergencyRole",
 			runtimeRole:       "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",
@@ -225,7 +225,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionConfigRole:  "ActionConfigRole",
 			breakGlassRoleARN: "EmergencyRole",
 			runtimeRole:       "RuntimeRole",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",

@@ -21,7 +21,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 		installDeployType  app.InstallDeployType
 		installDeployRole  string // runtime role
 		componentRoles     map[app.OperationType]string
-		matrixRules        []*app.OperationRoleRule
+		matrixRules        []*app.AppOperationRoleRule
 		expectedOperation  app.OperationType
 		expectedRoleSource operationroles.RoleSelectionSource
 		expectedRoleName   string
@@ -95,7 +95,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			name:              "matrix_rule_matches_component_deploy",
 			installDeployType: app.InstallDeployTypeApply,
 			installDeployRole: "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeploy,
 					PrincipalType: "component",
@@ -112,7 +112,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			name:              "matrix_rule_matches_wildcard",
 			installDeployType: app.InstallDeployTypeApply,
 			installDeployRole: "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeploy,
 					PrincipalType: "component",
@@ -129,7 +129,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			name:              "matrix_rule_teardown",
 			installDeployType: app.InstallDeployTypeTeardown,
 			installDeployRole: "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTeardown,
 					PrincipalType: "component",
@@ -146,7 +146,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			name:              "matrix_rule_no_match",
 			installDeployType: app.InstallDeployTypeApply,
 			installDeployRole: "",
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTeardown, // Different operation
 					PrincipalType: "component",
@@ -169,7 +169,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			componentRoles: map[app.OperationType]string{
 				app.OperationDeploy: "ComponentDeployRole",
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeploy,
 					PrincipalType: "component",
@@ -189,7 +189,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			componentRoles: map[app.OperationType]string{
 				app.OperationTeardown: "ComponentTeardownRole",
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTeardown,
 					PrincipalType: "component",
@@ -212,7 +212,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			componentRoles: map[app.OperationType]string{
 				app.OperationDeploy: "ComponentDeployRole",
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeploy,
 					PrincipalType: "component",
@@ -232,7 +232,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			componentRoles: map[app.OperationType]string{
 				app.OperationTeardown: "ComponentTeardownRole",
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationTeardown,
 					PrincipalType: "component",
@@ -264,7 +264,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			installDeployType: app.InstallDeployTypeApply,
 			installDeployRole: "",
 			componentRoles:    map[app.OperationType]string{},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeploy,
 					PrincipalType: "component",

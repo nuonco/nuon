@@ -372,7 +372,7 @@ func TestSelectRole(t *testing.T) {
 				EntityRoles: EntityOperationRoleMap{
 					app.OperationDeploy: "custom-db-role",
 				},
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
 				},
 				DefaultRole:  "provision",
@@ -395,7 +395,7 @@ func TestSelectRole(t *testing.T) {
 				EntityRoles: EntityOperationRoleMap{
 					app.OperationDeploy: "{{.nuon.install.id}}-custom-db-role",
 				},
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
 				DefaultRole:  "{{.nuon.install.name}}-provision",
@@ -416,7 +416,7 @@ func TestSelectRole(t *testing.T) {
 				PrincipalName: "database",
 				RuntimeRole:   "",
 				EntityRoles:   nil,
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
 				DefaultRole:  "{{.nuon.install.name}}-provision",
@@ -547,7 +547,7 @@ func TestSelectRole(t *testing.T) {
 				PrincipalName: "any-component",
 				RuntimeRole:   "",
 				EntityRoles:   nil,
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "*", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
 				DefaultRole:  "{{.nuon.install.name}}-provision",
@@ -568,7 +568,7 @@ func TestSelectRole(t *testing.T) {
 				PrincipalName: "any-action",
 				RuntimeRole:   "",
 				EntityRoles:   nil,
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "action", PrincipalName: "*", Operation: app.OperationTrigger, Role: "emergency-access"},
 				},
 				DefaultRole:  "maintenance",
@@ -615,7 +615,7 @@ func TestSelectRole(t *testing.T) {
 				EntityRoles: EntityOperationRoleMap{
 					app.OperationDeploy: "custom-db-role",
 				},
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
 				},
 				DefaultRole: "maintenance",
@@ -704,7 +704,7 @@ func TestSelectRole(t *testing.T) {
 				PrincipalName: "database",
 				RuntimeRole:   "",
 				EntityRoles:   nil,
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.id}}-custom-db-role"},
 				},
 				DefaultRole:  "{{.nuon.install.name}}-maintenance",
@@ -728,7 +728,7 @@ func TestSelectRole(t *testing.T) {
 				EntityRoles: EntityOperationRoleMap{
 					app.OperationDeploy: "emergency-access",
 				},
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
 				DefaultRole:  "{{.nuon.install.name}}-provision",
@@ -814,7 +814,7 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:    "",
 				BreakGlassRole: "emergency-access",
 				EntityRoles:    nil,
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
 				DefaultRole:  "{{.nuon.install.name}}-provision",
@@ -896,7 +896,7 @@ func TestSelectRole(t *testing.T) {
 				EntityRoles: EntityOperationRoleMap{
 					app.OperationDeploy: "{{.nuon.install.id}}-custom-db-role",
 				},
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "{{.nuon.install.name}}-maintenance"},
 				},
 				DefaultRole:  "{{.nuon.install.name}}-provision",
@@ -1157,7 +1157,7 @@ func TestSelectRoleWithTemplateRendering(t *testing.T) {
 				PrincipalName: "api",
 				RuntimeRole:   "",
 				EntityRoles:   nil,
-				MatrixRules: []*app.OperationRoleRule{
+				MatrixRules: []*app.AppOperationRoleRule{
 					{
 						PrincipalType: principal.TypeComponent,
 						PrincipalName: "api",

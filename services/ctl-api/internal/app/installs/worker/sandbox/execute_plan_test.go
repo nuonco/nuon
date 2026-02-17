@@ -24,7 +24,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 		sandboxRunType     app.SandboxRunType
 		sandboxRuntimeRole string // Runtime role from sandboxRun.Role
 		sandboxEntityRoles pgtype.Hstore
-		matrixRules        []*app.OperationRoleRule
+		matrixRules        []*app.AppOperationRoleRule
 		expectedOperation  app.OperationType
 		expectedRoleSource operationroles.RoleSelectionSource
 		expectedRoleName   string
@@ -142,7 +142,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeProvision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationProvision,
 					PrincipalType: "sandbox",
@@ -160,7 +160,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeReprovision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationReprovision,
 					PrincipalType: "sandbox",
@@ -178,7 +178,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeDeprovision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeprovision,
 					PrincipalType: "sandbox",
@@ -196,7 +196,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeProvision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationProvision,
 					PrincipalType: "component", // Wrong principal type
@@ -214,7 +214,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeProvision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeprovision, // Wrong operation
 					PrincipalType: "sandbox",
@@ -238,7 +238,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxEntityRoles: pgtype.Hstore{
 				"provision": generics.ToPtr("SandboxProvisionRole"),
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationProvision,
 					PrincipalType: "sandbox",
@@ -258,7 +258,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxEntityRoles: pgtype.Hstore{
 				"deprovision": generics.ToPtr("SandboxDeprovisionRole"),
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeprovision,
 					PrincipalType: "sandbox",
@@ -282,7 +282,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxEntityRoles: pgtype.Hstore{
 				"provision": generics.ToPtr("SandboxProvisionRole"),
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationProvision,
 					PrincipalType: "sandbox",
@@ -302,7 +302,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxEntityRoles: pgtype.Hstore{
 				"deprovision": generics.ToPtr("SandboxDeprovisionRole"),
 			},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationDeprovision,
 					PrincipalType: "sandbox",
@@ -346,7 +346,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeProvision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{},
-			matrixRules: []*app.OperationRoleRule{
+			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationProvision,
 					PrincipalType: "sandbox",
