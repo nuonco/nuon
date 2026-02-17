@@ -1,0 +1,117 @@
+---
+title: "Configuring Sandboxes"
+description: "Configure sandbox infrastructure for your app."
+icon: "gear"
+---
+
+A sandbox is configured in a `sandbox.toml` file in the root of your app directory. It points to a Terraform module (public or private repo) and passes variables to configure the infrastructure.
+
+## Basic Configuration
+
+```toml sandbox.toml
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-eks-sandbox"
+branch    = "main"
+
+[vars]
+cluster_version = "1.33"
+cluster_name    = "n-{{.nuon.install.id}}"
+
+enable_nuon_dns      = "true"
+public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
+```
+
+```toml sandbox.tfvars
+additional_namespaces = ["grafana"]
+
+min_size = 2
+max_size = 3
+desired_capacity = 2
+```
+
+You can use either a public repo (`public_repo` block) or a private GitHub repo (`connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
+
+## Using Default Values
+
+Add a `vars` block to `sandbox.toml` or use the `sandbox.tfvars` file for default values shared across all installs:
+
+```toml sandbox.toml
+[vars]
+cluster_name         = "n-{{.nuon.install.id}}"
+enable_nuon_dns      = "true"
+public_root_domain   = "{{ .nuon.install.id }}.nuon.run"
+internal_root_domain = "internal.{{ .nuon.install.id }}.nuon.run"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
+```
+
+## Using Inputs
+
+Define an input in `inputs.toml` and reference it in `sandbox.toml`:
+
+```toml inputs.toml
+[[group]]
+name         = "dns"
+description  = "DNS configuration"
+display_name = "DNS"
+
+[[input]]
+name         = "root_domain"
+description  = "The root domain for the install."
+default      = "app.example.com"
+display_name = "Root Domain"
+group        = "dns"
+```
+
+```toml sandbox.toml
+[vars]
+public_root_domain = "{{ .nuon.inputs.inputs.root_domain }}"
+```
+
+## Sandbox Outputs
+
+Sandbox outputs are accessible to all components through [variables](/guides/using-variables):
+
+```toml components/app.toml
+[values]
+account_region = "{{.nuon.install.sandbox.outputs.account.region}}"
+```
+
+Common outputs include:
+
+- `account.id` - The AWS Account ID
+- `account.region` - The AWS Region
+- `vpc.id` - The VPC ID
+- `cluster.cluster_name` - The EKS Cluster name
+- `cluster.cluster_endpoint` - The EKS Cluster endpoint
+- `ecr.repository_url` - The ECR repository URL
+- `nuon_dns.public_domain` - The public root domain
+- `nuon_dns.internal_domain` - The internal root domain
+- `namespaces` - Namespaces created in the cluster
+
+See the [outputs.tf](https://github.com/nuonco/aws-eks-sandbox/blob/main/outputs.tf) for the full list.
+
+## Custom Sandboxes
+
+You can fork a [managed sandbox](https://github.com/nuonco) or create your own. Point your `sandbox.toml` to your repo:
+
+```toml sandbox.toml
+terraform_version = "1.11.3"
+
+[public_repo]
+repo      = "your-org/your-sandbox"
+directory = "sandbox"
+branch    = "main"
+```
+
+<Note>
+If you are considering a custom sandbox, we would love to hear about your use case. Please [contact us](https://nuon.co/contact-us).
+</Note>

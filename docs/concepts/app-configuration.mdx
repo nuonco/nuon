@@ -1,0 +1,30 @@
+---
+title: "App Configuration"
+description: "How to parameterize your app with inputs, variables, and secrets."
+---
+
+Nuon provides three mechanisms for parameterizing your app. All are accessible in your component and sandbox config through the [variable template syntax](/guides/using-variables).
+
+| Mechanism | Scope | Stored In | Use Case |
+|-----------|-------|-----------|----------|
+| Inputs | Per-install | Nuon Control Plane | Customer-provided values like region, domain, VPC ID |
+| Variables | Per-app | Nuon Control Plane | Vendor-managed values shared across installs like API keys |
+| Secrets | Per-install | Customer's cloud (e.g., AWS Secrets Manager) | Sensitive values the vendor never sees |
+
+## Inputs
+
+Inputs are parameters that customers provide when creating or updating an install. They are defined in `inputs.toml` and accessed using `{{.nuon.install.inputs.<input-name>}}`.
+
+## Variables
+
+Variables are vendor-managed values stored in the Nuon API and shared across all installs of an app. They are managed through the CLI and accessed using `{{ .nuon.app.variables.<variable-name> }}`.
+
+<Note>
+Variables are stored without encryption. For sensitive values that should never leave the customer's cloud, use Secrets instead.
+</Note>
+
+## Secrets
+
+Secrets handle sensitive values that stay in the customer's cloud. Secret metadata is defined in `secrets.toml`, and the actual values are entered by the customer when they deploy the install [stack](/concepts/stacks). Neither Nuon nor the vendor ever sees secret values.
+
+For detailed configuration examples, see the [Configuring Inputs & Secrets](/guides/configuring-inputs-and-secrets) guide.

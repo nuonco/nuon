@@ -1,247 +1,34 @@
 ---
 title: "Sandboxes"
-description:
-  "Sandboxes manage the base layer infrastructure for your application in each
-  customer's cloud account."
+description: "Sandboxes manage the base infrastructure layer for your application in each customer's cloud account."
 ---
 
-## What is a Sandbox?
+A Sandbox is the base infrastructure layer provisioned in each install. It creates a consistent, isolated environment that your application can rely on regardless of the customer's account.
 
-Sandboxes create a consistent, isolated environment that your application can be
-guaranteed to work with, across your installs. They are
-responsible for defining the basic networking, permissioning, and infrastructure
-compute primitives e.g., a Kubernetes cluster - to power the app.
-
-In a shared responsiblity model, a customer may provide some infrastructure in
-the sandbox, such as an existing VPC or Kubernetes cluster. In this case,
-sandboxes enable you to leverage this customer infrastructure to meet security
-requirements, while also having a consistent way to deploy and manage your App
-in any account.
-
-Sandboxes can ensure isolation, reproducability and repeatability with each
-install - regardless of the account.
-
-## How is a sandbox configured?
-
-A sandbox is configured in a `sandbox.toml` file inside the root of your app directory. To configure a sandbox, specify a repo and the correct
-parameters for your sandbox.
-
-Inputs and variables, are entered both inline in the `sandbox.toml` and also the
-`tfvars` file - to configure the sandbox, and these are passed to the Terraform
-code that is run by the sandbox.
-
-You can configure sandboxes to use either a public repo (using a `public_repo`
-block) such as Nuon's public repository of AWS and Azure sandboxes - or a
-private GitHub repo (using a `connected_repo` block). Read more about VCS
-configuration [here](/guides/vcs).
-
-```toml sandbox.toml
-# sandbox
-terraform_version = "1.11.3"
-
-[public_repo]
-directory = "."
-repo      = "nuonco/aws-eks-sandbox"
-branch    = "main"
-
-[vars]
-cluster_version = "1.33"
-cluster_name    = "n-{{.nuon.install.id}}"
-
-enable_nuon_dns      = "true"
-public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
-internal_root_domain = "internal.{{ .nuon.inputs.inputs.root_domain }}"
-
-[[var_file]]
-contents = "./sandbox.tfvars"
-```
-
-```toml sandbox.tfvars
-additional_namespaces = ["grafana"]
-
-min_size = 2
-max_size = 3
-desired_capacity = 2
-```
+Sandboxes typically include networking (VPC, subnets), compute (Kubernetes cluster, VMs), and IAM roles. In a shared responsibility model, a customer can provide existing infrastructure like a VPC or Kubernetes cluster through [inputs](/concepts/app-configuration#inputs).
 
 ## Nuon Managed Sandboxes
 
-We maintain managed sandboxes for each [platform](/concepts/platforms) that we
-support. Each platform has a turnkey sandbox (where all resources are
-provisioned). These sandboxes are designed to be a stable, configurable starting
-point and most relevant options around the network, cluster and compute are
-configurable.
+Nuon maintains managed sandbox templates for common configurations. Each is published as a GitHub repository that you reference in your `sandbox.toml`:
+
+- [AWS EKS sandbox](https://github.com/nuonco/aws-eks-sandbox)
+- [AWS EKS with Karpenter sandbox](https://github.com/nuonco/aws-eks-karpenter-sandbox)
+- [AWS Min sandbox](https://github.com/nuonco/aws-min-sandbox)
+- [Azure AKS sandbox](https://github.com/nuonco/azure-aks-sandbox)
 
 <Note>
-	[Let us know](https://nuon.co/contact-us) if you have a use case for bringing
-	your own VPC or Kubernetes cluster, and we can show how to adjust the sandbox
-	configuration.
+The AWS Min sandbox does not create a Kubernetes cluster, but still provisions a Route 53 Zone and IAM roles for the install.
 </Note>
 
-We publish each sandbox as a GitHub repository and you can find detailed
-documentation for each sandbox there. These repositories are what you will
-reference in your `sandbox.toml`.
-
-[AWS EKS sandbox](https://github.com/nuonco/aws-eks-sandbox)
-
-[AWS EKS with Karpenter sandbox](https://github.com/nuonco/aws-eks-karpenter-sandbox)
-
-[AWS Min sandbox](https://github.com/nuonco/aws-min-sandbox)
-
-[Azure AKS sandbox](https://github.com/nuonco/azure-aks-sandbox)
-
-<Note>
-	The AWS Min sandbox does not create a Kubernetes cluster, but still provisions
-	a Route 53 Zone and IAM roles for the install. See the [Lambda function
-	example](../get-started/app-aws-lambda) that leverages the AWS Min sandbox.
-</Note>
-
-## Runner Types
-
-Update the `runner.toml` in your app to specify the type of Cloud runner to use
-for your app. The runner is responsible for executing the deployment of your app
-into the customer's account.
-
-```toml runner.toml
-# runner
-
-runner_type = "aws"
-helm_driver = "configmap"
-```
-
-```toml runner.toml
-# runner
-
-runner_type = "azure"
-helm_driver = "configmap"
-```
+You can also fork these or create your own custom sandbox. See the [Configuring Sandboxes](/guides/configuring-sandboxes) guide for details.
 
 ## Sandbox Outputs
 
-Sandbox outputs are made accessible to all components
-[using variables](/guides/using-variables).
+Sandbox outputs are accessible to all components through [variables](/guides/using-variables). For example:
 
-You can use any output from your selected sandbox by setting a config value on
-your component. In this example, we are using the `account.region` output from
-the sandbox to configure a Helm chart component:
-
-```toml components/e2e_helm.toml
-name   = "e2e_helm"
-type = "helm_chart"
-chart_name = "e2e-helm"
-
-[public_repo]
-repo      = "org/repo"
-directory = "chart"
-branch    = "main"
-
+```toml components/app.toml
 [values]
 account_region = "{{.nuon.install.sandbox.outputs.account.region}}"
 ```
 
-See the
-[outputs.tf](https://github.com/nuonco/aws-eks-sandbox/blob/main/outputs.tf) for
-the AWS EKS sandbox for a full list of available outputs or the
-[outputs.tf](https://github.com/nuonco/aws-min-sandbox/blob/main/outputs.tf) for
-the AWS Min sandbox.
-
-Example outputs include:
-
-- `account.id` - The AWS Account ID
-- `account.region` - The AWS Region
-- `vpc.id` - The VPC ID
-- `cluster.cluster_name` - The EKS Cluster name
-- `cluster.cluster_endpoint` - The EKS Cluster endpoint
-- `ecr.repository_url` - The ECR repository URL
-- `ecr.registry_url` - The ECR registry URL
-- `nuon_dns.public_domain` - The public root domain for the install
-- `nuon_dns.internal_domain` - The internal root domain for the install
-- `namespaces` - A list of namespaces created in the cluster
-
-## Configure sandboxes
-
-Each sandbox has a set of variable inputs. Most variables are either supplied by
-the Nuon platform during install, via inputs, or by setting default values.
-
-### Use Default Values
-
-To configure a sandbox parameter with a default value for your app, add a `vars`
-block to your `sandbox.toml` file, or the mandatory `sandbox.tfvars` file in the
-same directory as your `sandbox.toml`. The values in this block will be used as
-defaults for all installs of this App.:
-
-```toml sandbox.toml
-[vars]
-cluster_name         = "n-{{.nuon.install.id}}"
-enable_nuon_dns      = "true"
-public_root_domain   = "{{ .nuon.install.id }}.nuon.run"
-internal_root_domain = "internal.{{ .nuon.install.id }}.nuon.run"
-
-[[var_file]]
-contents = "./sandbox.tfvars"
-```
-
-```toml sandbox.tfvars
-additional_namespaces = ["grafana"]
-
-min_size = 2
-max_size = 3
-desired_capacity = 2
-```
-
-### Use Inputs
-
-Inputs allow you to collect customer input in the dashboard at install for
-values such as resource IDs, tokens and more. These inputs are accesible to all
-components and your sandbox, [using variables](/guides/using-variables#inputs).
-
-To configure a sandbox parameter using an input, you can define an input in your
-`inputs.toml` file and then reference it in your `sandbox.toml` file. In this
-example, we define a root domain input and use it to set the
-`public_root_domain` variable in the sandbox:
-
-```toml inputs.toml
-[[group]]
-name         = "dns"
-description  = "DNS Configrations"
-display_name = "Configurations for the root domain for Route53"
-
-[[input]]
-name         = "root_domain"
-description  = "The root domain. Services will be made available at subdomains of this root domain."
-default      = "app.example.com"
-display_name = "Root Domain"
-group        = "dns"
-```
-
-```toml sandbox.toml
-[vars]
-public_root_domain   = "{{ .nuon.inputs.inputs.root_domain }}"
-```
-
-## Create a Custom Sandbox
-
-While our [open source Sandboxes](#nuon-managed-sandboxes) are a great starting
-point, you can always fork them, or create your own sandbox to support
-customizing.
-
-To use a custom sandbox, simply update your app's `sandbox.toml` to point to
-your new sandbox code. Custom Sandboxes can also use private GitHub repos, that
-are connected to Nuon.
-
-```toml sandbox.toml
-# sandbox
-terraform_version = "1.11.3"
-
-[public_repo]
-repo = "your-org/private-repo"
-directory = "sandbox"
-branch = "main"
-```
-
-<br />
-
-<Note>
-If one of our managed sandboxes does not work for you, and you are considering creating a custom sandbox, we would love to hear about your use case. Please [contact us](https://nuon.co/contact-us).
-
-</Note>
+See the [outputs.tf](https://github.com/nuonco/aws-eks-sandbox/blob/main/outputs.tf) for a full list of available outputs for each sandbox.

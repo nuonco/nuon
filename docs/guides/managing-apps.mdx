@@ -1,0 +1,73 @@
+---
+title: "Managing Apps"
+description: "Create, configure, and manage apps using the CLI and dashboard."
+icon: "terminal"
+---
+
+The [CLI](/cli) is the primary interface for managing apps. The dashboard also provides limited app management. To see all available commands, run `nuon apps --help`.
+
+## Creating an App
+
+Create a directory for your app config files, then create the app:
+
+```sh
+mkdir your-app
+cd your-app
+nuon apps create --name=your-app
+```
+
+The app name should match the directory name.
+
+## Pinning an App
+
+Pin an app to set its ID as the default for all app commands, avoiding the need to pass `-a` each time:
+
+```sh
+nuon apps select
+nuon apps current  # show the currently pinned app
+```
+
+<Note>Examples below assume you have run `nuon apps select` first.</Note>
+
+## Common Commands
+
+```sh
+nuon apps list              # list all apps
+nuon apps get               # get info about the pinned app
+nuon apps rename --name=new-name  # rename an app
+```
+
+## Syncing Configuration
+
+Sync uploads your TOML config files to the Nuon control plane and triggers builds for any changed components:
+
+```sh
+nuon apps sync
+```
+
+If component TOML files or related files (e.g., Helm `values.yaml`) have changed, a new build is triggered during sync. If component source files have changed, push those changes to your git repo first, then build the component manually using the dashboard or CLI.
+
+## Viewing Configuration
+
+```sh
+nuon apps configs          # list all config versions
+nuon apps runner-config    # print runner config
+nuon apps sandbox-config   # print sandbox config
+nuon apps input-config     # print input config
+```
+
+<Note>
+The output of `runner-config`, `sandbox-config`, and `input-config` is JSON. Pipe through `jq` or `python -m json.tool` for readability.
+</Note>
+
+## Metadata
+
+Add metadata to your app via a `metadata.toml` file in the app root directory. This metadata is used in installers and the dashboard:
+
+```toml metadata.toml
+display_name = "Your App"
+description  = "A short description of your app."
+readme       = "./README.md"
+```
+
+The `readme` field points to a Markdown file rendered in the dashboard for each install. See the [Using READMEs](/guides/using-readmes) guide for details.

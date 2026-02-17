@@ -127,23 +127,25 @@
       },
       {
         "tab": "Architecture",
-        "pages": ["runner-architecture"]
+        "pages": [
+          "architecture/byoc",
+          "architecture/platform"
+        ]
       },
       {
         "tab": "Concepts",
         "pages": [
           "concepts/overview",
-          "concepts/apps",
+          "concepts/apps-and-installs",
           "concepts/sandboxes",
           "concepts/components",
-          "concepts/installs",
-          "concepts/actions",
-          "concepts/workflows",
-          "concepts/policies",
+          "concepts/app-configuration",
+          "concepts/stacks",
           "concepts/runners",
-          "concepts/app-inputs",
-          "concepts/app-variables",
-          "concepts/app-secrets"
+          "concepts/workflows",
+          "concepts/actions",
+          "concepts/policies",
+          "concepts/customer-portal"
         ]
       },
       {
@@ -153,6 +155,8 @@
             "group": "Configuration",
             "pages": [
               "guides/app-install-life-cycle",
+              "guides/configuring-sandboxes",
+              "guides/configuring-inputs-and-secrets",
               "guides/vcs",
               "guides/docker-build-components",
               "guides/container-image-components",
@@ -190,8 +194,20 @@
           {
             "group": "Integrations",
             "pages": ["guides/notifications", "guides/github-actions"]
+          },
+          {
+            "group": "CLI",
+            "pages": [
+              "guides/managing-apps",
+              "guides/managing-installs",
+              "guides/managing-components"
+            ]
           }
         ]
+      },
+      {
+        "tab": "Security",
+        "pages": ["security"]
       },
       {
         "tab": "Support",
@@ -264,6 +280,10 @@
     {
       "source": "/faq",
       "destination": "/support/faq"
+    },
+    {
+      "source": "/runner-architecture",
+      "destination": "/architecture/platform"
     }
   ]
 }

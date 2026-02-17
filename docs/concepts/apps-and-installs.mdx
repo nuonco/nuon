@@ -1,0 +1,27 @@
+---
+title: "Apps & Installs"
+description: "Apps define your product. Installs deploy it into customer cloud accounts."
+---
+
+## Apps
+
+An App is a fully configured version of your product that can be installed into a customer's cloud account. Most Nuon users create multiple apps to offer different deployment options, for example AWS vs Azure, or dev vs prod configurations.
+
+Each app is represented as a set of TOML configuration files in a directory. An app consists of:
+
+- [Sandbox](/concepts/sandboxes) - the base infrastructure layer (e.g., EKS, AKS)
+- [Components](/concepts/components) - your application (e.g., Helm charts, Terraform modules, manifests)
+- [App Configuration](/concepts/app-configuration) - inputs, variables, and secrets that parameterize the app
+- [Runner](/concepts/runners) - the Nuon service that manages each install
+
+When you run `nuon apps sync`, these config files are validated and uploaded to the Nuon control plane.
+
+## Installs
+
+An Install is a running instance of an App in a customer's cloud account. Each install has its own infrastructure, configuration, and lifecycle. You can have many installs of the same app across different customers and environments.
+
+For details on how apps and installs are created, updated, and managed over time, see the [App and Install Life Cycle](/guides/app-install-life-cycle) guide.
+
+## Managing Apps & Installs
+
+See the [Managing Apps](/guides/managing-apps) and [Managing Installs](/guides/managing-installs) guides for CLI commands and operational tasks.

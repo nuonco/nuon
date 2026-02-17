@@ -1,0 +1,73 @@
+---
+title: "Managing Installs"
+description: "Create, update, and manage installs using the CLI and dashboard."
+icon: "terminal"
+---
+
+The [dashboard](/dashboard) is the primary interface for creating and managing installs. The [CLI](/cli) provides additional operational commands. To see all available commands, run `nuon installs --help`.
+
+## Pinning an Install
+
+Pin an install to set its ID as the default for all install commands:
+
+```sh
+nuon installs select
+nuon installs current  # show the currently pinned install
+```
+
+<Note>Examples below assume you have run `nuon installs select` first.</Note>
+
+## Common Commands
+
+```sh
+nuon installs create --name=install --region=us-east-1 --role=iam-role
+nuon installs list
+nuon installs get
+nuon installs delete
+```
+
+## Install Config Files
+
+You can manage installs declaratively using [Install Config files](/configuration-files#install-config):
+
+```sh
+nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
+nuon installs generate-config -i <install-name-or-id>
+```
+
+Example install config file:
+
+```toml
+name = "config_demo"
+approval_option = "approve-all"
+
+[aws_account]
+region = "us-east-1"
+
+[inputs]
+sub_domain = "whoami"
+app_release = "v2.25.0"
+```
+
+## Sandbox Operations
+
+```sh
+nuon installs sandbox-runs                  # list sandbox updates
+nuon installs sandbox-run-logs -r <run-id>  # logs for a sandbox run
+nuon installs reprovision                   # reprovision with latest sandbox config
+nuon installs deprovision                   # deprovision the sandbox
+```
+
+## Component Deploys
+
+Each component is deployed to an install when it is first created. If a component is added after an install is provisioned, it is deployed on the first release.
+
+```sh
+nuon installs list-deploys                      # list deploys
+nuon installs deploy-logs -d <deploy-id>        # logs for a deploy
+nuon installs print-deploy-plan -d <deploy-id>  # print a deploy plan
+```
+
+## Changing Components
+
+If you change a component in an app that already has installs, redeploy the component through the dashboard. A modal will prompt you to select the build to use.

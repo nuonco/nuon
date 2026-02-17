@@ -3,56 +3,15 @@ title: "Concepts"
 description: "Get up to speed on BYOC and Nuon."
 ---
 
-This section of our docs outlines the basic concepts you should understand to get the most of Nuon and the BYOC model.
+This section covers the core primitives you need to understand to use Nuon.
 
-<CardGroup cols={2}>
-
-  <Card title="Apps" icon="code" href="/concepts/apps">
-    Learn about Apps.
-  </Card>
-
-  <Card title="Sandboxes" icon="code" href="/concepts/sandboxes">
-    Learn about Sandboxes.
-  </Card>
-
-  <Card title="Components" icon="code" href="/concepts/components">
-    Learn about Components.
-  </Card>
-
-  <Card title="Installs" icon="code" href="/concepts/installs">
-    Learn about Installs.
-  </Card>
-
-  <Card title="Actions" icon="code" href="/concepts/actions">
-    Learn about Actions.
-  </Card>
-
-  <Card title="Workflows" icon="code" href="/concepts/workflows">
-    Learn about Workflows.
-  </Card>
-
-  <Card title="Policies" icon="code" href="/concepts/policies">
-    Learn about Policies.
-  </Card>
-
-  <Card title="Runners" icon="code" href="/concepts/runners">
-    Learn about Runners.
-  </Card>
-
-  <Card title="Inputs" icon="code" href="/concepts/app-inputs">
-    Learn about Inputs.
-  </Card>
-
-  <Card title="App Variables" icon="code" href="/concepts/app-variables">
-    Learn about App Variables.
-  </Card>
-
-  <Card title="Secrets" icon="code" href="/concepts/app-secrets">
-    Learn about Secrets.
-  </Card>
-
-  <Card title="Glossary" icon="font" href="/concepts/glossary">
-    Summary of the entire platform.
-  </Card>
-
-</CardGroup>
+- **[Apps & Installs](/concepts/apps-and-installs)** - Apps define your product. Installs deploy it into customer cloud accounts.
+- **[Stacks](/concepts/stacks)** - The cloud-native template (CloudFormation, Bicep) that bootstraps an install with networking and the Runner.
+- **[Runners](/concepts/runners)** - The agent deployed into each install that executes jobs from the control plane.
+- **[Sandboxes](/concepts/sandboxes)** - The base infrastructure layer (networking, compute) provisioned in each install.
+- **[Components](/concepts/components)** - The individual pieces of your application: Helm charts, Terraform modules, manifests, and container images.
+- **[App Configuration](/concepts/app-configuration)** - Inputs, variables, and secrets that parameterize your app across installs.
+- **[Workflows](/concepts/workflows)** - The lifecycle steps for deploying, updating, or tearing down an install.
+- **[Actions](/concepts/actions)** - Reusable operational tasks like health checks, migrations, and maintenance scripts.
+- **[Policies](/concepts/policies)** - OPA and Kyverno rules that enforce compliance and security standards during builds and deploys.
+- **[Customer Experience](/concepts/customer-portal)** - How your customers interact with installs, from the hosted portal to your own product integration.

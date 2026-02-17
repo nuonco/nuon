@@ -1,0 +1,38 @@
+---
+title: "Managing Components"
+description: "List, build, and manage components using the CLI."
+icon: "terminal"
+---
+
+The [CLI](/cli) provides commands to manage components and builds. To see all available commands, run `nuon components --help`.
+
+<Note>
+Select an app using `nuon apps select` before using component commands, or pass the `-a` flag.
+</Note>
+
+## Common Commands
+
+```sh
+nuon components list                                  # list components
+nuon components get -c <component_id or name>         # get a component
+nuon components latest-config -c <component_id or name>  # print latest config
+```
+
+To delete a component, remove its TOML file from the app directory and run `nuon apps sync` rather than using the CLI.
+
+## Builds
+
+All components must be built before creating or updating an install. `nuon apps sync` triggers builds automatically when component TOML files or related files (e.g., Helm `values.yaml`) change.
+
+If component source files change in git, push those changes first, then build manually:
+
+```sh
+nuon builds create -c <component_name>    # create a build
+nuon builds list -c <component_name>      # list builds
+nuon builds get -b <build-id> -c <component_name>   # get build details
+nuon builds logs -b <build-id> -c <component_name>  # show build logs
+```
+
+<Note>
+Omit the `-c` flag to list builds for all components in the selected app.
+</Note>
