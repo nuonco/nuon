@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
-import { updateRunner } from '@/actions/runners/update-runner'
+import { updateRunnerWithProvisioning } from '@/actions/runners/update-runner-with-provisioning'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -49,6 +50,7 @@ export const UpdateRunnerModal = ({
   const { org } = useOrg()
   const { runner } = useRunner()
   const { removeModal } = useSurfaces()
+  const pathname = usePathname()
   const formRef = useRef<HTMLFormElement>(null)
   const runnerId = runner?.id
 
@@ -59,7 +61,7 @@ export const UpdateRunnerModal = ({
     error,
     execute,
     isLoading,
-  } = useServerAction({ action: updateRunner })
+  } = useServerAction({ action: updateRunnerWithProvisioning })
 
   useServerActionToast({
     data: isUpdated,
@@ -83,6 +85,8 @@ export const UpdateRunnerModal = ({
     execute({
       runnerId,
       orgId: org.id,
+      runnerType: runner?.runner_group?.type || 'install',
+      path: pathname,
       body: {
         container_image_tag: tag,
         container_image_url: settings?.container_image_url,
