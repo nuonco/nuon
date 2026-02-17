@@ -148,7 +148,7 @@ func (m *Model) updateStepItems() {
 		// Find matching run step
 		var runStep *models.AppInstallActionWorkflowRunStep
 		for _, rs := range m.run.Steps {
-			if rs != nil && rs.StepID != nil && rs.StepID.String == configStep.ID {
+			if rs != nil && rs.StepID == configStep.ID {
 				runStep = rs
 				break
 			}
