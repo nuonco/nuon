@@ -10,7 +10,7 @@ import (
 )
 
 templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery string) {
-	@Layout("Installs") {
+	@Layout("Installs", ActivePageInstalls) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
 				@card.Header() {

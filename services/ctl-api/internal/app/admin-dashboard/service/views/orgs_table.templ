@@ -27,6 +27,8 @@ templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string
 						@table.Head() { Organization }
 						@table.Head() { Type }
 						@table.Head() { Status }
+						@table.Head() { Apps }
+						@table.Head() { Installs }
 						@table.Head() { Tags }
 						@table.Head() { Created At }
 					}
@@ -52,6 +54,12 @@ templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string
 							}
 							@table.Cell() {
 								@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
+							}
+							@table.Cell(table.CellProps{Class: "text-center font-mono text-sm"}) {
+								{ fmt.Sprintf("%d", org.AppCount) }
+							}
+							@table.Cell(table.CellProps{Class: "text-center font-mono text-sm"}) {
+								{ fmt.Sprintf("%d", org.InstallCount) }
 							}
 							@table.Cell() {
 								<div class="flex flex-wrap gap-1 max-w-xs">

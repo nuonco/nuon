@@ -22,6 +22,54 @@ The dashboard is designed to be **simple, fast, and maintainable** without the c
 - **Minimal dependencies** - Leverages Go's standard library and simple tooling
 - **Dark theme** - Matches Nuon brand with custom Tailwind configuration
 
+## ⚠️ CRITICAL WARNINGS FOR AI ASSISTANTS
+
+### 1. NEVER Run `templ generate` Manually
+
+**DO NOT EVER run `templ generate` in this directory.** The templ CLI has path issues that will break the generated imports.
+
+- ❌ `templ generate` - **NEVER DO THIS**
+- ✅ Edit `.templ` files and let the build process handle generation
+- The `_templ.go` files are auto-generated during the build/compilation process
+- Running `templ generate` manually will create broken import paths that are difficult to fix
+
+### 2. DO NOT Add Unnecessary Comments
+
+**Stop adding obvious comments everywhere.** The code should be self-explanatory.
+
+❌ **Bad - Unnecessary comments**:
+```go
+// Get the organization from context
+org := ctx.Org
+
+// Query the database for the organization
+result := s.db.Where("id = ?", orgID).First(&org)
+
+// Return the organization
+return org
+```
+
+✅ **Good - Clean code without noise**:
+```go
+var org app.Org
+if err := s.db.Where("id = ?", orgID).First(&org).Error; err != nil {
+    return nil, err
+}
+return &org, nil
+```
+
+**When comments ARE appropriate**:
+- Complex business logic that isn't obvious
+- Non-obvious workarounds or edge cases
+- Important architectural decisions
+- Public API documentation
+
+**When comments are NOT needed** (most of the time):
+- Obvious variable assignments
+- Standard CRUD operations
+- Self-explanatory function calls
+- Anything the code itself clearly expresses
+
 ## Technology Stack
 
 ### Templating: Templ
@@ -40,15 +88,13 @@ Templ (https://templ.guide/) is a templating language for Go that compiles to Go
 # 1. Edit .templ files
 vim service/views/my_page.templ
 
-# 2. Generate Go code
-cd services/ctl-api/internal/app/admin_dashboard
-templ generate
+# 2. Build the application (generates _templ.go files automatically)
+go build ./services/ctl-api/...
 
-# 3. Compiled Go files created automatically
-# my_page_templ.go is generated and compiled with the rest of the app
+# The _templ.go files are auto-generated during compilation
 ```
 
-**Important**: `.templ` files are source files; `_templ.go` files are generated artifacts.
+**CRITICAL**: DO NOT run `templ generate` manually - it will break import paths. Let the build process handle generation.
 
 ### Component Library: templui
 
@@ -228,17 +274,17 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 }
 ```
 
-**Step 4: Generate Templ Files**
+**Step 4: Build Application**
 
 ```bash
-cd services/ctl-api/internal/app/admin_dashboard
-templ generate
+# DO NOT run templ generate manually
+# Just build the application and it will generate the Go files automatically
+go build ./services/ctl-api/...
 ```
 
 **Step 5: Format Go Code**
 
 ```bash
-cd /path/to/nuon
 go fmt ./services/ctl-api/internal/app/admin_dashboard/...
 ```
 
@@ -455,12 +501,8 @@ npx tailwindcss -i ./assets/css/input.css -o ./assets/css/output.css --watch
 
 **Debug Steps**:
 ```bash
-# Regenerate templates
-cd services/ctl-api/internal/app/admin_dashboard
-templ generate
-
-# Check for Go compilation errors
-cd /path/to/nuon
+# DO NOT run templ generate manually - it breaks imports
+# Just build to regenerate templates automatically
 go build ./services/ctl-api/...
 
 # Rebuild CSS
@@ -705,12 +747,13 @@ open http://localhost:8085/
 
 ### Templ Generation Fails
 
-**Issue**: `templ generate` returns errors
+**Issue**: `_templ.go` files have broken imports or compilation errors
 
 **Solutions**:
+- **DO NOT run `templ generate` manually** - it will break import paths
 - Check `.templ` file syntax (missing brackets, imports)
-- Ensure templ CLI is installed: `go install github.com/a-h/templ/cmd/templ@latest`
 - Verify Go imports are correct
+- Let the build process handle generation: `go build ./services/ctl-api/...`
 
 ### Styles Not Applied
 
@@ -751,16 +794,21 @@ open http://localhost:8085/
 
 When working on the admin dashboard:
 
-1. **CRITICAL: NEVER use HTTP API calls** - Always use GORM directly for all database operations
-2. **Always read this file first** to understand architecture and patterns
-3. **Use established patterns** for handlers, templates, and styling
-4. **Run `templ generate`** after creating/editing `.templ` files
-5. **Follow the two-method handler pattern** for consistency
-6. **Use templui components** rather than building custom UI
-7. **Direct database access only** - Use `s.db` for all data operations
-8. **Test locally** before considering the task complete
-9. **Keep it simple** - avoid over-engineering
+1. **🚨 NEVER run `templ generate` manually** - It breaks import paths. Let the build process handle it.
+2. **🚨 NEVER use HTTP API calls** - Always use GORM directly for all database operations
+3. **🚨 DO NOT add unnecessary comments** - Code should be self-explanatory. Only comment non-obvious logic.
+4. **Always read this file first** to understand architecture and patterns
+5. **Use established patterns** for handlers, templates, and styling
+6. **Follow the two-method handler pattern** for consistency
+7. **Use templui components** rather than building custom UI
+8. **Direct database access only** - Use `s.db` for all data operations
+9. **Test locally** before considering the task complete
+10. **Keep it simple** - avoid over-engineering
 
-**Critical Reminder:** HTTP calls to `localhost` or the admin API will work in development but **fail in production**. The admin-dashboard shares the same database connection as ctl-api and should operate directly on the database layer using GORM.
+**Critical Reminders:**
+- HTTP calls to `localhost` or the admin API will work in development but **fail in production**
+- The admin-dashboard shares the same database connection as ctl-api and operates directly on the database layer using GORM
+- Running `templ generate` manually creates broken import paths - never do it
+- Stop adding obvious comments like "Get the org" or "Query the database" - the code is clear enough
 
 The admin dashboard is intentionally minimal and focused. Prefer simplicity over features.
