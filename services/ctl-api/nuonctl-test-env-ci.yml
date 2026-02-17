@@ -1,0 +1,10 @@
+# Test environment overrides for CI.
+# Loaded by nuonctl when running: CI=true nuonctl tests run-all ctl-api
+# These values override the service.yml env section for CI test runs.
+DB_NAME: ctl_api_test
+DB_HOST: localhost
+DB_PORT: "5432"
+DB_USER: ctl_api
+DB_PASSWORD: test
+DB_SSL_MODE: disable
+INTEGRATION: "true"

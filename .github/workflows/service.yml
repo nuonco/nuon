@@ -42,6 +42,20 @@ jobs:
       NO_REMOTE_BUILDKIT: ${{ github.repository == 'nuonco/nuon' || contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
       DISABLE_GITHUB_OIDC: ${{ inputs.disable_github_oidc }}
       GEN_API_TYPES: ${{ contains(github.event.pull_request.labels.*.name, 'gen-api-types') }}
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ctl_api
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: ctl_api_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
 
@@ -69,6 +83,20 @@ jobs:
       - name: 😎 Tests
         run: |
           CI=true nuonctl tests run-all ${{inputs.service}}
+
+      - name: 🧪 Integration Tests
+        if: ${{ inputs.service == 'ctl-api' }}
+        run: |
+          cd services/ctl-api
+          go test -v -p 1 -count=1 ./internal/app/...
+        env:
+          INTEGRATION: "true"
+          DB_NAME: ctl_api_test
+          DB_HOST: localhost
+          DB_PORT: "5432"
+          DB_USER: ctl_api
+          DB_PASSWORD: test
+          DB_SSL_MODE: disable
 
       - name: 📦 Build
         run: |
