@@ -42,7 +42,7 @@ type AppOperationRoleRule struct {
 	Org   Org    `json:"org" gorm:"-" temporaljson:"org,omitzero,omitempty"`
 
 	AppOperationRoleConfigID string                 `json:"app_operation_role_config_id" gorm:"app_operation_role_config_id"`
-	AppOperationRoleConfig   AppOperationRoleConfig `json:"app_operation_role_config" gorm:"-"`
+	AppOperationRoleConfig   AppOperationRoleConfig `json:"-" gorm:"-"`
 
 	PrincipalType principal.Type `json:"principal_type" gorm:"column:principal_type;not null;index" swaggertype:"string"`
 	PrincipalName string         `json:"principal_name" gorm:"column:principal_name;index"`
