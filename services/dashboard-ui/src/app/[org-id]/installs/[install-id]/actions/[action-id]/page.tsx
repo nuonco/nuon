@@ -78,6 +78,9 @@ export default async function InstallActionPage({
 
   const containerId = 'install-action-page'
 
+  const installActionBreakGlassRole = installAction.action_workflow?.configs?.[0].break_glass_role_arn
+  const breakGlassRoleArns = installState?.install_stack?.outputs?.break_glass_role_arns
+
   return (
     <PageSection id={containerId} isScrollable className="!p-0 !gap-0">
       <Breadcrumbs
@@ -197,8 +200,7 @@ export default async function InstallActionPage({
         </Section>
 
         <div className="divide-y flex flex-col lg:min-w-[450px] lg:max-w-[450px]">
-          {installAction.action_workflow?.configs?.[0]
-            .break_glass_role_arn!! ? (
+          {installActionBreakGlassRole ? (
             <Section
               className="flex-initial"
               childrenClassName="flex flex-col gap-4"
@@ -207,18 +209,12 @@ export default async function InstallActionPage({
                   <span>Break glass role</span>
                   <StatusBadge
                     description={
-                      installState?.install_stack?.outputs?.break_glass_roles?.[
-                        installAction.action_workflow?.configs?.[0]
-                          ?.break_glass_role_arn
-                      ]
+                      breakGlassRoleArns[installActionBreakGlassRole]
                         ? 'Role provisioned'
                         : 'Role not provisioned'
                     }
                     status={
-                      installState?.install_stack?.outputs?.break_glass_roles?.[
-                        installAction.action_workflow?.configs?.[0]
-                          .break_glass_role_arn
-                      ]
+                      breakGlassRoleArns[installActionBreakGlassRole]
                         ? 'provisioned'
                         : 'not provisioned'
                     }
@@ -226,38 +222,35 @@ export default async function InstallActionPage({
                 </div>
               }
             >
-              <Text variant="body" weight="strong" level={5}>
-                Access Permissions
-              </Text>
-              <Text>
-                Break Glass Role{' '}
-                <Code variant="inline">
-                  {
-                    installAction?.action_workflow?.configs?.[0]
-                      ?.break_glass_role_arn
-                  }
-                </Code>{' '}
-                must be enabled in install stack before running this action.
-              </Text>
               <br></br>
-              {installState?.install_stack?.outputs?.break_glass_roles?.[
-                installAction.action_workflow?.configs?.[0]
-                  ?.break_glass_role_arn
-              ]!! ? (
-                <div>
+              {breakGlassRoleArns[installActionBreakGlassRole]!! ? (
+                <div className="flex flex-col gap-2">
                   <Text variant="body" weight="strong">
-                    Role ARN
+                    Role assumed while running this action 
+                  </Text>
+                  <Code variant='default'>
+                    {
+                        breakGlassRoleArns[installActionBreakGlassRole]
+                    }
+                  </Code>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Text variant="body" weight="strong" level={5}>
+                    Access Permissions
                   </Text>
                   <Text>
-                    {
-                      installState?.install_stack?.outputs?.break_glass_roles?.[
-                        installAction.action_workflow?.configs?.[0]
+                    Break Glass Role must be enabled in install stack before running this action.
+                    <Code variant="default">
+                      {
+                        installAction?.action_workflow?.configs?.[0]
                           ?.break_glass_role_arn
-                      ]
-                    }
+                      }
+                    </Code>
                   </Text>
                 </div>
-              ) : null}
+              )
+            }
             </Section>
           ) : null}
           <Section className="flex-initial" heading="Latest configured steps">
