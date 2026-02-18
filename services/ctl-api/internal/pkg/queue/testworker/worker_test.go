@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
@@ -40,6 +41,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -64,10 +66,6 @@ type EnqueueTestSuite struct {
 }
 
 func TestSuite(t *testing.T) {
-	// TODO: fix queue tests - SetupSuite fails due to missing FX dependency
-	// converter.PayloadCodec[name="s3payload"] in the dataconverter provider.
-	t.Skip("skipping: missing s3payload PayloadCodec FX dependency in SetupSuite")
-
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
 		return
@@ -91,8 +89,10 @@ func (e *EnqueueTestSuite) SetupSuite() {
 		fx.Provide(psql.AsPSQL(psql.New)),
 		fx.Provide(ch.AsCH(ch.New)),
 
+		fx.Provide(blobstore.NewService),
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
+		fx.Provide(s3payload.AsS3Payload(s3payload.New)),
 		fx.Provide(dataconverter.New),
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
