@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import React, { useRef, useState, type FormEvent } from 'react'
 import { runAction } from '@/actions/installs/run-action'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -43,6 +43,7 @@ export const InstallActionManualRunModal = ({
   actionConfigId,
   ...props
 }: IInstallActionManualRunModal) => {
+  const router = useRouter()
   const path = usePathname()
   const { user } = useAuth()
   const { org } = useOrg()
@@ -55,7 +56,7 @@ export const InstallActionManualRunModal = ({
   const [customVars, setCustomVars] = useState<number[]>([])
   const formRef = useRef<HTMLFormElement>(null)
 
-  const { data, error, isLoading, execute } = useServerAction({
+  const { data, error, isLoading, execute, headers } = useServerAction({
     action: runAction,
   })
 
@@ -85,6 +86,14 @@ export const InstallActionManualRunModal = ({
         },
       })
       removeModal(props.modalId)
+
+       if (headers?.['x-nuon-install-workflow-id']) {
+        router.push(
+          `/${org.id}/installs/${install.id}/workflows/${headers['x-nuon-install-workflow-id']}`
+        )
+      } else {
+        router.push(`/${org.id}/installs/${install.id}/workflows`)
+      }
     },
     onError: () => {
       trackEvent({
