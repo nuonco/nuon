@@ -1,14 +1,18 @@
 package views
 
 import (
+	"fmt"
 	"time"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/datepicker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/calendar"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
 )
 
 templ AccountDetail(
@@ -19,7 +23,7 @@ templ AccountDetail(
 	startDate, endDate time.Time,
 	currentPage, installsTotalPages, auditLogsTotalPages int,
 ) {
-	@Layout("Account: " + account.Email) {
+	@Layout("Account: " + account.Email, ActivePageAccounts) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
 			<div class="mb-6">
@@ -201,29 +205,56 @@ templ AccountDetail(
 						if len(apps) == 0 {
 							<div class="text-sm text-muted-foreground">No apps created.</div>
 						} else {
-							<div class="space-y-2">
-								for _, app := range apps {
-									<div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-										<div class="flex flex-col gap-1">
-											<div class="font-medium">{ app.Name }</div>
-											<div class="flex items-center gap-2">
-												<span id={ "app-id-" + app.ID } class="font-mono text-xs text-muted-foreground">{ app.ID }</span>
-												@copybutton.CopyButton(copybutton.Props{
-													TargetID: "app-id-" + app.ID,
-												})
-											</div>
-										</div>
-										<div class="flex flex-col items-end gap-1">
-											<a href={ templ.URL("/orgs/" + app.OrgID) } class="text-cyan hover:underline text-sm">
-												{ app.Org.Name }
-											</a>
-											<div class="text-xs text-muted-foreground">
-												<span class="font-mono">{ app.CreatedAt.Format("2006-01-02 15:04") }</span>
-											</div>
-										</div>
-									</div>
+							@table.Table() {
+								@table.Header() {
+									@table.Row() {
+										@table.Head() { App }
+										@table.Head() { Organization }
+										@table.Head() { Status }
+										@table.Head() { Config Version }
+										@table.Head() { Created At }
+										@table.Head() { Updated At }
+									}
 								}
-							</div>
+								@table.Body() {
+									for _, app := range apps {
+										@table.Row() {
+											@table.Cell() {
+												<div class="flex flex-col gap-1">
+													<div class="font-medium">{ app.Name }</div>
+													<div class="flex items-center gap-2">
+														<span id={ "app-id-" + app.ID } class="font-mono text-xs text-muted-foreground">{ app.ID }</span>
+														@copybutton.CopyButton(copybutton.Props{
+															TargetID: "app-id-" + app.ID,
+														})
+													</div>
+												</div>
+											}
+											@table.Cell() {
+												<a href={ templ.URL("/orgs/" + app.OrgID) } class="text-cyan hover:underline text-sm">
+													{ app.Org.Name }
+												</a>
+											}
+											@table.Cell() {
+												@status.StatusAutoSimple(string(app.Status))
+											}
+											@table.Cell(table.CellProps{Class: "font-mono text-sm text-center"}) {
+												if app.ConfigCount > 0 {
+													{ fmt.Sprintf("%d", app.ConfigCount) }
+												} else {
+													<span class="text-muted-foreground">-</span>
+												}
+											}
+											@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+												{ app.CreatedAt.Format("2006-01-02 15:04") }
+											}
+											@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+												{ app.UpdatedAt.Format("2006-01-02 15:04") }
+											}
+										}
+									}
+								}
+							}
 						}
 					}
 				}
@@ -244,26 +275,58 @@ templ AccountDetail(
 						if len(account.Orgs) == 0 {
 							<div class="text-sm text-muted-foreground">No organizations found.</div>
 						} else {
-							<div class="space-y-2">
-								for _, org := range account.Orgs {
-									<div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-										<div class="flex flex-col gap-1">
-											<a href={ templ.URL("/orgs/" + org.ID) } class="text-cyan hover:underline font-medium">
-												{ org.Name }
-											</a>
-											<div class="flex items-center gap-2">
-												<span id={ "org-id-" + org.ID } class="font-mono text-xs text-muted-foreground">{ org.ID }</span>
-												@copybutton.CopyButton(copybutton.Props{
-													TargetID: "org-id-" + org.ID,
-												})
-											</div>
-										</div>
-										<div class="text-xs text-muted-foreground">
-											<span class="font-mono uppercase">{ string(org.OrgType) }</span>
-										</div>
-									</div>
+							@table.Table() {
+								@table.Header() {
+									@table.Row() {
+										@table.Head() { Organization }
+										@table.Head() { Type }
+										@table.Head() { Status }
+										@table.Head() { Tags }
+										@table.Head() { Created At }
+									}
 								}
-							</div>
+								@table.Body() {
+									for _, org := range account.Orgs {
+										@table.Row() {
+											@table.Cell() {
+												<div class="flex flex-col gap-1">
+													<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline">
+														{ org.Name }
+													</a>
+													<div class="flex items-center gap-2">
+														<span id={ "org-id-" + org.ID } class="font-mono text-xs text-muted-foreground">{ org.ID }</span>
+														@copybutton.CopyButton(copybutton.Props{
+															TargetID: "org-id-" + org.ID,
+														})
+													</div>
+												</div>
+											}
+											@table.Cell(table.CellProps{Class: "font-mono text-xs uppercase"}) {
+												{ string(org.OrgType) }
+											}
+											@table.Cell() {
+												@OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
+											}
+											@table.Cell() {
+												<div class="flex flex-wrap gap-1 max-w-xs">
+													if len(org.Tags) == 0 {
+														<span class="text-xs text-muted-foreground italic">No tags</span>
+													} else {
+														for _, tag := range org.Tags {
+															@badge.Badge(badge.Props{Class: "text-xs"}) {
+																{ tag }
+															}
+														}
+													}
+												</div>
+											}
+											@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+												{ org.CreatedAt.Format("2006-01-02 15:04") }
+											}
+										}
+									}
+								}
+							}
 						}
 					}
 				}

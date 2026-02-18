@@ -20,6 +20,9 @@ import (
 // swagger:model app.Org
 type AppOrg struct {
 
+	// Transient fields for counts (not persisted to database)
+	AppCount int64 `json:"app_count,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -31,6 +34,9 @@ type AppOrg struct {
 
 	// id
 	ID string `json:"id,omitempty"`
+
+	// install count
+	InstallCount int64 `json:"install_count,omitempty"`
 
 	// links
 	Links map[string]any `json:"links,omitempty"`
