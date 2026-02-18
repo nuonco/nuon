@@ -321,9 +321,9 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string)
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var15 templ.SafeURL
-								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + org.ID))
+								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + org.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 41, Col: 46}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 41, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {

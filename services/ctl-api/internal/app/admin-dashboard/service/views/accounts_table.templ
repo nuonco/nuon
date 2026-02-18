@@ -35,7 +35,7 @@ templ AccountsTable(accounts []*app.Account, currentPage, totalPages int, search
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("accounts/" + account.ID) } class="text-cyan hover:underline">
+									<a href={ templ.URL("/accounts/" + account.ID) } class="text-cyan hover:underline">
 										{ account.Email }
 									</a>
 									<div class="flex items-center gap-2">
@@ -52,7 +52,7 @@ templ AccountsTable(accounts []*app.Account, currentPage, totalPages int, search
 									{{ totalOrgs := len(account.Orgs) }}
 									for i, org := range account.Orgs {
 										if i < maxOrgs {
-											<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline text-sm">
+											<a href={ templ.URL("/orgs/" + org.ID) } class="text-cyan hover:underline text-sm">
 												{ org.Name }
 											</a>
 										}

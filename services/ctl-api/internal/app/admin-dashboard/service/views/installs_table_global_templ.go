@@ -347,9 +347,9 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var16 templ.SafeURL
-								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("installs/" + install.ID))
+								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/installs/" + install.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 42, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 42, Col: 55}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -435,9 +435,9 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var21 templ.SafeURL
-								templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + install.OrgID))
+								templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + install.OrgID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 54, Col: 52}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 54, Col: 53}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 								if templ_7745c5c3_Err != nil {

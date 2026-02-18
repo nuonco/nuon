@@ -39,7 +39,7 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("installs/" + install.ID) } class="text-cyan hover:underline">
+									<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
 										{ install.Name }
 									</a>
 									<div class="flex items-center gap-2">
@@ -51,7 +51,7 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 								</div>
 							}
 							@table.Cell() {
-								<a href={ templ.URL("orgs/" + install.OrgID) } class="text-cyan hover:underline">
+								<a href={ templ.URL("/orgs/" + install.OrgID) } class="text-cyan hover:underline">
 									{ install.Org.Name }
 								</a>
 							}

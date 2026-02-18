@@ -268,9 +268,9 @@ func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQ
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var13 templ.SafeURL
-								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("accounts/" + account.ID))
+								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/accounts/" + account.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 38, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 38, Col: 55}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 								if templ_7745c5c3_Err != nil {
@@ -364,9 +364,9 @@ func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQ
 											return templ_7745c5c3_Err
 										}
 										var templ_7745c5c3_Var18 templ.SafeURL
-										templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + org.ID))
+										templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + org.ID))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 55, Col: 48}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 55, Col: 49}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 										if templ_7745c5c3_Err != nil {
