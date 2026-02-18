@@ -9,10 +9,12 @@ import (
 )
 
 type CustomNestedStack struct {
-	Name        string            `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
-	TemplateURL string            `mapstructure:"template_url" toml:"template_url" json:"template_url" jsonschema:"required" features:"template"`
-	Index       int               `mapstructure:"index" toml:"index" json:"index" jsonschema:"required"`
-	Parameters  map[string]string `mapstructure:"parameters" toml:"parameters" json:"parameters,omitempty"`
+	Name         string            `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
+	TemplateURL  string            `mapstructure:"template_url" toml:"template_url" json:"template_url" jsonschema:"required" features:"template"`
+	Index        int               `mapstructure:"index" toml:"index" json:"index" jsonschema:"required"`
+	Parameters   map[string]string `mapstructure:"parameters" toml:"parameters" json:"parameters,omitempty"`
+	Contents     string            `mapstructure:"-" toml:"-" json:"contents,omitempty" jsonschema:"-" features:"get"`
+	ContentsHash string            `mapstructure:"-" toml:"-" json:"contents_hash,omitempty" jsonschema:"-"`
 }
 
 func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -132,9 +134,6 @@ func (a *StackConfig) parse() error {
 				Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
 				Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
 			}
-		}
-		if err := ValidateTemplateURL(stack.TemplateURL, fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url", i, stack.Name)); err != nil {
-			return err
 		}
 		for paramName, paramValue := range stack.Parameters {
 			if _, err := ParseInstallInputReference(paramValue); err != nil {

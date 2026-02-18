@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -31,6 +32,7 @@ type Params struct {
 	AccountsHelpers *accountshelpers.Helpers
 	EvClient        eventloop.Client
 	EndpointAudit   *api.EndpointAudit
+	TemporalClient  temporalclient.Client
 }
 
 type service struct {
@@ -45,6 +47,7 @@ type service struct {
 	installsHelpers *installshelpers.Helpers
 	accountsHelpers *accountshelpers.Helpers
 	evClient        eventloop.Client
+	temporalClient  temporalclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -237,5 +240,6 @@ func New(params Params) *service {
 		installsHelpers: params.InstallsHelpers,
 		accountsHelpers: params.AccountsHelpers,
 		evClient:        params.EvClient,
+		temporalClient:  params.TemporalClient,
 	}
 }
