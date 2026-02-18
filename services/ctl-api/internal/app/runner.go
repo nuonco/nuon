@@ -103,6 +103,13 @@ func (r *Runner) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &Runner{}, "runner_group_id_leader"),
+			Columns: []string{
+				"runner_group_id",
+				"leader",
+			},
+		},
 	}
 }
 

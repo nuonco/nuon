@@ -29,22 +29,21 @@ func (a *Activities) RescheduleJobsToLeader(ctx context.Context, req RescheduleJ
 		return nil, fmt.Errorf("unable to reschedule jobs to new leader: %w", res.Error)
 	}
 
-	if res.RowsAffected > 0 {
-		// Fetch rescheduled job IDs and signal each on the new leader's event loop.
-		var jobs []app.RunnerJob
-		if err := a.db.WithContext(ctx).
-			Select("id").
-			Where("runner_id = ? AND status = ? AND deleted_at = 0", req.NewLeaderRunnerID, app.RunnerJobStatusQueued).
-			Find(&jobs).Error; err != nil {
-			return nil, fmt.Errorf("unable to fetch rescheduled jobs: %w", err)
-		}
+	// Always signal queued jobs on the new leader to ensure idempotency on retry.
+	// Redundant signals are safe; missing signals leave jobs stuck.
+	var jobs []app.RunnerJob
+	if err := a.db.WithContext(ctx).
+		Select("id").
+		Where("runner_id = ? AND status = ? AND deleted_at = 0", req.NewLeaderRunnerID, app.RunnerJobStatusQueued).
+		Find(&jobs).Error; err != nil {
+		return nil, fmt.Errorf("unable to fetch queued jobs on new leader: %w", err)
+	}
 
-		for _, job := range jobs {
-			a.evClient.Send(ctx, req.NewLeaderRunnerID, &signals.Signal{
-				Type:  signals.OperationProcessJob,
-				JobID: job.ID,
-			})
-		}
+	for _, job := range jobs {
+		a.evClient.Send(ctx, req.NewLeaderRunnerID, &signals.Signal{
+			Type:  signals.OperationProcessJob,
+			JobID: job.ID,
+		})
 	}
 
 	return &RescheduleJobsToLeaderResponse{RescheduledCount: int(res.RowsAffected)}, nil

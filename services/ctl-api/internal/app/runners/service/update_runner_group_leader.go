@@ -25,7 +25,7 @@ type updateRunnerGroupLeaderRequest struct {
 // @Produce				json
 // @Param					runner_group_id	path	string								true	"runner group ID"
 // @Param					request			body	updateRunnerGroupLeaderRequest		true	"leader update request"
-// @Success				200	{object}	app.Runner
+// @Success				202	{object}	object
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
@@ -72,30 +72,13 @@ func (s *service) UpdateRunnerGroupLeader(ctx *gin.Context) {
 			return
 		}
 
-		// Clear all leader flags in the group, then set the requested runner as leader.
-		if err := s.db.WithContext(ctx).Model(&app.Runner{}).
-			Where("runner_group_id = ? AND org_id = ? AND deleted_at = 0", groupID, org.ID).
-			Update("leader", false).Error; err != nil {
-			ctx.Error(fmt.Errorf("unable to clear leader flags: %w", err))
-			return
-		}
-		if err := s.db.WithContext(ctx).Model(&app.Runner{}).
-			Where("id = ? AND deleted_at = 0", *req.RunnerID).
-			Update("leader", true).Error; err != nil {
-			ctx.Error(fmt.Errorf("unable to set leader: %w", err))
-			return
-		}
+		// Dispatch to the runner-groups event loop so the set + reschedule
+		// happen atomically inside the workflow, avoiding races with ElectLeader.
+		s.evClient.Send(ctx, groupID, &runnergroupssignals.Signal{
+			Type:                    runnergroupssignals.OperationSetLeader,
+			RequestedLeaderRunnerID: *req.RunnerID,
+		})
 	}
 
-	// Find and return the current leader runner.
-	var leader app.Runner
-	res := s.db.WithContext(ctx).
-		Where("runner_group_id = ? AND leader = true AND deleted_at = 0", groupID).
-		First(&leader)
-	if res.Error != nil {
-		ctx.JSON(http.StatusOK, gin.H{"leader_runner_id": nil})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, &leader)
+	ctx.JSON(http.StatusAccepted, gin.H{"status": "accepted"})
 }

@@ -80,7 +80,7 @@ func (s *Signal) Stop() bool {
 
 func (s *Signal) Start() bool {
 	switch s.Type {
-	case OperationCreated:
+	case OperationCreated, OperationElectLeader, OperationSetLeader:
 		return true
 	default:
 	}

@@ -25,14 +25,17 @@ func (a *Activities) RetargetJobToLeader(ctx context.Context, req RetargetJobToL
 	resp := &RetargetJobToLeaderResponse{}
 
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Look up the runner with its group and sibling runners to find the leader.
+		// Look up the runner.
 		var runner app.Runner
-		if res := tx.Preload("RunnerGroup.Runners").First(&runner, "id = ? AND deleted_at = 0", req.RunnerID); res.Error != nil {
+		if res := tx.First(&runner, "id = ? AND deleted_at = 0", req.RunnerID); res.Error != nil {
 			return fmt.Errorf("unable to get runner: %w", res.Error)
 		}
 
-		leader := runner.RunnerGroup.ActiveRunner()
-		if leader == nil || !leader.Leader {
+		// Find the leader directly instead of loading all runners in the group.
+		var leader app.Runner
+		err := tx.Where("runner_group_id = ? AND leader = true AND deleted_at = 0", runner.RunnerGroupID).
+			First(&leader).Error
+		if err != nil {
 			resp.NoLeader = true
 			return nil
 		}
