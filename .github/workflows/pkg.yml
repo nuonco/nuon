@@ -60,7 +60,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2
+          version: v2.9.0
           working-directory: pkg
           args: -c ../.golangci.yml -v
 
