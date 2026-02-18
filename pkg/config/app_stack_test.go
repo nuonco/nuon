@@ -60,48 +60,29 @@ func TestStackConfig_Parse_MissingTemplateURL(t *testing.T) {
 	assert.Contains(t, err.Error(), "template_url is required")
 }
 
-func TestStackConfig_Parse_InvalidTemplateURL(t *testing.T) {
+func TestStackConfig_Parse_NonS3URLAccepted(t *testing.T) {
+	// Custom nested stack template URLs no longer require S3 — go-getter handles fetching.
 	cfg := &StackConfig{
-		CustomNestedStacks: []CustomNestedStack{
-			{Name: "my_stack", TemplateURL: "not-a-url", Index: 0},
-		},
-	}
-	err := cfg.parse()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "missing scheme or host")
-}
-
-func TestStackConfig_Parse_TemplateURLMissingScheme(t *testing.T) {
-	cfg := &StackConfig{
-		CustomNestedStacks: []CustomNestedStack{
-			{Name: "my_stack", TemplateURL: "example.com/template.yaml", Index: 0},
-		},
-	}
-	err := cfg.parse()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "missing scheme or host")
-}
-
-func TestStackConfig_Parse_NonS3URL(t *testing.T) {
-	cfg := &StackConfig{
+		Type:        "aws-cloudformation",
+		Name:        "my-stack",
+		Description: "test stack",
 		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", TemplateURL: "https://example.com/template.yaml", Index: 0},
 		},
 	}
-	err := cfg.parse()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not an S3 URL")
+	require.NoError(t, cfg.parse())
 }
 
-func TestStackConfig_Parse_HttpS3URLRejected(t *testing.T) {
+func TestStackConfig_Parse_FilePathURLAccepted(t *testing.T) {
 	cfg := &StackConfig{
+		Type:        "aws-cloudformation",
+		Name:        "my-stack",
+		Description: "test stack",
 		CustomNestedStacks: []CustomNestedStack{
-			{Name: "my_stack", TemplateURL: "http://s3.amazonaws.com/bucket/template.yaml", Index: 0},
+			{Name: "my_stack", TemplateURL: "./templates/custom.yaml", Index: 0},
 		},
 	}
-	err := cfg.parse()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not an S3 URL")
+	require.NoError(t, cfg.parse())
 }
 
 func TestStackConfig_Parse_VPCTemplateURLValidation(t *testing.T) {
