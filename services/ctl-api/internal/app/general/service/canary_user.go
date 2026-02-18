@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 const (
@@ -40,8 +41,8 @@ type CreateCanaryUserResponse struct {
 // @Router					/v1/general/canary-user [post]
 func (s *service) CreateCanaryUser(ctx *gin.Context) {
 	var req CreateCanaryUserRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
