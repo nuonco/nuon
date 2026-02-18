@@ -16,6 +16,8 @@ type Props struct {
 	Placeholder string // Placeholder text for the search input
 	TargetURL   string // HTMX endpoint to call (e.g., "orgs/table")
 	TargetID    string // ID of the element to update (e.g., "orgs-table")
+	PushURL     string // URL to push to browser history (empty = don't push)
+	Value       string // Initial value for the search input
 }
 
 func SearchInput(props Props) templ.Component {
@@ -43,16 +45,21 @@ func SearchInput(props Props) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		attrs := templ.Attributes{
+			"hx-get":     props.TargetURL,
+			"hx-trigger": "keyup changed delay:500ms, search",
+			"hx-target":  "#" + props.TargetID,
+			"hx-swap":    "outerHTML",
+		}
+		if props.PushURL != "" {
+			attrs["hx-push-url"] = props.PushURL
+		}
 		templ_7745c5c3_Err = input.Input(input.Props{
 			Name:        "search",
 			Type:        input.TypeSearch,
 			Placeholder: props.Placeholder,
-			Attributes: templ.Attributes{
-				"hx-get":     props.TargetURL,
-				"hx-trigger": "keyup changed delay:500ms, search",
-				"hx-target":  "#" + props.TargetID,
-				"hx-swap":    "outerHTML",
-			},
+			Value:       props.Value,
+			Attributes:  attrs,
 		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

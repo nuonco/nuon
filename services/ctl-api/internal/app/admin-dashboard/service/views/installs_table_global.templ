@@ -10,13 +10,13 @@ import (
 )
 
 // InstallsTableGlobal renders the global installs table for all organizations
-templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string) {
+templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string, sort string, filter string) {
 	<div
 		id="installs-table-wrapper"
 		hx-get="/installs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
-		hx-include="[name='search']"
+		hx-include="[name='search'],[name='sort'],[name='filter']"
 	>
 		if len(installs) == 0 {
 			<div class="text-sm text-muted-foreground">No installs found.</div>
@@ -39,7 +39,7 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("installs/" + install.ID) } class="text-cyan hover:underline">
+									<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
 										{ install.Name }
 									</a>
 									<div class="flex items-center gap-2">
@@ -51,7 +51,7 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 								</div>
 							}
 							@table.Cell() {
-								<a href={ templ.URL("orgs/" + install.OrgID) } class="text-cyan hover:underline">
+								<a href={ templ.URL("/orgs/" + install.OrgID) } class="text-cyan hover:underline">
 									{ install.Org.Name }
 								</a>
 							}
@@ -80,39 +80,39 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 		}
 		if totalPages > 1 {
 			<div class="mt-4">
-				@renderPagination(currentPage, totalPages, searchQuery)
+				@renderPagination(currentPage, totalPages, searchQuery, sort, filter)
 			</div>
 		}
 	</div>
 }
 
-templ renderPagination(currentPage, totalPages int, searchQuery string) {
+templ renderPagination(currentPage, totalPages int, searchQuery string, sort string, filter string) {
 	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
 	@pagination.Pagination() {
 		@pagination.Content() {
 			@pagination.Item() {
 				@pagination.Previous(pagination.PreviousProps{
-					Href:     buildPageURL(currentPage-1, searchQuery),
+					Href:     buildInstallsBrowserURL(currentPage-1, searchQuery, sort, filter),
 					Disabled: !paginationData.HasPrevious,
 					Label:    "Previous",
 					Attributes: templ.Attributes{
-						"hx-get":    buildPageURL(currentPage-1, searchQuery),
-						"hx-target": "#installs-table-wrapper",
-						"hx-swap":   "outerHTML",
-						"hx-include": "[name='search']",
+						"hx-get":     buildPageURL(currentPage-1, searchQuery, sort, filter),
+						"hx-target":  "#installs-table-wrapper",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search'],[name='sort'],[name='filter']",
 					},
 				})
 			}
 			for _, pageNum := range paginationData.Pages {
 				@pagination.Item() {
 					@pagination.Link(pagination.LinkProps{
-						Href:     buildPageURL(pageNum, searchQuery),
+						Href:     buildInstallsBrowserURL(pageNum, searchQuery, sort, filter),
 						IsActive: pageNum == currentPage,
 						Attributes: templ.Attributes{
-							"hx-get":    buildPageURL(pageNum, searchQuery),
-							"hx-target": "#installs-table-wrapper",
-							"hx-swap":   "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-get":     buildPageURL(pageNum, searchQuery, sort, filter),
+							"hx-target":  "#installs-table-wrapper",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search'],[name='sort'],[name='filter']",
 						},
 					}) {
 						{ fmt.Sprintf("%d", pageNum) }
@@ -121,14 +121,14 @@ templ renderPagination(currentPage, totalPages int, searchQuery string) {
 			}
 			@pagination.Item() {
 				@pagination.Next(pagination.NextProps{
-					Href:     buildPageURL(currentPage+1, searchQuery),
+					Href:     buildInstallsBrowserURL(currentPage+1, searchQuery, sort, filter),
 					Disabled: !paginationData.HasNext,
 					Label:    "Next",
 					Attributes: templ.Attributes{
-						"hx-get":    buildPageURL(currentPage+1, searchQuery),
-						"hx-target": "#installs-table-wrapper",
-						"hx-swap":   "outerHTML",
-						"hx-include": "[name='search']",
+						"hx-get":     buildPageURL(currentPage+1, searchQuery, sort, filter),
+						"hx-target":  "#installs-table-wrapper",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search'],[name='sort'],[name='filter']",
 					},
 				})
 			}
