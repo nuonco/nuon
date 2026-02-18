@@ -17,7 +17,7 @@ import (
 )
 
 // AccountsTable renders the accounts table
-func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQuery string) templ.Component {
+func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQuery string, filter string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -38,7 +38,7 @@ func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQ
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"accounts-table\" hx-get=\"/accounts/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"accounts-table\" hx-get=\"/accounts/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='filter']\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -268,9 +268,9 @@ func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQ
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var13 templ.SafeURL
-								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("accounts/" + account.ID))
+								templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/accounts/" + account.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 38, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 38, Col: 55}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 								if templ_7745c5c3_Err != nil {
@@ -364,9 +364,9 @@ func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQ
 											return templ_7745c5c3_Err
 										}
 										var templ_7745c5c3_Var18 templ.SafeURL
-										templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + org.ID))
+										templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + org.ID))
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 55, Col: 48}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/accounts_table.templ`, Line: 55, Col: 49}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 										if templ_7745c5c3_Err != nil {
@@ -544,7 +544,7 @@ func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQ
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = renderAccountsPagination(currentPage, totalPages, searchQuery).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = renderAccountsPagination(currentPage, totalPages, searchQuery, filter).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -561,7 +561,7 @@ func AccountsTable(accounts []*app.Account, currentPage, totalPages int, searchQ
 	})
 }
 
-func renderAccountsPagination(currentPage, totalPages int, searchQuery string) templ.Component {
+func renderAccountsPagination(currentPage, totalPages int, searchQuery string, filter string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -620,14 +620,14 @@ func renderAccountsPagination(currentPage, totalPages int, searchQuery string) t
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
-						Href:     buildAccountsPageURL(currentPage-1, searchQuery),
+						Href:     buildAccountsBrowserURL(currentPage-1, searchQuery, filter),
 						Disabled: !paginationData.HasPrevious,
 						Label:    "Previous",
 						Attributes: templ.Attributes{
-							"hx-get":     buildAccountsPageURL(currentPage-1, searchQuery),
+							"hx-get":     buildAccountsPageURL(currentPage-1, searchQuery, filter),
 							"hx-target":  "#accounts-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-include": "[name='search'],[name='filter']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
@@ -676,13 +676,13 @@ func renderAccountsPagination(currentPage, totalPages int, searchQuery string) t
 							return nil
 						})
 						templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
-							Href:     buildAccountsPageURL(pageNum, searchQuery),
+							Href:     buildAccountsBrowserURL(pageNum, searchQuery, filter),
 							IsActive: pageNum == currentPage,
 							Attributes: templ.Attributes{
-								"hx-get":     buildAccountsPageURL(pageNum, searchQuery),
+								"hx-get":     buildAccountsPageURL(pageNum, searchQuery, filter),
 								"hx-target":  "#accounts-table",
 								"hx-swap":    "outerHTML",
-								"hx-include": "[name='search']",
+								"hx-include": "[name='search'],[name='filter']",
 							},
 						}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var32), templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
@@ -712,14 +712,14 @@ func renderAccountsPagination(currentPage, totalPages int, searchQuery string) t
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
-						Href:     buildAccountsPageURL(currentPage+1, searchQuery),
+						Href:     buildAccountsBrowserURL(currentPage+1, searchQuery, filter),
 						Disabled: !paginationData.HasNext,
 						Label:    "Next",
 						Attributes: templ.Attributes{
-							"hx-get":     buildAccountsPageURL(currentPage+1, searchQuery),
+							"hx-get":     buildAccountsPageURL(currentPage+1, searchQuery, filter),
 							"hx-target":  "#accounts-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-include": "[name='search'],[name='filter']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {

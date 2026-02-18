@@ -7,9 +7,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
 )
 
-templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery string) {
+templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery string, sort string, filter string) {
 	@Layout("Installs", ActivePageInstalls) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
@@ -22,28 +23,184 @@ templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery
 					}
 				}
 				@card.Content() {
-					@search.SearchInput(search.Props{
-						Placeholder: "Search by install name or ID...",
-						TargetURL:   "installs/table",
-						TargetID:    "installs-table-wrapper",
-					})
+					<div class="flex gap-4 mb-4">
+						<div class="flex-1">
+							@search.SearchInput(search.Props{
+								Placeholder: "Search by install name or ID...",
+								TargetURL:   "installs/table",
+								TargetID:    "installs-table-wrapper",
+								PushURL:     "",
+								Value:       searchQuery,
+							})
+						</div>
+						<div
+							class="w-48"
+							hx-get="/installs/table"
+							hx-trigger="change from:[name='sort']"
+							hx-target="#installs-table-wrapper"
+							hx-swap="outerHTML"
+							hx-include="[name='search'],[name='sort'],[name='filter']"
+						>
+							@selectbox.SelectBox(selectbox.Props{
+								Multiple: false,
+							}) {
+								@selectbox.Trigger(selectbox.TriggerProps{
+									Name:     "sort",
+									Multiple: false,
+								}) {
+									@selectbox.Value(selectbox.ValueProps{
+										Placeholder: "Newest first",
+										Multiple:    false,
+									})
+								}
+								@selectbox.Content(selectbox.ContentProps{
+									NoSearch: true,
+								}) {
+									@selectbox.Group() {
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "newest",
+											Selected: sort == "" || sort == "newest",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											Newest first
+										}
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "oldest",
+											Selected: sort == "oldest",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											Oldest first
+										}
+									}
+								}
+							}
+						</div>
+						<div
+							class="w-48"
+							hx-get="/installs/table"
+							hx-trigger="change from:[name='filter']"
+							hx-target="#installs-table-wrapper"
+							hx-swap="outerHTML"
+							hx-include="[name='search'],[name='sort'],[name='filter']"
+						>
+							@selectbox.SelectBox(selectbox.Props{
+								Multiple: false,
+							}) {
+								@selectbox.Trigger(selectbox.TriggerProps{
+									Name:     "filter",
+									Multiple: false,
+								}) {
+									@selectbox.Value(selectbox.ValueProps{
+										Placeholder: "All installs",
+										Multiple:    false,
+									})
+								}
+								@selectbox.Content(selectbox.ContentProps{
+									NoSearch: true,
+								}) {
+									@selectbox.Group() {
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "all",
+											Selected: filter == "" || filter == "all",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											All installs
+										}
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "nuon",
+											Selected: filter == "nuon",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											Nuon installs
+										}
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "user",
+											Selected: filter == "user",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											User installs
+										}
+									}
+								}
+							}
+						</div>
+					</div>
 					if len(installs) == 0 {
 						<div class="text-sm text-muted-foreground">No installs found.</div>
 					} else {
-						@InstallsTableGlobal(installs, currentPage, totalPages, searchQuery)
+						@InstallsTableGlobal(installs, currentPage, totalPages, searchQuery, sort, filter)
 					}
 				}
 			}
 		</div>
 		@copybutton.Script()
 		@popover.Script()
+		@selectbox.Script()
+		<script>
+			// Update URL when search/sort/filter changes
+			document.body.addEventListener('htmx:afterSwap', function(evt) {
+				if (evt.detail.target.id === 'installs-table-wrapper') {
+					const searchInput = document.querySelector('input[name="search"]');
+					const sortInput = document.querySelector('input[name="sort"]');
+					const filterInput = document.querySelector('input[name="filter"]');
+
+					const params = new URLSearchParams();
+
+					// Add search param if present
+					if (searchInput && searchInput.value) {
+						params.set('search', searchInput.value);
+					}
+
+					// Add sort param if present and not "newest"
+					if (sortInput && sortInput.value && sortInput.value !== 'newest') {
+						params.set('sort', sortInput.value);
+					}
+
+					// Add filter param if present and not "all"
+					if (filterInput && filterInput.value && filterInput.value !== 'all') {
+						params.set('filter', filterInput.value);
+					}
+
+					// Add page param if not page 1
+					const currentUrl = new URL(evt.detail.xhr.responseURL);
+					const page = currentUrl.searchParams.get('page');
+					if (page && page !== '1') {
+						params.set('page', page);
+					}
+
+					// Update browser URL
+					const newUrl = '/installs' + (params.toString() ? '?' + params.toString() : '');
+					history.replaceState(null, '', newUrl);
+				}
+			});
+		</script>
 	}
 }
 
-func buildPageURL(page int, search string) string {
+func buildPageURL(page int, search string, sort string, filter string) string {
 	url := fmt.Sprintf("installs/table?page=%d", page)
 	if search != "" {
 		url += fmt.Sprintf("&search=%s", search)
+	}
+	if sort != "" && sort != "newest" {
+		url += fmt.Sprintf("&sort=%s", sort)
+	}
+	if filter != "" && filter != "all" {
+		url += fmt.Sprintf("&filter=%s", filter)
+	}
+	return url
+}
+
+func buildInstallsBrowserURL(page int, search string, sort string, filter string) string {
+	url := fmt.Sprintf("/installs?page=%d", page)
+	if search != "" {
+		url += fmt.Sprintf("&search=%s", search)
+	}
+	if sort != "" && sort != "newest" {
+		url += fmt.Sprintf("&sort=%s", sort)
+	}
+	if filter != "" && filter != "all" {
+		url += fmt.Sprintf("&filter=%s", filter)
 	}
 	return url
 }

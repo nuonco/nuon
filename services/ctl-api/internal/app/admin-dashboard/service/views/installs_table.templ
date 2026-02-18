@@ -44,7 +44,7 @@ templ InstallsTable(orgID string, installs []*app.Install, currentPage, totalPag
 								</div>
 							}
 							@table.Cell() {
-								<a href={ templ.URL("installs/" + install.ID) } class="text-cyan hover:underline">
+								<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
 									{ install.Name }
 								</a>
 							}
