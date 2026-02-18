@@ -216,6 +216,9 @@ func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
 			{Name: "api_update"},
 			{Name: "migrate_role"},
 			{Name: "some_role"},
+			{Name: "custom_provision"},
+			{Name: "custom_maintenance"},
+			{Name: "custom_deprovision"},
 		},
 	}
 
@@ -303,7 +306,7 @@ func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
 					},
 					{
 						Principal: "nuon::component:api-server",
-						Operation: OperationUpdate,
+						Operation: OperationDeploy,
 						RoleName:  "api_update",
 					},
 					{
@@ -407,7 +410,7 @@ func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
 					},
 					{
 						Principal: "nuon::component:invalid",
-						Operation: OperationUpdate,
+						Operation: OperationDeploy,
 						RoleName:  "invalid_role",
 					},
 				},

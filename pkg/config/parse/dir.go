@@ -83,7 +83,7 @@ func (c *ConfigDir) getSecrets() (*config.SecretsConfig, error) {
 
 func (c *ConfigDir) getOperationRoles() (*config.OperationRolesConfig, error) {
 	if c.OperationRolesConfig == nil {
-		return &config.OperationRolesConfig{}, nil
+		return &config.OperationRolesConfig{Type: config.OperationRuleConfigTypeMatrix}, nil
 	}
 
 	return c.OperationRolesConfig, nil

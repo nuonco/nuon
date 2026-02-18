@@ -59,8 +59,8 @@ var validOperations ValidOperations = []OperationType{
 
 // OperationRolesConfig defines role assignments for operations at the app level
 type OperationRolesConfig struct {
-	Type       string               `mapstructure:"type" toml:"type" jsonschema:"required"` // Should be "matrix"
-	RuleMatrix []*OperationRoleRule `mapstructure:"rules,omitempty" toml:"rules,omitempty" jsonschema:"required"`
+	Type       OperationRuleConfigType `mapstructure:"type" toml:"type" jsonschema:"required"` // Should be "matrix"
+	RuleMatrix []*OperationRoleRule    `mapstructure:"rules,omitempty" toml:"rules,omitempty"`
 }
 
 func (c OperationRolesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -81,11 +81,7 @@ func (c *OperationRolesConfig) Validate() error {
 	}
 
 	if c.Type != "matrix" {
-		return errors.New("only matrix type supported")
-	}
-
-	if len(c.RuleMatrix) == 0 {
-		return errors.New("operation_roles rules cannot be empty when operation_roles is configured")
+		return errors.New("operation roles supports only matrix type config")
 	}
 
 	// validate if a particular rule is duplicated for a principal and a operation
