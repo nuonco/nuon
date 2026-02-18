@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 // WorkflowStepOptions is a functional option for configuring WorkflowStep
@@ -91,6 +92,9 @@ func appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadat
 			Type:        string(sig.Type()),
 			EventLoopID: appBranchID,
 			SignalJSON:  byts,
+		},
+		QueueSignal: signaldb.SignalData{
+			Signal: sig,
 		},
 		Retryable: true,
 		Skippable: true,

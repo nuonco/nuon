@@ -42,27 +42,99 @@ func (c *PayloadConverter) ToPayload(value interface{}) (*commonpb.Payload, erro
 		return c.encodeSignal(sig)
 	}
 
-	// Check if it's a struct with a Signal field
 	rv := reflect.ValueOf(value)
-	if rv.Kind() == reflect.Struct {
-		signalInterfaceType := reflect.TypeOf((*signal.Signal)(nil)).Elem()
+	signalInterfaceType := reflect.TypeOf((*signal.Signal)(nil)).Elem()
 
-		// Look for a Signal field
-		for i := 0; i < rv.NumField(); i++ {
-			field := rv.Field(i)
-			if field.Type() == signalInterfaceType {
-				// Found a Signal field - encode the struct with the signal
-				sig, ok := field.Interface().(signal.Signal)
-				if !ok || sig == nil {
-					return nil, errors.New("Signal field is nil or invalid")
-				}
-				return c.encodeStructWithSignal(value, sig)
+	// Check if it's a struct with a Signal field
+	if rv.Kind() == reflect.Struct {
+		if structHasSignalField(rv.Type(), signalInterfaceType) {
+			sig, ok := getSignalFromStruct(rv, signalInterfaceType)
+			if !ok || sig == nil {
+				return nil, errors.New("Signal field is nil or invalid")
 			}
+			return c.encodeStructWithSignal(value, sig)
+		}
+	}
+
+	// Check if it's a slice/array of structs with Signal fields
+	if (rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array) && rv.Len() > 0 {
+		elemType := rv.Type().Elem()
+		// Handle both direct struct and pointer-to-struct elements
+		if elemType.Kind() == reflect.Ptr {
+			elemType = elemType.Elem()
+		}
+		if elemType.Kind() == reflect.Struct && structHasSignalField(elemType, signalInterfaceType) {
+			return c.encodeSliceWithSignals(rv)
 		}
 	}
 
 	// Not something we handle
 	return nil, nil
+}
+
+// structHasSignalField checks if a struct type has a signal.Signal field
+func structHasSignalField(t reflect.Type, signalInterfaceType reflect.Type) bool {
+	for i := 0; i < t.NumField(); i++ {
+		if t.Field(i).Type == signalInterfaceType {
+			return true
+		}
+	}
+	return false
+}
+
+// getSignalFromStruct extracts the signal.Signal value from a struct
+func getSignalFromStruct(rv reflect.Value, signalInterfaceType reflect.Type) (signal.Signal, bool) {
+	for i := 0; i < rv.NumField(); i++ {
+		field := rv.Field(i)
+		if field.Type() == signalInterfaceType {
+			sig, ok := field.Interface().(signal.Signal)
+			return sig, ok
+		}
+	}
+	return nil, false
+}
+
+// encodeSliceWithSignals encodes a slice of structs that contain Signal fields
+func (c *PayloadConverter) encodeSliceWithSignals(rv reflect.Value) (*commonpb.Payload, error) {
+	var encodedItems []json.RawMessage
+
+	for i := 0; i < rv.Len(); i++ {
+		elem := rv.Index(i)
+		// Dereference pointer elements
+		if elem.Kind() == reflect.Ptr {
+			elem = elem.Elem()
+		}
+
+		signalInterfaceType := reflect.TypeOf((*signal.Signal)(nil)).Elem()
+		sig, ok := getSignalFromStruct(elem, signalInterfaceType)
+		if !ok || sig == nil {
+			return nil, errors.Errorf("Signal field is nil or invalid at index %d", i)
+		}
+
+		payload, err := c.encodeStructWithSignal(elem.Interface(), sig)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to encode item at index %d", i)
+		}
+
+		encodedItems = append(encodedItems, payload.Data)
+	}
+
+	wrapper := map[string]interface{}{
+		"items":    encodedItems,
+		"is_array": true,
+	}
+
+	byts, err := json.Marshal(wrapper)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to marshal array payload")
+	}
+
+	return &commonpb.Payload{
+		Metadata: map[string][]byte{
+			MetadataEncodingKey: []byte(MetadataEncodingType),
+		},
+		Data: byts,
+	}, nil
 }
 
 // encodeSignal encodes a bare signal
@@ -133,9 +205,16 @@ func (c *PayloadConverter) encodeStructWithSignal(structValue interface{}, sig s
 }
 
 func (c *PayloadConverter) FromPayload(payload *commonpb.Payload, valuePtr interface{}) error {
-	// Try to unmarshal and check if it's a composite payload
+	// Try to unmarshal and check if it's a composite or array payload
 	var composite map[string]interface{}
 	if err := json.Unmarshal(payload.Data, &composite); err == nil {
+		// Check if it's an array payload
+		if _, isArray := composite["is_array"]; isArray {
+			if _, hasItems := composite["items"]; hasItems {
+				return c.decodeSliceWithSignals(payload, valuePtr)
+			}
+		}
+
 		// Check if it has the composite structure markers
 		if _, hasSignalData := composite["signal_data"]; hasSignalData {
 			if _, hasStructFields := composite["struct_fields"]; hasStructFields {
@@ -330,6 +409,50 @@ func (c *PayloadConverter) decodeStructWithSignal(payload *commonpb.Payload, val
 	}
 
 	return errors.New("no Signal field found in target struct")
+}
+
+// decodeSliceWithSignals decodes an array payload back into a slice of structs with Signal fields
+func (c *PayloadConverter) decodeSliceWithSignals(payload *commonpb.Payload, valuePtr interface{}) error {
+	var wrapper struct {
+		Items   []json.RawMessage `json:"items"`
+		IsArray bool              `json:"is_array"`
+	}
+	if err := json.Unmarshal(payload.Data, &wrapper); err != nil {
+		return errors.Wrap(err, "unable to unmarshal array payload")
+	}
+
+	rv := reflect.ValueOf(valuePtr)
+	if rv.Kind() != reflect.Ptr {
+		return errors.New("valuePtr must be a pointer")
+	}
+	if rv.IsNil() {
+		return errors.New("valuePtr cannot be nil")
+	}
+
+	elem := rv.Elem()
+	if elem.Kind() != reflect.Slice {
+		return errors.Errorf("valuePtr must be a pointer to a slice, got %s", elem.Kind())
+	}
+
+	sliceType := elem.Type()
+	resultSlice := reflect.MakeSlice(sliceType, len(wrapper.Items), len(wrapper.Items))
+
+	for i, itemData := range wrapper.Items {
+		itemPayload := &commonpb.Payload{
+			Metadata: payload.Metadata,
+			Data:     itemData,
+		}
+
+		itemPtr := reflect.New(sliceType.Elem())
+		if err := c.decodeStructWithSignal(itemPayload, itemPtr.Interface()); err != nil {
+			return errors.Wrapf(err, "unable to decode item at index %d", i)
+		}
+
+		resultSlice.Index(i).Set(itemPtr.Elem())
+	}
+
+	elem.Set(resultSlice)
+	return nil
 }
 
 func (c *PayloadConverter) ToString(payload *commonpb.Payload) string {

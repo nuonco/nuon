@@ -390,6 +390,59 @@ func (s *PayloadConverterTestSuite) TestTrueRoundTrip_StructWithSignalField() {
 	assert.Equal(s.T(), "true-roundtrip-2", exampleSig.Arg2)
 }
 
+// TestRoundTrip_ArrayOfStructsWithSignalField verifies that an array of structs
+// with Signal fields can be serialized and deserialized correctly.
+// This covers the WorkflowStep scenario where steps are stored as a slice.
+func (s *PayloadConverterTestSuite) TestRoundTrip_ArrayOfStructsWithSignalField() {
+	items := []TestRequestStruct{
+		{
+			QueueID: "queue-1",
+			Signal: &example.ExampleSignal{
+				Arg1: "array-item-1-arg1",
+				Arg2: "array-item-1-arg2",
+			},
+		},
+		{
+			QueueID: "queue-2",
+			Signal: &example.ExampleSignal{
+				Arg1: "array-item-2-arg1",
+				Arg2: "array-item-2-arg2",
+			},
+		},
+		{
+			QueueID: "queue-3",
+			Signal: &example.ExampleSignal{
+				Arg1: "array-item-3-arg1",
+				Arg2: "array-item-3-arg2",
+			},
+		},
+	}
+
+	// Serialize the array
+	payload, err := s.converter.ToPayload(items)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), payload, "ToPayload must handle arrays of structs with Signal fields")
+
+	// Deserialize back into an array
+	var result []TestRequestStruct
+	err = s.converter.FromPayload(payload, &result)
+	require.NoError(s.T(), err)
+	require.Len(s.T(), result, 3, "Should have 3 items after deserialization")
+
+	// Verify each item
+	for i, item := range result {
+		assert.Equal(s.T(), items[i].QueueID, item.QueueID, "QueueID mismatch at index %d", i)
+		require.NotNil(s.T(), item.Signal, "Signal should not be nil at index %d", i)
+
+		exampleSig, ok := item.Signal.(*example.ExampleSignal)
+		require.True(s.T(), ok, "Expected *example.ExampleSignal at index %d, got %T", i, item.Signal)
+
+		originalSig := items[i].Signal.(*example.ExampleSignal)
+		assert.Equal(s.T(), originalSig.Arg1, exampleSig.Arg1, "Arg1 mismatch at index %d", i)
+		assert.Equal(s.T(), originalSig.Arg2, exampleSig.Arg2, "Arg2 mismatch at index %d", i)
+	}
+}
+
 // TestTrueRoundTrip_WithGenericSignalInterface verifies round-trip when Signal
 // is stored in a generic signal.Signal interface variable (common pattern)
 func (s *PayloadConverterTestSuite) TestTrueRoundTrip_WithGenericSignalInterface() {

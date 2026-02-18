@@ -1,8 +1,6 @@
 package created
 
 import (
-	"fmt"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -35,22 +33,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")
 	}
-
-	return nil
-}
-
-func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get the app branch
-	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
-	if err != nil {
-		return fmt.Errorf("unable to get app branch: %w", err)
-	}
-
-	// Initialize state
-	workflow.GetLogger(ctx).Info("app branch created", "app_branch_id", branch.ID, "name", branch.Name)
-
-	// TODO: Enqueue check-changes signal to start sync loop
-	// This will be implemented when check-changes signal is ready
 
 	return nil
 }
