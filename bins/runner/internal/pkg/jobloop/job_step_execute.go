@@ -16,7 +16,7 @@ func (j *jobLoop) executeExecuteJobStep(ctx context.Context, handler jobs.JobHan
 			return j.execActionSandboxStep(ctx, job)
 		}
 
-		return j.execSandboxStep(ctx)
+		return j.execSandboxStep(ctx, job)
 	}
 
 	j.l.Info("executing exec job", zap.String("job_id", job.ID), zap.String("job_execution_id", jobExecution.ID))
