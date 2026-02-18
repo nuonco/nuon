@@ -18,6 +18,7 @@ var (
 	InstallGroup    = cobra.Group{ID: "install", Title: "Install Commands"}
 	HelpGroup       = cobra.Group{ID: "help", Title: "Help Commands"}
 	AdditionalGroup = cobra.Group{ID: "additional", Title: "Additional Commands"}
+	ExtensionGroup  = cobra.Group{ID: "extensions", Title: "Extensions"}
 )
 
 // newRootCmd constructs a new root cobra command, which all other commands will be nested under. If there are any flags
@@ -45,6 +46,7 @@ nuon sync
 		&InstallGroup,
 		&HelpGroup,
 		&AdditionalGroup,
+		&ExtensionGroup,
 	)
 
 	rootCmd.SetCompletionCommandGroupID(HelpGroup.ID)
@@ -73,6 +75,7 @@ nuon sync
 		c.buildsCmd(),
 		c.devCmd(),
 		c.loginCmd(),
+		c.extensionsCmd(),
 	}
 
 	for _, cmd := range cmds {
