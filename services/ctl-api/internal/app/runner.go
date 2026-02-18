@@ -85,6 +85,10 @@ type Runner struct {
 	Name        string `json:"name,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"name,omitzero,omitempty"`
 	DisplayName string `json:"display_name,omitzero" gorm:"not null;default null" temporaljson:"display_name,omitzero,omitempty"`
 
+	Platform AppRunnerType `json:"platform,omitzero" gorm:"not null;default:'unknown'" swaggertype:"string" temporaljson:"platform,omitzero,omitempty"`
+	Tainted  bool          `json:"tainted,omitzero" gorm:"not null;default:false" temporaljson:"tainted,omitzero,omitempty"`
+	Leader   bool          `json:"leader,omitzero" gorm:"not null;default:false" temporaljson:"leader,omitzero,omitempty"`
+
 	Jobs       []RunnerJob       `json:"jobs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"jobs,omitzero,omitempty"`
 	Operations []RunnerOperation `json:"operations,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operations,omitzero,omitempty"`
 

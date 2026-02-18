@@ -65,14 +65,15 @@ func (s *service) GetRunnerJobs(ctx *gin.Context) {
 
 func (s *service) getRunnerJobs(ctx *gin.Context, runnerID string, status app.RunnerJobStatus, grp app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
 	var runner app.Runner
-	if res := s.db.WithContext(ctx).Preload("RunnerGroup").First(&runner, "id = ?", runnerID); res.Error != nil {
+	if res := s.db.WithContext(ctx).Preload("RunnerGroup.Runners").First(&runner, "id = ?", runnerID); res.Error != nil {
 		s.l.Warn("failed to load runner for leader check, returning empty jobs",
 			zap.Error(res.Error),
 			zap.String("runner_id", runnerID),
 		)
 		return []*app.RunnerJob{}, nil
 	}
-	if runner.RunnerGroup.LeaderRunnerID != nil && *runner.RunnerGroup.LeaderRunnerID != runnerID {
+	// If a leader exists in the group and this runner is not it, return no jobs.
+	if !runner.Leader && runner.RunnerGroup.HasLeader() {
 		return []*app.RunnerJob{}, nil
 	}
 

@@ -142,8 +142,8 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	is.App = h.toAppState(install.App)
 	is.Org = h.toOrgState(install.Org)
 
-	if len(install.RunnerGroup.Runners) > 0 {
-		is.Runner = h.toRunnerState(install.RunnerGroup.Runners[0])
+	if runner := install.RunnerGroup.ActiveRunner(); runner != nil {
+		is.Runner = h.toRunnerState(*runner)
 	}
 
 	is.Sandbox = h.toSandboxesState(sandboxRuns)

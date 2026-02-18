@@ -94,6 +94,10 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.RunnersWorkerModule)
 	}
 
+	if (namespace == "all" || namespace == "runner-groups") && !shouldSkipNamespace("runner-groups") {
+		providers = append(providers, fxmodules.RunnerGroupsWorkerModule)
+	}
+
 	if (namespace == "all" || namespace == "actions") && !shouldSkipNamespace("actions") {
 		providers = append(providers, fxmodules.ActionsWorkerModule)
 	}

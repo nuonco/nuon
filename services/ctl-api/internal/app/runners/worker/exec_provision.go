@@ -21,7 +21,7 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
-	if runner.RunnerGroup.Platform == app.AppRunnerTypeLocal {
+	if runner.Platform == app.AppRunnerTypeLocal {
 		w.updateStatus(ctx, runnerID, app.RunnerStatusActive, "local runner must be run locally")
 		return nil
 	}

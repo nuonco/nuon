@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
@@ -25,9 +26,14 @@ func (w *Workflows) ProvisionRunner(ctx workflow.Context, sreq signals.RequestSi
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
-		Type: runnersignals.OperationProvisionServiceAccount,
-	})
+	for _, runner := range install.RunnerGroup.Runners {
+		if runner.Platform == app.AppRunnerTypeLocal {
+			continue
+		}
+		w.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
+			Type: runnersignals.OperationProvisionServiceAccount,
+		})
+	}
 
 	return nil
 }

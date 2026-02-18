@@ -34,13 +34,11 @@ type RunnerGroup struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"index:idx_runner_group_owner;notnull;default null" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"notnull;default null" temporaljson:"owner_type,omitzero,omitempty"`
 
-	LeaderRunnerID *string `json:"leader_runner_id,omitzero" gorm:"default:null" temporaljson:"leader_runner_id,omitzero,omitempty"`
-	LeaderRunner   *Runner `json:"leader_runner,omitzero" gorm:"foreignKey:LeaderRunnerID" temporaljson:"leader_runner,omitzero,omitempty"`
-
 	Runners  []Runner            `json:"runners,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runners,omitzero,omitempty"`
 	Settings RunnerGroupSettings `json:"settings,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"settings,omitzero,omitempty"`
 	Type     RunnerGroupType     `json:"type,omitzero" gorm:"notnull;defaultnull" temporaljson:"type,omitzero,omitempty"`
-	Platform AppRunnerType       `json:"platform,omitzero" gorm:"notnull;defaultnull" temporaljson:"platform,omitzero,omitempty"`
+	// Deprecated: Platform is being phased out in favor of per-runner Runner.Platform field.
+	Platform AppRunnerType `json:"platform,omitzero" gorm:"notnull;defaultnull" swaggertype:"string" temporaljson:"platform,omitzero,omitempty"`
 }
 
 func (r *RunnerGroup) Indexes(db *gorm.DB) []migrations.Index {
@@ -66,6 +64,31 @@ func (r *RunnerGroup) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// ActiveRunner returns the elected leader runner (Leader==true) if one exists
+// in the group, otherwise falls back to the first runner.
+// Returns nil if the group has no runners.
+func (r *RunnerGroup) ActiveRunner() *Runner {
+	if len(r.Runners) == 0 {
+		return nil
+	}
+	for idx := range r.Runners {
+		if r.Runners[idx].Leader {
+			return &r.Runners[idx]
+		}
+	}
+	return &r.Runners[0]
+}
+
+// HasLeader returns true if any runner in the group has Leader==true.
+func (r *RunnerGroup) HasLeader() bool {
+	for idx := range r.Runners {
+		if r.Runners[idx].Leader {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *RunnerGroup) EventLoops() []bulk.EventLoop {

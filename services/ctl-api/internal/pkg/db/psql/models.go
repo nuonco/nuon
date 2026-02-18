@@ -101,11 +101,13 @@ func AllModels() []any {
 		// log streams
 		&app.LogStream{},
 
-		// runner jobs and groups
+		// runner groups and runners
 		&app.RunnerGroup{},
-		&app.RunnerOperation{},
 		&app.RunnerGroupSettings{},
 		&app.Runner{},
+		&app.RunnerOperation{},
+
+		// runner jobs
 		&app.RunnerJob{},
 		&app.RunnerJobPlan{},
 		&app.RunnerJobExecution{},

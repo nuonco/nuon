@@ -20,17 +20,6 @@ func (d *devver) Init(ctx context.Context) error {
 		shouldMonitor = false
 	}
 
-	switch d.watchRunnerType {
-	case "org":
-		if os.Getenv("ORG_RUNNER_ID") != "" {
-			shouldMonitor = false
-		}
-	case "install":
-		if os.Getenv("INSTALL_RUNNER_ID") != "" {
-			shouldMonitor = false
-		}
-	}
-
 	disabled := d.Disabled()
 	if disabled {
 		fmt.Println("disabling and returning because of DISABLE_ORG_RUNNER or DISABLE_INSTALL_RUNNER in env")

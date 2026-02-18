@@ -56,6 +56,8 @@ type Runner struct {
 	RunnerGroupID string `json:"runner_group_id"`
 	Name          string `json:"name"`
 	DisplayName   string `json:"display_name"`
+	Platform      string `json:"platform"`
+	Tainted       bool   `json:"tainted"`
 }
 
 func (c *client) ListRunners(ctx context.Context, typ string) ([]Runner, error) {
@@ -120,6 +122,50 @@ func (c *client) GetRunnerGroup(ctx context.Context, id string) (*RunnerGroup, e
 	}
 
 	return &resp, nil
+}
+
+type CreateRunnerInGroupRequest struct {
+	Platform string `json:"platform"`
+}
+
+type CreateRunnerInGroupResponse struct {
+	Runner Runner `json:"runner"`
+	Token  string `json:"token"`
+}
+
+func (c *client) CreateRunnerInGroup(ctx context.Context, runnerGroupID string, platform string) (*CreateRunnerInGroupResponse, error) {
+	endpoint := fmt.Sprintf("/v1/runner-groups/%s/runners", runnerGroupID)
+	byts, err := c.execPostRequest(ctx, endpoint, CreateRunnerInGroupRequest{
+		Platform: platform,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create runner in group: %w", err)
+	}
+
+	var resp CreateRunnerInGroupResponse
+	if err := json.Unmarshal(byts, &resp); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (c *client) TaintRunner(ctx context.Context, runnerID string) error {
+	endpoint := fmt.Sprintf("/v1/runners/%s/taint", runnerID)
+	_, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to taint runner: %w", err)
+	}
+	return nil
+}
+
+func (c *client) UntaintRunner(ctx context.Context, runnerID string) error {
+	endpoint := fmt.Sprintf("/v1/runners/%s/untaint", runnerID)
+	_, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to untaint runner: %w", err)
+	}
+	return nil
 }
 
 func (c *client) RestartRunner(ctx context.Context, runnerID string) error {

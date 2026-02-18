@@ -13,7 +13,7 @@ import (
 
 // @ID						GetRunnerGroupLeader
 // @Summary				get the leader runner for a runner group
-// @Tags					runners/runner-groups
+// @Tags					runners
 // @Security				APIKey
 // @Security				OrgID
 // @Accept					json
@@ -32,16 +32,11 @@ func (s *service) GetRunnerGroupLeader(ctx *gin.Context) {
 
 	groupID := ctx.Param("runner_group_id")
 
-	rg := app.RunnerGroup{}
+	var leader app.Runner
 	res := s.db.WithContext(ctx).
-		Preload("LeaderRunner").
-		First(&rg, "id = ? AND org_id = ?", groupID, org.ID)
+		Where("runner_group_id = ? AND org_id = ? AND leader = true AND deleted_at = 0", groupID, org.ID).
+		First(&leader)
 	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to get runner group: %w", res.Error))
-		return
-	}
-
-	if rg.LeaderRunnerID == nil || rg.LeaderRunner == nil {
 		ctx.Error(stderr.ErrNotFound{
 			Err:         fmt.Errorf("no leader elected for runner group %s", groupID),
 			Description: "no leader elected",
@@ -49,5 +44,5 @@ func (s *service) GetRunnerGroupLeader(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, rg.LeaderRunner)
+	ctx.JSON(http.StatusOK, &leader)
 }

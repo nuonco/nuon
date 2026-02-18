@@ -10,6 +10,7 @@ import (
 	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	releasessignals "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/signals"
+	runnergroupssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/signals"
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
@@ -21,6 +22,12 @@ type SendSignalRequest[T any] struct {
 
 // @temporal-gen activity
 func (a *Activities) PkgSignalsSendRunnersSignal(ctx context.Context, req *SendSignalRequest[*runnersignals.Signal]) error {
+	a.evClient.Send(ctx, req.ID, req.Signal)
+	return nil
+}
+
+// @temporal-gen activity
+func (a *Activities) PkgSignalsSendRunnerGroupsSignal(ctx context.Context, req *SendSignalRequest[*runnergroupssignals.Signal]) error {
 	a.evClient.Send(ctx, req.ID, req.Signal)
 	return nil
 }

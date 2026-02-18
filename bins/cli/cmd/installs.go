@@ -34,6 +34,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		disable       bool
 		dryRun        bool
 		skipConfirm   bool
+		runnerID      string
 	)
 
 	installsCmds := &cobra.Command{
@@ -700,6 +701,72 @@ Examples:
 	setApprovalOptionCmd.Flags().BoolVar(&promptApproval, "prompt", false, "Prompt for approval on each step")
 	setApprovalOptionCmd.MarkFlagsMutuallyExclusive("approve-all", "prompt")
 	workflowsCmd.AddCommand(setApprovalOptionCmd)
+
+	runnersCmd := &cobra.Command{
+		Use:   "runners",
+		Short: "Manage install runners",
+		Long:  "View and manage runners in an install's runner group",
+	}
+	installsCmds.AddCommand(runnersCmd)
+
+	runnersListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List runners",
+		Long:    "List all runners in an install's runner group",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnersList(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	runnersListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnersListCmd.MarkFlagRequired("install-id")
+	runnersCmd.AddCommand(runnersListCmd)
+
+	runnersElectLeaderCmd := &cobra.Command{
+		Use:   "elect-leader",
+		Short: "Elect a runner as leader",
+		Long:  "Pin a specific runner as the leader for an install's runner group",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnersElectLeader(cmd.Context(), id, runnerID, PrintJSON)
+		}),
+	}
+	runnersElectLeaderCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnersElectLeaderCmd.MarkFlagRequired("install-id")
+	runnersElectLeaderCmd.Flags().StringVar(&runnerID, "runner-id", "", "The ID of the runner to elect as leader")
+	runnersElectLeaderCmd.MarkFlagRequired("runner-id")
+	runnersCmd.AddCommand(runnersElectLeaderCmd)
+
+	runnersTaintCmd := &cobra.Command{
+		Use:   "taint",
+		Short: "Taint a runner",
+		Long:  "Mark a runner as tainted to exclude it from leader election",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnersTaint(cmd.Context(), id, runnerID, PrintJSON)
+		}),
+	}
+	runnersTaintCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnersTaintCmd.MarkFlagRequired("install-id")
+	runnersTaintCmd.Flags().StringVar(&runnerID, "runner-id", "", "The ID of the runner to taint")
+	runnersTaintCmd.MarkFlagRequired("runner-id")
+	runnersCmd.AddCommand(runnersTaintCmd)
+
+	runnersUntaintCmd := &cobra.Command{
+		Use:   "untaint",
+		Short: "Untaint a runner",
+		Long:  "Remove taint from a runner to include it in leader election",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnersUntaint(cmd.Context(), id, runnerID, PrintJSON)
+		}),
+	}
+	runnersUntaintCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnersUntaintCmd.MarkFlagRequired("install-id")
+	runnersUntaintCmd.Flags().StringVar(&runnerID, "runner-id", "", "The ID of the runner to untaint")
+	runnersUntaintCmd.MarkFlagRequired("runner-id")
+	runnersCmd.AddCommand(runnersUntaintCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{

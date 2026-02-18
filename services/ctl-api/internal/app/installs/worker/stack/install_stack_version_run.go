@@ -95,10 +95,15 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		if err != nil {
 			return errors.Wrap(err, "unable to create sandbox version run")
 		}
-		w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
-			Type:                     runnersignals.OperationInstallStackVersionRun,
-			InstallStackVersionRunID: run.ID,
-		})
+		for _, runner := range install.RunnerGroup.Runners {
+			if runner.Platform == app.AppRunnerTypeLocal {
+				continue
+			}
+			w.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
+				Type:                     runnersignals.OperationInstallStackVersionRun,
+				InstallStackVersionRunID: run.ID,
+			})
+		}
 
 		if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID:     version.ID,
@@ -156,10 +161,15 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return errors.Wrap(err, "unable to get install stack run in time")
 	}
 
-	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
-		Type:                     runnersignals.OperationInstallStackVersionRun,
-		InstallStackVersionRunID: run.ID,
-	})
+	for _, runner := range install.RunnerGroup.Runners {
+		if runner.Platform == app.AppRunnerTypeLocal {
+			continue
+		}
+		w.evClient.Send(ctx, runner.ID, &runnersignals.Signal{
+			Type:                     runnersignals.OperationInstallStackVersionRun,
+			InstallStackVersionRunID: run.ID,
+		})
+	}
 
 	// successfully got a run
 	l.Debug("successfully got run", zap.Any("data", run.Data))

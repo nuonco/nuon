@@ -62,10 +62,16 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 			zap.String("org_name", org.Name))
 	}
 
-	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
+	runner := org.RunnerGroup.ActiveRunner()
+	if runner == nil {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "no runners available in runner group")
+		return fmt.Errorf("no runners available in runner group")
+	}
+
+	w.ev.Send(ctx, runner.ID, &runnersignals.Signal{
 		Type: runnersignals.OperationReprovision,
 	})
-	if err := w.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
+	if err := w.pollRunner(ctx, runner.ID); err != nil {
 		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "organization did not provision runner")
 		return fmt.Errorf("runner did not reprovision correctly: %w", err)
 	}

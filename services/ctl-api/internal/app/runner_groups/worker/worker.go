@@ -1,0 +1,84 @@
+package worker
+
+import (
+	"context"
+	"fmt"
+
+	"go.temporal.io/sdk/interceptor"
+	"go.temporal.io/sdk/worker"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/signals"
+	runnersactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
+)
+
+type Worker struct {
+	worker.Worker
+}
+
+type WorkerParams struct {
+	fx.In
+
+	Cfg              *internal.Config
+	Tclient          temporalclient.Client
+	Wkflows          *Workflows
+	RunnersActs      *runnersactivities.Activities
+	L                *zap.Logger
+	Lc               fx.Lifecycle
+	Interceptors     []interceptor.WorkerInterceptor `group:"interceptors"`
+	SharedActivities *workflows.Activities
+	SharedWorkflows  *workflows.Workflows
+}
+
+func New(params WorkerParams) (*Worker, error) {
+	client, err := params.Tclient.GetNamespaceClient(signals.TemporalNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get namespace client: %w", err)
+	}
+
+	panicPolicy := worker.BlockWorkflow
+	if params.Cfg.TemporalWorkflowFailurePanic {
+		panicPolicy = worker.FailWorkflow
+	}
+
+	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
+	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
+		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
+		Interceptors:                       params.Interceptors,
+		WorkflowPanicPolicy:                panicPolicy,
+	})
+
+	// Register runners activities (ElectLeader, RescheduleJobsToLeader run here).
+	wkr.RegisterActivity(params.RunnersActs)
+	for _, acts := range params.SharedActivities.AllActivities() {
+		wkr.RegisterActivity(acts)
+	}
+
+	// Register workflows.
+	for _, wkflow := range params.Wkflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+
+	params.Lc.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			params.L.Info("starting runner-groups worker")
+			go func() {
+				wkr.Run(worker.InterruptCh())
+			}()
+			return nil
+		},
+		OnStop: func(_ context.Context) error {
+			return nil
+		},
+	})
+
+	return &Worker{wkr}, nil
+}

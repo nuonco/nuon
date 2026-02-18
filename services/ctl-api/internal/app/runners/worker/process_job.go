@@ -39,24 +39,28 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		return errors.New("runner is not healthy")
 	}
 
-	// Leader election check: ensure this runner is the group leader before processing
-	retargetResp, err := activities.AwaitRetargetJobToLeader(ctx, activities.RetargetJobToLeaderRequest{
-		JobID:    sreq.JobID,
-		RunnerID: sreq.ID,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to check leader status: %w", err)
-	}
-	if retargetResp.NoLeader {
-		l.Warn("no leader set for runner group, marking job as not attempted")
-		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "no leader runner available for group")
-		return nil
-	}
-	if retargetResp.Retargeted {
-		l.Info("job retargeted to group leader",
-			zap.String("leader_runner_id", retargetResp.LeaderRunnerID),
-		)
-		return nil
+	// Leader election check: if this runner is already the leader, skip the
+	// retarget activity entirely. The Get activity above preloads
+	// RunnerGroup.Runners, so we can check locally.
+	if !runner.Leader {
+		retargetResp, err := activities.AwaitRetargetJobToLeader(ctx, activities.RetargetJobToLeaderRequest{
+			JobID:    sreq.JobID,
+			RunnerID: sreq.ID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to check leader status: %w", err)
+		}
+		if retargetResp.NoLeader {
+			l.Warn("no leader set for runner group, marking job as not attempted")
+			w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "no leader runner available for group")
+			return nil
+		}
+		if retargetResp.Retargeted {
+			l.Info("job retargeted to group leader",
+				zap.String("leader_runner_id", retargetResp.LeaderRunnerID),
+			)
+			return nil
+		}
 	}
 
 	runnerJob, err := activities.AwaitGetJob(ctx, activities.GetJobRequest{

@@ -508,6 +508,8 @@ type ClientService interface {
 
 	GetRunnerConnectStatus(params *GetRunnerConnectStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerConnectStatusOK, error)
 
+	GetRunnerGroupLeader(params *GetRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerGroupLeaderOK, error)
+
 	GetRunnerJob(params *GetRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobOK, error)
 
 	GetRunnerJobCompositePlan(params *GetRunnerJobCompositePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobCompositePlanOK, error)
@@ -602,11 +604,15 @@ type ClientService interface {
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
+	TaintRunner(params *TaintRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TaintRunnerOK, error)
+
 	TeardownInstallComponent(params *TeardownInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentCreated, error)
 
 	TeardownInstallComponents(params *TeardownInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentsCreated, error)
 
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
+
+	UntaintRunner(params *UntaintRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UntaintRunnerOK, error)
 
 	UpdateApp(params *UpdateAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppOK, error)
 
@@ -637,6 +643,8 @@ type ClientService interface {
 	UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgOK, error)
 
 	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
+
+	UpdateRunnerGroupLeader(params *UpdateRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerGroupLeaderOK, error)
 
 	UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error)
 
@@ -10535,6 +10543,50 @@ func (a *Client) GetRunnerConnectStatus(params *GetRunnerConnectStatusParams, au
 }
 
 /*
+GetRunnerGroupLeader gets the leader runner for a runner group
+*/
+func (a *Client) GetRunnerGroupLeader(params *GetRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerGroupLeaderOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunnerGroupLeaderParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunnerGroupLeader",
+		Method:             "GET",
+		PathPattern:        "/v1/runner-groups/{runner_group_id}/leader",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunnerGroupLeaderReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunnerGroupLeaderOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunnerGroupLeader: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetRunnerJob gets runner job
 
 Return a runner job.
@@ -12698,6 +12750,50 @@ func (a *Client) SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientA
 }
 
 /*
+TaintRunner taints a runner to exclude it from leader election
+*/
+func (a *Client) TaintRunner(params *TaintRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TaintRunnerOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewTaintRunnerParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "TaintRunner",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/taint",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &TaintRunnerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*TaintRunnerOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for TaintRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 TeardownInstallComponent teardowns an install component
 
 Teardown and remove an install component's resources.
@@ -12832,6 +12928,50 @@ func (a *Client) UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UnlockTerraformWorkspace: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UntaintRunner untaints a runner to include it in leader election
+*/
+func (a *Client) UntaintRunner(params *UntaintRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UntaintRunnerOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUntaintRunnerParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UntaintRunner",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/untaint",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UntaintRunnerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UntaintRunnerOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UntaintRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -13534,6 +13674,50 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateRunnerGroupLeader sets or auto elect the leader runner for a runner group
+*/
+func (a *Client) UpdateRunnerGroupLeader(params *UpdateRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerGroupLeaderOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateRunnerGroupLeaderParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateRunnerGroupLeader",
+		Method:             "PUT",
+		PathPattern:        "/v1/runner-groups/{runner_group_id}/leader",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateRunnerGroupLeaderReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateRunnerGroupLeaderOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateRunnerGroupLeader: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

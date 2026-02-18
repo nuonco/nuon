@@ -23,10 +23,10 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 	ctx = cctx.SetOrgIDContext(ctx, install.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, install.CreatedByID)
 
+	// The default runner always gets the cloud platform from the app config.
+	// Local runners are created separately via the CreateRunnerInGroup endpoint
+	// so they get their own record and don't take over the default cloud runner.
 	platform := install.AppRunnerConfig.Type
-	if install.Org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
-		platform = app.AppRunnerTypeLocal
-	}
 
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
@@ -40,6 +40,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 				DisplayName:       "Default runner",
 				Status:            app.RunnerStatusPending,
 				StatusDescription: string(app.RunnerStatusPending),
+				Platform:          platform,
 			},
 		},
 		Settings: app.RunnerGroupSettings{
@@ -86,10 +87,9 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	ctx = cctx.SetOrgIDContext(ctx, org.ID)
 	ctx = cctx.SetAccountIDContext(ctx, org.CreatedByID)
 
+	// The default runner always gets the cloud platform.
+	// Local runners are created separately via the CreateRunnerInGroup endpoint.
 	platform := app.AppRunnerTypeAWSEKS
-	if org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
-		platform = app.AppRunnerTypeLocal
-	}
 
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultOrgRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
@@ -103,6 +103,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 				DisplayName:       "Default runner",
 				Status:            app.RunnerStatusPending,
 				StatusDescription: string(app.RunnerStatusPending),
+				Platform:          platform,
 			},
 		},
 		Settings: app.RunnerGroupSettings{

@@ -22,6 +22,7 @@ import (
 	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	releasessignals "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/signals"
+	runnergroupssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/signals"
 	runnerssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
 )
@@ -72,6 +73,11 @@ func (e *evClient) Send(ctx workflow.Context, id string, signal eventloop.Signal
 		signalsactivities.AwaitPkgSignalsSendRunnersSignal(ctx, &signalsactivities.SendSignalRequest[*runnerssignals.Signal]{
 			ID:     id,
 			Signal: signal.(*runnerssignals.Signal),
+		})
+	case runnergroupssignals.TemporalNamespace:
+		signalsactivities.AwaitPkgSignalsSendRunnerGroupsSignal(ctx, &signalsactivities.SendSignalRequest[*runnergroupssignals.Signal]{
+			ID:     id,
+			Signal: signal.(*runnergroupssignals.Signal),
 		})
 	case generalsignals.TemporalNamespace:
 		signalsactivities.AwaitPkgSignalsSendGeneralSignal(ctx, &signalsactivities.SendSignalRequest[*generalsignals.Signal]{

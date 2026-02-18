@@ -25,11 +25,12 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	if len(comp.Org.RunnerGroup.Runners) == 0 {
+	leader := comp.Org.RunnerGroup.ActiveRunner()
+	if leader == nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
 		return fmt.Errorf("no runners available in runner group for org %s", comp.Org.ID)
 	}
-	runnerID := comp.Org.RunnerGroup.Runners[0].ID
+	runnerID := leader.ID
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {

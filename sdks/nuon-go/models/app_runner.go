@@ -35,6 +35,9 @@ type AppRunner struct {
 	// jobs
 	Jobs []*AppRunnerJob `json:"jobs"`
 
+	// leader
+	Leader bool `json:"leader,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
@@ -43,6 +46,9 @@ type AppRunner struct {
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`
+
+	// platform
+	Platform string `json:"platform,omitempty"`
 
 	// runner group
 	RunnerGroup *AppRunnerGroup `json:"runner_group,omitempty"`
@@ -58,6 +64,9 @@ type AppRunner struct {
 
 	// status description
 	StatusDescription string `json:"status_description,omitempty"`
+
+	// tainted
+	Tainted bool `json:"tainted,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

@@ -27,6 +27,11 @@ func (d *devver) monitorRunners() error {
 				return fmt.Errorf("no runners found")
 			}
 
+			// If we self-registered (have our own local runner), don't restart when cloud runners change
+			if d.runnerGroupID != "" {
+				return nil
+			}
+
 			if d.runnerID != runners[0].ID {
 				fmt.Println("new runner was found, so restarting to act as " + runners[0].ID)
 				return retry.AsNonRetryable(fmt.Errorf("new runner has been created, restarting"))

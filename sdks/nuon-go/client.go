@@ -168,6 +168,13 @@ type Client interface {
 	// runner job plan
 	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)
 
+	// install runner groups
+	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)
+	GetRunnerGroupLeader(ctx context.Context, runnerGroupID string) (*models.AppRunner, error)
+	UpdateRunnerGroupLeader(ctx context.Context, runnerGroupID string, runnerID string) (*models.AppRunner, error)
+	TaintRunner(ctx context.Context, runnerID string) (*models.AppRunner, error)
+	UntaintRunner(ctx context.Context, runnerID string) (*models.AppRunner, error)
+
 	// install stacks
 	GetInstallStack(ctx context.Context, installID string) (*models.AppInstallStack, error)
 

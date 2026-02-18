@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type RetargetJobToLeaderRequest struct {
@@ -26,39 +25,32 @@ func (a *Activities) RetargetJobToLeader(ctx context.Context, req RetargetJobToL
 	resp := &RetargetJobToLeaderResponse{}
 
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Look up the runner to get its group ID.
+		// Look up the runner with its group and sibling runners to find the leader.
 		var runner app.Runner
-		if res := tx.Select("runner_group_id").First(&runner, "id = ? AND deleted_at = 0", req.RunnerID); res.Error != nil {
+		if res := tx.Preload("RunnerGroup.Runners").First(&runner, "id = ? AND deleted_at = 0", req.RunnerID); res.Error != nil {
 			return fmt.Errorf("unable to get runner: %w", res.Error)
 		}
 
-		// Load fresh leader_runner_id from the runner group.
-		var group app.RunnerGroup
-		if res := tx.Select("leader_runner_id").First(&group, "id = ? AND deleted_at = 0", runner.RunnerGroupID); res.Error != nil {
-			return fmt.Errorf("unable to get runner group: %w", res.Error)
-		}
-
-		// No leader elected yet.
-		if group.LeaderRunnerID == nil {
+		leader := runner.RunnerGroup.ActiveRunner()
+		if leader == nil || !leader.Leader {
 			resp.NoLeader = true
 			return nil
 		}
 
 		// This runner is already the leader.
-		if *group.LeaderRunnerID == req.RunnerID {
-			resp.Retargeted = false
+		if leader.ID == req.RunnerID {
 			return nil
 		}
 
 		// Retarget the job to the leader runner.
 		if res := tx.Model(&app.RunnerJob{}).
 			Where("id = ? AND deleted_at = 0", req.JobID).
-			Update("runner_id", *group.LeaderRunnerID); res.Error != nil {
+			Update("runner_id", leader.ID); res.Error != nil {
 			return fmt.Errorf("unable to retarget job to leader: %w", res.Error)
 		}
 
 		resp.Retargeted = true
-		resp.LeaderRunnerID = *group.LeaderRunnerID
+		resp.LeaderRunnerID = leader.ID
 		return nil
 	})
 	if err != nil {

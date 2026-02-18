@@ -34,8 +34,14 @@ func (w *Workflows) UpdateVersion(ctx workflow.Context, sreq signals.RequestSign
 		return errors.Wrap(err, "could not get logger")
 	}
 
+	leader := runner.Org.RunnerGroup.ActiveRunner()
+	if leader == nil {
+		w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "no runners available in runner group")
+		return errors.New("no runners available in runner group")
+	}
+
 	runnerJob, err := activities.AwaitCreateUpdateVersionJob(ctx, &activities.CreateUpdateVersionJobRequest{
-		RunnerID:    runner.Org.RunnerGroup.Runners[0].ID,
+		RunnerID:    leader.ID,
 		OwnerID:     sreq.HealthCheckID,
 		LogStreamID: logStream.ID,
 	})
@@ -54,7 +60,7 @@ func (w *Workflows) UpdateVersion(ctx workflow.Context, sreq signals.RequestSign
 	}
 
 	l.Info("dispatching job to update runner version",
-		zap.String("runner_id", runner.Org.RunnerGroup.Runners[0].ID),
+		zap.String("runner_id", leader.ID),
 		zap.String("runner_type", string(runner.RunnerGroup.Type)),
 		zap.String("expected_version", runner.RunnerGroup.Settings.ExpectedVersion),
 		zap.String("api_version", w.cfg.Version),
@@ -62,7 +68,7 @@ func (w *Workflows) UpdateVersion(ctx workflow.Context, sreq signals.RequestSign
 	// We have to send the signal and then return to allow it to be processed.
 	// Waiting for it to complete would deadlock. Not a big deal because
 	// we wouldn't do anything differently even if it failed.
-	w.evClient.Send(ctx, runner.Org.RunnerGroup.Runners[0].ID, &signals.Signal{
+	w.evClient.Send(ctx, leader.ID, &signals.Signal{
 		Type:  signals.OperationProcessJob,
 		JobID: runnerJob.ID,
 	})
