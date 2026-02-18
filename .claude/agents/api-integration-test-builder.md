@@ -498,30 +498,34 @@ if shouldHaveSignal {
 
 ## 13. Running Tests
 
+**CRITICAL: Always use `nuonctl tests run` with `--test integration-test`** to run integration tests locally. This command fetches the required environment variables (database credentials, secrets, AWS creds, etc.) from the Kubernetes cluster and sets `INTEGRATION=true` automatically.
+
 ```bash
-# CRITICAL: Use nuonctl to ensure proper environment setup
-nuonctl tests run ctl-api --test integration
+# Run ALL integration tests for a package
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 ./internal/app/orgs/service/..."
 
-# Run specific test file (all suites in file)
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_orgs_test.go
+# Run a specific test suite
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -count=1 -p 1 -run TestGetOrgsSuite ./internal/app/orgs/service/..."
 
-# Run specific test suite (when file has multiple suites)
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_org_operations_test.go -run TestGetOrgSuite
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_org_operations_test.go -run TestGetOrgStatsSuite
-
-# Run specific deprecated handler test
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/actions/service/... -run TestGetInstallActionWorkflowsLatestRunsDeprecatedSuite
-
-# Run specific subtest within a suite
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_orgs_test.go -run TestGetOrgsSuite/TestGetOrgs
+# Run all integration tests across the whole service
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 ./..."
 ```
 
-**NEVER run tests without `INTEGRATION=true`** - they will be skipped.
+**Key details:**
+- `NUONCTL_LOCAL=true` tells nuonctl to run commands locally (not in Docker)
+- `--test integration-test` selects the test config that sets `INTEGRATION=true` env var
+- `--command` overrides the default test command with your custom `go test` invocation
+- The working directory is automatically set to `services/ctl-api/` — use paths **relative to that directory** (e.g., `./internal/app/orgs/service/...` NOT `./services/ctl-api/internal/...`)
+- **Do NOT use single quotes** around the `-run` regex pattern — nuonctl passes arguments directly without shell interpretation, so single quotes become literal characters in the regex
+- Use `-p 1` to run test packages sequentially (avoids database conflicts)
+- Use `-count=1` to disable test caching when debugging
+
+**NEVER run integration tests with bare `go test`** — they require environment variables from K8s secrets that only `nuonctl tests run` provides. Without them, config validation will fail.
 
 **Test Organization Benefits:**
 With the one-to-one file mapping and separate test suites:
-- Run all tests for a handler file: `go test get_orgs_test.go`
-- Run specific handler test from multi-handler file: `-run TestGetOrgSuite`
+- Run all tests for a package: `./internal/app/orgs/service/...`
+- Run specific handler test: `-run TestGetOrgSuite`
 - Locate tests when debugging: same filename with `_test.go` suffix
 - Review test coverage: check if `handler.go` has matching `handler_test.go`
 - Identify deprecated tests: Look for `Deprecated` suffix in suite names
