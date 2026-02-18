@@ -18,7 +18,7 @@ import (
 )
 
 // InstallsTableGlobal renders the global installs table for all organizations
-func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string) templ.Component {
+func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string, sort string, filter string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -39,7 +39,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"installs-table-wrapper\" hx-get=\"/installs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"installs-table-wrapper\" hx-get=\"/installs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='sort'],[name='filter']\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -662,7 +662,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = renderPagination(currentPage, totalPages, searchQuery).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = renderPagination(currentPage, totalPages, searchQuery, sort, filter).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -679,7 +679,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 	})
 }
 
-func renderPagination(currentPage, totalPages int, searchQuery string) templ.Component {
+func renderPagination(currentPage, totalPages int, searchQuery string, sort string, filter string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -738,14 +738,14 @@ func renderPagination(currentPage, totalPages int, searchQuery string) templ.Com
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
-						Href:     buildPageURL(currentPage-1, searchQuery),
+						Href:     buildInstallsBrowserURL(currentPage-1, searchQuery, sort, filter),
 						Disabled: !paginationData.HasPrevious,
 						Label:    "Previous",
 						Attributes: templ.Attributes{
-							"hx-get":     buildPageURL(currentPage-1, searchQuery),
+							"hx-get":     buildPageURL(currentPage-1, searchQuery, sort, filter),
 							"hx-target":  "#installs-table-wrapper",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-include": "[name='search'],[name='sort'],[name='filter']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
@@ -794,13 +794,13 @@ func renderPagination(currentPage, totalPages int, searchQuery string) templ.Com
 							return nil
 						})
 						templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
-							Href:     buildPageURL(pageNum, searchQuery),
+							Href:     buildInstallsBrowserURL(pageNum, searchQuery, sort, filter),
 							IsActive: pageNum == currentPage,
 							Attributes: templ.Attributes{
-								"hx-get":     buildPageURL(pageNum, searchQuery),
+								"hx-get":     buildPageURL(pageNum, searchQuery, sort, filter),
 								"hx-target":  "#installs-table-wrapper",
 								"hx-swap":    "outerHTML",
-								"hx-include": "[name='search']",
+								"hx-include": "[name='search'],[name='sort'],[name='filter']",
 							},
 						}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var37), templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
@@ -830,14 +830,14 @@ func renderPagination(currentPage, totalPages int, searchQuery string) templ.Com
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
-						Href:     buildPageURL(currentPage+1, searchQuery),
+						Href:     buildInstallsBrowserURL(currentPage+1, searchQuery, sort, filter),
 						Disabled: !paginationData.HasNext,
 						Label:    "Next",
 						Attributes: templ.Attributes{
-							"hx-get":     buildPageURL(currentPage+1, searchQuery),
+							"hx-get":     buildPageURL(currentPage+1, searchQuery, sort, filter),
 							"hx-target":  "#installs-table-wrapper",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-include": "[name='search'],[name='sort'],[name='filter']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
