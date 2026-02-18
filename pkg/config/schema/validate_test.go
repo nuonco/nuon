@@ -31,6 +31,7 @@ func TestValidate_StackWithoutCustomNestedStacks(t *testing.T) {
 }
 
 func TestValidate_StackWithCustomNestedStacks(t *testing.T) {
+	// test that valid custom_nested_stacks do not cause validation errors
 	cfg := &config.AppConfig{
 		Stack: &config.StackConfig{
 			Type:                    "aws-cloudformation",
