@@ -17,6 +17,12 @@ import (
 // swagger:model config.CustomNestedStack
 type ConfigCustomNestedStack struct {
 
+	// contents
+	Contents string `json:"contents,omitempty"`
+
+	// contents hash
+	ContentsHash string `json:"contents_hash,omitempty"`
+
 	// index
 	Index int64 `json:"index,omitempty"`
 

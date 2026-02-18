@@ -16,6 +16,7 @@ func (s sync) getAppStackRequest() *models.ServiceCreateAppStackConfigRequest {
 			TemplateURL: stack.TemplateURL,
 			Index:       int64(stack.Index),
 			Parameters:  stack.Parameters,
+			Contents:    stack.Contents,
 		})
 	}
 

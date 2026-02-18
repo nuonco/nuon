@@ -92,6 +92,13 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		}
 	}
 
+	// Copy TemplateURL to Contents for go-getter to fetch template content.
+	if appCfg.Stack != nil {
+		for i := range appCfg.Stack.CustomNestedStacks {
+			appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
+		}
+	}
+
 	// parse all get functions
 	if err := get.Parse(ctx, appCfg, &get.Options{
 		FieldTimeout: defaultFieldGetTimeout,
