@@ -127,8 +127,8 @@ func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
 	var req CreateHelmComponentConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

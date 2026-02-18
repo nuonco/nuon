@@ -2,13 +2,16 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminAddPriorityRequest struct {
@@ -55,8 +58,8 @@ func (s *service) AdminAddPriority(ctx *gin.Context) {
 	}
 
 	var req AdminAddPriorityRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
