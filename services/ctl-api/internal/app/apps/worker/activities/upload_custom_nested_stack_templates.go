@@ -4,12 +4,15 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/aws/s3uploader"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	"go.temporal.io/sdk/temporal"
+	"gorm.io/gorm"
 )
 
 type UploadCustomNestedStackTemplatesRequest struct {
@@ -21,6 +24,9 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 	var stackConfig app.AppStackConfig
 	res := a.db.WithContext(ctx).First(&stackConfig, "id = ?", req.AppStackConfigID)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return temporal.NewNonRetryableApplicationError("not found", "not found", res.Error, "")
+		}
 		return fmt.Errorf("unable to get app stack config: %w", res.Error)
 	}
 
