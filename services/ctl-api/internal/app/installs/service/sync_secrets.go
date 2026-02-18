@@ -1,13 +1,15 @@
 package service
 
 import (
-	"fmt"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type SyncSecretsRequest struct {
@@ -35,8 +37,8 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	var req SyncSecretsRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

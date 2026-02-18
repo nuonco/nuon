@@ -12,6 +12,7 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -48,8 +49,8 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	phoneHomeID := ctx.Param("phone_home_id")
 
 	var req InstallPhoneHomeRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(err)
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
