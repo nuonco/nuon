@@ -20,12 +20,14 @@ export const InstallActionRunLogs = ({
   actionConfig: TActionConfig
   layout?: 'vertical' | 'horizontal'
 }) => {
-  const { logs, isLoading } = useUnifiedLogData()
+  const { filteredLogs } = useLogViewer()
 
   const steps = actionConfig?.steps || []
 
   const logSteps = useMemo(() => {
-    return (logs as unknown as TOTELLog[]).reduce(
+    if (!filteredLogs) return {}
+
+    return filteredLogs.reduce(
       (acc, log) => {
         const stepName = log.log_attributes?.workflow_step_name
         if (stepName) {
@@ -36,7 +38,7 @@ export const InstallActionRunLogs = ({
       },
       {} as Record<string, TOTELLog[]>
     )
-  }, [logs])
+  }, [filteredLogs])
 
   const stepKeys = useMemo(() => Object.keys(logSteps), [logSteps])
   const [activeStep, setActiveStep] = useState<string | undefined>(
@@ -60,16 +62,6 @@ export const InstallActionRunLogs = ({
       setActiveStep(stepKeys[0])
     }
   }, [stepKeys, activeStep, showAllLogs])
-
-  // Get the logs to display based on current selection
-  const displayLogs = useMemo(() => {
-    if (showAllLogs) {
-      return logs
-    } else if (activeStep && logSteps[activeStep]) {
-      return logSteps[activeStep]
-    }
-    return []
-  }, [showAllLogs, activeStep, logSteps, logs])
 
   const sortedSteps = steps.sort((a, b) => {
     if (a.idx === undefined && b.idx === undefined) return 0
@@ -118,7 +110,11 @@ export const InstallActionRunLogs = ({
           {stepButtons}
         </div>
         <div className="w-full">
-          <StepAwareLogViewer logs={displayLogs} />
+          <StepAwareLogViewer
+            activeStep={activeStep}
+            showAllLogs={showAllLogs}
+            logSteps={logSteps}
+          />
         </div>
       </div>
     )
@@ -131,7 +127,11 @@ export const InstallActionRunLogs = ({
         {stepButtons}
       </div>
       <div className="pl-2 w-full border-l">
-        <StepAwareLogViewer logs={displayLogs} />
+        <StepAwareLogViewer
+          activeStep={activeStep}
+          showAllLogs={showAllLogs}
+          logSteps={logSteps}
+        />
       </div>
     </div>
   )
@@ -145,9 +145,26 @@ const LogsSkeleton = () => {
 }
 
 // Custom log viewer component that displays filtered logs
-const StepAwareLogViewer = ({ logs }: { logs: TOTELLog[] }) => {
+const StepAwareLogViewer = ({
+  activeStep,
+  showAllLogs,
+  logSteps,
+}: {
+  activeStep?: string
+  showAllLogs: boolean
+  logSteps: Record<string, TOTELLog[]>
+}) => {
   const { loadMore, hasMore, isLoading, isStreamOpen } = useUnifiedLogData()
-  const { activeLog, handleActiveLog, filters } = useLogViewer()
+  const { filteredLogs, activeLog, handleActiveLog, filters } = useLogViewer()
+
+  const displayLogs = useMemo(() => {
+    if (showAllLogs) {
+      return filteredLogs
+    } else if (activeStep && logSteps[activeStep]) {
+      return logSteps[activeStep]
+    }
+    return []
+  }, [showAllLogs, activeStep, logSteps, filteredLogs])
 
   return (
     <div className="flex flex-col gap-4">
@@ -171,11 +188,11 @@ const StepAwareLogViewer = ({ logs }: { logs: TOTELLog[] }) => {
         </div>
 
         <div className="flex flex-col divide-y">
-          {!isStreamOpen && !logs?.length && isLoading ? (
+          {!isStreamOpen && !displayLogs?.length && isLoading ? (
             <LogsSkeleton />
           ) : null}
 
-          {logs?.map((logLine) => (
+          {displayLogs?.map((logLine) => (
             <LogLine key={logLine?.id} log={logLine} />
           ))}
 
