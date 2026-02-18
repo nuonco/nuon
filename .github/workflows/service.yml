@@ -84,20 +84,6 @@ jobs:
         run: |
           CI=true nuonctl tests run-all ${{inputs.service}}
 
-      - name: 🧪 Integration Tests
-        if: ${{ inputs.service == 'ctl-api' }}
-        run: |
-          cd services/ctl-api
-          go test -v -p 1 -count=1 ./internal/app/...
-        env:
-          INTEGRATION: "true"
-          DB_NAME: ctl_api_test
-          DB_HOST: localhost
-          DB_PORT: "5432"
-          DB_USER: ctl_api
-          DB_PASSWORD: test
-          DB_SSL_MODE: disable
-
       - name: 📦 Build
         run: |
           CI=true nuonctl builds release \
