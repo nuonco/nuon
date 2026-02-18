@@ -43,27 +43,26 @@ jobs:
               - .github/workflows/pkg.yml
               - go.mod
               - go.sum
+  # TODO: add lint job once .golangci.yml is migrated to v2 format
   test:
     name: 🌏 test
     needs: changes
     if: ${{ needs.changes.outputs.pkg == 'true' }}
-    defaults:
-      run:
-        working-directory: pkg
     runs-on: ubuntu-latest
-    env:
-      DISABLE_GITHUB_OIDC: true
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
 
-      - name: Setup nuonctl
-        uses: nuonco/nuon/actions/setup-nuonctl@main
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
-      # TODO(jm): need to implement a way to run tests
-      #- name: 😎 Tests
-        #run: |
-          #CI=true nuonctl tests run-all ${{inputs.service}}
+      - name: Generate code
+        run: go generate ./pkg/...
+
+      - name: Run tests
+        run: cd pkg && go test -v ./...
 
   update_status:
     name: update status
