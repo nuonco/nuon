@@ -18,7 +18,7 @@ import (
 )
 
 // OrgsTable renders just the table for htmx updates
-func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string) templ.Component {
+func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string, selectedTags []string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -39,7 +39,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string)
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"orgs-table\" hx-get=\"/orgs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search']\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"orgs-table\" hx-get=\"/orgs/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='tag']\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -321,9 +321,9 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string)
 									return templ_7745c5c3_Err
 								}
 								var templ_7745c5c3_Var15 templ.SafeURL
-								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("orgs/" + org.ID))
+								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + org.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 41, Col: 46}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 41, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {
@@ -629,7 +629,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = renderOrgsPagination(currentPage, totalPages, searchQuery).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = renderOrgsPagination(currentPage, totalPages, searchQuery, selectedTags).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -646,7 +646,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string)
 	})
 }
 
-func renderOrgsPagination(currentPage, totalPages int, searchQuery string) templ.Component {
+func renderOrgsPagination(currentPage, totalPages int, searchQuery string, selectedTags []string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -705,14 +705,14 @@ func renderOrgsPagination(currentPage, totalPages int, searchQuery string) templ
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
-						Href:     buildOrgsPageURL(currentPage-1, searchQuery),
+						Href:     buildOrgsBrowserURL(currentPage-1, searchQuery, selectedTags),
 						Disabled: !paginationData.HasPrevious,
 						Label:    "Previous",
 						Attributes: templ.Attributes{
-							"hx-get":     buildOrgsPageURL(currentPage-1, searchQuery),
+							"hx-get":     buildOrgsPageURL(currentPage-1, searchQuery, selectedTags),
 							"hx-target":  "#orgs-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-include": "[name='search'],[name='tag']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
@@ -761,13 +761,13 @@ func renderOrgsPagination(currentPage, totalPages int, searchQuery string) templ
 							return nil
 						})
 						templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
-							Href:     buildOrgsPageURL(pageNum, searchQuery),
+							Href:     buildOrgsBrowserURL(pageNum, searchQuery, selectedTags),
 							IsActive: pageNum == currentPage,
 							Attributes: templ.Attributes{
-								"hx-get":     buildOrgsPageURL(pageNum, searchQuery),
+								"hx-get":     buildOrgsPageURL(pageNum, searchQuery, selectedTags),
 								"hx-target":  "#orgs-table",
 								"hx-swap":    "outerHTML",
-								"hx-include": "[name='search']",
+								"hx-include": "[name='search'],[name='tag']",
 							},
 						}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var36), templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
@@ -797,14 +797,14 @@ func renderOrgsPagination(currentPage, totalPages int, searchQuery string) templ
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
-						Href:     buildOrgsPageURL(currentPage+1, searchQuery),
+						Href:     buildOrgsBrowserURL(currentPage+1, searchQuery, selectedTags),
 						Disabled: !paginationData.HasNext,
 						Label:    "Next",
 						Attributes: templ.Attributes{
-							"hx-get":     buildOrgsPageURL(currentPage+1, searchQuery),
+							"hx-get":     buildOrgsPageURL(currentPage+1, searchQuery, selectedTags),
 							"hx-target":  "#orgs-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-include": "[name='search'],[name='tag']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {

@@ -14,15 +14,17 @@ import (
 func (s *service) InstallsTableGlobal(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
+	sort := c.Query("sort")
+	filter := c.Query("filter")
 	page := getPageFromQuery(c)
 
-	installs, totalPages, err := s.getInstalls(ctx, search, page)
+	installs, totalPages, err := s.getInstalls(ctx, search, sort, filter, page)
 	if err != nil {
 		s.l.Error("failed to get installs for table", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})
 		return
 	}
 
-	component := views.InstallsTableGlobal(installs, page, totalPages, search)
+	component := views.InstallsTableGlobal(installs, page, totalPages, search, sort, filter)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }

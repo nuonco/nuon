@@ -10,13 +10,13 @@ import (
 )
 
 // OrgsTable renders just the table for htmx updates
-templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string) {
+templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string, selectedTags []string) {
 	<div
 		id="orgs-table"
 		hx-get="/orgs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
-		hx-include="[name='search']"
+		hx-include="[name='search'],[name='tag']"
 	>
 		if len(orgs) == 0 {
 			<div class="text-sm text-muted-foreground">No organizations found.</div>
@@ -38,7 +38,7 @@ templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("orgs/" + org.ID) } class="text-cyan hover:underline">
+									<a href={ templ.URL("/orgs/" + org.ID) } class="text-cyan hover:underline">
 										{ org.Name }
 									</a>
 									<div class="flex items-center gap-2">
@@ -84,39 +84,39 @@ templ OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string
 		}
 		if totalPages > 1 {
 			<div class="mt-4">
-				@renderOrgsPagination(currentPage, totalPages, searchQuery)
+				@renderOrgsPagination(currentPage, totalPages, searchQuery, selectedTags)
 			</div>
 		}
 	</div>
 }
 
-templ renderOrgsPagination(currentPage, totalPages int, searchQuery string) {
+templ renderOrgsPagination(currentPage, totalPages int, searchQuery string, selectedTags []string) {
 	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
 	@pagination.Pagination() {
 		@pagination.Content() {
 			@pagination.Item() {
 				@pagination.Previous(pagination.PreviousProps{
-					Href:     buildOrgsPageURL(currentPage-1, searchQuery),
+					Href:     buildOrgsBrowserURL(currentPage-1, searchQuery, selectedTags),
 					Disabled: !paginationData.HasPrevious,
 					Label:    "Previous",
 					Attributes: templ.Attributes{
-						"hx-get":     buildOrgsPageURL(currentPage-1, searchQuery),
+						"hx-get":     buildOrgsPageURL(currentPage-1, searchQuery, selectedTags),
 						"hx-target":  "#orgs-table",
 						"hx-swap":    "outerHTML",
-						"hx-include": "[name='search']",
+						"hx-include": "[name='search'],[name='tag']",
 					},
 				})
 			}
 			for _, pageNum := range paginationData.Pages {
 				@pagination.Item() {
 					@pagination.Link(pagination.LinkProps{
-						Href:     buildOrgsPageURL(pageNum, searchQuery),
+						Href:     buildOrgsBrowserURL(pageNum, searchQuery, selectedTags),
 						IsActive: pageNum == currentPage,
 						Attributes: templ.Attributes{
-							"hx-get":     buildOrgsPageURL(pageNum, searchQuery),
+							"hx-get":     buildOrgsPageURL(pageNum, searchQuery, selectedTags),
 							"hx-target":  "#orgs-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search']",
+							"hx-include": "[name='search'],[name='tag']",
 						},
 					}) {
 						{ fmt.Sprintf("%d", pageNum) }
@@ -125,14 +125,14 @@ templ renderOrgsPagination(currentPage, totalPages int, searchQuery string) {
 			}
 			@pagination.Item() {
 				@pagination.Next(pagination.NextProps{
-					Href:     buildOrgsPageURL(currentPage+1, searchQuery),
+					Href:     buildOrgsBrowserURL(currentPage+1, searchQuery, selectedTags),
 					Disabled: !paginationData.HasNext,
 					Label:    "Next",
 					Attributes: templ.Attributes{
-						"hx-get":     buildOrgsPageURL(currentPage+1, searchQuery),
+						"hx-get":     buildOrgsPageURL(currentPage+1, searchQuery, selectedTags),
 						"hx-target":  "#orgs-table",
 						"hx-swap":    "outerHTML",
-						"hx-include": "[name='search']",
+						"hx-include": "[name='search'],[name='tag']",
 					},
 				})
 			}
