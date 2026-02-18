@@ -7,10 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -48,8 +52,8 @@ func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 		if stack.TemplateURL == "" {
 			return fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
 		}
-		if err := config.ValidateTemplateURL(stack.TemplateURL, fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url", i, stack.Name)); err != nil {
-			return err
+		if stack.Contents == "" {
+			return fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required when template_url is set", i, stack.Name)
 		}
 	}
 	return nil
@@ -109,6 +113,29 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		Create(&appCloudFormationStackConfig)
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	if len(appCloudFormationStackConfig.CustomNestedStacks) > 0 {
+		org, err := cctx.OrgFromContext(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get org from context: %w", err)
+		}
+
+		opts := tclient.StartWorkflowOptions{
+			ID:        fmt.Sprintf("app-config-sync-custom-stacks-%s", appCloudFormationStackConfig.ID),
+			TaskQueue: workflows.APITaskQueue,
+		}
+		_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, "apps", opts,
+			"AppConfigSyncCustomStacks",
+			worker.AppConfigSyncCustomStacksRequest{
+				OrgID:            org.ID,
+				AppID:            appID,
+				AppStackConfigID: appCloudFormationStackConfig.ID,
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("unable to start custom stacks sync: %w", err)
+		}
 	}
 
 	return &appCloudFormationStackConfig, nil
