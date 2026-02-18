@@ -9,11 +9,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/checkchanges"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -114,25 +114,21 @@ func getExecuteFlowExecFn(eventLoopReq eventloop.EventLoopRequest) func(workflow
 	return func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *appsignals.Signal, step app.WorkflowStep) error {
 		logger := workflow.GetLogger(ctx)
 
-		// Use the typed queue signal directly from the step
-		typedSignal := step.QueueSignal.Signal
-		if typedSignal == nil {
-			return errors.Errorf("no queue signal for step %s", step.Name)
-		}
-
 		logger.Info("enqueuing signal to queue",
 			"step_name", step.Name,
-			"signal_type", typedSignal.Type(),
 			"owner_id", eventLoopReq.ID,
 			"owner_type", "app_branches",
 		)
 
-		// Enqueue the signal to the queue owned by the app branch
-		// This routes the signal through the queue system for execution
-		enqueueResp, err := workflowactivities.AwaitEnqueueSignalToOwner(ctx, &workflowactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   eventLoopReq.ID, // App branch ID
-			OwnerType: "app_branches",
-			Signal:    typedSignal,
+		// TODO: fetch the queue ID for this app branch owner
+		queueID := "TODO"
+
+		// Enqueue the signal via the queue client
+		enqueueResp, err := client.AwaitEnqueueSignal(ctx, &client.EnqueueSignalRequest{
+			QueueID: queueID,
+			Signal: &checkchanges.Signal{
+				AppBranchID: "DNE",
+			},
 		})
 		if err != nil {
 			return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
@@ -140,12 +136,12 @@ func getExecuteFlowExecFn(eventLoopReq eventloop.EventLoopRequest) func(workflow
 
 		logger.Info("waiting for queue signal to complete",
 			"step_name", step.Name,
-			"queue_signal_id", enqueueResp.QueueSignalID,
+			"queue_signal_id", enqueueResp.ID,
 			"workflow_id", enqueueResp.WorkflowID,
 		)
 
 		// Wait for the queue signal to complete execution
-		_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID)
+		_, err = client.AwaitAwaitSignal(ctx, enqueueResp.ID)
 		if err != nil {
 			return errors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
 		}

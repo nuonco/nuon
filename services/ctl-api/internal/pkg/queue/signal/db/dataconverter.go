@@ -43,6 +43,15 @@ func (c *PayloadConverter) ToPayload(value interface{}) (*commonpb.Payload, erro
 	}
 
 	rv := reflect.ValueOf(value)
+
+	// Dereference pointer if needed
+	if rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return nil, nil
+		}
+		rv = rv.Elem()
+	}
+
 	signalInterfaceType := reflect.TypeOf((*signal.Signal)(nil)).Elem()
 
 	// Check if it's a struct with a Signal field
@@ -52,7 +61,7 @@ func (c *PayloadConverter) ToPayload(value interface{}) (*commonpb.Payload, erro
 			if !ok || sig == nil {
 				return nil, errors.New("Signal field is nil or invalid")
 			}
-			return c.encodeStructWithSignal(value, sig)
+			return c.encodeStructWithSignal(rv.Interface(), sig)
 		}
 	}
 
@@ -269,6 +278,14 @@ func (c *PayloadConverter) FromPayload(payload *commonpb.Payload, valuePtr inter
 	// Dereference the pointer and get the underlying value
 	elem := rv.Elem()
 
+	// Handle double-pointer case (e.g., **EnqueueSignalRequest from Temporal)
+	if elem.Kind() == reflect.Ptr {
+		if elem.IsNil() {
+			elem.Set(reflect.New(elem.Type().Elem()))
+		}
+		elem = elem.Elem()
+	}
+
 	// Check if the element is settable
 	if !elem.CanSet() {
 		return errors.New("cannot set value of valuePtr")
@@ -359,6 +376,16 @@ func (c *PayloadConverter) decodeStructWithSignal(payload *commonpb.Payload, val
 	}
 
 	elem := rv.Elem()
+
+	// Handle double-pointer case (e.g., **EnqueueSignalRequest from Temporal).
+	// Temporal passes pointer-to-pointer because the activity param is already a pointer.
+	if elem.Kind() == reflect.Ptr {
+		if elem.IsNil() {
+			elem.Set(reflect.New(elem.Type().Elem()))
+		}
+		elem = elem.Elem()
+	}
+
 	if elem.Kind() != reflect.Struct {
 		return errors.New("valuePtr must be a pointer to a struct for composite payloads")
 	}

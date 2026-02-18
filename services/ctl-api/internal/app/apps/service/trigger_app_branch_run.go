@@ -7,35 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	runsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
-
-// appBranchRunSignal is a local implementation to avoid import cycles
-// This matches the structure in internal/app/apps/signals/v2/branches/run
-// SIMPLIFIED: Only pass run_id, signal fetches everything else from DB
-type appBranchRunSignal struct {
-	RunID string `json:"run_id"`
-}
-
-func (s *appBranchRunSignal) Type() signal.SignalType {
-	return "app-branch-run"
-}
-
-func (s *appBranchRunSignal) Validate(ctx workflow.Context) error {
-	// Validation happens in the actual signal handler
-	return nil
-}
-
-func (s *appBranchRunSignal) Execute(ctx workflow.Context) error {
-	// Execution happens in the actual signal handler
-	return nil
-}
 
 type TriggerAppBranchRunRequest struct {
 	ConfigID string `json:"config_id"` // optional - use latest if not provided
@@ -179,7 +157,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	// 4. ENQUEUE SIMPLIFIED SIGNAL (just run_id)
 	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: branch.Queue.ID,
-		Signal: &appBranchRunSignal{
+		Signal: &runsignal.Signal{
 			RunID: run.ID, // SIMPLIFIED: only pass run_id
 		},
 	})

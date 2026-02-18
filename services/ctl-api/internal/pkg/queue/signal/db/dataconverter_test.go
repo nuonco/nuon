@@ -78,17 +78,9 @@ func (s *PayloadConverterTestSuite) TestToPayload_StructWithSignalField() {
 		Signal:  sig,
 	}
 
-	// TODO: This currently returns nil, which is the ROOT CAUSE of the bug
-	// The JSON converter cannot properly handle Signal interface fields
-	// See TestTrueRoundTrip_StructWithSignalField for the failing case
 	payload, err := s.converter.ToPayload(req)
 	require.NoError(s.T(), err)
-
-	if payload == nil {
-		s.T().Skip("KNOWN BUG: ToPayload returns nil for structs with Signal fields - this causes the production error")
-	} else {
-		require.NotNil(s.T(), payload, "ToPayload should handle structs with Signal fields")
-	}
+	require.NotNil(s.T(), payload, "ToPayload should handle structs with Signal fields")
 }
 
 // TestToPayload_NonSignalValue verifies that non-signal values return nil (let other converters handle)
@@ -443,6 +435,36 @@ func (s *PayloadConverterTestSuite) TestRoundTrip_ArrayOfStructsWithSignalField(
 	}
 }
 
+// TestTrueRoundTrip_PointerToStructWithSignalField tests the ACTUAL Temporal path:
+// Temporal passes *EnqueueSignalRequest (pointer), not a value.
+// This was the root cause of the production "can not unmarshal into nil" error.
+func (s *PayloadConverterTestSuite) TestTrueRoundTrip_PointerToStructWithSignalField() {
+	originalReq := &TestRequestStruct{
+		QueueID: "test-queue-ptr",
+		Signal: &example.ExampleSignal{
+			Arg1: "ptr-roundtrip-1",
+			Arg2: "ptr-roundtrip-2",
+		},
+	}
+
+	// Serialize the POINTER TO STRUCT (this is what Temporal does)
+	payload, err := s.converter.ToPayload(originalReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), payload, "ToPayload must handle pointers to structs with Signal fields")
+
+	// Deserialize back
+	var resultReq TestRequestStruct
+	err = s.converter.FromPayload(payload, &resultReq)
+	require.NoError(s.T(), err)
+
+	assert.Equal(s.T(), "test-queue-ptr", resultReq.QueueID)
+	require.NotNil(s.T(), resultReq.Signal)
+	exampleSig, ok := resultReq.Signal.(*example.ExampleSignal)
+	require.True(s.T(), ok)
+	assert.Equal(s.T(), "ptr-roundtrip-1", exampleSig.Arg1)
+	assert.Equal(s.T(), "ptr-roundtrip-2", exampleSig.Arg2)
+}
+
 // TestTrueRoundTrip_WithGenericSignalInterface verifies round-trip when Signal
 // is stored in a generic signal.Signal interface variable (common pattern)
 func (s *PayloadConverterTestSuite) TestTrueRoundTrip_WithGenericSignalInterface() {
@@ -477,4 +499,36 @@ func (s *PayloadConverterTestSuite) TestTrueRoundTrip_WithGenericSignalInterface
 	require.True(s.T(), ok)
 	assert.Equal(s.T(), "interface-var-1", exampleSig.Arg1)
 	assert.Equal(s.T(), "interface-var-2", exampleSig.Arg2)
+}
+
+// TestTrueRoundTrip_DoublePointerFromTemporal simulates the exact Temporal deserialization path.
+// Activity signature: EnqueueSignal(ctx, req *EnqueueSignalRequest)
+// Temporal passes **EnqueueSignalRequest as valuePtr to FromPayload.
+func (s *PayloadConverterTestSuite) TestTrueRoundTrip_DoublePointerFromTemporal() {
+	originalReq := &TestRequestStruct{
+		QueueID: "temporal-double-ptr",
+		Signal: &example.ExampleSignal{
+			Arg1: "double-ptr-1",
+			Arg2: "double-ptr-2",
+		},
+	}
+
+	// Serialize pointer-to-struct (what ToPayload receives)
+	payload, err := s.converter.ToPayload(originalReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), payload)
+
+	// Deserialize with double pointer (what Temporal passes to FromPayload)
+	var resultReq *TestRequestStruct // nil *TestRequestStruct
+	// Temporal passes &resultReq which is **TestRequestStruct
+	err = s.converter.FromPayload(payload, &resultReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), resultReq)
+
+	assert.Equal(s.T(), "temporal-double-ptr", resultReq.QueueID)
+	require.NotNil(s.T(), resultReq.Signal)
+	exampleSig, ok := resultReq.Signal.(*example.ExampleSignal)
+	require.True(s.T(), ok)
+	assert.Equal(s.T(), "double-ptr-1", exampleSig.Arg1)
+	assert.Equal(s.T(), "double-ptr-2", exampleSig.Arg2)
 }

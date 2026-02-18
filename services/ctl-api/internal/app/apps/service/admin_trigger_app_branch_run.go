@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	runsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -104,7 +105,7 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 	// Enqueue signal
 	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: branch.Queue.ID,
-		Signal: &appBranchRunSignal{
+		Signal: &runsignal.Signal{
 			RunID: run.ID,
 		},
 	})
