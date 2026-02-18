@@ -6,8 +6,7 @@ import { LogoLight } from '@/components/common/Logo/LogoLight'
 import { LogoDark } from '@/components/common/Logo/LogoDark'
 import { Text } from '@/components/common/Text'
 import { USE_AUTH_SERVICE, AUTH_SERVICE_URL, APP_URL } from '@/configs/auth'
-import authRightLight from '@/assets/auth-right-light.png'
-import authRightDark from '@/assets/auth-right-dark.png'
+import ossHeroImage from '@/assets/oss-hero.png'
 
 interface HomePageWithModalProps {
   showModal: boolean
@@ -105,22 +104,11 @@ export const HomePageWithModal: React.FC<HomePageWithModalProps> = ({
       {/* Right Side - Branded Background */}
       <div className="hidden lg:flex relative flex-1 overflow-hidden">
         <Image
-          src={authRightLight}
+          src={ossHeroImage}
           alt="Nuon branded background"
           fill
-          className="object-cover block dark:hidden"
+          className="object-cover"
           priority
-          quality={100}
-          unoptimized
-        />
-        <Image
-          src={authRightDark}
-          alt="Nuon branded background"
-          fill
-          className="object-cover hidden dark:block"
-          priority
-          quality={100}
-          unoptimized
         />
       </div>
     </div>
