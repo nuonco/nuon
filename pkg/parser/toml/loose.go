@@ -20,8 +20,19 @@ func ParseLoose(text string) *TomlDocument {
 	lines := strings.Split(text, "\n")
 
 	currentTable := ""
+	inMultilineString := false
+	multilineDelimiter := "" // `"""` or `'''`
 
 	for lineNum, line := range lines {
+		// If inside a multiline string, check for the closing delimiter
+		if inMultilineString {
+			if strings.Contains(line, multilineDelimiter) {
+				inMultilineString = false
+				multilineDelimiter = ""
+			}
+			continue
+		}
+
 		// Skip comments
 		if commentRegex.MatchString(line) {
 			continue
@@ -90,10 +101,37 @@ func ParseLoose(text string) *TomlDocument {
 
 			doc.Keys = append(doc.Keys, key)
 			doc.CurrentTable = currentTable
+
+			// Check if this line opens a multiline string (""" or ''')
+			if hasEquals {
+				eqIdx := strings.Index(line, "=")
+				valuePart := line[eqIdx+1:]
+				if delim, open := opensMultilineString(valuePart); open {
+					inMultilineString = true
+					multilineDelimiter = delim
+				}
+			}
 		}
 	}
 
 	return doc
+}
+
+// opensMultilineString checks if a value part (after the =) opens a multiline string.
+// Returns the delimiter and true if a multiline string is opened but not closed on the same line.
+func opensMultilineString(valuePart string) (string, bool) {
+	trimmed := strings.TrimSpace(valuePart)
+	for _, delim := range []string{`"""`, `'''`} {
+		if strings.HasPrefix(trimmed, delim) {
+			// Check if it's also closed on the same line (after the opening delimiter)
+			rest := trimmed[len(delim):]
+			if strings.Contains(rest, delim) {
+				return "", false
+			}
+			return delim, true
+		}
+	}
+	return "", false
 }
 
 // ParseLooseWithCursor parses TOML and detects the prefix at a specific cursor position
