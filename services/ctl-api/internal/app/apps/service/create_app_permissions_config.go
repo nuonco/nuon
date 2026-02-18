@@ -83,7 +83,7 @@ func (s *service) CreateAppPermissionsConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppPermissionsConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.ErrInvalidRequest{
 			Err: err,
 		})

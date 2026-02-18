@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
@@ -50,8 +51,8 @@ func (s *service) CreateRunnerJobExecutionOutputs(ctx *gin.Context) {
 	}
 
 	var req CreateRunnerJobExecutionOutputsRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to parse request"))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

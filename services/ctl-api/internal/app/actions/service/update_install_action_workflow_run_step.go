@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type UpdateInstallActionWorkflowRunStepRequest struct {
@@ -41,8 +42,8 @@ func (s *service) UpdateInstallActionWorkflowRunStep(ctx *gin.Context) {
 	stepID := ctx.Param("step_id")
 
 	var req UpdateInstallActionWorkflowRunStepRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

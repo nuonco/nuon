@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/pkg/types/workflows/canary"
 	"github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
@@ -36,8 +39,8 @@ type StartCanaryCronRequest struct {
 // @Router					/v1/general/start-canary-cron [post]
 func (c *service) StartCanaryCron(ctx *gin.Context) {
 	var req StartCanaryCronRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
