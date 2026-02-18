@@ -16,6 +16,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationProvision:        AwaitProvision,
 		signals.OperationReprovision:      AwaitReprovision,
 		signals.OperationUpdateSandbox:    AwaitUpdateSandbox,
+		signals.OperationSyncCustomStacks: AwaitSyncCustomStacks,
 		signals.OperationDeprovision:      AwaitDeprovision,
 	}
 

@@ -7,14 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/pkg/config"
-	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -116,26 +113,10 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 	}
 
 	if len(appCloudFormationStackConfig.CustomNestedStacks) > 0 {
-		org, err := cctx.OrgFromContext(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get org from context: %w", err)
-		}
-
-		opts := tclient.StartWorkflowOptions{
-			ID:        fmt.Sprintf("app-config-sync-custom-stacks-%s", appCloudFormationStackConfig.ID),
-			TaskQueue: workflows.APITaskQueue,
-		}
-		_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, "apps", opts,
-			"AppConfigSyncCustomStacks",
-			worker.AppConfigSyncCustomStacksRequest{
-				OrgID:            org.ID,
-				AppID:            appID,
-				AppStackConfigID: appCloudFormationStackConfig.ID,
-			},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("unable to start custom stacks sync: %w", err)
-		}
+		s.evClient.Send(ctx, appID, &signals.Signal{
+			Type:             signals.OperationSyncCustomStacks,
+			AppStackConfigID: appCloudFormationStackConfig.ID,
+		})
 	}
 
 	return &appCloudFormationStackConfig, nil
