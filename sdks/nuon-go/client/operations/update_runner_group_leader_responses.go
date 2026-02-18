@@ -25,8 +25,8 @@ type UpdateRunnerGroupLeaderReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateRunnerGroupLeaderReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (any, error) {
 	switch response.Code() {
-	case 200:
-		result := NewUpdateRunnerGroupLeaderOK()
+	case 202:
+		result := NewUpdateRunnerGroupLeaderAccepted()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -54,70 +54,68 @@ func (o *UpdateRunnerGroupLeaderReader) ReadResponse(response runtime.ClientResp
 	}
 }
 
-// NewUpdateRunnerGroupLeaderOK creates a UpdateRunnerGroupLeaderOK with default headers values
-func NewUpdateRunnerGroupLeaderOK() *UpdateRunnerGroupLeaderOK {
-	return &UpdateRunnerGroupLeaderOK{}
+// NewUpdateRunnerGroupLeaderAccepted creates a UpdateRunnerGroupLeaderAccepted with default headers values
+func NewUpdateRunnerGroupLeaderAccepted() *UpdateRunnerGroupLeaderAccepted {
+	return &UpdateRunnerGroupLeaderAccepted{}
 }
 
 /*
-UpdateRunnerGroupLeaderOK describes a response with status code 200, with default header values.
+UpdateRunnerGroupLeaderAccepted describes a response with status code 202, with default header values.
 
-OK
+Accepted
 */
-type UpdateRunnerGroupLeaderOK struct {
-	Payload *models.AppRunner
+type UpdateRunnerGroupLeaderAccepted struct {
+	Payload any
 }
 
-// IsSuccess returns true when this update runner group leader o k response has a 2xx status code
-func (o *UpdateRunnerGroupLeaderOK) IsSuccess() bool {
+// IsSuccess returns true when this update runner group leader accepted response has a 2xx status code
+func (o *UpdateRunnerGroupLeaderAccepted) IsSuccess() bool {
 	return true
 }
 
-// IsRedirect returns true when this update runner group leader o k response has a 3xx status code
-func (o *UpdateRunnerGroupLeaderOK) IsRedirect() bool {
+// IsRedirect returns true when this update runner group leader accepted response has a 3xx status code
+func (o *UpdateRunnerGroupLeaderAccepted) IsRedirect() bool {
 	return false
 }
 
-// IsClientError returns true when this update runner group leader o k response has a 4xx status code
-func (o *UpdateRunnerGroupLeaderOK) IsClientError() bool {
+// IsClientError returns true when this update runner group leader accepted response has a 4xx status code
+func (o *UpdateRunnerGroupLeaderAccepted) IsClientError() bool {
 	return false
 }
 
-// IsServerError returns true when this update runner group leader o k response has a 5xx status code
-func (o *UpdateRunnerGroupLeaderOK) IsServerError() bool {
+// IsServerError returns true when this update runner group leader accepted response has a 5xx status code
+func (o *UpdateRunnerGroupLeaderAccepted) IsServerError() bool {
 	return false
 }
 
-// IsCode returns true when this update runner group leader o k response a status code equal to that given
-func (o *UpdateRunnerGroupLeaderOK) IsCode(code int) bool {
-	return code == 200
+// IsCode returns true when this update runner group leader accepted response a status code equal to that given
+func (o *UpdateRunnerGroupLeaderAccepted) IsCode(code int) bool {
+	return code == 202
 }
 
-// Code gets the status code for the update runner group leader o k response
-func (o *UpdateRunnerGroupLeaderOK) Code() int {
-	return 200
+// Code gets the status code for the update runner group leader accepted response
+func (o *UpdateRunnerGroupLeaderAccepted) Code() int {
+	return 202
 }
 
-func (o *UpdateRunnerGroupLeaderOK) Error() string {
+func (o *UpdateRunnerGroupLeaderAccepted) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[PUT /v1/runner-groups/{runner_group_id}/leader][%d] updateRunnerGroupLeaderOK %s", 200, payload)
+	return fmt.Sprintf("[PUT /v1/runner-groups/{runner_group_id}/leader][%d] updateRunnerGroupLeaderAccepted %s", 202, payload)
 }
 
-func (o *UpdateRunnerGroupLeaderOK) String() string {
+func (o *UpdateRunnerGroupLeaderAccepted) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[PUT /v1/runner-groups/{runner_group_id}/leader][%d] updateRunnerGroupLeaderOK %s", 200, payload)
+	return fmt.Sprintf("[PUT /v1/runner-groups/{runner_group_id}/leader][%d] updateRunnerGroupLeaderAccepted %s", 202, payload)
 }
 
-func (o *UpdateRunnerGroupLeaderOK) GetPayload() *models.AppRunner {
+func (o *UpdateRunnerGroupLeaderAccepted) GetPayload() any {
 	return o.Payload
 }
 
-func (o *UpdateRunnerGroupLeaderOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.AppRunner)
+func (o *UpdateRunnerGroupLeaderAccepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

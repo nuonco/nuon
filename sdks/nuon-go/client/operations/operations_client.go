@@ -644,7 +644,7 @@ type ClientService interface {
 
 	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
 
-	UpdateRunnerGroupLeader(params *UpdateRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerGroupLeaderOK, error)
+	UpdateRunnerGroupLeader(params *UpdateRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerGroupLeaderAccepted, error)
 
 	UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error)
 
@@ -13680,7 +13680,7 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 /*
 UpdateRunnerGroupLeader sets or auto elect the leader runner for a runner group
 */
-func (a *Client) UpdateRunnerGroupLeader(params *UpdateRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerGroupLeaderOK, error) {
+func (a *Client) UpdateRunnerGroupLeader(params *UpdateRunnerGroupLeaderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerGroupLeaderAccepted, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewUpdateRunnerGroupLeaderParams()
@@ -13707,7 +13707,7 @@ func (a *Client) UpdateRunnerGroupLeader(params *UpdateRunnerGroupLeaderParams, 
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*UpdateRunnerGroupLeaderOK)
+	success, ok := result.(*UpdateRunnerGroupLeaderAccepted)
 	if ok {
 		return success, nil
 	}

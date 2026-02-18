@@ -31,17 +31,13 @@ func (c *client) GetRunnerGroupLeader(ctx context.Context, runnerGroupID string)
 	return resp.Payload, nil
 }
 
-func (c *client) UpdateRunnerGroupLeader(ctx context.Context, runnerGroupID string, runnerID string) (*models.AppRunner, error) {
-	resp, err := c.genClient.Operations.UpdateRunnerGroupLeader(&operations.UpdateRunnerGroupLeaderParams{
+func (c *client) UpdateRunnerGroupLeader(ctx context.Context, runnerGroupID string, runnerID string) error {
+	_, err := c.genClient.Operations.UpdateRunnerGroupLeader(&operations.UpdateRunnerGroupLeaderParams{
 		RunnerGroupID: runnerGroupID,
 		Request: &models.ServiceUpdateRunnerGroupLeaderRequest{
 			RunnerID: runnerID,
 		},
 		Context: ctx,
 	}, c.getOrgIDAuthInfo())
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
+	return err
 }

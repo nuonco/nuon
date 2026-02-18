@@ -66,17 +66,15 @@ func (s *Service) RunnersElectLeader(ctx context.Context, installID, runnerID st
 		return view.Error(err)
 	}
 
-	runner, err := s.api.UpdateRunnerGroupLeader(ctx, rg.ID, runnerID)
-	if err != nil {
+	if err := s.api.UpdateRunnerGroupLeader(ctx, rg.ID, runnerID); err != nil {
 		return view.Error(err)
 	}
 
-	if asJSON {
-		ui.PrintJSON(runner)
-		return nil
+	if runnerID == "" {
+		fmt.Printf("Leader election triggered for runner group %s\n", rg.ID)
+	} else {
+		fmt.Printf("Leader election triggered for runner %s in runner group %s\n", runnerID, rg.ID)
 	}
-
-	fmt.Printf("Runner %s (%s) elected as leader for runner group %s\n", runner.ID, runner.Name, rg.ID)
 	return nil
 }
 

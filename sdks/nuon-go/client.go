@@ -171,7 +171,7 @@ type Client interface {
 	// install runner groups
 	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)
 	GetRunnerGroupLeader(ctx context.Context, runnerGroupID string) (*models.AppRunner, error)
-	UpdateRunnerGroupLeader(ctx context.Context, runnerGroupID string, runnerID string) (*models.AppRunner, error)
+	UpdateRunnerGroupLeader(ctx context.Context, runnerGroupID string, runnerID string) error
 	TaintRunner(ctx context.Context, runnerID string) (*models.AppRunner, error)
 	UntaintRunner(ctx context.Context, runnerID string) (*models.AppRunner, error)
 
