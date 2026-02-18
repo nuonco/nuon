@@ -27,7 +27,7 @@ func (s *service) AdminForgetOrg(ctx *gin.Context) {
 
 	var req AdminForgetOrgRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

@@ -60,7 +60,7 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 
 	var req CreateActionWorkflowConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -252,7 +252,7 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 
 	var req CreateActionWorkflowConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

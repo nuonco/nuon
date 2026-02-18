@@ -32,7 +32,7 @@ type CreateTerraformWorkspaceRequest struct {
 func (s *service) CreateTerraformWorkspace(ctx *gin.Context) {
 	var req CreateTerraformWorkspaceRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
@@ -67,7 +67,7 @@ func (s *service) CreateTerraformWorkspace(ctx *gin.Context) {
 func (s *service) CreateTerraformWorkspaceV2(ctx *gin.Context) {
 	var req CreateTerraformWorkspaceRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

@@ -61,7 +61,7 @@ func (s *service) CreateAppSandboxConfigV2(ctx *gin.Context) {
 
 	var req CreateAppSandboxConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -105,7 +105,7 @@ func (s *service) CreateAppSandboxConfig(ctx *gin.Context) {
 
 	var req CreateAppSandboxConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

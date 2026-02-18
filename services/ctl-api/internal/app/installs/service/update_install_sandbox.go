@@ -32,7 +32,7 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 
 	var req AdminUpdateSandboxRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

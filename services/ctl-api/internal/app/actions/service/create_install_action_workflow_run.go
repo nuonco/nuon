@@ -43,7 +43,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 
 	var req CreateInstallActionWorkflowRunRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

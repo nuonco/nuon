@@ -59,7 +59,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 	}
 	var req CreateInstallDeployRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
@@ -142,7 +142,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 
 	var req CreateInstallDeployRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

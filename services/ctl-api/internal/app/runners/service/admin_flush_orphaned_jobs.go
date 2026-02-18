@@ -29,7 +29,7 @@ func (s *service) AdminFlushOrphanedJobs(ctx *gin.Context) {
 
 	var req AdminFlushOrphanedJobsRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

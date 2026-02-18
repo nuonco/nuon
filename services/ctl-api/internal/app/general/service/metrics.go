@@ -48,7 +48,7 @@ func (m PublishMetricInput) write(mw metrics.Writer) {
 func (s *service) PublishMetrics(ctx *gin.Context) {
 	var req []PublishMetricInput
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

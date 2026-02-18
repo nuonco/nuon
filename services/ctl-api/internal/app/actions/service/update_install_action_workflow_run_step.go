@@ -43,7 +43,7 @@ func (s *service) UpdateInstallActionWorkflowRunStep(ctx *gin.Context) {
 
 	var req UpdateInstallActionWorkflowRunStepRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

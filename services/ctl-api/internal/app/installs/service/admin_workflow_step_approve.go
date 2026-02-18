@@ -64,7 +64,7 @@ func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.Wor
 func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 	var req AdminWorkflowStepApproveRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

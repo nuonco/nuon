@@ -152,7 +152,7 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 
 	var req CreateTerraformModuleComponentConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

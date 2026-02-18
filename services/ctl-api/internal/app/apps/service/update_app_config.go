@@ -53,7 +53,7 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 
 	var req UpdateAppConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -106,7 +106,7 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 
 	var req UpdateAppConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

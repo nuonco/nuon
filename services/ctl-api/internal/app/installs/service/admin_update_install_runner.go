@@ -30,7 +30,7 @@ func (s *service) AdminUpdateInstallRunner(ctx *gin.Context) {
 
 	var req AdminUpdateInstallRunnerRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

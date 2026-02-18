@@ -44,7 +44,7 @@ func (c *CreateConnectionCallbackRequest) Validate(v *validator.Validate) error 
 func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 	var req CreateConnectionCallbackRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

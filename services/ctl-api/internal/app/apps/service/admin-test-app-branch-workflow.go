@@ -29,7 +29,7 @@ type AdminTestAppBranchWorkflowRequest struct {
 func (s *service) AdminTestAppBranchWorkflow(ctx *gin.Context) {
 	var req AdminTestAppBranchWorkflowRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

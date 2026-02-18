@@ -63,7 +63,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 
 	var req CreateAppRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

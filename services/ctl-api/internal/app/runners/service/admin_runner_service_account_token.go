@@ -41,7 +41,7 @@ func (s *service) AdminCreateRunnerServiceAccountToken(ctx *gin.Context) {
 
 	var req AdminRunnerServiceAccountTokenRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

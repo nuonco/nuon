@@ -28,7 +28,7 @@ type InfraTestsRequests struct {
 func (c *service) InfraTests(ctx *gin.Context) {
 	var req InfraTestsRequests
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

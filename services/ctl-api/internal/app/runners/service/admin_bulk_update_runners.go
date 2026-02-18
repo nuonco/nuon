@@ -35,7 +35,7 @@ type AdminBulkUpdateRunnersResponse struct {
 func (s *service) AdminBulkUpdateRunners(ctx *gin.Context) {
 	var req AdminBulkUpdateRunnersRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

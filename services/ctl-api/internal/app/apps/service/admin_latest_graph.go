@@ -37,7 +37,7 @@ func (s *service) AdminConfigGraph(ctx *gin.Context) {
 
 	var req AdminAppConfigGraphRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

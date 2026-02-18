@@ -53,7 +53,7 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 
 	var req CreateRunnerJobExecutionResultRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

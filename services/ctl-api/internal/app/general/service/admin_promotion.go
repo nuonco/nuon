@@ -30,7 +30,7 @@ type AdminPromotionRequest struct {
 func (s *service) AdminPromotion(ctx *gin.Context) {
 	var req AdminPromotionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

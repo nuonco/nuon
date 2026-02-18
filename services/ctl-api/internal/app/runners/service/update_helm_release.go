@@ -53,7 +53,7 @@ func (s *service) UpdateHelmRelease(ctx *gin.Context) {
 
 	var rls helm.Release
 	if err := ctx.ShouldBindJSON(&rls); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

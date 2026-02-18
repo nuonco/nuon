@@ -38,7 +38,7 @@ func (s *service) AdminAddLogo(ctx *gin.Context) {
 
 	var req OrgAddLogoRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

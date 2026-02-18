@@ -30,7 +30,7 @@ type ProvisionCanaryRequest struct {
 func (c *service) ProvisionCanary(ctx *gin.Context) {
 	var req ProvisionCanaryRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

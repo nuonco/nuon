@@ -64,7 +64,7 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 func (s *service) CreateInstallV2(ctx *gin.Context) {
 	var req CreateInstallV2Request
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -175,7 +175,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 
 	var req CreateInstallRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

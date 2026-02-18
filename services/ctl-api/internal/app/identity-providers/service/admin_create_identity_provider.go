@@ -65,7 +65,7 @@ func (r *AdminCreateIdentityProviderRequest) Validate(v *validator.Validate) err
 func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 	var req AdminCreateIdentityProviderRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

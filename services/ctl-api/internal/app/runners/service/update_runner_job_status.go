@@ -38,7 +38,7 @@ func (s *service) UpdateRunnerJob(ctx *gin.Context) {
 
 	var req UpdateRunnerJobRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
@@ -97,7 +97,7 @@ func (s *service) UpdateRunnerJobV2(ctx *gin.Context) {
 
 	var req UpdateRunnerJobRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

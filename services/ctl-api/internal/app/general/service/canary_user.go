@@ -42,7 +42,7 @@ type CreateCanaryUserResponse struct {
 func (s *service) CreateCanaryUser(ctx *gin.Context) {
 	var req CreateCanaryUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

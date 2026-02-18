@@ -33,7 +33,7 @@ func (s *service) AdminExtendRunnerServiceAccountToken(ctx *gin.Context) {
 
 	var req ExtendRunnerServiceTokenRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

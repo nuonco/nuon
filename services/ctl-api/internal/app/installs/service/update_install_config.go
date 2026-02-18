@@ -48,7 +48,7 @@ func (s *service) UpdateInstallConfig(ctx *gin.Context) {
 
 	var req UpdateInstallConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

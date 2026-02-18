@@ -37,7 +37,7 @@ type InfraTestsDeprovisionRequest struct {
 func (c *service) InfraTestsDeprovision(ctx *gin.Context) {
 	var req InfraTestsDeprovisionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

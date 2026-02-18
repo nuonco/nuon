@@ -36,7 +36,7 @@ type UpdateUserJourneyStepRequest struct {
 func (s *service) UpdateUserJourneyStep(ctx *gin.Context) {
 	var req UpdateUserJourneyStepRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

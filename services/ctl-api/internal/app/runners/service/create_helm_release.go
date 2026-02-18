@@ -55,7 +55,7 @@ func (s *service) CreateHelmRelease(ctx *gin.Context) {
 
 	var rls helm.Release
 	if err := ctx.ShouldBindJSON(&rls); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

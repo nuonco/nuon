@@ -32,7 +32,7 @@ func (s *service) AdminInvalidateRunnerServiceAccountToken(ctx *gin.Context) {
 
 	var req AdminInvalidateRunnerServiceAccountTokenRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

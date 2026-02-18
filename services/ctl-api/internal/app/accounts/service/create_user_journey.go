@@ -40,7 +40,7 @@ type CreateUserJourneyStepReq struct {
 func (s *service) CreateUserJourney(ctx *gin.Context) {
 	var req CreateUserJourneyRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

@@ -27,7 +27,7 @@ type DeprovisionCanaryRequest struct {
 func (c *service) DeprovisionCanary(ctx *gin.Context) {
 	var req DeprovisionCanaryRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrInvalidRequest{Err: err})
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
