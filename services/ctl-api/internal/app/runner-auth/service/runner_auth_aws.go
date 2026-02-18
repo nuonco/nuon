@@ -155,16 +155,16 @@ func extractInstanceIDFromSTSUserId(userId string) string {
 // @Router					/v1/runner-auth/aws [POST]
 func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 	var req RunnerAuthAWSRequest
-	if err := ctx.BindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		s.l.Warn("runner auth: failed to parse request", zap.Error(err))
-		ctx.Error(stderr.ErrInvalidRequest{Err: errors.New("invalid request format")})
+		ctx.Error(stderr.NewInvalidRequest(errors.New("invalid request format")))
 		ctx.Abort()
 		return
 	}
 
 	if err := s.v.Struct(req); err != nil {
 		s.l.Warn("runner auth: request validation failed", zap.Error(err))
-		ctx.Error(stderr.ErrInvalidRequest{Err: errors.New("invalid request: missing required fields")})
+		ctx.Error(stderr.NewInvalidRequest(errors.New("invalid request: missing required fields")))
 		ctx.Abort()
 		return
 	}
