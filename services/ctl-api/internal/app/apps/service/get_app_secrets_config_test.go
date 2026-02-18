@@ -15,7 +15,7 @@ import (
 // TestGetAppSecretsConfig tests the GetAppSecretsConfig endpoint.
 func (s *AppConfigTypesTestSuite) TestGetAppSecretsConfig() {
 	s.Run("returns not found when no config exists", func() {
-		rr := s.makeRequest(http.MethodGet, "/v1/apps/"+s.testApp.ID+"/secrets-configs", nil)
+		rr := s.makeRequest(http.MethodGet, "/v1/apps/"+s.testApp.ID+"/secrets-configs/nonexistent-id", nil)
 
 		// The handler calls First() which returns record not found
 		assert.Equal(s.T(), http.StatusNotFound, rr.Code)
@@ -43,7 +43,7 @@ func (s *AppConfigTypesTestSuite) TestGetAppSecretsConfig() {
 		err := s.service.DB.WithContext(ctx).Create(cfg).Error
 		require.NoError(s.T(), err)
 
-		rr := s.makeRequest(http.MethodGet, "/v1/apps/"+s.testApp.ID+"/secrets-configs", nil)
+		rr := s.makeRequest(http.MethodGet, "/v1/apps/"+s.testApp.ID+"/secrets-configs/"+cfg.ID, nil)
 
 		if rr.Code != http.StatusOK {
 			s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
