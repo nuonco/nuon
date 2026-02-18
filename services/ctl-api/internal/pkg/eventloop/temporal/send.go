@@ -38,54 +38,57 @@ func (e *evClient) Send(ctx workflow.Context, id string, signal eventloop.Signal
 		return
 	}
 
-	switch signal.Namespace() {
-	case actionssignals.TemporalNamespace:
+	// Dispatch by concrete signal type. We use type switches instead of
+	// namespace strings because runner-groups signals share the runners
+	// Temporal namespace.
+	switch s := signal.(type) {
+	case *actionssignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendActionsSignal(ctx, &signalsactivities.SendSignalRequest[*actionssignals.Signal]{
 			ID:     id,
-			Signal: signal.(*actionssignals.Signal),
+			Signal: s,
 		})
-	case appssignals.TemporalNamespace:
+	case *appssignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendAppsSignal(ctx, &signalsactivities.SendSignalRequest[*appssignals.Signal]{
 			ID:     id,
-			Signal: signal.(*appssignals.Signal),
+			Signal: s,
 		})
-	case installssignals.TemporalNamespace:
+	case *installssignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendInstallsSignal(ctx, &signalsactivities.SendSignalRequest[*installssignals.Signal]{
 			ID:     id,
-			Signal: signal.(*installssignals.Signal),
+			Signal: s,
 		})
-	case componentssignals.TemporalNamespace:
+	case *componentssignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendComponentsSignal(ctx, &signalsactivities.SendSignalRequest[*componentssignals.Signal]{
 			ID:     id,
-			Signal: signal.(*componentssignals.Signal),
+			Signal: s,
 		})
-	case orgssignals.TemporalNamespace:
+	case *orgssignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendOrgsSignal(ctx, &signalsactivities.SendSignalRequest[*orgssignals.Signal]{
 			ID:     id,
-			Signal: signal.(*orgssignals.Signal),
+			Signal: s,
 		})
-	case releasessignals.TemporalNamespace:
+	case *releasessignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendReleasesSignal(ctx, &signalsactivities.SendSignalRequest[*releasessignals.Signal]{
 			ID:     id,
-			Signal: signal.(*releasessignals.Signal),
+			Signal: s,
 		})
-	case runnerssignals.TemporalNamespace:
+	case *runnerssignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendRunnersSignal(ctx, &signalsactivities.SendSignalRequest[*runnerssignals.Signal]{
 			ID:     id,
-			Signal: signal.(*runnerssignals.Signal),
+			Signal: s,
 		})
-	case runnergroupssignals.TemporalNamespace:
+	case *runnergroupssignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendRunnerGroupsSignal(ctx, &signalsactivities.SendSignalRequest[*runnergroupssignals.Signal]{
 			ID:     id,
-			Signal: signal.(*runnergroupssignals.Signal),
+			Signal: s,
 		})
-	case generalsignals.TemporalNamespace:
+	case *generalsignals.Signal:
 		signalsactivities.AwaitPkgSignalsSendGeneralSignal(ctx, &signalsactivities.SendSignalRequest[*generalsignals.Signal]{
 			ID:     id,
-			Signal: signal.(*generalsignals.Signal),
+			Signal: s,
 		})
 	default:
-		err = errors.New("unsupported namespace " + signal.Namespace())
+		err = errors.New("unsupported signal type for namespace " + signal.Namespace())
 	}
 
 	if err != nil {

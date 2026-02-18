@@ -14,6 +14,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	runnergroupsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
@@ -34,6 +35,8 @@ type WorkerParams struct {
 	Acts    *activities.Activities
 	L       *zap.Logger
 	Lc      fx.Lifecycle
+
+	RunnerGroupsWkflows *runnergroupsworker.Workflows
 
 	SharedActivities *workflows.Activities
 	SharedWorkflows  *workflows.Workflows
@@ -67,6 +70,9 @@ func New(params WorkerParams) (*Worker, error) {
 
 	// register workflows
 	for _, wkflow := range params.Wkflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+	for _, wkflow := range params.RunnerGroupsWkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}
 	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {

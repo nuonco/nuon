@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	TemporalNamespace string = "runner-groups"
+	TemporalNamespace string = "runners"
 	EventLoop         string = "runner-groups"
 
 	OperationCreated     eventloop.SignalType = "created"
@@ -62,6 +62,14 @@ func (s *Signal) Namespace() string {
 
 func (s *Signal) Name() string {
 	return string(s.Type)
+}
+
+func (s *Signal) WorkflowName() string {
+	return "RunnerGroupEventLoop"
+}
+
+func (s *Signal) WorkflowID(id string) string {
+	return "runner-group-event-loop-" + id
 }
 
 func (s *Signal) Restart() bool {

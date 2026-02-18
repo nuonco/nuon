@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnergroupssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -43,6 +44,14 @@ func (s *service) setRunnerTainted(ctx *gin.Context, runnerID string, tainted bo
 	}
 
 	runner.Tainted = tainted
+
+	// Trigger leader election so the group picks a new leader after taint changes.
+	if runner.RunnerGroupID != "" {
+		s.evClient.Send(ctx, runner.RunnerGroupID, &runnergroupssignals.Signal{
+			Type: runnergroupssignals.OperationElectLeader,
+		})
+	}
+
 	return &runner, nil
 }
 

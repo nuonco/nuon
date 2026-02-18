@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
+func (w *Workflows) RunnerGroupEventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		signals.OperationElectLeader: w.handleElectLeader,
 		signals.OperationSetLeader:   w.handleSetLeader,
@@ -25,6 +25,10 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		NewRequestSignal: signals.NewRequestSignal,
 		ExistsHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) (bool, error) {
 			return true, nil
+		},
+		StartupHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+			w.startEnsureLeaderWorkflow(ctx, req.ID)
+			return nil
 		},
 	}
 

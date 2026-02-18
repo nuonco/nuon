@@ -31,7 +31,8 @@ type WorkflowParams struct {
 
 func (w *Workflows) All() []any {
 	return []any{
-		w.EventLoop,
+		w.RunnerGroupEventLoop,
+		w.EnsureLeader,
 	}
 }
 

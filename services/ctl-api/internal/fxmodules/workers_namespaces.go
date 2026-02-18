@@ -85,16 +85,12 @@ var ReleasesWorkerModule = fx.Module("worker-releases",
 )
 
 // RunnersWorkerModule provides the runners namespace worker.
+// Runner-groups workflows are also registered here (they share the runners namespace).
 var RunnersWorkerModule = fx.Module("worker-runners",
 	fx.Provide(runnersactivities.New),
 	fx.Provide(runnersworker.NewWorkflows),
-	fx.Provide(worker.AsWorker(runnersworker.New)),
-)
-
-// RunnerGroupsWorkerModule provides the runner-groups namespace worker.
-var RunnerGroupsWorkerModule = fx.Module("worker-runner-groups",
 	fx.Provide(runnergroupsworker.NewWorkflows),
-	fx.Provide(worker.AsWorker(runnergroupsworker.New)),
+	fx.Provide(worker.AsWorker(runnersworker.New)),
 )
 
 // ActionsWorkerModule provides the actions namespace worker.
