@@ -54,11 +54,10 @@ templ Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage
 										Multiple:    true,
 									})
 								}
-								@selectbox.Content() {
+								@selectbox.Content(selectbox.ContentProps{
+									NoSearch: true,
+								}) {
 									@selectbox.Group() {
-										@selectbox.Label() {
-											Tags
-										}
 										for _, tag := range allTags {
 											@selectbox.Item(selectbox.ItemProps{
 												Value:    tag,

@@ -7,9 +7,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
 )
 
-templ Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery string) {
+templ Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery string, filter string) {
 	@Layout("Accounts", ActivePageAccounts) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
@@ -22,28 +23,130 @@ templ Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery
 					}
 				}
 				@card.Content() {
-					@search.SearchInput(search.Props{
-						Placeholder: "Search by email or account ID...",
-						TargetURL:   "accounts/table",
-						TargetID:    "accounts-table",
-					})
+					<div class="flex gap-4 mb-4">
+						<div class="flex-1">
+							@search.SearchInput(search.Props{
+								Placeholder: "Search by email or account ID...",
+								TargetURL:   "accounts/table",
+								TargetID:    "accounts-table",
+								PushURL:     "",
+								Value:       searchQuery,
+							})
+						</div>
+						<div
+							class="w-64"
+							hx-get="/accounts/table"
+							hx-trigger="change from:[name='filter']"
+							hx-target="#accounts-table"
+							hx-swap="outerHTML"
+							hx-include="[name='search'],[name='filter']"
+						>
+							@selectbox.SelectBox(selectbox.Props{
+								Multiple: false,
+							}) {
+								@selectbox.Trigger(selectbox.TriggerProps{
+									Name:     "filter",
+									Multiple: false,
+								}) {
+									@selectbox.Value(selectbox.ValueProps{
+										Placeholder: "All accounts",
+										Multiple:    false,
+									})
+								}
+								@selectbox.Content(selectbox.ContentProps{
+									NoSearch: true,
+								}) {
+									@selectbox.Group() {
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "all",
+											Selected: filter == "" || filter == "all",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											All accounts
+										}
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "nuon",
+											Selected: filter == "nuon",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											Nuon accounts
+										}
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    "user",
+											Selected: filter == "user",
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											User accounts
+										}
+									}
+								}
+							}
+						</div>
+					</div>
 					if len(accounts) == 0 {
 						<div class="text-sm text-muted-foreground">No accounts found.</div>
 					} else {
-						@AccountsTable(accounts, currentPage, totalPages, searchQuery)
+						@AccountsTable(accounts, currentPage, totalPages, searchQuery, filter)
 					}
 				}
 			}
 		</div>
 		@copybutton.Script()
 		@popover.Script()
+		@selectbox.Script()
+		<script>
+			// Update URL when search/filter changes
+			document.body.addEventListener('htmx:afterSwap', function(evt) {
+				if (evt.detail.target.id === 'accounts-table') {
+					const searchInput = document.querySelector('input[name="search"]');
+					const filterInput = document.querySelector('input[name="filter"]');
+
+					const params = new URLSearchParams();
+
+					// Add search param if present
+					if (searchInput && searchInput.value) {
+						params.set('search', searchInput.value);
+					}
+
+					// Add filter param if present and not "all"
+					if (filterInput && filterInput.value && filterInput.value !== 'all') {
+						params.set('filter', filterInput.value);
+					}
+
+					// Add page param if not page 1
+					const currentUrl = new URL(evt.detail.xhr.responseURL);
+					const page = currentUrl.searchParams.get('page');
+					if (page && page !== '1') {
+						params.set('page', page);
+					}
+
+					// Update browser URL
+					const newUrl = '/accounts' + (params.toString() ? '?' + params.toString() : '');
+					history.replaceState(null, '', newUrl);
+				}
+			});
+		</script>
 	}
 }
 
-func buildAccountsPageURL(page int, search string) string {
+func buildAccountsPageURL(page int, search string, filter string) string {
 	url := fmt.Sprintf("accounts/table?page=%d", page)
 	if search != "" {
 		url += fmt.Sprintf("&search=%s", search)
+	}
+	if filter != "" && filter != "all" {
+		url += fmt.Sprintf("&filter=%s", filter)
+	}
+	return url
+}
+
+func buildAccountsBrowserURL(page int, search string, filter string) string {
+	url := fmt.Sprintf("/accounts?page=%d", page)
+	if search != "" {
+		url += fmt.Sprintf("&search=%s", search)
+	}
+	if filter != "" && filter != "all" {
+		url += fmt.Sprintf("&filter=%s", filter)
 	}
 	return url
 }

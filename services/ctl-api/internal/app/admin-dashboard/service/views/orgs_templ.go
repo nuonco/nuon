@@ -236,30 +236,8 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Var12 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-									templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-									templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-									if !templ_7745c5c3_IsBuffer {
-										defer func() {
-											templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-											if templ_7745c5c3_Err == nil {
-												templ_7745c5c3_Err = templ_7745c5c3_BufErr
-											}
-										}()
-									}
-									ctx = templ.InitializeContext(ctx)
-									templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "Tags")
-									if templ_7745c5c3_Err != nil {
-										return templ_7745c5c3_Err
-									}
-									return nil
-								})
-								templ_7745c5c3_Err = selectbox.Label().Render(templ.WithChildren(ctx, templ_7745c5c3_Var12), templ_7745c5c3_Buffer)
-								if templ_7745c5c3_Err != nil {
-									return templ_7745c5c3_Err
-								}
 								for _, tag := range allTags {
-									templ_7745c5c3_Var13 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+									templ_7745c5c3_Var12 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 										templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 										templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 										if !templ_7745c5c3_IsBuffer {
@@ -271,12 +249,12 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 											}()
 										}
 										ctx = templ.InitializeContext(ctx)
-										var templ_7745c5c3_Var14 string
-										templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(tag)
+										var templ_7745c5c3_Var13 string
+										templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(tag)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs.templ`, Line: 68, Col: 17}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs.templ`, Line: 67, Col: 17}
 										}
-										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 										if templ_7745c5c3_Err != nil {
 											return templ_7745c5c3_Err
 										}
@@ -286,7 +264,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 										Value:    tag,
 										Selected: contains(selectedTags, tag),
 										Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-									}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var13), templ_7745c5c3_Buffer)
+									}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var12), templ_7745c5c3_Buffer)
 									if templ_7745c5c3_Err != nil {
 										return templ_7745c5c3_Err
 									}
@@ -299,7 +277,9 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 							}
 							return nil
 						})
-						templ_7745c5c3_Err = selectbox.Content().Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = selectbox.Content(selectbox.ContentProps{
+							NoSearch: true,
+						}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -311,12 +291,12 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if len(orgs) == 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"text-sm text-muted-foreground\">No organizations found.</div>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"text-sm text-muted-foreground\">No organizations found.</div>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -338,7 +318,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -346,7 +326,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -354,7 +334,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -362,7 +342,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, " <script>\n\t\t\t// Update URL when search/filter changes\n\t\t\tdocument.body.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t\tif (evt.detail.target.id === 'orgs-table') {\n\t\t\t\t\tconst searchInput = document.querySelector('input[name=\"search\"]');\n\t\t\t\t\tconst tagInput = document.querySelector('input[name=\"tag\"]');\n\n\t\t\t\t\tconst params = new URLSearchParams();\n\n\t\t\t\t\t// Add search param if present\n\t\t\t\t\tif (searchInput && searchInput.value) {\n\t\t\t\t\t\tparams.set('search', searchInput.value);\n\t\t\t\t\t}\n\n\t\t\t\t\t// Add tag param if present (selectbox uses single input with comma-separated values)\n\t\t\t\t\tif (tagInput && tagInput.value) {\n\t\t\t\t\t\tparams.set('tag', tagInput.value);\n\t\t\t\t\t}\n\n\t\t\t\t\t// Add page param if not page 1\n\t\t\t\t\tconst currentUrl = new URL(evt.detail.xhr.responseURL);\n\t\t\t\t\tconst page = currentUrl.searchParams.get('page');\n\t\t\t\t\tif (page && page !== '1') {\n\t\t\t\t\t\tparams.set('page', page);\n\t\t\t\t\t}\n\n\t\t\t\t\t// Update browser URL\n\t\t\t\t\tconst newUrl = '/orgs' + (params.toString() ? '?' + params.toString() : '');\n\t\t\t\t\thistory.replaceState(null, '', newUrl);\n\t\t\t\t}\n\t\t\t});\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, " <script>\n\t\t\t// Update URL when search/filter changes\n\t\t\tdocument.body.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\t\tif (evt.detail.target.id === 'orgs-table') {\n\t\t\t\t\tconst searchInput = document.querySelector('input[name=\"search\"]');\n\t\t\t\t\tconst tagInput = document.querySelector('input[name=\"tag\"]');\n\n\t\t\t\t\tconst params = new URLSearchParams();\n\n\t\t\t\t\t// Add search param if present\n\t\t\t\t\tif (searchInput && searchInput.value) {\n\t\t\t\t\t\tparams.set('search', searchInput.value);\n\t\t\t\t\t}\n\n\t\t\t\t\t// Add tag param if present (selectbox uses single input with comma-separated values)\n\t\t\t\t\tif (tagInput && tagInput.value) {\n\t\t\t\t\t\tparams.set('tag', tagInput.value);\n\t\t\t\t\t}\n\n\t\t\t\t\t// Add page param if not page 1\n\t\t\t\t\tconst currentUrl = new URL(evt.detail.xhr.responseURL);\n\t\t\t\t\tconst page = currentUrl.searchParams.get('page');\n\t\t\t\t\tif (page && page !== '1') {\n\t\t\t\t\t\tparams.set('page', page);\n\t\t\t\t\t}\n\n\t\t\t\t\t// Update browser URL\n\t\t\t\t\tconst newUrl = '/orgs' + (params.toString() ? '?' + params.toString() : '');\n\t\t\t\t\thistory.replaceState(null, '', newUrl);\n\t\t\t\t}\n\t\t\t});\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
