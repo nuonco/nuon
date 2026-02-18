@@ -98,3 +98,7 @@ func (e ErrInvalidRequest) Error() string {
 func (e ErrInvalidRequest) Unwrap() error {
 	return e.Err
 }
+
+func NewInvalidRequest(err error) ErrInvalidRequest {
+	return ErrInvalidRequest{Err: err}
+}

@@ -2,16 +2,18 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminCreateNoopJobRequest struct{}
@@ -31,8 +33,8 @@ func (s *service) AdminCreateNoopJob(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	var req AdminCreateNoopJobRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
@@ -63,7 +65,7 @@ func (s *service) adminCreateJob(ctx context.Context, runnerID string, typ app.R
 		OrgID:     runner.OrgID,
 	}
 	if res := s.db.WithContext(ctx).Create(&logStream); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create log stream")
+		return nil, fmt.Errorf("unable to create log stream: %w", res.Error)
 	}
 
 	status := app.RunnerJobStatusQueued
