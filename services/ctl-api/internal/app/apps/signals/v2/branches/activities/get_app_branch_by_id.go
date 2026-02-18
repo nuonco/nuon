@@ -21,7 +21,7 @@ func (a *Activities) getAppBranchByID(ctx context.Context, appBranchID string) (
 		Preload("App").
 		Preload("Queue").
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_branch_configs.created_at DESC").Limit(1)
+			return db.Order("app_branch_configs_view_v1.created_at DESC").Limit(1)
 		}).
 		Preload("Configs.ConnectedGithubVCSConfig").
 		Preload("Configs.PublicGitVCSConfig").

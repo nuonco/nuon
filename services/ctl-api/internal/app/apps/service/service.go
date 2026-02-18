@@ -214,6 +214,12 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		}
 	}
 
+	// app branches
+	appBranches := api.Group("/v1/app-branches")
+	{
+		appBranches.POST("/:app_branch_id/admin-trigger-run", s.AdminTriggerAppBranchRun)
+	}
+
 	return nil
 }
 

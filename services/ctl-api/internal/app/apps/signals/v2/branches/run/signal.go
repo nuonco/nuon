@@ -72,16 +72,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
-	config, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppBranchConfigID)
-	if err != nil {
-		return fmt.Errorf("unable to get app branch config: %w", err)
-	}
-
 	logger.Info("starting app branch run",
 		"run_id", run.ID,
 		"app_branch_id", branch.ID,
 		"app_branch_name", branch.Name,
-		"config_id", config.ID,
 		"workflow_id", *run.WorkflowID,
 		"force", run.Force,
 	)
@@ -93,22 +87,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		logger.Error("unable to update run status to running", "error", err)
+		return err
 		// Continue execution even if status update fails
 	}
 
-	// Embed WorkflowConductor directly to execute the flow
-	// No need for indirection through a child workflow - just call it directly
-
-	// Build the event loop request
+	// NOTE(jm): this is all mostly compatibility stuff from previous iterations of this tooling. Will remove once
+	// app branches is landed.
 	eventLoopReq := eventloop.EventLoopRequest{
 		ID: branch.ID, // App branch ID is the event loop ID
 	}
 
 	// Create the WorkflowConductor with queue-based signal execution
 	fc := &flow.WorkflowConductor[*appsignals.Signal]{
-		Cfg:        nil, // Not needed for app signals
-		V:          nil, // Not needed for app signals
-		MW:         nil, // Not needed for app signals
+		Cfg: nil, // Not needed for app signals
+		V:   nil, // Not needed for app signals
+		MW:  nil, // Not needed for app signals
+
 		Generators: getWorkflowStepGenerators(),
 		ExecFn:     getExecuteFlowExecFn(eventLoopReq),
 	}
