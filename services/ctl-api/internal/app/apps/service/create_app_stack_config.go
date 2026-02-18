@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -48,8 +49,8 @@ func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 		if stack.TemplateURL == "" {
 			return fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
 		}
-		if err := config.ValidateTemplateURL(stack.TemplateURL, fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url", i, stack.Name)); err != nil {
-			return err
+		if stack.Contents == "" {
+			return fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required when template_url is set", i, stack.Name)
 		}
 	}
 	return nil
@@ -109,6 +110,13 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		Create(&appCloudFormationStackConfig)
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	if len(appCloudFormationStackConfig.CustomNestedStacks) > 0 {
+		s.evClient.Send(ctx, appID, &signals.Signal{
+			Type:             signals.OperationSyncCustomStacks,
+			AppStackConfigID: appCloudFormationStackConfig.ID,
+		})
 	}
 
 	return &appCloudFormationStackConfig, nil
