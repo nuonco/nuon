@@ -9,6 +9,10 @@ func (e ErrAuthentication) Error() string {
 	return e.Err.Error()
 }
 
+func (e ErrAuthentication) Unwrap() error {
+	return e.Err
+}
+
 type ErrAuthorization struct {
 	Err         error
 	Description string
@@ -16,6 +20,10 @@ type ErrAuthorization struct {
 
 func (e ErrAuthorization) Error() string {
 	return e.Err.Error()
+}
+
+func (e ErrAuthorization) Unwrap() error {
+	return e.Err
 }
 
 // A user error is a standard user error that denotes something about the user input was not valid
@@ -29,6 +37,10 @@ func (u ErrUser) Error() string {
 	return u.Err.Error()
 }
 
+func (u ErrUser) Unwrap() error {
+	return u.Err
+}
+
 // A not ready error
 type ErrNotReady struct {
 	Err         error
@@ -39,6 +51,10 @@ func (u ErrNotReady) Error() string {
 	return u.Err.Error()
 }
 
+func (u ErrNotReady) Unwrap() error {
+	return u.Err
+}
+
 type ErrNotFound struct {
 	Err         error
 	Description string
@@ -46,6 +62,10 @@ type ErrNotFound struct {
 
 func (e ErrNotFound) Error() string {
 	return e.Err.Error()
+}
+
+func (e ErrNotFound) Unwrap() error {
+	return e.Err
 }
 
 type ErrResponse struct {
@@ -61,6 +81,10 @@ type ErrSystem struct {
 
 func (e ErrSystem) Error() string {
 	return e.Err.Error()
+}
+
+func (e ErrSystem) Unwrap() error {
+	return e.Err
 }
 
 type ErrInvalidRequest struct {
