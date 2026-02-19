@@ -31,7 +31,7 @@ export const ComponentConfigCard = ({
   config,
   ...props
 }: IComponentConfigCard) => {
-  const { commonFields, typeSpecificFields, vcsInfo } =
+  const { commonFields, typeSpecificFields, vcsInfo, operationRoles } =
     getComponentConfigDisplayData(config)
   const { addModal } = useSurfaces()
 
@@ -187,14 +187,14 @@ export const ComponentConfigCard = ({
           ))}
         </div>
 
-        {displayData.operationRoles &&
-          Object.keys(displayData.operationRoles).length > 0 && (
+        {operationRoles &&
+          Object.keys(operationRoles).length > 0 && (
             <div className="flex flex-col gap-2">
               <Text variant="body" weight="strong" level={5}>
                 Operation Roles
               </Text>
               <OperationRolesList
-                operationRoles={displayData.operationRoles}
+                operationRoles={operationRoles}
               />
             </div>
           )}
