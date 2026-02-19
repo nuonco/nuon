@@ -84,11 +84,23 @@ func (m *Manager) Get(name string) (*InstalledExtension, error) {
 }
 
 // Remove uninstalls an extension by removing its directory.
+// If the extension directory is a symlink (local install), only the symlink is removed.
 func (m *Manager) Remove(name string) error {
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
-	if _, err := os.Stat(extDir); os.IsNotExist(err) {
-		return fmt.Errorf("extension %q is not installed", name)
+
+	info, err := os.Lstat(extDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("extension %q is not installed", name)
+		}
+		return err
 	}
+
+	// If it's a symlink, just remove the symlink (don't follow it)
+	if info.Mode()&os.ModeSymlink != 0 {
+		return os.Remove(extDir)
+	}
+
 	return os.RemoveAll(extDir)
 }
 

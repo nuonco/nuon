@@ -1,5 +1,15 @@
 package extensions
 
+// Extension types determine how an extension is installed and executed.
+const (
+	ExtTypeBinary ExtType = "binary" // precompiled platform binaries via GitHub Releases
+	ExtTypeScript ExtType = "script" // executable script at repo root (bash, etc.)
+	ExtTypePython ExtType = "python" // python project managed by uv
+)
+
+// ExtType represents the type of an extension.
+type ExtType string
+
 // ExtensionManifest represents the parsed nuon-ext.toml file from an extension repo.
 type ExtensionManifest struct {
 	Extension ExtensionMeta `toml:"extension"`
@@ -22,18 +32,20 @@ type ExtensionAuth struct {
 // InstalledExtension represents a locally installed extension.
 // This is the schema for manifest.json stored in each extension's directory.
 type InstalledExtension struct {
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Repo          string `json:"repo"`
-	Version       string `json:"version"`
-	Tag           string `json:"tag"`
-	InstalledAt   string `json:"installed_at"`
-	UpdatedAt     string `json:"updated_at"`
-	Binary        string `json:"binary"`
-	Platform      string `json:"platform"`
-	MinCLIVersion string `json:"min_cli_version"`
-	RequiresToken bool   `json:"requires_token"`
-	RequiresOrg   bool   `json:"requires_org"`
+	Name          string  `json:"name"`
+	Description   string  `json:"description"`
+	Repo          string  `json:"repo"`
+	Version       string  `json:"version"`
+	Tag           string  `json:"tag"`
+	InstalledAt   string  `json:"installed_at"`
+	UpdatedAt     string  `json:"updated_at"`
+	Binary        string  `json:"binary"`
+	Type          ExtType `json:"type"`
+	Entrypoint    string  `json:"entrypoint,omitempty"`
+	Platform      string  `json:"platform"`
+	MinCLIVersion string  `json:"min_cli_version"`
+	RequiresToken bool    `json:"requires_token"`
+	RequiresOrg   bool    `json:"requires_org"`
 }
 
 // AvailableExtension represents an extension available for installation from GitHub.

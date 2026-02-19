@@ -6,12 +6,14 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 // defaultOrg is used when resolving shorthand extension names (e.g. "deploy-checker").
@@ -35,16 +37,65 @@ func isLocalPath(input string) bool {
 	return strings.HasPrefix(input, ".") || strings.HasPrefix(input, "/") || strings.HasPrefix(input, "~")
 }
 
+// cloneRepo clones a GitHub repository into the given directory.
+func cloneRepo(repo, destDir string) error {
+	url := fmt.Sprintf("https://github.com/%s.git", repo)
+	cmd := exec.Command("git", "clone", "--depth", "1", url, destDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// detectExtType detects the extension type from the contents of a directory.
+// It checks for pyproject.toml (python), then nuon-ext-<name> script, then falls back to binary.
+func detectExtType(dir, name string) (ExtType, string) {
+	// Check for python project
+	if _, err := os.Stat(filepath.Join(dir, "pyproject.toml")); err == nil {
+		entrypoint := "nuon-ext-" + name
+		// If there's no script entrypoint, it's a pure python project
+		if _, err := os.Stat(filepath.Join(dir, entrypoint)); err != nil {
+			return ExtTypePython, entrypoint
+		}
+	}
+
+	// Check for script entrypoint at repo root
+	entrypoint := extensionBinaryName(name)
+	if _, err := os.Stat(filepath.Join(dir, entrypoint)); err == nil {
+		return ExtTypeScript, entrypoint
+	}
+
+	return ExtTypeBinary, ""
+}
+
+// findReleaseAsset looks for a matching platform binary in a release's assets.
+// Returns the download URL and asset name, or empty strings if not found.
+func findReleaseAsset(release *githubRelease, name string) (downloadURL, assetName string) {
+	assetName = fmt.Sprintf("nuon-ext-%s-%s-%s", name, runtime.GOOS, runtime.GOARCH)
+	if runtime.GOOS == "windows" {
+		assetName += ".exe"
+	}
+	for _, asset := range release.Assets {
+		if asset.Name == assetName {
+			return asset.BrowserDownloadURL, assetName
+		}
+	}
+	return "", assetName
+}
+
 // Install installs an extension from a GitHub repository or a local directory.
 func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 	if isLocalPath(repo) {
+		ui.PrintDebug(fmt.Sprintf("detected local path: %s", repo))
 		return m.InstallLocal(repo)
 	}
+
+	ui.PrintDebug(fmt.Sprintf("installing from GitHub: %s", repo))
 
 	repo, name, err := normalizeRepo(repo)
 	if err != nil {
 		return nil, err
 	}
+	ui.PrintDebug(fmt.Sprintf("resolved repo=%s name=%s", repo, name))
 
 	// Check if already installed
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
@@ -53,10 +104,12 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 	}
 
 	// Fetch and validate manifest
+	ui.PrintDebug(fmt.Sprintf("fetching nuon-ext.toml from %s", repo))
 	manifest, err := FetchManifest(repo, "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch extension manifest: %w", err)
 	}
+	ui.PrintDebug(fmt.Sprintf("manifest: name=%s description=%s", manifest.Extension.Name, manifest.Extension.Description))
 
 	if err := ValidateManifest(manifest, repo); err != nil {
 		return nil, fmt.Errorf("invalid extension manifest: %w", err)
@@ -66,37 +119,35 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		return nil, err
 	}
 
-	// Get latest release
+	// Auto-detect: try release with platform assets first, fall back to clone
+	ui.PrintDebug(fmt.Sprintf("fetching latest release for %s", repo))
 	release, err := getLatestRelease(repo)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get latest release: %w", err)
-	}
-
-	// Find the right binary for this platform
-	binaryName := extensionBinaryName(name)
-	assetName := fmt.Sprintf("nuon-ext-%s-%s-%s", name, runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
-		assetName += ".exe"
-	}
-
-	var downloadURL string
-	for _, asset := range release.Assets {
-		if asset.Name == assetName {
-			downloadURL = asset.BrowserDownloadURL
-			break
+	if err == nil && len(release.Assets) > 0 {
+		downloadURL, assetName := findReleaseAsset(release, name)
+		if downloadURL != "" {
+			ui.PrintDebug(fmt.Sprintf("found platform asset %s in release %s", assetName, release.TagName))
+			return m.installByRelease(repo, name, extDir, manifest, release, downloadURL)
 		}
+		ui.PrintDebug(fmt.Sprintf("no matching platform asset in release %s, falling back to clone", release.TagName))
+	} else {
+		ui.PrintDebug("no release with assets found, falling back to clone")
 	}
 
-	if downloadURL == "" {
-		return nil, fmt.Errorf("no binary found for %s/%s in release %s (expected asset: %s)", runtime.GOOS, runtime.GOARCH, release.TagName, assetName)
-	}
+	return m.installByClone(repo, name, extDir, manifest)
+}
+
+// installByRelease installs a binary extension by downloading a release asset.
+func (m *Manager) installByRelease(repo, name, extDir string, manifest *ExtensionManifest, release *githubRelease, downloadURL string) (*InstalledExtension, error) {
+	binaryName := extensionBinaryName(name)
 
 	// Create extension directory
+	ui.PrintDebug(fmt.Sprintf("creating extension directory: %s", extDir))
 	if err := os.MkdirAll(extDir, 0o755); err != nil {
 		return nil, fmt.Errorf("unable to create extension directory: %w", err)
 	}
 
 	// Download binary
+	ui.PrintDebug(fmt.Sprintf("downloading binary from %s", downloadURL))
 	binaryPath := filepath.Join(extDir, binaryName)
 	if err := downloadFile(downloadURL, binaryPath); err != nil {
 		os.RemoveAll(extDir)
@@ -126,6 +177,7 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		InstalledAt:   now,
 		UpdatedAt:     now,
 		Binary:        binaryName,
+		Type:          ExtTypeBinary,
 		Platform:      runtime.GOOS + "/" + runtime.GOARCH,
 		MinCLIVersion: manifest.Extension.MinCLIVersion,
 		RequiresToken: manifest.Extension.Auth.RequiresToken,
@@ -137,6 +189,61 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		return nil, fmt.Errorf("unable to write manifest: %w", err)
 	}
 
+	ui.PrintDebug(fmt.Sprintf("installed %s %s to %s", name, release.TagName, extDir))
+	return installed, nil
+}
+
+// installByClone installs a script or python extension by cloning the repo.
+// The type is auto-detected from the repo contents after cloning.
+func (m *Manager) installByClone(repo, name, extDir string, manifest *ExtensionManifest) (*InstalledExtension, error) {
+	ui.PrintDebug(fmt.Sprintf("cloning %s into %s", repo, extDir))
+	if err := cloneRepo(repo, extDir); err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to clone repository: %w", err)
+	}
+
+	extType, entrypoint := detectExtType(extDir, name)
+	ui.PrintDebug(fmt.Sprintf("detected type=%s entrypoint=%s", extType, entrypoint))
+
+	if extType == ExtTypeScript {
+		scriptPath := filepath.Join(extDir, entrypoint)
+		if err := os.Chmod(scriptPath, 0o755); err != nil {
+			os.RemoveAll(extDir)
+			return nil, fmt.Errorf("unable to make script executable: %w", err)
+		}
+	}
+
+	// Determine version from latest release tag, or "latest" if no releases
+	ver := "latest"
+	release, err := getLatestRelease(repo)
+	if err == nil {
+		ver = release.TagName
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	installed := &InstalledExtension{
+		Name:          name,
+		Description:   manifest.Extension.Description,
+		Repo:          repo,
+		Version:       ver,
+		Tag:           ver,
+		InstalledAt:   now,
+		UpdatedAt:     now,
+		Binary:        "",
+		Type:          extType,
+		Entrypoint:    entrypoint,
+		Platform:      runtime.GOOS + "/" + runtime.GOARCH,
+		MinCLIVersion: manifest.Extension.MinCLIVersion,
+		RequiresToken: manifest.Extension.Auth.RequiresToken,
+		RequiresOrg:   manifest.Extension.Auth.RequiresOrg,
+	}
+
+	if err := writeManifestJSON(extDir, installed); err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to write manifest: %w", err)
+	}
+
+	ui.PrintDebug(fmt.Sprintf("installed %s (%s) %s to %s", name, extType, ver, extDir))
 	return installed, nil
 }
 
@@ -281,6 +388,7 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve path: %w", err)
 	}
+	ui.PrintDebug(fmt.Sprintf("resolved local path: %s", absPath))
 
 	info, err := os.Stat(absPath)
 	if err != nil {
@@ -292,6 +400,7 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 
 	// Read and validate nuon-ext.toml from the local directory
 	tomlPath := filepath.Join(absPath, "nuon-ext.toml")
+	ui.PrintDebug(fmt.Sprintf("reading manifest from %s", tomlPath))
 	tomlData, err := os.ReadFile(tomlPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read nuon-ext.toml: %w (does the directory contain a nuon-ext.toml?)", err)
@@ -310,6 +419,7 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	}
 
 	name := manifest.Extension.Name
+	ui.PrintDebug(fmt.Sprintf("manifest: name=%s description=%s", name, manifest.Extension.Description))
 
 	// Verify the directory name matches the convention
 	dirName := filepath.Base(absPath)
@@ -328,32 +438,28 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 		return nil, fmt.Errorf("extension %q is already installed (use `nuon ext remove %s` first)", name, name)
 	}
 
-	// Find the local binary
-	binaryName := extensionBinaryName(name)
-	srcBinary := filepath.Join(absPath, binaryName)
-	if _, err := os.Stat(srcBinary); err != nil {
-		return nil, fmt.Errorf("binary not found at %s (build your extension first)", srcBinary)
+	// Auto-detect extension type from directory contents
+	extType, entrypoint := detectExtType(absPath, name)
+	ui.PrintDebug(fmt.Sprintf("detected type=%s entrypoint=%s", extType, entrypoint))
+
+	// For binary type, verify the compiled binary exists
+	binaryName := ""
+	if extType == ExtTypeBinary {
+		binaryName = extensionBinaryName(name)
+		srcBinary := filepath.Join(absPath, binaryName)
+		ui.PrintDebug(fmt.Sprintf("looking for binary at %s", srcBinary))
+		if _, err := os.Stat(srcBinary); err != nil {
+			return nil, fmt.Errorf("binary not found at %s (build your extension first)", srcBinary)
+		}
 	}
 
-	// Create extension directory
-	if err := os.MkdirAll(extDir, 0o755); err != nil {
-		return nil, fmt.Errorf("unable to create extension directory: %w", err)
+	// Symlink the entire source directory so all files (scripts/, etc.) are available
+	ui.PrintDebug(fmt.Sprintf("symlinking %s -> %s", extDir, absPath))
+	if err := os.Symlink(absPath, extDir); err != nil {
+		return nil, fmt.Errorf("unable to symlink extension directory: %w", err)
 	}
 
-	// Symlink the binary so rebuilds take effect immediately
-	destBinary := filepath.Join(extDir, binaryName)
-	if err := os.Symlink(srcBinary, destBinary); err != nil {
-		os.RemoveAll(extDir)
-		return nil, fmt.Errorf("unable to symlink binary: %w", err)
-	}
-
-	// Copy nuon-ext.toml
-	if err := os.WriteFile(filepath.Join(extDir, "nuon-ext.toml"), tomlData, 0o644); err != nil {
-		os.RemoveAll(extDir)
-		return nil, fmt.Errorf("unable to write nuon-ext.toml: %w", err)
-	}
-
-	// Write manifest.json
+	// Write manifest.json into the source directory (via the symlink)
 	now := time.Now().UTC().Format(time.RFC3339)
 	installed := &InstalledExtension{
 		Name:          name,
@@ -364,6 +470,8 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 		InstalledAt:   now,
 		UpdatedAt:     now,
 		Binary:        binaryName,
+		Type:          extType,
+		Entrypoint:    entrypoint,
 		Platform:      runtime.GOOS + "/" + runtime.GOARCH,
 		MinCLIVersion: manifest.Extension.MinCLIVersion,
 		RequiresToken: manifest.Extension.Auth.RequiresToken,
@@ -371,9 +479,10 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	}
 
 	if err := writeManifestJSON(extDir, installed); err != nil {
-		os.RemoveAll(extDir)
+		os.Remove(extDir) // remove symlink, not source
 		return nil, fmt.Errorf("unable to write manifest: %w", err)
 	}
 
+	ui.PrintDebug(fmt.Sprintf("installed %s (%s, dev) from %s to %s", name, extType, absPath, extDir))
 	return installed, nil
 }

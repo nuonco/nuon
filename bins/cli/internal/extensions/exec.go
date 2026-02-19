@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 // Exec runs an installed extension with the given arguments and environment variables.
@@ -29,14 +31,44 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 		}
 	}
 
-	// Resolve binary path
-	binaryPath := filepath.Join(m.dir, "nuon-ext-"+name, ext.Binary)
-	if _, err := os.Stat(binaryPath); err != nil {
-		return fmt.Errorf("extension binary not found: %s", binaryPath)
+	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
+	extType := ext.Type
+	if extType == "" {
+		extType = ExtTypeBinary
+	}
+	ui.PrintDebug(fmt.Sprintf("executing extension %s (type=%s)", name, extType))
+
+	var cmd *exec.Cmd
+
+	switch extType {
+	case ExtTypePython:
+		ui.PrintDebug(fmt.Sprintf("running: uv run %s %v", ext.Entrypoint, args))
+		uvArgs := append([]string{"run", ext.Entrypoint}, args...)
+		cmd = exec.Command("uv", uvArgs...)
+		cmd.Dir = extDir
+
+	case ExtTypeScript:
+		entrypoint := ext.Entrypoint
+		if entrypoint == "" {
+			entrypoint = extensionBinaryName(name)
+		}
+		scriptPath := filepath.Join(extDir, entrypoint)
+		ui.PrintDebug(fmt.Sprintf("running script: %s", scriptPath))
+		if _, err := os.Stat(scriptPath); err != nil {
+			return fmt.Errorf("extension script not found: %s", scriptPath)
+		}
+		cmd = exec.Command(scriptPath, args...)
+		cmd.Dir = extDir
+
+	default: // ExtTypeBinary
+		binaryPath := filepath.Join(extDir, ext.Binary)
+		ui.PrintDebug(fmt.Sprintf("running binary: %s", binaryPath))
+		if _, err := os.Stat(binaryPath); err != nil {
+			return fmt.Errorf("extension binary not found: %s", binaryPath)
+		}
+		cmd = exec.Command(binaryPath, args...)
 	}
 
-	// Build command
-	cmd := exec.Command(binaryPath, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -50,7 +82,7 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 	// Add extension-specific env vars
 	cmd.Env = append(cmd.Env,
 		"NUON_EXT_NAME="+name,
-		"NUON_EXT_DIR="+filepath.Join(m.dir, "nuon-ext-"+name),
+		"NUON_EXT_DIR="+extDir,
 	)
 
 	// Run the extension
