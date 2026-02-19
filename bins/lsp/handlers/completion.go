@@ -26,15 +26,28 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 	}
 	log.Debugf("✅ Found document, length: %d chars", len(text))
 
-	// Check if we're on line 0 (first line) after a # - provide schema type completions
-	if pos.Line == 0 {
-		lines := strings.Split(text, "\n")
-		if len(lines) > 0 {
-			firstLine := lines[0]
-			beforeCursor := firstLine[:min(int(pos.Character), len(firstLine))]
-			if strings.HasPrefix(strings.TrimSpace(beforeCursor), "#") {
-				log.Infof("🏷️  Building schema type completions for first line")
-				return buildSchemaTypeCompletions(), nil
+	textLines := strings.Split(text, "\n")
+	if int(pos.Line) < len(textLines) {
+		inTopCommentSection := true
+		for i := 0; i < int(pos.Line); i++ {
+			line := strings.TrimSpace(textLines[i])
+			if line != "" && !strings.HasPrefix(line, "#") {
+				inTopCommentSection = false
+				break
+			}
+		}
+
+		if inTopCommentSection {
+			currentLine := textLines[pos.Line]
+			beforeCursor := currentLine[:min(int(pos.Character), len(currentLine))]
+			trimmed := strings.TrimSpace(beforeCursor)
+			if strings.HasPrefix(trimmed, "#") {
+				prefix := strings.TrimSpace(trimmed[1:])
+				hashPos := strings.Index(currentLine, "#")
+				replaceStart := uint32(hashPos + 1)
+				replaceEnd := pos.Character
+				log.Infof("🏷️  Building schema type completions (prefix: '%s')", prefix)
+				return buildSchemaTypeCompletions(prefix, pos.Line, replaceStart, replaceEnd), nil
 			}
 		}
 	}
@@ -178,25 +191,37 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 // small helper to get pointer of string
 func ptr(s string) *string { return &s }
 
-// buildSchemaTypeCompletions returns completion items for all valid schema types
-func buildSchemaTypeCompletions() *protocol.CompletionList {
+func buildSchemaTypeCompletions(prefix string, line uint32, replaceStart uint32, replaceEnd uint32) *protocol.CompletionList {
 	schemaTypes := models.GetValidSchemaTypes()
 	items := make([]protocol.CompletionItem, 0, len(schemaTypes))
+	lowerPrefix := strings.ToLower(prefix)
 
 	for _, schemaType := range schemaTypes {
+		if prefix != "" && !strings.HasPrefix(strings.ToLower(schemaType), lowerPrefix) {
+			continue
+		}
+
 		kind := protocol.CompletionItemKindValue
 		detail := "Schema type"
+		textEdit := protocol.TextEdit{
+			Range: protocol.Range{
+				Start: protocol.Position{Line: line, Character: replaceStart},
+				End:   protocol.Position{Line: line, Character: replaceEnd},
+			},
+			NewText: " " + schemaType,
+		}
+
 		items = append(items, protocol.CompletionItem{
-			Label:      schemaType,
-			Kind:       &kind,
-			Detail:     &detail,
-			InsertText: ptr(schemaType),
+			Label:    schemaType,
+			Kind:     &kind,
+			Detail:   &detail,
+			TextEdit: &textEdit,
 		})
 	}
 
-	log.Infof("✅ Generated %d schema type completions", len(items))
+	log.Infof("✅ Generated %d schema type completions (filtered by prefix: '%s')", len(items), prefix)
 	return &protocol.CompletionList{
-		IsIncomplete: false,
+		IsIncomplete: true,
 		Items:        items,
 	}
 }
