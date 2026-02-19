@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import { Suspense } from 'react'
-import { IS_BYOC } from '@/configs/app'
+import { IS_BYOC, IS_CUSTOMER_PORTAL_ENABLED } from '@/configs/app'
 import { API_URL } from '@/configs/api'
 import { USE_AUTH_SERVICE, AUTH_SERVICE_URL } from '@/configs/auth'
 import { PYLON_APP_ID } from "@/configs/pylon"
@@ -80,7 +80,7 @@ export default async function RootLayout({
             />
 
             <AccountProvider shouldPoll>
-              <UserJourneyProvider isBYOC={IS_BYOC}>
+              <UserJourneyProvider isBYOC={IS_BYOC} isCustomerPortalEnabled={IS_CUSTOMER_PORTAL_ENABLED}>
                 {children}
               </UserJourneyProvider>
             </AccountProvider>

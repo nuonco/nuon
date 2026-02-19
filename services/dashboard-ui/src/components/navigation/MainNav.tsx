@@ -1,6 +1,8 @@
 import { Text } from '@/components/common/Text'
+import { CUSTOMER_PORTAL_URL } from '@/configs/app'
 import { useOrg } from '@/hooks/use-org'
 import { useSidebar } from '@/hooks/use-sidebar'
+import { useUserJourney } from '@/hooks/use-user-journey'
 import { cn } from '@/utils/classnames'
 import { MainNavLink } from './MainNavLink'
 import { MAIN_LINKS, SETTINGS_LINKS, SUPPORT_LINKS } from './main-nav-links'
@@ -37,11 +39,23 @@ const Divider = () => {
 
 export const MainNav = () => {
   const { org } = useOrg()
+  const { isCustomerPortalEnabled } = useUserJourney()
   const basePath = `/${org.id}`
+  const mainLinks = isCustomerPortalEnabled
+    ? [
+        ...MAIN_LINKS,
+        {
+          iconVariant: 'Users' as const,
+          path: CUSTOMER_PORTAL_URL,
+          text: 'Customer Portal',
+          isExternal: true,
+        },
+      ]
+    : MAIN_LINKS
   return (
     <nav className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        {MAIN_LINKS.map((link, idx) =>
+        {mainLinks.map((link, idx) =>
           !org?.features?.['org-dashboard'] && idx === 0 ? null : (
             <MainNavLink key={link.text} basePath={basePath} {...link} />
           )
