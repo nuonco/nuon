@@ -12,7 +12,7 @@ import (
 
 func (j *jobLoop) executeResetJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	if j.isSandbox(job) {
-		j.execSandboxStep(ctx)
+		j.execSandboxStep(ctx, job)
 		return nil
 	}
 
