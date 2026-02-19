@@ -32,7 +32,7 @@ export const ComponentConfig = async ({
       {componentConfig?.operation_roles &&
         Object.keys(componentConfig.operation_roles).length > 0 && (
           <div className="flex flex-col gap-4">
-            <Text variant="body" weight="strong" level={5}>
+            <Text level={5}>
               Operation Roles
             </Text>
             <OperationRolesList
