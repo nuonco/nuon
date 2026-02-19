@@ -37,6 +37,7 @@ func main() {
 		TextDocumentHover:        handlers.TextDocumentHover,
 		TextDocumentDidSave:      handlers.TextDocumentDidSave,
 		TextDocumentFoldingRange: handlers.TextDocumentFoldingRange,
+		TextDocumentFormatting:   handlers.TextDocumentFormatting,
 	}
 
 	server := server.NewServer(&handler, lsName, true)
@@ -96,7 +97,8 @@ func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, 
 			CompletionProvider: &protocol.CompletionOptions{
 				TriggerCharacters: []string{"=", " ", "#"},
 			},
-			FoldingRangeProvider: true,
+			FoldingRangeProvider:       true,
+			DocumentFormattingProvider: true,
 		},
 		ServerInfo: &protocol.InitializeResultServerInfo{
 			Name:    lsName,
