@@ -30,7 +30,7 @@ func (a *Activities) CreateInstallWorkflowStep(ctx context.Context, req CreateIn
 		OwnerType:         req.OwnerType,
 		Status:            req.Status,
 		Name:              req.Name,
-		Signal:            req.Signal,
+		Signal:            &req.Signal,
 		Idx:               req.Idx,
 		ExecutionType:     req.ExecutionType,
 		Metadata:          req.Metadata,

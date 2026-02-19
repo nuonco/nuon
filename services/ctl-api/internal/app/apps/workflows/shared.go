@@ -1,10 +1,7 @@
 package workflows
 
 import (
-	"encoding/json"
-
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -67,11 +64,6 @@ func appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadat
 		return step, nil
 	}
 
-	byts, err := json.Marshal(sig)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create signal json")
-	}
-
 	// Default execution type is system
 	executionTyp := app.WorkflowStepExecutionTypeSystem
 
@@ -87,13 +79,7 @@ func appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadat
 		OwnerType:      "app_branches",
 		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 		Metadata:       metadata,
-		Signal: app.Signal{
-			Namespace:   "app_branches",
-			Type:        string(sig.Type()),
-			EventLoopID: appBranchID,
-			SignalJSON:  byts,
-		},
-		QueueSignal: signaldb.SignalData{
+		QueueSignal: &signaldb.SignalData{
 			Signal: sig,
 		},
 		Retryable: true,

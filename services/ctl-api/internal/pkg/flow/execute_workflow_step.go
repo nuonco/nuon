@@ -848,3 +848,4 @@ func (c *WorkflowConductor[DomainSignal]) checkPolicies(ctx workflow.Context, st
 		ComponentName:    prepResult.ComponentName,
 	}, nil
 }
+

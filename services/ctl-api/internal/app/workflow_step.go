@@ -70,9 +70,9 @@ type WorkflowStep struct {
 	Name   string          `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 
 	// the signal that needs to be called (legacy)
-	Signal Signal `json:"-" temporaljson:"signal,omitzero,omitempty"`
+	Signal *Signal `json:"-" temporaljson:"signal,omitzero,omitempty"`
 
-	QueueSignal signaldb.SignalData `json:"-" temporaljson:"queue_signal,omitzero,omitempty"`
+	QueueSignal *signaldb.SignalData `json:"-" dnetemporaljson:"queue_signal,omitzero,omitempty"`
 
 	Idx int `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
 

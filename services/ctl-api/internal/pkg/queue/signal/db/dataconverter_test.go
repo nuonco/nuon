@@ -501,6 +501,101 @@ func (s *PayloadConverterTestSuite) TestTrueRoundTrip_WithGenericSignalInterface
 	assert.Equal(s.T(), "interface-var-2", exampleSig.Arg2)
 }
 
+// TestStructWithSignalDataField mimics a WorkflowStep-like struct that has a
+// *SignalData field (wrapper) instead of a bare signal.Signal field.
+type TestStructWithSignalData struct {
+	Name        string      `json:"name"`
+	QueueSignal *SignalData `json:"queue_signal,omitempty"`
+}
+
+// TestRoundTrip_SliceOfPointersWithSignalData tests encoding/decoding a slice of
+// pointers to structs that contain a *SignalData field. This mimics the workflow
+// step generator returning []*WorkflowStep where each step has QueueSignal set.
+func (s *PayloadConverterTestSuite) TestRoundTrip_SliceOfPointersWithSignalData() {
+	items := []*TestStructWithSignalData{
+		{
+			Name: "step-1",
+			QueueSignal: &SignalData{
+				Signal: &example.ExampleSignal{
+					Arg1: "step-1-arg1",
+					Arg2: "step-1-arg2",
+				},
+			},
+		},
+		{
+			Name: "step-2",
+			QueueSignal: &SignalData{
+				Signal: &example.ExampleSignal{
+					Arg1: "step-2-arg1",
+					Arg2: "step-2-arg2",
+				},
+			},
+		},
+		{
+			Name: "step-3",
+			QueueSignal: &SignalData{
+				Signal: &example.ExampleSignal{
+					Arg1: "step-3-arg1",
+					Arg2: "step-3-arg2",
+				},
+			},
+		},
+	}
+
+	// ToPayload should return nil because these structs don't have a direct
+	// signal.Signal field — they have *SignalData which is a wrapper.
+	// The standard JSON converter should handle this via SignalData.MarshalJSON.
+	payload, err := s.converter.ToPayload(items)
+	assert.NoError(s.T(), err)
+
+	if payload != nil {
+		// If our converter handles it, verify round-trip
+		var result []*TestStructWithSignalData
+		err = s.converter.FromPayload(payload, &result)
+		require.NoError(s.T(), err)
+		require.Len(s.T(), result, 3)
+
+		for i, item := range result {
+			assert.Equal(s.T(), items[i].Name, item.Name, "Name mismatch at index %d", i)
+			require.NotNil(s.T(), item.QueueSignal, "QueueSignal should not be nil at index %d", i)
+			require.NotNil(s.T(), item.QueueSignal.Signal, "QueueSignal.Signal should not be nil at index %d", i)
+
+			exampleSig, ok := item.QueueSignal.Signal.(*example.ExampleSignal)
+			require.True(s.T(), ok, "Expected *example.ExampleSignal at index %d, got %T", i, item.QueueSignal.Signal)
+
+			originalSig := items[i].QueueSignal.Signal.(*example.ExampleSignal)
+			assert.Equal(s.T(), originalSig.Arg1, exampleSig.Arg1, "Arg1 mismatch at index %d", i)
+			assert.Equal(s.T(), originalSig.Arg2, exampleSig.Arg2, "Arg2 mismatch at index %d", i)
+		}
+	} else {
+		// Our converter returned nil — this means the standard JSON converter
+		// will handle it. Let's verify that path works by doing a manual JSON
+		// marshal/unmarshal round-trip (since SignalData has MarshalJSON/UnmarshalJSON).
+		s.T().Log("PayloadConverter returned nil for slice of *SignalData structs — testing JSON path")
+
+		byts, err := json.Marshal(items)
+		require.NoError(s.T(), err)
+
+		var result []*TestStructWithSignalData
+		err = json.Unmarshal(byts, &result)
+		require.NoError(s.T(), err)
+		require.Len(s.T(), result, 3)
+
+		for i, item := range result {
+			assert.Equal(s.T(), items[i].Name, item.Name, "Name mismatch at index %d", i)
+			require.NotNil(s.T(), item.QueueSignal, "QueueSignal should not be nil at index %d", i)
+			require.NotNil(s.T(), item.QueueSignal.Signal, "QueueSignal.Signal should not be nil at index %d", i)
+
+			exampleSig, ok := item.QueueSignal.Signal.(*example.ExampleSignal)
+			require.True(s.T(), ok, "Expected *example.ExampleSignal at index %d, got %T", i, item.QueueSignal.Signal)
+
+			originalSig := items[i].QueueSignal.Signal.(*example.ExampleSignal)
+			assert.Equal(s.T(), originalSig.Arg1, exampleSig.Arg1, "Arg1 mismatch at index %d", i)
+			assert.Equal(s.T(), originalSig.Arg2, exampleSig.Arg2, "Arg2 mismatch at index %d", i)
+		}
+	}
+}
+
 // TestTrueRoundTrip_DoublePointerFromTemporal simulates the exact Temporal deserialization path.
 // Activity signature: EnqueueSignal(ctx, req *EnqueueSignalRequest)
 // Temporal passes **EnqueueSignalRequest as valuePtr to FromPayload.
