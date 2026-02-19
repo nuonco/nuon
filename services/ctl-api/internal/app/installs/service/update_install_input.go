@@ -47,8 +47,8 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	var req UpdateInstallInputsRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

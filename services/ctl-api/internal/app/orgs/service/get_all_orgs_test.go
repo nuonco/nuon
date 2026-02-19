@@ -25,6 +25,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // GetAllOrgsTestService holds all fx-injected dependencies for GetAllOrgs endpoint tests.
@@ -39,6 +40,7 @@ type GetAllOrgsTestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	OrgsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // GetAllOrgsTestSuite is the testify suite for GetAllOrgs endpoint.
@@ -100,16 +102,8 @@ func (s *GetAllOrgsTestSuite) TearDownSuite() {
 }
 
 func (s *GetAllOrgsTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "admin@example.com",
-		Subject:     "admin-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
+	ctx := context.Background()
+	_, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 }
 
 func (s *GetAllOrgsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -146,17 +140,19 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org1 := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "sandbox-org",
-					OrgType: app.OrgTypeSandbox,
+					ID:          domains.NewOrgID(),
+					Name:        "sandbox-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeSandbox,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
 				}
 				org2 := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "default-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "default-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -189,9 +185,10 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				orgIDs := make([]string, 0, 15)
 				for i := 0; i < 15; i++ {
 					testOrg := &app.Org{
-						ID:      domains.NewOrgID(),
-						Name:    fmt.Sprintf("test-org-%02d", i),
-						OrgType: app.OrgTypeSandbox, // Use sandbox so type=sandbox filter works
+						ID:          domains.NewOrgID(),
+						Name:        fmt.Sprintf("test-org-%02d", i),
+						SandboxMode: true,
+						OrgType:     app.OrgTypeSandbox, // Use sandbox so type=sandbox filter works
 						NotificationsConfig: app.NotificationsConfig{
 							InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 						},
@@ -219,9 +216,10 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				orgIDs := make([]string, 0, 10)
 				for i := 0; i < 10; i++ {
 					testOrg := &app.Org{
-						ID:      domains.NewOrgID(),
-						Name:    fmt.Sprintf("test-org-%02d", i),
-						OrgType: app.OrgTypeDefault,
+						ID:          domains.NewOrgID(),
+						Name:        fmt.Sprintf("test-org-%02d", i),
+						SandboxMode: true,
+						OrgType:     app.OrgTypeDefault,
 						NotificationsConfig: app.NotificationsConfig{
 							InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 						},
@@ -248,9 +246,10 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 
 				// Create orgs sequentially
 				org1 := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "oldest-org",
-					OrgType: app.OrgTypeIntegration,
+					ID:          domains.NewOrgID(),
+					Name:        "oldest-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -262,9 +261,10 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				})
 
 				org2 := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "middle-org",
-					OrgType: app.OrgTypeIntegration,
+					ID:          domains.NewOrgID(),
+					Name:        "middle-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -276,9 +276,10 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				})
 
 				org3 := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "newest-org",
-					OrgType: app.OrgTypeIntegration,
+					ID:          domains.NewOrgID(),
+					Name:        "newest-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -309,9 +310,10 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				orgIDs := make([]string, 0, 25)
 				for i := 0; i < 25; i++ {
 					testOrg := &app.Org{
-						ID:      domains.NewOrgID(),
-						Name:    fmt.Sprintf("page-test-org-%02d", i),
-						OrgType: app.OrgTypeSandbox,
+						ID:          domains.NewOrgID(),
+						Name:        fmt.Sprintf("page-test-org-%02d", i),
+						SandboxMode: true,
+						OrgType:     app.OrgTypeSandbox,
 						NotificationsConfig: app.NotificationsConfig{
 							InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 						},

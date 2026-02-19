@@ -539,7 +539,7 @@ func SelectInstall(installs []InstallOption) (string, error) {
 	return SelectFromItems("Select an installation", items)
 }
 
-// SelectWorkflow shows an installation selector
+// SelectWorkflow shows a workflow selector
 func SelectWorkflow(workflows []WorkflowOption) (string, error) {
 	items := make([]SelectorItem, len(workflows))
 	// get some widths for padding
@@ -551,14 +551,21 @@ func SelectWorkflow(workflows []WorkflowOption) (string, error) {
 	}
 
 	for i, workflow := range workflows {
+		desc := fmt.Sprintf("ID: %s", workflow.ID)
+		if workflow.Type != "" {
+			desc += fmt.Sprintf(" • %s", workflow.Type)
+		}
+		if workflow.Status != "" {
+			desc += fmt.Sprintf(" • %s", workflow.Status)
+		}
 		items[i] = SelectorItem{
 			title:       fmt.Sprintf("%s%s", workflow.Name, strings.Repeat(" ", maxWorkflowNameWidth-len(workflow.Name))),
-			description: styles.TextDim.Render(fmt.Sprintf("ID: %s", workflow.ID)),
+			description: styles.TextDim.Render(desc),
 			value:       workflow.ID,
 		}
 	}
 
-	return SelectFromItems("Select an workflow", items)
+	return SelectFromItems("Select a workflow", items)
 }
 
 // Helper types for the selector functions
@@ -579,8 +586,10 @@ type InstallOption struct {
 }
 
 type WorkflowOption struct {
-	ID   string
-	Name string
+	ID     string
+	Name   string
+	Type   string
+	Status string
 }
 
 // Helper functions

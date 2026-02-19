@@ -42,8 +42,8 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	var req CreateInstallActionWorkflowRunRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable toq parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

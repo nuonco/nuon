@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRunnerJobPlan
@@ -39,6 +40,23 @@ func (s *service) GetRunnerJobPlan(ctx *gin.Context) {
 	ctx.String(http.StatusOK, plan)
 }
 
+func (s *service) GetRunnerJobPlanPublic(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	runnerJobID := ctx.Param("runner_job_id")
+
+	plan, err := s.getOrgRunnerJobPlan(ctx, runnerJobID, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
+		return
+	}
+
+	ctx.String(http.StatusOK, plan)
+}
+
 func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error) {
 	var runnerPlan app.RunnerJobPlan
 
@@ -52,12 +70,25 @@ func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (str
 	return runnerPlan.PlanJSON, nil
 }
 
+func (s *service) getOrgRunnerJobPlan(ctx context.Context, runnerJobID string, orgID string) (string, error) {
+	var runnerPlan app.RunnerJobPlan
+
+	res := s.db.WithContext(ctx).
+		Where("runner_job_id = ? AND org_id = ?", runnerJobID, orgID).
+		First(&runnerPlan)
+	if res.Error != nil {
+		return "", fmt.Errorf("unable to get job plan: %w", res.Error)
+	}
+
+	return runnerPlan.PlanJSON, nil
+}
+
 // @ID						GetRunnerJobPlanV2
 // @Summary				get runner job plan
 // @Description.markdown	get_runner_job_plan.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Param					job_id	path	string	true	"runner job ID"
-// @Tags					runners,runners/runner
+// @Tags					runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -68,7 +99,7 @@ func (s *service) getRunnerJobPlan(ctx context.Context, runnerJobID string) (str
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	string
-// @Router					/v1/runner/{runner_id}/jobs/{job_id}/plan [get]
+// @Router					/v1/runners/{runner_id}/jobs/{job_id}/plan [get]
 func (s *service) GetRunnerJobPlanV2(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 	_, err := s.getRunner(ctx, runnerID)

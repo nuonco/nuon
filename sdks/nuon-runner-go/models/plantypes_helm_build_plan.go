@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -24,6 +25,12 @@ type PlantypesHelmBuildPlan struct {
 
 	// labels
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// values
+	Values []*PlantypesHelmValue `json:"values"`
+
+	// values files
+	ValuesFiles []string `json:"valuesFiles"`
 }
 
 // Validate validates this plantypes helm build plan
@@ -31,6 +38,10 @@ func (m *PlantypesHelmBuildPlan) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateHelmRepoConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateValues(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -63,11 +74,45 @@ func (m *PlantypesHelmBuildPlan) validateHelmRepoConfig(formats strfmt.Registry)
 	return nil
 }
 
+func (m *PlantypesHelmBuildPlan) validateValues(formats strfmt.Registry) error {
+	if swag.IsZero(m.Values) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Values); i++ {
+		if swag.IsZero(m.Values[i]) { // not required
+			continue
+		}
+
+		if m.Values[i] != nil {
+			if err := m.Values[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("values" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("values" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this plantypes helm build plan based on the context it is used
 func (m *PlantypesHelmBuildPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateHelmRepoConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateValues(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -97,6 +142,35 @@ func (m *PlantypesHelmBuildPlan) contextValidateHelmRepoConfig(ctx context.Conte
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesHelmBuildPlan) contextValidateValues(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Values); i++ {
+
+		if m.Values[i] != nil {
+
+			if swag.IsZero(m.Values[i]) { // not required
+				return nil
+			}
+
+			if err := m.Values[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("values" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("values" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

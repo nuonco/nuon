@@ -34,9 +34,9 @@ func (c *client) GetLatestAppBreakGlassConfig(ctx context.Context, appID string)
 
 func (c *client) GetAppBreakGlassConfig(ctx context.Context, appID, appBreakGlassID string) (*models.AppAppBreakGlassConfig, error) {
 	params := &operations.GetAppBreakGlassConfigParams{
-		AppID:              appID,
-		BreakGlassConfigID: appBreakGlassID,
-		Context:            ctx,
+		AppID:    appID,
+		ConfigID: appBreakGlassID,
+		Context:  ctx,
 	}
 
 	resp, err := c.genClient.Operations.GetAppBreakGlassConfig(params, c.getOrgIDAuthInfo())

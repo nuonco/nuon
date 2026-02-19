@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 )
 
@@ -14,12 +15,14 @@ type Params struct {
 	V       *validator.Validate
 	Helpers *helpers.Helpers
 	DB      *gorm.DB `name:"psql"`
+	Cfg     *internal.Config
 }
 
 type Activities struct {
 	v       *validator.Validate
 	db      *gorm.DB
 	helpers *helpers.Helpers
+	cfg     *internal.Config
 }
 
 func New(params Params) (*Activities, error) {
@@ -27,5 +30,6 @@ func New(params Params) (*Activities, error) {
 		v:       params.V,
 		db:      params.DB,
 		helpers: params.Helpers,
+		cfg:     params.Cfg,
 	}, nil
 }

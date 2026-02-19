@@ -28,6 +28,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // TestService holds all fx-injected dependencies for apps endpoint tests.
@@ -44,6 +45,7 @@ type TestService struct {
 	InstallsHelpers *installshelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	AppsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // AppsTestSuite is the testify suite for apps endpoints.
@@ -106,30 +108,9 @@ func (s *AppsTestSuite) TearDownSuite() {
 }
 
 func (s *AppsTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org-" + domains.NewOrgID(),
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 }
 
 func (s *AppsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -285,8 +266,9 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	otherOrg := &app.Org{
-		ID:   domains.NewOrgID(), // BeforeCreate adds "org" prefix
-		Name: "other-org-" + domains.NewOrgID(),
+		ID:          domains.NewOrgID(), // BeforeCreate adds "org" prefix
+		Name:        "other-org-" + domains.NewOrgID(),
+		SandboxMode: true,
 	}
 	err := s.service.DB.WithContext(ctx).Create(otherOrg).Error
 	require.NoError(s.T(), err)

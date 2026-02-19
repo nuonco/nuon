@@ -26,6 +26,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // AdminRenameOrgTestService holds all fx-injected dependencies for admin rename org tests.
@@ -39,6 +40,7 @@ type AdminRenameOrgTestService struct {
 	OrgsHelpers     *orgshelpers.Helpers
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
+	Seeder          *testseed.Seeder
 }
 
 // AdminRenameOrgTestSuite is the testify suite for admin rename org endpoint.
@@ -101,30 +103,9 @@ func (s *AdminRenameOrgTestSuite) TearDownSuite() {
 }
 
 func (s *AdminRenameOrgTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 }
 
 func (s *AdminRenameOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -164,8 +145,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "original-name",
+					ID:          domains.NewOrgID(),
+					Name:        "original-name",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -203,8 +185,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "existing-org",
+					ID:          domains.NewOrgID(),
+					Name:        "existing-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -236,8 +219,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "existing-org",
+					ID:          domains.NewOrgID(),
+					Name:        "existing-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -267,8 +251,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			setupFunc: func() *app.Org {
 				// Return org with non-existent ID
 				return &app.Org{
-					ID:   "org_nonexistent_id_12345",
-					Name: "does-not-exist",
+					ID:          "org_nonexistent_id_12345",
+					Name:        "does-not-exist",
+					SandboxMode: true,
 				}
 			},
 			requestBody: RenameOrgRequest{
@@ -290,8 +275,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "existing-org",
+					ID:          domains.NewOrgID(),
+					Name:        "existing-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -322,8 +308,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 
 				// Create target org
 				targetOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "target-org",
+					ID:          domains.NewOrgID(),
+					Name:        "target-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -336,8 +323,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 
 				// Create other org that should NOT be affected
 				otherOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "other-org",
+					ID:          domains.NewOrgID(),
+					Name:        "other-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},

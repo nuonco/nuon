@@ -8,6 +8,8 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -51,8 +53,8 @@ func (s *service) CreateAppComponentBuild(ctx *gin.Context) {
 	}
 
 	var req CreateComponentBuildRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -92,11 +94,24 @@ func (s *service) CreateAppComponentBuild(ctx *gin.Context) {
 // @Success				201	{object}	app.ComponentBuild
 // @Router					/v1/components/{component_id}/builds [POST]
 func (s *service) CreateComponentBuild(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	cmpID := ctx.Param("component_id")
 
+	// Validate component belongs to org before creating build
+	_, err = s.findComponent(ctx, org.ID, cmpID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to find component %s: %w", cmpID, err))
+		return
+	}
+
 	var req CreateComponentBuildRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

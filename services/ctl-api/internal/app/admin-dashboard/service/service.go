@@ -58,11 +58,12 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 	// Register routes - templ components will be rendered directly in handlers
 	api.GET("/", s.Index)
-	api.GET("/livez", s.Livez)
 	api.GET("/orgs", s.Orgs)
 	api.GET("/orgs/table", s.OrgsTable)
 	api.GET("/orgs/:id", s.OrgDetail)
 	api.GET("/orgs/:id/status", s.OrgStatus)
+	api.POST("/orgs/:id/tags", s.UpdateOrgTags)
+	api.POST("/orgs/:id/tags/remove/:tag", s.RemoveSingleTag)
 	api.GET("/orgs/:id/installs/table", s.InstallsTable)
 
 	// Accounts routes
@@ -70,6 +71,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/accounts/table", s.AccountsTable)
 	api.GET("/accounts/:id", s.AccountDetail)
 	api.GET("/accounts/:id/installs/table", s.AccountInstallsTable)
+	api.GET("/accounts/:id/audit-logs/table", s.AccountAuditLogsTable)
 
 	// Global installs routes
 	api.GET("/installs", s.Installs)

@@ -37,6 +37,12 @@ func (s *service) LockTerraformWorkspace(ctx *gin.Context) {
 		return
 	}
 
+	// Validate workspace belongs to org
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
+		return
+	}
+
 	// keeping jobID optional to remain backwards compatible for old runners
 	jobID := ctx.Query("job_id")
 	var sJobID *string
@@ -45,8 +51,8 @@ func (s *service) LockTerraformWorkspace(ctx *gin.Context) {
 	}
 
 	var lock app.TerraformLock
-	if err := ctx.BindJSON(&lock); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&lock); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

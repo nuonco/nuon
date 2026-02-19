@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,7 @@ import (
 // @Description.markdown	get_terraform_state_by_id.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id 		path	string	true	"state ID"
-// @Tags					runners,runners/runner
+// @Tags					runners
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -34,7 +35,7 @@ func (s *service) GetTerraformWorkspaceStateByIDV2(ctx *gin.Context) {
 // @Description.markdown	get_terraform_state_by_id.md
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					state_id 		path	string	true	"state ID"
-// @Tags					runners,runners/runner
+// @Tags					runners
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -55,6 +56,12 @@ func (s *service) GetTerraformWorkspaceStateByID(ctx *gin.Context) {
 			Err: errors.New("workspace_id  or state_id was not set"),
 		})
 
+		return
+	}
+
+	// Validate workspace belongs to org
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
 		return
 	}
 

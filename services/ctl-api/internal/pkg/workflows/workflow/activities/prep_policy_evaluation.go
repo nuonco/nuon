@@ -26,6 +26,7 @@ type PolicyViolation = app.PolicyViolation
 
 type PolicyToEvaluate struct {
 	PolicyID      string `json:"policy_id" temporaljson:"policy_id,omitempty"`
+	PolicyName    string `json:"policy_name" temporaljson:"policy_name,omitempty"`
 	Contents      string `json:"contents" temporaljson:"contents,omitempty"`
 	InputJSON     []byte `json:"input_json" temporaljson:"input_json,omitempty"`
 	InputIndex    int    `json:"input_index" temporaljson:"input_index,omitempty"`       // Index of the input document
@@ -283,12 +284,12 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 }
 
 func (a *Activities) preparePolicyInputs(planContentsJSON []byte, pctx *policyContext) ([][]byte, []string, error) {
-	switch pctx.ComponentType {
-	case app.ComponentTypeTerraformModule:
+	switch {
+	case pctx.IsSandbox, pctx.ComponentType == app.ComponentTypeTerraformModule:
 		return a.prepareTerraformPolicyInputs(planContentsJSON, pctx)
-	case app.ComponentTypeHelmChart:
+	case pctx.ComponentType == app.ComponentTypeHelmChart:
 		return a.prepareHelmPolicyInputs(planContentsJSON)
-	case app.ComponentTypeKubernetesManifest:
+	case pctx.ComponentType == app.ComponentTypeKubernetesManifest:
 		return a.prepareKubernetesManifestPolicyInputs(planContentsJSON)
 	default:
 		return nil, nil, fmt.Errorf("unsupported component type for policy input preparation: %s", pctx.ComponentType)
@@ -420,6 +421,7 @@ func (a *Activities) buildPolicyEvaluationItems(
 			}
 			result = append(result, PolicyToEvaluate{
 				PolicyID:      policy.ID,
+				PolicyName:    policy.Name,
 				Contents:      policy.Contents,
 				InputJSON:     input,
 				InputIndex:    idx,

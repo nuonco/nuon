@@ -25,6 +25,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // TestService holds all fx-injected dependencies for orgs endpoint tests.
@@ -39,6 +40,7 @@ type TestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	OrgsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // OrgsTestSuite is the testify suite for orgs endpoints.
@@ -99,16 +101,8 @@ func (s *OrgsTestSuite) TearDownSuite() {
 }
 
 func (s *OrgsTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
+	ctx := context.Background()
+	_, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 }
 
 func (s *OrgsTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -143,15 +137,17 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org1 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-1",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-1",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
 				}
 				org2 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-org-2",
+					ID:          domains.NewOrgID(),
+					Name:        "test-org-2",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -186,15 +182,17 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org1 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "frontend-team",
+					ID:          domains.NewOrgID(),
+					Name:        "frontend-team",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
 				}
 				org2 := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "backend-team",
+					ID:          domains.NewOrgID(),
+					Name:        "backend-team",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -229,8 +227,9 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				orgIDs := make([]string, 0, 15)
 				for i := 0; i < 15; i++ {
 					testOrg := &app.Org{
-						ID:   domains.NewOrgID(),
-						Name: fmt.Sprintf("test-org-%02d", i),
+						ID:          domains.NewOrgID(),
+						Name:        fmt.Sprintf("test-org-%02d", i),
+						SandboxMode: true,
 						NotificationsConfig: app.NotificationsConfig{
 							InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 						},
@@ -275,8 +274,9 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				ctx2 = cctx.SetAccountContext(ctx2, acc2)
 
 				myOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "my-org",
+					ID:          domains.NewOrgID(),
+					Name:        "my-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -288,8 +288,9 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				})
 
 				otherOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "other-org",
+					ID:          domains.NewOrgID(),
+					Name:        "other-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},

@@ -8,7 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -20,12 +23,35 @@ type CreateAppStackConfigRequest struct {
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url"`
 	VPCNestedTemplateURL    string `json:"vpc_nested_template_url"`
 
+	CustomNestedStacks []config.CustomNestedStack `json:"custom_nested_stacks"`
+
 	AppConfigID string `json:"app_config_id" validate:"required"`
 }
 
 func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+	if c.VPCNestedTemplateURL != "" {
+		if err := config.ValidateTemplateURL(c.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
+			return err
+		}
+	}
+	if c.RunnerNestedTemplateURL != "" {
+		if err := config.ValidateTemplateURL(c.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
+			return err
+		}
+	}
+	for i, stack := range c.CustomNestedStacks {
+		if stack.Name == "" {
+			return fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
+		}
+		if stack.TemplateURL == "" {
+			return fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
+		}
+		if stack.Contents == "" {
+			return fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required when template_url is set", i, stack.Name)
+		}
 	}
 	return nil
 }
@@ -51,8 +77,8 @@ func (s *service) CreateAppStackConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppStackConfigRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -78,11 +104,19 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		Description:             req.Description,
 		VPCNestedTemplateURL:    req.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
+		CustomNestedStacks:      req.CustomNestedStacks,
 	}
 	res := s.db.WithContext(ctx).
 		Create(&appCloudFormationStackConfig)
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	if len(appCloudFormationStackConfig.CustomNestedStacks) > 0 {
+		s.evClient.Send(ctx, appID, &signals.Signal{
+			Type:             signals.OperationSyncCustomStacks,
+			AppStackConfigID: appCloudFormationStackConfig.ID,
+		})
 	}
 
 	return &appCloudFormationStackConfig, nil

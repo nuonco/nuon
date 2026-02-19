@@ -104,6 +104,8 @@ type ClientService interface {
 
 	CreateActionWorkflowConfig(params *CreateActionWorkflowConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateActionWorkflowConfigCreated, error)
 
+	CreateAdHocAction(params *CreateAdHocActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdHocActionCreated, error)
+
 	CreateApp(params *CreateAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppCreated, error)
 
 	CreateAppAction(params *CreateAppActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppActionCreated, error)
@@ -510,13 +512,7 @@ type ClientService interface {
 
 	GetRunnerJobCompositePlan(params *GetRunnerJobCompositePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobCompositePlanOK, error)
 
-	GetRunnerJobExecutions(params *GetRunnerJobExecutionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobExecutionsOK, error)
-
 	GetRunnerJobPlan(params *GetRunnerJobPlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobPlanOK, error)
-
-	GetRunnerJobPlanV2(params *GetRunnerJobPlanV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobPlanV2OK, error)
-
-	GetRunnerJobV2(params *GetRunnerJobV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobV2OK, error)
 
 	GetRunnerJobs(params *GetRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobsOK, error)
 
@@ -558,9 +554,9 @@ type ClientService interface {
 
 	GetUserJourneys(params *GetUserJourneysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserJourneysOK, error)
 
-	GetVCSConnection(params *GetVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionOK, error)
+	GetV1VcsConnectionsConnectionIDRepos(params *GetV1VcsConnectionsConnectionIDReposParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetV1VcsConnectionsConnectionIDReposOK, error)
 
-	GetVcsConnectionsConnectionIDRepos(params *GetVcsConnectionsConnectionIDReposParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVcsConnectionsConnectionIDReposOK, error)
+	GetVCSConnection(params *GetVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionOK, error)
 
 	GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowOK, error)
 
@@ -591,6 +587,8 @@ type ClientService interface {
 	ReprovisionInstall(params *ReprovisionInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallCreated, error)
 
 	ReprovisionInstallSandbox(params *ReprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallSandboxCreated, error)
+
+	ResendOrgInvite(params *ResendOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResendOrgInviteOK, error)
 
 	ResetUserJourney(params *ResetUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetUserJourneyOK, error)
 
@@ -1085,6 +1083,105 @@ func (a *Client) CreateActionWorkflowConfig(params *CreateActionWorkflowConfigPa
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateActionWorkflowConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	CreateAdHocAction creates an adhoc action run for an install
+
+	# Create AdHoc Action
+
+Creates and executes a one-time action on an install without creating a permanent action workflow definition.
+
+## Use Cases
+
+- Running ad-hoc debugging scripts
+- Executing maintenance commands
+- Testing bash snippets before creating permanent actions
+- Quick data exports or transformations
+
+## Request Body
+
+Provide **either** `inline_contents` (for multi-line bash scripts) **or** `command` (for single-line commands), but not both.
+
+### Fields
+
+- `inline_contents` (string, optional): Multi-line bash script to execute
+- `command` (string, optional): Single-line shell command to execute
+- `env_vars` (object, optional): Environment variables as key-value pairs
+- `timeout` (integer, optional): Execution timeout in seconds (1-3600, default: 300)
+- `name` (string, optional): Display name for the action (max 255 chars)
+
+## Response
+
+Returns the created adhoc action run with status information.
+
+## Example
+
+```bash
+
+	curl -X POST https://api.nuon.co/v1/installs/{install_id}/actions/adhoc \
+	  -H "Authorization: Bearer $API_KEY" \
+	  -H "X-Nuon-Org-ID: $ORG_ID" \
+	  -H "Content-Type: application/json" \
+	  -d '{
+	    "inline_contents": "#!/bin/bash\necho \"Hello from adhoc action\"\nenv | grep NUON",
+	    "env_vars": {
+	      "DEBUG": "true",
+	      "LOG_LEVEL": "info"
+	    },
+	    "timeout": 300,
+	    "name": "Debug Script"
+	  }'
+
+```
+
+## Notes
+
+- AdHoc actions are marked with `trigger_type: "adhoc"`
+- They appear in action run history and can be filtered via trigger_type
+- Execution happens on the install's runner using the same infrastructure as permanent actions
+- Logs are preserved and can be viewed via the action runs API
+- AdHoc runs are kept indefinitely (same retention as regular action runs)
+*/
+func (a *Client) CreateAdHocAction(params *CreateAdHocActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdHocActionCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAdHocActionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAdHocAction",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/actions/adhoc-run",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAdHocActionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAdHocActionCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAdHocAction: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -3394,7 +3491,7 @@ func (a *Client) DeleteAction(params *DeleteActionParams, authInfo runtime.Clien
 	op := &runtime.ClientOperation{
 		ID:                 "DeleteAction",
 		Method:             "DELETE",
-		PathPattern:        "/v1/actions/{action_id}",
+		PathPattern:        "/v1/apps/{app_id}/actions/{action_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -4735,7 +4832,7 @@ func (a *Client) GetAppActionConfig(params *GetAppActionConfigParams, authInfo r
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppActionConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/actions/{action_id}/configs/{action_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/actions/configs/{action_config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -4781,7 +4878,7 @@ func (a *Client) GetAppActionConfigs(params *GetAppActionConfigsParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppActionConfigs",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/action/{action_id}/configs",
+		PathPattern:        "/v1/apps/{app_id}/actions/{action_id}/configs",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -5011,7 +5108,7 @@ func (a *Client) GetAppBreakGlassConfig(params *GetAppBreakGlassConfigParams, au
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppBreakGlassConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/break-glass-configs/{break_glass_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/break-glass-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -6029,7 +6126,7 @@ func (a *Client) GetAppPermissionsConfig(params *GetAppPermissionsConfigParams, 
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppPermissionsConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/permissions-configs/{permissions_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/permissions-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -6075,7 +6172,7 @@ func (a *Client) GetAppPoliciesConfig(params *GetAppPoliciesConfigParams, authIn
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppPoliciesConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/policies-configs/{policies_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/policies-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -6445,7 +6542,7 @@ func (a *Client) GetAppSecretsConfig(params *GetAppSecretsConfigParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "GetAppSecretsConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/secrets-configs/{app_secrets_config_id}",
+		PathPattern:        "/v1/apps/{app_id}/secrets-configs/{config_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -7952,7 +8049,7 @@ func (a *Client) GetInstallActionWorkflowRunStep(params *GetInstallActionWorkflo
 	op := &runtime.ClientOperation{
 		ID:                 "GetInstallActionWorkflowRunStep",
 		Method:             "GET",
-		PathPattern:        "/v1/installs/{install_id}/action-workflows/runs/{workflow_run_id}/steps/{step_id}",
+		PathPattern:        "/v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -9522,7 +9619,7 @@ func (a *Client) GetLatestAppBreakGlassConfig(params *GetLatestAppBreakGlassConf
 	op := &runtime.ClientOperation{
 		ID:                 "GetLatestAppBreakGlassConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/latest-app-break-glass-config",
+		PathPattern:        "/v1/apps/{app_id}/latest-break-glass-config",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -9568,7 +9665,7 @@ func (a *Client) GetLatestAppPermissionsConfig(params *GetLatestAppPermissionsCo
 	op := &runtime.ClientOperation{
 		ID:                 "GetLatestAppPermissionsConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/latest-app-permissions-config",
+		PathPattern:        "/v1/apps/{app_id}/latest-permissions-config",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -9614,7 +9711,7 @@ func (a *Client) GetLatestAppPoliciesConfig(params *GetLatestAppPoliciesConfigPa
 	op := &runtime.ClientOperation{
 		ID:                 "GetLatestAppPoliciesConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/latest-app-policies-config",
+		PathPattern:        "/v1/apps/{app_id}/latest-policies-config",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -9660,7 +9757,7 @@ func (a *Client) GetLatestAppSecretsConfig(params *GetLatestAppSecretsConfigPara
 	op := &runtime.ClientOperation{
 		ID:                 "GetLatestAppSecretsConfig",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/latest-app-secrets-config",
+		PathPattern:        "/v1/apps/{app_id}/latest-secrets-config",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -10530,52 +10627,6 @@ func (a *Client) GetRunnerJobCompositePlan(params *GetRunnerJobCompositePlanPara
 }
 
 /*
-GetRunnerJobExecutions gets runner job executions
-
-Return executions for a runner job.
-*/
-func (a *Client) GetRunnerJobExecutions(params *GetRunnerJobExecutionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobExecutionsOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetRunnerJobExecutionsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetRunnerJobExecutions",
-		Method:             "GET",
-		PathPattern:        "/v1/runner-jobs/{runner_job_id}/executions",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetRunnerJobExecutionsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetRunnerJobExecutionsOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetRunnerJobExecutions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 GetRunnerJobPlan gets runner job plan
 
 Return a plan for a runner job.
@@ -10618,98 +10669,6 @@ func (a *Client) GetRunnerJobPlan(params *GetRunnerJobPlanParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetRunnerJobPlan: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetRunnerJobPlanV2 gets runner job plan
-
-Return a plan for a runner job.
-*/
-func (a *Client) GetRunnerJobPlanV2(params *GetRunnerJobPlanV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobPlanV2OK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetRunnerJobPlanV2Params()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetRunnerJobPlanV2",
-		Method:             "GET",
-		PathPattern:        "/v1/runner/{runner_id}/jobs/{job_id}/plan",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetRunnerJobPlanV2Reader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetRunnerJobPlanV2OK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetRunnerJobPlanV2: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetRunnerJobV2 gets runner job
-
-Return a runner job.
-*/
-func (a *Client) GetRunnerJobV2(params *GetRunnerJobV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobV2OK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetRunnerJobV2Params()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetRunnerJobV2",
-		Method:             "GET",
-		PathPattern:        "/v1/runners/{runner_id}/jobs/{job_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetRunnerJobV2Reader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetRunnerJobV2OK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetRunnerJobV2: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -10998,7 +10957,7 @@ func (a *Client) GetTerraformStatesV2(params *GetTerraformStatesV2Params, authIn
 	op := &runtime.ClientOperation{
 		ID:                 "GetTerraformStatesV2",
 		Method:             "GET",
-		PathPattern:        "/v1/terraform-workspace/{workspace_id}/states",
+		PathPattern:        "/v1/terraform-workspaces/{workspace_id}/states",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -11274,7 +11233,7 @@ func (a *Client) GetTerraformWorkspaceStateJSONResourcesV2(params *GetTerraformW
 	op := &runtime.ClientOperation{
 		ID:                 "GetTerraformWorkspaceStateJSONResourcesV2",
 		Method:             "GET",
-		PathPattern:        "/v1/terraform-workspace/{workspace_id}/state-json/{state_id}/resources",
+		PathPattern:        "/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}/resources",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -11630,6 +11589,52 @@ func (a *Client) GetUserJourneys(params *GetUserJourneysParams, authInfo runtime
 }
 
 /*
+GetV1VcsConnectionsConnectionIDRepos lists v c s connection repositories
+
+Lists all repositories accessible by a GitHub App installation (VCS connection)
+*/
+func (a *Client) GetV1VcsConnectionsConnectionIDRepos(params *GetV1VcsConnectionsConnectionIDReposParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetV1VcsConnectionsConnectionIDReposOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetV1VcsConnectionsConnectionIDReposParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetV1VcsConnectionsConnectionIDRepos",
+		Method:             "GET",
+		PathPattern:        "/v1/vcs/connections/{connection_id}/repos",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetV1VcsConnectionsConnectionIDReposReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetV1VcsConnectionsConnectionIDReposOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetV1VcsConnectionsConnectionIDRepos: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetVCSConnection returns a vcs connection for an org
 
 Return a VCS connection by id.
@@ -11672,52 +11677,6 @@ func (a *Client) GetVCSConnection(params *GetVCSConnectionParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetVCSConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetVcsConnectionsConnectionIDRepos lists v c s connection repositories
-
-Lists all repositories accessible by a GitHub App installation (VCS connection)
-*/
-func (a *Client) GetVcsConnectionsConnectionIDRepos(params *GetVcsConnectionsConnectionIDReposParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVcsConnectionsConnectionIDReposOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetVcsConnectionsConnectionIDReposParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetVcsConnectionsConnectionIDRepos",
-		Method:             "GET",
-		PathPattern:        "/vcs/connections/{connection_id}/repos",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetVcsConnectionsConnectionIDReposReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetVcsConnectionsConnectionIDReposOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetVcsConnectionsConnectionIDRepos: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -12417,6 +12376,54 @@ func (a *Client) ReprovisionInstallSandbox(params *ReprovisionInstallSandboxPara
 }
 
 /*
+	ResendOrgInvite resends an org invite
+
+	Resend the invite email for an existing pending org invite.
+
+The invite must be in "pending" status. Accepted invites cannot be resent.
+*/
+func (a *Client) ResendOrgInvite(params *ResendOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResendOrgInviteOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewResendOrgInviteParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ResendOrgInvite",
+		Method:             "POST",
+		PathPattern:        "/v1/orgs/current/invites/{invite_id}/resend",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ResendOrgInviteReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ResendOrgInviteOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ResendOrgInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 ResetUserJourney resets user journey steps
 
 Reset all steps in a specified user journey by setting their completion status to false
@@ -12567,7 +12574,7 @@ func (a *Client) RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo run
 	op := &runtime.ClientOperation{
 		ID:                 "RetryWorkflowStep",
 		Method:             "POST",
-		PathPattern:        "/v1/workflows/{workflow_id}/step/{step_id}/retry",
+		PathPattern:        "/v1/workflows/{workflow_id}/steps/{step_id}/retry",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	maxBytesPerPayload int = 4096
+	maxBytesPerPayload int = 8192
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen

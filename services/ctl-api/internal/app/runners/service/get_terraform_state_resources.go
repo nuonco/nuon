@@ -31,7 +31,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	interface{}
-// @Router					/v1/terraform-workspace/{workspace_id}/state-json/{state_id}/resources [get]
+// @Router					/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}/resources [get]
 func (s *service) GetTerraformWorkspaceStateResourcesV2(ctx *gin.Context) {
 	s.GetTerraformWorkspaceStateResources(ctx)
 }
@@ -62,6 +62,12 @@ func (s *service) GetTerraformWorkspaceStateResources(ctx *gin.Context) {
 			Err: errors.New("workspace_id  or state_id was not set"),
 		})
 
+		return
+	}
+
+	// Validate workspace belongs to org
+	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
+		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
 		return
 	}
 

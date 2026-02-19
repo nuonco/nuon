@@ -62,6 +62,8 @@ services/ctl-api/docs/runner/runner_swagger*
 pkg/api/client/client/
 pkg/api/client/models/
 services/ctl-api/ctl-api/.restart
+sdks/nuon-go/.swagger.stamp
+sdks/nuon-runner-go/.swagger.stamp
 
 # MacOS files
 .DS_Store

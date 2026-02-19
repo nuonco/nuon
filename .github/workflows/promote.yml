@@ -54,6 +54,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set git_ref output
         id: git_ref
@@ -61,12 +63,10 @@ jobs:
 
       - name: Determine next version
         id: semver
-        uses: ietf-tools/semver-action@v1
+        uses: ./.github/actions/cross-repo-semver
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          minorList: ""
-          patchAll: true
+          sibling_repo: nuonco/mono
+          token: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
   start_slack_notifications:
     name: update promotions channel

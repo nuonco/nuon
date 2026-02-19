@@ -26,6 +26,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // AdminEnableDebugForOrgTestService holds all fx-injected dependencies.
@@ -39,6 +40,7 @@ type AdminEnableDebugForOrgTestService struct {
 	OrgsHelpers     *orgshelpers.Helpers
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
+	Seeder          *testseed.Seeder
 }
 
 // AdminEnableDebugForOrgTestSuite is the testify suite for admin debug mode endpoint.
@@ -101,30 +103,9 @@ func (s *AdminEnableDebugForOrgTestSuite) TearDownSuite() {
 }
 
 func (s *AdminEnableDebugForOrgTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 }
 
 func (s *AdminEnableDebugForOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -163,9 +144,10 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:        domains.NewOrgID(),
-					Name:      "test-enable-debug",
-					DebugMode: false,
+					ID:          domains.NewOrgID(),
+					Name:        "test-enable-debug",
+					SandboxMode: true,
+					DebugMode:   false,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -198,9 +180,10 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:        domains.NewOrgID(),
-					Name:      "test-disable-debug",
-					DebugMode: true,
+					ID:          domains.NewOrgID(),
+					Name:        "test-disable-debug",
+					SandboxMode: true,
+					DebugMode:   true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -233,9 +216,10 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:        domains.NewOrgID(),
-					Name:      "test-idempotent-enable",
-					DebugMode: true,
+					ID:          domains.NewOrgID(),
+					Name:        "test-idempotent-enable",
+					SandboxMode: true,
+					DebugMode:   true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -268,9 +252,10 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:        domains.NewOrgID(),
-					Name:      "test-idempotent-disable",
-					DebugMode: false,
+					ID:          domains.NewOrgID(),
+					Name:        "test-idempotent-disable",
+					SandboxMode: true,
+					DebugMode:   false,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -358,8 +343,9 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "test-invalid-body",
+					ID:          domains.NewOrgID(),
+					Name:        "test-invalid-body",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -422,9 +408,10 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeToggle() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	org := &app.Org{
-		ID:        domains.NewOrgID(),
-		Name:      "test-toggle",
-		DebugMode: false,
+		ID:          domains.NewOrgID(),
+		Name:        "test-toggle",
+		SandboxMode: true,
+		DebugMode:   false,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},

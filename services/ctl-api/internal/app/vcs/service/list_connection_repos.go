@@ -43,7 +43,7 @@ type VCSConnectionReposResponse struct {
 // @Failure      500            {object}  stderr.ErrResponse
 // @Security     APIKey
 // @Security     OrgID
-// @Router       /vcs/connections/{connection_id}/repos [get]
+// @Router       /v1/vcs/connections/{connection_id}/repos [get]
 func (s *service) ListConnectionRepos(ctx *gin.Context) {
 	connectionID := ctx.Param("connection_id")
 

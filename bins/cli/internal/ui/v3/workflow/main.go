@@ -73,6 +73,7 @@ type model struct {
 	stackLoading bool
 
 	approvalContents approvalContents
+	policyNames      map[string]string
 
 	// ui components
 	// 1. layout
@@ -96,6 +97,9 @@ type model struct {
 	workflowApprovalConf    bool
 	workflowCancelationConf bool
 	showJson                bool
+
+	// approval processing state
+	approvingStep bool // whether an approval request is in flight
 
 	// for the footer
 	help help.Model
@@ -141,6 +145,7 @@ func initialModel(
 
 		// data
 		approvalContents: approvalContents,
+		policyNames:      map[string]string{},
 
 		header:     viewport.New(minRequiredWidth, 2),
 		stepsList:  stepsList,
@@ -158,6 +163,16 @@ func initialModel(
 	m.stepDetail.SetContent("Loading")
 
 	return m
+}
+
+func (m model) PolicyNameByID(id string) string {
+	if id == "" {
+		return ""
+	}
+	if name, ok := m.policyNames[id]; ok && name != "" {
+		return name
+	}
+	return id
 }
 
 func (m *model) toggleShowJson() {
@@ -382,6 +397,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case workflowFetchedMsg:
 		m.handleWorkflowFetched(msg)
+
 	case stackFetchedMsg:
 		m.handleStackFetched(msg)
 	case createWorkflowStepApprovalResponseMsg:
@@ -467,7 +483,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// data actions
 		case key.Matches(msg, m.keys.ApproveStep):
 			if m.stepApprovalConf {
-				m.createWorkflowStepApprovalResponseCmd()
+				m.approvingStep = true
+				// Capture values needed for the API call before returning
+				cmd := m.makeApproveStepCmd()
+				cmds = append(cmds, cmd)
 			} else {
 				m.setApprovalConfirmation()
 			}
@@ -479,6 +498,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, m.keys.ApproveAll):
 			if m.workflowApprovalConf {
+				m.approvingStep = true
 				cmds = append(cmds, m.approveAllCmd)
 			} else {
 				m.setWorkflowApprovalConf()

@@ -32,7 +32,7 @@ import (
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.ActionWorkflowConfig
-// @Router					/v1/apps/{app_id}/action/{action_id}/configs [get]
+// @Router					/v1/apps/{app_id}/actions/{action_id}/configs [get]
 func (s *service) GetAppActionConfigs(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

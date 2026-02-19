@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetActionLatestConfig
@@ -16,7 +17,7 @@ import (
 // @Description.markdown	get_action_workflow_latest_config.md
 // @Param					app_id				path	string	true	"app ID"
 // @Param					action_id	path	string	true	"action workflow ID"
-// @Tags					actions,actions/runner
+// @Tags					actions
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -43,7 +44,7 @@ func (s *service) GetAppActionLatestConfig(ctx *gin.Context) {
 //		@Summary				get an app action workflow's latest config
 //		@Description.markdown	get_action_workflow_latest_config.md
 //		@Param					action_workflow_id	path	string	true	"action workflow ID"
-//		@Tags					actions,actions/runner
+//		@Tags					actions
 //		@Accept					json
 //		@Produce				json
 //		@Security				APIKey
@@ -68,6 +69,11 @@ func (s *service) GetActionWorkflowLatestConfig(ctx *gin.Context) {
 }
 
 func (s *service) getActionWorkflowLatestConfig(ctx context.Context, awcID string) (*app.ActionWorkflowConfig, error) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org from context: %w", err)
+	}
+
 	aw := app.ActionWorkflowConfig{}
 	res := s.db.WithContext(ctx).
 		Preload("Triggers").
@@ -76,7 +82,7 @@ func (s *service) getActionWorkflowLatestConfig(ctx context.Context, awcID strin
 		}).
 		Order("created_at DESC").
 		Limit(1).
-		First(&aw, "action_workflow_id = ?", awcID)
+		First(&aw, "action_workflow_id = ? AND org_id = ?", awcID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get action workflow latest config: %w", res.Error)
 	}

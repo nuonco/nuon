@@ -15,6 +15,9 @@ export * from './get-install-drifted-objects'
 // workflows
 export * from './get-install-workflows'
 
+// policy reports
+export * from './get-install-policy-reports'
+
 // mutations
 export * from './forget-install'
 export * from './create-install-config'

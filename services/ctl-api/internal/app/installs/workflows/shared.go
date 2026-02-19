@@ -58,7 +58,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		signals.OperationReprovisionSandboxPlan,
 		signals.OperationReprovisionSandboxApplyPlan:
 		targettype = string(app.WorkflowStepTargetTypeInstallSandboxRuns)
-	case signals.OperationExecuteActionWorkflow:
+	case signals.OperationExecuteActionWorkflow, signals.OperationActionWorkflowRun:
 		targettype = string(app.WorkflowStepTargetTypeInstallActionWorkflowRuns)
 	case signals.OperationGenerateState:
 		targettype = string(app.WorkflowStepTargetTypeInstallStates)

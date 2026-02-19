@@ -26,6 +26,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // UpdateOrgTestService holds all fx-injected dependencies for update org tests.
@@ -39,6 +40,7 @@ type UpdateOrgTestService struct {
 	OrgsHelpers     *orgshelpers.Helpers
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
+	Seeder          *testseed.Seeder
 }
 
 // UpdateOrgTestSuite is the testify suite for update org endpoint.
@@ -101,30 +103,9 @@ func (s *UpdateOrgTestSuite) TearDownSuite() {
 }
 
 func (s *UpdateOrgTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 }
 
 func (s *UpdateOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -161,8 +142,9 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "original-name",
+					ID:          domains.NewOrgID(),
+					Name:        "original-name",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -201,7 +183,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", s.testOrg.ID).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "test-org", dbOrg.Name, "org name should not have changed")
+				assert.Equal(s.T(), s.testOrg.Name, dbOrg.Name, "org name should not have changed")
 			},
 		},
 		{
@@ -218,7 +200,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", s.testOrg.ID).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "test-org", dbOrg.Name, "org name should not have changed")
+				assert.Equal(s.T(), s.testOrg.Name, dbOrg.Name, "org name should not have changed")
 			},
 		},
 		{
@@ -229,8 +211,9 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 
 				// Create a second org
 				otherOrg := &app.Org{
-					ID:   domains.NewOrgID(),
-					Name: "other-org",
+					ID:          domains.NewOrgID(),
+					Name:        "other-org",
+					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",
 					},
@@ -361,14 +344,15 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgInvalidJSON() {
 	var dbOrg app.Org
 	err = s.service.DB.First(&dbOrg, "id = ?", s.testOrg.ID).Error
 	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "test-org", dbOrg.Name, "org name should not have changed")
+	assert.Equal(s.T(), s.testOrg.Name, dbOrg.Name, "org name should not have changed")
 }
 
 func (s *UpdateOrgTestSuite) TestUpdateOrgNonExistentOrg() {
 	// Create a non-existent org ID for context
 	nonExistentOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "non-existent",
+		ID:          domains.NewOrgID(),
+		Name:        "non-existent",
+		SandboxMode: true,
 	}
 
 	// Create router with non-existent org context

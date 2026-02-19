@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
@@ -26,6 +27,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -42,9 +44,13 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(psql.AsPSQL(psql.New)),
 	fx.Provide(ch.AsCH(ch.New)),
 
+	// Blob storage service
+	fx.Provide(blobstore.NewService),
+
 	// Temporal data converters and client
 	fx.Provide(gzip.AsGzip(gzip.New)),
 	fx.Provide(largepayload.AsLargePayload(largepayload.New)),
+	fx.Provide(s3payload.AsS3Payload(s3payload.New)),
 	fx.Provide(signaldb.NewPayloadConverter),
 	fx.Provide(dataconverter.New),
 	fx.Provide(temporal.New),

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,12 +18,12 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // AdminGetOrgFeaturesTestService holds all fx-injected dependencies.
@@ -37,6 +38,7 @@ type AdminGetOrgFeaturesTestService struct {
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
 	OrgsService     *service
+	Seeder          *testseed.Seeder
 }
 
 // AdminGetOrgFeaturesTestSuite is the testify suite for AdminGetOrgFeatures endpoint.
@@ -97,16 +99,8 @@ func (s *AdminGetOrgFeaturesTestSuite) TearDownSuite() {
 }
 
 func (s *AdminGetOrgFeaturesTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "admin@example.com",
-		Subject:     "admin-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
+	ctx := context.Background()
+	_, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 }
 
 func (s *AdminGetOrgFeaturesTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {

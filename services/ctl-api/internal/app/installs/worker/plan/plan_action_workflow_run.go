@@ -10,6 +10,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -72,16 +73,23 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get override env vars")
 	}
 
+	var attrs map[string]string = make(map[string]string, 0)
+	if !run.ActionWorkflowConfigID.Empty() {
+		attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
+		attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
+	} else {
+		name := generics.FirstNonEmptyString(run.Steps[0].AdHocConfig.Name, "Adhoc Action")
+		attrs["action.name"] = name
+		attrs["action.id"] = run.ID
+	}
+
 	plan := &plantypes.ActionWorkflowRunPlan{
-		InstallID: run.InstallID,
-		ID:        runID,
-		Attrs: map[string]string{
-			"action.name": run.ActionWorkflowConfig.ActionWorkflow.Name,
-			"action.id":   run.ActionWorkflowConfig.ActionWorkflow.ID,
-		},
+		InstallID:       run.InstallID,
+		ID:              runID,
 		Steps:           make([]*plantypes.ActionWorkflowRunStepPlan, 0),
 		BuiltinEnvVars:  builtInEnvVars,
 		OverrideEnvVars: overrideEnvVars,
+		Attrs:           attrs,
 	}
 
 	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
@@ -116,13 +124,21 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		plan.ClusterInfo = clusterInfo
 	}
 
-	for idx, stepCfg := range run.Steps {
-		l.Debug(fmt.Sprintf("creating plan for step %d", idx))
-		stepPlan, err := p.createStepPlan(ctx, &stepCfg, stateMap, run.InstallID)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unable to create plan for step %d", idx))
-		}
+	if !run.ActionWorkflowConfigID.Empty() {
+		for idx, stepCfg := range run.Steps {
+			l.Debug(fmt.Sprintf("creating plan for step %d", idx))
+			stepPlan, err := p.createStepPlan(ctx, &stepCfg, stateMap, run.InstallID)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to create plan for step %d", idx))
+			}
 
+			plan.Steps = append(plan.Steps, stepPlan)
+		}
+	} else {
+		stepPlan, err := p.createAdhocStepPlan(ctx, &run.Steps[0], stateMap, run.InstallID)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to create adhoc step plan"))
+		}
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 

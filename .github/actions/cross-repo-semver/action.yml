@@ -1,0 +1,53 @@
+---
+name: Cross-Repo Semver
+description: >
+  Determines the next patch version by looking at tags from both the current
+  repo and a sibling repo, ensuring version numbers stay in sync.
+
+inputs:
+  sibling_repo:
+    description: 'Sibling repo to check tags from (e.g. nuonco/mono)'
+    required: true
+  token:
+    description: 'GitHub token with read access to the sibling repo'
+    required: true
+
+outputs:
+  nextStrict:
+    description: 'Next semver version without v prefix (e.g. 0.19.775)'
+    value: ${{ steps.semver.outputs.nextStrict }}
+
+runs:
+  using: composite
+  steps:
+    - name: Determine next version
+      id: semver
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SIBLING_REPO: ${{ inputs.sibling_repo }}
+      run: |
+        # Get latest semver tag from this repo
+        LOCAL_LATEST=$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+        # Get latest semver tag from sibling repo
+        SIBLING_LATEST=$(gh api "repos/${SIBLING_REPO}/tags" --paginate --jq '.[].name' \
+          | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+        echo "Local latest: ${LOCAL_LATEST:-none}"
+        echo "Sibling latest: ${SIBLING_LATEST:-none}"
+
+        # Take the highest version across both repos
+        MAX_VERSION=$(printf '%s\n' "${LOCAL_LATEST:-v0.0.0}" "${SIBLING_LATEST:-v0.0.0}" | sort -V | tail -1)
+        echo "Max version across repos: ${MAX_VERSION}"
+
+        # Bump patch version
+        VERSION="${MAX_VERSION#v}"
+        MAJOR=$(echo "$VERSION" | cut -d. -f1)
+        MINOR=$(echo "$VERSION" | cut -d. -f2)
+        PATCH=$(echo "$VERSION" | cut -d. -f3)
+        NEXT_PATCH=$((PATCH + 1))
+        NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+
+        echo "Next version: ${NEXT_VERSION}"
+        echo "nextStrict=${NEXT_VERSION}" >> $GITHUB_OUTPUT

@@ -7,6 +7,7 @@ import (
 // PolicyViolationDisplay is a display-friendly representation of a policy violation.
 type PolicyViolationDisplay struct {
 	PolicyID      string
+	PolicyName    string
 	Message       string
 	Severity      string
 	InputIndex    int
@@ -35,6 +36,7 @@ type PolicyInputDisplay struct {
 func ToViolationDisplay(v app.PolicyViolation) PolicyViolationDisplay {
 	return PolicyViolationDisplay{
 		PolicyID:      v.PolicyID,
+		PolicyName:    v.PolicyName,
 		Message:       v.Message,
 		Severity:      v.Severity,
 		InputIndex:    v.InputIndex,
@@ -55,6 +57,7 @@ func ToViolationDisplays(violations []app.PolicyViolation) []PolicyViolationDisp
 func ToAppViolation(v PolicyViolationDisplay) app.PolicyViolation {
 	return app.PolicyViolation{
 		PolicyID:      v.PolicyID,
+		PolicyName:    v.PolicyName,
 		InputIndex:    v.InputIndex,
 		InputIdentity: v.InputIdentity,
 		Message:       v.Message,

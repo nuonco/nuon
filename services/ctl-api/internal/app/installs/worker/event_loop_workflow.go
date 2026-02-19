@@ -4,6 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
@@ -34,6 +35,9 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 
 		// install stack update
 		signals.OperationUpdateInstallStackOutputs: stack.AwaitUpdateInstallStackOutputs,
+
+		// adhoc action runs execute directly in main loop
+		signals.OperationActionWorkflowRun: actions.AwaitExecuteActionWorkflowRun,
 
 		// NOTE(jm): these should be child loops
 		signals.OperationProvisionDNS:   AwaitProvisionDNS,

@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
@@ -34,7 +35,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
 	validatorpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // CtlApiFXOptions returns the common FX options used across all ctl-api integration tests.
@@ -64,9 +67,13 @@ func CtlApiFXOptions() []fx.Option {
 		fx.Provide(propagator.New),
 		fx.Provide(features.New),
 
+		// Blob storage service
+		fx.Provide(blobstore.NewService),
+
 		// Temporal dependencies (required for eventloop)
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
+		fx.Provide(s3payload.AsS3Payload(s3payload.New)),
 		fx.Provide(signaldb.NewPayloadConverter),
 		fx.Provide(dataconverter.New),
 		fx.Provide(temporal.New),
@@ -99,6 +106,9 @@ func CtlApiFXOptions() []fx.Option {
 		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),
 
+		// Test fixtures
+		fx.Provide(testseed.New),
+
 		// Invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	}
@@ -124,9 +134,13 @@ func CtlApiFXOptionsWithValidator() []fx.Option {
 		fx.Provide(propagator.New),
 		fx.Provide(features.New),
 
+		// Blob storage service
+		fx.Provide(blobstore.NewService),
+
 		// Temporal dependencies (required for eventloop)
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
+		fx.Provide(s3payload.AsS3Payload(s3payload.New)),
 		fx.Provide(signaldb.NewPayloadConverter),
 		fx.Provide(dataconverter.New),
 		fx.Provide(temporal.New),

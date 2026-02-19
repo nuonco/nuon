@@ -1,12 +1,14 @@
 package service
 
 import (
-	"fmt"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type RestartGeneralEventLoopRequest struct{}
@@ -22,8 +24,8 @@ type RestartGeneralEventLoopRequest struct{}
 // @Router					/v1/general/restart-event-loop [post]
 func (s *service) RestartGeneralEventLoop(ctx *gin.Context) {
 	var req RestartGeneralEventLoopRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

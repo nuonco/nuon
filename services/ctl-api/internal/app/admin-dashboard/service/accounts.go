@@ -20,20 +20,21 @@ const accountsPerPage = 8
 func (s *service) Accounts(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
+	filter := c.Query("filter")
 	page := getPageFromQuery(c)
 
-	accounts, totalPages, err := s.getAccounts(ctx, search, page)
+	accounts, totalPages, err := s.getAccounts(ctx, search, filter, page)
 	if err != nil {
 		s.l.Error("failed to get accounts", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch accounts"})
 		return
 	}
 
-	component := views.Accounts(accounts, page, totalPages, search)
+	component := views.Accounts(accounts, page, totalPages, search, filter)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getAccounts(ctx context.Context, search string, page int) ([]*app.Account, int, error) {
+func (s *service) getAccounts(ctx context.Context, search string, filter string, page int) ([]*app.Account, int, error) {
 	var accounts []*app.Account
 	var totalCount int64
 
@@ -42,6 +43,15 @@ func (s *service) getAccounts(ctx context.Context, search string, page int) ([]*
 		Model(&app.Account{}).
 		Preload("Roles.Org").
 		Where("account_type IN ?", []app.AccountType{app.AccountTypeAuth0, app.AccountTypeAuth})
+
+	// Apply account type filter
+	switch filter {
+	case "nuon":
+		query = query.Where("email LIKE ?", "%@nuon.co")
+	case "user":
+		query = query.Where("email NOT LIKE ?", "%@nuon.co")
+		// "all" or empty = no additional filter
+	}
 
 	// Apply search filter if provided
 	if search != "" {

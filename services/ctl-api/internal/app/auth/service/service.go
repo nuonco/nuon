@@ -118,9 +118,13 @@ func New(params Params) (*service, error) {
 		return nil, fmt.Errorf("nuon_auth_session_key is required")
 	}
 
-	// Validate allowed domains (may not be empty)
-	if len(s.cfg.NuonAuthAllowedDomains) == 0 {
-		return nil, fmt.Errorf("nuon_auth_allowed_domains is required")
+	// NOTE(fd): an empty env var `""` produces [""] via StringToSliceHookFunc so we must
+	// filter out the empty strings
+	for _, domain := range s.cfg.NuonAuthAllowedDomains {
+		domain = strings.TrimSpace(domain)
+		if domain != "" {
+			s.allowedDomains = append(s.allowedDomains, strings.ToLower(domain))
+		}
 	}
 
 	// configure domain name for the auth service.
@@ -139,14 +143,6 @@ func New(params Params) (*service, error) {
 	defaultIP, err := s.getDefaultIdentityProvider()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load default identity provider: %w", err)
-	}
-
-	// Normalize allowed domains to lowercase
-	for _, domain := range s.cfg.NuonAuthAllowedDomains {
-		domain = strings.TrimSpace(domain)
-		if domain != "" {
-			s.allowedDomains = append(s.allowedDomains, strings.ToLower(domain))
-		}
 	}
 
 	s.l.Info("allowed domains configured",

@@ -20,6 +20,8 @@ func init() {
 	config.RegisterDefault("runner_http_port", "8083")
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8085")
+	config.RegisterDefault("worker_healthcheck_port", "8086")
+	config.RegisterDefault("worker_healthcheck_enabled", true)
 
 	// defaults for psql database
 	config.RegisterDefault("db_region", "us-west-2")
@@ -78,6 +80,10 @@ func init() {
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
+
+	// Blob storage configuration
+	config.RegisterDefault("blob_storage_bucket", "nuon-blobs")
+	config.RegisterDefault("blob_storage_region", "us-west-2")
 }
 
 type Config struct {
@@ -100,6 +106,9 @@ type Config struct {
 	RunnerHTTPPort         string `config:"runner_http_port" validate:"required"`
 	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
+
+	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
+	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
 
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
@@ -249,6 +258,10 @@ type Config struct {
 
 	EventLoopGeneralPurgeStaleDataCron        string        `config:"event_loop_general_purge_stale_data_cron"`
 	EventLoopGeneralPurgeStaleDataDurationAgo time.Duration `config:"event_loop_general_purge_stale_data_duration_ago" validate:"required"`
+
+	// Blob storage configuration
+	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
+	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {

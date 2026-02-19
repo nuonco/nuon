@@ -70,6 +70,8 @@ func (i WorkflowType) PastTenseName() string {
 		return "Deployed all components"
 	case WorkflowTypeSyncSecrets:
 		return "Synced secrets"
+	case WorkflowTypeActionWorkflowRun:
+		return "Action run"
 	default:
 	}
 
@@ -96,6 +98,8 @@ func (i WorkflowType) Name() string {
 		return "Reprovisioning sandbox"
 	case WorkflowTypeSyncSecrets:
 		return "Syncing secrets"
+	case WorkflowTypeActionWorkflowRun:
+		return "Action run"
 	default:
 	}
 
@@ -237,6 +241,11 @@ func (r *Workflow) AfterQuery(tx *gorm.DB) error {
 	r.Name = name
 	if component_name, ok := r.Metadata[WorkflowMetadataKeyWorkflowNameSuffix]; ok {
 		r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(component_name))
+	}
+	if r.Type == WorkflowTypeActionWorkflowRun {
+		if actionName, ok := r.Metadata["install_action_workflow_name"]; ok {
+			r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(actionName))
+		}
 	}
 
 	return nil

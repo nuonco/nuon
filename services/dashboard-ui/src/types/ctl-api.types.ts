@@ -45,6 +45,14 @@ export type TAppPoliciesConfig = {
   policies?: TAppPolicyConfig[]
 }
 
+// policy reports
+export type TPolicyReport = components['schemas']['app.PolicyReport']
+export type TPolicyReportOwnerType =
+  components['schemas']['app.PolicyReportOwnerType']
+export type TPolicyResult = components['schemas']['app.PolicyResult']
+export type TPolicyViolation = components['schemas']['app.PolicyViolation']
+export type TPolicyInputRef = components['schemas']['app.PolicyInputRef']
+
 // component
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig =

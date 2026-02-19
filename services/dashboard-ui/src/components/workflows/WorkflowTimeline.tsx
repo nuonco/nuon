@@ -62,7 +62,10 @@ export const WorkflowTimeline = ({
             className="inline-flex gap-2 items-center"
             href={`/${org.id}/${ownerType}/${ownerId}/workflows/${workflow.id}`}
           >
-            {workflow.name || toSentenceCase(snakeToWords(workflow.type))}
+            {workflow?.type === 'action_workflow_run' &&
+            workflow?.metadata?.adhoc_action
+              ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
+              : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
           </Link>
         )
 

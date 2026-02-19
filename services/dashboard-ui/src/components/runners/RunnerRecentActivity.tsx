@@ -5,6 +5,7 @@ import { Link } from '@/components/common/Link'
 import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
 import type { TRunnerJob } from '@/types'
@@ -31,24 +32,23 @@ interface IRunnerRecentActivity
   extends Omit<ITimeline<TRunnerJob>, 'events' | 'renderEvent'>,
     IPollingProps {
   initJobs: Array<TRunnerJob>
-  runnerId: string
 }
 
 export const RunnerRecentActivity = ({
   initJobs,
   pagination,
-  runnerId,
   shouldPoll = false,
   pollInterval = 20000,
 }: IRunnerRecentActivity) => {
   const { org } = useOrg()
+  const { runner } = useRunner()
   const queryParams = useQueryParams({
     offset: pagination?.offset,
     limit: 10,
   })
   const { data: jobs } = usePolling<TRunnerJob[]>({
     dependencies: [queryParams],
-    path: `/api/orgs/${org?.id}/runners/${runnerId}/jobs${queryParams}`,
+    path: `/api/orgs/${org?.id}/runners/${runner?.id}/jobs${queryParams}`,
     shouldPoll,
     initData: initJobs,
     pollInterval,

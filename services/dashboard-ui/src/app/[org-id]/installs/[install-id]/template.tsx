@@ -70,6 +70,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
                 text: 'Roles',
               },
               {
+                path: `/policies`,
+                iconVariant: 'ShieldCheck',
+                text: 'Policies',
+              },
+              {
                 path: `/workflows`,
                 iconVariant: 'TreeStructure',
                 text: 'Workflows',
@@ -188,6 +193,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   path: `/roles`,
                   iconVariant: 'FileLock',
                   text: 'Roles',
+                },
+                {
+                  path: `/policies`,
+                  iconVariant: 'ShieldCheck',
+                  text: 'Policies',
                 },
                 {
                   path: `/workflows`,

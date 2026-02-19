@@ -88,7 +88,7 @@ export const InstallActionRunOutputs = () => {
                     </Text>
                   </Text>
                   <JSONViewer
-                    className="border-none !rounded-t-none"
+                    className="border-none !rounded-t-none max-h-[600px] overflow-auto"
                     data={outputs}
                     expanded={3}
                   />
@@ -127,6 +127,10 @@ function extractQuickReference(output, maxItems = 6) {
   const candidates = []
 
   function traverse(obj, path = []) {
+    if (obj === null) {
+      return
+    }
+
     for (const [key, value] of Object.entries(obj)) {
       const fullPath = [...path, key].join('.')
 
@@ -145,6 +149,7 @@ function extractQuickReference(output, maxItems = 6) {
 
       // Don't go too deep or into arrays
       if (
+        value !== null &&
         typeof value === 'object' &&
         !Array.isArray(value) &&
         path.length < 2

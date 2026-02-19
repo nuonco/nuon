@@ -93,16 +93,8 @@ func (s *CreateOrgTestSuite) TearDownSuite() {
 }
 
 func (s *CreateOrgTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
+	ctx := context.Background()
+	_, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 }
 
 func (s *CreateOrgTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -470,8 +462,9 @@ func (s *CreateOrgTestSuite) TestCreateOrgDuplicateName() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	existingOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "duplicate-org",
+		ID:          domains.NewOrgID(),
+		Name:        "duplicate-org",
+		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",
 		},

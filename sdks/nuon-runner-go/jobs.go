@@ -37,7 +37,6 @@ func (c *client) GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob
 	return resp.Payload, nil
 }
 
-// DEPRECATED: Use GetJobCompositePlan instead
 func (c *client) GetJobPlanJSON(ctx context.Context, jobID string) (string, error) {
 	resp, err := c.genClient.Operations.GetRunnerJobPlan(&operations.GetRunnerJobPlanParams{
 		RunnerJobID: jobID,
@@ -45,18 +44,6 @@ func (c *client) GetJobPlanJSON(ctx context.Context, jobID string) (string, erro
 	}, c.getAuthInfo())
 	if err != nil {
 		return "", err
-	}
-
-	return resp.Payload, nil
-}
-
-func (c *client) GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error) {
-	resp, err := c.genClient.Operations.GetRunnerJobCompositePlan(&operations.GetRunnerJobCompositePlanParams{
-		RunnerJobID: jobID,
-		Context:     ctx,
-	}, c.getAuthInfo())
-	if err != nil {
-		return nil, err
 	}
 
 	return resp.Payload, nil

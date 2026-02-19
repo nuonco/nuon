@@ -5,7 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
 	"github.com/nuonco/nuon/services/ctl-api/docs/admin"
 	"github.com/nuonco/nuon/services/ctl-api/docs/public"
@@ -156,6 +162,249 @@ func parseSwaggerSpec(t *testing.T, specJSON string, specName string) *SwaggerSp
 	require.NoError(t, err, "Failed to parse swagger spec JSON for %s", specName)
 
 	return &spec
+}
+
+// TestSwaggerRoutesRegisteredInGin validates that every route documented in the OpenAPI specs
+// is actually registered in the corresponding gin router. This catches cases where a swagger
+// annotation exists but the route was never wired up, or where the path doesn't match.
+func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// All domain services are registered in fxmodules.domainServices — the single
+	// source of truth for both FX dependency injection and this test.
+	ea := api.NewEndpointAudit()
+	services := fxmodules.TestDomainServices(ea)
+
+	// Each swagger spec maps to one or more route-registration methods.
+	// The public spec includes routes from both RegisterPublicRoutes (unauthenticated)
+	// and RegisterAuthRoutes (authenticated) since they share the same swagger doc.
+	specs := []struct {
+		name      string
+		specJSON  string
+		registers []func(api.Service, *gin.Engine) error
+	}{
+		{
+			name:     "public",
+			specJSON: public.SwaggerInfo.ReadDoc(),
+			registers: []func(api.Service, *gin.Engine) error{
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterPublicRoutes(e) },
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterAuthRoutes(e) },
+			},
+		},
+		{
+			name:     "admin",
+			specJSON: admin.SwaggerInfoadmin.ReadDoc(),
+			registers: []func(api.Service, *gin.Engine) error{
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterInternalRoutes(e) },
+			},
+		},
+		{
+			name:     "runner",
+			specJSON: runner.SwaggerInforunner.ReadDoc(),
+			registers: []func(api.Service, *gin.Engine) error{
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterRunnerRoutes(e) },
+			},
+		},
+	}
+
+	for _, spec := range specs {
+		t.Run(spec.name, func(t *testing.T) {
+			// Build a gin engine with all domain service routes registered.
+			engine := gin.New()
+			for _, svc := range services {
+				for _, register := range spec.registers {
+					err := register(svc, engine)
+					require.NoError(t, err, "failed to register routes for %s", spec.name)
+				}
+			}
+
+			// Collect all registered gin routes as "METHOD /path" keys.
+			ginRoutes := make(map[string]struct{})
+			for _, route := range engine.Routes() {
+				key := route.Method + " " + route.Path
+				ginRoutes[key] = struct{}{}
+			}
+
+			// Parse the swagger spec.
+			swaggerSpec := parseSwaggerSpec(t, spec.specJSON, spec.name)
+
+			// Check every documented swagger route is registered in gin.
+			var missing []string
+			for path, pathItem := range swaggerSpec.Paths {
+				ginPath := swaggerPathToGinPath(path)
+				for _, method := range getPathMethods(pathItem) {
+					key := method + " " + ginPath
+					if _, ok := ginRoutes[key]; !ok {
+						missing = append(missing, key)
+					}
+				}
+			}
+
+			if len(missing) > 0 {
+				sort.Strings(missing)
+				msg := fmt.Sprintf("Found %d swagger route(s) in %s spec not registered in gin:\n", len(missing), spec.name)
+				for _, r := range missing {
+					msg += fmt.Sprintf("  - %s\n", r)
+				}
+				assert.Fail(t, msg)
+			}
+		})
+	}
+}
+
+// swaggerPathToGinPath converts swagger path parameters like {id} to gin-style :id.
+func swaggerPathToGinPath(path string) string {
+	var result strings.Builder
+	for i := 0; i < len(path); i++ {
+		if path[i] == '{' {
+			result.WriteByte(':')
+			i++ // skip '{'
+			for i < len(path) && path[i] != '}' {
+				result.WriteByte(path[i])
+				i++
+			}
+			// skip '}'
+		} else {
+			result.WriteByte(path[i])
+		}
+	}
+	return result.String()
+}
+
+// getPathMethods returns the HTTP methods defined on a swagger PathItem.
+func getPathMethods(p PathItem) []string {
+	var methods []string
+	if p.Get != nil {
+		methods = append(methods, "GET")
+	}
+	if p.Post != nil {
+		methods = append(methods, "POST")
+	}
+	if p.Put != nil {
+		methods = append(methods, "PUT")
+	}
+	if p.Patch != nil {
+		methods = append(methods, "PATCH")
+	}
+	if p.Delete != nil {
+		methods = append(methods, "DELETE")
+	}
+	return methods
+}
+
+// extractPathParams extracts parameter names from {param} placeholders in a swagger path.
+func extractPathParams(path string) []string {
+	var params []string
+	for i := 0; i < len(path); i++ {
+		if path[i] == '{' {
+			i++ // skip '{'
+			start := i
+			for i < len(path) && path[i] != '}' {
+				i++
+			}
+			params = append(params, path[start:i])
+		}
+	}
+	return params
+}
+
+// getOperations returns a map of HTTP method name to Operation for a PathItem.
+func getOperations(p PathItem) map[string]*Operation {
+	ops := make(map[string]*Operation)
+	if p.Get != nil {
+		ops["GET"] = p.Get
+	}
+	if p.Post != nil {
+		ops["POST"] = p.Post
+	}
+	if p.Put != nil {
+		ops["PUT"] = p.Put
+	}
+	if p.Patch != nil {
+		ops["PATCH"] = p.Patch
+	}
+	if p.Delete != nil {
+		ops["DELETE"] = p.Delete
+	}
+	return ops
+}
+
+// TestSwaggerParamNamesConsistency validates that @Param path annotations are consistent
+// with {param} placeholders in swagger paths. This catches cases where @Router was updated
+// (e.g., renaming a path param) but the @Param annotation wasn't, or vice versa.
+func TestSwaggerParamNamesConsistency(t *testing.T) {
+	specs := []struct {
+		name     string
+		specJSON string
+	}{
+		{
+			name:     "public",
+			specJSON: public.SwaggerInfo.ReadDoc(),
+		},
+		{
+			name:     "admin",
+			specJSON: admin.SwaggerInfoadmin.ReadDoc(),
+		},
+		{
+			name:     "runner",
+			specJSON: runner.SwaggerInforunner.ReadDoc(),
+		},
+	}
+
+	for _, spec := range specs {
+		t.Run(spec.name, func(t *testing.T) {
+			swaggerSpec := parseSwaggerSpec(t, spec.specJSON, spec.name)
+
+			var violations []string
+
+			for path, pathItem := range swaggerSpec.Paths {
+				pathParams := extractPathParams(path)
+
+				for method, op := range getOperations(pathItem) {
+					// Collect @Param names where in=path
+					annotatedParams := make(map[string]bool)
+					for _, param := range op.Parameters {
+						if param.In == "path" {
+							annotatedParams[param.Name] = true
+						}
+					}
+
+					// Build set from URL path params
+					urlParams := make(map[string]bool)
+					for _, p := range pathParams {
+						urlParams[p] = true
+					}
+
+					// Check: every {param} in URL has a matching @Param annotation
+					for _, p := range pathParams {
+						if !annotatedParams[p] {
+							violations = append(violations, fmt.Sprintf(
+								"%s %s (operation: %s): path has {%s} but no @Param annotation with in=path for %q",
+								method, path, op.OperationID, p, p))
+						}
+					}
+
+					// Check: every @Param in=path appears in the URL
+					for name := range annotatedParams {
+						if !urlParams[name] {
+							violations = append(violations, fmt.Sprintf(
+								"%s %s (operation: %s): @Param %q has in=path but {%s} not found in URL",
+								method, path, op.OperationID, name, name))
+						}
+					}
+				}
+			}
+
+			if len(violations) > 0 {
+				sort.Strings(violations)
+				msg := fmt.Sprintf("Found %d @Param/path inconsistency(ies) in %s spec:\n", len(violations), spec.name)
+				for _, v := range violations {
+					msg += fmt.Sprintf("  - %s\n", v)
+				}
+				assert.Fail(t, msg)
+			}
+		})
+	}
 }
 
 // TestSwaggerSpecsExist validates that all required swagger spec files exist

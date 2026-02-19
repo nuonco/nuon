@@ -84,6 +84,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			{
 				invites.GET("", s.GetOrgInvites)
 				invites.POST("", s.CreateOrgInvite)
+				invites.POST("/:invite_id/resend", s.ResendOrgInvite)
 			}
 
 			// runners
@@ -139,6 +140,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			org.POST("/admin-force-sandbox-mode", s.AdminForceSandboxMode)
 			org.POST("/admin-restart-runners", s.AdminRestartRunners)
 			org.PATCH("/admin-features", s.AdminUpdateOrgFeatures)
+			org.POST("/admin-add-tags", s.AdminAddTags)
+			org.POST("/admin-remove-tags", s.AdminRemoveTags)
 		}
 	}
 

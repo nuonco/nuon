@@ -19,11 +19,25 @@ func (p *Planner) createHelmBuildPlan(ctx workflow.Context, bld *app.ComponentBu
 		}
 	}
 
+	values := make([]plantypes.HelmValue, 0)
+	for key, value := range helmCompCfg.HelmConfig.Values {
+		if value == nil {
+			continue
+		}
+		values = append(values, plantypes.HelmValue{
+			Name:  key,
+			Value: *value,
+			Type:  "auto",
+		})
+	}
+
 	return &plantypes.HelmBuildPlan{
 		Labels: map[string]string{
 			"component_id":       bld.ComponentID,
 			"component_build_id": bld.ID,
 		},
 		HelmRepoConfig: helmCfg,
+		ValuesFiles:    helmCompCfg.HelmConfig.ValuesFiles,
+		Values:         values,
 	}, nil
 }

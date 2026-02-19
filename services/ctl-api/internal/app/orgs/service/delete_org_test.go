@@ -26,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 // DeleteOrgTestService holds all fx-injected dependencies for delete org tests.
@@ -39,6 +40,7 @@ type DeleteOrgTestService struct {
 	OrgsHelpers     *orgshelpers.Helpers
 	RunnersHelpers  *runnershelpers.Helpers
 	AccountsHelpers *accountshelpers.Helpers
+	Seeder          *testseed.Seeder
 }
 
 // DeleteOrgTestSuite is the testify suite for delete org endpoint.
@@ -112,30 +114,9 @@ func (s *DeleteOrgTestSuite) TearDownSuite() {
 }
 
 func (s *DeleteOrgTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 }
 
 func (s *DeleteOrgTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -163,9 +144,10 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "default-org",
-					OrgType: app.OrgTypeDefault,
+					ID:          domains.NewOrgID(),
+					Name:        "default-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},
@@ -190,9 +172,10 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				org := &app.Org{
-					ID:      domains.NewOrgID(),
-					Name:    "integration-org",
-					OrgType: app.OrgTypeIntegration,
+					ID:          domains.NewOrgID(),
+					Name:        "integration-org",
+					SandboxMode: true,
+					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 					},

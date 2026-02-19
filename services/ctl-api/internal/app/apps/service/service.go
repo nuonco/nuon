@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -31,6 +32,7 @@ type Params struct {
 	AccountsHelpers *accountshelpers.Helpers
 	EvClient        eventloop.Client
 	EndpointAudit   *api.EndpointAudit
+	TemporalClient  temporalclient.Client
 }
 
 type service struct {
@@ -45,6 +47,7 @@ type service struct {
 	installsHelpers *installshelpers.Helpers
 	accountsHelpers *accountshelpers.Helpers
 	evClient        eventloop.Client
+	temporalClient  temporalclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -100,7 +103,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		secretsConfigs := app.Group("/secrets-configs")
 		{
 			secretsConfigs.POST("", s.CreateAppSecretsConfig)
-			secretsConfigs.GET("", s.GetAppSecretsConfig)
+			secretsConfigs.GET("/:config_id", s.GetAppSecretsConfig)
 		}
 
 		// app stack configs
@@ -115,21 +118,21 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		{
 			policiesConfigs.GET("", s.GetAppPoliciesConfigs)
 			policiesConfigs.POST("", s.CreateAppPoliciesConfig)
-			policiesConfigs.GET("/:app_policies_config_id", s.GetAppPoliciesConfig)
+			policiesConfigs.GET("/:config_id", s.GetAppPoliciesConfig)
 		}
 
 		// app break glass
 		breakGlassConfigs := app.Group("/break-glass-configs")
 		{
 			breakGlassConfigs.POST("", s.CreateAppBreakGlasssConfig)
-			breakGlassConfigs.GET("/:app_break_glass_config_id", s.GetAppBreakGlassConfig)
+			breakGlassConfigs.GET("/:config_id", s.GetAppBreakGlassConfig)
 		}
 
 		// app permissions
 		permissionsConfigs := app.Group("/permissions-configs")
 		{
 			permissionsConfigs.POST("", s.CreateAppPermissionsConfig)
-			permissionsConfigs.GET("/:app_permissions_config_id", s.GetAppPermissionsConfig)
+			permissionsConfigs.GET("/:config_id", s.GetAppPermissionsConfig)
 		}
 
 		// app runner management
@@ -237,5 +240,6 @@ func New(params Params) *service {
 		installsHelpers: params.InstallsHelpers,
 		accountsHelpers: params.AccountsHelpers,
 		evClient:        params.EvClient,
+		temporalClient:  params.TemporalClient,
 	}
 }

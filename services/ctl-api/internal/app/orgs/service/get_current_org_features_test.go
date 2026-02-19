@@ -74,30 +74,9 @@ func (s *GetCurrentOrgFeaturesTestSuite) TearDownSuite() {
 }
 
 func (s *GetCurrentOrgFeaturesTestSuite) setupTestData() {
-	// Create test account
-	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
-		AccountType: app.AccountTypeAuth0,
-	}
-	err := s.service.DB.Create(testAcc).Error
-	require.NoError(s.T(), err)
-	s.testAcc = testAcc
-
-	// Create basic test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
-	ctx = cctx.SetAccountContext(ctx, testAcc)
-	testOrg := &app.Org{
-		ID:   domains.NewOrgID(),
-		Name: "test-org",
-		NotificationsConfig: app.NotificationsConfig{
-			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-		},
-	}
-	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
-	require.NoError(s.T(), err)
-	s.testOrg = testOrg
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	_, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 }
 
 func (s *GetCurrentOrgFeaturesTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -140,8 +119,9 @@ func (s *GetCurrentOrgFeaturesTestSuite) TestGetCurrentOrgFeaturesResponseFormat
 		ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 		org := &app.Org{
-			ID:   domains.NewOrgID(),
-			Name: "org-json-format",
+			ID:          domains.NewOrgID(),
+			Name:        "org-json-format",
+			SandboxMode: true,
 			NotificationsConfig: app.NotificationsConfig{
 				InternalSlackWebhookURL: "https://hooks.slack.com/test",
 			},

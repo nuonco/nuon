@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						GetRunnerJob
@@ -40,6 +41,23 @@ func (s *service) GetRunnerJob(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJob)
 }
 
+func (s *service) GetRunnerJobPublic(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	runnerJobID := ctx.Param("runner_job_id")
+
+	runnerJob, err := s.getOrgRunnerJob(ctx, runnerJobID, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, runnerJob)
+}
+
 func (s *service) getRunnerJob(ctx context.Context, runnerJobID string) (*app.RunnerJob, error) {
 	runnerJob := app.RunnerJob{}
 	res := s.db.WithContext(ctx).
@@ -54,12 +72,26 @@ func (s *service) getRunnerJob(ctx context.Context, runnerJobID string) (*app.Ru
 	return &runnerJob, nil
 }
 
+func (s *service) getOrgRunnerJob(ctx context.Context, runnerJobID string, orgID string) (*app.RunnerJob, error) {
+	runnerJob := app.RunnerJob{}
+	res := s.db.WithContext(ctx).
+		Preload("Executions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("runner_job_executions.created_at DESC").Limit(1)
+		}).
+		First(&runnerJob, "id = ? AND org_id = ?", runnerJobID, orgID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)
+	}
+
+	return &runnerJob, nil
+}
+
 // @ID						GetRunnerJobV2
 // @Summary				get runner job
 // @Description.markdown	get_runner_job.md
 // @Param					runner_id	path	string	true	"runner ID"
 // @Param					job_id	path	string	true	"job ID"
-// @Tags					runners,runners/runner
+// @Tags					runners/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey

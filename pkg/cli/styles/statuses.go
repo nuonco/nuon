@@ -35,3 +35,22 @@ func GetStatusStyle(status models.AppStatus) lipgloss.Style {
 	}
 	return TextDim
 }
+
+func IsActionableStatus(status models.AppStatus) bool {
+	switch status {
+	case models.AppStatusApprovalDashAwaiting,
+		models.AppStatusPending,
+		models.AppStatusInDashProgress,
+		models.AppStatusPlanning,
+		models.AppStatusApplying,
+		models.AppStatusQueued,
+		models.AppStatusGenerating,
+		models.AppStatusRetrying,
+		models.AppStatusBuilding,
+		models.AppStatusProvisioning,
+		models.AppStatusCheckingDashPlan:
+		return true
+	default:
+		return false
+	}
+}

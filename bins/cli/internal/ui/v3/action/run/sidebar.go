@@ -51,9 +51,10 @@ func (m *Model) setSidebarContent() string {
 		status := styles.GetStatusStyle(models.AppStatus(step.Status)).Render(fmt.Sprintf("[%s]", step.Status))
 
 		// Get step name from map, fallback to ID if not found
-		stepName := stepIDToName[step.StepID]
+		stepID := step.StepID
+		stepName := stepIDToName[stepID]
 		if stepName == "" {
-			stepName = step.StepID
+			stepName = stepID
 		}
 
 		stepSection := stepStyle.Render(fmt.Sprintf("%s %s", status, stepName))

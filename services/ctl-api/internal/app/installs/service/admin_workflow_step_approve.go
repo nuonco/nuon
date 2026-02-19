@@ -8,36 +8,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminWorkflowStepApproveRequest struct {
 	StepID string `json:"step_id"`
-}
-
-// @ID						AdminWorkflowStepApprove
-// @Description.markdown	update_install_runner.md
-// @Tags					installs/admin
-// @Security				AdminEmail
-// @Accept					json
-// @Param					req	body	AdminWorkflowStepApproveRequest	true	"Input"
-// @Produce					json
-// @Success					200	{object}	app.WorkflowStepApprovalResponse
-// @Router					/v1/admin-workflow-step-approve [post]
-func (s *service) AdminWorkflowStepApprove(ctx *gin.Context) {
-	var req AdminWorkflowStepApproveRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
-	}
-
-	approvalResponse, err := s.approveWorkflowStep(ctx, req.StepID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, approvalResponse)
-
 }
 
 func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.WorkflowStepApprovalResponse, error) {
@@ -88,8 +63,8 @@ func (s *service) approveWorkflowStep(ctx *gin.Context, stepID string) (*app.Wor
 // @Router					/v1/admin-install-workflow-step-approve [post]
 func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 	var req AdminWorkflowStepApproveRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

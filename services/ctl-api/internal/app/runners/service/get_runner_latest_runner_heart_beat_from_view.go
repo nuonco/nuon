@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type LatestRunnerHeartBeats map[string]*app.LatestRunnerHeartBeat
@@ -28,9 +29,14 @@ type LatestRunnerHeartBeats map[string]*app.LatestRunnerHeartBeat
 // @Success				200	{object}	LatestRunnerHeartBeats
 // @Router					/v1/runners/{runner_id}/heart-beats/latest [get]
 func (s *service) GetLatestRunnerHeartBeatFromView(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 	runnerID := ctx.Param("runner_id")
 
-	_, err := s.getRunner(ctx, runnerID)
+	_, err = s.getOrgRunner(ctx, runnerID, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 	"gorm.io/gorm/clause"
 )
@@ -45,8 +46,8 @@ func (s *service) CreateAppSecretV2(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppSecretRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
@@ -85,8 +86,8 @@ func (s *service) CreateAppSecret(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
 	var req CreateAppSecretRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 	if err := req.Validate(s.v); err != nil {

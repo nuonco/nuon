@@ -17,9 +17,58 @@ The dashboard is designed to be **simple, fast, and maintainable** without the c
 **Key Principles**:
 - **Server-side rendering** - No JavaScript frameworks, pure SSR with Templ
 - **Component-based** - Reusable templui components for UI consistency
-- **Read-only operations** - Dashboard is for viewing data, not modifying it
+- **Direct database access** - Use GORM directly, never HTTP API calls
+- **Admin operations** - Primarily viewing data, with write operations for admin tools
 - **Minimal dependencies** - Leverages Go's standard library and simple tooling
 - **Dark theme** - Matches Nuon brand with custom Tailwind configuration
+
+## ⚠️ CRITICAL WARNINGS FOR AI ASSISTANTS
+
+### 1. NEVER Run `templ generate` Manually
+
+**DO NOT EVER run `templ generate` in this directory.** The templ CLI has path issues that will break the generated imports.
+
+- ❌ `templ generate` - **NEVER DO THIS**
+- ✅ Edit `.templ` files and let the build process handle generation
+- The `_templ.go` files are auto-generated during the build/compilation process
+- Running `templ generate` manually will create broken import paths that are difficult to fix
+
+### 2. DO NOT Add Unnecessary Comments
+
+**Stop adding obvious comments everywhere.** The code should be self-explanatory.
+
+❌ **Bad - Unnecessary comments**:
+```go
+// Get the organization from context
+org := ctx.Org
+
+// Query the database for the organization
+result := s.db.Where("id = ?", orgID).First(&org)
+
+// Return the organization
+return org
+```
+
+✅ **Good - Clean code without noise**:
+```go
+var org app.Org
+if err := s.db.Where("id = ?", orgID).First(&org).Error; err != nil {
+    return nil, err
+}
+return &org, nil
+```
+
+**When comments ARE appropriate**:
+- Complex business logic that isn't obvious
+- Non-obvious workarounds or edge cases
+- Important architectural decisions
+- Public API documentation
+
+**When comments are NOT needed** (most of the time):
+- Obvious variable assignments
+- Standard CRUD operations
+- Self-explanatory function calls
+- Anything the code itself clearly expresses
 
 ## Technology Stack
 
@@ -39,15 +88,13 @@ Templ (https://templ.guide/) is a templating language for Go that compiles to Go
 # 1. Edit .templ files
 vim service/views/my_page.templ
 
-# 2. Generate Go code
-cd services/ctl-api/internal/app/admin_dashboard
-templ generate
+# 2. Build the application (generates _templ.go files automatically)
+go build ./services/ctl-api/...
 
-# 3. Compiled Go files created automatically
-# my_page_templ.go is generated and compiled with the rest of the app
+# The _templ.go files are auto-generated during compilation
 ```
 
-**Important**: `.templ` files are source files; `_templ.go` files are generated artifacts.
+**CRITICAL**: DO NOT run `templ generate` manually - it will break import paths. Let the build process handle generation.
 
 ### Component Library: templui
 
@@ -227,17 +274,17 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 }
 ```
 
-**Step 4: Generate Templ Files**
+**Step 4: Build Application**
 
 ```bash
-cd services/ctl-api/internal/app/admin_dashboard
-templ generate
+# DO NOT run templ generate manually
+# Just build the application and it will generate the Go files automatically
+go build ./services/ctl-api/...
 ```
 
 **Step 5: Format Go Code**
 
 ```bash
-cd /path/to/nuon
 go fmt ./services/ctl-api/internal/app/admin_dashboard/...
 ```
 
@@ -454,12 +501,8 @@ npx tailwindcss -i ./assets/css/input.css -o ./assets/css/output.css --watch
 
 **Debug Steps**:
 ```bash
-# Regenerate templates
-cd services/ctl-api/internal/app/admin_dashboard
-templ generate
-
-# Check for Go compilation errors
-cd /path/to/nuon
+# DO NOT run templ generate manually - it breaks imports
+# Just build to regenerate templates automatically
 go build ./services/ctl-api/...
 
 # Rebuild CSS
@@ -537,20 +580,83 @@ The admin dashboard routes are mounted on the admin API server (separate from pu
 
 ### Database Access
 
-The admin dashboard has **read-only** access to the ctl-api database via GORM:
+The admin dashboard has direct access to the ctl-api database via GORM.
 
+**CRITICAL RULE: Always Use GORM Directly**
+
+❌ **NEVER make HTTP API calls** from admin-dashboard handlers:
 ```go
-// Access via service.db
-func (s *service) getData(ctx context.Context) (*app.Model, error) {
-    var data app.Model
-    res := s.db.WithContext(ctx).
-        Where("condition = ?", value).
-        Find(&data)
-    return &data, res.Error
+// ❌ BAD - Do NOT do this
+func (s *service) UpdateSomething(c *gin.Context) {
+    // Making HTTP call to localhost API - FAILS IN PRODUCTION
+    resp, err := http.Post("http://localhost:8081/v1/resource", ...)
 }
 ```
 
-**Important**: Only use `SELECT` queries. Do not create, update, or delete records.
+✅ **ALWAYS use GORM directly** for database operations:
+```go
+// ✅ GOOD - Use GORM directly
+func (s *service) UpdateSomething(c *gin.Context) {
+    ctx := c.Request.Context()
+
+    // Get data from database
+    var data app.Model
+    if err := s.db.WithContext(ctx).Where("id = ?", id).First(&data).Error; err != nil {
+        // Handle error
+        return
+    }
+
+    // Update directly in database
+    data.Field = newValue
+    if err := s.db.WithContext(ctx).Model(&data).Updates(&data).Error; err != nil {
+        // Handle error
+        return
+    }
+}
+```
+
+**Why This Matters:**
+- HTTP calls to `localhost` work locally but **fail in production deployment**
+- Admin-dashboard runs in the same process as ctl-api and has direct database access
+- Direct GORM operations are faster and more reliable than HTTP calls
+- Handlers should operate on the database layer, not the API layer
+
+**Common Database Patterns:**
+
+```go
+// SELECT query
+func (s *service) getData(ctx context.Context, id string) (*app.Model, error) {
+    var data app.Model
+    res := s.db.WithContext(ctx).
+        Where("id = ?", id).
+        First(&data)
+    return &data, res.Error
+}
+
+// UPDATE operation
+func (s *service) updateData(ctx context.Context, id string, newValue string) error {
+    return s.db.WithContext(ctx).
+        Model(&app.Model{}).
+        Where("id = ?", id).
+        Update("field", newValue).
+        Error
+}
+
+// Multiple updates (use struct or map)
+func (s *service) updateMultipleFields(ctx context.Context, model *app.Model) error {
+    return s.db.WithContext(ctx).
+        Model(model).
+        Select("field1", "field2").  // Specify which fields to update
+        Updates(model).
+        Error
+}
+```
+
+**Read-Write Operations:**
+- Admin-dashboard CAN perform both read and write operations when needed
+- Always use transactions for multi-step operations
+- Use proper error handling and logging
+- Consider the impact of write operations (they're admin-only tools)
 
 ### Using ctl-api Models
 
@@ -574,10 +680,11 @@ import "github.com/nuonco/nuon/services/ctl-api/internal/app"
 
 ### Handler Development
 
-1. **Separate concerns** - HTTP logic in handlers, business logic in private methods
-2. **Use proper error handling** - log errors, return user-friendly messages
-3. **Follow naming conventions** - handlers are PascalCase, private methods are camelCase
-4. **Limit database queries** - use reasonable limits (e.g., 100 items)
+1. **NEVER use HTTP API calls** - Always use GORM directly for database operations
+2. **Separate concerns** - HTTP logic in handlers, business logic in private methods
+3. **Use proper error handling** - log errors, return user-friendly messages
+4. **Follow naming conventions** - handlers are PascalCase, private methods are camelCase
+5. **Limit database queries** - use reasonable limits (e.g., 100 items)
 
 ### Performance
 
@@ -588,10 +695,11 @@ import "github.com/nuonco/nuon/services/ctl-api/internal/app"
 
 ### Security
 
-1. **Read-only operations** - dashboard should never modify data
-2. **Admin authentication** - routes should require admin auth (handled by ctl-api)
-3. **No user input in queries** - use parameterized queries only
+1. **Admin-only operations** - All routes require admin authentication (handled by ctl-api)
+2. **Use GORM directly** - Never make HTTP calls to localhost APIs
+3. **Parameterized queries only** - Always use GORM's query builders with placeholders
 4. **Escape output** - templ handles this automatically
+5. **Careful with write operations** - Admin tools can modify data; consider impact
 
 ## Testing
 
@@ -639,12 +747,13 @@ open http://localhost:8085/
 
 ### Templ Generation Fails
 
-**Issue**: `templ generate` returns errors
+**Issue**: `_templ.go` files have broken imports or compilation errors
 
 **Solutions**:
+- **DO NOT run `templ generate` manually** - it will break import paths
 - Check `.templ` file syntax (missing brackets, imports)
-- Ensure templ CLI is installed: `go install github.com/a-h/templ/cmd/templ@latest`
 - Verify Go imports are correct
+- Let the build process handle generation: `go build ./services/ctl-api/...`
 
 ### Styles Not Applied
 
@@ -685,13 +794,21 @@ open http://localhost:8085/
 
 When working on the admin dashboard:
 
-1. **Always read this file first** to understand architecture and patterns
-2. **Use established patterns** for handlers, templates, and styling
-3. **Run `templ generate`** after creating/editing `.templ` files
-4. **Follow the two-method handler pattern** for consistency
-5. **Use templui components** rather than building custom UI
-6. **Maintain read-only operations** - no data modification
-7. **Test locally** before considering the task complete
-8. **Keep it simple** - avoid over-engineering
+1. **🚨 NEVER run `templ generate` manually** - It breaks import paths. Let the build process handle it.
+2. **🚨 NEVER use HTTP API calls** - Always use GORM directly for all database operations
+3. **🚨 DO NOT add unnecessary comments** - Code should be self-explanatory. Only comment non-obvious logic.
+4. **Always read this file first** to understand architecture and patterns
+5. **Use established patterns** for handlers, templates, and styling
+6. **Follow the two-method handler pattern** for consistency
+7. **Use templui components** rather than building custom UI
+8. **Direct database access only** - Use `s.db` for all data operations
+9. **Test locally** before considering the task complete
+10. **Keep it simple** - avoid over-engineering
+
+**Critical Reminders:**
+- HTTP calls to `localhost` or the admin API will work in development but **fail in production**
+- The admin-dashboard shares the same database connection as ctl-api and operates directly on the database layer using GORM
+- Running `templ generate` manually creates broken import paths - never do it
+- Stop adding obvious comments like "Get the org" or "Query the database" - the code is clear enough
 
 The admin dashboard is intentionally minimal and focused. Prefer simplicity over features.

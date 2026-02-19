@@ -3,25 +3,20 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Dropdown } from '@/components/common/Dropdown'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Menu } from '@/components/common/Menu'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { type IPagination } from '@/components/common/Pagination'
-import { Modal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useQueryParams } from '@/hooks/use-query-params'
 import type { TInstallStack } from '@/types'
-import { StackLinks } from './StackLinks'
-import { StackOutputs } from './StackOutputs'
+import { StackVersionDetails } from './StackVersionDetails'
 
 export type TInstallStackRow = {
   versionId: string
@@ -48,51 +43,7 @@ function parseInstallStackSummaryToTableData(
       ),
       runs: version?.runs?.length?.toString() || '-',
       createdAt: version?.created_at,
-      more: (
-        <Dropdown
-          id={`stack-${version.id}`}
-          icon=""
-          alignment="right"
-          buttonClassName="!p-1"
-          buttonText={<Icon variant="DotsThree" />}
-        >
-          <Menu>
-            <Modal
-              size="3/4"
-              heading="View stack links"
-              triggerButton={{
-                children: (
-                  <>
-                    View links <Icon variant="Link" />
-                  </>
-                ),
-                isMenuButton: true,
-                variant: 'ghost',
-              }}
-            >
-              <StackLinks
-                quick_link_url={version?.quick_link_url}
-                template_url={version?.template_url}
-              />
-            </Modal>
-            <Modal
-              size="3/4"
-              heading="View stack outputs"
-              triggerButton={{
-                children: (
-                  <>
-                    View outputs <Icon variant="CodeBlock" />
-                  </>
-                ),
-                isMenuButton: true,
-                variant: 'ghost',
-              }}
-            >
-              <StackOutputs runs={version?.runs} />
-            </Modal>
-          </Menu>
-        </Dropdown>
-      ),
+      more: <StackVersionDetails version={version} />,
     }
   })
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/helm"
 )
 
@@ -52,7 +53,7 @@ func (s *service) UpdateHelmRelease(ctx *gin.Context) {
 
 	var rls helm.Release
 	if err := ctx.ShouldBindJSON(&rls); err != nil {
-		ctx.Error(fmt.Errorf("failed to bind request body: %w", err))
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

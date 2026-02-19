@@ -20,7 +20,10 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	}
 
 	// build nested resources
-	stack, vpcParams := t.getVPCNestedStack(inp, tb)
+	stack, vpcParams, err := t.getVPCNestedStack(inp, tb)
+	if err != nil {
+		return nil, err
+	}
 	tmpl.Resources["VPC"] = stack
 	// vpcParams := t.getVPCNestedStackParams(inp)
 	maps.Copy(tmpl.Parameters, vpcParams)
@@ -43,7 +46,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 
 	paramlabels := map[string]any{}
 
-	// build roles
+	// build roles (before custom nested stacks so they can depend on them)
 	roles := t.getRolesResources(inp, tb)
 	maps.Copy(tmpl.Resources, roles)
 	roleParams := t.getRolesParameters(inp)
@@ -53,13 +56,30 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	roleParamLabels := t.getRolesParamLabels(inp)
 	maps.Copy(paramlabels, roleParamLabels)
 
+	// custom nested stacks
+	existingResourceKeys := map[string]bool{}
+	for k := range tmpl.Resources {
+		existingResourceKeys[k] = true
+	}
+	customResult, err := t.getCustomNestedStacks(inp, tb, existingResourceKeys)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range customResult.resources {
+		tmpl.Resources[k] = v
+	}
+	maps.Copy(tmpl.Parameters, customResult.params)
+
+	// NOTE(fd): if there are no secrets in the config, the section is not rendered.
 	// build secrets
-	secrets := t.getSecretsResources(inp, tb)
-	maps.Copy(tmpl.Resources, secrets)
-	secretParams := t.getSecretsParameters(inp)
-	maps.Copy(tmpl.Parameters, secretParams)
-	secretParamLabels := t.getSecretsParamLabels(inp)
-	maps.Copy(paramlabels, secretParamLabels)
+	if len(inp.AppCfg.SecretsConfig.Secrets) > 0 {
+		secrets := t.getSecretsResources(inp, tb)
+		maps.Copy(tmpl.Resources, secrets)
+		secretParams := t.getSecretsParameters(inp)
+		maps.Copy(tmpl.Parameters, secretParams)
+		secretParamLabels := t.getSecretsParamLabels(inp)
+		maps.Copy(paramlabels, secretParamLabels)
+	}
 
 	// build app input parameters for install_stack sourced inputs
 	installGroupParameters := t.getInstallInputGroupParameters(inp)
@@ -73,26 +93,29 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 
 	// parameter groups
 	var pgs []map[string]any
-	pgs = append(pgs, []map[string]any{
+	paramGroups := []map[string]any{
 		{
 			"Label": map[string]any{
 				"default": "VPC Configuration",
 			},
 			"Parameters": pkggenerics.MapToKeys(vpcParams),
 		},
-		{
+	}
+	if len(inp.AppCfg.SecretsConfig.Secrets) > 0 {
+		paramGroups = append(paramGroups, map[string]any{
 			"Label": map[string]any{
 				"default": "Application Secrets",
 			},
 			"Parameters": pkggenerics.MapToKeys(t.getSecretsParameters(inp)),
+		})
+	}
+	paramGroups = append(paramGroups, map[string]any{
+		"Label": map[string]any{
+			"default": "Access Permissions",
 		},
-		{
-			"Label": map[string]any{
-				"default": "Access Permissions",
-			},
-			"Parameters": pkggenerics.MapToKeys(t.getRolesParameters(inp)),
-		},
-	}...)
+		"Parameters": pkggenerics.MapToKeys(t.getRolesParameters(inp)),
+	})
+	pgs = append(pgs, paramGroups...)
 
 	// add app input parameter group if there are any install_stack sourced inputs
 	for groupName, installGroupParameters := range installGroupParameters {
@@ -103,6 +126,9 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			"Parameters": pkggenerics.MapToKeys(installGroupParameters),
 		})
 	}
+
+	// add custom nested stack parameter groups
+	pgs = append(pgs, customResult.paramGroups...)
 
 	tmpl.Metadata["AWS::CloudFormation::Interface"] = map[string]any{
 		"ParameterLabels": paramlabels,

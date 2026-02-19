@@ -29,6 +29,9 @@ type AppPolicyViolation struct {
 	// policy id
 	PolicyID string `json:"policy_id,omitempty"`
 
+	// policy name
+	PolicyName string `json:"policy_name,omitempty"`
+
 	// "deny" or "warn"
 	Severity string `json:"severity,omitempty"`
 }

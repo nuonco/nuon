@@ -9,9 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/pkg/generics"
@@ -71,6 +72,11 @@ func (h *handler) parseOutputs(ctx context.Context) (map[string]interface{}, err
 
 	steps := make(map[string]any, 0)
 	outputs := make(map[string]interface{}, 0)
+
+	// if the workflow config is not defined, this is an adhoc action
+	if h.state.workflowCfg == nil {
+		return outputs, nil
+	}
 
 	for _, stepCfg := range h.state.workflowCfg.Steps {
 		fh, err := os.Open(h.outputsFP(stepCfg))
