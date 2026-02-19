@@ -1,0 +1,23 @@
+---
+title: '030 - Policies'
+description: 'Enforce compliance, security, and operational standards across component deploys, sandbox runs, and external images.'
+---
+
+_Feb 19, 2026_
+
+## Policies
+
+Nuon now supports **Policies** for component deployments, sandbox runs, and external container images — extending beyond the existing in-cluster Kyverno policies to give you control over your entire deployment pipeline.
+
+### What's New
+
+- **Deploy-time policies**: Validate Terraform plans, Helm charts, and Kubernetes manifests before changes are applied. Block deployments with `deny` rules or log warnings with `warn` rules
+- **Sandbox policies**: Enforce standards on sandbox infrastructure provisioning
+- **External image policies**: Validate container image metadata during builds — check for signed images, SBOMs, and attestations before they reach your installs
+- **Policy reporting**: View and filter all policy evaluations across installs by status, type, and more — useful for compliance auditing and tracking policy adherence over time
+
+### Learn More
+
+- [Policies Concepts](/concepts/policies) — Understand how policies work, supported types, and evaluation phases
+- [Configuring Policies Guide](/guides/configuring-policies) — Step-by-step walkthrough for adding policies to your app
+- [Example Policies Repository](https://github.com/nuonco/policies) — Ready-to-use policy examples for Terraform and Kubernetes
