@@ -323,7 +323,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var15 templ.SafeURL
 								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + org.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 41, Col: 47}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 41, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {
@@ -336,7 +336,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var16 string
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(org.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 42, Col: 20}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 42, Col: 20}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -349,7 +349,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var17 string
 								templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs("org-id-" + org.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 45, Col: 39}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 45, Col: 39}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 								if templ_7745c5c3_Err != nil {
@@ -362,7 +362,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var18 string
 								templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(org.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 45, Col: 98}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 45, Col: 98}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 								if templ_7745c5c3_Err != nil {
@@ -407,7 +407,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var20 string
 								templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(string(org.OrgType))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 53, Col: 29}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 53, Col: 29}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 								if templ_7745c5c3_Err != nil {
@@ -464,7 +464,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var23 string
 								templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", org.AppCount))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 59, Col: 41}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 59, Col: 41}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 								if templ_7745c5c3_Err != nil {
@@ -495,7 +495,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var25 string
 								templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", org.InstallCount))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 62, Col: 45}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 62, Col: 45}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 								if templ_7745c5c3_Err != nil {
@@ -549,7 +549,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 											var templ_7745c5c3_Var28 string
 											templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(tag)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 71, Col: 17}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 71, Col: 17}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 											if templ_7745c5c3_Err != nil {
@@ -592,7 +592,7 @@ func OrgsTable(orgs []*app.Org, currentPage, totalPages int, searchQuery string,
 								var templ_7745c5c3_Var30 string
 								templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(org.CreatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 78, Col: 50}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 78, Col: 50}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 								if templ_7745c5c3_Err != nil {
@@ -752,7 +752,7 @@ func renderOrgsPagination(currentPage, totalPages int, searchQuery string, selec
 							var templ_7745c5c3_Var37 string
 							templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pageNum))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs_table.templ`, Line: 122, Col: 34}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `orgs_table.templ`, Line: 122, Col: 34}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 							if templ_7745c5c3_Err != nil {
