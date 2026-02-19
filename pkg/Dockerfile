@@ -2,8 +2,9 @@ FROM golang:1.25-alpine AS base
 
 WORKDIR /src
 
-# Copy module files and download dependencies
+# Copy module files and local replace targets, then download dependencies
 COPY --from=nuon go.mod go.sum ./
+COPY --from=nuon sdks ./sdks/
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-pkg \
     go mod download
 
