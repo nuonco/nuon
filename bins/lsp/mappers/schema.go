@@ -12,11 +12,12 @@ import (
 // The inner map contains properties available at that level.
 // Resolves $ref pointers to definitions to properly handle nested structures.
 // This is useful for context-aware property lookups in LSP features like hover, completion, etc.
-func BuildPropertyMap(schema *jsonschema.Schema) map[string]map[string]*jsonschema.Schema {
+func BuildPropertyMap(schema *jsonschema.Schema) (map[string]map[string]*jsonschema.Schema, map[string]map[string]bool) {
 	hierarchicalMap := make(map[string]map[string]*jsonschema.Schema)
+	requiredMap := make(map[string]map[string]bool)
 
 	if schema == nil {
-		return hierarchicalMap
+		return hierarchicalMap, requiredMap
 	}
 
 	// Use schema.Definitions directly as the lookup map for $ref resolution
@@ -32,7 +33,7 @@ func BuildPropertyMap(schema *jsonschema.Schema) map[string]map[string]*jsonsche
 		}
 	}
 
-	buildPropertyMapRecursive(rootSchema, "", hierarchicalMap, defsLookup)
+	buildPropertyMapRecursive(rootSchema, "", hierarchicalMap, requiredMap, defsLookup)
 	for _, s := range schema.AllOf {
 		defsLookup := s.Definitions
 		sh := s
@@ -42,15 +43,15 @@ func BuildPropertyMap(schema *jsonschema.Schema) map[string]map[string]*jsonsche
 				sh = resolved
 			}
 		}
-		buildPropertyMapRecursive(sh, "", hierarchicalMap, defsLookup)
+		buildPropertyMapRecursive(sh, "", hierarchicalMap, requiredMap, defsLookup)
 	}
-	return hierarchicalMap
+	return hierarchicalMap, requiredMap
 }
 
 // buildPropertyMapRecursive is the internal recursive function that populates the hierarchical property map
 // currentPath represents the dotted path to the current level (e.g., "public_repo" or "values_file")
 // defsLookup contains all schema definitions for $ref resolution
-func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hierarchicalMap map[string]map[string]*jsonschema.Schema, defsLookup map[string]*jsonschema.Schema) {
+func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hierarchicalMap map[string]map[string]*jsonschema.Schema, requiredMap map[string]map[string]bool, defsLookup map[string]*jsonschema.Schema) {
 	ignoredOneOffs := []string{
 		"component_type",
 		"docker_build",
@@ -72,6 +73,16 @@ func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hi
 	// Initialize the map for this path level if it doesn't exist
 	if hierarchicalMap[currentPath] == nil {
 		hierarchicalMap[currentPath] = make(map[string]*jsonschema.Schema)
+	}
+
+	// Track required fields for this level
+	if len(schema.Required) > 0 {
+		if requiredMap[currentPath] == nil {
+			requiredMap[currentPath] = make(map[string]bool)
+		}
+		for _, req := range schema.Required {
+			requiredMap[currentPath][req] = true
+		}
 	}
 
 	pair := schema.Properties.Oldest()
@@ -99,7 +110,7 @@ func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hi
 				if currentPath != "" {
 					nestedPath = currentPath + "." + key
 				}
-				buildPropertyMapRecursive(refDef, nestedPath, hierarchicalMap, defsLookup)
+				buildPropertyMapRecursive(refDef, nestedPath, hierarchicalMap, requiredMap, defsLookup)
 			}
 		} else if prop.Type == "array" && prop.Items != nil {
 			// Handle array types - check if items have $ref or properties
@@ -110,14 +121,14 @@ func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hi
 					if currentPath != "" {
 						nestedPath = currentPath + "." + key
 					}
-					buildPropertyMapRecursive(refDef, nestedPath, hierarchicalMap, defsLookup)
+					buildPropertyMapRecursive(refDef, nestedPath, hierarchicalMap, requiredMap, defsLookup)
 				}
 			} else if prop.Items.Properties != nil {
 				nestedPath := key
 				if currentPath != "" {
 					nestedPath = currentPath + "." + key
 				}
-				buildPropertyMapRecursive(prop.Items, nestedPath, hierarchicalMap, defsLookup)
+				buildPropertyMapRecursive(prop.Items, nestedPath, hierarchicalMap, requiredMap, defsLookup)
 			}
 		} else if prop.Properties != nil {
 			// Handle inline nested properties
@@ -125,7 +136,7 @@ func buildPropertyMapRecursive(schema *jsonschema.Schema, currentPath string, hi
 			if currentPath != "" {
 				nestedPath = currentPath + "." + key
 			}
-			buildPropertyMapRecursive(prop, nestedPath, hierarchicalMap, defsLookup)
+			buildPropertyMapRecursive(prop, nestedPath, hierarchicalMap, requiredMap, defsLookup)
 		}
 
 		pair = pair.Next()
