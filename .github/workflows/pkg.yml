@@ -60,13 +60,9 @@ jobs:
 
       - name: Generate code
         run: go generate ./pkg/...
-      - name: Setup nuonctl
-        uses: ./actions/setup-nuonctl
 
       - name: Run tests
         run: cd pkg && go test -v ./...
-      - name: 🧪 Tests
-        run: CI=true nuonctl tests run-all pkg
 
   update_status:
     name: update status
