@@ -55,7 +55,7 @@ func (a *Activities) CreateRepository(ctx context.Context, req *CreateRepository
 		resp.RepositoryName = *repo.RepositoryName
 		resp.RepositoryArn = *repo.RepositoryArn
 		resp.RepositoryURI = *repo.RepositoryUri
-		resp.Region = "us-west-2"
+		resp.Region = a.cfg.AppRegion
 		return &resp, nil
 	}
 	if !isEntityExistsException(err) {
@@ -71,7 +71,7 @@ func (a *Activities) CreateRepository(ctx context.Context, req *CreateRepository
 	resp.RepositoryName = *repo.RepositoryName
 	resp.RepositoryArn = *repo.RepositoryArn
 	resp.RepositoryURI = *repo.RepositoryUri
-	resp.Region = "us-west-2"
+	resp.Region = a.cfg.AppRegion
 	return &resp, nil
 }
 
