@@ -847,3 +847,4 @@ func (s *RenderStructTestSuite) TestRenderByteField() {
 		})
 	}
 }
+
