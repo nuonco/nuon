@@ -8,10 +8,10 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) List(ctx context.Context, offset, limit int, asJSON bool) error {
+func (s *Service) List(ctx context.Context, offset, limit int, search string, asJSON bool) error {
 	view := ui.NewListView()
 
-	orgs, hasMore, err := s.list(ctx, offset, limit)
+	orgs, hasMore, err := s.list(ctx, offset, limit, search)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -53,10 +53,11 @@ func (s *Service) List(ctx context.Context, offset, limit int, asJSON bool) erro
 	return nil
 }
 
-func (s *Service) list(ctx context.Context, offset, limit int) ([]*models.AppOrg, bool, error) {
+func (s *Service) list(ctx context.Context, offset, limit int, q string) ([]*models.AppOrg, bool, error) {
 	o, hasMore, err := s.api.GetOrgs(ctx, &models.GetPaginatedQuery{
 		Offset: offset,
 		Limit:  limit,
+		Q:      q,
 	})
 	if err != nil {
 		return nil, hasMore, err
