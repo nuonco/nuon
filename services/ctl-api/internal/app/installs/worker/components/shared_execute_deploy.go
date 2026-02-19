@@ -49,8 +49,14 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 
 	jobTyp := build.ComponentConfigConnection.Type.DeployPlanJobType()
 
+	runner := install.RunnerGroup.ActiveRunner()
+	if runner == nil {
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "no runners available in runner group")
+		return fmt.Errorf("no runners available in runner group for install %s", install.ID)
+	}
+
 	runnerJob, err := activities.AwaitCreateDeployJob(ctx, &activities.CreateDeployJobRequest{
-		RunnerID:        install.RunnerGroup.Runners[0].ID,
+		RunnerID:        runner.ID,
 		DeployID:        installDeploy.ID,
 		Op:              op,
 		Type:            jobTyp,

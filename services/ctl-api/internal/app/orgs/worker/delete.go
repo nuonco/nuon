@@ -40,7 +40,13 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 		l.Error("unable to deprovision org, continuing anyway", zap.Error(err))
 	}
 
-	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
+	runner := org.RunnerGroup.ActiveRunner()
+	if runner == nil {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "no runners available in runner group")
+		return fmt.Errorf("no runners available in runner group")
+	}
+
+	w.ev.Send(ctx, runner.ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDelete,
 	})
 	err = w.pollRunnerNotFound(ctx, sreq.ID)

@@ -85,9 +85,18 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to render cloudformation stack config")
 	}
 
-	runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get runner")
+	// Find the cloud runner matching the configured platform type.
+	// The stack template must use the cloud runner's ID (not the local leader's)
+	// so the provisioned VM heartbeats as the correct runner.
+	var runner *app.Runner
+	for i := range install.RunnerGroup.Runners {
+		if install.RunnerGroup.Runners[i].Platform == cfg.RunnerConfig.Type {
+			runner = &install.RunnerGroup.Runners[i]
+			break
+		}
+	}
+	if runner == nil {
+		return errors.Errorf("unable to find runner with platform %s in runner group", cfg.RunnerConfig.Type)
 	}
 
 	// need to generate a token
@@ -117,7 +126,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to update stack version")
 	}
 
-	token, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
+	token, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, runner.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner token")
 	}
