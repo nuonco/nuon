@@ -92,7 +92,10 @@ func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName
 	}
 
 	if !found {
-		return nil, fmt.Errorf("journey '%s' or step '%s' not found", journeyName, stepName)
+		return nil, stderr.ErrNotFound{
+			Err:         fmt.Errorf("journey '%s' or step '%s' not found", journeyName, stepName),
+			Description: fmt.Sprintf("journey '%s' or step '%s' not found on this account", journeyName, stepName),
+		}
 	}
 
 	// Save to database
