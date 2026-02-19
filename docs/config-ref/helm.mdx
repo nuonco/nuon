@@ -24,7 +24,7 @@ title: 'Helm'
 | `namespace` | `string` | No | namespace to deploy into. Defaults to \{\{.nuon.install.id\}\} and supports templating. | - | - |
 | `storage_driver` | `string` | No | which helm storage driver to use (defaults to configmap) | - | `"configmap"` |
 | `take_ownership` | `boolean` | No | - | - | - |
-| `drift_schedule` | `string` | No | - | - | - |
+| `drift_schedule` | `string` | No | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. | - | `"0 2 * * *"` |
 | `build_timeout` | `string` | No | build operation timeout Duration string for build operations (e.g., "30m", "1h"). | - | `"30m"` |
 | `deploy_timeout` | `string` | No | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | - | `"30m"` |
 | `value` | `array` | No | array of helm values (not recommended) | - | - |
