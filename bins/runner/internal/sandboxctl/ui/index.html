@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandbox Control</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e4ed;
+    --text-dim: #8b8fa3;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --danger: #ef4444;
+    --danger-hover: #f87171;
+    --success: #22c55e;
+    --warning: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; }
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    flex: 1;
+  }
+  .stat-label { font-size: 11px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; }
+  .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat-value.success { color: var(--success); }
+  .stat-value.danger { color: var(--danger); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px; color: var(--text-dim); font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  select, input[type="number"] {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  input[type="range"] { width: 80px; vertical-align: middle; }
+  .fault-val { display: inline-block; width: 36px; text-align: right; font-size: 12px; color: var(--text-dim); }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  button:hover { background: var(--accent-hover); }
+  button.danger { background: var(--danger); }
+  button.danger:hover { background: var(--danger-hover); }
+  button.secondary { background: var(--border); color: var(--text); }
+  button.secondary:hover { background: #3a3d4a; }
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+  .danger-zone { border-color: var(--danger); }
+  .danger-zone h2 { color: var(--danger); }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .job-type-name { font-family: monospace; font-size: 12px; }
+  .category-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--border);
+    color: var(--text-dim);
+    margin-left: 6px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Sandbox Control</h1>
+<p class="subtitle">Control sandbox job behavior, inject faults, and monitor execution.</p>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-label">Executed</div><div class="stat-value" id="stat-executed">0</div></div>
+  <div class="stat"><div class="stat-label">Succeeded</div><div class="stat-value success" id="stat-succeeded">0</div></div>
+  <div class="stat"><div class="stat-label">Failed</div><div class="stat-value danger" id="stat-failed">0</div></div>
+</div>
+
+<div class="card">
+  <h2>Job Types</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Job Type</th>
+        <th>Preset</th>
+        <th>Duration</th>
+        <th>Fault Rate</th>
+      </tr>
+    </thead>
+    <tbody id="job-types-body"></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Global Controls</h2>
+  <div class="btn-row">
+    <button class="secondary" onclick="resetAll()">Reset All to Defaults</button>
+  </div>
+</div>
+
+<div class="card danger-zone">
+  <h2>Danger Zone</h2>
+  <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">These actions affect the next job that runs.</p>
+  <div class="btn-row">
+    <button class="danger" onclick="armPanic()">Panic on Next Job</button>
+    <button class="danger" onclick="armShutdown()">Shutdown on Next Job</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1/sandbox';
+let presets = {};
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  return res.json();
+}
+
+async function loadPresets() {
+  presets = await api('GET', '/presets');
+}
+
+async function loadState() {
+  const state = await api('GET', '/state');
+  renderJobTypes(state.job_types);
+  document.getElementById('stat-executed').textContent = state.stats.jobs_executed;
+  document.getElementById('stat-succeeded').textContent = state.stats.jobs_succeeded;
+  document.getElementById('stat-failed').textContent = state.stats.jobs_failed;
+}
+
+function renderJobTypes(jobTypes) {
+  const tbody = document.getElementById('job-types-body');
+  tbody.innerHTML = '';
+
+  const sorted = Object.keys(jobTypes).sort();
+  for (const jt of sorted) {
+    const cfg = jobTypes[jt];
+    const tr = document.createElement('tr');
+
+    // name
+    const tdName = document.createElement('td');
+    tdName.innerHTML = '<span class="job-type-name">' + jt + '</span>';
+    tr.appendChild(tdName);
+
+    // preset dropdown
+    const tdPreset = document.createElement('td');
+    const sel = document.createElement('select');
+    sel.dataset.jobType = jt;
+    const available = presets[jt] || [{ name: 'default', description: 'Default' }];
+    for (const p of available) {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name;
+      if (p.name === cfg.preset) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    sel.onchange = () => applyPreset(jt, sel.value);
+    tdPreset.appendChild(sel);
+    tr.appendChild(tdPreset);
+
+    // duration
+    const tdDur = document.createElement('td');
+    const durInput = document.createElement('input');
+    durInput.type = 'number';
+    durInput.min = 0;
+    durInput.step = 1000;
+    durInput.value = Math.round(cfg.duration_ms / 1000000);
+    durInput.style.width = '70px';
+    durInput.title = 'Duration in ms';
+    durInput.onchange = () => updateConfig(jt, { duration_ms: durInput.value * 1000000, preset: cfg.preset, fault_rate: cfg.fault_rate });
+    tdDur.appendChild(durInput);
+    const ms = document.createElement('span');
+    ms.textContent = ' ms';
+    ms.style.fontSize = '11px';
+    ms.style.color = 'var(--text-dim)';
+    tdDur.appendChild(ms);
+    tr.appendChild(tdDur);
+
+    // fault rate
+    const tdFault = document.createElement('td');
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 0;
+    slider.max = 100;
+    slider.value = Math.round((cfg.fault_rate || 0) * 100);
+    const fval = document.createElement('span');
+    fval.className = 'fault-val';
+    fval.textContent = slider.value + '%';
+    slider.oninput = () => { fval.textContent = slider.value + '%'; };
+    slider.onchange = () => updateConfig(jt, { duration_ms: cfg.duration_ms, preset: cfg.preset, fault_rate: slider.value / 100 });
+    tdFault.appendChild(slider);
+    tdFault.appendChild(fval);
+    tr.appendChild(tdFault);
+
+    tbody.appendChild(tr);
+  }
+}
+
+async function applyPreset(jobType, preset) {
+  await api('PUT', '/job-types/' + encodeURIComponent(jobType) + '/preset/' + encodeURIComponent(preset));
+  toast('Applied ' + preset + ' to ' + jobType);
+  loadState();
+}
+
+async function updateConfig(jobType, cfg) {
+  await api('PUT', '/job-types/' + encodeURIComponent(jobType), cfg);
+  toast('Updated ' + jobType);
+}
+
+async function resetAll() {
+  if (!confirm('Reset all job types to defaults?')) return;
+  await api('POST', '/reset');
+  toast('Reset to defaults');
+  loadState();
+}
+
+async function armPanic() {
+  if (!confirm('The next sandbox job will cause a runner panic. Continue?')) return;
+  await api('POST', '/panic');
+  toast('Panic armed for next job');
+}
+
+async function armShutdown() {
+  if (!confirm('The next sandbox job will trigger runner shutdown. Continue?')) return;
+  await api('POST', '/shutdown');
+  toast('Shutdown armed for next job');
+}
+
+async function refreshStats() {
+  const stats = await api('GET', '/stats');
+  document.getElementById('stat-executed').textContent = stats.jobs_executed;
+  document.getElementById('stat-succeeded').textContent = stats.jobs_succeeded;
+  document.getElementById('stat-failed').textContent = stats.jobs_failed;
+}
+
+(async () => {
+  await loadPresets();
+  await loadState();
+  setInterval(refreshStats, 2000);
+})();
+</script>
+</body>
+</html>
