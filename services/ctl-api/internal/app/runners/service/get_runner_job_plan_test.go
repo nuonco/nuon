@@ -494,3 +494,365 @@ func (s *GetRunnerJobPlanPublicTestSuite) TestGetRunnerJobPlanDifferentJobTypes(
 		})
 	}
 }
+
+// V2 Test Suite for GetRunnerJobPlanV2 (runner routes)
+
+type GetRunnerJobPlanV2TestService struct {
+	fx.In
+	DB             *gorm.DB `name:"psql"`
+	CHDB           *gorm.DB `name:"ch"`
+	V              *validator.Validate
+	L              *zap.Logger
+	Seeder         *testseed.Seeder
+	RunnersService *service
+}
+
+type GetRunnerJobPlanV2TestSuite struct {
+	tests.BaseDBTestSuite
+	app           *fxtest.App
+	service       GetRunnerJobPlanV2TestService
+	router        *gin.Engine
+	testOrg       *app.Org
+	testAcc       *app.Account
+	testRunner    *app.Runner
+	testRunnerGrp *app.RunnerGroup
+	testLogStream *app.LogStream
+}
+
+func TestGetRunnerJobPlanV2Suite(t *testing.T) {
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
+	suite.Run(t, new(GetRunnerJobPlanV2TestSuite))
+}
+
+func (s *GetRunnerJobPlanV2TestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
+	gin.SetMode(gin.TestMode)
+
+	options := append(
+		tests.CtlApiFXOptions(),
+		fx.Provide(New),
+		fx.Populate(&s.service),
+	)
+
+	s.app = fxtest.New(s.T(), options...)
+	s.app.RequireStart()
+	s.SetDB(s.service.DB)
+}
+
+func (s *GetRunnerJobPlanV2TestSuite) SetupTest() {
+	s.BaseDBTestSuite.SetupTest()
+	s.setupTestData()
+
+	// Create router with runner routes (no TestOrg/TestAcc needed)
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:  s.service.L,
+		DB: s.service.DB,
+	})
+	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
+	require.NoError(s.T(), err)
+}
+
+func (s *GetRunnerJobPlanV2TestSuite) TearDownSuite() {
+	s.app.RequireStop()
+}
+
+func (s *GetRunnerJobPlanV2TestSuite) setupTestData() {
+	ctx := context.Background()
+
+	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+
+	// Create log stream for runner jobs
+	s.testLogStream = &app.LogStream{
+		ID:      domains.NewLogStreamID(),
+		OrgID:   s.testOrg.ID,
+		OwnerID: s.testOrg.ID,
+		Open:    true,
+	}
+	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
+	require.NoError(s.T(), err)
+
+	// Create runner group
+	s.testRunnerGrp = &app.RunnerGroup{
+		ID:        domains.NewRunnerGroupID(),
+		OrgID:     s.testOrg.ID,
+		OwnerID:   s.testOrg.ID,
+		OwnerType: "org",
+		Type:      app.RunnerGroupTypeOrg,
+		Platform:  app.AppRunnerTypeAWSEKS,
+	}
+	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
+	require.NoError(s.T(), err)
+
+	// Create runner
+	s.testRunner = &app.Runner{
+		ID:            domains.NewRunnerID(),
+		OrgID:         s.testOrg.ID,
+		Name:          "test-runner",
+		DisplayName:   "Test Runner",
+		Status:        app.RunnerStatusActive,
+		RunnerGroupID: s.testRunnerGrp.ID,
+	}
+	err = s.service.DB.WithContext(ctx).Create(s.testRunner).Error
+	require.NoError(s.T(), err)
+}
+
+func (s *GetRunnerJobPlanV2TestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
+	req, err := http.NewRequest(method, path, nil)
+	require.NoError(s.T(), err)
+
+	rr := httptest.NewRecorder()
+	s.router.ServeHTTP(rr, req)
+	return rr
+}
+
+func (s *GetRunnerJobPlanV2TestSuite) TestGetRunnerJobPlanV2() {
+	testCases := []struct {
+		name             string
+		setupFunc        func() (string, string)
+		expectedCode     int
+		expectedPlan     string
+		expectedNotFound bool
+	}{
+		{
+			name: "successfully get runner job plan",
+			setupFunc: func() (string, string) {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusAvailable,
+					StatusDescription: "test job",
+					Group:             app.RunnerJobGroupBuild,
+					Type:              app.RunnerJobTypeDockerBuild,
+					Operation:         app.RunnerJobOperationTypeBuild,
+					QueueTimeout:      5 * time.Minute,
+					AvailableTimeout:  10 * time.Minute,
+					ExecutionTimeout:  30 * time.Minute,
+					MaxExecutions:     3,
+				}
+				err := s.service.DB.WithContext(ctx).Create(job).Error
+				require.NoError(s.T(), err)
+
+				plan := &app.RunnerJobPlan{
+					ID:          domains.NewRunnerID(),
+					OrgID:       s.testOrg.ID,
+					RunnerJobID: job.ID,
+					PlanJSON:    `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+				}
+				err = s.service.DB.WithContext(ctx).Create(plan).Error
+				require.NoError(s.T(), err)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(plan)
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return s.testRunner.ID, job.ID
+			},
+			expectedCode: http.StatusOK,
+			expectedPlan: `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+		},
+		{
+			name: "runner not found returns error",
+			setupFunc: func() (string, string) {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusAvailable,
+					StatusDescription: "test job",
+					Group:             app.RunnerJobGroupBuild,
+					Type:              app.RunnerJobTypeDockerBuild,
+					Operation:         app.RunnerJobOperationTypeBuild,
+					QueueTimeout:      5 * time.Minute,
+					AvailableTimeout:  10 * time.Minute,
+					ExecutionTimeout:  30 * time.Minute,
+					MaxExecutions:     3,
+				}
+				err := s.service.DB.WithContext(ctx).Create(job).Error
+				require.NoError(s.T(), err)
+
+				plan := &app.RunnerJobPlan{
+					ID:          domains.NewRunnerID(),
+					OrgID:       s.testOrg.ID,
+					RunnerJobID: job.ID,
+					PlanJSON:    `{"buildConfig": {"dockerfile": "Dockerfile"}}`,
+				}
+				err = s.service.DB.WithContext(ctx).Create(plan).Error
+				require.NoError(s.T(), err)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(plan)
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return "runnonexistent123456789012", job.ID
+			},
+			expectedCode:     http.StatusNotFound,
+			expectedNotFound: true,
+		},
+		{
+			name: "runner job plan not found",
+			setupFunc: func() (string, string) {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				// Create job without plan
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusAvailable,
+					StatusDescription: "test job",
+					Group:             app.RunnerJobGroupBuild,
+					Type:              app.RunnerJobTypeDockerBuild,
+					Operation:         app.RunnerJobOperationTypeBuild,
+					QueueTimeout:      5 * time.Minute,
+					AvailableTimeout:  10 * time.Minute,
+					ExecutionTimeout:  30 * time.Minute,
+					MaxExecutions:     3,
+				}
+				err := s.service.DB.WithContext(ctx).Create(job).Error
+				require.NoError(s.T(), err)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return s.testRunner.ID, job.ID
+			},
+			expectedCode:     http.StatusNotFound,
+			expectedNotFound: true,
+		},
+		{
+			name: "empty plan JSON returns successfully",
+			setupFunc: func() (string, string) {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusQueued,
+					StatusDescription: "test job",
+					Group:             app.RunnerJobGroupBuild,
+					Type:              app.RunnerJobTypeNOOPBuild,
+					Operation:         app.RunnerJobOperationTypeBuild,
+					QueueTimeout:      5 * time.Minute,
+					AvailableTimeout:  10 * time.Minute,
+					ExecutionTimeout:  30 * time.Minute,
+					MaxExecutions:     3,
+				}
+				err := s.service.DB.WithContext(ctx).Create(job).Error
+				require.NoError(s.T(), err)
+
+				plan := &app.RunnerJobPlan{
+					ID:          domains.NewRunnerID(),
+					OrgID:       s.testOrg.ID,
+					RunnerJobID: job.ID,
+					PlanJSON:    "",
+				}
+				err = s.service.DB.WithContext(ctx).Create(plan).Error
+				require.NoError(s.T(), err)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(plan)
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return s.testRunner.ID, job.ID
+			},
+			expectedCode: http.StatusOK,
+			expectedPlan: "",
+		},
+		{
+			name: "plan with complex JSON structure",
+			setupFunc: func() (string, string) {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusAvailable,
+					StatusDescription: "test job",
+					Group:             app.RunnerJobGroupDeploy,
+					Type:              app.RunnerJobTypeTerraformDeploy,
+					Operation:         app.RunnerJobOperationTypeCreateApplyPlan,
+					QueueTimeout:      5 * time.Minute,
+					AvailableTimeout:  10 * time.Minute,
+					ExecutionTimeout:  30 * time.Minute,
+					MaxExecutions:     3,
+				}
+				err := s.service.DB.WithContext(ctx).Create(job).Error
+				require.NoError(s.T(), err)
+
+				complexPlan := `{
+					"resources": [
+						{"type": "aws_instance", "name": "web"},
+						{"type": "aws_security_group", "name": "web_sg"}
+					],
+					"variables": {
+						"instance_type": "t3.micro",
+						"region": "us-west-2"
+					}
+				}`
+
+				plan := &app.RunnerJobPlan{
+					ID:          domains.NewRunnerID(),
+					OrgID:       s.testOrg.ID,
+					RunnerJobID: job.ID,
+					PlanJSON:    complexPlan,
+				}
+				err = s.service.DB.WithContext(ctx).Create(plan).Error
+				require.NoError(s.T(), err)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(plan)
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return s.testRunner.ID, job.ID
+			},
+			expectedCode: http.StatusOK,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			runnerID, jobID := tc.setupFunc()
+			rr := s.makeRequest("GET", "/v1/runners/"+runnerID+"/jobs/"+jobID+"/plan")
+
+			if rr.Code != tc.expectedCode {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), tc.expectedCode, rr.Code)
+
+			if tc.expectedNotFound {
+				assert.Contains(s.T(), rr.Body.String(), "error")
+			} else {
+				planJSON := rr.Body.String()
+				if tc.expectedPlan != "" {
+					assert.Equal(s.T(), tc.expectedPlan, planJSON)
+				}
+			}
+		})
+	}
+}

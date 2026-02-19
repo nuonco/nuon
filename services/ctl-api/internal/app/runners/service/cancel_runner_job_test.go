@@ -475,7 +475,9 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 	}
 }
 
-func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobMultipleExecutionStatuses() {
+// TestCancelRunnerJobOnlyMostRecentExecution verifies that cancel only affects the
+// most recent execution, since getRunnerJob preloads only the latest one (LIMIT 1).
+func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobOnlyMostRecentExecution() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -497,48 +499,115 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobMultipleExecutionStatuses(
 	err := s.service.DB.WithContext(ctx).Create(job).Error
 	require.NoError(s.T(), err)
 
-	// Create executions with various statuses
-	execStatuses := []struct {
-		status           app.RunnerJobExecutionStatus
-		shouldBeCanceled bool
-	}{
-		{app.RunnerJobExecutionStatusPending, true},
-		{app.RunnerJobExecutionStatusInProgress, true},
-		{app.RunnerJobExecutionStatusFinished, false},
-		{app.RunnerJobExecutionStatusFailed, false},
-		{app.RunnerJobExecutionStatusCancelled, false},
+	// Create an older finished execution
+	olderExec := &app.RunnerJobExecution{
+		ID:          domains.NewRunnerID(),
+		OrgID:       s.testOrg.ID,
+		RunnerJobID: job.ID,
+		Status:      app.RunnerJobExecutionStatusFinished,
 	}
+	err = s.service.DB.WithContext(ctx).Create(olderExec).Error
+	require.NoError(s.T(), err)
 
-	for _, es := range execStatuses {
-		exec := &app.RunnerJobExecution{
-			ID:          domains.NewRunnerID(),
-			OrgID:       s.testOrg.ID,
-			RunnerJobID: job.ID,
-			Status:      es.status,
-		}
-		err = s.service.DB.WithContext(ctx).Create(exec).Error
-		require.NoError(s.T(), err)
+	// Small sleep to ensure distinct created_at timestamps
+	time.Sleep(10 * time.Millisecond)
+
+	// Create a newer running execution (this is the most recent)
+	newerExec := &app.RunnerJobExecution{
+		ID:          domains.NewRunnerID(),
+		OrgID:       s.testOrg.ID,
+		RunnerJobID: job.ID,
+		Status:      app.RunnerJobExecutionStatusInProgress,
 	}
+	err = s.service.DB.WithContext(ctx).Create(newerExec).Error
+	require.NoError(s.T(), err)
 
 	// Cancel the job
 	rr := s.makeRequest("POST", "/v1/runner-jobs/"+job.ID+"/cancel", CancelRunnerJobRequest{})
 	require.Equal(s.T(), http.StatusAccepted, rr.Code)
 
-	// Verify execution statuses
-	var executions []app.RunnerJobExecution
-	err = s.service.DB.Where("runner_job_id = ?", job.ID).Order("created_at asc").Find(&executions).Error
+	// Verify: the most recent (in-progress) execution should be cancelled
+	var newerResult app.RunnerJobExecution
+	err = s.service.DB.First(&newerResult, "id = ?", newerExec.ID).Error
 	require.NoError(s.T(), err)
-	require.Len(s.T(), executions, len(execStatuses))
+	assert.Equal(s.T(), app.RunnerJobExecutionStatusCancelled, newerResult.Status,
+		"most recent running execution should be cancelled")
 
-	for i, es := range execStatuses {
-		if es.shouldBeCanceled {
-			assert.Equal(s.T(), app.RunnerJobExecutionStatusCancelled, executions[i].Status,
-				"execution with original status %s should be cancelled", es.status)
-		} else {
-			assert.Equal(s.T(), es.status, executions[i].Status,
-				"execution with status %s should not change", es.status)
-		}
+	// Verify: the older (finished) execution should remain unchanged
+	var olderResult app.RunnerJobExecution
+	err = s.service.DB.First(&olderResult, "id = ?", olderExec.ID).Error
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), app.RunnerJobExecutionStatusFinished, olderResult.Status,
+		"older finished execution should remain unchanged")
+
+	// Cleanup
+	s.service.DB.Unscoped().Where("runner_job_id = ?", job.ID).Delete(&app.RunnerJobExecution{})
+	s.service.DB.Unscoped().Delete(job)
+}
+
+// TestCancelRunnerJobTerminalMostRecentExecution verifies that when the most recent
+// execution is already terminal, no executions are modified.
+func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobTerminalMostRecentExecution() {
+	ctx := context.Background()
+	ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+	job := &app.RunnerJob{
+		ID:                domains.NewRunnerJobID(),
+		OrgID:             s.testOrg.ID,
+		RunnerID:          s.testRunner.ID,
+		LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+		Status:            app.RunnerJobStatusInProgress,
+		StatusDescription: "test job",
+		Group:             app.RunnerJobGroupBuild,
+		Type:              app.RunnerJobTypeDockerBuild,
+		Operation:         app.RunnerJobOperationTypeBuild,
+		QueueTimeout:      5 * time.Minute,
+		AvailableTimeout:  10 * time.Minute,
+		ExecutionTimeout:  30 * time.Minute,
+		MaxExecutions:     3,
 	}
+	err := s.service.DB.WithContext(ctx).Create(job).Error
+	require.NoError(s.T(), err)
+
+	// Create a running execution (older)
+	olderExec := &app.RunnerJobExecution{
+		ID:          domains.NewRunnerID(),
+		OrgID:       s.testOrg.ID,
+		RunnerJobID: job.ID,
+		Status:      app.RunnerJobExecutionStatusPending,
+	}
+	err = s.service.DB.WithContext(ctx).Create(olderExec).Error
+	require.NoError(s.T(), err)
+
+	time.Sleep(10 * time.Millisecond)
+
+	// Create a terminal execution (newer - most recent)
+	newerExec := &app.RunnerJobExecution{
+		ID:          domains.NewRunnerID(),
+		OrgID:       s.testOrg.ID,
+		RunnerJobID: job.ID,
+		Status:      app.RunnerJobExecutionStatusFailed,
+	}
+	err = s.service.DB.WithContext(ctx).Create(newerExec).Error
+	require.NoError(s.T(), err)
+
+	// Cancel the job
+	rr := s.makeRequest("POST", "/v1/runner-jobs/"+job.ID+"/cancel", CancelRunnerJobRequest{})
+	require.Equal(s.T(), http.StatusAccepted, rr.Code)
+
+	// Verify: the most recent (failed) execution stays failed
+	var newerResult app.RunnerJobExecution
+	err = s.service.DB.First(&newerResult, "id = ?", newerExec.ID).Error
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), app.RunnerJobExecutionStatusFailed, newerResult.Status,
+		"most recent terminal execution should remain unchanged")
+
+	// Verify: the older (pending) execution also stays pending - it's not loaded by getRunnerJob
+	var olderResult app.RunnerJobExecution
+	err = s.service.DB.First(&olderResult, "id = ?", olderExec.ID).Error
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), app.RunnerJobExecutionStatusPending, olderResult.Status,
+		"older execution should remain unchanged since only the most recent is loaded")
 
 	// Cleanup
 	s.service.DB.Unscoped().Where("runner_job_id = ?", job.ID).Delete(&app.RunnerJobExecution{})
