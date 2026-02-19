@@ -357,6 +357,13 @@ func mergeAllOf(schema *jsonschema.Schema, defs map[string]*jsonschema.Schema) *
 			continue
 		}
 
+		// Merge definitions first so $ref resolution works for this branch
+		for k, v := range branch.Definitions {
+			if _, exists := defs[k]; !exists {
+				defs[k] = v
+			}
+		}
+
 		resolved := branch
 		if branch.Ref != "" {
 			if r := resolveRef(branch.Ref, defs); r != nil {
@@ -380,6 +387,7 @@ func mergeAllOf(schema *jsonschema.Schema, defs map[string]*jsonschema.Schema) *
 			merged.OneOf = append(merged.OneOf, resolved.OneOf...)
 		}
 
+		// Also merge definitions from the resolved schema (in case ref target has its own)
 		for k, v := range resolved.Definitions {
 			if _, exists := defs[k]; !exists {
 				defs[k] = v

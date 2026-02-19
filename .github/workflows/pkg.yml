@@ -53,16 +53,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
+      - name: Setup nuonctl
+        uses: ./actions/setup-nuonctl
 
-      - name: Generate code
-        run: go generate ./pkg/...
-
-      - name: Run tests
-        run: cd pkg && go test -v ./...
+      - name: 🧪 Tests
+        run: CI=true nuonctl tests run-all pkg
 
   update_status:
     name: update status
