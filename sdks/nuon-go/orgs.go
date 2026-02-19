@@ -30,6 +30,10 @@ func (c *client) GetOrgs(ctx context.Context, query *models.GetPaginatedQuery) (
 		limit := int64(query.Limit)
 		params.Offset = &offset
 		params.Limit = &limit
+		if query.Q != "" {
+			q := query.Q
+			params.Q = &q
+		}
 	}
 
 	resp, err := c.genClient.Operations.GetOrgs(params, c.getApiKeyAuthInfo())
