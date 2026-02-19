@@ -10,15 +10,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
 	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/appconfig"
 	buildcomponents "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/buildcomponents"
+	clonerepo "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/clonerepo"
 	deploygrouptoqueue "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/deploygrouptoqueue"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/fetchcommit"
 )
 
 // AppBranchRun builds the workflow steps for an app branch run
 // This workflow orchestrates:
-// 1. Fetching the repo and building the config
-// 2. Building all components in the config
-// 3. Deploying to install groups in order
+// 1. Fetching the latest commit from VCS
+// 2. Cloning the repo at that commit
+// 3. Parsing the intermediate config from the cloned repo
+// 4. Building all components in the config
+// 5. Deploying to install groups in order
 func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	// Extract metadata from workflow
 	appBranchID := generics.FromPtrStr(flw.Metadata["app_branch_id"])
@@ -50,6 +53,19 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 	}
 	steps = append(steps, step)
 
+	// Step 2: Clone the repo at the fetched commit
+	sg.nextGroup()
+	step, err = sg.appBranchSignalStep(ctx, appBranchID, "clone repo", pgtype.Hstore{}, &clonerepo.Signal{
+		AppBranchID: appBranchID,
+		RunID:       runID,
+		CommitSHA:   "", // TODO: Read commit SHA from AppBranchRun.VCSConnectionCommit instead
+	}, WithSkippable(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create clone repo step")
+	}
+	steps = append(steps, step)
+
+	// Step 3: Parse intermediate config from the cloned repo
 	sg.nextGroup()
 	step, err = sg.appBranchSignalStep(ctx, appBranchID, "fetch app config", pgtype.Hstore{}, &appconfig.Signal{
 		AppBranchID: appBranchID,
@@ -61,7 +77,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 	}
 	steps = append(steps, step)
 
-	// Step 2: Build all components in parallel
+	// Step 4: Build all components in parallel
 	sg.nextGroup()
 	step, err = sg.appBranchSignalStep(ctx, appBranchID, "build all components", pgtype.Hstore{}, &buildcomponents.Signal{
 		AppBranchID: appBranchID,
@@ -71,7 +87,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 	}
 	steps = append(steps, step)
 
-	// Step 3: Deploy to install groups in order
+	// Step 5: Deploy to install groups in order
 	// Fetch install groups for this config, ordered by the order field
 	installGroups, err := activities.AwaitGetInstallGroupsByConfigID(ctx, configID)
 	if err != nil {

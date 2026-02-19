@@ -50,9 +50,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"vcs_commit_id", vcsCommit.ID)
 
 	// Update the app branch run with the VCS commit ID
-	err = activities.AwaitUpdateAppBranchRunVCSCommit(ctx, activities.AwaitUpdateAppBranchRunVCSCommit{
-		RunID:  s.RunID,
-		Commit: vcsCommit.ID,
+	err = activities.AwaitUpdateAppBranchRunVCSCommit(ctx, activities.UpdateAppBranchRunVCSCommitRequest{
+		RunID:       s.RunID,
+		VcsCommitID: vcsCommit.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to update run with VCS commit: %w", err)

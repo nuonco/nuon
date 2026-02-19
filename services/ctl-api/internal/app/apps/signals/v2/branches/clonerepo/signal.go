@@ -1,4 +1,4 @@
-package appconfig
+package clonerepo
 
 import (
 	"github.com/go-playground/validator/v10"
@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "app-branch-app-config"
+const SignalType signal.SignalType = "app-branch-clone-repo"
 
 type Signal struct {
 	AppBranchID string `json:"app_branch_id" validate:"required"`
@@ -32,6 +32,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")
+	}
+
+	_, err = activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
+	if err != nil {
+		return errors.Wrap(err, "app branch run not found")
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package appconfig
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -19,29 +20,29 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	var vcsConfigID string
+	var vcsDirectory string
 	if cfg := branch.Configs[0].ConnectedGithubVCSConfig; cfg != nil {
 		vcsConfigID = cfg.ID
+		vcsDirectory = cfg.Directory
 	} else if cfg := branch.Configs[0].PublicGitVCSConfig; cfg != nil {
 		vcsConfigID = cfg.ID
+		vcsDirectory = cfg.Directory
 	} else {
 		return fmt.Errorf("app branch has no VCS config")
 	}
 
-	// Fetch the intermediate config from the repo
+	// Derive the source directory from the deterministic workspace ID used by the clone step.
+	sourceDir := filepath.Join("/tmp", "app-branch-"+vcsConfigID)
+	if vcsDirectory != "" {
+		sourceDir = filepath.Join(sourceDir, vcsDirectory)
+	}
+
+	// Parse the intermediate config from the already-cloned repo
 	appConfig, err := activities.AwaitFetchIntermediateConfig(ctx, activities.FetchIntermediateConfigRequest{
-		VcsConfigID: vcsConfigID,
-		CommitSHA:   s.CommitSHA,
+		SourceDir: sourceDir,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to fetch intermediate config: %w", err)
-	}
-
-	// Update run commit SHA
-	if err := activities.AwaitUpdateAppBranchRunCommitSHA(ctx, activities.UpdateAppBranchRunCommitSHARequest{
-		RunID:     s.RunID,
-		CommitSHA: s.CommitSHA,
-	}); err != nil {
-		return fmt.Errorf("unable to update run commit SHA: %w", err)
 	}
 
 	workflow.GetLogger(ctx).Info("intermediate config fetched",
