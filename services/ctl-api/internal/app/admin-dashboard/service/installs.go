@@ -21,25 +21,37 @@ const installsPerPage = 8
 func (s *service) Installs(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
+	sort := c.Query("sort")
+	filter := c.Query("filter")
 	page := getPageFromQuery(c)
 
-	installs, totalPages, err := s.getInstalls(ctx, search, page)
+	installs, totalPages, err := s.getInstalls(ctx, search, sort, filter, page)
 	if err != nil {
 		s.l.Error("failed to get installs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})
 		return
 	}
 
-	component := views.Installs(installs, page, totalPages, search)
+	component := views.Installs(installs, page, totalPages, search, sort, filter)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getInstalls(ctx context.Context, search string, page int) ([]*app.Install, int, error) {
+func (s *service) getInstalls(ctx context.Context, search string, sort string, filter string, page int) ([]*app.Install, int, error) {
 	var installs []*app.Install
 	var totalCount int64
 
 	// Build base query
 	query := s.db.WithContext(ctx).Model(&app.Install{})
+
+	// Apply user type filter using subquery to check creator email
+	switch filter {
+	case "nuon":
+		query = query.Where("created_by_id IN (SELECT id FROM accounts WHERE email LIKE ?)", "%@nuon.co")
+	case "user":
+		query = query.Where("created_by_id IN (SELECT id FROM accounts WHERE email NOT LIKE ?)", "%@nuon.co")
+	default:
+		// "all" or empty = no additional filter
+	}
 
 	// Apply search filter if provided
 	if search != "" {
@@ -65,6 +77,12 @@ func (s *service) getInstalls(ctx context.Context, search string, page int) ([]*
 	// Calculate offset
 	offset := (page - 1) * installsPerPage
 
+	// Determine sort order
+	orderClause := "created_at desc" // default: newest first
+	if sort == "oldest" {
+		orderClause = "created_at asc"
+	}
+
 	// Get paginated results
 	res := query.
 		Preload("Org").
@@ -72,7 +90,7 @@ func (s *service) getInstalls(ctx context.Context, search string, page int) ([]*
 		Preload("RunnerGroup.Runners").
 		Preload("AppConfig").
 		Preload("AppRunnerConfig").
-		Order("created_at desc").
+		Order(orderClause).
 		Limit(installsPerPage).
 		Offset(offset).
 		Find(&installs)

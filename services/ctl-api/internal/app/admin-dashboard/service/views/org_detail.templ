@@ -154,6 +154,14 @@ templ OrgHeaderWithPopover(org *app.Org) {
 							/>
 							<span class="text-sm">Demo</span>
 						</label>
+						<label class="flex items-center gap-2 cursor-pointer hover:bg-cyan/10 hover:border-cyan/30 border border-transparent rounded px-2 py-1.5 transition-all">
+							<input type="checkbox" name="tags" value="Employee" class="rounded border-input accent-cyan"
+								if contains(org.Tags, "Employee") {
+									checked
+								}
+							/>
+							<span class="text-sm">Employee</span>
+						</label>
 					</div>
 					<button
 						type="submit"

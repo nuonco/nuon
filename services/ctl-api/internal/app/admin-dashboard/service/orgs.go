@@ -9,6 +9,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -20,20 +21,43 @@ const orgsPerPage = 8
 func (s *service) Orgs(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
+	tagFilters := c.QueryArray("tag")
+
+	// Split comma-separated values and filter out empty strings
+	var filteredTags []string
+	for _, tag := range tagFilters {
+		if tag != "" {
+			// Split on comma in case multiple tags come as a single value
+			parts := strings.Split(tag, ",")
+			for _, part := range parts {
+				trimmed := strings.TrimSpace(part)
+				if trimmed != "" {
+					filteredTags = append(filteredTags, trimmed)
+				}
+			}
+		}
+	}
+
 	page := getPageFromQuery(c)
 
-	orgs, totalPages, err := s.getOrgs(ctx, search, page)
+	orgs, totalPages, err := s.getOrgs(ctx, search, filteredTags, page)
 	if err != nil {
 		s.l.Error("failed to get orgs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})
 		return
 	}
 
-	component := views.Orgs(orgs, page, totalPages, search)
+	allTags, err := s.getAllOrgTags(ctx)
+	if err != nil {
+		s.l.Warn("failed to get all tags", zap.Error(err))
+		allTags = []string{}
+	}
+
+	component := views.Orgs(orgs, allTags, filteredTags, page, totalPages, search)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getOrgs(ctx context.Context, search string, page int) ([]*app.Org, int, error) {
+func (s *service) getOrgs(ctx context.Context, search string, tagFilters []string, page int) ([]*app.Org, int, error) {
 	type OrgWithCounts struct {
 		app.Org
 		AppCount     int `gorm:"column:app_count"`
@@ -50,11 +74,16 @@ func (s *service) getOrgs(ctx context.Context, search string, page int) ([]*app.
 	if search != "" {
 		search = strings.TrimSpace(search)
 		query = query.Where(
-			"name ILIKE ? OR id = ? OR EXISTS (SELECT 1 FROM unnest(tags) AS tag WHERE tag ILIKE ?)",
+			"name ILIKE ? OR id = ?",
 			"%"+search+"%",
 			search,
-			"%"+search+"%",
 		)
+	}
+
+	// Apply tag filters if provided (org must have ANY of the selected tags - OR logic)
+	if len(tagFilters) > 0 {
+		// Use && operator with explicit text[] cast for array overlap (OR logic)
+		query = query.Where("tags && CAST(? AS text[])", pq.Array(tagFilters))
 	}
 
 	// Get total count for pagination
@@ -94,4 +123,17 @@ func (s *service) getOrgs(ctx context.Context, search string, page int) ([]*app.
 	}
 
 	return orgs, totalPages, nil
+}
+
+func (s *service) getAllOrgTags(ctx context.Context) ([]string, error) {
+	var tags []string
+	err := s.db.WithContext(ctx).
+		Model(&app.Org{}).
+		Distinct().
+		Pluck("unnest(tags)", &tags).
+		Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to get tags: %w", err)
+	}
+	return tags, nil
 }

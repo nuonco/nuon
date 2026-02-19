@@ -14,15 +14,16 @@ import (
 func (s *service) AccountsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
+	filter := c.Query("filter")
 	page := getPageFromQuery(c)
 
-	accounts, totalPages, err := s.getAccounts(ctx, search, page)
+	accounts, totalPages, err := s.getAccounts(ctx, search, filter, page)
 	if err != nil {
 		s.l.Error("failed to get accounts for table", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch accounts"})
 		return
 	}
 
-	component := views.AccountsTable(accounts, page, totalPages, search)
+	component := views.AccountsTable(accounts, page, totalPages, search, filter)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
