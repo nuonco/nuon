@@ -70,7 +70,7 @@ func AccountDetail(
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(account.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 40, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 40, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -83,7 +83,7 @@ func AccountDetail(
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("account-detail-id-" + account.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 43, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 43, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func AccountDetail(
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(account.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 44, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 44, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -124,7 +124,7 @@ func AccountDetail(
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(account.Subject)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 53, Col: 73}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 53, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -142,7 +142,7 @@ func AccountDetail(
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(string(account.AccountType))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 63, Col: 78}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 63, Col: 78}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -155,7 +155,7 @@ func AccountDetail(
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(account.CreatedAt.Format("2006-01-02 15:04"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 68, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 68, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -168,7 +168,7 @@ func AccountDetail(
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(account.UpdatedAt.Format("2006-01-02 15:04"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 69, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 69, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -279,7 +279,7 @@ func AccountDetail(
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("/accounts/" + account.ID + "/audit-logs/table")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 89, Col: 63}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 89, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -292,7 +292,7 @@ func AccountDetail(
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs("#audit-logs-table-" + account.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 91, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 91, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -561,7 +561,7 @@ func AccountDetail(
 					var templ_7745c5c3_Var27 string
 					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("/accounts/" + account.ID + "/audit-logs/table")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 148, Col: 63}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 148, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 					if templ_7745c5c3_Err != nil {
@@ -574,7 +574,7 @@ func AccountDetail(
 					var templ_7745c5c3_Var28 string
 					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs("#audit-logs-table-" + account.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 150, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 150, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 					if templ_7745c5c3_Err != nil {
@@ -1090,7 +1090,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var51 string
 											templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(app.Name)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 224, Col: 48}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 224, Col: 48}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 											if templ_7745c5c3_Err != nil {
@@ -1103,7 +1103,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var52 string
 											templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs("app-id-" + app.ID)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 226, Col: 43}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 226, Col: 43}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 											if templ_7745c5c3_Err != nil {
@@ -1116,7 +1116,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var53 string
 											templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(app.ID)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 226, Col: 102}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 226, Col: 102}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 											if templ_7745c5c3_Err != nil {
@@ -1165,7 +1165,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var55 templ.SafeURL
 											templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + app.OrgID))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 234, Col: 53}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 234, Col: 53}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 											if templ_7745c5c3_Err != nil {
@@ -1178,7 +1178,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var56 string
 											templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(app.Org.Name)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 235, Col: 27}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 235, Col: 27}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 											if templ_7745c5c3_Err != nil {
@@ -1240,7 +1240,7 @@ func AccountDetail(
 												var templ_7745c5c3_Var59 string
 												templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", app.ConfigCount))
 												if templ_7745c5c3_Err != nil {
-													return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 243, Col: 49}
+													return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 243, Col: 49}
 												}
 												_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 												if templ_7745c5c3_Err != nil {
@@ -1277,7 +1277,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var61 string
 											templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(app.CreatedAt.Format("2006-01-02 15:04"))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 249, Col: 54}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 249, Col: 54}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 											if templ_7745c5c3_Err != nil {
@@ -1308,7 +1308,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var63 string
 											templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(app.UpdatedAt.Format("2006-01-02 15:04"))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 252, Col: 54}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 252, Col: 54}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 											if templ_7745c5c3_Err != nil {
@@ -1678,7 +1678,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var80 templ.SafeURL
 											templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + org.ID))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 293, Col: 51}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 293, Col: 51}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
 											if templ_7745c5c3_Err != nil {
@@ -1691,7 +1691,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var81 string
 											templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.JoinStringErrs(org.Name)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 294, Col: 24}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 294, Col: 24}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
 											if templ_7745c5c3_Err != nil {
@@ -1704,7 +1704,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var82 string
 											templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs("org-id-" + org.ID)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 297, Col: 43}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 297, Col: 43}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
 											if templ_7745c5c3_Err != nil {
@@ -1717,7 +1717,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var83 string
 											templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(org.ID)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 297, Col: 102}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 297, Col: 102}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
 											if templ_7745c5c3_Err != nil {
@@ -1762,7 +1762,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var85 string
 											templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(string(org.OrgType))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 305, Col: 33}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 305, Col: 33}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
 											if templ_7745c5c3_Err != nil {
@@ -1842,7 +1842,7 @@ func AccountDetail(
 														var templ_7745c5c3_Var89 string
 														templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(tag)
 														if templ_7745c5c3_Err != nil {
-															return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 317, Col: 21}
+															return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 317, Col: 21}
 														}
 														_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
 														if templ_7745c5c3_Err != nil {
@@ -1885,7 +1885,7 @@ func AccountDetail(
 											var templ_7745c5c3_Var91 string
 											templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.JoinStringErrs(org.CreatedAt.Format("2006-01-02 15:04"))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/account_detail.templ`, Line: 324, Col: 54}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `account_detail.templ`, Line: 324, Col: 54}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var91))
 											if templ_7745c5c3_Err != nil {
