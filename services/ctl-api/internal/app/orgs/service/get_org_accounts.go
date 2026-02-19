@@ -55,12 +55,7 @@ func (s *service) getOrgAccounts(ctx *gin.Context, orgID string) ([]app.Account,
 
 	accounts := []app.Account{}
 	tx := s.db.WithContext(ctx).
-		Where("accounts.id IN (?)",
-			s.db.Table("account_roles").
-				Select("account_id").
-				Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
-				Where("roles.org_id = ? AND account_roles.deleted_at = 0", orgID),
-		).
+		Where("accounts.id IN (SELECT account_roles.account_id FROM account_roles JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0 WHERE roles.org_id = ? AND account_roles.deleted_at = 0)", orgID).
 		Where("accounts.account_type != ?", app.AccountTypeService)
 
 	if !strings.HasSuffix(acct.Email, "nuon.co") {
@@ -70,6 +65,7 @@ func (s *service) getOrgAccounts(ctx *gin.Context, orgID string) ([]app.Account,
 	tx = tx.
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Roles", "org_id = ?", orgID).
+		Preload("Roles.Org").
 		Preload("Roles.Policies").
 		Find(&accounts)
 	if tx.Error != nil {
