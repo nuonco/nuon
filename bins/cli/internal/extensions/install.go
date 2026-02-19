@@ -1,6 +1,8 @@
 package extensions
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -94,18 +96,36 @@ func detectExtType(dir, name string) (ExtType, string) {
 }
 
 // findReleaseAsset looks for a matching platform binary in a release's assets.
+// It checks for bare binaries first, then .tar.gz and .zip archives.
 // Returns the download URL and asset name, or empty strings if not found.
 func findReleaseAsset(release *githubRelease, name string) (downloadURL, assetName string) {
-	assetName = fmt.Sprintf("nuon-ext-%s-%s-%s", name, runtime.GOOS, runtime.GOARCH)
+	baseName := fmt.Sprintf("nuon-ext-%s-%s-%s", name, runtime.GOOS, runtime.GOARCH)
 	if runtime.GOOS == "windows" {
-		assetName += ".exe"
+		baseName += ".exe"
 	}
+
+	// Try exact match first (bare binary)
 	for _, asset := range release.Assets {
-		if asset.Name == assetName {
-			return asset.BrowserDownloadURL, assetName
+		if asset.Name == baseName {
+			return asset.BrowserDownloadURL, asset.Name
 		}
 	}
-	return "", assetName
+
+	// Try .tar.gz archive
+	for _, asset := range release.Assets {
+		if asset.Name == baseName+".tar.gz" {
+			return asset.BrowserDownloadURL, asset.Name
+		}
+	}
+
+	// Try .zip archive
+	for _, asset := range release.Assets {
+		if asset.Name == baseName+".zip" {
+			return asset.BrowserDownloadURL, asset.Name
+		}
+	}
+
+	return "", baseName
 }
 
 // Install installs an extension from a GitHub repository or a local directory.
@@ -145,14 +165,25 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		return nil, err
 	}
 
-	// When a ref is pinned, skip release auto-detection and go straight to clone.
-	// This is the primary path for interpreted extensions (script/python).
+	// When a ref is pinned, try release-based install for that tag first,
+	// then fall back to clone (for interpreted extensions or commit SHAs).
 	if ref != "" {
-		ui.PrintDebug(fmt.Sprintf("ref pinned to %s, cloning directly", ref))
+		ui.PrintDebug(fmt.Sprintf("ref pinned to %s, trying release first", ref))
+		release, err := getReleaseByTag(repo, ref)
+		if err == nil && len(release.Assets) > 0 {
+			downloadURL, assetName := findReleaseAsset(release, name)
+			if downloadURL != "" {
+				ui.PrintDebug(fmt.Sprintf("found platform asset %s in release %s", assetName, release.TagName))
+				return m.installByRelease(repo, name, extDir, manifest, release, downloadURL)
+			}
+			ui.PrintDebug(fmt.Sprintf("no matching platform asset in release %s, falling back to clone", release.TagName))
+		} else {
+			ui.PrintDebug(fmt.Sprintf("no release found for tag %s, falling back to clone", ref))
+		}
 		return m.installByClone(repo, name, ref, extDir, manifest)
 	}
 
-	// Auto-detect: try release with platform assets first, fall back to clone
+	// Auto-detect: try latest release with platform assets first, fall back to clone
 	ui.PrintDebug(fmt.Sprintf("fetching latest release for %s", repo))
 	release, err := getLatestRelease(repo)
 	if err == nil && len(release.Assets) > 0 {
@@ -179,18 +210,12 @@ func (m *Manager) installByRelease(repo, name, extDir string, manifest *Extensio
 		return nil, fmt.Errorf("unable to create extension directory: %w", err)
 	}
 
-	// Download binary
+	// Download and install binary (handling archives if needed)
 	ui.PrintDebug(fmt.Sprintf("downloading binary from %s", downloadURL))
 	binaryPath := filepath.Join(extDir, binaryName)
-	if err := downloadFile(downloadURL, binaryPath); err != nil {
+	if err := downloadAndExtractBinary(downloadURL, binaryPath, binaryName); err != nil {
 		os.RemoveAll(extDir)
 		return nil, fmt.Errorf("unable to download extension binary: %w", err)
-	}
-
-	// Make binary executable
-	if err := os.Chmod(binaryPath, 0o755); err != nil {
-		os.RemoveAll(extDir)
-		return nil, fmt.Errorf("unable to make binary executable: %w", err)
 	}
 
 	// Write cached nuon-ext.toml
@@ -320,6 +345,43 @@ func normalizeRepo(input string) (repo, name, ref string, err error) {
 	return repo, name, ref, nil
 }
 
+// getReleaseByTag fetches a specific release by tag name from a GitHub repository.
+func getReleaseByTag(repo, tag string) (*githubRelease, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/tags/%s", repo, tag)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	req.Header.Set("User-Agent", "nuon-cli/"+version.Version)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("no release found for tag %s in %s", tag, repo)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status %d fetching release %s for %s", resp.StatusCode, tag, repo)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var release githubRelease
+	if err := json.Unmarshal(body, &release); err != nil {
+		return nil, err
+	}
+
+	return &release, nil
+}
+
 // getLatestRelease fetches the latest release from a GitHub repository.
 func getLatestRelease(repo string) (*githubRelease, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
@@ -383,6 +445,72 @@ func downloadFile(url, destPath string) error {
 
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+// downloadAndExtractBinary downloads a release asset and extracts the binary if it's an archive.
+// Supports bare binaries, .tar.gz archives, and .zip archives.
+func downloadAndExtractBinary(url, binaryPath, binaryName string) error {
+	if strings.HasSuffix(url, ".tar.gz") {
+		return downloadAndExtractTarGz(url, binaryPath, binaryName)
+	}
+
+	// Bare binary download
+	if err := downloadFile(url, binaryPath); err != nil {
+		return err
+	}
+	return os.Chmod(binaryPath, 0o755)
+}
+
+// downloadAndExtractTarGz downloads a .tar.gz archive and extracts the named binary from it.
+func downloadAndExtractTarGz(url, binaryPath, binaryName string) error {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "nuon-cli/"+version.Version)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status %d downloading %s", resp.StatusCode, url)
+	}
+
+	gz, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		return fmt.Errorf("unable to decompress archive: %w", err)
+	}
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("unable to read archive: %w", err)
+		}
+
+		// Match the binary by base name (archives may have paths like ./nuon-ext-api)
+		if filepath.Base(hdr.Name) == binaryName && hdr.Typeflag == tar.TypeReg {
+			out, err := os.Create(binaryPath)
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(out, tr); err != nil {
+				out.Close()
+				return err
+			}
+			out.Close()
+			return os.Chmod(binaryPath, 0o755)
+		}
+	}
+
+	return fmt.Errorf("binary %s not found in archive", binaryName)
 }
 
 // fetchRawManifest fetches the raw nuon-ext.toml content from a GitHub repo.
