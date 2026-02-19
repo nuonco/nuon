@@ -29,8 +29,18 @@ type githubAsset struct {
 	BrowserDownloadURL string `json:"browser_download_url"`
 }
 
-// Install installs an extension from a GitHub repository.
+// isLocalPath returns true if the input looks like a filesystem path.
+func isLocalPath(input string) bool {
+	input = strings.TrimSpace(input)
+	return strings.HasPrefix(input, ".") || strings.HasPrefix(input, "/") || strings.HasPrefix(input, "~")
+}
+
+// Install installs an extension from a GitHub repository or a local directory.
 func (m *Manager) Install(repo string) (*InstalledExtension, error) {
+	if isLocalPath(repo) {
+		return m.InstallLocal(repo)
+	}
+
 	repo, name, err := normalizeRepo(repo)
 	if err != nil {
 		return nil, err
@@ -261,4 +271,109 @@ func extensionBinaryName(name string) string {
 		binName += ".exe"
 	}
 	return binName
+}
+
+// InstallLocal installs an extension from a local directory.
+// The directory must contain a nuon-ext.toml and a pre-built binary named nuon-ext-<name>.
+// The binary is symlinked (not copied) so rebuilds take effect immediately.
+func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve path: %w", err)
+	}
+
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return nil, fmt.Errorf("path does not exist: %w", err)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("path is not a directory: %s", absPath)
+	}
+
+	// Read and validate nuon-ext.toml from the local directory
+	tomlPath := filepath.Join(absPath, "nuon-ext.toml")
+	tomlData, err := os.ReadFile(tomlPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read nuon-ext.toml: %w (does the directory contain a nuon-ext.toml?)", err)
+	}
+
+	manifest, err := ParseManifest(tomlData)
+	if err != nil {
+		return nil, fmt.Errorf("invalid extension manifest: %w", err)
+	}
+
+	if manifest.Extension.Name == "" {
+		return nil, fmt.Errorf("extension.name is required in nuon-ext.toml")
+	}
+	if manifest.Extension.Description == "" {
+		return nil, fmt.Errorf("extension.description is required in nuon-ext.toml")
+	}
+
+	name := manifest.Extension.Name
+
+	// Verify the directory name matches the convention
+	dirName := filepath.Base(absPath)
+	expectedDir := "nuon-ext-" + name
+	if dirName != expectedDir {
+		return nil, fmt.Errorf("directory name %q does not match extension name %q (expected directory %s)", dirName, name, expectedDir)
+	}
+
+	if err := CheckCLIVersion(manifest); err != nil {
+		return nil, err
+	}
+
+	// Check if already installed
+	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
+	if _, err := os.Stat(extDir); err == nil {
+		return nil, fmt.Errorf("extension %q is already installed (use `nuon ext remove %s` first)", name, name)
+	}
+
+	// Find the local binary
+	binaryName := extensionBinaryName(name)
+	srcBinary := filepath.Join(absPath, binaryName)
+	if _, err := os.Stat(srcBinary); err != nil {
+		return nil, fmt.Errorf("binary not found at %s (build your extension first)", srcBinary)
+	}
+
+	// Create extension directory
+	if err := os.MkdirAll(extDir, 0o755); err != nil {
+		return nil, fmt.Errorf("unable to create extension directory: %w", err)
+	}
+
+	// Symlink the binary so rebuilds take effect immediately
+	destBinary := filepath.Join(extDir, binaryName)
+	if err := os.Symlink(srcBinary, destBinary); err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to symlink binary: %w", err)
+	}
+
+	// Copy nuon-ext.toml
+	if err := os.WriteFile(filepath.Join(extDir, "nuon-ext.toml"), tomlData, 0o644); err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to write nuon-ext.toml: %w", err)
+	}
+
+	// Write manifest.json
+	now := time.Now().UTC().Format(time.RFC3339)
+	installed := &InstalledExtension{
+		Name:          name,
+		Description:   manifest.Extension.Description,
+		Repo:          "local:" + absPath,
+		Version:       "dev",
+		Tag:           "dev",
+		InstalledAt:   now,
+		UpdatedAt:     now,
+		Binary:        binaryName,
+		Platform:      runtime.GOOS + "/" + runtime.GOARCH,
+		MinCLIVersion: manifest.Extension.MinCLIVersion,
+		RequiresToken: manifest.Extension.Auth.RequiresToken,
+		RequiresOrg:   manifest.Extension.Auth.RequiresOrg,
+	}
+
+	if err := writeManifestJSON(extDir, installed); err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to write manifest: %w", err)
+	}
+
+	return installed, nil
 }
