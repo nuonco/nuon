@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/extensions"
 )
 
@@ -84,11 +85,13 @@ nuon sync
 		rootCmd.AddCommand(cmd)
 	}
 
-	// Register installed extensions as top-level proxy commands
-	extMgr := extensions.New(extensionsDir())
-	if exts, err := extMgr.List(); err == nil {
-		for _, ext := range exts {
-			rootCmd.AddCommand(c.extensionProxyCmd(ext))
+	// Register installed extensions as top-level proxy commands (preview only)
+	if config.Preview() {
+		extMgr := extensions.New(extensionsDir())
+		if exts, err := extMgr.List(); err == nil {
+			for _, ext := range exts {
+				rootCmd.AddCommand(c.extensionProxyCmd(ext))
+			}
 		}
 	}
 

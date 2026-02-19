@@ -10,11 +10,15 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
+// extensionTopic is the GitHub topic that official extensions must have to appear in browse results.
+const extensionTopic = "nuon-extensions"
+
 // githubRepo represents a GitHub repository from the search API.
 type githubRepo struct {
-	Name        string `json:"name"`
-	FullName    string `json:"full_name"`
-	Description string `json:"description"`
+	Name        string   `json:"name"`
+	FullName    string   `json:"full_name"`
+	Description string   `json:"description"`
+	Topics      []string `json:"topics"`
 }
 
 // githubSearchResult represents the GitHub repo search API response.
@@ -22,9 +26,10 @@ type githubSearchResult struct {
 	Items []githubRepo `json:"items"`
 }
 
-// Browse lists available extensions from the nuonco GitHub org.
-func (m *Manager) Browse() ([]AvailableExtension, error) {
-	repos, err := searchExtensionRepos()
+// Browse lists official extensions from the nuonco GitHub org.
+// Only repositories with the "nuon-cli-extension" topic are shown.
+func (m *Manager) Browse(_ string) ([]AvailableExtension, error) {
+	repos, err := searchExtensionRepos(defaultOrg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to search for extensions: %w", err)
 	}
@@ -39,6 +44,9 @@ func (m *Manager) Browse() ([]AvailableExtension, error) {
 	var available []AvailableExtension
 	for _, repo := range repos {
 		if !strings.HasPrefix(repo.Name, "nuon-ext-") {
+			continue
+		}
+		if !hasTopic(repo.Topics, extensionTopic) {
 			continue
 		}
 
@@ -63,9 +71,19 @@ func (m *Manager) Browse() ([]AvailableExtension, error) {
 	return available, nil
 }
 
-// searchExtensionRepos searches for nuon-ext-* repos in the nuonco org.
-func searchExtensionRepos() ([]githubRepo, error) {
-	url := fmt.Sprintf("https://api.github.com/search/repositories?q=nuon-ext-+in:name+org:%s&per_page=100", allowedOrg)
+// hasTopic checks if a topic list contains a specific topic.
+func hasTopic(topics []string, target string) bool {
+	for _, t := range topics {
+		if t == target {
+			return true
+		}
+	}
+	return false
+}
+
+// searchExtensionRepos searches for nuon-ext-* repos in the given org that have the extension topic.
+func searchExtensionRepos(org string) ([]githubRepo, error) {
+	url := fmt.Sprintf("https://api.github.com/search/repositories?q=nuon-ext-+in:name+org:%s+topic:%s&per_page=100", org, extensionTopic)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

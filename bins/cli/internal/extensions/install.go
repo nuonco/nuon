@@ -14,7 +14,8 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
-const allowedOrg = "nuonco"
+// defaultOrg is used when resolving shorthand extension names (e.g. "deploy-checker").
+const defaultOrg = "nuonco"
 
 // githubRelease represents a GitHub release from the releases API.
 type githubRelease struct {
@@ -130,19 +131,14 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 }
 
 // normalizeRepo parses and validates the repo input.
-// Accepts: "deploy-checker", "nuon-ext-deploy-checker", "nuonco/nuon-ext-deploy-checker"
+// Accepts: "deploy-checker", "nuon-ext-deploy-checker", "nuonco/nuon-ext-deploy-checker", "myorg/nuon-ext-foo"
 func normalizeRepo(input string) (repo, name string, err error) {
 	input = strings.TrimSpace(input)
 
 	if strings.Contains(input, "/") {
 		// Full repo format: org/repo
 		parts := strings.SplitN(input, "/", 2)
-		org := parts[0]
 		repoName := parts[1]
-
-		if org != allowedOrg {
-			return "", "", fmt.Errorf("extensions must be from the %s GitHub organization (got: %s)", allowedOrg, org)
-		}
 
 		if !strings.HasPrefix(repoName, "nuon-ext-") {
 			return "", "", fmt.Errorf("extension repository must use nuon-ext- prefix (got: %s)", repoName)
@@ -154,7 +150,7 @@ func normalizeRepo(input string) (repo, name string, err error) {
 
 	// Shorthand: either "nuon-ext-deploy-checker" or "deploy-checker"
 	name = strings.TrimPrefix(input, "nuon-ext-")
-	repo = allowedOrg + "/nuon-ext-" + name
+	repo = defaultOrg + "/nuon-ext-" + name
 	return repo, name, nil
 }
 

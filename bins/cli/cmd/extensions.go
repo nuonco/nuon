@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -16,14 +17,48 @@ func extensionsDir() string {
 	return filepath.Join(home, ".config", "nuon", "extensions")
 }
 
+// reservedCommandNames are top-level CLI command names (and aliases) that extensions
+// must not shadow. An extension can still be installed, but the user is warned
+// that `nuon <name>` will invoke the built-in command, not the extension.
+var reservedCommandNames = map[string]bool{
+	"auth":       true,
+	"config":     true,
+	"apps":       true,
+	"sync":       true,
+	"installs":   true,
+	"version":    true,
+	"docs":       true,
+	"exit-codes": true,
+	"actions":    true,
+	"components": true,
+	"orgs":       true,
+	"secrets":    true,
+	"builds":     true,
+	"dev":        true,
+	"login":      true,
+	"extensions": true,
+	"ext":        true,
+	"init":       true,
+	"help":       true,
+	"completion": true,
+}
+
 func (c *cli) extensionsCmd() *cobra.Command {
 	extCmd := &cobra.Command{
-		Use:               "extensions",
-		Short:             "Manage CLI extensions",
-		Aliases:           []string{"ext"},
-		GroupID:           AdditionalGroup.ID,
-		PersistentPreRunE: c.persistentPreRunE,
-		Annotations:       skipAuthAnnotation(),
+		Use:     "extensions",
+		Short:   "Manage CLI extensions [preview]",
+		Aliases: []string{"ext"},
+		GroupID: AdditionalGroup.ID,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := c.persistentPreRunE(cmd, args); err != nil {
+				return err
+			}
+			if !c.cfg.Preview {
+				return errors.New("[NUON_PREVIEW=false] extensions are a preview feature, set NUON_PREVIEW=true to enable")
+			}
+			return nil
+		},
+		Annotations: skipAuthAnnotation(),
 	}
 
 	extCmd.AddCommand(
@@ -87,7 +122,7 @@ func (c *cli) extInstallCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:         "install <repo>",
 		Short:       "Install an extension",
-		Long:        "Install an extension from a GitHub repository. Accepts full repo (nuonco/nuon-ext-name) or shorthand (name).",
+		Long:        "Install an extension from a GitHub repository. Accepts full repo (org/nuon-ext-name) or shorthand (name).",
 		Args:        cobra.ExactArgs(1),
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
@@ -106,6 +141,10 @@ func (c *cli) extInstallCmd() *cobra.Command {
 			}
 
 			spinner.Success(fmt.Sprintf("Installed %s %s", ext.Name, ext.Version))
+
+			if reservedCommandNames[ext.Name] {
+				ui.PrintWarning(fmt.Sprintf("Warning: extension %q conflicts with a built-in command. Use `nuon ext exec %s` to run it.", ext.Name, ext.Name))
+			}
 
 			if PrintJSON {
 				ui.PrintJSON(ext)
@@ -197,10 +236,12 @@ func (c *cli) extRemoveCmd() *cobra.Command {
 }
 
 func (c *cli) extBrowseCmd() *cobra.Command {
-	return &cobra.Command{
+	var org string
+
+	cmd := &cobra.Command{
 		Use:         "browse",
 		Short:       "Browse available extensions",
-		Long:        "List available extensions from the nuonco GitHub organization.",
+		Long:        "List available extensions from a GitHub organization (defaults to nuonco).",
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
@@ -208,7 +249,7 @@ func (c *cli) extBrowseCmd() *cobra.Command {
 			spinner := ui.NewSpinnerView(PrintJSON)
 			spinner.Start("Searching for extensions...")
 
-			exts, err := mgr.Browse()
+			exts, err := mgr.Browse(org)
 			if err != nil {
 				spinner.Fail(err)
 				return err
@@ -248,6 +289,10 @@ func (c *cli) extBrowseCmd() *cobra.Command {
 			return nil
 		}),
 	}
+
+	cmd.Flags().StringVar(&org, "org", "", "GitHub organization to browse (default: nuonco)")
+
+	return cmd
 }
 
 func (c *cli) extExecCmd() *cobra.Command {
