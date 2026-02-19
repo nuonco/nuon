@@ -49,6 +49,9 @@ type AppBranchRun struct {
 
 	// ErrorMessage stores any error that occurred during execution
 	ErrorMessage string `json:"error_message,omitempty" temporaljson:"error_message,omitzero,omitempty"`
+
+	// CommitSHA is the VCS commit that triggered or is associated with this run
+	CommitSHA string `json:"commit_sha,omitzero" temporaljson:"commit_sha,omitzero,omitempty"`
 }
 
 func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {

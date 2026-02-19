@@ -36,12 +36,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to fetch intermediate config: %w", err)
 	}
 
-	// Update app branch last synced commit
-	if err := activities.AwaitUpdateAppBranchLastSyncedCommit(ctx, activities.UpdateAppBranchLastSyncedCommitRequest{
-		AppBranchID: branch.ID,
-		CommitSHA:   s.CommitSHA,
+	// Update run commit SHA
+	if err := activities.AwaitUpdateAppBranchRunCommitSHA(ctx, activities.UpdateAppBranchRunCommitSHARequest{
+		RunID:     s.RunID,
+		CommitSHA: s.CommitSHA,
 	}); err != nil {
-		return fmt.Errorf("unable to update last synced commit: %w", err)
+		return fmt.Errorf("unable to update run commit SHA: %w", err)
 	}
 
 	workflow.GetLogger(ctx).Info("intermediate config fetched",

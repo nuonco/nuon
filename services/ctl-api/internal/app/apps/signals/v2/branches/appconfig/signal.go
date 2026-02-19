@@ -13,6 +13,7 @@ const SignalType signal.SignalType = "app-branch-app-config"
 
 type Signal struct {
 	AppBranchID string `json:"app_branch_id" validate:"required"`
+	RunID       string `json:"run_id" validate:"required"`
 	CommitSHA   string `json:"commit_sha" validate:"required"`
 }
 

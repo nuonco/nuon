@@ -31,8 +31,6 @@ type AppBranch struct {
 	Queue   Queue             `json:"queue,omitzero" gorm:"polymorphic:Owner;" temporaljson:"queue,omitzero,omitempty"`
 	Configs []AppBranchConfig `json:"configs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"configs,omitzero,omitempty"`
 
-	// LastSyncedCommit string `json:"last_synced_commit,omitzero" temporaljson:"last_synced_commit,omitzero,omitempty"`
-
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 }
 

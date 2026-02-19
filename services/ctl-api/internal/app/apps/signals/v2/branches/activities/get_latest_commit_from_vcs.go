@@ -13,16 +13,32 @@ import (
 // @wrapper-prefix AppBranches
 // @by-field vcsConfigID
 func (a *Activities) getLatestCommitFromVCS(ctx context.Context, vcsConfigID string) (string, error) {
-	// Fetch VCS config to get repo details
-	var vcsConfig app.ConnectedGithubVCSConfig
-	res := a.db.WithContext(ctx).First(&vcsConfig, "id = ?", vcsConfigID)
-	if res.Error != nil {
-		return "", fmt.Errorf("unable to get vcs config: %w", res.Error)
+	vcsHelpers := a.helpers.VCSHelpers()
+
+	// Try ConnectedGithubVCSConfig first
+	var connectedCfg app.ConnectedGithubVCSConfig
+	res := a.db.WithContext(ctx).
+		Preload("VCSConnection").
+		First(&connectedCfg, "id = ?", vcsConfigID)
+	if res.Error == nil {
+		commit, err := vcsHelpers.GetVCSConfigLatestCommit(ctx, &connectedCfg)
+		if err != nil {
+			return "", fmt.Errorf("unable to get latest commit for connected repo: %w", err)
+		}
+
+		return *commit.SHA, nil
 	}
 
-	// TODO: Implement actual VCS integration
-	// Use GitHub client via helpers to get latest commit
-	// commit, err := a.helpers.GetLatestCommit(ctx, vcsConfig.Owner, vcsConfig.Repo, vcsConfig.Branch)
+	// Try PublicGitVCSConfig
+	var publicCfg app.PublicGitVCSConfig
+	res = a.db.WithContext(ctx).First(&publicCfg, "id = ?", vcsConfigID)
+	if res.Error == nil {
+		commit, err := vcsHelpers.GetPublicGitVCSConfigLatestCommit(ctx, &publicCfg)
+		if err != nil {
+			return "", fmt.Errorf("unable to get latest commit for public repo: %w", err)
+		}
+		return *commit.SHA, nil
+	}
 
-	return "", fmt.Errorf("GetLatestCommitFromVCS not yet implemented")
+	return "", fmt.Errorf("VCS config not found: %s", vcsConfigID)
 }

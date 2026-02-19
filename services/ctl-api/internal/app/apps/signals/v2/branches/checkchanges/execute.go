@@ -9,44 +9,59 @@ import (
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get app branch with latest config
+	logger := workflow.GetLogger(ctx)
+
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
-	// Check if branch has a config with VCS settings
-	if len(branch.Configs) == 0 || branch.Configs[0].ConnectedGithubVCSConfig == nil {
-		workflow.GetLogger(ctx).Info("no VCS config found for app branch",
-			"app_branch_id", branch.ID)
+	// No configs — nothing to check
+	if len(branch.Configs) == 0 {
+		logger.Info("no configs found for app branch", "app_branch_id", branch.ID)
 		return nil
 	}
 
-	// Get latest commit from VCS using the config's VCS config ID
-	latestCommit, err := activities.AwaitGetLatestCommitFromVCSByVcsConfigID(ctx, branch.Configs[0].ConnectedGithubVCSConfig.ID)
+	cfg := branch.Configs[0]
+
+	// Determine the VCS config ID to check
+	var vcsConfigID string
+	switch {
+	case cfg.ConnectedGithubVCSConfig != nil:
+		vcsConfigID = cfg.ConnectedGithubVCSConfig.ID
+	case cfg.PublicGitVCSConfig != nil:
+		vcsConfigID = cfg.PublicGitVCSConfig.ID
+	default:
+		logger.Info("no VCS config found for app branch", "app_branch_id", branch.ID)
+		return nil
+	}
+
+	// Fetch latest commit from VCS
+	latestCommit, err := activities.AwaitGetLatestCommitFromVCSByVcsConfigID(ctx, vcsConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get latest commit: %w", err)
 	}
 
-	// TODO: LastSyncedCommit field is commented out in AppBranch struct - needs to be re-enabled
-	// Compare with last synced commit
-	// if latestCommit != branch.LastSyncedCommit {
-	// 	workflow.GetLogger(ctx).Info("changes detected",
-	// 		"app_branch_id", branch.ID,
-	// 		"latest_commit", latestCommit,
-	// 		"last_synced_commit", branch.LastSyncedCommit)
-	//
-	// 	// TODO: Enqueue update-app-config signal
-	// 	// This will be implemented when update-app-config signal is ready and queue enqueue is available
-	// } else {
-	// 	workflow.GetLogger(ctx).Info("no changes detected",
-	// 		"app_branch_id", branch.ID,
-	// 		"commit", latestCommit)
-	// }
+	// Get the commit SHA from the most recent successful run for comparison
+	lastRunCommit, err := activities.AwaitGetLatestAppBranchRunCommitSHAByAppBranchID(ctx, branch.ID)
+	if err != nil {
+		return fmt.Errorf("unable to get latest run commit: %w", err)
+	}
 
-	workflow.GetLogger(ctx).Info("latest commit fetched",
+	// Compare with last successful run's commit
+	if latestCommit == lastRunCommit {
+		logger.Info("no changes detected",
+			"app_branch_id", branch.ID,
+			"commit", latestCommit)
+		return nil
+	}
+
+	logger.Info("changes detected",
 		"app_branch_id", branch.ID,
-		"latest_commit", latestCommit)
+		"latest_commit", latestCommit,
+		"last_run_commit", lastRunCommit)
+
+	// TODO: Enqueue update-app-config or run signal when ready
 
 	return nil
 }
