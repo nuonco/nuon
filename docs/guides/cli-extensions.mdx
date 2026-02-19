@@ -1,0 +1,314 @@
+---
+title: 'CLI Extensions'
+description: 'Extend the Nuon CLI with community and first-party plugins.'
+icon: 'puzzle-piece'
+---
+
+Extensions let you add new commands to the `nuon` CLI. Once installed, an extension called `policies` is available as
+`nuon policies`, just like a built-in command.
+
+The extension system was heavily inspired by
+[GitHub CLI extensions](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions).
+
+## Compiled vs interpreted extensions
+
+Extensions come in two flavors:
+
+- **Compiled extensions** ship precompiled binaries via GitHub Releases. The CLI downloads the correct binary for your
+  platform during install. This is the standard distribution model for production extensions.
+
+- **Interpreted extensions** are cloned as source and run directly. The CLI supports two interpreted types:
+  - **Script:** a single executable file (bash, Python, etc.) with a shebang line
+  - **Python:** a [uv](https://docs.astral.sh/uv/)-managed project executed via `uv run`
+
+The extension type is auto-detected during installation, you don't need to declare it. The CLI checks for GitHub Release
+assets first; if none match your platform, it clones the repo and detects the type from the directory contents.
+
+## Quick start
+
+```sh
+# Browse available extensions
+nuon ext browse
+
+# Install an extension
+nuon ext install nuonco/nuon-ext-policies
+
+# Install at a specific branch, tag, or commit
+nuon ext install nuonco/nuon-ext-demo@main
+
+# Install from a local directory (for development)
+nuon ext install ./nuon-ext-my-tool
+
+# Run it
+nuon policies --help
+```
+
+## Managing extensions
+
+All extension management commands live under `nuon extensions` (alias: `nuon ext`).
+
+### Browsing available extensions
+
+```sh
+nuon ext browse
+```
+
+This queries the `nuonco` GitHub organization for repositories matching the `nuon-ext-*` naming convention and shows
+which ones you already have installed. Extensions can be installed from any GitHub organization, but `browse` lists
+Nuon-authored extensions by default.
+
+### Installing an extension
+
+```sh
+nuon ext install <name>
+```
+
+You can provide the extension name in several formats:
+
+| Input                       | Resolved to                               |
+| --------------------------- | ----------------------------------------- |
+| `policies`                  | `nuonco/nuon-ext-policies` (latest)       |
+| `nuon-ext-policies`         | `nuonco/nuon-ext-policies` (latest)       |
+| `nuonco/nuon-ext-policies`  | `nuonco/nuon-ext-policies` (latest)       |
+| `myorg/nuon-ext-foo`        | `myorg/nuon-ext-foo` (latest)             |
+| `nuonco/nuon-ext-demo@main` | `nuonco/nuon-ext-demo` at branch `main`   |
+| `demo@v1.0.0`               | `nuonco/nuon-ext-demo` at tag `v1.0.0`    |
+| `demo@abc123`               | `nuonco/nuon-ext-demo` at commit `abc123` |
+| `./nuon-ext-my-tool`        | Local directory (symlink)                 |
+
+Shorthand names (without an org prefix) default to the `nuonco` GitHub organization. To install an extension from
+another org, use the full `org/nuon-ext-name` format.
+
+#### How install works
+
+The install behavior depends on the extension type:
+
+- **Compiled extensions:** The CLI checks the latest GitHub Release for a platform-specific binary asset (e.g.
+  `nuon-ext-policies-darwin-arm64`). If a match is found, it downloads the binary directly. No clone is needed.
+
+- **Interpreted extensions:** If no release asset matches your platform, the CLI clones the repository and detects the
+  extension type from the directory contents (`pyproject.toml` for python, executable `nuon-ext-<name>` for script).
+
+When `@ref` is specified (e.g. `demo@main`, `nuonco/nuon-ext-demo@v1.0`), the CLI always clones the repo at that exact
+ref, skipping release detection entirely. This is the standard way to install interpreted extensions and to pin compiled
+extensions to a specific source revision.
+
+#### Local install
+
+```sh
+nuon ext install ./path/to/nuon-ext-my-tool
+```
+
+Local installs create a symlink from the extensions directory to your source directory. This enables a live development
+loop: rebuild the binary or edit a script and the changes take effect immediately. The directory must contain a
+`nuon-ext.toml` and the directory name must match `nuon-ext-<name>`.
+
+If the extension is already installed, the command fails and you will need to use the `nuon ext upgrade` command
+instead. However, we strongly reccomend uninstalling and re-installing from source when the dev work is complete.
+
+### Listing installed extensions
+
+```sh
+nuon ext list
+```
+
+Shows a table of installed extensions with their name, version, repository, and description. Use `--json` for
+machine-readable output.
+
+### Upgrading extensions
+
+```sh
+# Upgrade a specific extension
+nuon ext upgrade policies
+
+# Upgrade all installed extensions
+nuon ext upgrade
+```
+
+Upgrade checks for newer GitHub releases and re-downloads the binary if a new version is available. This currently only
+works for compiled extensions installed from a release. Interpreted extensions installed via clone should be
+re-installed to pick up changes.
+
+### Removing an extension
+
+```sh
+nuon ext remove policies
+```
+
+This deletes the extension and its local files. For locally installed extensions (symlinks), the symlink is removed but
+the source directory is left untouched.
+
+### Running an extension explicitly
+
+```sh
+nuon ext exec policies [args...]
+```
+
+The `exec` subcommand is an escape hatch for cases where an extension name conflicts with a built-in command. In most
+cases, you can run extensions directly as top-level commands (e.g. `nuon policies`).
+
+## How extensions work
+
+### Top-level commands
+
+When the CLI starts, it scans the extensions directory and registers each installed extension as a top-level command.
+This means `nuon policies` works the same as `nuon ext exec policies`.
+
+All flags and arguments are passed through to the extension unchanged.
+
+### Environment variables
+
+When running an extension, the CLI provides context through environment variables:
+
+| Variable           | Description                             |
+| ------------------ | --------------------------------------- |
+| `NUON_API_URL`     | API endpoint URL                        |
+| `NUON_ORG_ID`      | Current organization context            |
+| `NUON_APP_ID`      | Current app context (if set)            |
+| `NUON_INSTALL_ID`  | Current install context (if set)        |
+| `NUON_API_TOKEN`   | Authentication token                    |
+| `NUON_EXT_NAME`    | Extension name                          |
+| `NUON_EXT_DIR`     | Path to the extension's local directory |
+| `NUON_CONFIG_FILE` | Path to the Nuon config file            |
+
+Extensions can use these variables to interact with the Nuon API or read the local configuration.
+
+### Authentication
+
+Extensions declare their auth requirements in a `nuon-ext.toml` manifest. If an extension requires an API token or org
+context and one isn't configured, the CLI prints a warning before running the extension. The extension still runs and is
+allowed to handle the missing credentials on its own.
+
+### Local storage
+
+Extensions are stored under `~/.config/nuon/extensions/`. Each extension gets its own directory:
+
+```
+~/.config/nuon/extensions/
+├── nuon-ext-policies/                    # compiled - downloaded binary only
+│   ├── nuon-ext-policies                 # platform binary
+│   ├── nuon-ext.toml                     # cached manifest
+│   └── manifest.json                     # install metadata
+├── nuon-ext-gen-readme/                  # interpreted - full repo clone
+│   ├── pyproject.toml                    # project definition
+│   ├── nuon-ext.toml                     # manifest (from repo)
+│   ├── manifest.json                     # install metadata
+│   └── src/                              # source code
+├── nuon-ext-my-tool -> /home/user/...    # local install (symlink)
+```
+
+## Creating an extension
+
+Every extension needs two things: a GitHub repository named `nuon-ext-<name>` and a `nuon-ext.toml` manifest at the
+root. Beyond that, the approach differs depending on whether you're building a compiled or interpreted extension.
+
+### Repository name
+
+The repository must use the `nuon-ext-` prefix. The rest becomes the command name:
+
+```
+nuonco/nuon-ext-policies        →  nuon policies
+nuonco/nuon-ext-cost-report     →  nuon cost-report
+```
+
+### Extension manifest
+
+Every extension repository must include a `nuon-ext.toml` file at the root:
+
+```toml nuon-ext.toml
+[extension]
+name            = "policies"
+description     = "Check deployment health across installs"
+min_cli_version = "1.5.0"
+
+[extension.auth]
+requires_token = true
+requires_org   = true
+```
+
+| Field                           | Required | Description                                  |
+| ------------------------------- | -------- | -------------------------------------------- |
+| `extension.name`                | Yes      | Must match the repo suffix after `nuon-ext-` |
+| `extension.description`         | Yes      | Shown in `list` and `browse` output          |
+| `extension.min_cli_version`     | No       | Minimum CLI version required                 |
+| `extension.auth.requires_token` | No       | Warn if no API token is configured           |
+| `extension.auth.requires_org`   | No       | Warn if no org is selected                   |
+
+### Compiled extensions (binary)
+
+Compiled extensions ship precompiled binaries for each platform via GitHub Releases. This is the best choice when you
+want fast startup, no runtime dependencies, and a clean upgrade path via `nuon ext upgrade`.
+
+Create GitHub releases with assets following this naming scheme:
+
+```
+nuon-ext-<name>-<os>-<arch>[.exe]
+```
+
+For example:
+
+```
+nuon-ext-policies-darwin-arm64
+nuon-ext-policies-darwin-amd64
+nuon-ext-policies-linux-amd64
+nuon-ext-policies-linux-arm64
+nuon-ext-policies-windows-amd64.exe
+```
+
+The CLI automatically selects the correct binary for the user's platform during install. You can use any language and
+build system. [GoReleaser](https://goreleaser.com/) works well for Go extensions.
+
+### Interpreted extensions (script and python)
+
+Interpreted extensions are cloned as source and run directly. They're simpler to set up and great for tooling that
+doesn't need to be compiled. For example: documentation generators, linters, config validators, and similar utilities.
+
+The CLI supports two interpreted types:
+
+| Type       | Detection                                 | Execution                | Requires                                     |
+| ---------- | ----------------------------------------- | ------------------------ | -------------------------------------------- |
+| **script** | Executable `nuon-ext-<name>` at repo root | Run script directly      | Nothing extra                                |
+| **python** | `pyproject.toml` at repo root             | `uv run nuon-ext-<name>` | [uv](https://docs.astral.sh/uv/) on the host |
+
+#### Script extensions
+
+Place a single executable file named `nuon-ext-<name>` at the repo root with a shebang line:
+
+```bash nuon-ext-hello
+#!/usr/bin/env bash
+echo "Hello from $NUON_EXT_NAME"
+```
+
+The script receives the same environment variables as any other extension. Make sure the file is marked executable
+(`chmod +x`).
+
+#### Python extensions
+
+Python extensions use a standard `pyproject.toml` with a console script entry point. The CLI runs them via
+`uv run nuon-ext-<name>`, so [uv](https://docs.astral.sh/uv/) manages the virtualenv and dependencies automatically.
+
+A minimal project structure:
+
+```
+nuon-ext-my-tool/
+├── nuon-ext.toml
+├── pyproject.toml
+└── src/
+    └── nuon_ext_my_tool/
+        ├── __init__.py
+        └── cli.py
+```
+
+With a `pyproject.toml` entry point like:
+
+```toml
+[project.scripts]
+nuon-ext-my-tool = "nuon_ext_my_tool.cli:main"
+```
+
+We recommend [click](https://click.palletsprojects.com/) for building the CLI interface. Users install interpreted
+extensions with `@ref` to pin a branch:
+
+```sh
+nuon ext install myorg/nuon-ext-my-tool@main
+```

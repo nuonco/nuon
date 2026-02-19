@@ -140,3 +140,10 @@ func PrintWarning(msg string) {
 func PrintSuccess(msg string) {
 	fmt.Println(bubbles.SuccessStyle.Render(msg))
 }
+
+func PrintDebug(msg string) {
+	if os.Getenv(debugEnvVar) != "true" {
+		return
+	}
+	fmt.Println(bubbles.InfoStyle.Render("DEBUG: " + msg))
+}
