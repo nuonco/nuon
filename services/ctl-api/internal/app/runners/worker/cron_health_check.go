@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnergroupssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
@@ -173,6 +174,30 @@ func (w *Workflows) executeHealthCheck(ctx workflow.Context, runnerID string) (a
 			StatusDescription: fmt.Sprintf("status change %s -> %s in health check", runner.Status, newStatus),
 		}); err != nil {
 			return app.RunnerStatusUnknown, false, errors.Wrap(err, "unable to update runner status")
+		}
+
+		// Leader election: if runner became unhealthy and is the current leader, elect a new one.
+		// If runner became active and the group has no leader, elect it.
+		leaderBecameUnhealthy := newStatus != app.RunnerStatusActive && runner.Leader
+		groupLeader, _ := activities.AwaitGetGroupLeader(ctx, activities.GetGroupLeaderRequest{
+			RunnerGroupID: runner.RunnerGroupID,
+		})
+		groupHasLeader := groupLeader != nil && groupLeader.LeaderRunnerID != nil
+		runnerBecameActiveWithNoLeader := newStatus == app.RunnerStatusActive && !groupHasLeader
+
+		if leaderBecameUnhealthy || runnerBecameActiveWithNoLeader {
+			if leaderBecameUnhealthy {
+				l.Info("current leader became unhealthy, triggering leader election",
+					zap.String("runner_group_id", runner.RunnerGroupID),
+				)
+			} else {
+				l.Info("runner became active with no group leader, triggering leader election",
+					zap.String("runner_group_id", runner.RunnerGroupID),
+				)
+			}
+			w.evClient.Send(ctx, runner.RunnerGroupID, &runnergroupssignals.Signal{
+				Type: runnergroupssignals.OperationElectLeader,
+			})
 		}
 	}
 

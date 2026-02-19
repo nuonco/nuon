@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnergroupssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -106,6 +107,16 @@ func (w *Workflows) checkOffline(ctx workflow.Context, runnerID string) error {
 			StatusDescription: "runner is offline",
 		}); err != nil {
 			return errors.Wrap(err, "unable to update runner status")
+		}
+
+		// If the runner going offline was the group leader, trigger election.
+		if runner.Leader {
+			l.Info("offline leader detected, triggering leader election",
+				zap.String("runner_group_id", runner.RunnerGroupID),
+			)
+			w.evClient.Send(ctx, runner.RunnerGroupID, &runnergroupssignals.Signal{
+				Type: runnergroupssignals.OperationElectLeader,
+			})
 		}
 	}
 
