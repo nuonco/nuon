@@ -184,6 +184,83 @@ func TestDiagnostics_MissingRequiredFields(t *testing.T) {
 	}
 }
 
+// TestDiagnostics_MissingRequiredFieldsAllOf tests that required fields from allOf
+// branches are checked. Component schemas use allOf: [Component, SpecificConfig].
+func TestDiagnostics_MissingRequiredFieldsAllOf(t *testing.T) {
+	// Branch 1: Component base with "name" required
+	componentProps := jsonschema.NewProperties()
+	componentProps.Set("name", &jsonschema.Schema{Type: "string"})
+	componentBranch := &jsonschema.Schema{
+		Type:       "object",
+		Properties: componentProps,
+		Required:   []string{"name"},
+	}
+
+	// Branch 2: Helm-specific config with "chart_name" required
+	helmProps := jsonschema.NewProperties()
+	helmProps.Set("chart_name", &jsonschema.Schema{Type: "string"})
+	helmProps.Set("namespace", &jsonschema.Schema{Type: "string"})
+	helmBranch := &jsonschema.Schema{
+		Type:       "object",
+		Properties: helmProps,
+		Required:   []string{"chart_name"},
+	}
+
+	// Root schema with allOf (no root properties/required)
+	schema := &jsonschema.Schema{
+		AllOf:       []*jsonschema.Schema{componentBranch, helmBranch},
+		Definitions: map[string]*jsonschema.Schema{},
+	}
+
+	t.Run("missing required from both branches", func(t *testing.T) {
+		tomlContent := `namespace = "default"`
+		doc := tomlparser.ParseToml(tomlContent)
+		diags := DiagnoseDocument("file:///test.toml", doc, schema)
+
+		missingFields := map[string]bool{"name": false, "chart_name": false}
+		for _, diag := range diags {
+			for field := range missingFields {
+				if strings.Contains(diag.Message, field) && strings.Contains(diag.Message, "required") {
+					missingFields[field] = true
+				}
+			}
+		}
+		for field, found := range missingFields {
+			if !found {
+				t.Errorf("Expected diagnostic for missing required field '%s', got: %v", field, diags)
+			}
+		}
+	})
+
+	t.Run("all required present", func(t *testing.T) {
+		tomlContent := "name = \"myapp\"\nchart_name = \"nginx\""
+		doc := tomlparser.ParseToml(tomlContent)
+		diags := DiagnoseDocument("file:///test.toml", doc, schema)
+
+		for _, diag := range diags {
+			if strings.Contains(diag.Message, "required") {
+				t.Errorf("Expected no missing required diagnostics, got: %s", diag.Message)
+			}
+		}
+	})
+
+	t.Run("unknown key from allOf schema", func(t *testing.T) {
+		tomlContent := "name = \"myapp\"\nchart_name = \"nginx\"\nbogus = \"value\""
+		doc := tomlparser.ParseToml(tomlContent)
+		diags := DiagnoseDocument("file:///test.toml", doc, schema)
+
+		hasUnknown := false
+		for _, diag := range diags {
+			if strings.Contains(diag.Message, "bogus") && strings.Contains(diag.Message, "Unknown") {
+				hasUnknown = true
+			}
+		}
+		if !hasUnknown {
+			t.Errorf("Expected unknown key diagnostic for 'bogus', got: %v", diags)
+		}
+	})
+}
+
 // TestDiagnostics_UnknownKeys tests that unknown keys are detected
 func TestDiagnostics_UnknownKeys(t *testing.T) {
 	props := jsonschema.NewProperties()
