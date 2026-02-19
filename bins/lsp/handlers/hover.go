@@ -12,7 +12,6 @@ import (
 	protocol "github.com/tliron/glsp/protocol_3_16"
 )
 
-// HoverProvider handles hover requests with injectable schema
 type HoverProvider struct {
 	schema          *jsonschema.Schema
 	hierarchicalMap map[string]map[string]*jsonschema.Schema // Table path -> Properties mapping
@@ -20,7 +19,6 @@ type HoverProvider struct {
 	requiredKeys    map[string]bool                          // Current context's required keys (set per hover)
 }
 
-// NewHoverProvider creates a new hover provider with a schema and builds hierarchical property map
 func NewHoverProvider(schema *jsonschema.Schema) *HoverProvider {
 	propMap, reqMap := mappers.BuildPropertyMap(schema)
 	return &HoverProvider{
@@ -30,7 +28,6 @@ func NewHoverProvider(schema *jsonschema.Schema) *HoverProvider {
 	}
 }
 
-// GetHoverContent returns hover information for a key in the schema
 func (h *HoverProvider) GetHoverContent(text string, line, character int) *protocol.Hover {
 	log.Debugf("🔍 Hover requested at line:%d char:%d", line, character)
 
@@ -72,7 +69,6 @@ func (h *HoverProvider) GetHoverContent(text string, line, character int) *proto
 
 	log.Infof("✅ Found property '%s' in table '%s' (type: %s)", tomlCtx.KeyOnLine, tomlCtx.CurrentTable, prop.Type)
 
-	// Set required keys for the current table context
 	h.requiredKeys = h.requiredMap[tomlCtx.CurrentTable]
 
 	content := h.buildHoverContent(tomlCtx.CurrentTable, tomlCtx.KeyOnLine, prop)
@@ -85,20 +81,15 @@ func (h *HoverProvider) GetHoverContent(text string, line, character int) *proto
 	}
 }
 
-// buildHoverContent formats the hover information from a property
 func (h *HoverProvider) buildHoverContent(table, key string, prop *jsonschema.Schema) string {
 	var content strings.Builder
 
-	// Line 1: property name (bold) and type (italic code) on the same line
-	// Bold renders in the editor's heading color, italic code renders with
-	// a distinct background + slant — giving two visually different treatments.
 	if prop.Type != "" {
 		content.WriteString(fmt.Sprintf("**%s** &mdash; *`%s`*", key, prop.Type))
 	} else {
 		content.WriteString(fmt.Sprintf("**%s** &mdash; *`object`*", key))
 	}
 
-	// Append required / deprecated / default inline with the signature
 	if h.isRequired(key) {
 		content.WriteString(" &nbsp; `required`")
 	}
@@ -110,19 +101,16 @@ func (h *HoverProvider) buildHoverContent(table, key string, prop *jsonschema.Sc
 	}
 	content.WriteString("\n\n")
 
-	// Description
 	if prop.Description != "" {
 		content.WriteString("---\n\n")
 		content.WriteString(prop.Description)
 		content.WriteString("\n\n")
 	}
 
-	// Constraints: pattern, length, numeric bounds
 	if constraints := h.buildConstraints(prop); constraints != "" {
 		content.WriteString(constraints)
 	}
 
-	// Enum values as inline code chips
 	if len(prop.Enum) > 0 {
 		content.WriteString("📋 **Allowed values:** ")
 		enumStrs := make([]string, 0, len(prop.Enum))
@@ -133,12 +121,10 @@ func (h *HoverProvider) buildHoverContent(table, key string, prop *jsonschema.Sc
 		content.WriteString("\n\n")
 	}
 
-	// Child keys: for object/array types, show available sub-keys
 	if childKeys := h.buildChildKeys(table, key); childKeys != "" {
 		content.WriteString(childKeys)
 	}
 
-	// Examples in a TOML code block for realistic preview
 	if len(prop.Examples) > 0 {
 		content.WriteString("📝 **Examples:**\n\n")
 		content.WriteString("```toml\n")
@@ -151,7 +137,6 @@ func (h *HoverProvider) buildHoverContent(table, key string, prop *jsonschema.Sc
 	return content.String()
 }
 
-// buildConstraints returns a formatted string of schema constraints, or empty if none.
 func (h *HoverProvider) buildConstraints(prop *jsonschema.Schema) string {
 	var parts []string
 
@@ -186,9 +171,7 @@ func (h *HoverProvider) buildConstraints(prop *jsonschema.Schema) string {
 	return "🔒 **Constraints:** " + strings.Join(parts, " · ") + "\n\n"
 }
 
-// buildChildKeys returns a formatted list of available sub-keys for object/array types.
 func (h *HoverProvider) buildChildKeys(table, key string) string {
-	// Build the nested path that children would live under
 	childPath := key
 	if table != "" {
 		childPath = table + "." + key
@@ -207,7 +190,6 @@ func (h *HoverProvider) buildChildKeys(table, key string) string {
 	return "🔑 **Sub-keys:** " + strings.Join(keys, " · ") + "\n\n"
 }
 
-// isRequired checks whether the given key is required in its current table context
 func (h *HoverProvider) isRequired(key string) bool {
 	if h.schema == nil {
 		return false
@@ -215,7 +197,6 @@ func (h *HoverProvider) isRequired(key string) bool {
 	return h.requiredKeys[key]
 }
 
-// TextDocumentHover handles hover requests
 func TextDocumentHover(ctx *glsp.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	uri := params.TextDocument.URI
 	pos := params.Position
