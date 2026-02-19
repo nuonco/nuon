@@ -114,12 +114,7 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 		defs = rootSchema.Definitions
 	}
 
-	effectiveRoot := rootSchema
-	if effectiveRoot.Ref != "" {
-		if r := resolveRef(effectiveRoot.Ref, defs); r != nil {
-			effectiveRoot = r
-		}
-	}
+	effectiveRoot := mergeAllOf(rootSchema, defs)
 
 	// 1. Unknown keys
 	for _, key := range doc.Keys {
@@ -330,6 +325,78 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 }
 
 // Helper functions
+
+func mergeAllOf(schema *jsonschema.Schema, defs map[string]*jsonschema.Schema) *jsonschema.Schema {
+	if schema == nil {
+		return nil
+	}
+
+	current := schema
+	if current.Ref != "" {
+		if r := resolveRef(current.Ref, defs); r != nil {
+			current = r
+		}
+	}
+
+	if len(current.AllOf) == 0 {
+		return current
+	}
+
+	merged := &jsonschema.Schema{
+		Type:       current.Type,
+		Properties: current.Properties,
+		Required:   append([]string{}, current.Required...),
+		OneOf:      current.OneOf,
+	}
+	if merged.Properties == nil {
+		merged.Properties = jsonschema.NewProperties()
+	}
+
+	for _, branch := range current.AllOf {
+		if branch == nil {
+			continue
+		}
+
+		// Merge definitions first so $ref resolution works for this branch
+		for k, v := range branch.Definitions {
+			if _, exists := defs[k]; !exists {
+				defs[k] = v
+			}
+		}
+
+		resolved := branch
+		if branch.Ref != "" {
+			if r := resolveRef(branch.Ref, defs); r != nil {
+				resolved = r
+			}
+		}
+
+		if resolved.Properties != nil {
+			pair := resolved.Properties.Oldest()
+			for pair != nil {
+				if _, exists := merged.Properties.Get(pair.Key); !exists {
+					merged.Properties.Set(pair.Key, pair.Value)
+				}
+				pair = pair.Next()
+			}
+		}
+
+		merged.Required = append(merged.Required, resolved.Required...)
+
+		if len(resolved.OneOf) > 0 {
+			merged.OneOf = append(merged.OneOf, resolved.OneOf...)
+		}
+
+		// Also merge definitions from the resolved schema (in case ref target has its own)
+		for k, v := range resolved.Definitions {
+			if _, exists := defs[k]; !exists {
+				defs[k] = v
+			}
+		}
+	}
+
+	return merged
+}
 
 func ResolveSchema(root *jsonschema.Schema, path []string, defs map[string]*jsonschema.Schema) *jsonschema.Schema {
 	current := root
