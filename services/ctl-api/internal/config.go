@@ -55,7 +55,7 @@ func init() {
 	config.RegisterDefault("max_request_duration", time.Second*30)
 
 	config.RegisterDefault("app_repository_name_template", "%s/%s")
-	config.RegisterDefault("app_repository_region", "%s/%s")
+	config.RegisterDefault("app_region", "us-west-2")
 
 	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
 	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
@@ -226,6 +226,9 @@ type Config struct {
 	OrgRunnerK8sIAMRoleARN      string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
 	OrgRunnerK8sUseDefaultCreds bool   `config:"org_runner_k8s_use_default_creds"`
 	OrgRunnerInstanceType       string `config:"org_runner_instance_type" validate:"required"`
+
+	// configuration for apps
+	AppRegion string `config:"app_region" validate:"required"`
 
 	// configuration for managing the public dns zone
 	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
