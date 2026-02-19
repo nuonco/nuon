@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -72,7 +73,10 @@ func (s *service) completeUserJourney(ctx *gin.Context, accountID string, journe
 	}
 
 	if !found {
-		return nil, fmt.Errorf("journey '%s' not found for account", journeyName)
+		return nil, stderr.ErrNotFound{
+			Err:         fmt.Errorf("journey '%s' not found", journeyName),
+			Description: fmt.Sprintf("journey '%s' not found on this account", journeyName),
+		}
 	}
 
 	// Save if we found and updated any steps
