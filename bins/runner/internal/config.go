@@ -17,6 +17,7 @@ func init() {
 	config.RegisterDefault("log_level", "INFO")
 	config.RegisterDefault("registry_port", "5001")
 	config.RegisterDefault("sandbox_job_duration", "5s")
+	config.RegisterDefault("sandbox_control_port", "9095")
 }
 
 type Config struct {
@@ -39,6 +40,7 @@ type Config struct {
 	IsNuonctl                bool          `config:"is_nuonctl"`
 	SandboxJobDuration       time.Duration `config:"sandbox_job_duration"`
 	SandboxModeFaultsEnabled bool          `config:"sandbox_mode_faults_enabled"`
+	SandboxControlPort       int           `config:"sandbox_control_port"`
 }
 
 func NewConfig() (*Config, error) {
