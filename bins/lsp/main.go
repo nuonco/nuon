@@ -73,6 +73,22 @@ func startHealthCheckServer(port int) {
 func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, error) {
 	commonlog.NewInfoMessage(0, "Initializing server...")
 
+	// Store workspace folders for scanning
+	if params.WorkspaceFolders != nil && len(params.WorkspaceFolders) > 0 {
+		handlers.SetWorkspaceFolders(params.WorkspaceFolders)
+		commonlog.NewInfoMessage(0, fmt.Sprintf("Found %d workspace folder(s)", len(params.WorkspaceFolders)))
+		go handlers.ScanWorkspaceForDiagnostics(context)
+	} else if params.RootURI != nil {
+		handlers.SetWorkspaceFolders([]protocol.WorkspaceFolder{
+			{
+				URI:  *params.RootURI,
+				Name: "root",
+			},
+		})
+		commonlog.NewInfoMessage(0, fmt.Sprintf("Using rootUri as workspace folder: %s", *params.RootURI))
+		go handlers.ScanWorkspaceForDiagnostics(context)
+	}
+
 	return protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			TextDocumentSync: protocol.TextDocumentSyncKindFull,
