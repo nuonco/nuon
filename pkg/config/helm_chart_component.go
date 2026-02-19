@@ -65,6 +65,9 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("public_repo").Short("public repo with the helm chart").OneOfRequired("public_repo").
 		Field("connected_repo").Short("connected repo with the helm chart").OneOfRequired("connected_repo").
 		Field("helm_repo").Short("helm repo config").OneOfRequired("helm_repo").
+		Field("drift_schedule").Short("drift detection schedule").
+		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled.").
+		Example("0 2 * * *").
 		Field("build_timeout").Short("build operation timeout").
 		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
 		Example("30m").
