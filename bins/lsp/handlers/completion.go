@@ -82,7 +82,7 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 	}
 
 	// Build hierarchical property map from schema
-	hierarchicalMap := mappers.BuildPropertyMap(schema)
+	hierarchicalMap, _ := mappers.BuildPropertyMap(schema)
 	log.Debugf("✅ Built hierarchical property map with %d table levels", len(hierarchicalMap))
 
 	// Build completions
