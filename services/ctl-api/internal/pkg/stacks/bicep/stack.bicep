@@ -395,6 +395,7 @@ cat << 'EOF' > /etc/systemd/system/nuon-runner.service
 Description=Nuon Runner Service
 After=docker.service
 Requires=docker.service
+StartLimitIntervalSec=0
 
 [Service]
 TimeoutStartSec=0
