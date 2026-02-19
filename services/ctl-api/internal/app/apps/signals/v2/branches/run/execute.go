@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
@@ -118,7 +119,12 @@ func getExecuteFlowExecFn(eventLoopReq eventloop.EventLoopRequest) func(workflow
 			"step_name", step.Name,
 			"owner_id", eventLoopReq.ID,
 			"owner_type", "app_branches",
+			zap.Any("signal", sig),
+			
 		)
+		if sig == nil {
+			return nil
+		}
 
 		// TODO: fetch the queue ID for this app branch owner
 		queueID := "TODO"
