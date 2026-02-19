@@ -228,6 +228,7 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 	if len(effectiveRoot.OneOf) > 0 {
 		satisfiedCount := 0
 		var satisfiedTitles []string
+		var satisfiedFields []string
 		var requiredLists []string
 
 		for _, branch := range effectiveRoot.OneOf {
@@ -253,6 +254,8 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 				} else {
 					satisfiedTitles = append(satisfiedTitles, fmt.Sprintf("[%s]", strings.Join(branch.Required, ", ")))
 				}
+				// Track fields that satisfied this branch
+				satisfiedFields = append(satisfiedFields, branch.Required...)
 			}
 
 			if len(branch.Required) > 0 {
@@ -272,12 +275,54 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 				Source:   ptr("Nuon LSP"),
 			})
 		} else if satisfiedCount > 1 {
-			diagnostics = append(diagnostics, protocol.Diagnostic{
-				Severity: ptrSeverity(protocol.DiagnosticSeverityError),
-				Message:  fmt.Sprintf("Only one of: %s may be defined; found %s", strings.Join(requiredLists, ", "), strings.Join(satisfiedTitles, ", ")),
-				Range:    protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: 0, Character: 0}},
-				Source:   ptr("Nuon LSP"),
-			})
+			// Multiple oneOf branches satisfied - underline all conflicting fields
+			foundAny := false
+
+			for _, fieldName := range satisfiedFields {
+				// Find the key or table for this field at root level (empty tablePath)
+				found := false
+
+				// Check for root-level keys (e.g., "name = value")
+				for _, key := range doc.Keys {
+					if len(key.Path) == 1 && key.Name == fieldName {
+						diagnostics = append(diagnostics, protocol.Diagnostic{
+							Severity: ptrSeverity(protocol.DiagnosticSeverityError),
+							Message:  fmt.Sprintf("Only one of: %s may be defined; found %s", strings.Join(requiredLists, ", "), strings.Join(satisfiedTitles, ", ")),
+							Range:    toProtocolRange(key.Range),
+							Source:   ptr("Nuon LSP"),
+						})
+						found = true
+						foundAny = true
+						break
+					}
+				}
+
+				// Also check for tables (e.g., [connected_repo], [public_repo])
+				if !found {
+					for _, table := range doc.Tables {
+						if len(table.Path) == 1 && table.Name == fieldName {
+							diagnostics = append(diagnostics, protocol.Diagnostic{
+								Severity: ptrSeverity(protocol.DiagnosticSeverityError),
+								Message:  fmt.Sprintf("Only one of: %s may be defined; found %s", strings.Join(requiredLists, ", "), strings.Join(satisfiedTitles, ", ")),
+								Range:    toProtocolRange(table.Range),
+								Source:   ptr("Nuon LSP"),
+							})
+							found = true
+							foundAny = true
+							break
+						}
+					}
+				}
+			}
+			// If we didn't find any fields to underline, fall back to line 0
+			if !foundAny {
+				diagnostics = append(diagnostics, protocol.Diagnostic{
+					Severity: ptrSeverity(protocol.DiagnosticSeverityError),
+					Message:  fmt.Sprintf("Only one of: %s may be defined; found %s", strings.Join(requiredLists, ", "), strings.Join(satisfiedTitles, ", ")),
+					Range:    protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: 0, Character: 0}},
+					Source:   ptr("Nuon LSP"),
+				})
+			}
 		}
 	}
 
