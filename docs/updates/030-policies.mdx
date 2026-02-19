@@ -1,0 +1,67 @@
+---
+title: '030 - Policies'
+description:
+  'Enforce compliance, security, and operational standards across component deploys, sandbox runs, and external images.'
+---
+
+_Feb 19, 2026_
+
+## Policies
+
+Nuon now supports **Policies** for component deployments, sandbox runs, and external container images. Nuon policies now
+extends beyond the existing in-cluster Kyverno policies to give you control over your entire deployment pipeline.
+
+### What's New
+
+- **Deploy-time policies**: Validate Terraform plans, Helm charts, and Kubernetes manifests before changes are applied.
+  Enables blocking of deployments with `deny` rules and logging warnings with `warn` rules
+- **Sandbox policies**: Enables enforcing standards on sandbox infrastructure provisioning
+- **External image policies**: Validate container image metadata during builds to check for signed images, SBOMs, and
+  attestations and provenance before images are deployed into an install
+- **Policy reporting**: View and filter all policy evaluations across installs by status, type, for compliance auditing
+  and governance reporting
+
+### Learn More
+
+- [Policies Concepts](/concepts/policies): Understand how policies work, supported types, and evaluation phases
+- [Configuring Policies Guide](/guides/configuring-policies): Step-by-step walkthrough for adding policies to your app
+- [Example Policies Repository](https://github.com/nuonco/policies): Ready-to-use policy examples for Terraform and
+  Kubernetes
+
+## Custom Nested CloudFormation Stacks
+
+The install stack, `stack.toml`, now supports custom nested CloudFormation templates. This enables the provisioning of
+additional AWS or Kubernetes resources before the sandbox or any components simplifying the permissions story and
+enabling two new deploy methods: `byo-vpc` and `byo-eks`. Custom stacks are configured via `[[custom_nested_stacks]]`
+blocks in `stack.toml`. These are ideal for use cases like creating Kubernetes namespaces, EKS access entries, dedicated
+subnets, or transit VPCs. See the [Custom Nested Stacks guide](/guides/custom-nested-stacks) for full details.
+
+## Introducing Ad-hoc Actions
+
+Run one-off bash scripts or commands on installs for debugging and maintenance without creating permanent action config, with full UI support including a code editor component.
+
+## Nuon LSP Improvements
+
+### Added
+
+- Workspace-wide (multi-file) diagnostics.
+- Rich hover documentation with signatures, required/deprecated badges, constraints, and examples.
+
+## Dashboard UX Improvements
+
+- Policy reports UI with filtering and dedicated policy detail pages.
+- Auto-approve option on the install creation.
+- Improved install stack page with stack version details and config visibility
+- Redirect to workflow page after manual action runs with improved log filtering
+- Stratus design system updates for component config, install tables, and workflow filters
+- Break glass role display fix for unprovisioned installs.
+
+## Bug Fixes
+
+- Fixed Kubernetes manifest plan rendering
+- Fixed manual action now display the workflow name instead of a generic message
+- Fixed handling of null props in action run outputs rendering
+- Made `CreateApprovalResponse` idempotent to prevent duplicate approval errors on workflow retries
+- Bumped default Helm timeout to 30 minutes to avoid bad state on initial deploy failures
+- Fixed CloudFormation stack to omit secrets section when none are configured
+- Fixed empty allowed domains env var handling in auth service
