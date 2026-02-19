@@ -260,55 +260,87 @@ err := s.service.YourService.RegisterPublicRoutes(s.router)
 
 ## 5. Test Data Setup
 
-**Key Principles:**
-- **DO NOT manually clean up existing test data** - `BaseDBTestSuite.SetupTest()` handles this automatically
-- Set account context before creating orgs (required by BeforeCreate hook)
-- Use consistent test data IDs and names
+**CRITICAL: Use `testseed.Seeder` for creating test data.** The seeder generates unique IDs, handles context propagation, and sets correct defaults (e.g., `SandboxMode: true` for orgs, `AccountTypeAuth0` for accounts). This avoids duplicate key errors and missing required fields.
 
-**Critical Pattern:**
+**Key Principles:**
+- **Use `testseed.Seeder`** for accounts, orgs, apps, and installs — never manually build `&app.Account{}` or `&app.Org{}` structs for common test fixtures
+- **DO NOT manually clean up existing test data** - `BaseDBTestSuite.SetupTest()` handles this automatically
+- Only build entities manually when you need domain-specific fields not covered by the seeder (e.g., `RunnerGroup`, `RunnerGroupSettings`, `Runner`)
+
+**Seeder Setup:**
+
+Add `Seeder` to your test service struct:
+```go
+type YourTestService struct {
+    fx.In
+    DB     *gorm.DB `name:"psql"`
+    CHDB   *gorm.DB `name:"ch"`
+    V      *validator.Validate
+    L      *zap.Logger
+    Seeder *testseed.Seeder  // Already provided by CtlApiFXOptions()
+    // ... your service under test
+}
+```
+
+**Preferred Pattern — Using Seeder:**
 ```go
 func (s *YourTestSuite) setupTestData() {
-    // Create test account
-    testAcc := &app.Account{
-        ID:          domains.NewAccountID(),
-        Email:       "test@example.com",
-        Subject:     "test-subject",
-        AccountType: app.AccountTypeAuth0,
-    }
-    err := s.service.DB.Create(testAcc).Error
-    require.NoError(s.T(), err)
-    s.testAcc = testAcc
-
-    // ALWAYS set account context before creating orgs
     ctx := context.Background()
-    ctx = cctx.SetAccountContext(ctx, testAcc)
-    testOrg := &app.Org{
-        ID:          domains.NewOrgID(),
-        Name:        "test-org",
-        SandboxMode: true,
-        NotificationsConfig: app.NotificationsConfig{
-            InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-        },
+
+    // EnsureAccount creates account + sets account ID in context
+    ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+
+    // CreateOrg uses account from context for CreatedByID, sets SandboxMode: true
+    s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+}
+```
+
+**Available Seeder Methods:**
+- `BuildAccount()` / `CreateAccount(ctx, t)` / `EnsureAccount(ctx, t)` — unique ID-based email/subject, `AccountTypeAuth0`
+- `BuildOrg()` / `CreateOrg(ctx, t)` / `EnsureOrg(ctx, t)` — `SandboxMode: true`, uses account from context
+- `BuildApp()` / `CreateApp(ctx, t)` — uses org/account from context
+- `BuildInstall()` / `CreateInstall(ctx, t)` — uses org/account from context
+
+**When to Build Manually:**
+
+For domain-specific entities not covered by the seeder (e.g., runners, runner groups, settings), build them manually but still use the seeder for the account and org:
+```go
+func (s *YourTestSuite) setupTestData() {
+    ctx := context.Background()
+    ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+    s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+
+    // Domain-specific entities built manually
+    s.testRunnerGrp = &app.RunnerGroup{
+        ID:        domains.NewRunnerGroupID(),
+        OrgID:     s.testOrg.ID,
+        OwnerID:   s.testOrg.ID,
+        OwnerType: "org",
+        Type:      app.RunnerGroupTypeOrg,
+        Platform:  app.AppRunnerTypeAWSEKS,
     }
-    err = s.service.DB.WithContext(ctx).Create(testOrg).Error
+    err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
     require.NoError(s.T(), err)
-    s.testOrg = testOrg
 }
 ```
 
 **What NOT to Do:**
 ```go
-// ❌ BAD: Manual cleanup is redundant and can cause conflicts
-func (s *YourTestSuite) setupTestData() {
-    s.service.DB.Unscoped().Where("name = ?", "test-org").Delete(&app.Org{})
-    s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
-    // ... rest of setup
+// ❌ BAD: Manual account/org creation — use seeder instead
+testAcc := &app.Account{
+    ID:          domains.NewAccountID(),
+    Email:       "test@example.com",     // Will conflict across runs!
+    Subject:     "test-subject",
+    AccountType: app.AccountTypeAuth0,
 }
+
+// ❌ BAD: Manual cleanup is redundant
+s.service.DB.Unscoped().Where("name = ?", "test-org").Delete(&app.Org{})
 ```
 
 **Reference Examples:**
-- `services/ctl-api/internal/app/apps/service/get_apps_test.go:109-138` - Complete setupTestData
-- `services/ctl-api/internal/app/orgs/service/get_org_test.go:83-108` - With org creation
+- `services/ctl-api/internal/app/orgs/service/get_orgs_test.go:103-106` - Seeder usage (best example)
+- `services/ctl-api/tests/testseed/` - Seeder implementation
 
 ## 6. Test Cleanup
 
