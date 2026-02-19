@@ -25,6 +25,7 @@ import (
 	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	releasesworker "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/worker"
 	releasesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/worker/activities"
+	runnergroupsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/runner_groups/worker"
 	runnersworker "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker"
 	runnersactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 )
@@ -84,9 +85,11 @@ var ReleasesWorkerModule = fx.Module("worker-releases",
 )
 
 // RunnersWorkerModule provides the runners namespace worker.
+// Runner-groups workflows are also registered here (they share the runners namespace).
 var RunnersWorkerModule = fx.Module("worker-runners",
 	fx.Provide(runnersactivities.New),
 	fx.Provide(runnersworker.NewWorkflows),
+	fx.Provide(runnergroupsworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(runnersworker.New)),
 )
 
