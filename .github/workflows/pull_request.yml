@@ -3,6 +3,7 @@ name: pull request checks
 "on":
   pull_request:
     types: [opened, synchronize, edited]
+  merge_group:
 permissions:
   contents: read
   pull-requests: write
@@ -24,7 +25,7 @@ jobs:
 
   update_status:
     name: update status
-    if: github.event_name == 'pull_request' && always()
+    if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && always()
     needs:
       - check-pr
     runs-on: ubuntu-latest

@@ -2,7 +2,8 @@
 name: branch checks
 on:
   pull_request:
-    types: ['opened', 'edited', 'synchronize']
+    types: ["opened", "edited", "synchronize"]
+  merge_group:
 
 permissions:
   actions: read
@@ -11,7 +12,7 @@ permissions:
 jobs:
   update_status:
     name: update status
-    if: github.event_name == 'pull_request' && always()
+    if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && always()
     runs-on: ubuntu-latest
     steps:
       - uses: martialonline/workflow-status@v4.2

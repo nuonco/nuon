@@ -2,6 +2,7 @@
 name: skip-ci
 "on":
   pull_request:
+  merge_group:
   push:
     branches:
       - main
@@ -38,43 +39,43 @@ jobs:
         with:
           name: services ✅
           status: success
-      - name:  set artifacts
+      - name: set artifacts
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: artifacts ✅
           status: success
-      - name:  set pkg
+      - name: set pkg
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: pkg ✅
           status: success
-      - name:  set protos
+      - name: set protos
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: protos ✅
           status: success
-      - name:  set pull_request
+      - name: set pull_request
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: pull_request ✅
           status: success
-      - name:  set branch
+      - name: set branch
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: branch ✅
           status: success
-      - name:  set lint
+      - name: set lint
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: lint ✅
           status: success
-      - name:  set terraform cloud
+      - name: set terraform cloud
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:

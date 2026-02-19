@@ -3,6 +3,7 @@
 name: pkg
 "on":
   pull_request:
+  merge_group:
   push:
     branches:
       - main
@@ -18,7 +19,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 defaults:
   run:
@@ -68,7 +69,7 @@ jobs:
     name: update status
     needs:
       - test
-    if: github.event_name == 'pull_request' && always()
+    if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && always()
     runs-on: ubuntu-latest
     steps:
       - uses: martialonline/workflow-status@v4.2
