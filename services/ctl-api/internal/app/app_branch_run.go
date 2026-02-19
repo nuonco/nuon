@@ -51,7 +51,12 @@ type AppBranchRun struct {
 	ErrorMessage string `json:"error_message,omitempty" temporaljson:"error_message,omitzero,omitempty"`
 
 	// CommitSHA is the VCS commit that triggered or is associated with this run
+	// DEPRECATED: Use VCSConnectionCommit relationship instead
 	CommitSHA string `json:"commit_sha,omitzero" temporaljson:"commit_sha,omitzero,omitempty"`
+
+	// VCSConnectionCommit is the full commit record associated with this run
+	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" swaggerignore:"true" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
+	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitempty" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 }
 
 func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
@@ -78,6 +83,12 @@ func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &AppBranchRun{}, "status"),
 			Columns: []string{
 				"status",
+			},
+		},
+		{
+			Name: indexes.Name(db, &AppBranchRun{}, "vcs_connection_commit_id"),
+			Columns: []string{
+				"vcs_connection_commit_id",
 			},
 		},
 	}

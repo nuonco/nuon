@@ -1,4 +1,4 @@
-package checkchanges
+package fetchcommit
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"

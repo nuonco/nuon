@@ -1,4 +1,4 @@
-package checkchanges
+package fetchcommit
 
 import (
 	"github.com/go-playground/validator/v10"
@@ -9,9 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "app-branch-check-changes"
+const SignalType signal.SignalType = "app-branch-fetch-commit"
 
 type Signal struct {
+	RunID       string `json:"run_id" validate:"required"`
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 }
 
@@ -28,7 +29,14 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.Wrap(err, "validation failed")
 	}
 
-	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
+	// Validate run exists
+	_, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
+	if err != nil {
+		return errors.Wrap(err, "app branch run not found")
+	}
+
+	// Validate app branch exists
+	_, err = activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")
 	}
