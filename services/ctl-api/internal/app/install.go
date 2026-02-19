@@ -134,12 +134,12 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 func (i *Install) AfterQuery(tx *gorm.DB) error {
 	i.Links = links.InstallLinks(tx.Statement.Context, i.ID)
 
-	// get the runner status
+	// get the runner status, preferring the leader runner if one is elected
 	i.RunnerStatus = RunnerStatusDeprovisioned
-	if len(i.RunnerGroup.Runners) > 0 {
-		i.RunnerStatus = i.RunnerGroup.Runners[0].Status
-		i.RunnerStatusDescription = i.RunnerGroup.Runners[0].StatusDescription
-		i.RunnerID = i.RunnerGroup.Runners[0].ID
+	if runner := i.RunnerGroup.ActiveRunner(); runner != nil {
+		i.RunnerStatus = runner.Status
+		i.RunnerStatusDescription = runner.StatusDescription
+		i.RunnerID = runner.ID
 	}
 
 	if len(i.InstallInputs) > 0 {
