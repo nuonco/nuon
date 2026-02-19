@@ -21,6 +21,7 @@ type devver struct {
 	runnerType     string
 	runnerID       string
 	runnerAPIToken string
+	runnerGroupID  string
 
 	apiClient api.Client
 	v         *validator.Validate

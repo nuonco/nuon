@@ -8,32 +8,17 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/api"
 	"github.com/nuonco/nuon/pkg/retry"
 )
 
 func (d *devver) initRunner(ctx context.Context) error {
-	// NOTE(jm): we are removing `RUNNER_ID`
-	if os.Getenv("RUNNER_ID") != "" {
-		fmt.Println("runner id set from environment using RUNNER_ID env-var (note this is no longer recommended, please use ORG_RUNNER_ID or INSTALL_RUNNER_ID).")
-		d.runnerID = os.Getenv("RUNNER_ID")
-		return nil
+	// Warn if legacy env vars are set — they are ignored in favor of self-registration.
+	if os.Getenv("ORG_RUNNER_ID") != "" {
+		fmt.Println("warning: ORG_RUNNER_ID is set but will be ignored; local runner will self-register instead.")
 	}
-
-	switch d.watchRunnerType {
-	case "org":
-		if os.Getenv("ORG_RUNNER_ID") != "" {
-			fmt.Println("runner id set from environment using ORG_RUNNER_ID env-var")
-			d.runnerID = os.Getenv("ORG_RUNNER_ID")
-			os.Setenv("RUNNER_ID", d.runnerID)
-			return nil
-		}
-	case "install":
-		if os.Getenv("INSTALL_RUNNER_ID") != "" {
-			fmt.Println("runner id set from environment using INSTALL_RUNNER_ID env-var")
-			d.runnerID = os.Getenv("INSTALL_RUNNER_ID")
-			os.Setenv("RUNNER_ID", d.runnerID)
-			return nil
-		}
+	if os.Getenv("INSTALL_RUNNER_ID") != "" {
+		fmt.Println("warning: INSTALL_RUNNER_ID is set but will be ignored; local runner will self-register instead.")
 	}
 
 	fn := func(ctx context.Context) error {
@@ -46,18 +31,53 @@ func (d *devver) initRunner(ctx context.Context) error {
 			return fmt.Errorf("no runners found")
 		}
 
-		// once a runner is created, we must wait until the service account is created (as part of the provisioning
-		// process), before running locally.
-		_, err = d.apiClient.GetRunnerServiceAccount(ctx, runners[0].ID)
-		if err != nil {
-			fmt.Println("runner is created, but service account is not ready yet")
-			return errors.Wrap(err, "unable to get service account")
+		// Check if a local runner already exists and cloud runners are already tainted
+		var localRunner *api.Runner
+		allCloudTainted := true
+		for i := range runners {
+			if runners[i].Platform == "local" {
+				localRunner = &runners[i]
+			} else if !runners[i].Tainted {
+				allCloudTainted = false
+			}
 		}
 
-		// need to wait for the runner to have a local aws iam role to run with locally.
-		// this role must be assumable by the support role
+		if localRunner != nil && allCloudTainted {
+			fmt.Printf("local runner %s already registered and cloud runners tainted, skipping registration\n", localRunner.ID)
+			d.runnerID = localRunner.ID
+			d.runnerGroupID = localRunner.RunnerGroupID
+			return nil
+		}
 
-		d.runnerID = runners[0].ID
+		// Get the runner group ID from the first runner to self-register
+		runnerGroupID := runners[0].RunnerGroupID
+		if runnerGroupID == "" {
+			return fmt.Errorf("runner group ID not set on runner %s", runners[0].ID)
+		}
+
+		// Self-register: find-or-create a local runner in this group
+		resp, err := d.apiClient.CreateRunnerInGroup(ctx, runnerGroupID, "local")
+		if err != nil {
+			fmt.Println("unable to self-register local runner, falling back to cloud runner identity")
+			return errors.Wrap(err, "unable to create local runner in group")
+		}
+
+		d.runnerID = resp.Runner.ID
+		d.runnerGroupID = runnerGroupID
+		if resp.Token != "" {
+			d.runnerAPIToken = resp.Token
+		}
+
+		// Taint cloud runners in the group so the local runner wins leader election
+		for _, runner := range runners {
+			if runner.ID != d.runnerID && runner.Platform != "local" && !runner.Tainted {
+				fmt.Printf("tainting cloud runner %s (%s)\n", runner.ID, runner.Name)
+				if err := d.apiClient.TaintRunner(ctx, runner.ID); err != nil {
+					fmt.Printf("warning: unable to taint runner %s: %v\n", runner.ID, err)
+				}
+			}
+		}
+
 		return nil
 	}
 
