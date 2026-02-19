@@ -48,41 +48,33 @@ func (s *service) GetOrgAccounts(ctx *gin.Context) {
 }
 
 func (s *service) getOrgAccounts(ctx *gin.Context, orgID string) ([]app.Account, error) {
-	role := app.Role{}
-	res := s.db.WithContext(ctx).
-		Where("org_id = ? AND role_type = ?", orgID, app.RoleTypeOrgAdmin).
-		First(&role)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get org accounts %s: %w", orgID, res.Error)
-	}
-
-	ar := []app.AccountRole{}
-	tx := s.db.WithContext(ctx)
-
 	acct, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get account from context: %w", err)
 	}
 
+	accounts := []app.Account{}
+	tx := s.db.WithContext(ctx).
+		Where("accounts.id IN (SELECT account_roles.account_id FROM account_roles JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0 WHERE roles.org_id = ? AND account_roles.deleted_at = 0)", orgID).
+		Where("accounts.account_type != ?", app.AccountTypeService)
+
 	if !strings.HasSuffix(acct.Email, "nuon.co") {
-		tx = tx.Joins("JOIN accounts ON accounts.id = account_roles.account_id")
 		tx = tx.Where("accounts.email NOT LIKE ?", "%nuon.co")
 	}
 
 	tx = tx.
 		Scopes(scopes.WithOffsetPagination).
-		Preload("Account").
-		Where("role_id = ?", role.ID).
-		Find(&ar)
-
-	ar, err = db.HandlePaginatedResponse(ctx, ar)
-	if err != nil {
-		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+		Preload("Roles", "org_id = ?", orgID).
+		Preload("Roles.Org").
+		Preload("Roles.Policies").
+		Find(&accounts)
+	if tx.Error != nil {
+		return nil, fmt.Errorf("unable to get org accounts %s: %w", orgID, tx.Error)
 	}
 
-	accounts := make([]app.Account, len(ar))
-	for i, a := range ar {
-		accounts[i] = a.Account
+	accounts, err = db.HandlePaginatedResponse(ctx, accounts)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	return accounts, nil
