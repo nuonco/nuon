@@ -1,6 +1,7 @@
 ---
 title: '030 - Policies'
-description: 'Enforce compliance, security, and operational standards across component deploys, sandbox runs, and external images.'
+description:
+  'Enforce compliance, security, and operational standards across component deploys, sandbox runs, and external images.'
 ---
 
 _Feb 19, 2026_
@@ -9,15 +10,27 @@ _Feb 19, 2026_
 
 Nuon now supports **Policies** for component deployments, sandbox runs, and external container images. Nuon policies now extends beyond the existing in-cluster Kyverno policies to give you control over your entire deployment pipeline.
 
+## Custom Nested CloudFormation Stacks
+
+The install stack, `stack.toml`, now supports custom nested CloudFormation templates. This enables the provisioning of
+additional AWS or Kubernetes resources before the sandbox or any components simplifying the permissions story and
+enabling two new deploy methods: `byo-vpc` and `byo-eks`. Custom stacks are configured via `[[custom_nested_stacks]]`
+blocks in `stack.toml`. These are ideal for use cases like creating Kubernetes namespaces, EKS access entries, dedicated
+subnets, or transit VPCs. See the [Custom Nested Stacks guide](/guides/custom-nested-stacks) for full details.
+
 ### What's New
 
-- **Deploy-time policies**: Validate Terraform plans, Helm charts, and Kubernetes manifests before changes are applied. Block deployments with `deny` rules or log warnings with `warn` rules
+- **Deploy-time policies**: Validate Terraform plans, Helm charts, and Kubernetes manifests before changes are applied.
+  Block deployments with `deny` rules or log warnings with `warn` rules
 - **Sandbox policies**: Enforce standards on sandbox infrastructure provisioning
-- **External image policies**: Validate container image metadata during builds — check for signed images, SBOMs, and attestations before they reach your installs
-- **Policy reporting**: View and filter all policy evaluations across installs by status, type, and more — useful for compliance auditing and tracking policy adherence over time
+- **External image policies**: Validate container image metadata during builds — check for signed images, SBOMs, and
+  attestations before they reach your installs
+- **Policy reporting**: View and filter all policy evaluations across installs by status, type, and more — useful for
+  compliance auditing and tracking policy adherence over time
 
 ### Learn More
 
 - [Policies Concepts](/concepts/policies) — Understand how policies work, supported types, and evaluation phases
 - [Configuring Policies Guide](/guides/configuring-policies) — Step-by-step walkthrough for adding policies to your app
-- [Example Policies Repository](https://github.com/nuonco/policies) — Ready-to-use policy examples for Terraform and Kubernetes
+- [Example Policies Repository](https://github.com/nuonco/policies) — Ready-to-use policy examples for Terraform and
+  Kubernetes
