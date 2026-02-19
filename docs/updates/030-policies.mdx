@@ -28,7 +28,6 @@ extends beyond the existing in-cluster Kyverno policies to give you control over
 - [Example Policies Repository](https://github.com/nuonco/policies): Ready-to-use policy examples for Terraform and
   Kubernetes
 
-
 ## Custom Nested CloudFormation Stacks
 
 The install stack, `stack.toml`, now supports custom nested CloudFormation templates. This enables the provisioning of
@@ -37,10 +36,10 @@ enabling two new deploy methods: `byo-vpc` and `byo-eks`. Custom stacks are conf
 blocks in `stack.toml`. These are ideal for use cases like creating Kubernetes namespaces, EKS access entries, dedicated
 subnets, or transit VPCs. See the [Custom Nested Stacks guide](/guides/custom-nested-stacks) for full details.
 
-## Ad-hoc Action Runs
+## Introducing Ad-hoc Actions
 
-[tktk: Run one-off bash scripts on installs for debugging and maintenance without creating permanent action
-workflow definitions, with full UI support including a code editor component.] and tracking policy adherence over time
+Run one-off bash scripts on installs for debugging and maintenance without creating permanent action workflow
+definitions, with full UI support including a code editor component.
 
 ## Nuon LSP Improvements
 
@@ -48,11 +47,6 @@ workflow definitions, with full UI support including a code editor component.] a
 
 - Workspace-wide (multi-file) diagnostics.
 - Rich hover documentation with signatures, required/deprecated badges, constraints, and examples.
-
-## Admin Dashboard Improvements
-
-[tktk: Org tagging, paginated tables, account activity sections, search by name or ID, and numerous navigation and
-UX refinements across the admin UI.]
 
 ## Dashboard UX Improvements
 
