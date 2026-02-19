@@ -38,8 +38,8 @@ type AppRunnerGroup struct {
 	// owner type
 	OwnerType string `json:"owner_type,omitempty"`
 
-	// platform
-	Platform AppAppRunnerType `json:"platform,omitempty"`
+	// Deprecated: Platform is being phased out in favor of per-runner Runner.Platform field.
+	Platform string `json:"platform,omitempty"`
 
 	// runners
 	Runners []*AppRunner `json:"runners"`
@@ -58,10 +58,6 @@ type AppRunnerGroup struct {
 func (m *AppRunnerGroup) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validatePlatform(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateRunners(formats); err != nil {
 		res = append(res, err)
 	}
@@ -77,27 +73,6 @@ func (m *AppRunnerGroup) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppRunnerGroup) validatePlatform(formats strfmt.Registry) error {
-	if swag.IsZero(m.Platform) { // not required
-		return nil
-	}
-
-	if err := m.Platform.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("platform")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("platform")
-		}
-
-		return err
-	}
-
 	return nil
 }
 
@@ -179,10 +154,6 @@ func (m *AppRunnerGroup) validateType(formats strfmt.Registry) error {
 func (m *AppRunnerGroup) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidatePlatform(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateRunners(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -198,28 +169,6 @@ func (m *AppRunnerGroup) ContextValidate(ctx context.Context, formats strfmt.Reg
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppRunnerGroup) contextValidatePlatform(ctx context.Context, formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Platform) { // not required
-		return nil
-	}
-
-	if err := m.Platform.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("platform")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("platform")
-		}
-
-		return err
-	}
-
 	return nil
 }
 

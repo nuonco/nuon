@@ -56,6 +56,10 @@ type Client interface {
 	GetRunnerGroup(ctx context.Context, id string) (*RunnerGroup, error)
 	GetRunnerServiceAccount(ctx context.Context, runnerID string) (*RunnerServiceAccount, error)
 	GetRunnerServiceAccountToken(ctx context.Context, runnerID string, dur time.Duration, invalidate bool) (string, error)
+
+	CreateRunnerInGroup(ctx context.Context, runnerGroupID string, platform string) (*CreateRunnerInGroupResponse, error)
+	TaintRunner(ctx context.Context, runnerID string) error
+	UntaintRunner(ctx context.Context, runnerID string) error
 }
 
 var _ Client = (*client)(nil)
