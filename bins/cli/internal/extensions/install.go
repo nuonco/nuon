@@ -38,12 +38,38 @@ func isLocalPath(input string) bool {
 }
 
 // cloneRepo clones a GitHub repository into the given directory.
-func cloneRepo(repo, destDir string) error {
+// If ref is non-empty, it checks out that branch, tag, or commit.
+func cloneRepo(repo, destDir, ref string) error {
 	url := fmt.Sprintf("https://github.com/%s.git", repo)
-	cmd := exec.Command("git", "clone", "--depth", "1", url, destDir)
+
+	if ref == "" {
+		cmd := exec.Command("git", "clone", "--depth", "1", url, destDir)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}
+
+	// Try --branch first (works for branches and tags with shallow clone)
+	cmd := exec.Command("git", "clone", "--depth", "1", "--branch", ref, url, destDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		// --branch failed (likely a commit SHA), do a full clone + checkout
+		os.RemoveAll(destDir)
+		cmd = exec.Command("git", "clone", url, destDir)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+		cmd = exec.Command("git", "checkout", ref)
+		cmd.Dir = destDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}
+
+	return nil
 }
 
 // detectExtType detects the extension type from the contents of a directory.
@@ -91,11 +117,11 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 
 	ui.PrintDebug(fmt.Sprintf("installing from GitHub: %s", repo))
 
-	repo, name, err := normalizeRepo(repo)
+	repo, name, ref, err := normalizeRepo(repo)
 	if err != nil {
 		return nil, err
 	}
-	ui.PrintDebug(fmt.Sprintf("resolved repo=%s name=%s", repo, name))
+	ui.PrintDebug(fmt.Sprintf("resolved repo=%s name=%s ref=%s", repo, name, ref))
 
 	// Check if already installed
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
@@ -103,9 +129,9 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		return nil, fmt.Errorf("extension %q is already installed (use `nuon ext upgrade %s` to update)", name, name)
 	}
 
-	// Fetch and validate manifest
-	ui.PrintDebug(fmt.Sprintf("fetching nuon-ext.toml from %s", repo))
-	manifest, err := FetchManifest(repo, "")
+	// Fetch and validate manifest (at the pinned ref if provided)
+	ui.PrintDebug(fmt.Sprintf("fetching nuon-ext.toml from %s (ref=%s)", repo, ref))
+	manifest, err := FetchManifest(repo, ref)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch extension manifest: %w", err)
 	}
@@ -117,6 +143,13 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 
 	if err := CheckCLIVersion(manifest); err != nil {
 		return nil, err
+	}
+
+	// When a ref is pinned, skip release auto-detection and go straight to clone.
+	// This is the primary path for interpreted extensions (script/python).
+	if ref != "" {
+		ui.PrintDebug(fmt.Sprintf("ref pinned to %s, cloning directly", ref))
+		return m.installByClone(repo, name, ref, extDir, manifest)
 	}
 
 	// Auto-detect: try release with platform assets first, fall back to clone
@@ -133,7 +166,7 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		ui.PrintDebug("no release with assets found, falling back to clone")
 	}
 
-	return m.installByClone(repo, name, extDir, manifest)
+	return m.installByClone(repo, name, "", extDir, manifest)
 }
 
 // installByRelease installs a binary extension by downloading a release asset.
@@ -195,9 +228,10 @@ func (m *Manager) installByRelease(repo, name, extDir string, manifest *Extensio
 
 // installByClone installs a script or python extension by cloning the repo.
 // The type is auto-detected from the repo contents after cloning.
-func (m *Manager) installByClone(repo, name, extDir string, manifest *ExtensionManifest) (*InstalledExtension, error) {
-	ui.PrintDebug(fmt.Sprintf("cloning %s into %s", repo, extDir))
-	if err := cloneRepo(repo, extDir); err != nil {
+// If ref is non-empty, the clone checks out that specific branch, tag, or commit.
+func (m *Manager) installByClone(repo, name, ref, extDir string, manifest *ExtensionManifest) (*InstalledExtension, error) {
+	ui.PrintDebug(fmt.Sprintf("cloning %s (ref=%s) into %s", repo, ref, extDir))
+	if err := cloneRepo(repo, extDir, ref); err != nil {
 		os.RemoveAll(extDir)
 		return nil, fmt.Errorf("unable to clone repository: %w", err)
 	}
@@ -213,11 +247,15 @@ func (m *Manager) installByClone(repo, name, extDir string, manifest *ExtensionM
 		}
 	}
 
-	// Determine version from latest release tag, or "latest" if no releases
+	// Determine version: use pinned ref, or latest release tag, or "latest"
 	ver := "latest"
-	release, err := getLatestRelease(repo)
-	if err == nil {
-		ver = release.TagName
+	if ref != "" {
+		ver = ref
+	} else {
+		release, err := getLatestRelease(repo)
+		if err == nil {
+			ver = release.TagName
+		}
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -227,6 +265,7 @@ func (m *Manager) installByClone(repo, name, extDir string, manifest *ExtensionM
 		Repo:          repo,
 		Version:       ver,
 		Tag:           ver,
+		Ref:           ref,
 		InstalledAt:   now,
 		UpdatedAt:     now,
 		Binary:        "",
@@ -249,8 +288,18 @@ func (m *Manager) installByClone(repo, name, extDir string, manifest *ExtensionM
 
 // normalizeRepo parses and validates the repo input.
 // Accepts: "deploy-checker", "nuon-ext-deploy-checker", "nuonco/nuon-ext-deploy-checker", "myorg/nuon-ext-foo"
-func normalizeRepo(input string) (repo, name string, err error) {
+// An optional @ref suffix pins to a specific branch, tag, or commit (e.g. "nuonco/nuon-ext-demo@main").
+func normalizeRepo(input string) (repo, name, ref string, err error) {
 	input = strings.TrimSpace(input)
+
+	// Parse @ref suffix before any other processing
+	if idx := strings.LastIndex(input, "@"); idx > 0 {
+		ref = input[idx+1:]
+		input = input[:idx]
+		if ref == "" {
+			return "", "", "", fmt.Errorf("empty ref after @")
+		}
+	}
 
 	if strings.Contains(input, "/") {
 		// Full repo format: org/repo
@@ -258,17 +307,17 @@ func normalizeRepo(input string) (repo, name string, err error) {
 		repoName := parts[1]
 
 		if !strings.HasPrefix(repoName, "nuon-ext-") {
-			return "", "", fmt.Errorf("extension repository must use nuon-ext- prefix (got: %s)", repoName)
+			return "", "", "", fmt.Errorf("extension repository must use nuon-ext- prefix (got: %s)", repoName)
 		}
 
 		name = strings.TrimPrefix(repoName, "nuon-ext-")
-		return input, name, nil
+		return input, name, ref, nil
 	}
 
 	// Shorthand: either "nuon-ext-deploy-checker" or "deploy-checker"
 	name = strings.TrimPrefix(input, "nuon-ext-")
 	repo = defaultOrg + "/nuon-ext-" + name
-	return repo, name, nil
+	return repo, name, ref, nil
 }
 
 // getLatestRelease fetches the latest release from a GitHub repository.

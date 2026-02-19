@@ -37,6 +37,7 @@ type InstalledExtension struct {
 	Repo          string  `json:"repo"`
 	Version       string  `json:"version"`
 	Tag           string  `json:"tag"`
+	Ref           string  `json:"ref,omitempty"`
 	InstalledAt   string  `json:"installed_at"`
 	UpdatedAt     string  `json:"updated_at"`
 	Binary        string  `json:"binary"`
