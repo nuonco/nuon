@@ -208,7 +208,7 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 	}
 
 	for _, partial := range partials {
-		l.Info("fetching partial state " + partial.name)
+		l.Debug("fetching partial state " + partial.name)
 		if err := partial.fn(ctx, req.InstallID, is); err != nil {
 			return nil, errors.Wrap(err, "unable to get partial state "+partial.name)
 		}
