@@ -3,6 +3,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { Status } from '@/components/common/Status'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { ResendOrgInviteButton } from '@/components/team/ResendOrgInvite'
 import { getOrgInvites } from '@/lib'
 
 export const InvitedUser = async ({ orgId }: { orgId: string }) => {
@@ -27,6 +28,10 @@ export const InvitedUser = async ({ orgId }: { orgId: string }) => {
               <Badge size="sm" variant="code">
                 {i?.role_type === 'org_admin' ? 'Admin' : i?.role_type}
               </Badge>
+              <ResendOrgInviteButton
+                invite={i}
+                size="sm"
+              />
             </div>
           )
         })}

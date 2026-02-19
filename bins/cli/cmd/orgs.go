@@ -13,6 +13,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		sandbox      bool
 		offset       int
 		limit        int
+		search       string
 		email        string
 		noSelect     bool
 		connectionID string
@@ -68,11 +69,12 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:    "List all your orgs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), offset, limit, PrintJSON)
+			return svc.List(cmd.Context(), offset, limit, search, PrintJSON)
 		}),
 	}
 	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
+	listCmd.Flags().StringVar(&search, "search", "", "Search orgs by name")
 	orgsCmd.AddCommand(listCmd)
 
 	listVCSConnections := &cobra.Command{

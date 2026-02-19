@@ -14,7 +14,7 @@ import (
 type CreateUserJourneyRequest struct {
 	Name  string                     `json:"name" binding:"required"`
 	Title string                     `json:"title" binding:"required"`
-	Steps []CreateUserJourneyStepReq `json:"steps" binding:"required"`
+	Steps []CreateUserJourneyStepReq `json:"steps" binding:"required,dive"`
 }
 
 type CreateUserJourneyStepReq struct {
@@ -34,6 +34,7 @@ type CreateUserJourneyStepReq struct {
 // @Failure				401		{object}	stderr.ErrResponse
 // @Failure				403		{object}	stderr.ErrResponse
 // @Failure				404		{object}	stderr.ErrResponse
+// @Failure				409		{object}	stderr.ErrResponse
 // @Failure				500		{object}	stderr.ErrResponse
 // @Success				201		{object}	app.Account
 // @Router					/v1/account/user-journeys [POST]
@@ -69,7 +70,10 @@ func (s *service) createUserJourney(ctx *gin.Context, accountID string, req *Cre
 	// Check for duplicate journey names
 	for _, journey := range account.UserJourneys {
 		if journey.Name == req.Name {
-			return nil, fmt.Errorf("journey with name '%s' already exists", req.Name)
+			return nil, stderr.ErrConflict{
+				Err:         fmt.Errorf("journey with name '%s' already exists", req.Name),
+				Description: fmt.Sprintf("a journey named '%s' already exists on this account", req.Name),
+			}
 		}
 	}
 

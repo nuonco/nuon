@@ -179,6 +179,16 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		var conflictErr ErrConflict
+		if errors.As(err, &conflictErr) {
+			c.JSON(http.StatusConflict, ErrResponse{
+				Error:       err.Error(),
+				UserError:   true,
+				Description: conflictErr.Description,
+			})
+			return
+		}
+
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			c.JSON(http.StatusConflict, ErrResponse{
 				Error:       err.Error(),

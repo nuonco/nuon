@@ -102,3 +102,16 @@ func (e ErrInvalidRequest) Unwrap() error {
 func NewInvalidRequest(err error) ErrInvalidRequest {
 	return ErrInvalidRequest{Err: err}
 }
+
+type ErrConflict struct {
+	Err         error
+	Description string
+}
+
+func (e ErrConflict) Error() string {
+	return e.Err.Error()
+}
+
+func (e ErrConflict) Unwrap() error {
+	return e.Err
+}

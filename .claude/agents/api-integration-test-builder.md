@@ -260,55 +260,87 @@ err := s.service.YourService.RegisterPublicRoutes(s.router)
 
 ## 5. Test Data Setup
 
-**Key Principles:**
-- **DO NOT manually clean up existing test data** - `BaseDBTestSuite.SetupTest()` handles this automatically
-- Set account context before creating orgs (required by BeforeCreate hook)
-- Use consistent test data IDs and names
+**CRITICAL: Use `testseed.Seeder` for creating test data.** The seeder generates unique IDs, handles context propagation, and sets correct defaults (e.g., `SandboxMode: true` for orgs, `AccountTypeAuth0` for accounts). This avoids duplicate key errors and missing required fields.
 
-**Critical Pattern:**
+**Key Principles:**
+- **Use `testseed.Seeder`** for accounts, orgs, apps, and installs — never manually build `&app.Account{}` or `&app.Org{}` structs for common test fixtures
+- **DO NOT manually clean up existing test data** - `BaseDBTestSuite.SetupTest()` handles this automatically
+- Only build entities manually when you need domain-specific fields not covered by the seeder (e.g., `RunnerGroup`, `RunnerGroupSettings`, `Runner`)
+
+**Seeder Setup:**
+
+Add `Seeder` to your test service struct:
+```go
+type YourTestService struct {
+    fx.In
+    DB     *gorm.DB `name:"psql"`
+    CHDB   *gorm.DB `name:"ch"`
+    V      *validator.Validate
+    L      *zap.Logger
+    Seeder *testseed.Seeder  // Already provided by CtlApiFXOptions()
+    // ... your service under test
+}
+```
+
+**Preferred Pattern — Using Seeder:**
 ```go
 func (s *YourTestSuite) setupTestData() {
-    // Create test account
-    testAcc := &app.Account{
-        ID:          domains.NewAccountID(),
-        Email:       "test@example.com",
-        Subject:     "test-subject",
-        AccountType: app.AccountTypeAuth0,
-    }
-    err := s.service.DB.Create(testAcc).Error
-    require.NoError(s.T(), err)
-    s.testAcc = testAcc
-
-    // ALWAYS set account context before creating orgs
     ctx := context.Background()
-    ctx = cctx.SetAccountContext(ctx, testAcc)
-    testOrg := &app.Org{
-        ID:          domains.NewOrgID(),
-        Name:        "test-org",
-        SandboxMode: true,
-        NotificationsConfig: app.NotificationsConfig{
-            InternalSlackWebhookURL: "https://hooks.slack.com/foo",
-        },
+
+    // EnsureAccount creates account + sets account ID in context
+    ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+
+    // CreateOrg uses account from context for CreatedByID, sets SandboxMode: true
+    s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+}
+```
+
+**Available Seeder Methods:**
+- `BuildAccount()` / `CreateAccount(ctx, t)` / `EnsureAccount(ctx, t)` — unique ID-based email/subject, `AccountTypeAuth0`
+- `BuildOrg()` / `CreateOrg(ctx, t)` / `EnsureOrg(ctx, t)` — `SandboxMode: true`, uses account from context
+- `BuildApp()` / `CreateApp(ctx, t)` — uses org/account from context
+- `BuildInstall()` / `CreateInstall(ctx, t)` — uses org/account from context
+
+**When to Build Manually:**
+
+For domain-specific entities not covered by the seeder (e.g., runners, runner groups, settings), build them manually but still use the seeder for the account and org:
+```go
+func (s *YourTestSuite) setupTestData() {
+    ctx := context.Background()
+    ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
+    s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+
+    // Domain-specific entities built manually
+    s.testRunnerGrp = &app.RunnerGroup{
+        ID:        domains.NewRunnerGroupID(),
+        OrgID:     s.testOrg.ID,
+        OwnerID:   s.testOrg.ID,
+        OwnerType: "org",
+        Type:      app.RunnerGroupTypeOrg,
+        Platform:  app.AppRunnerTypeAWSEKS,
     }
-    err = s.service.DB.WithContext(ctx).Create(testOrg).Error
+    err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
     require.NoError(s.T(), err)
-    s.testOrg = testOrg
 }
 ```
 
 **What NOT to Do:**
 ```go
-// ❌ BAD: Manual cleanup is redundant and can cause conflicts
-func (s *YourTestSuite) setupTestData() {
-    s.service.DB.Unscoped().Where("name = ?", "test-org").Delete(&app.Org{})
-    s.service.DB.Unscoped().Where("email = ?", "test@example.com").Delete(&app.Account{})
-    // ... rest of setup
+// ❌ BAD: Manual account/org creation — use seeder instead
+testAcc := &app.Account{
+    ID:          domains.NewAccountID(),
+    Email:       "test@example.com",     // Will conflict across runs!
+    Subject:     "test-subject",
+    AccountType: app.AccountTypeAuth0,
 }
+
+// ❌ BAD: Manual cleanup is redundant
+s.service.DB.Unscoped().Where("name = ?", "test-org").Delete(&app.Org{})
 ```
 
 **Reference Examples:**
-- `services/ctl-api/internal/app/apps/service/get_apps_test.go:109-138` - Complete setupTestData
-- `services/ctl-api/internal/app/orgs/service/get_org_test.go:83-108` - With org creation
+- `services/ctl-api/internal/app/orgs/service/get_orgs_test.go:103-106` - Seeder usage (best example)
+- `services/ctl-api/tests/testseed/` - Seeder implementation
 
 ## 6. Test Cleanup
 
@@ -498,30 +530,45 @@ if shouldHaveSignal {
 
 ## 13. Running Tests
 
+**CRITICAL: You MUST run and verify all tests you create before reporting completion.** Do not just write test files — compile them, run them, and confirm they pass.
+
+**CRITICAL: Always use `nuonctl tests run` with `--test integration-test`** to run integration tests locally. This command fetches the required environment variables (database credentials, secrets, AWS creds, etc.) from the Kubernetes cluster and sets `INTEGRATION=true` automatically.
+
 ```bash
-# CRITICAL: Use nuonctl to ensure proper environment setup
-nuonctl tests run ctl-api --test integration
+# Run ALL integration tests for a package
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 ./internal/app/orgs/service/..."
 
-# Run specific test file (all suites in file)
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_orgs_test.go
+# Run a specific test suite
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -count=1 -p 1 -run TestGetOrgsSuite ./internal/app/orgs/service/"
 
-# Run specific test suite (when file has multiple suites)
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_org_operations_test.go -run TestGetOrgSuite
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_org_operations_test.go -run TestGetOrgStatsSuite
-
-# Run specific deprecated handler test
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/actions/service/... -run TestGetInstallActionWorkflowsLatestRunsDeprecatedSuite
-
-# Run specific subtest within a suite
-INTEGRATION=true go test -v ./services/ctl-api/internal/app/orgs/service/get_orgs_test.go -run TestGetOrgsSuite/TestGetOrgs
+# Run all integration tests across the whole service
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 ./..."
 ```
 
-**NEVER run tests without `INTEGRATION=true`** - they will be skipped.
+**Key details:**
+- `NUONCTL_LOCAL=true` tells nuonctl to run commands locally (not in Docker)
+- `--test integration-test` selects the test config that sets `INTEGRATION=true` env var
+- `--command` overrides the default test command with your custom `go test` invocation
+- The working directory is automatically set to `services/ctl-api/` — use paths **relative to that directory** (e.g., `./internal/app/orgs/service/` NOT `./services/ctl-api/internal/...`)
+- **Do NOT use single quotes** around the `-run` regex pattern — nuonctl passes arguments directly without shell interpretation, so single quotes become literal characters in the regex
+- The `|` character in `-run` regex causes shell/JSON issues with nuonctl — **run test suites separately** instead of combining with `|`
+- Use `-p 1` to run test packages sequentially (avoids database conflicts)
+- Use `-count=1` to disable test caching when debugging
+
+**NEVER run integration tests with bare `go test`** — they require environment variables from K8s secrets that only `nuonctl tests run` provides. Without them, config validation will fail.
+
+**Workflow:**
+1. Write the test files
+2. Run `go build ./path/to/package/` to verify compilation
+3. Run each test suite with `nuonctl tests run` as shown above
+4. If tests fail, fix the issues and re-run until all pass
+5. Run `go fmt` and `goimports -w` on all modified files
+6. Report results with pass/fail counts
 
 **Test Organization Benefits:**
 With the one-to-one file mapping and separate test suites:
-- Run all tests for a handler file: `go test get_orgs_test.go`
-- Run specific handler test from multi-handler file: `-run TestGetOrgSuite`
+- Run all tests for a package: `./internal/app/orgs/service/...`
+- Run specific handler test: `-run TestGetOrgSuite`
 - Locate tests when debugging: same filename with `_test.go` suffix
 - Review test coverage: check if `handler.go` has matching `handler_test.go`
 - Identify deprecated tests: Look for `Deprecated` suffix in suite names
