@@ -46,11 +46,12 @@ func (s *service) genTerraformInstallerConfig(ctx context.Context, installID str
 	if err != nil {
 		return "", err
 	}
-	if len(runnerGroup.Runners) == 0 {
+	runner := runnerGroup.ActiveRunner()
+	if runner == nil {
 		return "", fmt.Errorf("no runners in install runner group")
 	}
 
-	token, err := s.runnersHelpers.CreateToken(ctx, runnerGroup.Runners[0].ID)
+	token, err := s.runnersHelpers.CreateToken(ctx, runner.ID)
 	if err != nil {
 		return "", err
 	}

@@ -26,5 +26,11 @@ func (s *service) AdminGetInstallRunner(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, install.RunnerGroup.Runners[0])
+	runner := install.RunnerGroup.ActiveRunner()
+	if runner == nil {
+		ctx.Error(fmt.Errorf("no runners in install %s runner group", installID))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, runner)
 }

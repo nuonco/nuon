@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -26,19 +27,21 @@ type Params struct {
 	L             *zap.Logger
 	EvClient      eventloop.Client
 	AccountClient *account.Client
+	AuthzClient   *authz.Client
 	Helpers       *helpers.Helpers
 }
 
 type service struct {
-	v          *validator.Validate
-	l          *zap.Logger
-	db         *gorm.DB
-	chDB       *gorm.DB
-	mw         metrics.Writer
-	cfg        *internal.Config
-	evClient   eventloop.Client
-	acctClient *account.Client
-	helpers    *helpers.Helpers
+	v           *validator.Validate
+	l           *zap.Logger
+	db          *gorm.DB
+	chDB        *gorm.DB
+	mw          metrics.Writer
+	cfg         *internal.Config
+	evClient    eventloop.Client
+	acctClient  *account.Client
+	authzClient *authz.Client
+	helpers     *helpers.Helpers
 }
 
 var _ api.Service = (*service)(nil)
@@ -65,6 +68,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/mng/update", s.MngUpdate)
 	api.POST("/v1/runners/:runner_id/mng/fetch-token", s.MngFetchToken)
 	api.POST("/v1/runners/:runner_id/prune-tokens", s.PruneTokens)
+
+	// taint/untaint
+	api.POST("/v1/runners/:runner_id/taint", s.TaintRunner)
+	api.POST("/v1/runners/:runner_id/untaint", s.UntaintRunner)
 
 	// settings
 	api.GET("/v1/runners/:runner_id/settings", s.GetRunnerSettingsPublic)
@@ -101,6 +108,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
 	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
+
+	// runner group leader
+	api.GET("/v1/runner-groups/:runner_group_id/leader", s.GetRunnerGroupLeader)
+	api.PUT("/v1/runner-groups/:runner_group_id/leader", s.UpdateRunnerGroupLeader)
 
 	return nil
 }
@@ -139,6 +150,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.POST("/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
 			runner.GET("/jobs/queue", s.AdminGetRunnerJobsQueue)
 
+			// taint/untaint
+			runner.POST("/taint", s.AdminTaintRunner)
+			runner.POST("/untaint", s.AdminUntaintRunner)
+
 			// trigger specific jobs
 			runner.POST("/graceful-shutdown", s.AdminGracefulShutDown)
 			runner.POST("/force-shutdown", s.AdminForceShutDown)
@@ -151,6 +166,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	runnerGroups := api.Group("/v1/runner-groups/:runner_group_id")
 	{
 		runnerGroups.GET("", s.AdminGetRunnerGroup)
+		runnerGroups.GET("/leader", s.GetRunnerGroupLeader)
+		runnerGroups.PUT("/leader", s.UpdateRunnerGroupLeader)
+		runnerGroups.POST("/runners", s.AdminCreateRunnerInGroup)
 	}
 
 	// runner job management
@@ -256,14 +274,15 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
-		cfg:        params.Cfg,
-		l:          params.L,
-		v:          params.V,
-		db:         params.DB,
-		chDB:       params.CHDB,
-		mw:         params.MW,
-		evClient:   params.EvClient,
-		acctClient: params.AccountClient,
-		helpers:    params.Helpers,
+		cfg:         params.Cfg,
+		l:           params.L,
+		v:           params.V,
+		db:          params.DB,
+		chDB:        params.CHDB,
+		mw:          params.MW,
+		evClient:    params.EvClient,
+		acctClient:  params.AccountClient,
+		authzClient: params.AuthzClient,
+		helpers:     params.Helpers,
 	}
 }

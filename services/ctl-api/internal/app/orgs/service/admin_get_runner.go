@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,5 +26,11 @@ func (s *service) AdminGetOrgRunner(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, org.RunnerGroup.Runners[0])
+	runner := org.RunnerGroup.ActiveRunner()
+	if runner == nil {
+		ctx.Error(fmt.Errorf("no runners in org %s runner group", nameOrID))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, runner)
 }
