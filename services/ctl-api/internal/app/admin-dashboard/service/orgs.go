@@ -100,11 +100,11 @@ func (s *service) getOrgs(ctx context.Context, search string, tagFilters []strin
 	// Calculate offset
 	offset := (page - 1) * orgsPerPage
 
-	// Get paginated results with counts
+	// Get paginated results with counts (excluding deleted records)
 	res := query.
 		Select("orgs.*, " +
-			"(SELECT COUNT(*) FROM apps WHERE apps.org_id = orgs.id) as app_count, " +
-			"(SELECT COUNT(*) FROM installs WHERE installs.org_id = orgs.id) as install_count").
+			"(SELECT COUNT(*) FROM apps WHERE apps.org_id = orgs.id AND apps.deleted_at = 0) as app_count, " +
+			"(SELECT COUNT(*) FROM installs WHERE installs.org_id = orgs.id AND installs.deleted_at = 0) as install_count").
 		Order("created_at desc").
 		Limit(orgsPerPage).
 		Offset(offset).
