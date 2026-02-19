@@ -17,7 +17,7 @@ func TestBuildPropertyMap(t *testing.T) {
 	}
 
 	// Build the hierarchical property map
-	hierarchicalMap := BuildPropertyMap(helmSchema)
+	hierarchicalMap, _ := BuildPropertyMap(helmSchema)
 
 	// Verify the map is not empty
 	if len(hierarchicalMap) == 0 {
@@ -129,7 +129,7 @@ func TestBuildPropertyMap(t *testing.T) {
 }
 
 func TestBuildPropertyMapNilSchema(t *testing.T) {
-	hierarchicalMap := BuildPropertyMap(nil)
+	hierarchicalMap, _ := BuildPropertyMap(nil)
 	if len(hierarchicalMap) != 0 {
 		t.Errorf("expected empty map for nil schema, got %d entries", len(hierarchicalMap))
 	}
