@@ -80,6 +80,7 @@ func init() {
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
+	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
 
 	// Blob storage configuration
 	config.RegisterDefault("blob_storage_bucket", "nuon-blobs")
