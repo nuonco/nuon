@@ -5,6 +5,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/extensions"
 )
 
 var (
@@ -18,6 +21,7 @@ var (
 	InstallGroup    = cobra.Group{ID: "install", Title: "Install Commands"}
 	HelpGroup       = cobra.Group{ID: "help", Title: "Help Commands"}
 	AdditionalGroup = cobra.Group{ID: "additional", Title: "Additional Commands"}
+	ExtensionGroup  = cobra.Group{ID: "extensions", Title: "Extensions"}
 )
 
 // newRootCmd constructs a new root cobra command, which all other commands will be nested under. If there are any flags
@@ -45,6 +49,7 @@ nuon sync
 		&InstallGroup,
 		&HelpGroup,
 		&AdditionalGroup,
+		&ExtensionGroup,
 	)
 
 	rootCmd.SetCompletionCommandGroupID(HelpGroup.ID)
@@ -73,10 +78,21 @@ nuon sync
 		c.buildsCmd(),
 		c.devCmd(),
 		c.loginCmd(),
+		c.extensionsCmd(),
 	}
 
 	for _, cmd := range cmds {
 		rootCmd.AddCommand(cmd)
+	}
+
+	// Register installed extensions as top-level proxy commands (preview only)
+	if config.Preview() {
+		extMgr := extensions.New(extensionsDir())
+		if exts, err := extMgr.List(); err == nil {
+			for _, ext := range exts {
+				rootCmd.AddCommand(c.extensionProxyCmd(ext))
+			}
+		}
 	}
 
 	return rootCmd
