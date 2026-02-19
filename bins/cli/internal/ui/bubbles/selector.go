@@ -3,6 +3,7 @@ package bubbles
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -25,10 +26,20 @@ func (i SelectorItem) Description() string { return i.description }
 func (i SelectorItem) Value() string       { return i.value }
 func (i SelectorItem) IsEvaluation() bool  { return i.isEvaluation }
 
+type searchDebounceMsg struct{ query string }
+type searchResultMsg struct {
+	items []SelectorItem
+	err   error
+}
+
 // SelectorModel represents the list selection component
 type SelectorModel struct {
 	items          []SelectorItem
 	filteredItems  []SelectorItem
+	originalItems  []SelectorItem
+	searchFn       func(string) ([]SelectorItem, error)
+	searching      bool
+	searchErr      string
 	choice         string
 	selected       bool
 	quitting       bool
@@ -46,6 +57,7 @@ func NewSelectorModel(title string, items []SelectorItem) SelectorModel {
 	return SelectorModel{
 		items:          items,
 		filteredItems:  items,
+		originalItems:  items,
 		cursor:         0,
 		width:          60,
 		height:         24, // Default terminal height
@@ -148,6 +160,12 @@ func (m *SelectorModel) getVisibleRows() int {
 	return availableHeight
 }
 
+func searchDebounceCmd(query string) tea.Cmd {
+	return tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg {
+		return searchDebounceMsg{query: query}
+	})
+}
+
 // Update handles messages for the selector model
 func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -160,6 +178,30 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.height = msg.Height
 		m.adjustViewport() // Recalculate viewport with new height
+		return m, nil
+
+	case searchDebounceMsg:
+		if msg.query != m.searchQuery || m.searchFn == nil {
+			return m, nil
+		}
+		m.searching = true
+		m.searchErr = ""
+		fn := m.searchFn
+		q := msg.query
+		return m, func() tea.Msg {
+			items, err := fn(q)
+			return searchResultMsg{items: items, err: err}
+		}
+
+	case searchResultMsg:
+		m.searching = false
+		if msg.err != nil {
+			m.searchErr = "Search failed"
+			return m, nil
+		}
+		m.filteredItems = msg.items
+		m.cursor = 0
+		m.viewportOffset = 0
 		return m, nil
 
 	case tea.KeyMsg:
@@ -183,6 +225,16 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyBackspace:
 				if len(m.searchQuery) > 0 {
 					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+					if m.searchFn != nil {
+						if m.searchQuery == "" {
+							m.searching = false
+							m.searchErr = ""
+							m.filteredItems = m.originalItems
+							m.cursor, m.viewportOffset = 0, 0
+							return m, nil
+						}
+						return m, searchDebounceCmd(m.searchQuery)
+					}
 					m.filterItems()
 				}
 				return m, nil
@@ -199,9 +251,11 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			default:
-				// Add character to search query
 				if msg.Type == tea.KeyRunes {
 					m.searchQuery += string(msg.Runes)
+					if m.searchFn != nil {
+						return m, searchDebounceCmd(m.searchQuery)
+					}
 					m.filterItems()
 				}
 				return m, nil
@@ -247,6 +301,9 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Start search with typed character
 					m.searchMode = true
 					m.searchQuery = string(msg.Runes)
+					if m.searchFn != nil {
+						return m, searchDebounceCmd(m.searchQuery)
+					}
 					m.filterItems()
 				}
 				return m, nil
@@ -293,8 +350,11 @@ func (m SelectorModel) View() string {
 		searchBoxStyle = searchBoxStyle.Foreground(styles.SubtleColor)
 	}
 
-	if m.searchMode {
-		searchText = searchText + "█" // Add cursor
+	if m.searching {
+		searchText = "Searching…"
+		searchBoxStyle = searchBoxStyle.Foreground(styles.SubtleColor)
+	} else if m.searchMode {
+		searchText = m.searchQuery + "█"
 	}
 
 	b.WriteString(searchBoxStyle.Render(fmt.Sprintf("%s %s", searchPrompt, searchText)))
@@ -307,7 +367,13 @@ func (m SelectorModel) View() string {
 			Italic(true).
 			Align(lipgloss.Center).
 			Padding(2, 0)
-		b.WriteString(noResultsStyle.Render("No matches found"))
+		msg := "No matches found"
+		if m.searchErr != "" {
+			msg = m.searchErr
+		} else if m.searching {
+			msg = ""
+		}
+		b.WriteString(noResultsStyle.Render(msg))
 		b.WriteString("\n")
 	} else {
 		visibleRows := m.getVisibleRows()
@@ -463,38 +529,68 @@ func SelectFromItemsWithMaxRows(title string, items []SelectorItem, maxVisibleRo
 }
 
 // SelectOrg shows an organization selector with evaluation journey support
-func SelectOrg(orgs []OrgOption) (string, error) {
-	items := make([]SelectorItem, len(orgs))
-	maxOrgNameWidth := 0
-	for _, org := range orgs {
-		if len(org.Name) > maxOrgNameWidth {
-			maxOrgNameWidth = len(org.Name)
+func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error)) (string, error) {
+	buildItems := func(opts []OrgOption) []SelectorItem {
+		maxWidth := 0
+		for _, org := range opts {
+			if len(org.Name) > maxWidth {
+				maxWidth = len(org.Name)
+			}
 		}
-	}
-	for i, org := range orgs {
-		title := fmt.Sprintf("%s%s", org.Name, strings.Repeat(" ", maxOrgNameWidth-len(org.Name)))
-		description := styles.TextDim.Render(fmt.Sprintf("ID: %s", org.ID))
+		items := make([]SelectorItem, len(opts))
+		for i, org := range opts {
+			title := fmt.Sprintf("%s%s", org.Name, strings.Repeat(" ", maxWidth-len(org.Name)))
+			description := styles.TextDim.Render(fmt.Sprintf("ID: %s", org.ID))
 
-		// Add evaluation journey indicators
-		if org.IsEvaluation {
-			title = fmt.Sprintf("🚀 %s (Evaluation)", org.Name)
-			description = fmt.Sprintf("ID: %s • Perfect for trying out Nuon", org.ID)
-		}
+			if org.IsEvaluation {
+				title = fmt.Sprintf("🚀 %s (Evaluation)", org.Name)
+				description = fmt.Sprintf("ID: %s • Perfect for trying out Nuon", org.ID)
+			}
 
-		items[i] = SelectorItem{
-			title:        title,
-			description:  description,
-			value:        org.ID,
-			isEvaluation: org.IsEvaluation,
+			items[i] = SelectorItem{
+				title:        title,
+				description:  description,
+				value:        org.ID,
+				isEvaluation: org.IsEvaluation,
+			}
 		}
+		return items
 	}
+
+	items := buildItems(orgs)
 
 	title := "Select an organization"
 	if hasEvaluationOrgs(orgs) {
 		title = "Select an organization (🚀 = Evaluation mode)"
 	}
 
-	return SelectFromItems(title, items)
+	var selectorSearchFn func(string) ([]SelectorItem, error)
+	if searchFn != nil {
+		selectorSearchFn = func(q string) ([]SelectorItem, error) {
+			orgResults, err := searchFn(q)
+			if err != nil {
+				return nil, err
+			}
+			return buildItems(orgResults), nil
+		}
+	}
+
+	model := NewSelectorModel(title, items)
+	model.originalItems = items
+	model.searchFn = selectorSearchFn
+
+	program := tea.NewProgram(model)
+	finalModel, err := program.Run()
+	if err != nil {
+		return "", err
+	}
+
+	selectorModel := finalModel.(SelectorModel)
+	if !selectorModel.Selected() {
+		return "", fmt.Errorf("selection cancelled")
+	}
+
+	return selectorModel.Choice(), nil
 }
 
 // SelectApp shows an application selector
