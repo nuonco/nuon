@@ -44,7 +44,7 @@ func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req 
 	}
 
 	// NOTE(jm): this is for pre-queue workflows
-	if step.Signal.SignalJSON != nil {
+	if step.Signal != nil {
 		var sig DomainSignal
 		if err := json.Unmarshal(step.Signal.SignalJSON, &sig); err != nil {
 			return c.handleStepErr(ctx, step.ID, err)

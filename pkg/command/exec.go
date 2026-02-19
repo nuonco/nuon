@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 
 	"github.com/abiosoft/lineprefix"
 	"github.com/pkg/errors"
@@ -102,7 +103,14 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 
 	// if file output path is set, we also write to that.
 	if c.FileOutputPath != "" {
-		fpWriter, err := os.OpenFile(c.FileOutputPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		// Rotate existing log file before creating a new one
+		if _, err := os.Stat(c.FileOutputPath); err == nil {
+			rotatedPath := c.FileOutputPath + "." + time.Now().Format("2006-01-02T15-04-05")
+			// Best-effort rename; if it fails, we'll just truncate
+			os.Rename(c.FileOutputPath, rotatedPath)
+		}
+
+		fpWriter, err := os.OpenFile(c.FileOutputPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to open file output path")
 		}

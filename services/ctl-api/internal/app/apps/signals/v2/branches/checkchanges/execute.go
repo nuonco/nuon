@@ -9,7 +9,6 @@ import (
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	panic("here testing")
 	// Get app branch with latest config
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {

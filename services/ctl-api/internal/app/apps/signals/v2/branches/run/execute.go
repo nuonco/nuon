@@ -5,16 +5,16 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/checkchanges"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -59,12 +59,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Create the WorkflowConductor with queue-based signal execution
 	fc := &flow.WorkflowConductor[*appsignals.Signal]{
-		Cfg: nil, // Not needed for app signals
-		V:   nil, // Not needed for app signals
-		MW:  nil, // Not needed for app signals
-
-		Generators: getWorkflowStepGenerators(),
-		ExecFn:     getExecuteFlowExecFn(eventLoopReq),
+		Generators:        getWorkflowStepGenerators(),
+		ExecFn:            getExecuteFlowExecFn(eventLoopReq),
+		StepChildWorkflow: false,
 	}
 
 	// Execute the flow directly - this will generate and execute workflow steps
@@ -109,32 +106,27 @@ func getWorkflowStepGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator
 	}
 }
 
-// getExecuteFlowExecFn returns the execution function for workflow steps
-// This routes each step's signal through the queue system
-func getExecuteFlowExecFn(eventLoopReq eventloop.EventLoopRequest) func(workflow.Context, eventloop.EventLoopRequest, *appsignals.Signal, app.WorkflowStep) error {
-	return func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *appsignals.Signal, step app.WorkflowStep) error {
+// getExecuteFlowExecFn returns the execution function for workflow steps.
+// This routes each step's queue signal through the queue system for the owning app branch.
+func getExecuteFlowExecFn(eventLoopReq eventloop.EventLoopRequest) func(workflow.Context, *signaldb.SignalData, app.WorkflowStep) error {
+	return func(ctx workflow.Context, queueSignal *signaldb.SignalData, step app.WorkflowStep) error {
 		logger := workflow.GetLogger(ctx)
+
+		sig := queueSignal.Signal
+		if sig == nil {
+			return nil
+		}
 
 		logger.Info("enqueuing signal to queue",
 			"step_name", step.Name,
 			"owner_id", eventLoopReq.ID,
 			"owner_type", "app_branches",
-			zap.Any("signal", sig),
-			
 		)
-		if sig == nil {
-			return nil
-		}
 
-		// TODO: fetch the queue ID for this app branch owner
-		queueID := "TODO"
-
-		// Enqueue the signal via the queue client
-		enqueueResp, err := client.AwaitEnqueueSignal(ctx, &client.EnqueueSignalRequest{
-			QueueID: queueID,
-			Signal: &checkchanges.Signal{
-				AppBranchID: "DNE",
-			},
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   eventLoopReq.ID,
+			OwnerType: "app_branches",
+			Signal:    sig,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
@@ -142,12 +134,10 @@ func getExecuteFlowExecFn(eventLoopReq eventloop.EventLoopRequest) func(workflow
 
 		logger.Info("waiting for queue signal to complete",
 			"step_name", step.Name,
-			"queue_signal_id", enqueueResp.ID,
-			"workflow_id", enqueueResp.WorkflowID,
+			"queue_signal_id", enqueueResp.QueueSignalID,
 		)
 
-		// Wait for the queue signal to complete execution
-		_, err = client.AwaitAwaitSignal(ctx, enqueueResp.ID)
+		_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID)
 		if err != nil {
 			return errors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
 		}
