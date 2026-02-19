@@ -38,33 +38,18 @@ func (m *Manager) Upgrade(name string) error {
 		return err
 	}
 
-	// Find the right binary
-	assetName := fmt.Sprintf("nuon-ext-%s-%s-%s", name, runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
-		assetName += ".exe"
-	}
-
-	var downloadURL string
-	for _, asset := range release.Assets {
-		if asset.Name == assetName {
-			downloadURL = asset.BrowserDownloadURL
-			break
-		}
-	}
-
+	// Find the right binary asset
+	downloadURL, _ := findReleaseAsset(release, name)
 	if downloadURL == "" {
 		return fmt.Errorf("no binary found for %s/%s in release %s", runtime.GOOS, runtime.GOARCH, release.TagName)
 	}
 
-	// Download new binary
+	// Download new binary (handling archives if needed)
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
-	binaryPath := filepath.Join(extDir, extensionBinaryName(name))
-	if err := downloadFile(downloadURL, binaryPath); err != nil {
+	binaryName := extensionBinaryName(name)
+	binaryPath := filepath.Join(extDir, binaryName)
+	if err := downloadAndExtractBinary(downloadURL, binaryPath, binaryName); err != nil {
 		return fmt.Errorf("unable to download updated binary: %w", err)
-	}
-
-	if err := os.Chmod(binaryPath, 0o755); err != nil {
-		return fmt.Errorf("unable to make binary executable: %w", err)
 	}
 
 	// Update cached nuon-ext.toml
