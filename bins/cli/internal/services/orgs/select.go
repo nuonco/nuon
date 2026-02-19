@@ -8,13 +8,25 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+func toOrgOptions(orgs []*models.AppOrg) []bubbles.OrgOption {
+	opts := make([]bubbles.OrgOption, len(orgs))
+	for i, org := range orgs {
+		opts[i] = bubbles.OrgOption{
+			ID:           org.ID,
+			Name:         org.Name,
+			IsEvaluation: false,
+		}
+	}
+	return opts
+}
+
 func (s *Service) Select(ctx context.Context, orgID string, offset, limit int, asJSON bool) error {
 	view := ui.NewGetView()
 
 	if orgID != "" {
 		s.SetCurrent(ctx, orgID, asJSON)
 	} else {
-		orgs, _, err := s.list(ctx, offset, limit)
+		orgs, _, err := s.list(ctx, offset, limit, "")
 		if err != nil {
 			return view.Error(err)
 		}
@@ -24,19 +36,30 @@ func (s *Service) Select(ctx context.Context, orgID string, offset, limit int, a
 			return nil
 		}
 
-		// Convert orgs to selector options
-		orgOptions := make([]bubbles.OrgOption, len(orgs))
-		for i, org := range orgs {
-			// TODO: Detect evaluation orgs based on user journey data
-			orgOptions[i] = bubbles.OrgOption{
-				ID:           org.ID,
-				Name:         org.Name,
-				IsEvaluation: false, // Will be updated when user journey detection is added
+		allLoadedOrgs := orgs
+		orgOptions := toOrgOptions(orgs)
+
+		searchFn := func(q string) ([]bubbles.OrgOption, error) {
+			results, _, err := s.list(ctx, 0, limit, q)
+			if err != nil {
+				return nil, err
 			}
+			for _, r := range results {
+				found := false
+				for _, existing := range allLoadedOrgs {
+					if existing.ID == r.ID {
+						found = true
+						break
+					}
+				}
+				if !found {
+					allLoadedOrgs = append(allLoadedOrgs, r)
+				}
+			}
+			return toOrgOptions(results), nil
 		}
 
-		// Show org selector
-		selectedOrgID, err := bubbles.SelectOrg(orgOptions)
+		selectedOrgID, err := bubbles.SelectOrg(orgOptions, searchFn)
 		if err != nil {
 			return view.Error(err)
 		}
@@ -45,9 +68,8 @@ func (s *Service) Select(ctx context.Context, orgID string, offset, limit int, a
 			return view.Error(err)
 		}
 
-		// Find selected org for display
 		var selectedOrg *models.AppOrg
-		for _, org := range orgs {
+		for _, org := range allLoadedOrgs {
 			if org.ID == selectedOrgID {
 				selectedOrg = org
 				break
