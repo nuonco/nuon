@@ -46,12 +46,13 @@ export const MainNavLink = ({
         {iconVariant ? <Icon variant={iconVariant} weight="bold" /> : null}
       </span>
       <span
-        className={cn('transition-all duration-fast whitespace-nowrap', {
+        className={cn('transition-all duration-fast whitespace-nowrap flex items-center gap-1', {
           'md:opacity-100 w-full': isSidebarOpen,
           'md:opacity-0 md:w-0': !isSidebarOpen,
         })}
       >
         {text}
+        {isExternal ? <Icon variant="ArrowSquareOut" size={12} /> : null}
       </span>
     </Link>
   )
