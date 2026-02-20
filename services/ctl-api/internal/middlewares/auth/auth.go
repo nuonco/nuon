@@ -113,8 +113,14 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		// Extract attribution from cookie (set by customer-dashboard during auth flow)
 		attribution := m.extractAttributionFromCookie(ctx)
 
+		// Determine completion source based on request User-Agent
+		completionSource := "dashboard"
+		if isCLIUserAgent(ctx.Request.UserAgent()) {
+			completionSource = "cli"
+		}
+
 		// store the token
-		acctToken, err = m.saveAccountToken(ctx, token, claims, attribution)
+		acctToken, err = m.saveAccountToken(ctx, token, claims, attribution, completionSource)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to save account token: %w", err))
 			ctx.Abort()
