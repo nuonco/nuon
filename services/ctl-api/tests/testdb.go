@@ -166,6 +166,7 @@ func TruncateAllTables(ctx context.Context, db *gorm.DB) error {
 
 // BaseDBTestSuite provides automatic test database setup and truncation.
 // Embed this in your test suites and call SetDB() in SetupSuite after creating your DB connection.
+// Optionally call SetCHDB() to enable ClickHouse table truncation between tests.
 //
 // Example:
 //
@@ -183,47 +184,74 @@ func TruncateAllTables(ctx context.Context, db *gorm.DB) error {
 //	    s.BaseDBTestSuite.SetupSuite() // creates test DB and sets env
 //	    // create your fx app and get DB
 //	    s.SetDB(db)
+//	    s.SetCHDB(chDB) // optional: enable CH truncation
 //	}
 //
 // Tables are automatically truncated before each test via SetupTest.
 type BaseDBTestSuite struct {
 	suite.Suite
-	db *gorm.DB
+	db   *gorm.DB
+	chDB *gorm.DB
 }
 
-// SetupSuite creates the test database if needed.
+// SetupSuite creates the test databases if needed.
 // Call this at the start of your SetupSuite if you override it.
-// DB_NAME must already be set in the environment (e.g. via nuonctl-test-env.yml).
+// DB_NAME and CLICKHOUSE_DB_NAME must already be set in the environment.
 func (s *BaseDBTestSuite) SetupSuite() {
-	// Create test database if it doesn't exist (only once per test run)
+	// Create PostgreSQL test database if it doesn't exist (only once per test run)
 	createDBOnce.Do(func() {
 		if err := CreateTestDatabase(); err != nil {
 			s.T().Fatalf("failed to create test database: %v", err)
 		}
 	})
+
+	// Create ClickHouse test database if it doesn't exist (only once per test run)
+	createCHDBOnce.Do(func() {
+		if err := CreateTestClickHouseDatabase(); err != nil {
+			s.T().Fatalf("failed to create clickhouse test database: %v", err)
+		}
+	})
 }
 
-// SetDB stores the database connection for use in truncation.
+// SetDB stores the PostgreSQL database connection for use in truncation.
 // Call this in your SetupSuite after creating the DB connection.
 func (s *BaseDBTestSuite) SetDB(db *gorm.DB) {
 	s.db = db
 }
 
-// DB returns the database connection.
+// DB returns the PostgreSQL database connection.
 func (s *BaseDBTestSuite) DB() *gorm.DB {
 	return s.db
 }
 
-// SetupTest truncates all tables before each test and re-runs migrations.
+// SetCHDB stores the ClickHouse database connection for use in truncation.
+// Call this in your SetupSuite after creating the CH connection.
+// If not called, ClickHouse tables will not be truncated between tests.
+func (s *BaseDBTestSuite) SetCHDB(db *gorm.DB) {
+	s.chDB = db
+}
+
+// CHDB returns the ClickHouse database connection.
+func (s *BaseDBTestSuite) CHDB() *gorm.DB {
+	return s.chDB
+}
+
+// SetupTest truncates all tables before each test.
 // If you override SetupTest in your suite, call s.BaseDBTestSuite.SetupTest() first.
 func (s *BaseDBTestSuite) SetupTest() {
 	if s.db == nil {
 		s.T().Fatal("DB not set - call SetDB() in SetupSuite")
 	}
 
-	// Truncate all tables
+	// Truncate all PostgreSQL tables
 	err := TruncateAllTables(context.Background(), s.db)
 	require.NoError(s.T(), err)
+
+	// Truncate all ClickHouse tables (only if chDB was set)
+	if s.chDB != nil {
+		err = TruncateAllCHTables(context.Background(), s.chDB)
+		require.NoError(s.T(), err)
+	}
 }
 
 func runMigrator(ctx context.Context, db *gorm.DB) error {
