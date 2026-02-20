@@ -536,13 +536,13 @@ if shouldHaveSignal {
 
 ```bash
 # Run ALL integration tests for a package
-export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 ./internal/app/orgs/service/..."
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 -parallel 1 ./internal/app/orgs/service/..."
 
 # Run a specific test suite
-export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -count=1 -p 1 -run TestGetOrgsSuite ./internal/app/orgs/service/"
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -count=1 -p 1 -parallel 1 -run TestGetOrgsSuite ./internal/app/orgs/service/"
 
 # Run all integration tests across the whole service
-export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 ./..."
+export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test --command "go test -v -p 1 -parallel 1 ./..."
 ```
 
 **Key details:**
@@ -552,7 +552,7 @@ export NUONCTL_LOCAL=true && nuonctl tests run ctl-api --test integration-test -
 - The working directory is automatically set to `services/ctl-api/` — use paths **relative to that directory** (e.g., `./internal/app/orgs/service/` NOT `./services/ctl-api/internal/...`)
 - **Do NOT use single quotes** around the `-run` regex pattern — nuonctl passes arguments directly without shell interpretation, so single quotes become literal characters in the regex
 - The `|` character in `-run` regex causes shell/JSON issues with nuonctl — **run test suites separately** instead of combining with `|`
-- Use `-p 1` to run test packages sequentially (avoids database conflicts)
+- **CRITICAL: Always use `-p 1 -parallel 1`** — integration tests share a database and MUST NEVER run in parallel. `-p 1` prevents parallel package execution, `-parallel 1` prevents parallel test function execution within a package. Omitting these flags causes data interference between test suites sharing the same tables.
 - Use `-count=1` to disable test caching when debugging
 
 **NEVER run integration tests with bare `go test`** — they require environment variables from K8s secrets that only `nuonctl tests run` provides. Without them, config validation will fail.
