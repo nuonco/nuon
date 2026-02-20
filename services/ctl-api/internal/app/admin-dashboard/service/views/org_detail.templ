@@ -1,16 +1,19 @@
 package views
 
 import (
+	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/graphviewer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/toast"
 )
 
-templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, currentPage, totalPages int) {
+templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, dashboardURL string, currentPage, totalPages int) {
 	@Layout("Organization: " + org.Name, ActivePageOrgs) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
@@ -21,7 +24,7 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 			</div>
 
 			<!-- Compact Org Header with Popover -->
-			@OrgHeaderWithPopover(org)
+			@OrgHeaderWithPopover(org, dashboardURL)
 
 			<!-- Most Recently Updated App Card -->
 			if recentApp != nil {
@@ -45,10 +48,11 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 				}
 			}
 		</div>
-		// Include the copybutton, popover, and graphviewer JavaScript
+		// Include the copybutton, popover, graphviewer, and toast JavaScript
 		@copybutton.Script()
 		@popover.Script()
 		@graphviewer.Script()
+		@toast.Script()
 
 		// Handle popover cleanup
 		<script nonce={ templ.GetNonce(ctx) }>
@@ -95,9 +99,9 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 	}
 }
 
-templ OrgHeaderWithPopover(org *app.Org) {
+templ OrgHeaderWithPopover(org *app.Org, dashboardURL string) {
 	<div id="org-header-with-popover">
-		@OrgHeader(org)
+		@OrgHeader(org, dashboardURL)
 		<!-- Tags Popover -->
 		@popover.Content(popover.ContentProps{
 			ID:        "tags-popover",
@@ -175,7 +179,7 @@ templ OrgHeaderWithPopover(org *app.Org) {
 	</div>
 }
 
-templ OrgHeader(org *app.Org) {
+templ OrgHeader(org *app.Org, dashboardURL string) {
 	<div id="org-header-container" class="bg-card border border-border rounded-lg p-6 mb-6">
 		<div class="flex items-start justify-between">
 			<!-- Left side: Name and ID -->
@@ -192,7 +196,29 @@ templ OrgHeader(org *app.Org) {
 				</div>
 			</div>
 			<!-- Right side: Status and timestamps -->
-			<div class="text-right space-y-2">
+			<div class="text-right space-y-3">
+				<!-- Dashboard and Support Users Buttons -->
+				<div class="flex items-center justify-end gap-2 mb-2">
+					<a href={ templ.URL(dashboardURL + "/" + org.ID) } target="_blank" rel="noopener noreferrer">
+						@button.Button(button.Props{
+							Variant: button.VariantOutline,
+							Size:    button.SizeSm,
+						}) {
+							View Dashboard
+						}
+					</a>
+					@button.Button(button.Props{
+						Variant: button.VariantDefault,
+						Size:    button.SizeSm,
+						Attributes: templ.Attributes{
+							"hx-post":   "/orgs/" + org.ID + "/support-users/add",
+							"hx-target": "body",
+							"hx-swap":   "beforeend",
+						},
+					}) {
+						Add Support Users
+					}
+				</div>
 				<!-- Status -->
 				<div class="flex items-center justify-end gap-2">
 					<span class="text-xs text-muted-foreground uppercase">Status:</span>
@@ -265,6 +291,50 @@ func contains(tags []string, tag string) bool {
 		}
 	}
 	return false
+}
+
+templ SupportUsersToast(successCount, alreadyExistsCount, errorCount int) {
+	if errorCount > 0 {
+		@toast.Toast(toast.Props{
+			Variant:       toast.VariantError,
+			Title:         "Error adding support users",
+			Description:   fmt.Sprintf("%d errors occurred while adding support users", errorCount),
+			Position:      toast.PositionBottomRight,
+			Duration:      5000,
+			Dismissible:   true,
+			ShowIndicator: true,
+			Icon:          true,
+		})
+	} else if successCount > 0 {
+		@toast.Toast(toast.Props{
+			Variant:       toast.VariantSuccess,
+			Title:         "Support users added",
+			Description:   buildSupportUsersDescription(successCount, alreadyExistsCount),
+			Position:      toast.PositionBottomRight,
+			Duration:      4000,
+			Dismissible:   true,
+			ShowIndicator: true,
+			Icon:          true,
+		})
+	} else if alreadyExistsCount > 0 {
+		@toast.Toast(toast.Props{
+			Variant:       toast.VariantInfo,
+			Title:         "Support users already added",
+			Description:   fmt.Sprintf("All %d support users already have access", alreadyExistsCount),
+			Position:      toast.PositionBottomRight,
+			Duration:      3000,
+			Dismissible:   true,
+			ShowIndicator: true,
+			Icon:          true,
+		})
+	}
+}
+
+func buildSupportUsersDescription(successCount, alreadyExistsCount int) string {
+	if alreadyExistsCount > 0 {
+		return fmt.Sprintf("Added %d support users (%d already existed)", successCount, alreadyExistsCount)
+	}
+	return fmt.Sprintf("Added %d support users", successCount)
 }
 
 templ MostRecentAppCard(app *app.App, graphDot string) {

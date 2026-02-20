@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	journeyprogress "github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/journey-progress"
 )
 
 templ AccountDetail(
@@ -51,6 +52,12 @@ templ AccountDetail(
 							<div class="flex items-center gap-2 mt-2">
 								<span class="text-xs text-muted-foreground uppercase">Subject:</span>
 								<span class="font-mono text-xs text-foreground">{ account.Subject }</span>
+							</div>
+						}
+						if len(account.UserJourneys) > 0 {
+							<div class="flex items-center gap-2 mt-2">
+								<span class="text-xs text-muted-foreground uppercase">Progress:</span>
+								@journeyprogress.JourneyProgressSummary(account.UserJourneys[0])
 							</div>
 						}
 					</div>
@@ -172,6 +179,33 @@ templ AccountDetail(
 					}
 				}
 			</div>
+
+			<!-- User Journey Section -->
+			if len(account.UserJourneys) > 0 {
+				<div class="mt-6">
+					@card.Card() {
+						@card.Header() {
+							@card.Title() {
+								User Journey
+							}
+							@card.Description() {
+								Onboarding progress and completion tracking
+							}
+						}
+						@card.Content(card.ContentProps{Class: "py-4"}) {
+							for i, journey := range account.UserJourneys {
+								if i > 0 {
+									<div class="border-t border-border my-3"></div>
+								}
+								@journeyprogress.JourneyProgress(journeyprogress.Props{
+									Journey:      &journey,
+									ShowDetailed: true,
+								})
+							}
+						}
+					}
+				</div>
+			}
 
 			<!-- Installs Section -->
 			<div class="mt-6">
