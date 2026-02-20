@@ -743,7 +743,10 @@ Resources:
 	assert.NotContains(t, result.params, "NuonInstallID")
 	assert.Contains(t, result.params, "CustomParam")
 
-	assert.Contains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
+	// Role resources are conditional, so they must NOT appear in DependsOn
+	// (otherwise CloudFormation fails with "Unresolved resource dependencies"
+	// when the role condition is false).
+	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
 }
 
 func TestGetCustomNestedStacks_RoleParamNotInjectedWhenAbsent(t *testing.T) {
@@ -841,7 +844,8 @@ Resources:
 	_, hasDeprov := stack.Parameters["EnableRunnerDeprovision"]
 	assert.False(t, hasDeprov, "deprovision param should not be injected when template doesn't declare it")
 
-	assert.Contains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
+	// Conditional role resources must NOT be in DependsOn.
+	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
 	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerDeprovision")
 }
 
