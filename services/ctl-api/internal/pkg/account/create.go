@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -36,7 +37,8 @@ func (m *Client) createAccount(ctx context.Context, email, subject string, accou
 
 // DefaultEvaluationJourney returns the evaluation journey for self-signup users
 // This is the 6-step journey: account_created, org_created, cli_installed, app_created, app_synced, install_created
-func DefaultEvaluationJourney() app.UserJourneys {
+func DefaultEvaluationJourney(completionSource string) app.UserJourneys {
+	now := time.Now().UTC()
 	return app.UserJourneys{
 		{
 			Name:  "evaluation",
@@ -45,10 +47,10 @@ func DefaultEvaluationJourney() app.UserJourneys {
 				{
 					Name:             "account_created",
 					Title:            "Create an account",
-					Complete:         false,
-					CompletedAt:      nil,
-					CompletionMethod: "",
-					CompletionSource: "",
+					Complete:         true,
+					CompletedAt:      &now,
+					CompletionMethod: "auto",
+					CompletionSource: completionSource,
 					Metadata:         make(map[string]interface{}),
 				},
 				{
@@ -109,8 +111,8 @@ func NoUserJourneys() app.UserJourneys {
 // DefaultEvaluationJourneyWithAttribution returns the evaluation journey with attribution data
 // stored in the account_created step's metadata. This enables tracking marketing source
 // for ROI analysis.
-func DefaultEvaluationJourneyWithAttribution(attribution map[string]interface{}) app.UserJourneys {
-	journey := DefaultEvaluationJourney()
+func DefaultEvaluationJourneyWithAttribution(attribution map[string]interface{}, completionSource string) app.UserJourneys {
+	journey := DefaultEvaluationJourney(completionSource)
 
 	// Store attribution in the first step (account_created) metadata
 	if len(attribution) > 0 && len(journey) > 0 && len(journey[0].Steps) > 0 {
