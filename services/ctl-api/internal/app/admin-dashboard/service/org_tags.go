@@ -59,7 +59,7 @@ func (s *service) UpdateOrgTags(c *gin.Context) {
 	}
 
 	// Render the updated org header with popover
-	component := views.OrgHeaderWithPopover(updatedOrg)
+	component := views.OrgHeaderWithPopover(updatedOrg, s.cfg.AppURL)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
@@ -111,6 +111,6 @@ func (s *service) RemoveSingleTag(c *gin.Context) {
 	}
 
 	// Render the updated org header with popover
-	component := views.OrgHeaderWithPopover(updatedOrg)
+	component := views.OrgHeaderWithPopover(updatedOrg, s.cfg.AppURL)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
