@@ -3,6 +3,7 @@ package tests
 import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -53,6 +54,9 @@ import (
 //	)
 func CtlApiFXOptions() []fx.Option {
 	return []fx.Option{
+		// Suppress verbose Fx PROVIDE/INVOKE logs in tests
+		fx.WithLogger(func() fxevent.Logger { return fxevent.NopLogger }),
+
 		// Configuration
 		fx.Provide(internal.NewConfig),
 
@@ -120,6 +124,9 @@ func CtlApiFXOptions() []fx.Option {
 // Deprecated: Most tests should use CtlApiFXOptions() with the custom validator.
 func CtlApiFXOptionsWithValidator() []fx.Option {
 	return []fx.Option{
+		// Suppress verbose Fx PROVIDE/INVOKE logs in tests
+		fx.WithLogger(func() fxevent.Logger { return fxevent.NopLogger }),
+
 		// Configuration
 		fx.Provide(internal.NewConfig),
 
