@@ -1,48 +1,10 @@
 package service
 
 import (
-	"context"
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
-
-var defaultSupportUsers = [][2]string{
-	// Jon Morehouse
-	{"google-oauth2|114670241124324496631", "jon@nuon.co"},
-	// Jordan Acosta
-	{"google-oauth2|106750268626571499868", "jordan@nuon.co"},
-	// Nat Hamilton
-	{"google-oauth2|107796233904597398271", "nat@nuon.co"},
-	// Rob Bruce
-	{"google-oauth2|111073782439789496112", "rob@nuon.co"},
-	// Fred Diego
-	{"google-oauth2|101745198892864595751", "fred@nuon.co"},
-	// Casey Bierman
-	{"google-oauth2|102295167972372616803", "casey@nuon.co"},
-	// Stephen Ebenezer
-	{"google-oauth2|115499976104812001062", "stephen@nuon.co"},
-	// Harsh Thakur
-	{"google-oauth2|113727848816762717712", "harsh@nuon.co"},
-	// Somesh Koli
-	{"google-oauth2|109216513967056704574", "somesh@nuon.co"},
-	// Mark Milligan
-	{"google-oauth2|112768740915143844087", "mark@nuon.co"},
-	// Prem Saraswat
-	{"google-oauth2|110547539022695245311", "prem@nuon.co"},
-	// Erick Yellott
-	{"google-oauth2|113804032321437445852", "yellott@nuon.co"},
-	// Matthew Schultheiss
-	{"google-oauth2|101974311300567993819", "matt@nuon.co"},
-	// Amit Meena
-	{"google-oauth2|107018571285448341124", "amit@nuon.co"},
-}
 
 // @ID						AdminCreateSupportUsers
 // @BasePath				/v1/orgs
@@ -64,35 +26,31 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 		return
 	}
 
-	cctx.SetAccountIDGinContext(ctx, org.CreatedByID)
-	for _, user := range defaultSupportUsers {
-		if err := s.createSupportUser(ctx, user[0], user[1], orgID); err != nil {
-			ctx.Error(err)
-			return
-		}
-	}
-
-	ctx.JSON(http.StatusCreated, map[string]string{
-		"status": "ok",
-	})
-}
-
-func (s *service) createSupportUser(ctx context.Context, subject, email, orgID string) error {
-	acct, err := s.acctClient.FindAccount(ctx, email)
+	results, err := s.helpers.AddSupportUsersToOrg(ctx, org)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
+		ctx.Error(err)
+		return
+	}
 
-		acct, err = s.acctClient.CreateAccount(ctx, email, subject, account.NoUserJourneys())
-		if err != nil {
-			return err
+	successCount := 0
+	alreadyExistsCount := 0
+	errorCount := 0
+
+	for _, result := range results {
+		if result.Error != nil {
+			errorCount++
+		} else if result.AlreadyExists {
+			alreadyExistsCount++
+		} else if result.Success {
+			successCount++
 		}
 	}
 
-	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, orgID, acct.ID); err != nil {
-		return err
-	}
-
-	return nil
+	ctx.JSON(http.StatusCreated, map[string]interface{}{
+		"status":              "ok",
+		"success":             successCount,
+		"already_exists":      alreadyExistsCount,
+		"errors":              errorCount,
+		"total_support_users": len(results),
+	})
 }
