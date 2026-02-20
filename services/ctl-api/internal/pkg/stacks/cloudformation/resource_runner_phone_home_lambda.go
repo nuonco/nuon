@@ -5,6 +5,7 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/lambda"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -29,15 +30,27 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudfor
 		}
 	}
 
+	// Build conditional role ARN references so that disabling a role
+	// (e.g. EnableRunnerProvision=false) doesn't create an unresolvable
+	// Fn::GetAtt on a resource that doesn't exist.
+	roleArnByType := make(map[string]any)
+	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
+		roleArnByType[string(role.Type)] = cloudformation.If(
+			role.CloudFormationStackParamName,
+			generics.FromPtrStr(cloudformation.GetAttPtr(role.CloudFormationStackName, "Arn")),
+			"",
+		)
+	}
+
 	lambdaprops := map[string]any{
 		"ServiceToken": cloudformation.GetAttPtr("RunnerPhoneHome", "Arn"),
 		"url":          inp.CloudFormationStackVersion.PhoneHomeURL,
 
 		// fields for the phone-home endpoint
 		"phone_home_type":          "aws",
-		"maintenance_iam_role_arn": cloudformation.GetAttPtr("RunnerMaintenance", "Arn"),
-		"provision_iam_role_arn":   cloudformation.GetAttPtr("RunnerProvision", "Arn"),
-		"deprovision_iam_role_arn": cloudformation.GetAttPtr("RunnerDeprovision", "Arn"),
+		"maintenance_iam_role_arn": roleArnByType[string(app.AWSIAMRoleTypeRunnerMaintenance)],
+		"provision_iam_role_arn":   roleArnByType[string(app.AWSIAMRoleTypeRunnerProvision)],
+		"deprovision_iam_role_arn": roleArnByType[string(app.AWSIAMRoleTypeRunnerDeprovision)],
 		"runner_iam_role_arn":      cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole"),
 
 		"break_glass_role_arns": breakGlassRoleArns,
