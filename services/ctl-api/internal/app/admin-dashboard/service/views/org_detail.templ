@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/toast"
 )
 
-templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, currentPage, totalPages int) {
+templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graphDot string, dashboardURL string, currentPage, totalPages int) {
 	@Layout("Organization: " + org.Name, ActivePageOrgs) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb navigation -->
@@ -24,7 +24,7 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 			</div>
 
 			<!-- Compact Org Header with Popover -->
-			@OrgHeaderWithPopover(org)
+			@OrgHeaderWithPopover(org, dashboardURL)
 
 			<!-- Most Recently Updated App Card -->
 			if recentApp != nil {
@@ -99,9 +99,9 @@ templ OrgDetail(org *app.Org, installs []*app.Install, recentApp *app.App, graph
 	}
 }
 
-templ OrgHeaderWithPopover(org *app.Org) {
+templ OrgHeaderWithPopover(org *app.Org, dashboardURL string) {
 	<div id="org-header-with-popover">
-		@OrgHeader(org)
+		@OrgHeader(org, dashboardURL)
 		<!-- Tags Popover -->
 		@popover.Content(popover.ContentProps{
 			ID:        "tags-popover",
@@ -179,7 +179,7 @@ templ OrgHeaderWithPopover(org *app.Org) {
 	</div>
 }
 
-templ OrgHeader(org *app.Org) {
+templ OrgHeader(org *app.Org, dashboardURL string) {
 	<div id="org-header-container" class="bg-card border border-border rounded-lg p-6 mb-6">
 		<div class="flex items-start justify-between">
 			<!-- Left side: Name and ID -->
@@ -197,8 +197,16 @@ templ OrgHeader(org *app.Org) {
 			</div>
 			<!-- Right side: Status and timestamps -->
 			<div class="text-right space-y-3">
-				<!-- Add Support Users Button -->
-				<div class="flex items-center justify-end mb-2">
+				<!-- Dashboard and Support Users Buttons -->
+				<div class="flex items-center justify-end gap-2 mb-2">
+					<a href={ templ.URL(dashboardURL + "/" + org.ID) } target="_blank" rel="noopener noreferrer">
+						@button.Button(button.Props{
+							Variant: button.VariantOutline,
+							Size:    button.SizeSm,
+						}) {
+							View Dashboard
+						}
+					</a>
 					@button.Button(button.Props{
 						Variant: button.VariantDefault,
 						Size:    button.SizeSm,

@@ -79,7 +79,7 @@ func (s *service) OrgDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.OrgDetail(org, installs, recentApp, graphDot, page, installsTotalPages)
+	component := views.OrgDetail(org, installs, recentApp, graphDot, s.cfg.AppURL, page, installsTotalPages)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 

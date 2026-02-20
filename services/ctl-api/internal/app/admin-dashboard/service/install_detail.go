@@ -82,7 +82,7 @@ func (s *service) InstallDetail(c *gin.Context) {
 		activityTotalPages = 1
 	}
 
-	component := views.InstallDetail(install, activeDeployments, activityLogs, startDate, endDate, page, activityTotalPages)
+	component := views.InstallDetail(install, activeDeployments, activityLogs, startDate, endDate, s.cfg.AppURL, page, activityTotalPages)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
