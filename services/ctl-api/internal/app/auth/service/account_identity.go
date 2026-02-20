@@ -245,7 +245,8 @@ func (s *service) createAccountWithIdentity(
 		userJourneys = account.NoUserJourneys()
 	} else if s.cfg.EvaluationJourneyEnabled {
 		// Self-signup on multi-tenant deployment: enable evaluation journey
-		userJourneys = account.DefaultEvaluationJourney()
+		// This code path is the browser-based OAuth/OIDC flow, so always "dashboard"
+		userJourneys = account.DefaultEvaluationJourney("dashboard")
 	} else {
 		// Self-signup on BYOC deployment: skip evaluation journey
 		userJourneys = account.NoUserJourneys()
