@@ -17,6 +17,7 @@ interface IDebouncedSearchInput {
   placeholder?: string
   debounceMs?: number
   className?: string
+  labelClassName?: string
   onDebouncedChange?: (value: string) => void
 }
 
@@ -26,6 +27,7 @@ export const DebouncedSearchInput = ({
   placeholder = 'Search…',
   debounceMs = 200,
   className,
+  labelClassName,
   onDebouncedChange,
 }: IDebouncedSearchInput) => {
   const router = useRouter()
@@ -183,6 +185,7 @@ export const DebouncedSearchInput = ({
   return (
     <SearchInput
       className={className}
+      labelClassName={labelClassName}
       placeholder={placeholder}
       value={value}
       onChange={handleChange}
