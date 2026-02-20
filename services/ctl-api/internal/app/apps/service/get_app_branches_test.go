@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -26,12 +27,13 @@ import (
 type AppBranchesTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app     *fxtest.App
-	service TestService
-	router  *gin.Engine
-	testOrg *app.Org
-	testAcc *app.Account
-	testApp *app.App
+	app          *fxtest.App
+	service      TestService
+	router       *gin.Engine
+	testOrg      *app.Org
+	testAcc      *app.Account
+	testApp      *app.App
+	mockEvClient *tests.FakeEventLoopClient
 }
 
 func TestAppBranchesSuite(t *testing.T) {
@@ -47,8 +49,15 @@ func (s *AppBranchesTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
+	// Create fake event loop client for testing
+	s.mockEvClient = tests.NewFakeEventLoopClient()
+
 	options := append(
 		tests.CtlApiFXOptions(),
+		// Override eventloop.Client with mock
+		fx.Decorate(func() eventloop.Client {
+			return s.mockEvClient
+		}),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -61,6 +70,9 @@ func (s *AppBranchesTestSuite) SetupSuite() {
 func (s *AppBranchesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+
+	// Reset mock before each test
+	s.mockEvClient.Reset()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
