@@ -28,6 +28,10 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.Component
 // @Router					/v1/apps/{app_id}/components/{component_id}/dependencies [get]
+// XXX: This endpoint calls GetComponentDependents which does a BFS following outgoing edges
+// (dependency → dependent). This means it returns the component's *dependents* (children),
+// not its *dependencies* (parents). To return actual dependencies, the BFS would need to
+// traverse incoming edges instead.
 func (s *service) GetAppComponentDependencies(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
