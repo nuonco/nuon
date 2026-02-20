@@ -36,7 +36,7 @@ const (
 	WorkflowTypeDriftRun                   WorkflowType = "drift_run"
 
 	// app branches workflows
-	WorkflowTypeAppBranchesRun        WorkflowType = "app_branches_manual_update"
+	WorkflowTypeAppBranchesRun                 WorkflowType = "app_branches_manual_update"
 	WorkflowTypeAppBranchesConfigRepoUpdate    WorkflowType = "app_branches_config_repo_update"
 	WorkflowTypeAppBranchesComponentRepoUpdate WorkflowType = "app_branches_component_repo_update"
 

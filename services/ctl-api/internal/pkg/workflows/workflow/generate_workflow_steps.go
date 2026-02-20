@@ -74,4 +74,3 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 
 	return steps, nil
 }
-

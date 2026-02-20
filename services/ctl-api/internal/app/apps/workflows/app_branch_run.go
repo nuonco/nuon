@@ -81,6 +81,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 	sg.nextGroup()
 	step, err = sg.appBranchSignalStep(ctx, appBranchID, "build all components", pgtype.Hstore{}, &buildcomponents.Signal{
 		AppBranchID: appBranchID,
+		RunID:       runID,
 	}, WithSkippable(false))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create build components step")
@@ -100,6 +101,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 		step, err = sg.appBranchSignalStep(ctx, appBranchID, "deploy install group: "+group.Name, pgtype.Hstore{}, &deploygrouptoqueue.Signal{
 			InstallGroupID: group.ID,
 			AppBranchID:    appBranchID,
+			RunID:          runID,
 		}, WithSkippable(false))
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create deploy step for group %s", group.Name)

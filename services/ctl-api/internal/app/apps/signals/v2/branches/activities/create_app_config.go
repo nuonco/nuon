@@ -4,21 +4,45 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+type CreateAppConfigInput struct {
+	AppID                  string `json:"app_id" validate:"required"`
+	OrgID                  string `json:"org_id" validate:"required"`
+	AppBranchID            string `json:"app_branch_id" validate:"required"`
+	CreatedByID            string `json:"created_by_id" validate:"required"`
+	IntermediateConfigJSON string `json:"intermediate_config_json" validate:"required"`
+}
+
+type CreateAppConfigOutput struct {
+	AppConfigID string `json:"app_config_id"`
+}
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 // @as-wrapper
-// @by-field appID
-func (a *Activities) createAppConfig(ctx context.Context, appID string, config interface{}) (*app.AppConfig, error) {
-	// TODO: Implement app config creation
-	// This will need to:
-	// 1. Validate app config structure
-	// 2. Set proper relationships (AppID, etc.)
-	// 3. Create app config in database
-	// 4. Handle component creation/updates
-	// 5. Return created app config with all relationships
+func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigInput) (*CreateAppConfigOutput, error) {
+	if err := a.v.Struct(req); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
 
-	return nil, fmt.Errorf("CreateAppConfig not yet implemented")
+	appConfig := app.AppConfig{
+		AppID:             req.AppID,
+		OrgID:             req.OrgID,
+		CreatedByID:       req.CreatedByID,
+		AppBranchID:       generics.NewNullString(req.AppBranchID),
+		Status:            app.AppConfigStatusPending,
+		StatusDescription: "pending sync",
+	}
+	appConfig.IntermediateConfig.Set(req.IntermediateConfigJSON)
+
+	if res := a.db.WithContext(ctx).Create(&appConfig); res.Error != nil {
+		return nil, fmt.Errorf("unable to create app config: %w", res.Error)
+	}
+
+	return &CreateAppConfigOutput{
+		AppConfigID: appConfig.ID,
+	}, nil
 }

@@ -1,7 +1,6 @@
 package syncer
 
 import (
-	"context"
 	"os"
 	"testing"
 
