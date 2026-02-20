@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -56,7 +57,7 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	// Parse order parameter
 	order := ctx.DefaultQuery("order", "asc")
 	if order != "asc" && order != "desc" {
-		ctx.Error(errors.New("invalid order query parameter, must be 'asc' or 'desc'"))
+		ctx.Error(stderr.NewInvalidRequest(errors.New("invalid order query parameter, must be 'asc' or 'desc'")))
 		return
 	}
 
