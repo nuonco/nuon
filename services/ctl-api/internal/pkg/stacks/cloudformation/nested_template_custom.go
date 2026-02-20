@@ -175,16 +175,18 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		}
 	}
 
-	// Inject role enable params only if the template declares them, and
-	// track which role resources we actually depend on.
-	var roleDeps []string
+	// Inject role enable params only if the template declares them.
+	// NOTE: we intentionally do NOT add roleDeps to DependsOn because
+	// the role resources are conditional (they have Condition:
+	// Enable<RoleType>). A hard DependsOn on a conditional resource
+	// that doesn't exist causes "Unresolved resource dependencies".
+	// The nested stack only receives the Enable* boolean parameter
+	// (via Ref), which doesn't require a resource dependency.
 	for paramName, ref := range roleParams {
 		if reservedInTemplate[paramName] {
 			parameters[paramName] = ref.paramValue
-			roleDeps = append(roleDeps, ref.resource)
 		}
 	}
-	slices.Sort(roleDeps)
 
 	// Resolve explicit parameter mappings from install inputs
 	for cfnParamName, templateValue := range stack.Parameters {
@@ -226,7 +228,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 	} else {
 		dependsOn = append(dependsOn, "VPC", "RunnerAutoScalingGroup")
 	}
-	dependsOn = append(dependsOn, roleDeps...)
 	nestedStack.AWSCloudFormationDependsOn = dependsOn
 
 	return nestedStack, defaultParameters, templateOutputs, nil

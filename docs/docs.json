@@ -18,11 +18,7 @@
         "groups": [
           {
             "group": "Get Started",
-            "pages": [
-              "get-started/introduction",
-              "get-started/quickstart",
-              "get-started/create-your-first-app"
-            ]
+            "pages": ["get-started/introduction", "get-started/quickstart", "get-started/create-your-first-app"]
           },
           {
             "group": "Resources",
@@ -164,16 +160,13 @@
               "guides/kubernetes-manifest-components",
               "guides/component-dependencies",
               "guides/actions",
-              "guides/ai-and-apps"
+              "guides/ai-and-apps",
+              "guides/custom-nested-stacks"
             ]
           },
           {
             "group": "Customer Experience",
-            "pages": [
-              "guides/customer-portal",
-              "guides/control-plane-integration",
-              "guides/vendor-customers"
-            ]
+            "pages": ["guides/customer-portal", "guides/control-plane-integration", "guides/vendor-customers"]
           },
           {
             "group": "How To",

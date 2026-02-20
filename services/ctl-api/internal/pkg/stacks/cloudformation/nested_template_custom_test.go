@@ -695,8 +695,8 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   NuonInstallID:
     Type: String
-  EnableRunnerProvisioner:
-    Description: Enable the provisioner role
+  EnableRunnerProvision:
+    Description: Enable the provision role
     Type: String
     Default: "true"
     AllowedValues:
@@ -723,9 +723,9 @@ Resources:
 	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
 		Roles: []app.AppAWSIAMRoleConfig{
 			{
-				Type:                         "runner_provisioner",
-				CloudFormationStackName:      "RunnerProvisioner",
-				CloudFormationStackParamName: "EnableRunnerProvisioner",
+				Type:                         "runner_provision",
+				CloudFormationStackName:      "RunnerProvision",
+				CloudFormationStackParamName: "EnableRunnerProvision",
 			},
 		},
 	}
@@ -737,13 +737,16 @@ Resources:
 	stack := result.resources["MyStack"]
 	require.NotNil(t, stack)
 
-	assert.Equal(t, cfn.Ref("EnableRunnerProvisioner"), stack.Parameters["EnableRunnerProvisioner"])
+	assert.Equal(t, cfn.Ref("EnableRunnerProvision"), stack.Parameters["EnableRunnerProvision"])
 	assert.Equal(t, "test-install-id", stack.Parameters["NuonInstallID"])
-	assert.NotContains(t, result.params, "EnableRunnerProvisioner", "role param should not be hoisted")
+	assert.NotContains(t, result.params, "EnableRunnerProvision", "role param should not be hoisted")
 	assert.NotContains(t, result.params, "NuonInstallID")
 	assert.Contains(t, result.params, "CustomParam")
 
-	assert.Contains(t, stack.AWSCloudFormationDependsOn, "RunnerProvisioner")
+	// Role resources are conditional, so they must NOT appear in DependsOn
+	// (otherwise CloudFormation fails with "Unresolved resource dependencies"
+	// when the role condition is false).
+	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
 }
 
 func TestGetCustomNestedStacks_RoleParamNotInjectedWhenAbsent(t *testing.T) {
@@ -773,9 +776,9 @@ Resources:
 	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
 		Roles: []app.AppAWSIAMRoleConfig{
 			{
-				Type:                         "runner_provisioner",
-				CloudFormationStackName:      "RunnerProvisioner",
-				CloudFormationStackParamName: "EnableRunnerProvisioner",
+				Type:                         "runner_provision",
+				CloudFormationStackName:      "RunnerProvision",
+				CloudFormationStackParamName: "EnableRunnerProvision",
 			},
 		},
 	}
@@ -787,9 +790,9 @@ Resources:
 	stack := result.resources["MyStack"]
 	require.NotNil(t, stack)
 
-	_, hasRoleParam := stack.Parameters["EnableRunnerProvisioner"]
+	_, hasRoleParam := stack.Parameters["EnableRunnerProvision"]
 	assert.False(t, hasRoleParam, "role param should not be injected when template doesn't declare it")
-	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvisioner")
+	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
 	assert.Equal(t, []string{"VPC", "RunnerAutoScalingGroup"}, stack.AWSCloudFormationDependsOn)
 }
 
@@ -799,7 +802,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   NuonInstallID:
     Type: String
-  EnableRunnerProvisioner:
+  EnableRunnerProvision:
     Type: String
     Default: "true"
 Resources:
@@ -818,14 +821,14 @@ Resources:
 	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
 		Roles: []app.AppAWSIAMRoleConfig{
 			{
-				Type:                         "runner_provisioner",
-				CloudFormationStackName:      "RunnerProvisioner",
-				CloudFormationStackParamName: "EnableRunnerProvisioner",
+				Type:                         "runner_provision",
+				CloudFormationStackName:      "RunnerProvision",
+				CloudFormationStackParamName: "EnableRunnerProvision",
 			},
 			{
-				Type:                         "runner_deprovisioner",
-				CloudFormationStackName:      "RunnerDeprovisioner",
-				CloudFormationStackParamName: "EnableRunnerDeprovisioner",
+				Type:                         "runner_deprovision",
+				CloudFormationStackName:      "RunnerDeprovision",
+				CloudFormationStackParamName: "EnableRunnerDeprovision",
 			},
 		},
 	}
@@ -837,12 +840,13 @@ Resources:
 	stack := result.resources["MyStack"]
 	require.NotNil(t, stack)
 
-	assert.Equal(t, cfn.Ref("EnableRunnerProvisioner"), stack.Parameters["EnableRunnerProvisioner"])
-	_, hasDeprov := stack.Parameters["EnableRunnerDeprovisioner"]
-	assert.False(t, hasDeprov, "deprovisioner param should not be injected when template doesn't declare it")
+	assert.Equal(t, cfn.Ref("EnableRunnerProvision"), stack.Parameters["EnableRunnerProvision"])
+	_, hasDeprov := stack.Parameters["EnableRunnerDeprovision"]
+	assert.False(t, hasDeprov, "deprovision param should not be injected when template doesn't declare it")
 
-	assert.Contains(t, stack.AWSCloudFormationDependsOn, "RunnerProvisioner")
-	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerDeprovisioner")
+	// Conditional role resources must NOT be in DependsOn.
+	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
+	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerDeprovision")
 }
 
 const mockTemplateWithOutputsA = `

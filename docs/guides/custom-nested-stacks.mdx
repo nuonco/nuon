@@ -88,10 +88,6 @@ The first custom nested stack (lowest index) depends on the `VPC` and `RunnerAut
 subsequent stack depends on the previous one. This means stacks are provisioned sequentially, and a failure in one will
 prevent later stacks from executing.
 
-If your template declares any [role enable parameters](#role-enable-parameters), the corresponding IAM role resources
-are also added as dependencies — only for the stacks that actually reference them (see
-[Reserved Parameters](#Reserved-Parameters)).
-
 ## Reserved Parameters
 
 Nuon automatically injects the following reserved parameters into your nested template if they are defined in the
@@ -114,28 +110,25 @@ them, they are omitted — no error is raised.
 | Parameter                 | Value                           |
 | ------------------------- | ------------------------------- |
 | `EnableRunnerProvision`   | Runner Provision Role enabled   |
-| `EnableRunnerManagement`  | Runner Management Role enabled  |
+| `EnableRunnerMaintenance` | Runner Maintenance Role enabled |
 | `EnableRunnerDeprovision` | Runner Deprovision Role enabled |
 
 Your app's IAM role configuration (in `permissions/` and `break_glass/`) generates `Enable*` parameters in the parent
-stack (e.g., `EnableRunnerProvisioner`, `EnableRunnerDeprovisioner`). These are also treated as reserved parameters in
+stack (e.g., `EnableRunnerProvision`, `EnableRunnerDeprovision`). These are also treated as reserved parameters in
 custom nested stacks.
 
-If your template declares one of these parameters, Nuon will:
+If your template declares one of these parameters, Nuon passes through the parent stack's parameter value (a `Ref` to
+the parent parameter). If your template does not declare the parameter, it is not injected.
 
-1. Pass through the parent stack's parameter value (a `Ref` to the parent parameter).
-2. Add the corresponding IAM role resource as a dependency, so the role is created before your stack.
-
-If your template does not declare the parameter, no dependency is added and the role has no effect on your stack.
-
-This allows custom nested stacks to conditionally use IAM roles without creating a hard dependency on them:
+Your nested template can then use its own `Conditions` block to conditionally create resources based on whether a role
+is enabled:
 
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   NuonInstallID:
     Type: String
-  EnableRunnerProvisioner:
+  EnableRunnerProvision:
     Type: String
     Default: 'true'
     AllowedValues:
@@ -143,13 +136,13 @@ Parameters:
       - 'false'
 
 Conditions:
-  ProvisionerEnabled: !Equals [!Ref EnableRunnerProvisioner, 'true']
+  ProvisionEnabled: !Equals [!Ref EnableRunnerProvision, 'true']
 
 Resources:
-  # Resources that depend on the provisioner role being enabled
+  # Resources that depend on the provision role being enabled
   MyResource:
     Type: Custom::Resource
-    Condition: ProvisionerEnabled
+    Condition: ProvisionEnabled
     Properties:
       InstallId: !Ref NuonInstallID
 ```
