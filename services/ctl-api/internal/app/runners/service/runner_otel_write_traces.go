@@ -56,15 +56,13 @@ func (s *service) OtelWriteTraces(ctx *gin.Context) {
 }
 
 func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req ptraceotlp.ExportRequest) error {
-
-	otelTraces := []app.OtelTraceIngestion{}
+	var otelTraces []app.OtelTraceIngestion
 	traceSlice := req.Traces().ResourceSpans()
 	for i := 0; i < traceSlice.Len(); i++ {
 		trace := traceSlice.At(i)
 
 		resourceAttributes := trace.Resource().Attributes()
-		resourceAttrs := resourceAttributes
-		resourceAttrsMap := otel.AttributesToMap(resourceAttrs)
+		resourceAttrsMap := otel.AttributesToMap(resourceAttributes)
 		resourceSchemaUrl := trace.SchemaUrl()
 
 		var serviceName string
@@ -81,36 +79,31 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 			scopeName := scopeSpan.Scope().Name()
 			scopeVersion := scopeSpan.Scope().Version()
 			scopeSchemaUrl := scopeSpan.SchemaUrl()
-			traces := scopeSpan.Spans()
-			for k := 0; k < traces.Len(); k++ {
-				trace := traces.At(k)
-				timestamp := trace.StartTimestamp().AsTime()
-				endtimestamp := trace.EndTimestamp().AsTime()
+			spans := scopeSpan.Spans()
+			for k := 0; k < spans.Len(); k++ {
+				span := spans.At(k)
+				timestamp := span.StartTimestamp().AsTime()
+				endtimestamp := span.EndTimestamp().AsTime()
 				duration := endtimestamp.Unix() - timestamp.Unix()
-				traceAttrs := trace.Attributes()
+				traceAttrs := span.Attributes()
 				traceAttrsMap := otel.AttributesToMap(traceAttrs)
 
-				eventTimes, eventNames, _ := otel.ConvertEvents(trace.Events())
-				eventsAttrs := make([]map[string]string, trace.Events().Len())
+				eventTimes, eventNames, _ := otel.ConvertEvents(span.Events())
+				eventsAttrs := make([]map[string]string, span.Events().Len())
 
-				for i = 0; i < trace.Events().Len(); i++ {
-					event := trace.Events().At(i)
-					eventsAttrs[i] = otel.AttributesToMap(event.Attributes())
+				for ei := 0; ei < span.Events().Len(); ei++ {
+					event := span.Events().At(ei)
+					eventsAttrs[ei] = otel.AttributesToMap(event.Attributes())
 				}
 
-				linksTraceIDs, linksSpanIDs, linksTraceStates, _ := otel.ConvertLinks(trace.Links())
-				linksAttrs := make([]map[string]string, trace.Links().Len())
-				for i = 0; i < trace.Links().Len(); i++ {
-					link := trace.Links().At(i)
-					linksAttrs[i] = otel.AttributesToMap(link.Attributes())
+				linksTraceIDs, linksSpanIDs, linksTraceStates, _ := otel.ConvertLinks(span.Links())
+				linksAttrs := make([]map[string]string, span.Links().Len())
+				for li := 0; li < span.Links().Len(); li++ {
+					link := span.Links().At(li)
+					linksAttrs[li] = otel.AttributesToMap(link.Attributes())
 				}
 
 				obj := app.OtelTraceIngestion{
-					// NOTE(fd): we should send the `RunnerJobID` and `RunnerJobExecutionID` in known/conventional
-					// fields in the payload so we can extract them here similar to the way we extract serviceName
-					// from the field: service.name. e.g. runner.job_id and runner.job_execution_id.
-					// this would enable some nifty views/filtering.
-
 					// runner info
 					RunnerID:               runnerID,
 					RunnerGroupID:          resourceAttrsMap["runner_group.id"],
@@ -120,8 +113,8 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 
 					// topmatter
 					Timestamp:     timestamp,
-					TimestampTime: timestamp, // the gorm model struct sets these to zero so we must be explicit
-					TimestampDate: timestamp, // the gorm model struct sets these to zero so we must be explici
+					TimestampTime: timestamp,
+					TimestampDate: timestamp,
 
 					// from resource
 					ResourceAttributes: resourceAttrsMap,
@@ -133,17 +126,17 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 					ScopeVersion:    scopeVersion,
 					ScopeAttributes: otel.AttributesToMap(scopeAttrs),
 
-					TraceID:          trace.TraceID().String(),
-					SpanID:           trace.SpanID().String(),
-					ParentSpanID:     trace.ParentSpanID().String(),
-					TraceState:       trace.TraceState().AsRaw(),
-					SpanName:         trace.Name(),
-					SpanKind:         trace.Kind().String(),
+					TraceID:          span.TraceID().String(),
+					SpanID:           span.SpanID().String(),
+					ParentSpanID:     span.ParentSpanID().String(),
+					TraceState:       span.TraceState().AsRaw(),
+					SpanName:         span.Name(),
+					SpanKind:         span.Kind().String(),
 					ServiceName:      serviceName,
 					SpanAttributes:   otel.AttributesToMap(traceAttrs),
 					Duration:         duration,
-					StatusCode:       trace.Status().Code().String(),
-					StatusMessage:    trace.Status().Message(),
+					StatusCode:       span.Status().Code().String(),
+					StatusMessage:    span.Status().Message(),
 					EventsTimestamp:  eventTimes,
 					EventsName:       eventNames,
 					EventsAttributes: eventsAttrs,
@@ -156,12 +149,14 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 				otelTraces = append(otelTraces, obj)
 			}
 		}
+	}
 
+	if len(otelTraces) > 0 {
 		res := s.chDB.WithContext(ctx).Create(&otelTraces)
 		if res.Error != nil {
 			return fmt.Errorf("unable to ingest traces: %w", res.Error)
 		}
-
 	}
+
 	return nil
 }
