@@ -160,8 +160,7 @@
               "guides/kubernetes-manifest-components",
               "guides/component-dependencies",
               "guides/actions",
-              "guides/ai-and-apps",
-              "guides/custom-nested-stacks"
+              "guides/ai-and-apps"
             ]
           },
           {
@@ -178,7 +177,8 @@
               "guides/custom-domains",
               "guides/sandbox-orgs",
               "guides/team-management",
-              "guides/runner-management-mode"
+              "guides/runner-management-mode",
+              "guides/custom-nested-stacks"
             ]
           },
           {
