@@ -17,7 +17,7 @@ type RenderAWSStackTemplateResponse struct {
 }
 
 // @temporal-gen activity
-func (a *Activities) RenderAWSStacTemplate(ctx context.Context, req *RenderAWSStackTemplateRequest) (RenderAWSStackTemplateResponse, error) {
+func (a *Activities) RenderAWSStackTemplate(ctx context.Context, req *RenderAWSStackTemplateRequest) (RenderAWSStackTemplateResponse, error) {
 	res := RenderAWSStackTemplateResponse{}
 	tmpl, awsChecksum, err := a.cfTemplates.Template(&req.Input)
 	if err != nil {
