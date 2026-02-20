@@ -156,13 +156,13 @@ func (s *GetHelmReleasesTestSuite) TestGetHelmReleasesValidation() {
 		expectedCode int
 	}{
 		{
-			name:         "missing helm_chart_id returns error",
+			name:         "missing helm_chart_id returns 404",
 			helmChartID:  "",
 			namespace:    "default",
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "missing namespace returns error",
+			name:         "missing namespace returns 404",
 			helmChartID:  "hchvalid123456789012345678",
 			namespace:    "",
 			expectedCode: http.StatusNotFound,

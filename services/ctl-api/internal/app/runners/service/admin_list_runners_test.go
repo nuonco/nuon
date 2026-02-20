@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -171,9 +172,9 @@ func (s *AdminListRunnersTestSuite) TestAdminListRunners() {
 			expectedCode:  http.StatusOK,
 			validateFunc: func(runners []*app.Runner) {
 				assert.Len(s.T(), runners, 2)
-				// Verify CreatedBy is preloaded
+				// Verify CreatedByID is set
 				for _, runner := range runners {
-					assert.NotEmpty(s.T(), runner.CreatedBy)
+					assert.NotEmpty(s.T(), runner.CreatedByID)
 				}
 			},
 		},
@@ -215,7 +216,7 @@ func (s *AdminListRunnersTestSuite) TestAdminListRunners() {
 					runner := &app.Runner{
 						ID:            domains.NewRunnerID(),
 						OrgID:         s.testOrg.ID,
-						Name:          "runner-" + string(rune(i)),
+						Name:          fmt.Sprintf("runner-%d", i),
 						DisplayName:   "Runner",
 						Status:        app.RunnerStatusActive,
 						RunnerGroupID: s.testRunnerGrp.ID,
@@ -247,7 +248,7 @@ func (s *AdminListRunnersTestSuite) TestAdminListRunners() {
 					runner := &app.Runner{
 						ID:            domains.NewRunnerID(),
 						OrgID:         s.testOrg.ID,
-						Name:          "runner-offset-" + string(rune(i)),
+						Name:          fmt.Sprintf("runner-offset-%d", i),
 						DisplayName:   "Runner",
 						Status:        app.RunnerStatusActive,
 						RunnerGroupID: s.testRunnerGrp.ID,

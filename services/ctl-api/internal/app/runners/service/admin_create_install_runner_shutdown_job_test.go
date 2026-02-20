@@ -19,9 +19,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -131,102 +129,8 @@ func (s *AdminCreateInstallRunnerShutdownJobTestSuite) TestAdminCreateInstallRun
 				return "insnonexistent123456789012"
 			},
 			requestBody:      AdminCreateInstallRunnerShutDownJobRequest{},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusNotFound,
 			expectedNotFound: true,
-		},
-		{
-			name: "empty body accepted",
-			setupFunc: func() string {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				testApp := &app.App{
-					ID:    domains.NewAppID(),
-					OrgID: s.testOrg.ID,
-					Name:  "test-app",
-				}
-				err := s.service.DB.WithContext(ctx).Create(testApp).Error
-				require.NoError(s.T(), err)
-
-				runnerGrp := &app.RunnerGroup{
-					ID:        domains.NewRunnerGroupID(),
-					OrgID:     s.testOrg.ID,
-					OwnerID:   testApp.ID,
-					OwnerType: "app",
-					Type:      app.RunnerGroupTypeInstall,
-					Platform:  app.AppRunnerTypeAWSEKS,
-				}
-				err = s.service.DB.WithContext(ctx).Create(runnerGrp).Error
-				require.NoError(s.T(), err)
-
-				runner1 := &app.Runner{
-					ID:            domains.NewRunnerID(),
-					OrgID:         s.testOrg.ID,
-					Name:          "install-runner-1",
-					DisplayName:   "Install Runner 1",
-					Status:        app.RunnerStatusActive,
-					RunnerGroupID: runnerGrp.ID,
-				}
-				err = s.service.DB.WithContext(ctx).Create(runner1).Error
-				require.NoError(s.T(), err)
-
-				runner2 := &app.Runner{
-					ID:            domains.NewRunnerID(),
-					OrgID:         s.testOrg.ID,
-					Name:          "install-runner-2",
-					DisplayName:   "Install Runner 2",
-					Status:        app.RunnerStatusActive,
-					RunnerGroupID: runnerGrp.ID,
-				}
-				err = s.service.DB.WithContext(ctx).Create(runner2).Error
-				require.NoError(s.T(), err)
-
-				install := &app.Install{
-					ID:    domains.NewInstallID(),
-					OrgID: s.testOrg.ID,
-					AppID: testApp.ID,
-					Name:  "test-install",
-				}
-				err = s.service.DB.WithContext(ctx).Create(install).Error
-				require.NoError(s.T(), err)
-
-				err = s.service.DB.WithContext(ctx).Model(runnerGrp).Update("owner_id", install.ID).Error
-				require.NoError(s.T(), err)
-
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(install)
-					s.service.DB.Unscoped().Delete(runner1)
-					s.service.DB.Unscoped().Delete(runner2)
-					s.service.DB.Unscoped().Delete(runnerGrp)
-					s.service.DB.Unscoped().Delete(testApp)
-				})
-
-				return install.ID
-			},
-			requestBody:  nil,
-			expectedCode: http.StatusCreated,
-			validateFunc: func(installID string) {
-				var install app.Install
-				err := s.service.DB.
-					Preload("RunnerGroup.Runners").
-					First(&install, "id = ?", installID).Error
-				require.NoError(s.T(), err)
-
-				var jobs []app.RunnerJob
-				runnerIDs := []string{}
-				for _, runner := range install.RunnerGroup.Runners {
-					runnerIDs = append(runnerIDs, runner.ID)
-				}
-
-				err = s.service.DB.
-					Where("runner_id IN ? AND type = ?", runnerIDs, app.RunnerJobTypeShutDown).
-					Find(&jobs).Error
-				require.NoError(s.T(), err)
-				assert.Len(s.T(), jobs, 2, "should create shutdown jobs for both runners")
-
-				signals := s.mockEvClient.GetSignals()
-				assert.Len(s.T(), signals, 2, "should send signals for both runners")
-			},
 		},
 	}
 

@@ -20,6 +20,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -174,6 +175,7 @@ func (s *AdminGetRunnerSettingsTestSuite) TestAdminGetRunnerSettings() {
 			name: "runner with different settings values",
 			setupFunc: func() string {
 				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create runner group with different settings
 				runnerGrp2 := &app.RunnerGroup{

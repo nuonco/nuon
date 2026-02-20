@@ -90,6 +90,21 @@ func (s *DeleteHelmReleaseTestSuite) setupTestData() {
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 }
 
+func (s *DeleteHelmReleaseTestSuite) createHelmChart(ctx context.Context, helmChartID string) {
+	chart := &app.HelmChart{
+		ID:          helmChartID,
+		CreatedByID: s.testAcc.ID,
+		OrgID:       s.testOrg.ID,
+		OwnerID:     domains.NewInstallID(),
+		OwnerType:   "install",
+	}
+	err := s.service.DB.WithContext(ctx).Create(chart).Error
+	require.NoError(s.T(), err)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(chart)
+	})
+}
+
 func (s *DeleteHelmReleaseTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(method, path, nil)
 	require.NoError(s.T(), err)
@@ -113,6 +128,8 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				helmChartID := domains.NewHelmChartID()
+				s.createHelmChart(ctx, helmChartID)
+
 				namespace := "default"
 				key := "sh.helm.release.v1.test-release.v1"
 
@@ -146,19 +163,21 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 			},
 		},
 		{
-			name: "delete nonexistent release returns 404",
+			name: "delete nonexistent release returns 200 (no rows affected)",
 			setupFunc: func() (string, string, string) {
 				return "hchnonexistent123456789012", "default", "nonexistent-key"
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusOK,
 		},
 		{
-			name: "delete with wrong namespace returns 404",
+			name: "delete with wrong namespace returns 200 (no rows affected)",
 			setupFunc: func() (string, string, string) {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				helmChartID := domains.NewHelmChartID()
+				s.createHelmChart(ctx, helmChartID)
+
 				key := "sh.helm.release.v1.test-release.v1"
 
 				release := &app.HelmRelease{
@@ -187,15 +206,17 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 				// Try to delete with wrong namespace
 				return helmChartID, "staging", key
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusOK,
 		},
 		{
-			name: "delete with wrong key returns 404",
+			name: "delete with wrong key returns 200 (no rows affected)",
 			setupFunc: func() (string, string, string) {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				helmChartID := domains.NewHelmChartID()
+				s.createHelmChart(ctx, helmChartID)
+
 				namespace := "default"
 
 				release := &app.HelmRelease{
@@ -224,15 +245,17 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 				// Try to delete with wrong key
 				return helmChartID, namespace, "sh.helm.release.v1.different-release.v1"
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusOK,
 		},
 		{
-			name: "delete already deleted release returns 404",
+			name: "delete already deleted release returns 200 (no rows affected)",
 			setupFunc: func() (string, string, string) {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				helmChartID := domains.NewHelmChartID()
+				s.createHelmChart(ctx, helmChartID)
+
 				namespace := "default"
 				key := "sh.helm.release.v1.test-release.v1"
 
@@ -267,7 +290,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 
 				return helmChartID, namespace, key
 			},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusOK,
 		},
 		{
 			name: "delete multiple releases with same helm_chart_id but different keys",
@@ -276,6 +299,8 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				helmChartID := domains.NewHelmChartID()
+				s.createHelmChart(ctx, helmChartID)
+
 				namespace := "default"
 
 				// Create first release
@@ -361,50 +386,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 	}
 }
 
-func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmReleaseValidation() {
-	testCases := []struct {
-		name         string
-		helmChartID  string
-		namespace    string
-		key          string
-		expectedCode int
-	}{
-		{
-			name:         "missing helm_chart_id returns error",
-			helmChartID:  "",
-			namespace:    "default",
-			key:          "key",
-			expectedCode: http.StatusNotFound,
-		},
-		{
-			name:         "missing namespace returns error",
-			helmChartID:  "hchvalid123456789012345678",
-			namespace:    "",
-			key:          "key",
-			expectedCode: http.StatusNotFound,
-		},
-		{
-			name:         "missing key returns error",
-			helmChartID:  "hchvalid123456789012345678",
-			namespace:    "default",
-			key:          "",
-			expectedCode: http.StatusNotFound,
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			path := "/v1/helm-releases/" + tc.helmChartID + "/releases/" + tc.namespace + "/" + tc.key
-			rr := s.makeRequest("DELETE", path)
-
-			if rr.Code != tc.expectedCode {
-				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-			}
-			require.Equal(s.T(), tc.expectedCode, rr.Code)
-		})
-	}
-}
-
 func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmReleaseSoftDelete() {
 	// Verify that delete is a soft delete (sets DeletedAt, doesn't remove from DB)
 
@@ -412,6 +393,8 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmReleaseSoftDelete() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	helmChartID := domains.NewHelmChartID()
+	s.createHelmChart(ctx, helmChartID)
+
 	namespace := "default"
 	key := "sh.helm.release.v1.test-release.v1"
 

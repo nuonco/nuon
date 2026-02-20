@@ -73,10 +73,11 @@ func (s *AdminLockWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
+	// CRITICAL: TestAcc needed because handler creates lock records with created_by_id
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.RunnersService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -149,6 +150,9 @@ func (s *AdminLockWorkspaceTestSuite) TestAdminLockWorkspace() {
 		{
 			name: "lock workspace by owner_id",
 			setupFunc: func() (string, interface{}) {
+				// Clean up any existing locks for this workspace from previous subtests
+				s.service.DB.Unscoped().Where("workspace_id = ?", s.testWS.ID).Delete(&app.TerraformWorkspaceLock{})
+
 				// Use owner_id instead of workspace_id
 				return s.testOrg.ID, AdminLockWorkspace{}
 			},

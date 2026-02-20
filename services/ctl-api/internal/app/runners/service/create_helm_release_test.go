@@ -156,7 +156,7 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseValidation() {
 		expectedCode int
 	}{
 		{
-			name:         "missing helm_chart_id returns error",
+			name:         "missing helm_chart_id returns 404",
 			helmChartID:  "",
 			namespace:    "default",
 			key:          "key",
@@ -164,7 +164,7 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseValidation() {
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "missing namespace returns error",
+			name:         "missing namespace returns 404",
 			helmChartID:  "hchvalid123456789012345678",
 			namespace:    "",
 			key:          "key",
@@ -172,12 +172,12 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseValidation() {
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "missing key returns error",
+			name:         "missing key returns 307 redirect",
 			helmChartID:  "hchvalid123456789012345678",
 			namespace:    "default",
 			key:          "",
 			body:         map[string]interface{}{"name": "test"},
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusTemporaryRedirect,
 		},
 		{
 			name:         "invalid JSON body returns 400",

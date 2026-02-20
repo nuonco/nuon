@@ -21,6 +21,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -111,6 +112,16 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) setupTestData() {
 		RunnerGroupID: s.testRunnerGrp.ID,
 	}
 	err = s.service.DB.WithContext(ctx).Create(s.testRunner).Error
+	require.NoError(s.T(), err)
+
+	// Create service account for runner (handler expects this)
+	serviceAcct := &app.Account{
+		ID:          domains.NewAccountID(),
+		Email:       account.ServiceAccountEmail(s.testRunner.ID),
+		Subject:     s.testRunner.ID,
+		AccountType: app.AccountTypeService,
+	}
+	err = s.service.DB.WithContext(ctx).Create(serviceAcct).Error
 	require.NoError(s.T(), err)
 }
 

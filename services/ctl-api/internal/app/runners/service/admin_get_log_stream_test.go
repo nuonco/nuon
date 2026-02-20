@@ -20,6 +20,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -137,6 +138,7 @@ func (s *AdminGetLogStreamTestSuite) TestAdminGetLogStream() {
 			name: "successfully get log stream by owner_id",
 			setupFunc: func() string {
 				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				ownerID := domains.NewBuildID()
 				ls := &app.LogStream{
@@ -173,6 +175,7 @@ func (s *AdminGetLogStreamTestSuite) TestAdminGetLogStream() {
 			name: "log stream with closed state",
 			setupFunc: func() string {
 				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				ls := &app.LogStream{
 					ID:        domains.NewLogStreamID(),

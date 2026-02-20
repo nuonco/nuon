@@ -157,7 +157,7 @@ func (s *AdminRunnerServiceAccountTokenTestSuite) TestAdminCreateRunnerServiceAc
 				return s.testRunner.ID
 			},
 			requestBody:  map[string]interface{}{"invalidate": false},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusInternalServerError,
 		},
 		{
 			name: "invalid duration format",

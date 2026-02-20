@@ -142,7 +142,7 @@ func (s *AdminGetRunnerServiceAccountTestSuite) TestAdminGetRunnerServiceAccount
 			setupFunc: func() string {
 				return "rnrnonexistent123456789012"
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusNotFound,
 		},
 	}
 

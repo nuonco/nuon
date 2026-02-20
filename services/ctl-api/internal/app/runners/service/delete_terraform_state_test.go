@@ -66,12 +66,12 @@ func (s *DeleteTerraformStateTestSuite) SetupTest() {
 	ctx := context.Background()
 	_, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
 
-	// Create router with public routes
+	// Create router with runner routes (DELETE endpoint is only registered here)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
 	})
-	err := s.service.RunnersService.RegisterPublicRoutes(s.router)
+	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
 }
 

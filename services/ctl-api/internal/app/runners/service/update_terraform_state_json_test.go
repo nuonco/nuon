@@ -72,10 +72,12 @@ func (s *UpdateTerraformStateJSONTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (this endpoint doesn't use getWorkspace validation)
+	// Create router with runner routes - must include TestAcc for created_by_id context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.RunnersService.RegisterRunnerRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -91,12 +93,12 @@ func (s *UpdateTerraformStateJSONTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
+	// Create terraform workspace (use unique OwnerID to avoid unique constraint on owner_id+owner_type)
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
-		OwnerID:   s.testOrg.ID,
-		OwnerType: "org",
+		OwnerID:   domains.NewInstallID(),
+		OwnerType: "install",
 	}
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	err := s.service.DB.WithContext(ctx).Create(s.testWS).Error
@@ -151,8 +153,8 @@ func (s *UpdateTerraformStateJSONTestSuite) TestUpdateTerraformStateJSON() {
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
@@ -184,8 +186,8 @@ func (s *UpdateTerraformStateJSONTestSuite) TestUpdateTerraformStateJSON() {
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
@@ -208,8 +210,8 @@ func (s *UpdateTerraformStateJSONTestSuite) TestUpdateTerraformStateJSON() {
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)

@@ -101,6 +101,21 @@ func (s *GetHelmReleaseTestSuite) makeRequest(method, path string) *httptest.Res
 	return rr
 }
 
+func (s *GetHelmReleaseTestSuite) createHelmChart(ctx context.Context, helmChartID string) {
+	chart := &app.HelmChart{
+		ID:          helmChartID,
+		CreatedByID: s.testAcc.ID,
+		OrgID:       s.testOrg.ID,
+		OwnerID:     domains.NewInstallID(),
+		OwnerType:   "install",
+	}
+	err := s.service.DB.WithContext(ctx).Create(chart).Error
+	require.NoError(s.T(), err)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(chart)
+	})
+}
+
 func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 	testCases := []struct {
 		name         string
@@ -117,6 +132,9 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 				key := "sh.helm.release.v1.test-release.v1"
+
+				// Create helm chart first to satisfy FK constraint
+				s.createHelmChart(ctx, helmChartID)
 
 				// Create release with empty body - decode will fail
 				release := &app.HelmRelease{
@@ -162,6 +180,9 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				key := "sh.helm.release.v1.test-release.v1"
 
+				// Create helm chart first to satisfy FK constraint
+				s.createHelmChart(ctx, helmChartID)
+
 				release := &app.HelmRelease{
 					HelmChartID: helmChartID,
 					Key:         key,
@@ -198,6 +219,9 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
+
+				// Create helm chart first to satisfy FK constraint
+				s.createHelmChart(ctx, helmChartID)
 
 				release := &app.HelmRelease{
 					HelmChartID: helmChartID,
@@ -260,25 +284,25 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmReleaseValidation() {
 		expectedCode int
 	}{
 		{
-			name:         "missing helm_chart_id returns error",
+			name:         "missing helm_chart_id returns 404",
 			helmChartID:  "",
 			namespace:    "default",
 			key:          "key",
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "missing namespace returns error",
+			name:         "missing namespace returns 404",
 			helmChartID:  "hchvalid123456789012345678",
 			namespace:    "",
 			key:          "key",
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "missing key returns error",
+			name:         "missing key returns 301 redirect",
 			helmChartID:  "hchvalid123456789012345678",
 			namespace:    "default",
 			key:          "",
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusMovedPermanently,
 		},
 	}
 

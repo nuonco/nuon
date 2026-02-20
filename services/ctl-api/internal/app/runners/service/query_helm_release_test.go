@@ -92,6 +92,21 @@ func (s *QueryHelmReleaseTestSuite) setupTestData() {
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 }
 
+func (s *QueryHelmReleaseTestSuite) createHelmChart(ctx context.Context, helmChartID string) {
+	chart := &app.HelmChart{
+		ID:          helmChartID,
+		CreatedByID: s.testAcc.ID,
+		OrgID:       s.testOrg.ID,
+		OwnerID:     domains.NewInstallID(),
+		OwnerType:   "install",
+	}
+	err := s.service.DB.WithContext(ctx).Create(chart).Error
+	require.NoError(s.T(), err)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(chart)
+	})
+}
+
 func (s *QueryHelmReleaseTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(method, path, nil)
 	require.NoError(s.T(), err)
@@ -125,6 +140,9 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
+
+				// Create helm chart before releases
+				s.createHelmChart(ctx, helmChartID)
 
 				// Create releases with different statuses
 				release1 := &app.HelmRelease{
@@ -180,6 +198,9 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
+				// Create helm chart before releases
+				s.createHelmChart(ctx, helmChartID)
+
 				// Create releases with different versions
 				for i := 1; i <= 3; i++ {
 					release := &app.HelmRelease{
@@ -218,6 +239,9 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
+
+				// Create helm chart before releases
+				s.createHelmChart(ctx, helmChartID)
 
 				release1 := &app.HelmRelease{
 					HelmChartID: helmChartID,
@@ -272,6 +296,9 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
+				// Create helm chart before release
+				s.createHelmChart(ctx, helmChartID)
+
 				release := &app.HelmRelease{
 					HelmChartID: helmChartID,
 					Key:         domains.NewHelmChartID(),
@@ -310,6 +337,9 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
+
+				// Create helm chart before release
+				s.createHelmChart(ctx, helmChartID)
 
 				release := &app.HelmRelease{
 					HelmChartID: helmChartID,
@@ -377,13 +407,13 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmReleaseValidation() {
 		expectedCode int
 	}{
 		{
-			name:         "missing helm_chart_id returns error",
+			name:         "missing helm_chart_id returns 404",
 			helmChartID:  "",
 			namespace:    "default",
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "missing namespace returns error",
+			name:         "missing namespace returns 404",
 			helmChartID:  "hchvalid123456789012345678",
 			namespace:    "",
 			expectedCode: http.StatusNotFound,

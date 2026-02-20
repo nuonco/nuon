@@ -74,10 +74,11 @@ func (s *AdminUnlockWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
+	// CRITICAL: TestAcc needed because handler/test creates lock records with created_by_id
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.RunnersService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -138,12 +139,15 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				// Clean up any existing locks for this workspace from previous subtests
+				s.service.DB.Unscoped().Where("workspace_id = ?", s.testWS.ID).Delete(&app.TerraformWorkspaceLock{})
+
 				// Create a lock
 				lock := &app.TerraformWorkspaceLock{
 					WorkspaceID: s.testWS.ID,
 					OrgID:       s.testOrg.ID,
 					Lock: &app.TerraformLock{
-						ID:        "lock-123",
+						ID:        "test-lock-id",
 						Operation: "apply",
 						Info:      "test lock",
 						Who:       "test-user",
@@ -172,11 +176,14 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				// Create a unique owner ID to avoid conflicts with s.testWS
+				ownerID := domains.NewInstallID()
+
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   ownerID,
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
@@ -202,11 +209,14 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				// Create a unique owner ID to avoid conflicts with s.testOrg
+				ownerID := domains.NewAppID()
+
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   ownerID,
+					OwnerType: "app",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
@@ -215,7 +225,7 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 					WorkspaceID: ws.ID,
 					OrgID:       s.testOrg.ID,
 					Lock: &app.TerraformLock{
-						ID:        "lock-456",
+						ID:        "test-lock-id-2",
 						Operation: "plan",
 					},
 				}
@@ -228,7 +238,7 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 				})
 
 				// Use owner_id instead of workspace_id
-				return s.testOrg.ID, AdminUnlockWorkspace{}
+				return ownerID, AdminUnlockWorkspace{}
 			},
 			expectedCode: http.StatusOK,
 		},

@@ -127,8 +127,8 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				ws1 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws1).Error
 				require.NoError(s.T(), err)
@@ -136,8 +136,8 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err = s.service.DB.WithContext(ctx).Create(ws2).Error
 				require.NoError(s.T(), err)
@@ -168,8 +168,8 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				ws1 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws1).Error
 				require.NoError(s.T(), err)
@@ -190,8 +190,8 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,
-					OwnerID:   org2.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err = s.service.DB.WithContext(ctx).Create(ws2).Error
 				require.NoError(s.T(), err)
@@ -221,8 +221,8 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				ws1 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws1).Error
 				require.NoError(s.T(), err)
@@ -251,7 +251,7 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				for _, ws := range workspaces {
 					ownerTypes[ws.OwnerType] = true
 				}
-				assert.True(s.T(), ownerTypes["org"])
+				assert.True(s.T(), ownerTypes["install"])
 				assert.True(s.T(), ownerTypes["app"])
 			},
 		},

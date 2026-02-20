@@ -161,7 +161,7 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 	testCases := []struct {
 		name             string
 		setupFunc        func() string
-		requestBody      AdminUpdateRunnerSettingsRequest
+		requestBody      map[string]interface{}
 		expectedCode     int
 		expectedSignal   bool
 		validateFunc     func(string)
@@ -172,11 +172,9 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
-			requestBody: AdminUpdateRunnerSettingsRequest{
-				ContainerImageURL:     "updated.ecr.aws/runner",
-				RunnerAPIURL:          "https://updated-api.test.com",
-				K8sServiceAccountName: "updated-sa",
-				AWSIAMRoleARN:         "arn:aws:iam::123456789012:role/updated-role",
+			requestBody: map[string]interface{}{
+				"container_image_url": "updated.ecr.aws/runner",
+				"runner_api_url":      "https://updated-api.test.com",
 			},
 			expectedCode:   http.StatusOK,
 			expectedSignal: false,
@@ -186,8 +184,8 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "updated.ecr.aws/runner", settings.ContainerImageURL)
 				assert.Equal(s.T(), "https://updated-api.test.com", settings.RunnerAPIURL)
-				assert.Equal(s.T(), "updated-sa", settings.OrgK8sServiceAccountName)
-				assert.Equal(s.T(), "arn:aws:iam::123456789012:role/updated-role", settings.OrgAWSIAMRoleARN)
+				// Original tag should be preserved
+				assert.Equal(s.T(), "v1.0.0", settings.ContainerImageTag)
 			},
 		},
 		{
@@ -195,8 +193,8 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
-			requestBody: AdminUpdateRunnerSettingsRequest{
-				ContainerImageTag: "v2.0.0",
+			requestBody: map[string]interface{}{
+				"container_image_tag": "v2.0.0",
 			},
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
@@ -221,8 +219,8 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
-			requestBody: AdminUpdateRunnerSettingsRequest{
-				AWSMaxInstanceLifetime: intPtr(86400), // 1 day (min value)
+			requestBody: map[string]interface{}{
+				"aws_max_instance_lifetime": 86400, // 1 day (min value)
 			},
 			expectedCode:   http.StatusOK,
 			expectedSignal: false,
@@ -238,8 +236,8 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
-			requestBody: AdminUpdateRunnerSettingsRequest{
-				AWSMaxInstanceLifetime: intPtr(1000), // Below min
+			requestBody: map[string]interface{}{
+				"aws_max_instance_lifetime": 1000, // Below min
 			},
 			expectedCode:   http.StatusBadRequest,
 			expectedSignal: false,
@@ -249,8 +247,8 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
-			requestBody: AdminUpdateRunnerSettingsRequest{
-				AWSMaxInstanceLifetime: intPtr(999999999), // Above max
+			requestBody: map[string]interface{}{
+				"aws_max_instance_lifetime": 999999999, // Above max
 			},
 			expectedCode:   http.StatusBadRequest,
 			expectedSignal: false,
@@ -260,8 +258,8 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			setupFunc: func() string {
 				return "rnrnonexistent123456789012"
 			},
-			requestBody: AdminUpdateRunnerSettingsRequest{
-				ContainerImageURL: "test.ecr.aws/runner",
+			requestBody: map[string]interface{}{
+				"container_image_url": "test.ecr.aws/runner",
 			},
 			expectedCode:     http.StatusNotFound,
 			expectedSignal:   false,
@@ -327,8 +325,8 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 
 				return runner2.ID
 			},
-			requestBody: AdminUpdateRunnerSettingsRequest{
-				ContainerImageTag: "v3.0.0",
+			requestBody: map[string]interface{}{
+				"container_image_tag": "v3.0.0",
 			},
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
@@ -363,8 +361,4 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			}
 		})
 	}
-}
-
-func intPtr(i int) *int {
-	return &i
 }

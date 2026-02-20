@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -175,6 +176,7 @@ func (s *AdminReprovisionTestSuite) TestAdminReprovisionRunner() {
 			name: "reprovision pending runner",
 			setupFunc: func() string {
 				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				runner := &app.Runner{
 					ID:            domains.NewRunnerID(),
@@ -201,6 +203,7 @@ func (s *AdminReprovisionTestSuite) TestAdminReprovisionRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/reprovision", AdminReprovisionRunnerRequest{})
 

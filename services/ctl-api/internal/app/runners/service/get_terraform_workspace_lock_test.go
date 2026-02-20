@@ -93,12 +93,12 @@ func (s *GetTerraformWorkspaceLockTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
+	// Create terraform workspace (use unique OwnerID to avoid unique constraint on owner_id+owner_type)
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
-		OwnerID:   s.testOrg.ID,
-		OwnerType: "org",
+		OwnerID:   domains.NewInstallID(),
+		OwnerType: "install",
 	}
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	err := s.service.DB.WithContext(ctx).Create(s.testWS).Error
@@ -148,8 +148,8 @@ func (s *GetTerraformWorkspaceLockTestSuite) TestGetTerraformWorkspaceLock() {
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
@@ -218,8 +218,8 @@ func (s *GetTerraformWorkspaceLockTestSuite) TestGetTerraformWorkspaceLock() {
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,
-					OwnerID:   org2.ID,
-					OwnerType: "org",
+					OwnerID:   domains.NewInstallID(),
+					OwnerType: "install",
 				}
 				err = s.service.DB.WithContext(ctx).Create(ws2).Error
 				require.NoError(s.T(), err)
