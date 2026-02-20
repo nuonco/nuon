@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Cerberus - Run {{ run.id[:12] }}{% endblock %}
+{% block content %}
+
+<!-- Run header -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-xl font-bold">
+            <span class="text-amber-400">{{ run.canary_name }}</span>
+            <span class="text-gray-500 text-sm font-mono ml-2">{{ run.id }}</span>
+        </h1>
+        <div class="flex items-center gap-4 mt-1 text-sm text-gray-400">
+            {% if run.status == 'passed' %}
+                <span class="text-green-400 font-semibold">PASSED</span>
+            {% elif run.status == 'failed' %}
+                <span class="text-red-400 font-semibold">FAILED</span>
+            {% elif run.status == 'running' %}
+                <span class="text-amber-400 font-semibold">RUNNING</span>
+            {% else %}
+                <span class="font-semibold">{{ run.status|upper }}</span>
+            {% endif %}
+            {% if run.started_at %}
+                <span>Started {{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            {% endif %}
+            {% if run.started_at and run.completed_at %}
+                <span>Duration: {{ ((run.completed_at - run.started_at).total_seconds() / 60)|round(1) }}m</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="flex gap-2">
+        {% if run.status == 'running' %}
+        <button
+            hx-post="/api/runs/{{ run.id }}/cancel"
+            hx-swap="none"
+            class="px-4 py-2 text-sm rounded bg-red-600 hover:bg-red-500 text-white"
+        >Cancel</button>
+        {% endif %}
+    </div>
+</div>
+
+{% if run.error_message %}
+<div class="bg-red-950 border border-red-800 rounded-lg p-4 mb-6">
+    <div class="text-sm text-red-400 font-semibold mb-1">Error in: {{ run.error_step or 'unknown' }}</div>
+    <div class="text-sm text-red-300 font-mono">{{ run.error_message }}</div>
+</div>
+{% endif %}
+
+<!-- Two-column layout: timeline + events -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Step Timeline (auto-updates while running) -->
+    <div class="lg:col-span-2"
+         {% if run.status == 'running' %}
+         hx-get="/runs/{{ run.id }}/timeline"
+         hx-trigger="every 3s"
+         hx-swap="innerHTML"
+         {% endif %}
+    >
+        {% include "partials/run_timeline.html" %}
+    </div>
+
+    <!-- Event Log (auto-updates while running) -->
+    <div
+        {% if run.status == 'running' %}
+        hx-get="/runs/{{ run.id }}/events"
+        hx-trigger="every 3s"
+        hx-swap="innerHTML"
+        {% endif %}
+    >
+        {% include "partials/event_log.html" %}
+    </div>
+</div>
+
+{% endblock %}

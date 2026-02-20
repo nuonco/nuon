@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Cerberus - Dashboard{% endblock %}
+{% block content %}
+
+<!-- Stats bar -->
+<div class="grid grid-cols-4 gap-4 mb-8">
+    <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+        <div class="text-2xl font-bold">{{ stats.total }}</div>
+        <div class="text-sm text-gray-400">Total Runs</div>
+    </div>
+    <div class="bg-gray-900 rounded-lg p-4 border border-green-900">
+        <div class="text-2xl font-bold text-green-400">{{ stats.passed }}</div>
+        <div class="text-sm text-gray-400">Passed</div>
+    </div>
+    <div class="bg-gray-900 rounded-lg p-4 border border-red-900">
+        <div class="text-2xl font-bold text-red-400">{{ stats.failed }}</div>
+        <div class="text-sm text-gray-400">Failed</div>
+    </div>
+    <div class="bg-gray-900 rounded-lg p-4 border border-amber-900">
+        <div class="text-2xl font-bold text-amber-400">{{ stats.running }}</div>
+        <div class="text-sm text-gray-400">Running</div>
+    </div>
+</div>
+
+<!-- Canary Definitions -->
+<div class="mb-8">
+    <h2 class="text-lg font-semibold mb-4">Canary Definitions</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for c in canaries %}
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-mono text-sm text-amber-400">{{ c.name }}</h3>
+                <span class="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-400">{{ c.category }}</span>
+            </div>
+            <p class="text-sm text-gray-400 mb-3">{{ c.description }}</p>
+            <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>{{ c.installs|length }} install{{ 's' if c.installs|length != 1 }}</span>
+                <span>{{ c.steps|length }} steps</span>
+            </div>
+            <button
+                hx-post="/api/runs"
+                hx-vals='{"canary_name": "{{ c.name }}"}'
+                hx-headers='{"Content-Type": "application/json"}'
+                hx-swap="none"
+                class="mt-3 w-full text-sm py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-medium"
+            >
+                Run
+            </button>
+        </div>
+        {% endfor %}
+        {% if not canaries %}
+        <p class="text-gray-500 col-span-3">No canary definitions found. Add them to cerberus/canaries/.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Runs -->
+<div>
+    <h2 class="text-lg font-semibold mb-4">Recent Runs</h2>
+    <div class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-800 text-gray-400 text-xs uppercase">
+                <tr>
+                    <th class="px-4 py-2 text-left">ID</th>
+                    <th class="px-4 py-2 text-left">Canary</th>
+                    <th class="px-4 py-2 text-left">Status</th>
+                    <th class="px-4 py-2 text-left">Started</th>
+                    <th class="px-4 py-2 text-left">Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in recent_runs %}
+                <tr class="border-t border-gray-800 hover:bg-gray-800/50 cursor-pointer"
+                    onclick="window.location='/runs/{{ run.id }}'">
+                    <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ run.id[:12] }}</td>
+                    <td class="px-4 py-2 text-amber-400">{{ run.canary_name }}</td>
+                    <td class="px-4 py-2">
+                        {% if run.status == 'passed' %}
+                            <span class="text-green-400">passed</span>
+                        {% elif run.status == 'failed' %}
+                            <span class="text-red-400">failed</span>
+                        {% elif run.status == 'running' %}
+                            <span class="text-amber-400">running</span>
+                        {% else %}
+                            <span class="text-gray-400">{{ run.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2 text-gray-400">
+                        {{ run.started_at.strftime('%Y-%m-%d %H:%M') if run.started_at else '-' }}
+                    </td>
+                    <td class="px-4 py-2 text-gray-400">
+                        {% if run.started_at and run.completed_at %}
+                            {{ ((run.completed_at - run.started_at).total_seconds() / 60)|round(1) }}m
+                        {% elif run.started_at %}
+                            running...
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not recent_runs %}
+                <tr>
+                    <td colspan="5" class="px-4 py-8 text-center text-gray-500">No runs yet</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

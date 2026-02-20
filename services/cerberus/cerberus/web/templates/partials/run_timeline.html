@@ -1,0 +1,56 @@
+<div class="space-y-1">
+    <h2 class="text-sm font-semibold text-gray-400 uppercase mb-3">Steps</h2>
+    {% for step in run.steps %}
+    <div class="flex items-start gap-3 p-3 rounded-lg
+        {% if step.status == 'passed' %}bg-green-950/30 border border-green-900/50
+        {% elif step.status == 'failed' %}bg-red-950/30 border border-red-900/50
+        {% elif step.status == 'running' %}bg-amber-950/30 border border-amber-900/50
+        {% elif step.status == 'skipped' %}bg-gray-900/30 border border-gray-800/50 opacity-50
+        {% else %}bg-gray-900/30 border border-gray-800/50
+        {% endif %}
+    ">
+        <!-- Status indicator -->
+        <div class="mt-0.5">
+            {% if step.status == 'passed' %}
+                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            {% elif step.status == 'failed' %}
+                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            {% elif step.status == 'running' %}
+                <div class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></div>
+            {% elif step.status == 'skipped' %}
+                <div class="w-3 h-3 rounded-full bg-gray-600"></div>
+            {% else %}
+                <div class="w-3 h-3 rounded-full bg-gray-700"></div>
+            {% endif %}
+        </div>
+
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-mono">{{ step.name }}</span>
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">{{ step.phase }}</span>
+                </div>
+                {% if step.duration_ms %}
+                <span class="text-xs text-gray-500">{{ (step.duration_ms / 1000)|round(1) }}s</span>
+                {% endif %}
+            </div>
+
+            {% if step.error_message %}
+            <div class="mt-2 text-xs text-red-400 font-mono bg-red-950/50 p-2 rounded overflow-x-auto">
+                {{ step.error_message }}
+            </div>
+            {% endif %}
+
+            {% if step.output_data %}
+            <details class="mt-2">
+                <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-300">Output</summary>
+                <pre class="mt-1 text-xs text-gray-400 font-mono bg-gray-950 p-2 rounded overflow-x-auto">{{ step.output_data | tojson(indent=2) }}</pre>
+            </details>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% if not run.steps %}
+    <p class="text-sm text-gray-500">No steps recorded yet.</p>
+    {% endif %}
+</div>

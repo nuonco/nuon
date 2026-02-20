@@ -1,0 +1,30 @@
+<div>
+    <h2 class="text-sm font-semibold text-gray-400 uppercase mb-3">Event Log</h2>
+    <div class="bg-gray-900 rounded-lg border border-gray-800 p-3 max-h-[600px] overflow-y-auto space-y-2">
+        {% for event in (run.events if run is defined else events) | reverse %}
+        <div class="text-xs border-b border-gray-800/50 pb-2">
+            <div class="flex items-center justify-between mb-1">
+                <span class="
+                    {% if event.event_type == 'error' %}text-red-400
+                    {% elif event.event_type == 'status_change' %}text-amber-400
+                    {% elif event.event_type == 'fault_injected' %}text-purple-400
+                    {% else %}text-gray-500
+                    {% endif %}
+                    font-semibold uppercase
+                ">{{ event.event_type }}</span>
+                <span class="text-gray-600">{{ event.created_at.strftime('%H:%M:%S') }}</span>
+            </div>
+            <div class="text-gray-300">{{ event.message }}</div>
+            {% if event.data %}
+            <details class="mt-1">
+                <summary class="text-gray-600 cursor-pointer hover:text-gray-400">data</summary>
+                <pre class="mt-1 text-gray-500 font-mono overflow-x-auto">{{ event.data | tojson(indent=2) }}</pre>
+            </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% if not (run.events if run is defined else events) %}
+        <p class="text-gray-600 text-center py-4">No events yet</p>
+        {% endif %}
+    </div>
+</div>
