@@ -1,13 +1,26 @@
 package views
 
 import (
+	"time"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/datepicker"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/calendar"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
 	"fmt"
 )
 
-templ InstallDetail(install *app.Install) {
+templ InstallDetail(
+	install *app.Install,
+	activeDeployments []app.InstallDeploy,
+	activityLogs []*AuditLogEntry,
+	startDate, endDate time.Time,
+	dashboardURL string,
+	currentPage, activityTotalPages int,
+) {
 	@Layout("Install: " + install.Name, ActivePageInstalls) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb Navigation -->
@@ -21,7 +34,17 @@ templ InstallDetail(install *app.Install) {
 				<div class="flex items-start justify-between">
 					<!-- Left side: Name and ID -->
 					<div class="flex-1">
-						<h1 class="text-2xl font-bold mb-2">{ install.Name }</h1>
+						<div class="flex items-center gap-3 mb-2">
+							<h1 class="text-2xl font-bold">{ install.Name }</h1>
+							<a href={ templ.URL(dashboardURL + "/" + install.OrgID + "/installs/" + install.ID) } target="_blank" rel="noopener noreferrer">
+								@button.Button(button.Props{
+									Variant: button.VariantOutline,
+									Size:    button.SizeSm,
+								}) {
+									View Dashboard
+								}
+							</a>
+						</div>
 						<div class="flex items-center gap-2">
 							<span class="text-xs text-muted-foreground uppercase">ID:</span>
 							<span id={ "install-id-" + install.ID } class="font-mono text-xs text-foreground">
@@ -82,9 +105,104 @@ templ InstallDetail(install *app.Install) {
 					</div>
 				</div>
 			</div>
+			<!-- Active Deployments Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Active Component Deployments
+						}
+						@card.Description() {
+							Currently running deployments (updates every 5 seconds)
+						}
+					}
+					@card.Content(card.ContentProps{Class: "py-4"}) {
+						@InstallActiveDeploymentsTable(install.ID, activeDeployments)
+					}
+				}
+			</div>
+			<!-- Activity Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Activity
+						}
+						@card.Description() {
+							Runner jobs and workflows for this install
+						}
+					}
+					@card.Content() {
+						<!-- Entity Type Filter -->
+						<div class="mb-4"
+							hx-get={ "/installs/" + install.ID + "/activity/table" }
+							hx-trigger="change from:[name='entity_types'] delay:300ms"
+							hx-target={ "#activity-table-" + install.ID }
+							hx-swap="outerHTML"
+							hx-include="[name='start_date'],[name='end_date'],[name='entity_types']"
+						>
+							<label class="text-sm font-medium mb-2 block">Filter by Type</label>
+							<div class="w-full">
+								@selectbox.SelectBox() {
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:      "entity_types",
+										ShowPills: true,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "Select types to filter",
+										})
+									}
+									@selectbox.Content() {
+										@selectbox.Item(selectbox.ItemProps{
+											Value: "runner_job",
+											Class: "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											Runner Job
+										}
+										@selectbox.Item(selectbox.ItemProps{
+											Value: "workflow",
+											Class: "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											Workflow
+										}
+									}
+								}
+							</div>
+						</div>
+						<!-- Date Range Filters -->
+						<div class="flex gap-4 mb-4"
+							hx-get={ "/installs/" + install.ID + "/activity/table" }
+							hx-trigger="change from:[name='start_date'], change from:[name='end_date'] delay:300ms"
+							hx-target={ "#activity-table-" + install.ID }
+							hx-swap="outerHTML"
+							hx-include="[name='start_date'],[name='end_date'],[name='entity_types']"
+						>
+							@datepicker.DatePicker(datepicker.Props{
+								ID:          "install-start-date",
+								Name:        "start_date",
+								Placeholder: "Start date",
+								Value:       startDate,
+								Format:      datepicker.FormatLOCALE_SHORT,
+							})
+							@datepicker.DatePicker(datepicker.Props{
+								ID:          "install-end-date",
+								Name:        "end_date",
+								Placeholder: "End date",
+								Value:       endDate,
+								Format:      datepicker.FormatLOCALE_SHORT,
+							})
+						</div>
+						<!-- Activity Table -->
+						@InstallActivityTable(install.ID, activityLogs, startDate, endDate, currentPage, activityTotalPages)
+					}
+				}
+			</div>
 		</div>
 		// Include the copybutton and popover JavaScript
 		@copybutton.Script()
 		@popover.Script()
+		@calendar.Script()
+		@datepicker.Script()
+		@selectbox.Script()
 	}
 }

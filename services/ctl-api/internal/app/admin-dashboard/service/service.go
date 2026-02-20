@@ -10,7 +10,10 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 type Params struct {
@@ -21,6 +24,9 @@ type Params struct {
 	MW          metrics.Writer
 	L           *zap.Logger
 	AppsHelpers *appshelpers.Helpers
+	AcctClient  *account.Client
+	AuthzClient *authz.Client
+	OrgsHelpers *orgshelpers.Helpers
 }
 
 type Service struct {
@@ -30,6 +36,9 @@ type Service struct {
 	mw          metrics.Writer
 	cfg         *internal.Config
 	appsHelpers *appshelpers.Helpers
+	acctClient  *account.Client
+	authzClient *authz.Client
+	orgsHelpers *orgshelpers.Helpers
 }
 
 type service = Service
@@ -64,6 +73,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/orgs/:id/status", s.OrgStatus)
 	api.POST("/orgs/:id/tags", s.UpdateOrgTags)
 	api.POST("/orgs/:id/tags/remove/:tag", s.RemoveSingleTag)
+	api.POST("/orgs/:id/support-users/add", s.AddSupportUsers)
 	api.GET("/orgs/:id/installs/table", s.InstallsTable)
 
 	// Accounts routes
@@ -82,6 +92,8 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/installs/:id/status/runner", s.InstallRunnerStatus)
 	api.GET("/installs/:id/status/sandbox", s.InstallSandboxStatus)
 	api.GET("/installs/:id/status/component", s.InstallComponentStatus)
+	api.GET("/installs/:id/active-deployments/table", s.InstallActiveDeploymentsTable)
+	api.GET("/installs/:id/activity/table", s.InstallActivityTable)
 	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
 
 	s.l.Info("admin-dashboard routes registered")
@@ -96,6 +108,9 @@ func New(params Params) (*service, error) {
 		db:          params.DB,
 		mw:          params.MW,
 		appsHelpers: params.AppsHelpers,
+		acctClient:  params.AcctClient,
+		authzClient: params.AuthzClient,
+		orgsHelpers: params.OrgsHelpers,
 	}
 
 	s.l.Info("admin-dashboard service initialized")
