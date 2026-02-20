@@ -69,79 +69,85 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4 border-b">
-          <Text variant="base" weight="strong">
-            Resource drift
-          </Text>
-        </div>
+      {drift?.changes?.length ? (
+        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+          <div className="px-4 sm:px-6 py-4 border-b">
+            <Text variant="base" weight="strong">
+              Resource drift
+            </Text>
+          </div>
 
-        <TerraformSummary summary={drift.summary} />
+          <TerraformSummary summary={drift.summary} />
 
-        <DiffFilter
-          title="drift"
-          selectedActions={driftFilter.selectedActions}
-          onInputToggle={driftFilter.handleInputToggle}
-          onButtonClick={driftFilter.handleButtonClick}
-          onReset={driftFilter.handleReset}
-          selectedCount={driftFilter.filterStats.selectedCount}
-          totalCount={driftFilter.filterStats.totalCount}
-          searchValue={driftFilter.searchQuery}
-          onSearchChange={driftFilter.handleSearchChange}
-          searchPlaceholder="Search by address, resource, or name"
-        />
+          <DiffFilter
+            title="drift"
+            selectedActions={driftFilter.selectedActions}
+            onInputToggle={driftFilter.handleInputToggle}
+            onButtonClick={driftFilter.handleButtonClick}
+            onReset={driftFilter.handleReset}
+            selectedCount={driftFilter.filterStats.selectedCount}
+            totalCount={driftFilter.filterStats.totalCount}
+            searchValue={driftFilter.searchQuery}
+            onSearchChange={driftFilter.handleSearchChange}
+            searchPlaceholder="Search by address, resource, or name"
+          />
 
-        <ResourceChangesList changes={driftFilter.filteredItems} />
-      </Card>
+          <ResourceChangesList changes={driftFilter.filteredItems} />
+        </Card>
+      ) : null}
 
-      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4 border-b">
-          <Text variant="base" weight="strong">
-            Resource changes
-          </Text>
-        </div>
+      {resources?.changes?.length ? (
+        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+          <div className="px-4 sm:px-6 py-4 border-b">
+            <Text variant="base" weight="strong">
+              Resource changes
+            </Text>
+          </div>
 
-        <TerraformSummary summary={resources.summary} />
+          <TerraformSummary summary={resources.summary} />
 
-        <DiffFilter
-          title="resources"
-          selectedActions={resourceFilter.selectedActions}
-          onInputToggle={resourceFilter.handleInputToggle}
-          onButtonClick={resourceFilter.handleButtonClick}
-          onReset={resourceFilter.handleReset}
-          selectedCount={resourceFilter.filterStats.selectedCount}
-          totalCount={resourceFilter.filterStats.totalCount}
-          searchValue={resourceFilter.searchQuery}
-          onSearchChange={resourceFilter.handleSearchChange}
-          searchPlaceholder="Search by address, resource, or name"
-        />
+          <DiffFilter
+            title="resources"
+            selectedActions={resourceFilter.selectedActions}
+            onInputToggle={resourceFilter.handleInputToggle}
+            onButtonClick={resourceFilter.handleButtonClick}
+            onReset={resourceFilter.handleReset}
+            selectedCount={resourceFilter.filterStats.selectedCount}
+            totalCount={resourceFilter.filterStats.totalCount}
+            searchValue={resourceFilter.searchQuery}
+            onSearchChange={resourceFilter.handleSearchChange}
+            searchPlaceholder="Search by address, resource, or name"
+          />
 
-        <ResourceChangesList changes={resourceFilter.filteredItems} />
-      </Card>
+          <ResourceChangesList changes={resourceFilter.filteredItems} />
+        </Card>
+      ) : null}
 
-      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4 border-b">
-          <Text variant="base" weight="strong">
-            Output changes
-          </Text>
-        </div>
+      {outputs?.changes?.length ? (
+        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+          <div className="px-4 sm:px-6 py-4 border-b">
+            <Text variant="base" weight="strong">
+              Output changes
+            </Text>
+          </div>
 
-        <DiffFilter
-          title="outputs"
-          selectedActions={outputFilter.selectedActions}
-          onInputToggle={outputFilter.handleInputToggle}
-          onButtonClick={outputFilter.handleButtonClick}
-          onReset={outputFilter.handleReset}
-          selectedCount={outputFilter.filterStats.selectedCount}
-          totalCount={outputFilter.filterStats.totalCount}
-          searchValue={outputFilter.searchQuery}
-          onSearchChange={outputFilter.handleSearchChange}
-          searchPlaceholder="Search outputs by name"
-        />
+          <DiffFilter
+            title="outputs"
+            selectedActions={outputFilter.selectedActions}
+            onInputToggle={outputFilter.handleInputToggle}
+            onButtonClick={outputFilter.handleButtonClick}
+            onReset={outputFilter.handleReset}
+            selectedCount={outputFilter.filterStats.selectedCount}
+            totalCount={outputFilter.filterStats.totalCount}
+            searchValue={outputFilter.searchQuery}
+            onSearchChange={outputFilter.handleSearchChange}
+            searchPlaceholder="Search outputs by name"
+          />
 
-        <TerraformSummary summary={outputs.summary} />
-        <OutputChangesList changes={outputFilter.filteredItems} />
-      </Card>
+          <TerraformSummary summary={outputs.summary} />
+          <OutputChangesList changes={outputFilter.filteredItems} />
+        </Card>
+      ) : null}
     </div>
   )
 }
