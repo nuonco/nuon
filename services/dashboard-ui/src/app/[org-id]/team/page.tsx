@@ -35,16 +35,17 @@ export default async function OrgTeam({ params, searchParams }) {
   const { ['org-id']: orgId } = await params
   const { data: org } = await getOrg({ orgId })
 
+  const pageLimit = 20
   const currentOffset = parseInt(sp['offset'] || '0', 10)
   if (currentOffset > 0) {
     const { data: members } = await getOrgAccounts({
       orgId,
-      limit: 10,
+      limit: pageLimit,
       offset: sp['offset'],
     })
     // If no members at this offset, redirect to previous page
     if (!members || members.length === 0) {
-      const previousOffset = Math.max(0, currentOffset - 10)
+      const previousOffset = Math.max(0, currentOffset - pageLimit)
       const params = new URLSearchParams()
       if (previousOffset > 0) {
         params.set('offset', previousOffset.toString())
@@ -123,7 +124,7 @@ const StratusOrgMembers: FC<{
   orgId: string
   limit?: number
   offset?: string
-}> = async ({ orgId, limit = 5, offset }) => {
+}> = async ({ orgId, limit = 20, offset }) => {
   const session = await getSession()
   const {
     data: members,
