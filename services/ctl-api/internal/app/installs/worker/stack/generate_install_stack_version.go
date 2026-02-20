@@ -158,7 +158,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
 		}
 
-		renderedTemplate, err := activities.AwaitRenderAWSStacTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
+		renderedTemplate, err := activities.AwaitRenderAWSStackTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
 			Input: *inp,
 		})
 		if err != nil {
