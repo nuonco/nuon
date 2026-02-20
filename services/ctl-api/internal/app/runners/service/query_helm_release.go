@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/helm"
 )
 
@@ -33,12 +34,12 @@ func (s *service) QueryHelmRelease(ctx *gin.Context) {
 	helmChartID := ctx.Param("helm_chart_id")
 	namespace := ctx.Param("namespace")
 	if helmChartID == "" {
-		ctx.Error(fmt.Errorf("helm_chart_id was not set"))
+		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("helm_chart_id was not set")})
 		return
 	}
 
 	if namespace == "" {
-		ctx.Error(fmt.Errorf("namespace was not set"))
+		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("namespace was not set")})
 		return
 	}
 

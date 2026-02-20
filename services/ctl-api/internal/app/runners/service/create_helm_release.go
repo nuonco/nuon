@@ -39,17 +39,17 @@ func (s *service) CreateHelmRelease(ctx *gin.Context) {
 	key := ctx.Param("key")
 
 	if helmChartID == "" {
-		ctx.Error(fmt.Errorf("helm_chart_id was not set"))
+		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("helm_chart_id was not set")})
 		return
 	}
 
 	if namespace == "" {
-		ctx.Error(fmt.Errorf("namespace was not set"))
+		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("namespace was not set")})
 		return
 	}
 
 	if key == "" {
-		ctx.Error(fmt.Errorf("key was not set"))
+		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("key was not set")})
 		return
 	}
 

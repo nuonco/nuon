@@ -26,6 +26,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -51,12 +52,13 @@ type CreateAppTestService struct {
 type CreateAppTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app     *fxtest.App
-	service CreateAppTestService
-	router  *gin.Engine
-	ctx     context.Context
-	testOrg *app.Org
-	testAcc *app.Account
+	app          *fxtest.App
+	service      CreateAppTestService
+	router       *gin.Engine
+	ctx          context.Context
+	testOrg      *app.Org
+	testAcc      *app.Account
+	mockEvClient *tests.FakeEventLoopClient
 }
 
 func TestCreateAppSuite(t *testing.T) {
@@ -72,8 +74,15 @@ func (s *CreateAppTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
+	// Create fake event loop client for testing
+	s.mockEvClient = tests.NewFakeEventLoopClient()
+
 	options := append(
 		tests.CtlApiFXOptions(),
+		// Override eventloop.Client with mock
+		fx.Decorate(func() eventloop.Client {
+			return s.mockEvClient
+		}),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -89,6 +98,9 @@ func (s *CreateAppTestSuite) SetupSuite() {
 func (s *CreateAppTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+
+	// Reset mock before each test
+	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
