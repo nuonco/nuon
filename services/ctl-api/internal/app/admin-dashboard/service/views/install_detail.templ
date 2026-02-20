@@ -2,12 +2,13 @@ package views
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
 	"fmt"
 )
 
-templ InstallDetail(install *app.Install) {
+templ InstallDetail(install *app.Install, activeDeployments []app.InstallDeploy) {
 	@Layout("Install: " + install.Name, ActivePageInstalls) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb Navigation -->
@@ -81,6 +82,22 @@ templ InstallDetail(install *app.Install) {
 						<div class="text-sm font-mono">{ install.UpdatedAt.Format("2006-01-02 15:04") }</div>
 					</div>
 				</div>
+			</div>
+			<!-- Active Deployments Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Active Component Deployments
+						}
+						@card.Description() {
+							Currently running deployments (updates every 5 seconds)
+						}
+					}
+					@card.Content(card.ContentProps{Class: "py-4"}) {
+						@InstallActiveDeploymentsTable(install.ID, activeDeployments)
+					}
+				}
 			</div>
 		</div>
 		// Include the copybutton and popover JavaScript

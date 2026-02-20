@@ -1,0 +1,75 @@
+package views
+
+import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+)
+
+templ InstallActiveDeploymentsTable(installID string, deployments []app.InstallDeploy) {
+	<div
+		id={ "install-active-deployments-" + installID }
+		hx-get={ "/installs/" + installID + "/active-deployments/table" }
+		hx-trigger="every 5s"
+		hx-swap="outerHTML"
+	>
+		if len(deployments) == 0 {
+			<div class="text-sm text-muted-foreground py-4">No active deployments</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Component }
+						@table.Head() { Status }
+						@table.Head() { Type }
+						@table.Head() { Build }
+						@table.Head() { Started }
+						@table.Head() { Updated }
+					}
+				}
+				@table.Body() {
+					for _, deploy := range deployments {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex flex-col gap-1">
+									<div class="font-medium text-sm">{ deploy.ComponentName }</div>
+									<div class="flex items-center gap-2">
+										<span id={ "deploy-id-" + deploy.ID } class="font-mono text-xs text-muted-foreground">
+											{ deploy.ID }
+										</span>
+										@copybutton.CopyButton(copybutton.Props{
+											TargetID: "deploy-id-" + deploy.ID,
+										})
+									</div>
+								</div>
+							}
+							@table.Cell() {
+								@status.StatusAutoSimple(string(deploy.Status))
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs uppercase"}) {
+								{ string(deploy.Type) }
+							}
+							@table.Cell() {
+								<div class="flex items-center gap-2">
+									<span id={ "build-id-" + deploy.ComponentBuildID } class="font-mono text-xs text-muted-foreground">
+										{ deploy.ComponentBuildID[:8] }...
+									</span>
+									@copybutton.CopyButton(copybutton.Props{
+										TargetID: "build-id-" + deploy.ComponentBuildID,
+									})
+								</div>
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+								{ deploy.CreatedAt.Format("2006-01-02 15:04") }
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+								{ deploy.UpdatedAt.Format("2006-01-02 15:04") }
+							}
+						}
+					}
+				}
+			}
+		}
+	</div>
+}

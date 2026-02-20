@@ -92,6 +92,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/installs/:id/status/runner", s.InstallRunnerStatus)
 	api.GET("/installs/:id/status/sandbox", s.InstallSandboxStatus)
 	api.GET("/installs/:id/status/component", s.InstallComponentStatus)
+	api.GET("/installs/:id/active-deployments/table", s.InstallActiveDeploymentsTable)
 	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
 
 	s.l.Info("admin-dashboard routes registered")
