@@ -3,14 +3,10 @@
 import { useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Button } from '@/components/common/Button'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
-import { Dropdown } from '@/components/common/Dropdown'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Menu } from '@/components/common/Menu'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
@@ -108,7 +104,11 @@ function parseInstallsToTableData(
     ),
     created_at: install?.created_at,
     updated_at: install?.updated_at,
-    action: <QuickManagementDropdown install={install} />,
+    action: (
+      <div className="hidden md:block">
+        <QuickManagementDropdown install={install} />
+      </div>
+    ),
   }))
 }
 
@@ -214,7 +214,12 @@ export const InstallsTable = ({
         emptyTitle: 'No installs created',
         action: <CreateInstallButton />,
       }}
-      filterActions={<CreateInstallButton variant="primary" />}
+      filterActions={
+        <CreateInstallButton
+          className="!w-full !flex !justify-center md:!w-fit"
+          variant="primary"
+        />
+      }
       pagination={pagination}
       searchPlaceholder="Search install name..."
     />

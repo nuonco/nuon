@@ -81,14 +81,22 @@ export function TableBase<TData extends object>({
 
   return (
     <div className="flex flex-col gap-4 md:gap-6 w-full">
-      <div className="flex flex-row flex-wrap items-center justify-between">
-        {enableSearch ? <DebouncedSearchInput placeholder={searchPlaceholder} /> : null}
+      <div className="flex flex-row flex-wrap items-center justify-between gap-4">
+        {enableSearch ? (
+          <DebouncedSearchInput labelClassName="w-full md:w-fit" className="w-full md:w-fit" placeholder={searchPlaceholder} />
+        ) : null}
         {filterActions ? (
-          <div className={`flex gap-4 md:gap-6 ${!enableSearch ? 'w-full justify-end' : ''}`}>{filterActions}</div>
+          <div
+            className={`flex gap-4 md:gap-6 ${!enableSearch ? 'w-full justify-end' : 'w-full md:w-fit'}`}
+          >
+            {filterActions}
+          </div>
         ) : null}
       </div>
-      <div className={`rounded-lg border ${className}`}>
-        <table className="min-w-full text-sm">
+      <div
+        className={`overflow-x-auto md:overflow-visible rounded-lg border ${className} [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
+      >
+        <table className="w-max md:w-full min-w-full text-sm">
           <thead className="rounded-lg">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
