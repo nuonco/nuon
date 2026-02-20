@@ -29,7 +29,8 @@ source <(nuon completion <your-shell>)
 
 ### Install Script
 
-If you are not using Homebrew, you can use our install script to automatically download and install the correct binary for your platform (macOS or Linux):
+If you are not using Homebrew, you can use our install script to automatically download and install the correct binary
+for your platform (macOS or Linux):
 
 ```sh
 bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)
@@ -83,7 +84,8 @@ brew update
 brew upgrade nuonco/tap/nuon
 ```
 
-Or, if you installed via the install script, simply run it again to get the latest version. For manual binary installs, download the latest version from the S3 bucket as described above.
+Or, if you installed via the install script, simply run it again to get the latest version. For manual binary installs,
+download the latest version from the S3 bucket as described above.
 
 ### Debug Mode
 
@@ -125,3 +127,11 @@ for workflows and actions. These features can be enabled by setting `NUON_PREVIE
 ![Nuon CLI TUI](./images/resources/cli/workflow.png)
 
 At the time of writing, we have experimental TUIs for actions, workflows, and for creating new installs.
+
+### Nuon CLI Extensions
+
+The `nuon` cli has support for extensions. You can browse nuon-authored extensions with `nuon ext browse` and author
+your own. At the time of writing, we have published a handful of extensions for public consumption. Try our api
+extension with `nuon install api`.
+
+![Nuon Extensions](./images/resources/cli/extensions.png)
