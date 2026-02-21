@@ -1,22 +1,14 @@
 'use client'
 
 import {
-  createContext,
   useState,
   useEffect,
   useCallback,
   type ReactNode,
 } from 'react'
 import { setSidebarCookie } from '@/actions/layout/main-sidebar-cookie'
-
-interface ISidebarContext {
-  isSidebarOpen?: boolean
-  closeSidebar?: () => void
-  openSidebar?: () => void
-  toggleSidebar?: () => void
-}
-
-export const SidebarContext = createContext<ISidebarContext>({})
+export { SidebarContext } from '@/contexts/sidebar-context'
+import { SidebarContext } from '@/contexts/sidebar-context'
 
 export const SidebarProvider = ({
   children,

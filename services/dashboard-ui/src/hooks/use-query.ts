@@ -48,6 +48,9 @@ export function useQuery<T = any>({
         })
       )
       .catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return
+        }
         setIsLoading(false)
         setError(err)
         setResponseHeaders(null)

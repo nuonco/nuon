@@ -194,6 +194,12 @@ export function usePolling<T = any>({
         scheduleNext(pollInterval)
       } catch (err) {
         if (!mountedRef.current) return
+        // Ignore AbortErrors — these are expected cancellations from cleanup/unmount,
+        // not real errors. Setting error state for aborts causes flash-unmount cycles
+        // in React StrictMode.
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return
+        }
         setIsLoading(false)
         setError(err as TAPIError)
         setResponseHeaders(null)
@@ -257,16 +263,6 @@ export function usePolling<T = any>({
     backoff?.resetOnSuccess,
     ...dependencies,
   ])
-
-  useEffect(() => {
-    setData(initData)
-    setError(null)
-    setIsLoading(false)
-    setResponseHeaders(null)
-    // reset backoff trackers when initData changes
-    currentDelayRef.current = backoff?.initialDelay ?? 1000
-    retryCountRef.current = 0
-  }, [initData, backoff?.initialDelay])
 
   return {
     data,

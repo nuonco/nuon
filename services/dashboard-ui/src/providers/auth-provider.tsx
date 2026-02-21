@@ -1,19 +1,8 @@
 'use client'
 
-import { createContext } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import type { IUser } from '@/types/dashboard.types'
-
-interface IAuthContext {
-  user: IUser | null | undefined
-  error?: Error
-  isLoading: boolean
-  isAdmin: boolean
-  useAuthService: boolean
-  authServiceUrl?: string
-}
-
-export const AuthContext = createContext<IAuthContext | undefined>(undefined)
+export { AuthContext } from '@/contexts/auth-context'
+import { AuthContext } from '@/contexts/auth-context'
 
 // Auth0-based auth provider
 function Auth0AuthProvider({ 

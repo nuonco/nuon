@@ -10,6 +10,19 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "next/navigation": path.resolve(__dirname, "./src/shims/next-navigation"),
+      "next/link": path.resolve(__dirname, "./src/shims/next-link"),
+      "next/image": path.resolve(__dirname, "./src/shims/next-image"),
+      "next/headers": path.resolve(__dirname, "./src/shims/next-headers"),
+      "next/cache": path.resolve(__dirname, "./src/shims/next-cache"),
+      "@auth0/nextjs-auth0/client": path.resolve(
+        __dirname,
+        "./src/shims/auth0-client"
+      ),
+      "@auth0/nextjs-auth0/server": path.resolve(
+        __dirname,
+        "./src/shims/auth0-server"
+      ),
     },
   },
   define: {
@@ -28,17 +41,29 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: path.resolve(__dirname, "index.html"),
-      external: [
-        // Server-only Next.js modules — never bundled into the SPA
-        "@auth0/nextjs-auth0",
-        "next/server",
-        "next/headers",
-        "next/cache",
-      ],
     },
   },
   server: {
     port: 5173,
     strictPort: true,
+    // Proxy API requests to the Go BFF server
+    proxy: {
+      "/api": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+      },
+      "/livez": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+      },
+      "/readyz": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+      },
+    },
+    // HMR connects directly to Vite, not through the Go BFF proxy
+    hmr: {
+      port: 5173,
+    },
   },
 });

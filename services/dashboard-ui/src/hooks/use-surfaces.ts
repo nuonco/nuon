@@ -1,7 +1,7 @@
 'use client'
 
 import { useContext } from 'react'
-import { SurfacesContext } from '@/providers/surfaces-provider'
+import { SurfacesContext } from '@/contexts/surfaces-context'
 
 export function useSurfaces() {
   const ctx = useContext(SurfacesContext)

@@ -27,9 +27,18 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Skip auth for health endpoints
+		// Only require auth for /api/* routes.
+		// All other routes (SPA pages, static assets, health checks) are
+		// served without authentication — the React app handles auth
+		// redirects client-side.
 		path := c.Request.URL.Path
-		if path == "/livez" || path == "/readyz" || path == "/version" {
+		if !strings.HasPrefix(path, "/api/") {
+			c.Next()
+			return
+		}
+
+		// Public API endpoints that don't require auth
+		if path == "/api/livez" {
 			c.Next()
 			return
 		}

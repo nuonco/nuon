@@ -65,6 +65,7 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 	// SPA fallback: any unmatched GET request serves index.html with
 	// no-cache so the browser always fetches the latest version which
 	// references the current hashed asset bundles.
+	// The React app handles auth redirects on the client side.
 	e.NoRoute(func(c *gin.Context) {
 		if c.Request.Method != http.MethodGet {
 			c.Status(http.StatusNotFound)
@@ -94,6 +95,7 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 }
 
 // registerDevProxy proxies non-API requests to the Vite dev server for HMR.
+// The React app handles auth redirects on the client side.
 func (h *Handler) registerDevProxy(e *gin.Engine) error {
 	e.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
