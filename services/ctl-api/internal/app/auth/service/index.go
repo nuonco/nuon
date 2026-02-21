@@ -37,6 +37,22 @@ func (s *service) Index(c *gin.Context) {
 		if tokenInfo, err := s.validateToken(token); err == nil {
 			isAuthenticated = true
 			email = tokenInfo.Email
+
+			// If already authenticated and a redirect URL is provided, redirect there
+			if redirectURL != "" {
+				validatedURL, err := s.validateRequestedURL(redirectURL)
+				if err != nil {
+					s.l.Warn("invalid redirect URL for authenticated user",
+						zap.String("url", redirectURL),
+						zap.Error(err))
+				} else {
+					s.l.Info("redirecting authenticated user to requested URL",
+						zap.String("email", email),
+						zap.String("url", validatedURL))
+					s.redirect302(c, validatedURL)
+					return
+				}
+			}
 		}
 	}
 

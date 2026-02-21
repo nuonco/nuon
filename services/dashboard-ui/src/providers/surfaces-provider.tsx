@@ -2,49 +2,15 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import React, {
-  createContext,
   useState,
   useCallback,
   useEffect,
-  type ReactElement,
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { v4 as uuid } from 'uuid'
-import { type IPanel } from '@/components/surfaces/Panel'
-import { type IModal } from '@/components/surfaces/Modal'
-
-// Panel types
-type TPanelEl = ReactElement<IPanel & { ref?: React.Ref<HTMLDivElement> }>
-type TPanels = {
-  id: string
-  key?: string
-  content: TPanelEl
-  isVisible: boolean
-}[]
-
-// Modal types
-type TModalEl = ReactElement<IModal & { ref?: React.Ref<HTMLDivElement> }>
-type TModals = {
-  id: string
-  key?: string
-  content: TModalEl
-  isVisible: boolean
-}[]
-
-type TSurfacesContext = {
-  panels: TPanels
-  modals: TModals
-  addPanel: (content: TPanelEl, panelKey?: string, panelId?: string) => string
-  clearPanels: () => void
-  removePanel: (id: string, panelKey?: string) => void
-  addModal: (content: TModalEl, modalKey?: string) => string
-  removeModal: (id: string, modalKey?: string) => void
-}
-
-export const SurfacesContext = createContext<TSurfacesContext | undefined>(
-  undefined
-)
+export { SurfacesContext } from '@/contexts/surfaces-context'
+import { SurfacesContext, type TPanelEl, type TModalEl, type TPanels, type TModals } from '@/contexts/surfaces-context'
 
 export function SurfacesProvider({ children }: { children: ReactNode }) {
   // Panels

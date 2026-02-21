@@ -25,7 +25,11 @@ export const UserProfile = () => {
       ) : (
         user && (
           <>
-            <Avatar src={user?.picture} alt={user?.name} />
+            {user?.picture ? (
+              <Avatar src={user.picture} alt={user.name} />
+            ) : (
+              <Avatar name={user?.name || user?.email} />
+            )}
             <div className="flex flex-col gap-0.5 w-full overflow-hidden">
               <Text className="!leading-none" variant="body" weight="strong">
                 {user?.name}

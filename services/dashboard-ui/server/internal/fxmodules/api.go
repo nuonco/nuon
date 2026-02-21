@@ -36,6 +36,8 @@ type API struct {
 
 func NewAPI(p APIParams) (*API, error) {
 	handler := gin.New()
+	handler.Use(gin.Recovery())
+	handler.Use(gin.Logger())
 
 	api := &API{
 		cfg:         p.Config,
