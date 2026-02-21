@@ -52,10 +52,12 @@ import (
 //	    fx.Provide(MyService), // add your service under test
 //	    fx.Populate(&myTestService),
 //	)
+func NopFxLogger() fxevent.Logger { return fxevent.NopLogger }
+
 func CtlApiFXOptions() []fx.Option {
 	return []fx.Option{
 		// Suppress verbose Fx PROVIDE/INVOKE logs in tests
-		fx.WithLogger(func() fxevent.Logger { return fxevent.NopLogger }),
+		fx.WithLogger(NopFxLogger),
 
 		// Configuration
 		fx.Provide(internal.NewConfig),
@@ -125,7 +127,7 @@ func CtlApiFXOptions() []fx.Option {
 func CtlApiFXOptionsWithValidator() []fx.Option {
 	return []fx.Option{
 		// Suppress verbose Fx PROVIDE/INVOKE logs in tests
-		fx.WithLogger(func() fxevent.Logger { return fxevent.NopLogger }),
+		fx.WithLogger(NopFxLogger),
 
 		// Configuration
 		fx.Provide(internal.NewConfig),
