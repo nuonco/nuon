@@ -1,5 +1,5 @@
 --latest_runner_heart_beats create a new table. the view will write to this table.
-CREATE TABLE IF NOT EXISTS ctl_api.latest_runner_heart_beats
+CREATE TABLE IF NOT EXISTS latest_runner_heart_beats
 ON CLUSTER simple (
     runner_id String,
     "process" String DEFAULT '',
