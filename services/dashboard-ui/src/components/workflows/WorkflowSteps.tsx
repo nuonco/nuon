@@ -42,7 +42,7 @@ export const WorkflowSteps = ({
   const effectiveShouldPoll = shouldPoll && !shouldStopPolling
 
   const { data: workflowSteps } = usePolling<TWorkflowStep[]>({
-    path: `/api/orgs/${org?.id}/workflows/${workflowId}/steps`,
+    path: `/api/ctl-api/v1/workflows/${workflowId}/steps`,
     shouldPoll: effectiveShouldPoll,
     initData: initWorkflowSteps,
     pollInterval,

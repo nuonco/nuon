@@ -39,7 +39,7 @@ export const InstallActionRunTimeline = ({
   const { data: action } = usePolling<TInstallAction>({
     dependencies: [queryParams],
     initData: initInstallAction,
-    path: `/api/orgs/${org?.id}/installs/${install?.id}/actions/${initInstallAction?.action_workflow_id}${queryParams}`,
+    path: `/api/ctl-api/v1/installs/${install?.id}/actions/${initInstallAction?.action_workflow_id}${queryParams}`,
     shouldPoll,
     pollInterval,
   })

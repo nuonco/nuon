@@ -19,7 +19,7 @@ export const WorkflowSteps = ({
   const { org } = useOrg()
   const { data: workflow, error } = usePolling<TWorkflow>({
     initData: initWorkflow,
-    path: `/api/orgs/${org.id}/workflows/${workflowId}`,
+    path: `/api/ctl-api/v1/workflows/${workflowId}`,
     pollInterval,
     shouldPoll,
   })

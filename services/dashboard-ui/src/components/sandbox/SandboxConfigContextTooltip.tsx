@@ -155,7 +155,7 @@ export const SandboxConfigContextTooltip = ({
     isLoading,
     error,
   } = useQuery<TAppConfig>({
-    path: `/api/orgs/${org?.id}/apps/${appId}/configs/${appConfigId}?recurse=true`,
+    path: `/api/ctl-api/v1/apps/${appId}/configs/${appConfigId}?recurse=true`,
     enabled: !!org?.id && !!appId && !!appConfigId,
   })
 

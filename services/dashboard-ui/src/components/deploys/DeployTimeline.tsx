@@ -38,7 +38,7 @@ export const DeployTimeline = ({
   const { data: deploys } = usePolling<TDeploy[]>({
     dependencies: [queryParams],
     initData: initDeploys,
-    path: `/api/orgs/${org?.id}/installs/${install.id}/components/${componentId}/deploys${queryParams}`,
+    path: `/api/ctl-api/v1/installs/${install.id}/components/${componentId}/deploys${queryParams}`,
     shouldPoll,
     pollInterval,
   })

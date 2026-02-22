@@ -26,7 +26,7 @@ export const DeployApply = ({
   })
 
   const { data: logs } = useQuery<TOTELLog[]>({
-    path: `/api/orgs/${org.id}/log-streams/${deploy?.log_stream?.id}/logs${params}`,
+    path: `/api/ctl-api/v1/log-streams/${deploy?.log_stream?.id}/logs${params}`,
   })
 
   return (

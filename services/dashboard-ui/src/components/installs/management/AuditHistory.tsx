@@ -38,7 +38,7 @@ export const AuditHistoryModal = ({ ...props }: IAuditHistory & IModal) => {
     isLoading,
   } = useQuery<TFileResponse>({
     dependencies: [params],
-    path: `/api/orgs/${org.id}/installs/${install.id}/audit-logs${params}`,
+    path: `/api/ctl-api/v1/installs/${install.id}/audit-logs${params}`,
   })
 
   const handleDateChange = (hoursAgo: number) => {

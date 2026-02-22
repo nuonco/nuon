@@ -22,7 +22,7 @@ export default function OrgLayout() {
     error,
     isLoading,
   } = usePolling<TOrg>({
-    path: `/api/orgs/${orgId}`,
+    path: `/api/ctl-api/v1/orgs/current`,
     shouldPoll: true,
     pollInterval: 30000,
   })

@@ -24,7 +24,7 @@ export const ViewStateModal = ({ ...props }: IViewState & IModal) => {
     error,
     isLoading,
   } = useQuery<Record<string, any>>({
-    path: `/api/orgs/${org?.id}/installs/${install?.id}/state`,
+    path: `/api/ctl-api/v1/installs/${install?.id}/state`,
   })
 
   return (

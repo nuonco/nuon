@@ -19,7 +19,7 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
     isLoading,
   } = useQuery<TDeploy>({
     dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/deploys/${step.step_target_id}`,
+    path: `/api/ctl-api/v1/installs/${step?.owner_id}/deploys/${step.step_target_id}`,
   })
 
   return (

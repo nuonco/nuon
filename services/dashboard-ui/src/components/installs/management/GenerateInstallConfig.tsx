@@ -27,7 +27,7 @@ export const GenerateInstallConfigModal = ({ ...props }: IGenerateInstallConfig 
     error,
     isLoading,
   } = useQuery<TFileResponse>({
-    path: `/api/orgs/${org.id}/installs/${install.id}/generate-cli-config`,
+    path: `/api/ctl-api/v1/installs/${install.id}/generate-cli-config`,
   })
 
   const handleDownload = () => {

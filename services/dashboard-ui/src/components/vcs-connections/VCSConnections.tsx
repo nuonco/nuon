@@ -45,7 +45,7 @@ const VCSConnection = ({
 }) => {
   const { org } = useOrg()
   const { data, isLoading } = useQuery<TVCSConnectionStatus>({
-    path: `/api/orgs/${org?.id}/vcs-connections/${vcs_connection?.id}/check-status`,
+    path: `/api/ctl-api/v1/vcs-connections/${vcs_connection?.id}/check-status`,
   })
 
   return (

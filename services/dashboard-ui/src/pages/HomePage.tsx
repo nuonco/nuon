@@ -22,7 +22,7 @@ export default function HomePage() {
 
         if (orgIdFromCookie) {
           const { data: org, error } = await apiClient<TOrg>({
-            path: `/api/ctl-api/v1/orgs/${orgIdFromCookie}`,
+            path: `/api/ctl-api/v1/orgs/current`,
           })
 
           if (org && !error) {

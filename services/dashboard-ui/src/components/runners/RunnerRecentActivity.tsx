@@ -48,7 +48,7 @@ export const RunnerRecentActivity = ({
   })
   const { data: jobs } = usePolling<TRunnerJob[]>({
     dependencies: [queryParams],
-    path: `/api/orgs/${org?.id}/runners/${runner?.id}/jobs${queryParams}`,
+    path: `/api/ctl-api/v1/runners/${runner?.id}/jobs${queryParams}`,
     shouldPoll,
     initData: initJobs,
     pollInterval,

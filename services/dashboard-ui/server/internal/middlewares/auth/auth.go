@@ -87,8 +87,8 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		cctx.SetTokenGinContext(c, token)
 		cctx.SetIsEmployeeGinContext(c, strings.HasSuffix(me.Email, "@nuon.co"))
 
-		// Set org ID from route param if present
-		if orgID := c.Param("orgId"); orgID != "" {
+		// Read org ID from cookie
+		if orgID, err := c.Cookie("nuon-org-id"); err == nil && orgID != "" {
 			cctx.SetOrgIDGinContext(c, orgID)
 		}
 

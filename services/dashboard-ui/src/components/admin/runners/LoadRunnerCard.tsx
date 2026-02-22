@@ -17,7 +17,7 @@ export const LoadRunnerCard = ({ runnerId, installId }: LoadRunnerCardProps) => 
   const orgId = org.id
 
   const { data: runner, error: queryError, isLoading } = useQuery<TRunner>({
-    path: `/api/orgs/${orgId}/runners/${runnerId}`,
+    path: `/api/ctl-api/v1/runners/${runnerId}`,
     dependencies: [runnerId]
   })
 

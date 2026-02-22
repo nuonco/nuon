@@ -25,7 +25,7 @@ export const RunnerHealthCard = ({
   const { org } = useOrg()
   const { runner } = useRunner()
   const { data: healthchecks, error } = usePolling<TRunnerHealthCheck[]>({
-    path: `/api/orgs/${org?.id}/runners/${runner?.id}/health-checks`,
+    path: `/api/ctl-api/v1/runners/${runner?.id}/recent-health-checks`,
     shouldPoll,
     initData: initHealthchecks,
     pollInterval,

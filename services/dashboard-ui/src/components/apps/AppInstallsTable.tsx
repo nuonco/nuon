@@ -131,7 +131,7 @@ export const AppInstallsTable = ({
   })
   const { data: installs } = usePolling({
     initData: initInstalls,
-    path: `/api/orgs/${org.id}/apps/${appId}/installs${queryParams}`,
+    path: `/api/ctl-api/v1/apps/${appId}/installs${queryParams}`,
     pollInterval,
     shouldPoll,
   })

@@ -119,7 +119,7 @@ export const InstallStacksTable = ({
   })
   const { data: stack } = usePolling<TInstallStack>({
     initData: initStack,
-    path: `/api/orgs/${org.id}/installs/${install.id}/stack${queryParams}`,
+    path: `/api/ctl-api/v1/installs/${install.id}/stack${queryParams}`,
     pollInterval,
     shouldPoll,
   })

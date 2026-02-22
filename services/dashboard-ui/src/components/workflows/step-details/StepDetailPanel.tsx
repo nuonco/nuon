@@ -78,7 +78,7 @@ export const StepDetailPanel = ({
   const { org } = useOrg()
   const { data: step } = usePolling<TWorkflowStep>({
     initData: initStep,
-    path: `/api/orgs/${org.id}/workflows/${initStep.install_workflow_id}/steps/${initStep.id}`,
+    path: `/api/ctl-api/v1/workflows/${initStep.install_workflow_id}/steps/${initStep.id}`,
     pollInterval,
     shouldPoll,
   })

@@ -66,7 +66,7 @@ const InstallComponentDeployMenu = ({
     offset,
   })
   const { data, error, headers, isLoading } = useQuery<TDeploy[]>({
-    path: `/api/orgs/${org.id}/installs/${install.id}/components/${componentId}/deploys${queryParams}`,
+    path: `/api/ctl-api/v1/installs/${install.id}/components/${componentId}/deploys${queryParams}`,
     initData: [],
   })
 

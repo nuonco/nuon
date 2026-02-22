@@ -140,7 +140,7 @@ export const AppsTable = ({
   })
   const { data: apps } = usePolling({
     initData: initApps,
-    path: `/api/orgs/${org.id}/apps${queryParams}`,
+    path: `/api/ctl-api/v1/apps${queryParams}`,
     pollInterval,
     shouldPoll,
   })

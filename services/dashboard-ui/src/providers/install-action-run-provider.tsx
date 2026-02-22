@@ -34,7 +34,7 @@ export function InstallActionRunProvider({
     isLoading,
   } = usePolling<TInstallActionRun>({
     initData: initInstallActionRun,
-    path: `/api/orgs/${org.id}/installs/${install.id}/actions/runs/${initInstallActionRun.id}`,
+    path: `/api/ctl-api/v1/installs/${install.id}/actions/runs/${initInstallActionRun.id}`,
     pollInterval,
     shouldPoll,
   })

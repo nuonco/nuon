@@ -49,7 +49,7 @@ export const AdminOrgFeaturesPanel = ({
     setIsLoading(true)
     setError(undefined)
     
-    fetch(`/api/orgs/${orgId}/features`)
+    fetch(`/api/ctl-api/v1/features`)
       .then((res) => res.json())
       .then((features) => {
         setIsLoading(false)

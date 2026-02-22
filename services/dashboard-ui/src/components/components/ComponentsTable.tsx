@@ -162,7 +162,7 @@ export const ComponentsTable = ({
   const { data: components } = usePolling({
     dependencies: [queryParams],
     initData: initComponents,
-    path: `/api/orgs/${org.id}/apps/${app.id}/components${queryParams}`,
+    path: `/api/ctl-api/v1/apps/${app.id}/components${queryParams}`,
     pollInterval,
     shouldPoll,
   })

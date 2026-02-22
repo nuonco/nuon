@@ -109,7 +109,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
     isLoading: configsLoading,
     error: configsError,
   } = useQuery<TAppConfig[]>({
-    path: `/api/orgs/${org?.id}/apps/${app?.id}/configs`,
+    path: `/api/ctl-api/v1/apps/${app?.id}/configs`,
   })
 
   const {
@@ -117,7 +117,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
     isLoading: configLoading,
     error: configError,
   } = useQuery<TAppConfig>({
-    path: `/api/orgs/${org?.id}/apps/${app?.id}/configs/${configs?.[0]?.id}?recurse=true`,
+    path: `/api/ctl-api/v1/apps/${app?.id}/configs/${configs?.[0]?.id}?recurse=true`,
     enabled: !!configs?.[0]?.id,
   })
 

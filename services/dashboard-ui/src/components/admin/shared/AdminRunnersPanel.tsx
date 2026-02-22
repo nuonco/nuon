@@ -54,7 +54,7 @@ export const AdminRunnersPanel = ({
     setError(undefined)
 
     try {
-      const res = await fetch(`/api/orgs/${orgId}/installs`)
+      const res = await fetch(`/api/ctl-api/v1/installs`)
       const { data, error } = await res.json()
 
       if (error) {

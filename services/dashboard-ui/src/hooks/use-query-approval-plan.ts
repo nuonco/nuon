@@ -27,7 +27,7 @@ export function useQueryApprovalPlan({ step }: IUseQueryApprovalPlan) {
     }
 
     fetch(
-      `/api/orgs/${org.id}/workflows/${step.workflow_id}/steps/${step.id}/approvals/${step.approval.id}/contents`
+      `/api/ctl-api/v1/workflows/${step.workflow_id}/steps/${step.id}/approvals/${step.approval.id}/contents`
     )
       .then((r) => r.json())
       .then((res) => {

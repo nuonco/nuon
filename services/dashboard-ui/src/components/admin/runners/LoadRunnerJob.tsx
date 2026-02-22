@@ -31,7 +31,7 @@ export const LoadRunnerJob = ({
   })
 
   const { data, error: queryError, isLoading } = useQuery<TRunnerJob[]>({
-    path: `/api/orgs/${orgId}/runners/${runnerId}/jobs?${queryParams.toString()}`,
+    path: `/api/ctl-api/v1/runners/${runnerId}/jobs?${queryParams.toString()}`,
     dependencies: [runnerId, groups, statuses]
   })
 

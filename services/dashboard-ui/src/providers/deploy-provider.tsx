@@ -32,7 +32,7 @@ export function DeployProvider({
   } = usePolling<TDeploy>({
     dependencies: [initDeploy],
     initData: initDeploy,
-    path: `/api/orgs/${org.id}/installs/${initDeploy?.install_id}/deploys/${initDeploy.id}`,
+    path: `/api/ctl-api/v1/installs/${initDeploy?.install_id}/deploys/${initDeploy.id}`,
     pollInterval,
     shouldPoll,
   })

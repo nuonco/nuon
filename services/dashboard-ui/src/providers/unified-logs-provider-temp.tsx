@@ -38,7 +38,7 @@ const useUnifiedLogData = ({
     setConnectionState('connecting')
     setError(null)
 
-    const url = `/api/orgs/${org.id}/log-streams/${logStream.id}/logs/sse`
+    const url = `/api/ctl-api/v1/log-streams/${logStream.id}/logs/sse`
     const eventSource = new EventSource(url)
     eventSourceRef.current = eventSource
 
@@ -123,7 +123,7 @@ const useUnifiedLogData = ({
   }
 
   const pollingResults = usePolling<TOTELLog[]>({
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs`,
+    path: `/api/ctl-api/v1/log-streams/${logStream?.id}/logs`,
     dependencies: [offset],
     headers: offset ? { 'X-Nuon-API-Offset': offset } : {},
     initData: initLogs,
@@ -133,7 +133,7 @@ const useUnifiedLogData = ({
 
   const staticResults = useQuery<TOTELLog[]>({
     dependencies: [staticTrigger],
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs${params}`,
+    path: `/api/ctl-api/v1/log-streams/${logStream?.id}/logs${params}`,
     headers: offset ? { 'X-Nuon-API-Offset': offset } : {},
     initData: initLogs,
     initIsLoading: false,
@@ -142,7 +142,7 @@ const useUnifiedLogData = ({
 
   const paginationCheckResults = useQuery<TOTELLog[]>({
     dependencies: [needsPaginationCheck],
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs${params}`,
+    path: `/api/ctl-api/v1/log-streams/${logStream?.id}/logs${params}`,
     headers: logs.length > 0 ? {
       'X-Nuon-API-Offset': String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000)
     } : {},
@@ -153,7 +153,7 @@ const useUnifiedLogData = ({
 
   const finalFetchResults = useQuery<TOTELLog[]>({
     dependencies: [needsFinalFetch],
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs`,
+    path: `/api/ctl-api/v1/log-streams/${logStream?.id}/logs`,
     headers: logs.length > 0 ? {
       'X-Nuon-API-Offset': String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000)
     } : {},

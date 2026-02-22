@@ -23,7 +23,7 @@ export const ActionRunStepDetails = ({ step }: IActionRunDetails) => {
     isLoading,
   } = useQuery<TInstallActionRun>({
     dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step.owner_id}/actions/runs/${step?.step_target_id}`,
+    path: `/api/ctl-api/v1/installs/${step.owner_id}/actions/runs/${step?.step_target_id}`,
   })
 
   const isAdhoc = actionRun?.trigger_type === 'adhoc'

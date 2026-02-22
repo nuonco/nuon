@@ -22,13 +22,13 @@ export const LoadRunnerHeartbeat = ({ runnerId }: LoadRunnerHeartbeatProps) => {
     error: queryError,
     isLoading,
   } = useQuery<{ build?: TRunnerHeartbeat; install?: TRunnerHeartbeat }>({
-    path: `/api/orgs/${orgId}/runners/${runnerId}/heartbeat`,
+    path: `/api/ctl-api/v1/runners/${runnerId}/heart-beats/latest`,
     dependencies: [runnerId],
   })
 
   const { data: settings, isLoading: isSettingsLoading } =
     useQuery<TRunnerGroupSettings>({
-      path: `/api/orgs/${orgId}/runners/${runnerId}/settings`,
+      path: `/api/ctl-api/v1/runners/${runnerId}/settings`,
       dependencies: [runnerId],
     })
 

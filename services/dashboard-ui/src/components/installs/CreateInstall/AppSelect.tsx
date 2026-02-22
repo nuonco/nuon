@@ -44,7 +44,7 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
     isLoading,
     error,
   } = useQuery<TApp[]>({
-    path: `/api/orgs/${org?.id}/apps?offset=${currentPage * limit}&limit=${limit}${searchParam}`,
+    path: `/api/ctl-api/v1/apps?offset=${currentPage * limit}&limit=${limit}${searchParam}`,
   })
 
   // Update accumulated apps when new data comes in

@@ -32,7 +32,7 @@ export function SandboxRunProvider({
   } = usePolling<TSandboxRun>({
     dependencies: [initSandboxRun],
     initData: initSandboxRun,
-    path: `/api/orgs/${org.id}/installs/${initSandboxRun?.install_id}/sandbox/runs/${initSandboxRun.id}`,
+    path: `/api/ctl-api/v1/installs/${initSandboxRun?.install_id}/sandbox/runs/${initSandboxRun.id}`,
     pollInterval,
     shouldPoll,
   })

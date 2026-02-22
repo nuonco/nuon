@@ -30,7 +30,7 @@ export const WorkflowHeader = ({
   const { install } = useInstall()
   const { data: workflow, error } = usePolling<TWorkflow>({
     initData: initWorkflow,
-    path: `/api/orgs/${org.id}/workflows/${initWorkflow?.id}`,
+    path: `/api/ctl-api/v1/workflows/${initWorkflow?.id}`,
     pollInterval,
     shouldPoll,
   })

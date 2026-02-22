@@ -22,7 +22,7 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
 
   const { data: sandboxRun, isLoading } = useQuery<TSandboxRun>({
     dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`,
+    path: `/api/ctl-api/v1/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`,
   })
 
   return (

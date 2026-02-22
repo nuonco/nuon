@@ -50,7 +50,7 @@ export const CreateInstallFromApp = ({
     isLoading,
     error,
   } = useQuery<TAppConfig>({
-    path: `/api/orgs/${org?.id}/apps/${app.id}/configs/${configId}?recurse=true`,
+    path: `/api/ctl-api/v1/apps/${app.id}/configs/${configId}?recurse=true`,
   })
 
   const {

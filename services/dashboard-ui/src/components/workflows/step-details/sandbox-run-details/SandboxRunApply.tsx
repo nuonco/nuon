@@ -28,7 +28,7 @@ export const SandboxRunApply = ({
   })
 
   const { data: logs } = useQuery<TOTELLog[]>({
-    path: `/api/orgs/${org.id}/log-streams/${sandboxRun?.log_stream?.id}/logs${params}`,
+    path: `/api/ctl-api/v1/log-streams/${sandboxRun?.log_stream?.id}/logs${params}`,
   })
 
   return (

@@ -32,7 +32,7 @@ export function BuildProvider({
   } = usePolling<TBuild>({
     dependencies: [initBuild],
     initData: initBuild,
-    path: `/api/orgs/${org.id}/components/${initBuild?.component_id}/builds/${initBuild.id}`,
+    path: `/api/ctl-api/v1/components/${initBuild?.component_id}/builds/${initBuild.id}`,
     pollInterval,
     shouldPoll,
   })

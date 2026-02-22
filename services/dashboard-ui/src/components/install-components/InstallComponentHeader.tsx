@@ -32,7 +32,7 @@ export const InstallComponentHeader = ({
   const { org } = useOrg()
   const { data: deploy } = usePolling<TDeploy>({
     initData: initDeploy,
-    path: `/api/orgs/${org.id}/installs/${install.id}/deploys/${initDeploy?.id}`,
+    path: `/api/ctl-api/v1/installs/${install.id}/deploys/${initDeploy?.id}`,
     pollInterval,
     shouldPoll,
   })

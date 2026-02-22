@@ -46,7 +46,7 @@ export const WorkflowTimeline = ({
   })
   const { data: workflows } = usePolling<TWorkflow[]>({
     dependencies: [queryParams],
-    path: `/api/orgs/${org?.id}/${ownerType}/${ownerId}/workflows${queryParams}`,
+    path: `/api/ctl-api/v1/${ownerType}/${ownerId}/workflows${queryParams}`,
     shouldPoll,
     initData: initWorkflows,
     pollInterval,
