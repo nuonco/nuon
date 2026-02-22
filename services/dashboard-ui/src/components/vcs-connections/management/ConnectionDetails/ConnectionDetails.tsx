@@ -30,7 +30,7 @@ export const ConnectionDetailsModal = ({
 
   const { data: status, isLoading: isLoadingStatus } =
     useQuery<TVCSConnectionStatus>({
-      path: `/api/orgs/${org?.id}/vcs-connections/${vcs_connection?.id}/check-status`,
+      path: `/api/ctl-api/v1/vcs-connections/${vcs_connection?.id}/check-status`,
     })
 
   const {
@@ -38,7 +38,7 @@ export const ConnectionDetailsModal = ({
     error: reposError,
     isLoading: isLoadingRepos,
   } = useQuery<TVCSConnectionReposResponse>({
-    path: `/api/orgs/${org?.id}/vcs-connections/${vcs_connection?.id}/repos`,
+    path: `/api/ctl-api/v1/vcs-connections/${vcs_connection?.id}/repos`,
   })
 
   return (

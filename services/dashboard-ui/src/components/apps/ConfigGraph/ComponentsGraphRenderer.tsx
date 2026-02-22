@@ -176,7 +176,7 @@ const ComponentsGraph = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const { data, error, isLoading } = useQuery({
-    path: `/api/orgs/${org?.id}/apps/${appId}/configs/${configId}/graph`,
+    path: `/api/ctl-api/v1/apps/${appId}/configs/${configId}/graph`,
   })
 
   const convertDotToFlowData = (dotGraph: string) => {

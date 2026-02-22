@@ -235,7 +235,7 @@ export const ComponentConfigContextTooltip = ({
     isLoading,
     error,
   } = useQuery<TComponentConfig>({
-    path: `/api/orgs/${org?.id}/apps/${appId}/components/${componentId}/configs/${configId}`,
+    path: `/api/ctl-api/v1/apps/${appId}/components/${componentId}/configs/${configId}`,
     enabled: !!org?.id && !!appId && !!componentId && !!configId,
   })
 

@@ -125,7 +125,7 @@ export const ActionsTable = ({
   const { data: actions } = usePolling({
     dependencies: [queryParams],
     initData: initActionsWithRuns,
-    path: `/api/orgs/${org.id}/apps/${app.id}/actions${queryParams}`,
+    path: `/api/ctl-api/v1/apps/${app.id}/actions${queryParams}`,
     pollInterval,
     shouldPoll,
   })

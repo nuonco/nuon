@@ -27,7 +27,7 @@ export const RunnerDetailsCard = ({
   const { org } = useOrg()
   const { runner } = useRunner()
   const { data: heartbeats } = usePolling<TRunnerMngHeartbeat>({
-    path: `/api/orgs/${org?.id}/runners/${runner?.id}/heartbeat`,
+    path: `/api/ctl-api/v1/runners/${runner?.id}/heart-beats/latest`,
     shouldPoll,
     initData: initHeartbeat,
     pollInterval,

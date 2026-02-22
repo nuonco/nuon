@@ -33,11 +33,26 @@ function AppBootstrap() {
           return
         }
 
+        // Fetch identity data (picture, name) from auth/me endpoint
+        let picture: string | undefined
+        let displayName: string | undefined
+        try {
+          const meResp = await fetch('/api/ctl-api/v1/auth/me', { credentials: 'same-origin' })
+          if (meResp.ok) {
+            const me = await meResp.json()
+            const identity = me?.identities?.[0]
+            picture = identity?.picture
+            displayName = identity?.name
+          }
+        } catch {
+          // Non-critical — avatar falls back to initials
+        }
+
         const user: IUser = {
           sub: account.id,
           email: account.email,
-          name: account.name || account.email,
-          picture: undefined, // Identity picture not available via ctl-api; Avatar uses initials
+          name: displayName || account.name || account.email,
+          picture,
         }
 
         setInitialUser(user)

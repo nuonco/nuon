@@ -13,7 +13,7 @@ export default function AppLayout() {
     error,
     isLoading,
   } = usePolling<TApp>({
-    path: `/api/orgs/${org?.id}/apps/${appId}`,
+    path: `/api/ctl-api/v1/apps/${appId}`,
     shouldPoll: !!org?.id && !!appId,
     pollInterval: 20000,
   })

@@ -24,7 +24,7 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
   const { data: logs, isLoading: isLoadingLogs } = useQuery<TOTELLog[]>({
     dependencies: [actionRun?.log_stream?.id],
     path: actionRun?.log_stream?.id
-      ? `/api/orgs/${org.id}/log-streams/${actionRun?.log_stream?.id}/logs${params}`
+      ? `/api/ctl-api/v1/log-streams/${actionRun?.log_stream?.id}/logs${params}`
       : null,
   })
 

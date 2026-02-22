@@ -24,8 +24,9 @@ export type TActivityTimeline<T extends IHasCreatedAt> = Record<
 >
 
 export function parseActivityTimeline<T extends IHasCreatedAt>(
-  items: Array<T>
+  items: Array<T> | undefined | null
 ): TActivityTimeline<T> {
+  if (!items) return {} as TActivityTimeline<T>
   return items.reduce<TActivityTimeline<T>>((acc, item) => {
     // Skip items without a valid created_at
     if (!item?.created_at) {

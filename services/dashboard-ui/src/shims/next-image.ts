@@ -33,6 +33,7 @@ const Image = React.forwardRef<HTMLImageElement, NextImageProps>(
       className,
       style: fill ? style : undefined,
       loading: priority ? 'eager' : 'lazy',
+      referrerPolicy: 'no-referrer',
       ...props,
     })
   }

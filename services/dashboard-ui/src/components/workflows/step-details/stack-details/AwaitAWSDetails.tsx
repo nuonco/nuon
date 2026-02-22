@@ -28,7 +28,7 @@ export const AwaitAWSDetails = ({ stack }: IStackDetails) => {
     setIsDownloading(true)
     try {
       const response = await fetch(
-        `/api/orgs/${org.id}/installs/${install.id}/generate-terraform-installer-config`
+        `/api/ctl-api/v1/installs/${install.id}/generate-terraform-installer-config`
       )
 
       if (!response.ok) {

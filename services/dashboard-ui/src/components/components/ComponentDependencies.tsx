@@ -23,7 +23,7 @@ export const ComponentDependencies = ({ deps }: IComponentDependencies) => {
   const { app } = useApp()
   const params = useQueryParams({ component_ids: deps.toString() })
   const { data: components, isLoading } = useQuery({
-    path: `/api/orgs/${org?.id}/apps/${app?.id}/components${params}`,
+    path: `/api/ctl-api/v1/apps/${app?.id}/components${params}`,
   })
 
   const depSummaries = getContextTooltipItemsFromComponents(

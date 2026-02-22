@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -50,6 +52,7 @@ func (h *ProxyHandler) reverseProxy(target string) *httputil.ReverseProxy {
 	return httputil.NewSingleHostReverseProxy(targetURL)
 }
 
+
 func (h *ProxyHandler) TemporalUIProxy(c *gin.Context) {
 	proxy := h.reverseProxy(h.cfg.TemporalUIURL)
 	if proxy == nil {
@@ -60,47 +63,59 @@ func (h *ProxyHandler) TemporalUIProxy(c *gin.Context) {
 }
 
 func (h *ProxyHandler) CtlAPIProxy(c *gin.Context) {
-	proxy := h.reverseProxy(h.cfg.NuonAPIURL)
-	if proxy == nil {
-		c.Status(http.StatusBadGateway)
+	// Strip /api/ctl-api prefix so ctl-api sees /v1/...
+	apiPath := strings.TrimPrefix(c.Request.URL.Path, "/api/ctl-api")
+	targetURL := h.cfg.NuonAPIURL + apiPath
+	if c.Request.URL.RawQuery != "" {
+		targetURL += "?" + c.Request.URL.RawQuery
+	}
+
+	// Build the upstream request
+	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, targetURL, c.Request.Body)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	// Strip /api/ctl-api prefix so ctl-api sees /v1/...
-	originalPath := c.Request.URL.Path
-	c.Request.URL.Path = strings.TrimPrefix(originalPath, "/api/ctl-api")
-	if c.Request.URL.RawPath != "" {
-		c.Request.URL.RawPath = strings.TrimPrefix(c.Request.URL.RawPath, "/api/ctl-api")
-	}
-
-	// Add Authorization header from the validated token stored by auth middleware
+	// Auth token and org ID come from cookies (set by auth middleware)
 	if token, _ := cctx.TokenFromGinContext(c); token != "" {
-		c.Request.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	if orgID, _ := cctx.OrgIDFromGinContext(c); orgID != "" {
+		req.Header.Set("X-Nuon-Org-ID", orgID)
+	}
+	req.Header.Set("Content-Type", c.GetHeader("Content-Type"))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		respondError(c, http.StatusBadGateway, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		respondError(c, http.StatusBadGateway, err)
+		return
 	}
 
-	// Extract org ID from the path (e.g. /v1/orgs/<orgId>/...) and set as header.
-	// The ctl-api requires X-Nuon-Org-ID for org-scoped endpoints.
-	if orgID := extractOrgIDFromPath(c.Request.URL.Path); orgID != "" {
-		c.Request.Header.Set("X-Nuon-Org-ID", orgID)
+	// Wrap in TAPIResponse envelope expected by the frontend
+	var raw json.RawMessage = body
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		c.JSON(resp.StatusCode, gin.H{
+			"data":    raw,
+			"error":   nil,
+			"status":  resp.StatusCode,
+			"headers": gin.H{},
+		})
+	} else {
+		c.JSON(resp.StatusCode, gin.H{
+			"data":    nil,
+			"error":   raw,
+			"status":  resp.StatusCode,
+			"headers": gin.H{},
+		})
 	}
-
-	proxy.ServeHTTP(c.Writer, c.Request)
-}
-
-// extractOrgIDFromPath extracts the org ID from paths like /v1/orgs/<orgId> or /v1/orgs/<orgId>/...
-func extractOrgIDFromPath(path string) string {
-	// Look for /v1/orgs/<orgId> pattern
-	const prefix = "/v1/orgs/"
-	idx := strings.Index(path, prefix)
-	if idx < 0 {
-		return ""
-	}
-	rest := path[idx+len(prefix):]
-	// orgId is everything up to the next slash (or end of string)
-	if slashIdx := strings.Index(rest, "/"); slashIdx >= 0 {
-		return rest[:slashIdx]
-	}
-	return rest
 }
 
 func (h *ProxyHandler) CtlAPIDocsProxy(c *gin.Context) {

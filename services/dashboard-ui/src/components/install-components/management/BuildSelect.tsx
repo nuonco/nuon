@@ -42,7 +42,7 @@ export const BuildSelect = ({
     isLoading,
     error,
   } = useQuery<TBuild[]>({
-    path: `/api/orgs/${org?.id}/components/${componentId}/builds?offset=${currentPage * limit}&limit=${limit}`,
+    path: `/api/ctl-api/v1/components/${componentId}/builds?offset=${currentPage * limit}&limit=${limit}`,
   })
 
   // Update accumulated builds when new data comes in

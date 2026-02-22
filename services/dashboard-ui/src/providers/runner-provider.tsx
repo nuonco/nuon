@@ -34,7 +34,7 @@ export function RunnerProvider({
   } = usePolling<TRunner>({
     dependencies: [initRunner],
     initData: initRunner,
-    path: `/api/orgs/${org.id}/runners/${initRunner.id}`,
+    path: `/api/ctl-api/v1/runners/${initRunner.id}`,
     pollInterval,
     shouldPoll,
   })

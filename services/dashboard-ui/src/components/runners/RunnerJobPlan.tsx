@@ -31,7 +31,7 @@ export const RunnerJobPlanModal = ({
     error,
     isLoading,
   } = useQuery<TRunnerJobPlan>({
-    path: `/api/orgs/${org?.id}/runners/jobs/${runnerJobId}/plan`,
+    path: `/api/ctl-api/v1/runners/jobs/${runnerJobId}/plan`,
     dependencies: [runnerJobId],
   })
 

@@ -36,7 +36,7 @@ const useLoadLogs = ({
   }
 
   const pollingResults = usePolling<TOTELLog[]>({
-    path: `/api/orgs/${org.id}/log-streams/${logStream.id}/logs`,
+    path: `/api/ctl-api/v1/log-streams/${logStream.id}/logs`,
     dependencies: [offset],
     headers: offset
       ? {
@@ -50,7 +50,7 @@ const useLoadLogs = ({
 
   const staticResults = useQuery<TOTELLog[]>({
     dependencies: [staticTrigger],
-    path: `/api/orgs/${org.id}/log-streams/${logStream.id}/logs${params}`,
+    path: `/api/ctl-api/v1/log-streams/${logStream.id}/logs${params}`,
     headers: offset
       ? {
           'X-Nuon-API-Offset': offset,

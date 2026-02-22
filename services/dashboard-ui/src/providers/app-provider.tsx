@@ -30,7 +30,7 @@ export function AppProvider({
     isLoading,
   } = usePolling<TApp>({
     initData: initApp,
-    path: `/api/orgs/${org.id}/apps/${initApp.id}`,
+    path: `/api/ctl-api/v1/apps/${initApp.id}`,
     pollInterval,
     shouldPoll,
   })

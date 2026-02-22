@@ -32,7 +32,7 @@ export function LogStreamProvider({
     isLoading,
   } = usePolling<TLogStream>({
     initData: initLogStream,
-    path: `/api/orgs/${org.id}/log-streams/${initLogStream?.id}`,
+    path: `/api/ctl-api/v1/log-streams/${initLogStream?.id}`,
     pollInterval,
     shouldPoll,
   })

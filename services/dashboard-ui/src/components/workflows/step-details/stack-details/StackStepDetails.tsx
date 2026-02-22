@@ -20,7 +20,7 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
   const { org } = useOrg()
   const { data: stack, isLoading } = useQuery<TInstallStack>({
     dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step.owner_id}/stack`,
+    path: `/api/ctl-api/v1/installs/${step.owner_id}/stack`,
   })
 
   return (

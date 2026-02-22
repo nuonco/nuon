@@ -29,7 +29,7 @@ export function OrgProvider({
     isLoading,
   } = usePolling<TOrg>({
     initData: initOrg,
-    path: `/api/orgs/${initOrg.id}`,
+    path: `/api/ctl-api/v1/orgs/current`,
     pollInterval,
     shouldPoll,
   })

@@ -112,7 +112,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
     isLoading,
     error,
   } = useQuery<TAppConfig>({
-    path: `/api/orgs/${org.id}/apps/${install?.app_id}/configs/${install?.app_config_id}?recurse=true`,
+    path: `/api/ctl-api/v1/apps/${install?.app_id}/configs/${install?.app_config_id}?recurse=true`,
   })
 
   const {

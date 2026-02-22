@@ -26,6 +26,7 @@ const HomePage = lazy(() => import('@/pages/HomePage'))
 const OrgLayout = lazy(() => import('@/pages/layouts/OrgLayout'))
 const AppLayout = lazy(() => import('@/pages/layouts/AppLayout'))
 const InstallLayout = lazy(() => import('@/pages/layouts/InstallLayout'))
+const InstallActionRunLayout = lazy(() => import('@/pages/layouts/InstallActionRunLayout'))
 
 const OrgDashboard = lazy(() => import('@/pages/org/OrgDashboard'))
 const AppsPage = lazy(() => import('@/pages/org/AppsPage'))
@@ -51,6 +52,8 @@ const InstallWorkflows = lazy(() => import('@/pages/installs/InstallWorkflows'))
 const InstallWorkflowDetail = lazy(() => import('@/pages/installs/InstallWorkflowDetail'))
 const InstallActions = lazy(() => import('@/pages/installs/InstallActions'))
 const InstallActionDetail = lazy(() => import('@/pages/installs/InstallActionDetail'))
+const InstallActionRunSummary = lazy(() => import('@/pages/installs/InstallActionRunSummary'))
+const InstallActionRunLogs = lazy(() => import('@/pages/installs/InstallActionRunLogs'))
 const InstallRunner = lazy(() => import('@/pages/installs/InstallRunner'))
 const InstallSandbox = lazy(() => import('@/pages/installs/InstallSandbox'))
 const InstallSandboxRun = lazy(() => import('@/pages/installs/InstallSandboxRun'))
@@ -164,6 +167,20 @@ const router = createBrowserRouter([
           {
             path: 'actions/:actionId',
             element: wrap(InstallActionDetail),
+          },
+          {
+            path: 'actions/:actionId/:runId',
+            element: wrap(InstallActionRunLayout),
+            children: [
+              {
+                index: true,
+                element: wrap(InstallActionRunSummary),
+              },
+              {
+                path: 'logs',
+                element: wrap(InstallActionRunLogs),
+              },
+            ],
           },
           {
             path: 'runner',

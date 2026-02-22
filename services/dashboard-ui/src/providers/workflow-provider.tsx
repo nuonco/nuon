@@ -44,7 +44,7 @@ export const WorkflowProvider = ({
   
   const { data: workflow, isLoading, error, stopPolling } = usePolling<TWorkflow>({
     initData: initWorkflow,
-    path: `/api/orgs/${org.id}/workflows/${initWorkflow.id}`,
+    path: `/api/ctl-api/v1/workflows/${initWorkflow.id}`,
     pollInterval,
     shouldPoll,
   })

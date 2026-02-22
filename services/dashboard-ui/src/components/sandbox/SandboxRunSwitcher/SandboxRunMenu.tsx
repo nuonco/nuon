@@ -32,7 +32,7 @@ export const SandboxRunMenu = ({ activeSandboxRunId }: ISandboxRunMenu) => {
     offset,
   })
   const { data, error, headers, isLoading } = useQuery<TSandboxRun[]>({
-    path: `/api/orgs/${org.id}/installs/${install.id}/sandbox/runs${queryParams}`,
+    path: `/api/ctl-api/v1/installs/${install.id}/sandbox/runs${queryParams}`,
     initData: [],
   })
 

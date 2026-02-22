@@ -33,7 +33,7 @@ export function InstallProvider({
   } = usePolling<TInstall>({
     dependencies: [initInstall],
     initData: initInstall,
-    path: `/api/orgs/${org.id}/installs/${initInstall.id}`,
+    path: `/api/ctl-api/v1/installs/${initInstall.id}`,
     pollInterval,
     shouldPoll,
   })
