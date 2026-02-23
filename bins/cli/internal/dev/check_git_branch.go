@@ -23,7 +23,7 @@ func (s *Service) checkGitBranch(ctx context.Context) (string, error) {
 	case "master":
 		fallthrough
 	case "integration":
-		if err := prompt(s.autoApprove, "You are currently on the branch \"%s\". Are you sure you want to continue?", gitBranch); err != nil {
+		if err := prompt(s.autoApprove, s.cfg.Interactive, "You are currently on the branch \"%s\". Are you sure you want to continue?", gitBranch); err != nil {
 			return gitBranch, err
 		}
 	}

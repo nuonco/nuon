@@ -465,7 +465,7 @@ func (m SelectorModel) Selected() bool {
 // High-level selector functions
 
 // SelectFromOptions shows a selector with simple string options
-func SelectFromOptions(title string, options []string) (string, error) {
+func SelectFromOptions(title string, options []string, interactive bool) (string, error) {
 	items := make([]SelectorItem, len(options))
 	for i, option := range options {
 		items[i] = SelectorItem{
@@ -474,11 +474,11 @@ func SelectFromOptions(title string, options []string) (string, error) {
 		}
 	}
 
-	return SelectFromItems(title, items)
+	return SelectFromItems(title, items, interactive)
 }
 
 // SelectFromOptionsWithMaxRows shows a selector with simple string options and a specific max visible rows
-func SelectFromOptionsWithMaxRows(title string, options []string, maxVisibleRows int) (string, error) {
+func SelectFromOptionsWithMaxRows(title string, options []string, maxVisibleRows int, interactive bool) (string, error) {
 	items := make([]SelectorItem, len(options))
 	for i, option := range options {
 		items[i] = SelectorItem{
@@ -487,11 +487,15 @@ func SelectFromOptionsWithMaxRows(title string, options []string, maxVisibleRows
 		}
 	}
 
-	return SelectFromItemsWithMaxRows(title, items, maxVisibleRows)
+	return SelectFromItemsWithMaxRows(title, items, maxVisibleRows, interactive)
 }
 
 // SelectFromItems shows a selector with SelectorItem structs
-func SelectFromItems(title string, items []SelectorItem) (string, error) {
+func SelectFromItems(title string, items []SelectorItem, interactive bool) (string, error) {
+	if !interactive {
+		return "", fmt.Errorf("interactive terminal required for selection; use the appropriate --id flag to specify directly")
+	}
+
 	model := NewSelectorModel(title, items)
 
 	// Run inline without full-screen mode
@@ -510,7 +514,11 @@ func SelectFromItems(title string, items []SelectorItem) (string, error) {
 }
 
 // SelectFromItemsWithMaxRows shows a selector with SelectorItem structs and a specific max visible rows
-func SelectFromItemsWithMaxRows(title string, items []SelectorItem, maxVisibleRows int) (string, error) {
+func SelectFromItemsWithMaxRows(title string, items []SelectorItem, maxVisibleRows int, interactive bool) (string, error) {
+	if !interactive {
+		return "", fmt.Errorf("interactive terminal required for selection; use the appropriate --id flag to specify directly")
+	}
+
 	model := NewSelectorModelWithMaxRows(title, items, maxVisibleRows)
 
 	// Run inline without full-screen mode
@@ -529,7 +537,11 @@ func SelectFromItemsWithMaxRows(title string, items []SelectorItem, maxVisibleRo
 }
 
 // SelectOrg shows an organization selector with evaluation journey support
-func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error)) (string, error) {
+func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error), interactive bool) (string, error) {
+	if !interactive {
+		return "", fmt.Errorf("interactive terminal required for selection; use --org-id flag to specify directly")
+	}
+
 	buildItems := func(opts []OrgOption) []SelectorItem {
 		maxWidth := 0
 		for _, org := range opts {
@@ -594,7 +606,11 @@ func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error)) (st
 }
 
 // SelectApp shows an application selector
-func SelectApp(apps []AppOption) (string, error) {
+func SelectApp(apps []AppOption, interactive bool) (string, error) {
+	if !interactive {
+		return "", fmt.Errorf("interactive terminal required for selection; use --app-id flag to specify directly")
+	}
+
 	items := make([]SelectorItem, len(apps))
 	maxAppNameWidth := 0
 	for _, app := range apps {
@@ -610,11 +626,15 @@ func SelectApp(apps []AppOption) (string, error) {
 		}
 	}
 
-	return SelectFromItems("Select an application", items)
+	return SelectFromItems("Select an application", items, interactive)
 }
 
 // SelectInstall shows an installation selector
-func SelectInstall(installs []InstallOption) (string, error) {
+func SelectInstall(installs []InstallOption, interactive bool) (string, error) {
+	if !interactive {
+		return "", fmt.Errorf("interactive terminal required for selection; use --install-id flag to specify directly")
+	}
+
 	items := make([]SelectorItem, len(installs))
 	// get some widths for padding
 	maxInstallNameWidth := 0
@@ -632,11 +652,15 @@ func SelectInstall(installs []InstallOption) (string, error) {
 		}
 	}
 
-	return SelectFromItems("Select an installation", items)
+	return SelectFromItems("Select an installation", items, interactive)
 }
 
 // SelectWorkflow shows a workflow selector
-func SelectWorkflow(workflows []WorkflowOption) (string, error) {
+func SelectWorkflow(workflows []WorkflowOption, interactive bool) (string, error) {
+	if !interactive {
+		return "", fmt.Errorf("interactive terminal required for selection; use --workflow-id flag to specify directly")
+	}
+
 	items := make([]SelectorItem, len(workflows))
 	// get some widths for padding
 	maxWorkflowNameWidth := 0
@@ -661,7 +685,7 @@ func SelectWorkflow(workflows []WorkflowOption) (string, error) {
 		}
 	}
 
-	return SelectFromItems("Select a workflow", items)
+	return SelectFromItems("Select a workflow", items, interactive)
 }
 
 // Helper types for the selector functions

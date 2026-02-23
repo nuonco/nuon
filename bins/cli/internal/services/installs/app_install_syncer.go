@@ -118,7 +118,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	}
 
 	if !autoApprove {
-		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with creating this install?")
+		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with creating this install?", s.interactive)
 		if err != nil {
 			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
 			return nil, nil
@@ -217,7 +217,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	if !autoApprove {
-		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?")
+		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?", s.interactive)
 		if err != nil {
 			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
 			return nil, nil

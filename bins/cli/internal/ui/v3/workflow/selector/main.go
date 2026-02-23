@@ -348,6 +348,10 @@ func WorkflowSelectorApp(
 	api nuon.Client,
 	installID string,
 ) (string, error) {
+	if !cfg.Interactive {
+		return "", fmt.Errorf("interactive terminal required for workflow selection; use --workflow-id flag")
+	}
+
 	m := initialModel(ctx, cfg, api, installID)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
