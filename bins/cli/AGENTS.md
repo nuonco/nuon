@@ -336,3 +336,45 @@ internal/ui/v3/<feature>/
 ├── header.go        # Header view component
 └── selector/        # Sub-components if needed
 ```
+
+### No-TTY / Non-Interactive Support
+
+The CLI supports non-interactive environments (CI, pipes, cron). All `tea.NewProgram` call sites check `cfg.Interactive` before launching a TUI.
+
+#### Detection (`internal/config/tty.go`)
+
+Priority: `NUON_NO_TTY=true` → `CI` env var set → `!term.IsTerminal(stdout)` → interactive. Stored in `Config.Interactive` (resolved once in `NewConfig()`). All service structs access it via `s.cfg.Interactive`.
+
+#### Pattern
+
+Check `interactive` **before** creating a bubbletea program and use a different code path. `ui.NewProgram()` (`internal/ui/program.go`) exists as a safety net that injects `WithInput(nil)` + `WithoutRenderer()`, but the preferred pattern is to avoid bubbletea entirely when non-interactive.
+
+#### Fallback behavior by component type
+
+| Component | Non-interactive behavior |
+|-----------|------------------------|
+| **Spinners** (`bubbles/spinner.go`, `multi_spinner.go`) | Print status lines: `Syncing...` → `✓ Syncing... completed` |
+| **Selectors** (`bubbles/selector.go`, v3 selectors) | Return error: `"interactive terminal required; use --id flag"` |
+| **Confirms** (`bubbles/confirm.go`, `confirm_dialog.go`) | Return error: `"use --yes flag to auto-approve"` |
+| **Display TUIs** (`watch`, `workflow`, `logs`) | One-shot plain-text summary or streaming text output |
+| **Interactive table** (`bubbles/table.go`) | Render static table via `v.Render()` |
+| **Action TUIs** (`action/*`, `install/creator`) | Error: `"interactive terminal required; use --json flag"` |
+
+#### Command annotations (`cmd/annotations.go`)
+
+Commands are annotated with their TUI type via Cobra's `Annotations` map:
+
+```go
+Annotations: tuiAnnotation(TUIAltScreen)    // full-screen TUIs (workflows, watch, logs, actions, create)
+Annotations: tuiAnnotation(TUIContextual)   // inline TUI elements (select, dev)
+```
+
+Use `annotations()` to merge multiple annotation maps (e.g., `annotations(skipAuthAnnotation(), tuiAnnotation(TUIAltScreen))`).
+
+#### Testing
+
+```bash
+NUON_NO_TTY=true nuon <command>   # Explicit disable
+CI=true nuon <command>             # CI simulation
+nuon <command> | cat               # Pipe (auto-detected)
+```

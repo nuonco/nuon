@@ -13,9 +13,9 @@ type DeleteView struct {
 	id    string
 }
 
-func NewDeleteView(model string, id string) *DeleteView {
+func NewDeleteView(model, id string, interactive bool) *DeleteView {
 	return &DeleteView{
-		*NewSpinnerView(false),
+		*NewSpinnerView(false, interactive),
 		id,
 		model,
 	}

@@ -7,13 +7,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func prompt(autoApprove bool, msg string, vars ...any) error {
-	if autoApprove {
+func prompt(autoApprove, interactive bool, msg string, vars ...any) error {
+	if autoApprove || !interactive {
 		return nil
 	}
 
 	promptText := fmt.Sprintf(msg, vars...)
-	yes, err := bubbles.Confirm(promptText)
+	yes, err := bubbles.Confirm(promptText, interactive)
 	if err != nil {
 		return err
 	}

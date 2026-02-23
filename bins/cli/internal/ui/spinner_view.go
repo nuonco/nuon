@@ -8,9 +8,9 @@ type SpinnerView struct {
 	bubblesSpinner *bubbles.SpinnerView
 }
 
-func NewSpinnerView(json bool) *SpinnerView {
+func NewSpinnerView(json, interactive bool) *SpinnerView {
 	return &SpinnerView{
-		bubblesSpinner: bubbles.NewSpinnerView(json),
+		bubblesSpinner: bubbles.NewSpinnerView(json, interactive),
 	}
 }
 

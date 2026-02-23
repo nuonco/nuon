@@ -736,6 +736,10 @@ func InstallCreatorApp(
 	api nuon.Client,
 	appID string,
 ) (string, error) {
+	if !cfg.Interactive {
+		return "", errors.New("interactive terminal required for install creation; use nuon installs create --name <name> --region <region> flags")
+	}
+
 	m := initialModel(ctx, cfg, api, appID)
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 

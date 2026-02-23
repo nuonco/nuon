@@ -28,7 +28,7 @@ func (s *Service) Delete(ctx context.Context, appID, compID string, asJSON bool)
 		return nil
 	}
 
-	view := ui.NewDeleteView("component", compID)
+	view := ui.NewDeleteView("component", compID, s.cfg.Interactive)
 	view.Start()
 
 	_, err = s.api.DeleteComponent(ctx, compID)

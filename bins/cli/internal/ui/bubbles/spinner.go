@@ -162,20 +162,22 @@ func formatErrorMessage(err error) string {
 
 // SpinnerView provides a high-level interface similar to the original spinner_view
 type SpinnerView struct {
-	json       bool
-	program    *tea.Program
-	model      SpinnerModel
-	wg         sync.WaitGroup
-	mu         sync.Mutex
-	noTTY      bool
-	programErr error // stores the error from program.Run() if any
-	lastUpdate string
+	json        bool
+	interactive bool
+	program     *tea.Program
+	model       SpinnerModel
+	wg          sync.WaitGroup
+	mu          sync.Mutex
+	noTTY       bool
+	programErr  error // stores the error from program.Run() if any
+	lastUpdate  string
 }
 
 // NewSpinnerView creates a new spinner view
-func NewSpinnerView(json bool) *SpinnerView {
+func NewSpinnerView(json, interactive bool) *SpinnerView {
 	return &SpinnerView{
-		json: json,
+		json:        json,
+		interactive: interactive,
 	}
 }
 
@@ -186,6 +188,12 @@ func (v *SpinnerView) Start(text string) {
 	}
 
 	v.lastUpdate = text
+
+	if !v.interactive {
+		fmt.Println(text)
+		return
+	}
+
 	v.model = NewSpinnerModel(v.json)
 	v.model.message = text
 
@@ -207,7 +215,16 @@ func (v *SpinnerView) Start(text string) {
 
 // Update changes the spinner message
 func (v *SpinnerView) Update(text string) {
-	if v.json || v.program == nil {
+	if v.json {
+		return
+	}
+
+	if !v.interactive {
+		v.lastUpdate = text
+		return
+	}
+
+	if v.program == nil {
 		return
 	}
 
@@ -217,8 +234,12 @@ func (v *SpinnerView) Update(text string) {
 // Success completes the spinner with a success message
 func (v *SpinnerView) Success(text string) {
 	if v.json {
-		// Handle JSON output if needed
 		fmt.Println(text)
+		return
+	}
+
+	if !v.interactive {
+		fmt.Printf("✓ %s\n", text)
 		return
 	}
 
@@ -249,8 +270,12 @@ func (v *SpinnerView) Success(text string) {
 // Fail completes the spinner with an error message
 func (v *SpinnerView) Fail(err error) {
 	if v.json {
-		// Handle JSON error output
 		fmt.Printf(`{"error": "%s"}`, err.Error())
+		return
+	}
+
+	if !v.interactive {
+		fmt.Printf("✗ %s\n", formatErrorMessage(err))
 		return
 	}
 
@@ -281,12 +306,12 @@ func (v *SpinnerView) Fail(err error) {
 }
 
 // RunSpinnerWithContext runs a spinner for the duration of a context operation
-func RunSpinnerWithContext(ctx context.Context, message string, operation func(ctx context.Context) error, json bool) error {
+func RunSpinnerWithContext(ctx context.Context, message string, operation func(ctx context.Context) error, json, interactive bool) error {
 	if json {
 		return operation(ctx)
 	}
 
-	spinnerView := NewSpinnerView(json)
+	spinnerView := NewSpinnerView(json, interactive)
 	spinnerView.Start(message)
 
 	err := operation(ctx)

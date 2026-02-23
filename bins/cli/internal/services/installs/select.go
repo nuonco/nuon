@@ -51,7 +51,7 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		}
 
 		// Show install selector
-		selectedInstallID, err := bubbles.SelectInstall(installOptions)
+		selectedInstallID, err := bubbles.SelectInstall(installOptions, s.cfg.Interactive)
 		if err != nil {
 			return view.Error(err)
 		}
