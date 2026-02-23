@@ -23,12 +23,9 @@ type (
 func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
 	fn := c.sentryWrapCmd(c.analyticsWrapCmd(f))
 	return func(cmd *cobra.Command, args []string) {
-		_ = fn(cmd, args)
-
-		// todo(sk): add this back after removing manual error handling at various layers
-		// if err != nil {
-		// 	fmt.Println(errors.Wrap(err, "command failed"))
-		// }
+		if err := fn(cmd, args); err != nil {
+			os.Exit(1)
+		}
 	}
 }
 

@@ -2,22 +2,39 @@ package version
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-
-	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"os"
+	"runtime"
+	"runtime/debug"
 )
 
 var Version string = "development"
 
 func (s *Service) Version(ctx context.Context, asJSON bool) error {
 	if asJSON {
-		fmt.Printf("%s\n", Version)
-		return nil
+		out := map[string]string{
+			"version": Version,
+		}
+
+		if info, ok := debug.ReadBuildInfo(); ok {
+			out["go_version"] = info.GoVersion
+			out["os"] = runtime.GOOS
+			out["arch"] = runtime.GOARCH
+			for _, setting := range info.Settings {
+				switch setting.Key {
+				case "vcs.revision":
+					out["commit"] = setting.Value
+				case "vcs.time":
+					out["commit_time"] = setting.Value
+				}
+			}
+		}
+
+		enc := json.NewEncoder(os.Stdout)
+		return enc.Encode(out)
 	}
 
-	view := ui.NewGetView()
-	view.Render([][]string{
-		{"version", Version},
-	})
+	fmt.Println(Version)
 	return nil
 }
