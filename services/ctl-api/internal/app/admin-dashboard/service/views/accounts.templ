@@ -25,6 +25,7 @@ templ Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery
 				@card.Content() {
 					<div class="flex gap-4 mb-4">
 						<div class="flex-1">
+							<label class="text-sm font-medium mb-2 block">Search</label>
 							@search.SearchInput(search.Props{
 								Placeholder: "Search by email or account ID...",
 								TargetURL:   "accounts/table",
@@ -33,54 +34,56 @@ templ Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery
 								Value:       searchQuery,
 							})
 						</div>
-						<div
-							class="w-64"
-							hx-get="/accounts/table"
-							hx-trigger="change from:[name='filter']"
-							hx-target="#accounts-table"
-							hx-swap="outerHTML"
-							hx-include="[name='search'],[name='filter']"
-						>
-							@selectbox.SelectBox(selectbox.Props{
-								Multiple: false,
-							}) {
-								@selectbox.Trigger(selectbox.TriggerProps{
-									Name:     "filter",
+						<div class="w-64">
+							<label class="text-sm font-medium mb-2 block">Account type</label>
+							<div
+								hx-get="/accounts/table"
+								hx-trigger="change from:[name='filter']"
+								hx-target="#accounts-table"
+								hx-swap="outerHTML"
+								hx-include="[name='search'],[name='filter']"
+							>
+								@selectbox.SelectBox(selectbox.Props{
 									Multiple: false,
 								}) {
-									@selectbox.Value(selectbox.ValueProps{
-										Placeholder: "All accounts",
-										Multiple:    false,
-									})
-								}
-								@selectbox.Content(selectbox.ContentProps{
-									NoSearch: true,
-								}) {
-									@selectbox.Group() {
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "all",
-											Selected: filter == "" || filter == "all",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											All accounts
-										}
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "nuon",
-											Selected: filter == "nuon",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											Nuon accounts
-										}
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "user",
-											Selected: filter == "user",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											User accounts
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:     "filter",
+										Multiple: false,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "All accounts",
+											Multiple:    false,
+										})
+									}
+									@selectbox.Content(selectbox.ContentProps{
+										NoSearch: true,
+									}) {
+										@selectbox.Group() {
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "all",
+												Selected: filter == "" || filter == "all",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												All accounts
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "nuon",
+												Selected: filter == "nuon",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Nuon accounts
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "user",
+												Selected: filter == "user",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												User accounts
+											}
 										}
 									}
 								}
-							}
+							</div>
 						</div>
 					</div>
 					if len(accounts) == 0 {

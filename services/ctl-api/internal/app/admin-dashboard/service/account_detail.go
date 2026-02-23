@@ -124,9 +124,9 @@ func (s *service) getInstallsForAccount(ctx context.Context, accountID string, p
 	var installs []*app.Install
 	var totalCount int64
 
-	// Build base query
 	query := s.db.WithContext(ctx).
 		Model(&app.Install{}).
+		Unscoped().
 		Where("created_by_id = ?", accountID)
 
 	// Get total count for pagination
