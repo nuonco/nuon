@@ -25,6 +25,8 @@ const buildDirectoryUrl = (
     return `${cleanRepo}/-/tree/${branch}/${directory}`
   } else if (cleanRepo.includes('bitbucket.org')) {
     return `${cleanRepo}/src/${branch}/${directory}`
+  } else {
+    return `https://github.com/${cleanRepo}/tree/${branch}/${directory}`
   }
 
   // For other providers, try GitHub-style format as fallback
@@ -62,7 +64,7 @@ export const GitRepo = ({ vcsConfig, isAutoGrid = false }: IGitRepo) => {
       {vcsConfig?.repo && (
         <LabeledValue label="Repository">
           <Text variant="subtext">
-            <Link href={vcsConfig.repo} isExternal>
+            <Link href={`https://github.com/${vcsConfig.repo}`} isExternal>
               {vcsConfig.repo}
             </Link>
           </Text>
