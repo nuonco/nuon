@@ -6,16 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 const (
@@ -84,8 +84,8 @@ func New(
 		logsCursor:        "0",
 		selectedStepIndex: 0,
 		expandedStepIndex: -1,
-		stepsViewport:     viewport.New(width, height),
-		logsViewport:      viewport.New(width, height-headerHeight),
+		stepsViewport:     viewport.New(viewport.WithWidth(width), viewport.WithHeight(height)),
+		logsViewport:      viewport.New(viewport.WithWidth(width), viewport.WithHeight(height-headerHeight)),
 
 		help: help.New(),
 		keys: keys,
@@ -111,10 +111,10 @@ func (m *Model) SetSize(width, height int) {
 	headerHeight := 3
 
 	// Update both viewports
-	m.stepsViewport.Width = width
-	m.stepsViewport.Height = height
-	m.logsViewport.Width = width
-	m.logsViewport.Height = height - headerHeight
+	m.stepsViewport.SetWidth(width)
+	m.stepsViewport.SetHeight(height)
+	m.logsViewport.SetWidth(width)
+	m.logsViewport.SetHeight(height - headerHeight)
 
 	m.setContent()
 }
@@ -189,7 +189,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case logsFetchedMsg:
 		m.handleLogsFetched(msg)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// If a step is expanded, handle logs viewport scrolling or collapsing
 		if m.expandedStepIndex >= 0 {
 			switch {

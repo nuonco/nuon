@@ -14,14 +14,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
@@ -117,7 +117,7 @@ func initialModel(
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(styles.AccentColor)
 
-	vp := viewport.New(minRequiredWidth, minRequiredHeight)
+	vp := viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(minRequiredHeight))
 	vp.YPosition = 0
 
 	m := model{
@@ -169,7 +169,7 @@ func (m *model) createFormInputs() {
 	nameInput := textinput.New()
 	nameInput.Placeholder = "my-install"
 	nameInput.CharLimit = 100
-	nameInput.Width = 50
+	nameInput.SetWidth(50)
 	nameInput.Prompt = ""
 	m.inputs = append(m.inputs, nameInput)
 	m.inputMappings = append(m.inputMappings, inputMapping{
@@ -197,7 +197,7 @@ func (m *model) createFormInputs() {
 				ti := textinput.New()
 				ti.Placeholder = fmt.Sprintf("Enter %s", input.DisplayName)
 				ti.CharLimit = 500
-				ti.Width = 50
+				ti.SetWidth(50)
 				ti.Prompt = ""
 
 				// Set default value if provided
@@ -544,12 +544,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Calculate viewport height (subtract help and status space)
 		helpHeight := lipgloss.Height(m.help.View(m.keys))
 		statusHeight := 3 // space for status message
-		m.viewport.Width = msg.Width - 4
-		m.viewport.Height = msg.Height - helpHeight - statusHeight - 2
+		m.viewport.SetWidth(msg.Width - 4)
+		m.viewport.SetHeight(msg.Height - helpHeight - statusHeight - 2)
 
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// Handle global keys first
 		switch {
 		case key.Matches(msg, m.keys.Quit):
@@ -635,7 +635,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
+	v := tea.NewView(m.viewContent())
+	v.AltScreen = true
+	return v
+}
+
+func (m model) viewContent() string {
 	if m.quitting {
 		return ""
 	}
@@ -741,7 +747,7 @@ func InstallCreatorApp(
 	}
 
 	m := initialModel(ctx, cfg, api, appID)
-	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()
 	if err != nil {

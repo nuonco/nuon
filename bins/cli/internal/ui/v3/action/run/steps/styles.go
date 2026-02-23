@@ -1,7 +1,7 @@
 package steps
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // Step status styles

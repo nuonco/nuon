@@ -3,7 +3,7 @@ package logs
 import (
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // Messages are events that we respond to in our Update function. This

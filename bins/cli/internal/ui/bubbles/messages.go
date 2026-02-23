@@ -6,7 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"image/color"
+
+	"charm.land/lipgloss/v2"
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/config"
@@ -166,9 +168,9 @@ func PrintJSONError(err error) {
 }
 
 // Formatted printing functions
-func PrintFormattedMessage(level, prefix, message string, color lipgloss.Color) {
+func PrintFormattedMessage(level, prefix, message string, c color.Color) {
 	style := lipgloss.NewStyle().
-		Foreground(color).
+		Foreground(c).
 		Bold(true).
 		Padding(0, 1)
 

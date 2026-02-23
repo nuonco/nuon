@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -81,5 +81,5 @@ func (m *Model) setHeaderContent() {
 
 	content = lipgloss.JoinVertical(lipgloss.Right, topRow, bottomRow)
 	m.header.SetContent(content)
-	m.header.Height = lipgloss.Height(content)
+	m.header.SetHeight(lipgloss.Height(content))
 }

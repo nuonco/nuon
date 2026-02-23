@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -15,6 +15,7 @@ type TableModel struct {
 	table       table.Model
 	quitting    bool
 	interactive bool
+	altScreen   bool
 }
 
 // NewTableModel creates a new table model
@@ -86,6 +87,7 @@ func NewTableModel(data [][]string) TableModel {
 func NewInteractiveTableModel(data [][]string) TableModel {
 	model := NewTableModel(data)
 	model.interactive = true
+	model.altScreen = true
 	return model
 }
 
@@ -126,9 +128,9 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c", "esc":
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -140,12 +142,16 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the table
-func (m TableModel) View() string {
+func (m TableModel) View() tea.View {
 	if m.quitting {
-		return ""
+		return tea.NewView("")
 	}
 
-	return BaseStyle.Render(m.table.View())
+	v := tea.NewView(BaseStyle.Render(m.table.View()))
+	if m.altScreen {
+		v.AltScreen = true
+	}
+	return v
 }
 
 // TableView provides a high-level interface for rendering tables
@@ -168,7 +174,12 @@ func (v *TableView) Render(data [][]string) {
 	}
 
 	table := NewTableModel(data)
-	fmt.Println(table.View())
+	fmt.Println(table.viewString())
+}
+
+// viewString returns the string content for non-TUI rendering
+func (m TableModel) viewString() string {
+	return BaseStyle.Render(m.table.View())
 }
 
 // RenderPaging displays a table with pagination information
@@ -210,7 +221,7 @@ func (v *TableView) RenderInteractive(data [][]string, interactive bool) error {
 	model := NewInteractiveTableModel(data)
 	model.table.Focus()
 
-	program := tea.NewProgram(model, tea.WithAltScreen())
+	program := tea.NewProgram(model)
 	_, err := program.Run()
 	return err
 }

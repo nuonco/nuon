@@ -13,15 +13,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -154,10 +154,10 @@ func initialModel(
 		installID:        installID,
 		actionWorkflowID: actionWorkflowID,
 
-		header:       viewport.New(minRequiredWidth, 2),
+		header:       viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(2)),
 		runsList:     runsList,
-		actionConfig: viewport.New(minRequiredWidth, 30),
-		footer:       viewport.New(minRequiredWidth, 4),
+		actionConfig: viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(30)),
+		footer:       viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(4)),
 		focus:        RunsFocusArea,
 
 		help:    help.New(),
@@ -166,7 +166,7 @@ func initialModel(
 
 		keys:         keys,
 		viewMode:     RunsView,
-		formViewport: viewport.New(minRequiredWidth, 30),
+		formViewport: viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(30)),
 	}
 	m.actionConfig.SetContent("Loading")
 
@@ -214,7 +214,7 @@ func (m *Model) initializeExecuteForm() {
 		ti := textinput.New()
 		ti.Placeholder = fmt.Sprintf("Enter %s", name)
 		ti.CharLimit = 500
-		ti.Width = 50
+		ti.SetWidth(50)
 		ti.Prompt = ""
 
 		// Set default value
@@ -338,8 +338,8 @@ func (m *Model) resize() {
 
 	// horizonal margin is just 2 because of the padding of 1
 	hMargin := 2
-	m.header.Width = m.width - hMargin
-	m.footer.Width = m.width - hMargin
+	m.header.SetWidth(m.width - hMargin)
+	m.footer.SetWidth(m.width - hMargin)
 
 	// resize the runs list
 	runsListHeight := m.height - vMarginHeight
@@ -347,14 +347,14 @@ func (m *Model) resize() {
 	m.runsList.SetWidth(m.runsWidth - 1) // minus one because of the padding we render the list with
 
 	// resize the form viewport (same height as runs list)
-	m.formViewport.Height = runsListHeight
-	m.formViewport.Width = m.runsWidth - 4 // account for padding
+	m.formViewport.SetHeight(runsListHeight)
+	m.formViewport.SetWidth(m.runsWidth - 4) // account for padding
 
 	// make the steps detail viewport
 	vpWidth := m.width - (m.runsWidth + 2) - 2 // actual width plus margin
 	vpHeight := m.height - vMarginHeight
-	m.actionConfig.Height = vpHeight
-	m.actionConfig.Width = vpWidth
+	m.actionConfig.SetHeight(vpHeight)
+	m.actionConfig.SetWidth(vpWidth)
 
 	// NOTE: called here to ensure proportions
 	m.populateActionConfigView(true)
@@ -377,7 +377,7 @@ func (m *Model) toggleFocus() {
 }
 
 // handle up and down
-func (m *Model) handleNav(msg tea.KeyMsg) (*Model, tea.Cmd) {
+func (m *Model) handleNav(msg tea.KeyPressMsg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
 	if m.focus == StepsFocusArea {
 		m.actionConfig, cmd = m.actionConfig.Update(msg)
@@ -442,7 +442,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	// handle keystrokes
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// Handle execute mode keys
 		if m.viewMode == ExecuteView {
 			switch {
@@ -622,13 +622,13 @@ func (m Model) View() string {
 		if m.error != nil { // likely a 404 but worth refining later
 			content = common.FullPageDialog(common.FullPageDialogRequest{
 				Width:   m.width,
-				Height:  m.actionConfig.Height,
+				Height:  m.actionConfig.Height(),
 				Padding: 1,
 				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(m.error.Error()),
 				Level:   "error",
 			})
 		} else {
-			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.actionConfig.Height, Padding: 1, Content: "  Loading  ", Level: "info"})
+			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.actionConfig.Height(), Padding: 1, Content: "  Loading  ", Level: "info"})
 		}
 
 	} else {
