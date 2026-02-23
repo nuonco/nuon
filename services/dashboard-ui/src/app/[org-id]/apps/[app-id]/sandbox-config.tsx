@@ -26,7 +26,7 @@ export async function AppSandbox({
   })
 
   return !error && config?.sandbox ? (
-    <Card className="flex-auto flex flex-col gap-4">
+    <Card className="h-fit flex flex-col gap-4">
       <Text weight="strong">Sandbox config</Text>
       <Sandbox appConfig={config} />
     </Card>
@@ -36,7 +36,7 @@ export async function AppSandbox({
 }
 
 export const AppSandboxError = () => (
-  <Card className="flex-auto">
+  <Card className="h-full">
     <EmptyState
       variant="diagram"
       emptyTitle="No sandbox configuration"
@@ -46,7 +46,7 @@ export const AppSandboxError = () => (
 )
 
 export const AppSandboxSkeleton = () => (
-  <Card className="flex-auto flex flex-col gap-4">
+  <Card className="h-full flex flex-col gap-4">
     <Skeleton height="20px" width="140px" />
     <div className="grid gap-6" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
       <div className="flex flex-col gap-1">
