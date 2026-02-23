@@ -38,6 +38,11 @@ func ActionWorkflowApp(
 	install_id string,
 	action_workflow_id string,
 ) {
+	if !cfg.Interactive {
+		fmt.Fprintln(os.Stderr, "interactive terminal required; use --json flag for non-interactive output")
+		os.Exit(1)
+	}
+
 	// initialize the model
 	app := initialModel(ctx, cfg, api, install_id, action_workflow_id)
 	m := model{m: app}
