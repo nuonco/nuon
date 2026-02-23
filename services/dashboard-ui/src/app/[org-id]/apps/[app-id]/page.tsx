@@ -12,6 +12,7 @@ import {
   AppSandboxError,
   AppSandboxSkeleton,
 } from './sandbox-config'
+import { AppStack, AppStackError, AppStackSkeleton } from './stack-config'
 
 type TAppPageProps = TPageProps<'org-id' | 'app-id'>
 
@@ -66,28 +67,44 @@ export default async function AppOverviewPage({ params }: TAppPageProps) {
         </AsyncBoundary>
         {/* old page stuff */}
 
-        <div className="flex gap-6">
-          <AsyncBoundary
-            errorFallback={<AppSandboxError />}
-            loadingFallback={<AppSandboxSkeleton />}
-          >
-            <AppSandbox
-              appConfigId={configs?.at(0)?.id}
-              appId={appId}
-              orgId={orgId}
-            />
-          </AsyncBoundary>
+        <AsyncBoundary
+          errorFallback={<AppSandboxError />}
+          loadingFallback={<AppSandboxSkeleton />}
+        >
+          <AppSandbox
+            appConfigId={configs?.at(0)?.id}
+            appId={appId}
+            orgId={orgId}
+          />
+        </AsyncBoundary>
 
-          <AsyncBoundary
-            errorFallback={<AppRunnerError />}
-            loadingFallback={<AppRunnerSkeleton />}
-          >
-            <AppRunner
-              appConfigId={configs?.at(0)?.id}
-              appId={appId}
-              orgId={orgId}
-            />
-          </AsyncBoundary>
+        <div className="@container">
+          <div className="grid grid-cols-1 @lg:grid-cols-5 gap-6">
+            <div className="@lg:col-span-2">
+              <AsyncBoundary
+                errorFallback={<AppRunnerError />}
+                loadingFallback={<AppRunnerSkeleton />}
+              >
+                <AppRunner
+                  appConfigId={configs?.at(0)?.id}
+                  appId={appId}
+                  orgId={orgId}
+                />
+              </AsyncBoundary>
+            </div>
+            <div className="@lg:col-span-3">
+              <AsyncBoundary
+                errorFallback={<AppStackError />}
+                loadingFallback={<AppStackSkeleton />}
+              >
+                <AppStack
+                  appConfigId={configs?.at(0)?.id}
+                  appId={appId}
+                  orgId={orgId}
+                />
+              </AsyncBoundary>
+            </div>
+          </div>
         </div>
 
         {/* old page stuff */}
