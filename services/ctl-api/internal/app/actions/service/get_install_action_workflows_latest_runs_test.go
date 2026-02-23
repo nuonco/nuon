@@ -1,0 +1,279 @@
+package service
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
+	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	cctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
+)
+
+type GetInstallActionWorkflowsLatestRunsTestService struct {
+	fx.In
+	DB             *gorm.DB `name:"psql"`
+	CHDB           *gorm.DB `name:"ch"`
+	V              *validator.Validate
+	L              *zap.Logger
+	VcsHelpers     *vcshelpers.Helpers
+	CompHelpers    *comphelpers.Helpers
+	ActionsHelpers *actionshelpers.Helpers
+	InstallHelpers *installhelpers.Helpers
+	ActionsService *service
+	Seeder         *testseed.Seeder
+}
+
+type GetInstallActionWorkflowsLatestRunsTestSuite struct {
+	tests.BaseDBTestSuite
+	app          *fxtest.App
+	service      GetInstallActionWorkflowsLatestRunsTestService
+	router       *gin.Engine
+	ctx          context.Context
+	testOrg      *app.Org
+	testAcc      *app.Account
+	testApp      *app.App
+	mockEvClient *tests.FakeEventLoopClient
+}
+
+func TestGetInstallActionWorkflowsLatestRunsSuite(t *testing.T) {
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
+	suite.Run(t, new(GetInstallActionWorkflowsLatestRunsTestSuite))
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
+	gin.SetMode(gin.TestMode)
+	s.mockEvClient = tests.NewFakeEventLoopClient()
+	options := append(
+		tests.CtlApiFXOptions(),
+		fx.Decorate(func() eventloop.Client { return s.mockEvClient }),
+		fx.Provide(New),
+		fx.Populate(&s.service),
+	)
+	s.app = fxtest.New(s.T(), options...)
+	s.app.RequireStart()
+	s.SetDB(s.service.DB)
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) SetupTest() {
+	s.BaseDBTestSuite.SetupTest()
+	s.setupTestData()
+	s.mockEvClient.Reset()
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
+	})
+	err := s.service.ActionsService.RegisterPublicRoutes(s.router)
+	require.NoError(s.T(), err)
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) TearDownSuite() {
+	s.app.RequireStop()
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) setupTestData() {
+	s.ctx = context.Background()
+	s.ctx, s.testAcc = s.service.Seeder.EnsureAccount(s.ctx, s.T())
+	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
+	s.testApp = s.service.Seeder.CreateApp(s.ctx, s.T())
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
+	var reqBody *bytes.Buffer
+	if body != nil {
+		jsonBytes, err := json.Marshal(body)
+		require.NoError(s.T(), err)
+		reqBody = bytes.NewBuffer(jsonBytes)
+	} else {
+		reqBody = bytes.NewBuffer(nil)
+	}
+	req, err := http.NewRequest(method, path, reqBody)
+	require.NoError(s.T(), err)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	s.router.ServeHTTP(rr, req)
+	return rr
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) createInstall(appID string) *app.Install {
+	install := &app.Install{
+		ID:    domains.NewInstallID(),
+		Name:  fmt.Sprintf("test-install-%s", domains.NewInstallID()),
+		AppID: appID,
+	}
+	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
+	ctx = cctx.SetOrgContext(ctx, s.testOrg)
+	res := s.service.DB.WithContext(ctx).
+		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
+		Create(install)
+	require.NoError(s.T(), res.Error)
+	return install
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) createActionWorkflow(appID, name string) *app.ActionWorkflow {
+	action := &app.ActionWorkflow{
+		ID:    domains.NewActionWorkflowID(),
+		OrgID: s.testOrg.ID,
+		AppID: appID,
+		Name:  name,
+	}
+	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
+	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+	res := s.service.DB.WithContext(ctx).Create(action)
+	require.NoError(s.T(), res.Error)
+	return action
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) createInstallActionWorkflow(installID, actionID string) *app.InstallActionWorkflow {
+	installAction := &app.InstallActionWorkflow{
+		ID:               domains.NewInstallActionWorkflowConfigID(),
+		OrgID:            s.testOrg.ID,
+		InstallID:        installID,
+		ActionWorkflowID: actionID,
+	}
+	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
+	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+	res := s.service.DB.WithContext(ctx).Create(installAction)
+	require.NoError(s.T(), res.Error)
+	return installAction
+}
+
+func (s *GetInstallActionWorkflowsLatestRunsTestSuite) TestGetInstallActionsLatestRuns() {
+	testCases := []struct {
+		name          string
+		setupFunc     func() string
+		queryParams   string
+		expectedCount int
+		expectedCode  int
+		validateFunc  func([]*app.InstallActionWorkflow)
+	}{
+		{
+			name: "returns empty array when no actions",
+			setupFunc: func() string {
+				install := s.createInstall(s.testApp.ID)
+				return install.ID
+			},
+			queryParams:   "",
+			expectedCount: 0,
+			expectedCode:  http.StatusOK,
+		},
+		{
+			name: "returns install actions without runs",
+			setupFunc: func() string {
+				install := s.createInstall(s.testApp.ID)
+				action1 := s.createActionWorkflow(s.testApp.ID, "action-1")
+				action2 := s.createActionWorkflow(s.testApp.ID, "action-2")
+				s.createInstallActionWorkflow(install.ID, action1.ID)
+				s.createInstallActionWorkflow(install.ID, action2.ID)
+				return install.ID
+			},
+			queryParams:   "",
+			expectedCount: 2,
+			expectedCode:  http.StatusOK,
+			validateFunc: func(iaws []*app.InstallActionWorkflow) {
+				require.NotNil(s.T(), iaws[0].ActionWorkflow)
+				require.NotNil(s.T(), iaws[1].ActionWorkflow)
+			},
+		},
+		{
+			name: "respects pagination",
+			setupFunc: func() string {
+				install := s.createInstall(s.testApp.ID)
+				for i := 0; i < 15; i++ {
+					action := s.createActionWorkflow(s.testApp.ID, fmt.Sprintf("action-latest-runs-pag-%d", i))
+					s.createInstallActionWorkflow(install.ID, action.ID)
+				}
+				return install.ID
+			},
+			queryParams:   "?limit=5",
+			expectedCount: 5,
+			expectedCode:  http.StatusOK,
+		},
+		{
+			name: "filters by search query",
+			setupFunc: func() string {
+				install := s.createInstall(s.testApp.ID)
+				action1 := s.createActionWorkflow(s.testApp.ID, "deploy-production")
+				action2 := s.createActionWorkflow(s.testApp.ID, "test-staging")
+				s.createInstallActionWorkflow(install.ID, action1.ID)
+				s.createInstallActionWorkflow(install.ID, action2.ID)
+				return install.ID
+			},
+			queryParams:   "?q=production",
+			expectedCount: 1,
+			expectedCode:  http.StatusOK,
+			validateFunc: func(iaws []*app.InstallActionWorkflow) {
+				require.Equal(s.T(), "deploy-production", iaws[0].ActionWorkflow.Name)
+			},
+		},
+		{
+			name: "not found for non-existent install",
+			setupFunc: func() string {
+				return "inst-nonexistent123456789"
+			},
+			queryParams:   "",
+			expectedCount: 0,
+			expectedCode:  http.StatusOK,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			installID := tc.setupFunc()
+
+			path := fmt.Sprintf("/v1/installs/%s/actions/latest-runs%s", installID, tc.queryParams)
+			rr := s.makeRequest(http.MethodGet, path, nil)
+
+			if rr.Code != tc.expectedCode {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), tc.expectedCode, rr.Code)
+
+			if tc.expectedCode == http.StatusOK {
+				var response []*app.InstallActionWorkflow
+				err := json.Unmarshal(rr.Body.Bytes(), &response)
+				if err != nil {
+					s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
+				}
+				require.NoError(s.T(), err)
+				require.NotNil(s.T(), response)
+
+				if tc.expectedCount >= 0 {
+					assert.Len(s.T(), response, tc.expectedCount)
+				}
+
+				if tc.validateFunc != nil && len(response) > 0 {
+					tc.validateFunc(response)
+				}
+			}
+		})
+	}
+}

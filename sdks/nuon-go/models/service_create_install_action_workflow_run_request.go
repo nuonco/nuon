@@ -8,8 +8,10 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceCreateInstallActionWorkflowRunRequest service create install action workflow run request
@@ -18,7 +20,8 @@ import (
 type ServiceCreateInstallActionWorkflowRunRequest struct {
 
 	// action workflow config id
-	ActionWorkflowConfigID string `json:"action_workflow_config_id,omitempty"`
+	// Required: true
+	ActionWorkflowConfigID *string `json:"action_workflow_config_id"`
 
 	// run env vars
 	RunEnvVars map[string]string `json:"run_env_vars,omitempty"`
@@ -26,6 +29,24 @@ type ServiceCreateInstallActionWorkflowRunRequest struct {
 
 // Validate validates this service create install action workflow run request
 func (m *ServiceCreateInstallActionWorkflowRunRequest) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateActionWorkflowConfigID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCreateInstallActionWorkflowRunRequest) validateActionWorkflowConfigID(formats strfmt.Registry) error {
+
+	if err := validate.Required("action_workflow_config_id", "body", m.ActionWorkflowConfigID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
