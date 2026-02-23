@@ -53,6 +53,9 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 
 	// Skip user initialization for auth commands (login, logout)
 	if !hasSkipAuthAnnotation(cmd) {
+		if c.cfg.APIToken == "" {
+			return errors.New("no API token configured; run `nuon login` or set api_token in config")
+		}
 		if err := c.initUser(); err != nil {
 			return errors.Wrap(err, "unable to initialize user")
 		}
