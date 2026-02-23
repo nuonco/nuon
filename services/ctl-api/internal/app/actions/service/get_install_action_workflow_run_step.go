@@ -77,7 +77,7 @@ func (s *service) GetInstallActionWorkflowRunStep(ctx *gin.Context) {
 func (s *service) getInstallActionWorkflowRunStep(ctx context.Context, installID, workflowRunID, stepID string) (*app.InstallActionWorkflowRunStep, error) {
 	var step app.InstallActionWorkflowRunStep
 	res := s.db.WithContext(ctx).
-		Joins("JOIN install_action_workflow_runs ON install_action_workflow_runs.id=install_action_workflow_run_steps.workflow_run_id").
+		Joins("JOIN install_action_workflow_runs ON install_action_workflow_runs.id=install_action_workflow_run_steps.install_action_workflow_run_id").
 		Where("install_action_workflow_runs.id = ?", workflowRunID).
 		Where("install_action_workflow_runs.install_id = ?", installID).
 		Where("install_action_workflow_run_steps.id = ?", stepID).
