@@ -92,6 +92,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 
 	roleSelection, operation, err := w.getRoleForSandbox(l, appConfig, sandboxRun, stack, installState)
 	if err != nil {
+		l.Error("unable to evaluate role for sandbox operation", zap.Error(err))
 		w.updateRunStatusWithoutStatusSync(
 			ctx,
 			sandboxRun.ID,
@@ -115,6 +116,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		fmt.Sprintf("sandbox-run-%s", sandboxRun.ID),
 	)
 	if err != nil {
+		l.Error("unable to build plan auth for sandbox operation", zap.Error(err))
 		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to create auth config")
 		return errors.Wrap(err, "unable to create plan auth")
 	}
@@ -188,24 +190,39 @@ func (w *Workflows) getRoleForSandbox(
 		defaultRole = appConfig.PermissionsConfig.DeprovisionRole.Name
 	}
 
+	selectionCtx := &operationroles.SelectionContext{
+		Operation:     operation,
+		PrincipalType: principal.TypeSandbox,
+		PrincipalName: "", // Sandboxes don't have names
+		RuntimeRole:   sandboxRun.Role,
+		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
+			sandboxRun.AppSandboxConfig.OperationRoles,
+		),
+		MatrixRules:  appConfig.OperationRoleConfig.Rules,
+		DefaultRole:  defaultRole,
+		AppConfig:    appConfig,
+		StackOutputs: &stack.InstallStackOutputs,
+		InstallState: installState,
+	}
+
 	// Select role using operation roles engine
-	roleSelection, err := operationroles.SelectRole(
-		&operationroles.SelectionContext{
-			Operation:     operation,
-			PrincipalType: principal.TypeSandbox,
-			PrincipalName: "", // Sandboxes don't have names
-			RuntimeRole:   sandboxRun.Role,
-			EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-				sandboxRun.AppSandboxConfig.OperationRoles,
-			),
-			MatrixRules:  appConfig.OperationRoleConfig.Rules,
-			DefaultRole:  defaultRole,
-			AppConfig:    appConfig,
-			StackOutputs: &stack.InstallStackOutputs,
-			InstallState: installState,
-		}, l)
+	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
 	if err != nil {
-		return nil, "", err
+		l.Info("dynamic role selection failed, falling back to default role",
+			zap.Error(err),
+			zap.String("default_role", selectionCtx.DefaultRole),
+		)
+
+		var fallbackErr error
+		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
+		if fallbackErr != nil {
+			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+		}
+
+		l.Info("using default role for sandbox",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+		)
 	}
 
 	return roleSelection, operation, nil

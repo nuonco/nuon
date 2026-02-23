@@ -219,6 +219,7 @@ func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
 			{Name: "custom_provision"},
 			{Name: "custom_maintenance"},
 			{Name: "custom_deprovision"},
+			{Name: "{{ .nuon.install.id }}-custom_deprovision"},
 		},
 	}
 
@@ -249,6 +250,42 @@ func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
 						Principal: "nuon::component:database",
 						Operation: OperationProvision,
 						RoleName:  "db_role",
+					},
+				},
+			},
+			components:  components,
+			actions:     actions,
+			permissions: permissions,
+			breakGlass:  breakGlass,
+			expectError: false,
+		},
+		{
+			name: "valid config with rendered role without spaces",
+			config: &OperationRolesConfig{
+				Type: "matrix",
+				RuleMatrix: []*OperationRoleRule{
+					{
+						Principal: "nuon::component:database",
+						Operation: OperationProvision,
+						RoleName:  "{{.nuon.install.id}}-custom_deprovision",
+					},
+				},
+			},
+			components:  components,
+			actions:     actions,
+			permissions: permissions,
+			breakGlass:  breakGlass,
+			expectError: false,
+		},
+		{
+			name: "valid config with rendered role with spaces",
+			config: &OperationRolesConfig{
+				Type: "matrix",
+				RuleMatrix: []*OperationRoleRule{
+					{
+						Principal: "nuon::component:database",
+						Operation: OperationProvision,
+						RoleName:  "{{ .nuon.install.id }}-custom_deprovision",
 					},
 				},
 			},

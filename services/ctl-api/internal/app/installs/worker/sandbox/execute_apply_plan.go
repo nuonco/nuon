@@ -93,7 +93,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
 		runPlan.ApplyPlanContents = planJob.Execution.Result.Contents
-		runPlan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
+		runPlan.ApplyPlanDisplay = planJob.Execution.Result.ContentsDisplay
 	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
 		l.Info(
 			"using the compressed contents from the runner job execution result",
@@ -114,7 +114,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents display bytes")
 		}
-		runPlan.ApplyPlanDisplay = string(applyPlanContentsDisplay)
+		runPlan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
 
 	planJSON, err := json.Marshal(runPlan)
@@ -150,6 +150,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 
 	roleSelection, op, err := w.getRoleForSandbox(l, appConfig, installRun, stack, installState)
 	if err != nil {
+		l.Error("unable to evaluate role for sandbox operation", zap.Error(err))
 		w.updateRunStatus(
 			ctx,
 			installRun.ID,
@@ -173,6 +174,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		fmt.Sprintf("sandbox-apply-%s", installRun.ID),
 	)
 	if err != nil {
+		l.Error("unable to build plan auth for sandbox operation", zap.Error(err))
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create auth config")
 		return errors.Wrap(err, "unable to create plan auth")
 	}

@@ -38,7 +38,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	l.Info("fetching composite plan for the job")
 	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
 	if err != nil {
-		return errors.Wrap(err, "unable to get job plan")
+		return errors.Wrap(err, "unable to get job composite plan")
 	}
 
 	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)

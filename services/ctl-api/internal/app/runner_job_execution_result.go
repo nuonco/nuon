@@ -38,11 +38,11 @@ type RunnerJobExecutionResult struct {
 	ErrorMetadata pgtype.Hstore `json:"error_metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"error_metadata,omitzero,omitempty"`
 
 	Contents        string `json:"contents,omitzero" gorm:"string" swaggertype:"string" temporaljson:"contents"`
-	ContentsDisplay []byte `json:"contents_display,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"contents_display"`
+	ContentsDisplay []byte `json:"contents_display,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
 
 	// columns for storage of gzipped contents and plans
 	ContentsGzip        []byte `json:"contents_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"contents_binary"`
-	ContentsDisplayGzip []byte `json:"contents_display_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"contents_display_binary"`
+	ContentsDisplayGzip []byte `json:"contents_display_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"-"`
 }
 
 func (r *RunnerJobExecutionResult) Indexes(db *gorm.DB) []migrations.Index {

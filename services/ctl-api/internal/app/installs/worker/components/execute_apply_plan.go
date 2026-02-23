@@ -169,6 +169,7 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		installState,
 	)
 	if err != nil {
+		l.Error("unable to evaluate role for component operation", zap.Error(err))
 		w.updateDeployStatus(
 			ctx,
 			installDeploy.ID,
@@ -194,6 +195,7 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		fmt.Sprintf("install-deploy-%s", installDeploy.ID),
 	)
 	if err != nil {
+		l.Error("unable to build plan auth for component operation", zap.Error(err))
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create auth config")
 		return errors.Wrap(err, "unable to create plan auth")
 	}

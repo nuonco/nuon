@@ -30,9 +30,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 		expectedRoleName   string
 		description        string
 	}{
-		// ============================================
-		// Case 1: No operation rules - test all run types
-		// ============================================
 		{
 			name:               "no_rules_provision",
 			sandboxRunType:     app.SandboxRunTypeProvision,
@@ -78,9 +75,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 			description:        "Unknown run type should default to provision operation",
 		},
 
-		// ============================================
-		// Case 2: Entity-level operation roles (sandbox config)
-		// ============================================
 		{
 			name:               "entity_role_provision",
 			sandboxRunType:     app.SandboxRunTypeProvision,
@@ -133,10 +127,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 			expectedRoleName:   "ProvisionRole",
 			description:        "Provision should fall back to default when sandbox only has deprovision role",
 		},
-
-		// ============================================
-		// Case 3: Matrix rules for sandbox operations
-		// ============================================
 		{
 			name:               "matrix_rule_provision",
 			sandboxRunType:     app.SandboxRunTypeProvision,
@@ -228,9 +218,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 			description:        "Provision should fall back to default when matrix rule is for different operation",
 		},
 
-		// ============================================
-		// Case 4: Both entity and matrix rules
-		// ============================================
 		{
 			name:               "entity_role_overrides_matrix",
 			sandboxRunType:     app.SandboxRunTypeProvision,
@@ -272,9 +259,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 			description:        "Entity deprovision role should override matrix rule",
 		},
 
-		// ============================================
-		// Case 5: Runtime role (highest precedence)
-		// ============================================
 		{
 			name:               "runtime_role_overrides_all_provision",
 			sandboxRunType:     app.SandboxRunTypeProvision,
@@ -338,9 +322,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 			description:        "Runtime role should work for reprovision operation",
 		},
 
-		// ============================================
-		// Case 6: Multiple matrix rules (priority order)
-		// ============================================
 		{
 			name:               "multiple_matrix_rules_first_match_wins",
 			sandboxRunType:     app.SandboxRunTypeProvision,
@@ -366,9 +347,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 			description:        "First matching matrix rule should be used",
 		},
 
-		// ============================================
-		// Case 7: Edge cases
-		// ============================================
 		{
 			name:               "empty_runtime_role_ignored",
 			sandboxRunType:     app.SandboxRunTypeProvision,
@@ -396,6 +374,73 @@ func TestGetRoleForSandbox(t *testing.T) {
 			expectedRoleSource: operationroles.RoleSelectionSourceEntity,
 			expectedRoleName:   "SandboxDeprovisionRole",
 			description:        "Should select correct operation role when all are defined",
+		},
+
+		{
+			name:               "entity_role_missing_fallback_provision",
+			sandboxRunType:     app.SandboxRunTypeProvision,
+			sandboxRuntimeRole: "",
+			sandboxEntityRoles: pgtype.Hstore{
+				"provision": generics.ToPtr("MissingEntityRole"), // Not in stack outputs
+			},
+			matrixRules:        nil,
+			expectedOperation:  app.OperationProvision,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "ProvisionRole",
+			description:        "Should fallback to default provision role when entity role is missing",
+		},
+		{
+			name:               "entity_role_missing_fallback_deprovision",
+			sandboxRunType:     app.SandboxRunTypeDeprovision,
+			sandboxRuntimeRole: "",
+			sandboxEntityRoles: pgtype.Hstore{
+				"deprovision": generics.ToPtr("MissingDeprovisionRole"), // Not in stack outputs
+			},
+			matrixRules:        nil,
+			expectedOperation:  app.OperationDeprovision,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "DeprovisionRole",
+			description:        "Should fallback to default deprovision role when entity role is missing",
+		},
+		{
+			name:               "matrix_role_missing_fallback_provision",
+			sandboxRunType:     app.SandboxRunTypeProvision,
+			sandboxRuntimeRole: "",
+			sandboxEntityRoles: pgtype.Hstore{},
+			matrixRules: []*app.AppOperationRoleRule{
+				{
+					Operation:     app.OperationProvision,
+					PrincipalType: "sandbox",
+					PrincipalName: "",
+					Role:          "MissingMatrixRole", // Not in stack outputs
+				},
+			},
+			expectedOperation:  app.OperationProvision,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "ProvisionRole",
+			description:        "Should fallback to default when matrix role is missing from stack outputs",
+		},
+		{
+			name:               "runtime_role_missing_fallback_provision",
+			sandboxRunType:     app.SandboxRunTypeProvision,
+			sandboxRuntimeRole: "MissingRuntimeRole", // Not in stack outputs
+			sandboxEntityRoles: pgtype.Hstore{},
+			matrixRules:        nil,
+			expectedOperation:  app.OperationProvision,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "ProvisionRole",
+			description:        "Should fallback to default when runtime role is missing from stack outputs",
+		},
+		{
+			name:               "runtime_role_missing_fallback_deprovision",
+			sandboxRunType:     app.SandboxRunTypeDeprovision,
+			sandboxRuntimeRole: "MissingRuntimeRole", // Not in stack outputs
+			sandboxEntityRoles: pgtype.Hstore{},
+			matrixRules:        nil,
+			expectedOperation:  app.OperationDeprovision,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "DeprovisionRole",
+			description:        "Should fallback to default deprovision when runtime role is missing",
 		},
 	}
 

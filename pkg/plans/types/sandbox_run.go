@@ -51,7 +51,7 @@ type SandboxRunPlan struct {
 	// The following field is for applying a plan that is already saved
 	ApplyPlanContents string `json:"apply_plan_contents,omitempty"`
 	// This field is for storing a human legible plan or corollary representation
-	ApplyPlanDisplay string `json:"apply_plan_display,omitempty,omitzero"`
+	ApplyPlanDisplay []byte `json:"apply_plan_display,omitempty,omitzero"`
 
 	SandboxMode *SandboxMode `json:"sandbox_mode,omitzero,omitempty"`
 }

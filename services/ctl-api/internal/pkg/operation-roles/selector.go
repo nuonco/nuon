@@ -102,6 +102,23 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 	return selection, nil
 }
 
+func GetDefaultRoleSelection(ctx *SelectionContext) (*RoleSelection, error) {
+	renderedDefaultRole, err := renderRoleName(ctx.DefaultRole, ctx.InstallState)
+	if err != nil {
+		return nil, fmt.Errorf("unable to render default role name: %w", err)
+	}
+	roleARN, err := resolveRoleARN(renderedDefaultRole, ctx.AppConfig, ctx.StackOutputs, ctx.InstallState)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve role ARN for %q: %w", renderedDefaultRole, err)
+	}
+
+	return &RoleSelection{
+		RoleName: renderedDefaultRole,
+		Source:   RoleSelectionSourceDefault,
+		RoleARN:  roleARN,
+	}, nil
+}
+
 func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 	// Add nil check for StackOutputs before dereferencing
 	if ctx.StackOutputs == nil {
@@ -251,7 +268,8 @@ func renderRoleName(roleName string, installState *state.State) (string, error) 
 	return rendered, nil
 }
 
-// resolveRoleARN resolves role name into its arn from stack output, currently mostly does heavy  lifting for aws since azure is not yet supported
+// ResolveRoleARN looks up the ARN for a given role name from stack outputs.
+// Currently mostly does heavy lifting for AWS since Azure is not yet supported.
 func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, stackOutputs *app.InstallStackOutputs, installState *state.State) (string, error) {
 	if stackOutputs == nil {
 		return "", fmt.Errorf("stack outputs are required")

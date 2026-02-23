@@ -45,6 +45,14 @@ type ClusterInfo struct {
 	TrustedRoleARN string `json:"trusted_role_arn" hcl:"trusted_role_arn"`
 }
 
+func (c *ClusterInfo) WithAWSAuth(auth *awscredentials.Config) {
+	c.AWSAuth = auth
+}
+
+func (c *ClusterInfo) WithAzureAuth(auth *azurecredentials.Config) {
+	c.AzureAuth = auth
+}
+
 func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, error) {
 	if cInfo.KubeConfig != "" {
 		config, err := clientcmd.RESTConfigFromKubeConfig([]byte(cInfo.KubeConfig))

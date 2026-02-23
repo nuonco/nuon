@@ -250,6 +250,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 
 	roleSelection, operation, err := w.getRoleForAction(l, appConfig, run, stack, installState)
 	if err != nil {
+		l.Error("unable to evaluate role for action operation", zap.Error(err))
 		w.updateActionRunStatus(
 			ctx,
 			run.ID,
@@ -273,6 +274,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		fmt.Sprintf("install-action-workflow-%s", run.ID),
 	)
 	if err != nil {
+		l.Error("unable to build plan auth for action operation", zap.Error(err))
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create auth config")
 		return errors.Wrap(err, "unable to create plan auth")
 	}
@@ -346,22 +348,37 @@ func (w *Workflows) getRoleForAction(
 		breakGlassRole = run.ActionWorkflowConfig.BreakGlassRoleARN.String
 	}
 
-	roleSelection, err := operationroles.SelectRole(
-		&operationroles.SelectionContext{
-			Operation:      operation,
-			PrincipalType:  principal.TypeAction,
-			PrincipalName:  run.ActionWorkflowConfig.ActionWorkflow.Name,
-			RuntimeRole:    run.Role,
-			EntityRoles:    entityRoles,
-			MatrixRules:    appConfig.OperationRoleConfig.Rules,
-			DefaultRole:    defaultRole,
-			AppConfig:      appConfig,
-			StackOutputs:   &stack.InstallStackOutputs,
-			BreakGlassRole: breakGlassRole,
-			InstallState:   installState,
-		}, l)
+	selectionCtx := &operationroles.SelectionContext{
+		Operation:      operation,
+		PrincipalType:  principal.TypeAction,
+		PrincipalName:  run.ActionWorkflowConfig.ActionWorkflow.Name,
+		RuntimeRole:    run.Role,
+		EntityRoles:    entityRoles,
+		MatrixRules:    appConfig.OperationRoleConfig.Rules,
+		DefaultRole:    defaultRole,
+		AppConfig:      appConfig,
+		StackOutputs:   &stack.InstallStackOutputs,
+		BreakGlassRole: breakGlassRole,
+		InstallState:   installState,
+	}
+
+	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
 	if err != nil {
-		return nil, "", err
+		l.Info("dynamic role selection failed, falling back to default role",
+			zap.Error(err),
+			zap.String("default_role", selectionCtx.DefaultRole),
+		)
+
+		var fallbackErr error
+		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
+		if fallbackErr != nil {
+			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+		}
+
+		l.Info("using default role for action",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+		)
 	}
 
 	return roleSelection, operation, nil

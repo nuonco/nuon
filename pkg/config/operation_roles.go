@@ -132,14 +132,16 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 	if permissions != nil {
 		for _, role := range permissions.Roles {
 			if role.Name != "" {
-				availableRoles[role.Name] = true
+				roleName := strings.ReplaceAll(role.Name, " ", "")
+				availableRoles[roleName] = true
 			}
 		}
 	}
 	if breakGlass != nil {
 		for _, role := range breakGlass.Roles {
 			if role.Name != "" {
-				availableRoles[role.Name] = true
+				roleName := strings.ReplaceAll(role.Name, " ", "")
+				availableRoles[roleName] = true
 			}
 		}
 	}
@@ -177,7 +179,8 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 			}
 		}
 
-		if !availableRoles[rule.RoleName] {
+		roleName := strings.ReplaceAll(rule.RoleName, " ", "")
+		if !availableRoles[roleName] {
 			return fmt.Errorf("rule at index %d: role %q does not exist in permissions or break_glass config", i, rule.RoleName)
 		}
 	}

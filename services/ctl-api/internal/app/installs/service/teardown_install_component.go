@@ -88,14 +88,14 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeTeardownComponent,
 		map[string]string{
 			"component_id": component.ID,
-			"role":         req.Role,
 		},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)

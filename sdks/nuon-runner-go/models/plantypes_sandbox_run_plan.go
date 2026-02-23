@@ -29,7 +29,7 @@ type PlantypesSandboxRunPlan struct {
 	ApplyPlanContents string `json:"apply_plan_contents,omitempty"`
 
 	// This field is for storing a human legible plan or corollary representation
-	ApplyPlanDisplay string `json:"apply_plan_display,omitempty"`
+	ApplyPlanDisplay []int64 `json:"apply_plan_display"`
 
 	// aws auth
 	AwsAuth *GithubComNuoncoNuonPkgAwsCredentialsConfig `json:"aws_auth,omitempty"`

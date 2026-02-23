@@ -278,6 +278,65 @@ func TestGetRoleForAction(t *testing.T) {
 			expectedRoleName:   "azure-placeholder-name",
 			description:        "Azure should return placeholder regardless of runtime role",
 		},
+		{
+			name:               "entity_role_missing_fallback_to_default",
+			actionName:         "deploy-action",
+			actionConfigRole:   "MissingEntityRole", // Not in stack outputs
+			breakGlassRoleARN:  "",
+			runtimeRole:        "",
+			matrixRules:        nil,
+			useAzure:           false,
+			expectedOperation:  app.OperationTrigger,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when entity role is missing from stack outputs",
+		},
+		{
+			name:              "matrix_role_missing_fallback_to_default",
+			actionName:        "deploy-action",
+			actionConfigRole:  "",
+			breakGlassRoleARN: "",
+			runtimeRole:       "",
+			matrixRules: []*app.AppOperationRoleRule{
+				{
+					Operation:     app.OperationTrigger,
+					PrincipalType: "action",
+					PrincipalName: "deploy-action",
+					Role:          "MissingMatrixRole", // Not in stack outputs
+				},
+			},
+			useAzure:           false,
+			expectedOperation:  app.OperationTrigger,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when matrix role is missing from stack outputs",
+		},
+		{
+			name:               "runtime_role_missing_fallback_to_default",
+			actionName:         "deploy-action",
+			actionConfigRole:   "",
+			breakGlassRoleARN:  "",
+			runtimeRole:        "MissingRuntimeRole", // Not in stack outputs
+			matrixRules:        nil,
+			useAzure:           false,
+			expectedOperation:  app.OperationTrigger,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when runtime role is missing from stack outputs",
+		},
+		{
+			name:               "break_glass_role_missing_fallback_to_default",
+			actionName:         "emergency-action",
+			actionConfigRole:   "",
+			breakGlassRoleARN:  "MissingBreakGlassRole", // Not in stack outputs
+			runtimeRole:        "",
+			matrixRules:        nil,
+			useAzure:           false,
+			expectedOperation:  app.OperationTrigger,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when break glass role is missing from stack outputs",
+		},
 	}
 
 	for _, tt := range tests {

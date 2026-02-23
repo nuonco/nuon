@@ -283,6 +283,55 @@ func TestGetRoleForDeploy(t *testing.T) {
 			expectedRoleName:   "SpecificComponentRole",
 			description:        "Specific matrix rule should take precedence over wildcard",
 		},
+		{
+			name:              "component_role_missing_fallback_to_default",
+			installDeployType: app.InstallDeployTypeApply,
+			installDeployRole: "",
+			componentRoles: map[app.OperationType]string{
+				app.OperationDeploy: "MissingComponentRole", // This role won't be in stack outputs
+			},
+			matrixRules:        nil,
+			expectedOperation:  app.OperationDeploy,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when component role is missing from stack outputs",
+		},
+		{
+			name:              "matrix_role_missing_fallback_to_default",
+			installDeployType: app.InstallDeployTypeApply,
+			installDeployRole: "",
+			componentRoles:    map[app.OperationType]string{},
+			matrixRules: []*app.AppOperationRoleRule{
+				{
+					Operation:     app.OperationDeploy,
+					PrincipalType: "component",
+					PrincipalName: "test-component",
+					Role:          "MissingMatrixRole", // This role won't be in stack outputs
+				},
+			},
+			expectedOperation:  app.OperationDeploy,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when matrix role is missing from stack outputs",
+		},
+		{
+			name:              "matrix_role_missing_teardown_fallback",
+			installDeployType: app.InstallDeployTypeTeardown,
+			installDeployRole: "",
+			componentRoles:    map[app.OperationType]string{},
+			matrixRules: []*app.AppOperationRoleRule{
+				{
+					Operation:     app.OperationTeardown,
+					PrincipalType: "component",
+					PrincipalName: "test-component",
+					Role:          "MissingTeardownRole", // This role won't be in stack outputs
+				},
+			},
+			expectedOperation:  app.OperationTeardown,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when teardown role is missing from stack outputs",
+		},
 	}
 
 	for _, tt := range tests {
