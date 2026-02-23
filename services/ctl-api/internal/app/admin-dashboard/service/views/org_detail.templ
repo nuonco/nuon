@@ -135,6 +135,14 @@ templ OrgHeaderWithPopover(org *app.Org, dashboardURL string) {
 							<span class="text-sm">Trial</span>
 						</label>
 						<label class="flex items-center gap-2 cursor-pointer hover:bg-cyan/10 hover:border-cyan/30 border border-transparent rounded px-2 py-1.5 transition-all">
+							<input type="checkbox" name="tags" value="Customer" class="rounded border-input accent-cyan"
+								if contains(org.Tags, "Customer") {
+									checked
+								}
+							/>
+							<span class="text-sm">Customer</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer hover:bg-cyan/10 hover:border-cyan/30 border border-transparent rounded px-2 py-1.5 transition-all">
 							<input type="checkbox" name="tags" value="Inactive" class="rounded border-input accent-cyan"
 								if contains(org.Tags, "Inactive") {
 									checked

@@ -149,7 +149,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"flex gap-4 mb-4\"><div class=\"flex-1\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"flex gap-4 mb-4\"><div class=\"flex-1\"><label class=\"text-sm font-medium mb-2 block\">Search</label>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -163,7 +163,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"w-80\" hx-get=\"/orgs/table\" hx-trigger=\"change from:[name='tag']\" hx-target=\"#orgs-table\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='tag']\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"w-80\"><label class=\"text-sm font-medium mb-2 block\">Tags</label><div hx-get=\"/orgs/table\" hx-trigger=\"change from:[name='tag']\" hx-target=\"#orgs-table\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='tag']\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -252,7 +252,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 										var templ_7745c5c3_Var13 string
 										templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(tag)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs.templ`, Line: 67, Col: 17}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs.templ`, Line: 69, Col: 18}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 										if templ_7745c5c3_Err != nil {
@@ -291,7 +291,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

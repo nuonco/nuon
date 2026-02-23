@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
 )
 
-templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery string, sort string, filter string) {
+templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery string, sort string, filter string, deletedFilter string) {
 	@Layout("Installs", ActivePageInstalls) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			@card.Card() {
@@ -25,6 +25,7 @@ templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery
 				@card.Content() {
 					<div class="flex gap-4 mb-4">
 						<div class="flex-1">
+							<label class="text-sm font-medium mb-2 block">Search</label>
 							@search.SearchInput(search.Props{
 								Placeholder: "Search by install name or ID...",
 								TargetURL:   "installs/table",
@@ -33,102 +34,157 @@ templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery
 								Value:       searchQuery,
 							})
 						</div>
-						<div
-							class="w-48"
-							hx-get="/installs/table"
-							hx-trigger="change from:[name='sort']"
-							hx-target="#installs-table-wrapper"
-							hx-swap="outerHTML"
-							hx-include="[name='search'],[name='sort'],[name='filter']"
-						>
-							@selectbox.SelectBox(selectbox.Props{
-								Multiple: false,
-							}) {
-								@selectbox.Trigger(selectbox.TriggerProps{
-									Name:     "sort",
+						<div class="w-48">
+							<label class="text-sm font-medium mb-2 block">Sort</label>
+							<div
+								hx-get="/installs/table"
+								hx-trigger="change from:[name='sort']"
+								hx-target="#installs-table-wrapper"
+								hx-swap="outerHTML"
+								hx-include="[name='search'],[name='sort'],[name='filter'],[name='deleted_filter']"
+							>
+								@selectbox.SelectBox(selectbox.Props{
 									Multiple: false,
 								}) {
-									@selectbox.Value(selectbox.ValueProps{
-										Placeholder: "Newest first",
-										Multiple:    false,
-									})
-								}
-								@selectbox.Content(selectbox.ContentProps{
-									NoSearch: true,
-								}) {
-									@selectbox.Group() {
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "newest",
-											Selected: sort == "" || sort == "newest",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											Newest first
-										}
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "oldest",
-											Selected: sort == "oldest",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											Oldest first
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:     "sort",
+										Multiple: false,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "Newest first",
+											Multiple:    false,
+										})
+									}
+									@selectbox.Content(selectbox.ContentProps{
+										NoSearch: true,
+									}) {
+										@selectbox.Group() {
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "newest",
+												Selected: sort == "" || sort == "newest",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Newest first
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "oldest",
+												Selected: sort == "oldest",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Oldest first
+											}
 										}
 									}
 								}
-							}
+							</div>
 						</div>
-						<div
-							class="w-48"
-							hx-get="/installs/table"
-							hx-trigger="change from:[name='filter']"
-							hx-target="#installs-table-wrapper"
-							hx-swap="outerHTML"
-							hx-include="[name='search'],[name='sort'],[name='filter']"
-						>
-							@selectbox.SelectBox(selectbox.Props{
-								Multiple: false,
-							}) {
-								@selectbox.Trigger(selectbox.TriggerProps{
-									Name:     "filter",
+						<div class="w-48">
+							<label class="text-sm font-medium mb-2 block">User type</label>
+							<div
+								hx-get="/installs/table"
+								hx-trigger="change from:[name='filter']"
+								hx-target="#installs-table-wrapper"
+								hx-swap="outerHTML"
+								hx-include="[name='search'],[name='sort'],[name='filter'],[name='deleted_filter']"
+							>
+								@selectbox.SelectBox(selectbox.Props{
 									Multiple: false,
 								}) {
-									@selectbox.Value(selectbox.ValueProps{
-										Placeholder: "All installs",
-										Multiple:    false,
-									})
-								}
-								@selectbox.Content(selectbox.ContentProps{
-									NoSearch: true,
-								}) {
-									@selectbox.Group() {
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "all",
-											Selected: filter == "" || filter == "all",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											All installs
-										}
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "nuon",
-											Selected: filter == "nuon",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											Nuon installs
-										}
-										@selectbox.Item(selectbox.ItemProps{
-											Value:    "user",
-											Selected: filter == "user",
-											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-										}) {
-											User installs
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:     "filter",
+										Multiple: false,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "All installs",
+											Multiple:    false,
+										})
+									}
+									@selectbox.Content(selectbox.ContentProps{
+										NoSearch: true,
+									}) {
+										@selectbox.Group() {
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "all",
+												Selected: filter == "" || filter == "all",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												All installs
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "nuon",
+												Selected: filter == "nuon",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Nuon installs
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "user",
+												Selected: filter == "user",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												User installs
+											}
 										}
 									}
 								}
-							}
+							</div>
+						</div>
+						<div class="w-48">
+							<label class="text-sm font-medium mb-2 block">Active</label>
+							<div
+								hx-get="/installs/table"
+								hx-trigger="change from:[name='deleted_filter']"
+								hx-target="#installs-table-wrapper"
+								hx-swap="outerHTML"
+								hx-include="[name='search'],[name='sort'],[name='filter'],[name='deleted_filter']"
+							>
+								@selectbox.SelectBox(selectbox.Props{
+									Multiple: false,
+								}) {
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:     "deleted_filter",
+										Multiple: false,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "Active only",
+											Multiple:    false,
+										})
+									}
+									@selectbox.Content(selectbox.ContentProps{
+										NoSearch: true,
+									}) {
+										@selectbox.Group() {
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "active",
+												Selected: deletedFilter == "" || deletedFilter == "active",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Active only
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "deleted",
+												Selected: deletedFilter == "deleted",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												Deleted only
+											}
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "all",
+												Selected: deletedFilter == "all",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												All installs
+											}
+										}
+									}
+								}
+							</div>
 						</div>
 					</div>
 					if len(installs) == 0 {
 						<div class="text-sm text-muted-foreground">No installs found.</div>
 					} else {
-						@InstallsTableGlobal(installs, currentPage, totalPages, searchQuery, sort, filter)
+						@InstallsTableGlobal(installs, currentPage, totalPages, searchQuery, sort, filter, deletedFilter)
 					}
 				}
 			}
@@ -143,32 +199,32 @@ templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery
 					const searchInput = document.querySelector('input[name="search"]');
 					const sortInput = document.querySelector('input[name="sort"]');
 					const filterInput = document.querySelector('input[name="filter"]');
+					const deletedFilterInput = document.querySelector('input[name="deleted_filter"]');
 
 					const params = new URLSearchParams();
 
-					// Add search param if present
 					if (searchInput && searchInput.value) {
 						params.set('search', searchInput.value);
 					}
 
-					// Add sort param if present and not "newest"
 					if (sortInput && sortInput.value && sortInput.value !== 'newest') {
 						params.set('sort', sortInput.value);
 					}
 
-					// Add filter param if present and not "all"
 					if (filterInput && filterInput.value && filterInput.value !== 'all') {
 						params.set('filter', filterInput.value);
 					}
 
-					// Add page param if not page 1
+					if (deletedFilterInput && deletedFilterInput.value && deletedFilterInput.value !== 'active') {
+						params.set('deleted_filter', deletedFilterInput.value);
+					}
+
 					const currentUrl = new URL(evt.detail.xhr.responseURL);
 					const page = currentUrl.searchParams.get('page');
 					if (page && page !== '1') {
 						params.set('page', page);
 					}
 
-					// Update browser URL
 					const newUrl = '/installs' + (params.toString() ? '?' + params.toString() : '');
 					history.replaceState(null, '', newUrl);
 				}
@@ -177,7 +233,7 @@ templ Installs(installs []*app.Install, currentPage, totalPages int, searchQuery
 	}
 }
 
-func buildPageURL(page int, search string, sort string, filter string) string {
+func buildPageURL(page int, search string, sort string, filter string, deletedFilter string) string {
 	url := fmt.Sprintf("installs/table?page=%d", page)
 	if search != "" {
 		url += fmt.Sprintf("&search=%s", search)
@@ -188,10 +244,13 @@ func buildPageURL(page int, search string, sort string, filter string) string {
 	if filter != "" && filter != "all" {
 		url += fmt.Sprintf("&filter=%s", filter)
 	}
+	if deletedFilter != "" && deletedFilter != "active" {
+		url += fmt.Sprintf("&deleted_filter=%s", deletedFilter)
+	}
 	return url
 }
 
-func buildInstallsBrowserURL(page int, search string, sort string, filter string) string {
+func buildInstallsBrowserURL(page int, search string, sort string, filter string, deletedFilter string) string {
 	url := fmt.Sprintf("/installs?page=%d", page)
 	if search != "" {
 		url += fmt.Sprintf("&search=%s", search)
@@ -201,6 +260,9 @@ func buildInstallsBrowserURL(page int, search string, sort string, filter string
 	}
 	if filter != "" && filter != "all" {
 		url += fmt.Sprintf("&filter=%s", filter)
+	}
+	if deletedFilter != "" && deletedFilter != "active" {
+		url += fmt.Sprintf("&deleted_filter=%s", deletedFilter)
 	}
 	return url
 }
