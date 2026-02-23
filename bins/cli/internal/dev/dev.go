@@ -85,7 +85,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 
 				cmpBranch := contents[repoType].(map[string]any)["branch"]
 				if cmpBranch != branchName {
-					if err := prompt(s.autoApprove, "component %s is on branch %s. Override with %s?", cmpName, cmpBranch, branchName); err == nil {
+					if err := prompt(s.autoApprove, s.cfg.Interactive, "component %s is on branch %s. Override with %s?", cmpName, cmpBranch, branchName); err == nil {
 						contents[repoType].(map[string]any)["branch"] = branchName
 					}
 				}
@@ -127,7 +127,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	// Create new app version
 	//
 
-	if err := prompt(autoApprove, "You are ready to create a new version of your app. Continue?"); err != nil {
+	if err := prompt(autoApprove, s.cfg.Interactive, "You are ready to create a new version of your app. Continue?"); err != nil {
 		return ui.PrintError(err)
 	}
 
@@ -158,7 +158,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	if installID == "" {
 		return ui.PrintError(errors.New("No install is selected. Please select an install to deploy to."))
 	}
-	if err := prompt(autoApprove, "Ready to deploy the new app config version. Deploy to %s?", installID); err != nil {
+	if err := prompt(autoApprove, s.cfg.Interactive, "Ready to deploy the new app config version. Deploy to %s?", installID); err != nil {
 		return ui.PrintError(err)
 	}
 

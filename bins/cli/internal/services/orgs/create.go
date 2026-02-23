@@ -32,7 +32,7 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode, nosele
 		return err
 	}
 
-	view := ui.NewCreateView("org", asJSON)
+	view := ui.NewCreateView("org", asJSON, s.cfg.Interactive)
 	view.Start()
 	view.Update("creating org")
 	org, err := s.api.CreateOrg(ctx, &models.ServiceCreateOrgRequest{

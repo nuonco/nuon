@@ -222,8 +222,21 @@ func (m OnboardingModel) renderProgress() string {
 	return progress
 }
 
-// RunOnboarding runs the onboarding flow
-func RunOnboarding(userJourney string) error {
+// RunOnboarding runs the onboarding flow.
+// When interactive is false, it prints a simplified checklist to stdout.
+func RunOnboarding(userJourney string, interactive bool) error {
+	if !interactive {
+		model := NewOnboardingModel(userJourney)
+		for i, step := range model.steps {
+			marker := "○"
+			if step.Completed {
+				marker = "✓"
+			}
+			fmt.Printf("  %s Step %d: %s - %s\n", marker, i+1, step.Title, step.Description)
+		}
+		return nil
+	}
+
 	model := NewOnboardingModel(userJourney)
 	program := tea.NewProgram(model, tea.WithAltScreen())
 	_, err := program.Run()

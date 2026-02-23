@@ -190,14 +190,20 @@ func (v *TableView) RenderPaging(data [][]string, offset, limit int, hasMore boo
 	fmt.Println(pagingStyle.Render(pagingInfo))
 }
 
-// RenderInteractive displays an interactive table that users can navigate
-func (v *TableView) RenderInteractive(data [][]string) error {
+// RenderInteractive displays an interactive table that users can navigate.
+// When interactive is false, it falls back to rendering a static table.
+func (v *TableView) RenderInteractive(data [][]string, interactive bool) error {
 	if len(data) == 0 {
 		noItemsStyle := lipgloss.NewStyle().
 			Foreground(styles.SubtleColor).
 			Italic(true).
 			Padding(1)
 		fmt.Println(noItemsStyle.Render("No items found"))
+		return nil
+	}
+
+	if !interactive {
+		v.Render(data)
 		return nil
 	}
 

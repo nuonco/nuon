@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Service) Rename(ctx context.Context, appID string, name string, rename, asJSON bool) error {
-	view := ui.NewCreateView("app", asJSON)
+	view := ui.NewCreateView("app", asJSON, s.cfg.Interactive)
 	view.Start()
 
 	appID, err := lookup.AppID(ctx, s.api, appID)

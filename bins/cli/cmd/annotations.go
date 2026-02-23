@@ -7,11 +7,35 @@ import (
 )
 
 const skipAuthAnnotationKey string = "skip_auth"
+const tuiAnnotationKey string = "tui"
+
+// TUI annotation values
+const (
+	TUIAltScreen  = "alt-screen"
+	TUIContextual = "contextual"
+)
 
 func skipAuthAnnotation() map[string]string {
 	return map[string]string{
 		skipAuthAnnotationKey: strconv.FormatBool(true),
 	}
+}
+
+func tuiAnnotation(tuiType string) map[string]string {
+	return map[string]string{
+		tuiAnnotationKey: tuiType,
+	}
+}
+
+// annotations merges multiple annotation maps into one.
+func annotations(maps ...map[string]string) map[string]string {
+	merged := map[string]string{}
+	for _, m := range maps {
+		for k, v := range m {
+			merged[k] = v
+		}
+	}
+	return merged
 }
 
 func hasSkipAuthAnnotation(cmd *cobra.Command) bool {

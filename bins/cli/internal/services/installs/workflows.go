@@ -194,7 +194,7 @@ func (s *Service) confirmStepAction(ctx context.Context, installID, workflowID, 
 	fmt.Println()
 
 	prompt := fmt.Sprintf("Are you sure you want to %s step '%s'?", action, step.Name)
-	return bubbles.Confirm(prompt)
+	return bubbles.Confirm(prompt, s.cfg.Interactive)
 }
 
 func (s *Service) WorkflowStepsGet(ctx context.Context, workflowID, stepID string, asJSON bool) error {
