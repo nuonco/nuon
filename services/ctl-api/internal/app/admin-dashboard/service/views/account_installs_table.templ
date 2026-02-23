@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
@@ -36,9 +37,18 @@ templ AccountInstallsTable(accountID string, installs []*app.Install, currentPag
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
-										{ install.Name }
-									</a>
+									<div class="flex items-center gap-2">
+										<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
+											{ install.Name }
+										</a>
+										if install.DeletedAt > 0 {
+											@badge.Badge(badge.Props{
+												Variant: badge.VariantDestructive,
+											}) {
+												Deleted
+											}
+										}
+									</div>
 									<div class="flex items-center gap-2">
 										<span id={ "install-id-" + install.ID } class="font-mono text-xs text-muted-foreground">{ install.ID }</span>
 										@copybutton.CopyButton(copybutton.Props{
