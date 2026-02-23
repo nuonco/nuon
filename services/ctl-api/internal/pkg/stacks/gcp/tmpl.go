@@ -7,6 +7,10 @@ const tmpl = `{
       "google": {
         "source": "hashicorp/google",
         "version": ">= 5.0"
+      },
+      "null": {
+        "source": "hashicorp/null",
+        "version": ">= 3.0"
       }
     }
   },
@@ -197,6 +201,23 @@ const tmpl = `{
           }
         ],
         "metadata_startup_script": "#!/bin/bash\nset -e\nexport NUON_RUNNER_ID=${var.runner_id}\nexport NUON_RUNNER_API_URL=${var.runner_api_url}\nexport NUON_RUNNER_API_TOKEN=${var.runner_api_token}\nexport NUON_INSTALL_ID=${var.nuon_install_id}\ncurl -fsSL ${var.runner_init_script_url} | bash\n"
+      }
+    },
+    "null_resource": {
+      "phone_home": {
+        "depends_on": [
+          "google_compute_instance.runner",
+          "google_service_account.runner",
+          "google_compute_network.main",
+          "google_compute_subnetwork.public",
+          "google_compute_subnetwork.private",
+          "google_compute_subnetwork.runner"
+        ],
+        "provisioner": {
+          "local-exec": {
+            "command": "curl -sf -X POST '{{.CloudFormationStackVersion.PhoneHomeURL}}' -H 'Content-Type: application/json' -d '{\"request_type\":\"Create\",\"phone_home_type\":\"gcp\",\"project_id\":\"{{.Install.GCPAccount.ProjectID}}\",\"region\":\"{{.Install.GCPAccount.Region}}\",\"network_name\":\"${google_compute_network.main.name}\",\"network_id\":\"${google_compute_network.main.id}\",\"public_subnet_name\":\"${google_compute_subnetwork.public.name}\",\"private_subnet_name\":\"${google_compute_subnetwork.private.name}\",\"runner_subnet_name\":\"${google_compute_subnetwork.runner.name}\",\"runner_service_account_email\":\"${google_service_account.runner.email}\"}'"
+          }
+        }
       }
     }
   },
