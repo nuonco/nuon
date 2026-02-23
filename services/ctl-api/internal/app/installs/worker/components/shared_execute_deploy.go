@@ -256,7 +256,7 @@ func (w *Workflows) getRoleForDeploy(
 
 	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
 	if err != nil {
-		l.Info("dynamic role selection failed, falling back to default role",
+		l.Warn("dynamic role selection failed, falling back to default role",
 			zap.Error(err),
 			zap.String("default_role", selectionCtx.DefaultRole),
 		)
@@ -267,7 +267,7 @@ func (w *Workflows) getRoleForDeploy(
 			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
 		}
 
-		l.Info("using default role for component deploy",
+		l.Warn("using default role for component deploy",
 			zap.String("role_name", roleSelection.RoleName),
 			zap.String("role_arn", roleSelection.RoleARN),
 		)
