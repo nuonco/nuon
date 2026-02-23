@@ -132,7 +132,8 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 			)
 			return nil, errors.Wrap(err, "unable to render gar repository url")
 		}
-		cfg.Repository = repositoryStr
+		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE
+		cfg.Repository = repositoryStr + "/app"
 		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.registry_url}}", stateData)
 		if err != nil {
 			l.Error("error rendering registy url",
