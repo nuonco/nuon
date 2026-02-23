@@ -1,0 +1,1 @@
+../../../.claude/agents/git-worktree-manager.md
