@@ -54,10 +54,17 @@ func NewTableModel(data [][]string) TableModel {
 		tableRows[i] = tableRow
 	}
 
+	// Calculate total table width from columns
+	totalWidth := 0
+	for _, col := range columns {
+		totalWidth += col.Width + 2 // +2 for cell padding
+	}
+
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithRows(tableRows),
 		table.WithFocused(false),
+		table.WithWidth(totalWidth),
 		table.WithHeight(len(tableRows)+1), // Set height to match number of rows + header
 	)
 
