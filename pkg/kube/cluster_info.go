@@ -14,6 +14,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"golang.org/x/oauth2/google"
+
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
@@ -36,6 +38,7 @@ type ClusterInfo struct {
 	// them in the environment.
 	AWSAuth   *awscredentials.Config   `json:"aws_auth" hcl:"aws_auth,block"`
 	AzureAuth *azurecredentials.Config `json:"azure_auth" hcl:"azure_auth,block"`
+	GCPAuth   bool                     `json:"gcp_auth"`
 
 	// If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token
 	Inline bool `json:"inline"`
@@ -145,6 +148,19 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 			},
 			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
 		}
+	}
+
+	if cInfo.GCPAuth {
+		creds, err := google.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/cloud-platform")
+		if err != nil {
+			return nil, fmt.Errorf("unable to find GCP default credentials: %w", err)
+		}
+		tok, err := creds.TokenSource.Token()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get GCP access token: %w", err)
+		}
+		cfg.BearerToken = tok.AccessToken
+		cfg.ExecProvider = nil
 	}
 
 	return cfg, nil
