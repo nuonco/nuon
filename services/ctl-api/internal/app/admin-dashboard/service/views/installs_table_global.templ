@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
@@ -10,13 +11,13 @@ import (
 )
 
 // InstallsTableGlobal renders the global installs table for all organizations
-templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string, sort string, filter string) {
+templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, searchQuery string, sort string, filter string, deletedFilter string) {
 	<div
 		id="installs-table-wrapper"
 		hx-get="/installs/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
-		hx-include="[name='search'],[name='sort'],[name='filter']"
+		hx-include="[name='search'],[name='sort'],[name='filter'],[name='deleted_filter']"
 	>
 		if len(installs) == 0 {
 			<div class="text-sm text-muted-foreground">No installs found.</div>
@@ -39,9 +40,18 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 						@table.Row() {
 							@table.Cell() {
 								<div class="flex flex-col gap-1">
-									<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
-										{ install.Name }
-									</a>
+									<div class="flex items-center gap-2">
+										<a href={ templ.URL("/installs/" + install.ID) } class="text-cyan hover:underline">
+											{ install.Name }
+										</a>
+										if install.DeletedAt > 0 {
+											@badge.Badge(badge.Props{
+												Variant: badge.VariantDestructive,
+											}) {
+												Deleted
+											}
+										}
+									</div>
 									<div class="flex items-center gap-2">
 										<span id={ "install-id-" + install.ID } class="font-mono text-xs text-muted-foreground">{ install.ID }</span>
 										@copybutton.CopyButton(copybutton.Props{
@@ -80,39 +90,39 @@ templ InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, 
 		}
 		if totalPages > 1 {
 			<div class="mt-4">
-				@renderPagination(currentPage, totalPages, searchQuery, sort, filter)
+				@renderPagination(currentPage, totalPages, searchQuery, sort, filter, deletedFilter)
 			</div>
 		}
 	</div>
 }
 
-templ renderPagination(currentPage, totalPages int, searchQuery string, sort string, filter string) {
+templ renderPagination(currentPage, totalPages int, searchQuery string, sort string, filter string, deletedFilter string) {
 	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
 	@pagination.Pagination() {
 		@pagination.Content() {
 			@pagination.Item() {
 				@pagination.Previous(pagination.PreviousProps{
-					Href:     buildInstallsBrowserURL(currentPage-1, searchQuery, sort, filter),
+					Href:     buildInstallsBrowserURL(currentPage-1, searchQuery, sort, filter, deletedFilter),
 					Disabled: !paginationData.HasPrevious,
 					Label:    "Previous",
 					Attributes: templ.Attributes{
-						"hx-get":     buildPageURL(currentPage-1, searchQuery, sort, filter),
+						"hx-get":     buildPageURL(currentPage-1, searchQuery, sort, filter, deletedFilter),
 						"hx-target":  "#installs-table-wrapper",
 						"hx-swap":    "outerHTML",
-						"hx-include": "[name='search'],[name='sort'],[name='filter']",
+						"hx-include": "[name='search'],[name='sort'],[name='filter'],[name='deleted_filter']",
 					},
 				})
 			}
 			for _, pageNum := range paginationData.Pages {
 				@pagination.Item() {
 					@pagination.Link(pagination.LinkProps{
-						Href:     buildInstallsBrowserURL(pageNum, searchQuery, sort, filter),
+						Href:     buildInstallsBrowserURL(pageNum, searchQuery, sort, filter, deletedFilter),
 						IsActive: pageNum == currentPage,
 						Attributes: templ.Attributes{
-							"hx-get":     buildPageURL(pageNum, searchQuery, sort, filter),
+							"hx-get":     buildPageURL(pageNum, searchQuery, sort, filter, deletedFilter),
 							"hx-target":  "#installs-table-wrapper",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search'],[name='sort'],[name='filter']",
+							"hx-include": "[name='search'],[name='sort'],[name='filter'],[name='deleted_filter']",
 						},
 					}) {
 						{ fmt.Sprintf("%d", pageNum) }
@@ -121,14 +131,14 @@ templ renderPagination(currentPage, totalPages int, searchQuery string, sort str
 			}
 			@pagination.Item() {
 				@pagination.Next(pagination.NextProps{
-					Href:     buildInstallsBrowserURL(currentPage+1, searchQuery, sort, filter),
+					Href:     buildInstallsBrowserURL(currentPage+1, searchQuery, sort, filter, deletedFilter),
 					Disabled: !paginationData.HasNext,
 					Label:    "Next",
 					Attributes: templ.Attributes{
-						"hx-get":     buildPageURL(currentPage+1, searchQuery, sort, filter),
+						"hx-get":     buildPageURL(currentPage+1, searchQuery, sort, filter, deletedFilter),
 						"hx-target":  "#installs-table-wrapper",
 						"hx-swap":    "outerHTML",
-						"hx-include": "[name='search'],[name='sort'],[name='filter']",
+						"hx-include": "[name='search'],[name='sort'],[name='filter'],[name='deleted_filter']",
 					},
 				})
 			}

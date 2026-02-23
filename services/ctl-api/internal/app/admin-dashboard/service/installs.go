@@ -23,34 +23,43 @@ func (s *service) Installs(c *gin.Context) {
 	search := c.Query("search")
 	sort := c.Query("sort")
 	filter := c.Query("filter")
+	deletedFilter := c.Query("deleted_filter")
+	if deletedFilter == "" {
+		deletedFilter = "active"
+	}
 	page := getPageFromQuery(c)
 
-	installs, totalPages, err := s.getInstalls(ctx, search, sort, filter, page)
+	installs, totalPages, err := s.getInstalls(ctx, search, sort, filter, deletedFilter, page)
 	if err != nil {
 		s.l.Error("failed to get installs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch installs"})
 		return
 	}
 
-	component := views.Installs(installs, page, totalPages, search, sort, filter)
+	component := views.Installs(installs, page, totalPages, search, sort, filter, deletedFilter)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getInstalls(ctx context.Context, search string, sort string, filter string, page int) ([]*app.Install, int, error) {
+func (s *service) getInstalls(ctx context.Context, search string, sort string, filter string, deletedFilter string, page int) ([]*app.Install, int, error) {
 	var installs []*app.Install
 	var totalCount int64
 
-	// Build base query
 	query := s.db.WithContext(ctx).Model(&app.Install{})
 
-	// Apply user type filter using subquery to check creator email
+	switch deletedFilter {
+	case "deleted":
+		query = query.Unscoped().Where("deleted_at != ?", 0)
+	case "all":
+		query = query.Unscoped()
+	default:
+	}
+
 	switch filter {
 	case "nuon":
 		query = query.Where("created_by_id IN (SELECT id FROM accounts WHERE email LIKE ?)", "%@nuon.co")
 	case "user":
 		query = query.Where("created_by_id IN (SELECT id FROM accounts WHERE email NOT LIKE ?)", "%@nuon.co")
 	default:
-		// "all" or empty = no additional filter
 	}
 
 	// Apply search filter if provided

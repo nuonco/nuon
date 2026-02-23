@@ -149,7 +149,7 @@ func Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery 
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"flex gap-4 mb-4\"><div class=\"flex-1\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"flex gap-4 mb-4\"><div class=\"flex-1\"><label class=\"text-sm font-medium mb-2 block\">Search</label>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -163,7 +163,7 @@ func Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery 
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"w-64\" hx-get=\"/accounts/table\" hx-trigger=\"change from:[name='filter']\" hx-target=\"#accounts-table\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='filter']\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"w-64\"><label class=\"text-sm font-medium mb-2 block\">Account type</label><div hx-get=\"/accounts/table\" hx-trigger=\"change from:[name='filter']\" hx-target=\"#accounts-table\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='filter']\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -343,7 +343,7 @@ func Accounts(accounts []*app.Account, currentPage, totalPages int, searchQuery 
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
