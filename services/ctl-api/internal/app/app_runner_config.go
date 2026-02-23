@@ -130,6 +130,8 @@ func (a *AppRunnerConfig) AfterQuery(tx *gorm.DB) error {
 		a.CloudPlatform = CloudPlatformAWS
 	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS, AppRunnerTypeAzure:
 		a.CloudPlatform = CloudPlatformAzure
+	case AppRunnerTypeGCP:
+		a.CloudPlatform = CloudPlatformGCP
 	default:
 		a.CloudPlatform = CloudPlatformUnknown
 	}
