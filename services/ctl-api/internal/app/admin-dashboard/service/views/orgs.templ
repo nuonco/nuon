@@ -25,6 +25,7 @@ templ Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage
 				@card.Content() {
 					<div class="flex gap-4 mb-4">
 						<div class="flex-1">
+							<label class="text-sm font-medium mb-2 block">Search</label>
 							@search.SearchInput(search.Props{
 								Placeholder: "Search by name or ID...",
 								TargetURL:   "orgs/table",
@@ -33,43 +34,45 @@ templ Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage
 								Value:       searchQuery,
 							})
 						</div>
-						<div
-							class="w-80"
-							hx-get="/orgs/table"
-							hx-trigger="change from:[name='tag']"
-							hx-target="#orgs-table"
-							hx-swap="outerHTML"
-							hx-include="[name='search'],[name='tag']"
-						>
-							@selectbox.SelectBox(selectbox.Props{
-								Multiple: true,
-							}) {
-								@selectbox.Trigger(selectbox.TriggerProps{
-									Name:      "tag",
-									Multiple:  true,
-									ShowPills: true,
+						<div class="w-80">
+							<label class="text-sm font-medium mb-2 block">Tags</label>
+							<div
+								hx-get="/orgs/table"
+								hx-trigger="change from:[name='tag']"
+								hx-target="#orgs-table"
+								hx-swap="outerHTML"
+								hx-include="[name='search'],[name='tag']"
+							>
+								@selectbox.SelectBox(selectbox.Props{
+									Multiple: true,
 								}) {
-									@selectbox.Value(selectbox.ValueProps{
-										Placeholder: "All tags",
-										Multiple:    true,
-									})
-								}
-								@selectbox.Content(selectbox.ContentProps{
-									NoSearch: true,
-								}) {
-									@selectbox.Group() {
-										for _, tag := range allTags {
-											@selectbox.Item(selectbox.ItemProps{
-												Value:    tag,
-												Selected: contains(selectedTags, tag),
-												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
-											}) {
-												{ tag }
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:      "tag",
+										Multiple:  true,
+										ShowPills: true,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "All tags",
+											Multiple:    true,
+										})
+									}
+									@selectbox.Content(selectbox.ContentProps{
+										NoSearch: true,
+									}) {
+										@selectbox.Group() {
+											for _, tag := range allTags {
+												@selectbox.Item(selectbox.ItemProps{
+													Value:    tag,
+													Selected: contains(selectedTags, tag),
+													Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+												}) {
+													{ tag }
+												}
 											}
 										}
 									}
 								}
-							}
+							</div>
 						</div>
 					</div>
 					if len(orgs) == 0 {

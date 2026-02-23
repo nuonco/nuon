@@ -101,9 +101,9 @@ func (s *service) getInstallsForOrg(ctx context.Context, orgID string, page int)
 	var installs []*app.Install
 	var totalCount int64
 
-	// Build base query
 	query := s.db.WithContext(ctx).
 		Model(&app.Install{}).
+		Unscoped().
 		Where("org_id = ?", orgID)
 
 	// Get total count for pagination
