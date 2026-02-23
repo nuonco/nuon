@@ -595,6 +595,11 @@ func WorkflowApp(
 	install_id string,
 	workflow_id string,
 ) {
+	if !cfg.Interactive {
+		workflowPlainText(ctx, api, workflow_id)
+		return
+	}
+
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, workflow_id)
 	// initialize the program
@@ -602,5 +607,44 @@ func WorkflowApp(
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)
+	}
+}
+
+// workflowPlainText fetches a workflow once and prints a plain-text summary.
+func workflowPlainText(ctx context.Context, api nuon.Client, workflowID string) {
+	wf, err := api.GetWorkflow(ctx, workflowID)
+	if err != nil {
+		fmt.Printf("Error fetching workflow: %v\n", err)
+		return
+	}
+
+	status := ""
+	if wf.Status != nil {
+		status = string(wf.Status.Status)
+	}
+
+	fmt.Printf("Workflow: %s (%s)\n", wf.Name, wf.ID)
+	fmt.Printf("Type:     %s\n", string(wf.Type))
+	fmt.Printf("Status:   %s\n", status)
+
+	if wf.Finished {
+		fmt.Printf("Finished: yes\n")
+	} else {
+		fmt.Printf("Finished: no\n")
+	}
+
+	if len(wf.Steps) > 0 {
+		fmt.Println("\nSteps:")
+		for _, step := range wf.Steps {
+			stepStatus := ""
+			if step.Status != nil {
+				stepStatus = string(step.Status.Status)
+			}
+			finished := "no"
+			if step.Finished {
+				finished = "yes"
+			}
+			fmt.Printf("  [%d] %-30s  %-20s  finished=%s\n", step.Idx, step.Name, stepStatus, finished)
+		}
 	}
 }
