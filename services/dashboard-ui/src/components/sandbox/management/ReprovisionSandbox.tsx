@@ -147,7 +147,7 @@ export const ReprovisionSandboxModal = ({
         <RoleSelector
           installId={install?.id}
           operationType="reprovision"
-          principalType="install"
+          principalType="sandbox"
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value)}
           name="role"
