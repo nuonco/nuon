@@ -15,7 +15,7 @@ func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON 
 		return ui.PrintError(err)
 	}
 
-	view := ui.NewCreateView("secret", asJSON)
+	view := ui.NewCreateView("secret", asJSON, s.cfg.Interactive)
 	view.Start()
 	view.Update("creating secret")
 

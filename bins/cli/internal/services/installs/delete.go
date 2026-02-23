@@ -27,7 +27,7 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) err
 		return nil
 	}
 
-	view := ui.NewDeleteView("install", installID)
+	view := ui.NewDeleteView("install", installID, s.cfg.Interactive)
 	view.Start()
 	_, err = s.api.DeleteInstall(ctx, installID)
 	if err != nil {

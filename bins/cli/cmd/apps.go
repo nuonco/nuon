@@ -120,9 +120,10 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(latestRunnerConfig)
 
 	selectAppCmd := &cobra.Command{
-		Use:   "select",
-		Short: "Select your current app",
-		Long:  "Select your current app from a list or by app ID",
+		Use:         "select",
+		Short:       "Select your current app",
+		Long:        "Select your current app from a list or by app ID",
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), appID, PrintJSON)

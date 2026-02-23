@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -367,6 +368,11 @@ func LogStreamApp(
 	deploy_id string,
 	logstream_id string,
 ) {
+	if !cfg.Interactive {
+		logStreamPlainText(ctx, api, logstream_id)
+		return
+	}
+
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, deploy_id, logstream_id)
 	// initialize the program
@@ -374,5 +380,40 @@ func LogStreamApp(
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)
+	}
+}
+
+// logStreamPlainText streams logs to stdout as plain text lines.
+func logStreamPlainText(ctx context.Context, api nuon.Client, logstreamID string) {
+	cursor := "0"
+	for {
+		logs, err := api.LogStreamReadLogs(ctx, logstreamID, cursor)
+		if err != nil {
+			fmt.Printf("Error reading logs: %v\n", err)
+			return
+		}
+
+		for _, log := range logs {
+			fmt.Printf("[%s] %s %s: %s\n", log.Timestamp, log.SeverityText, log.ServiceName, log.Body)
+		}
+
+		// Update cursor to the latest timestamp
+		for _, log := range logs {
+			if log.Timestamp > cursor {
+				cursor = log.Timestamp
+			}
+		}
+
+		// Check if stream is still open
+		logStream, err := api.GetLogStream(ctx, logstreamID)
+		if err != nil || !logStream.Open {
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Second):
+		}
 	}
 }

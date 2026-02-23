@@ -229,17 +229,19 @@ func (m MultiSpinnerModel) HasErrors() bool {
 
 // MultiSpinnerView provides a high-level interface for managing multiple spinners
 type MultiSpinnerView struct {
-	model   MultiSpinnerModel
-	program *tea.Program
-	done    chan struct{}
-	started bool
+	model       MultiSpinnerModel
+	program     *tea.Program
+	done        chan struct{}
+	started     bool
+	interactive bool
 }
 
 // NewMultiSpinnerView creates a new multi-spinner view
-func NewMultiSpinnerView() *MultiSpinnerView {
+func NewMultiSpinnerView(interactive bool) *MultiSpinnerView {
 	return &MultiSpinnerView{
-		model: NewMultiSpinner(),
-		done:  make(chan struct{}),
+		model:       NewMultiSpinner(),
+		done:        make(chan struct{}),
+		interactive: interactive,
 	}
 }
 
@@ -256,6 +258,11 @@ func (v *MultiSpinnerView) Start() {
 	}
 
 	v.started = true
+
+	if !v.interactive {
+		return
+	}
+
 	v.program = tea.NewProgram(v.model)
 
 	// Run in background
@@ -274,6 +281,11 @@ func (v *MultiSpinnerView) Start() {
 func (v *MultiSpinnerView) AddSpinner(id, message string) {
 	v.model.AddSpinner(id, message)
 
+	if !v.interactive {
+		fmt.Printf("[%s] %s\n", id, message)
+		return
+	}
+
 	// If program is running, send update message
 	if v.program != nil {
 		v.program.Send(SpinnerUpdateMsg{ID: id, Message: message})
@@ -282,6 +294,10 @@ func (v *MultiSpinnerView) AddSpinner(id, message string) {
 
 // UpdateSpinner updates a spinner's message
 func (v *MultiSpinnerView) UpdateSpinner(id, message string) {
+	if !v.interactive {
+		return
+	}
+
 	if v.program == nil {
 		return
 	}
@@ -294,6 +310,21 @@ func (v *MultiSpinnerView) UpdateSpinner(id, message string) {
 
 // CompleteSpinner marks a spinner as completed
 func (v *MultiSpinnerView) CompleteSpinner(id string, success bool, finalMsg string) {
+	if !v.interactive {
+		icon := "✓"
+		if !success {
+			icon = "✗"
+		}
+		msg := finalMsg
+		if msg == "" {
+			if state, exists := v.model.spinners[id]; exists {
+				msg = state.message
+			}
+		}
+		fmt.Printf("[%s] %s %s\n", id, icon, msg)
+		return
+	}
+
 	if v.program == nil {
 		return
 	}
@@ -307,6 +338,11 @@ func (v *MultiSpinnerView) CompleteSpinner(id string, success bool, finalMsg str
 
 // Stop stops the multi-spinner display
 func (v *MultiSpinnerView) Stop() {
+	if !v.interactive {
+		v.started = false
+		return
+	}
+
 	if v.program == nil {
 		return
 	}
@@ -328,6 +364,9 @@ func (v *MultiSpinnerView) Stop() {
 
 // Wait waits for all spinners to complete
 func (v *MultiSpinnerView) Wait() {
+	if !v.interactive {
+		return
+	}
 	<-v.done
 }
 

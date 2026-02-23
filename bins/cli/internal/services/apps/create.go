@@ -22,7 +22,7 @@ const (
 )
 
 func (s *Service) Create(ctx context.Context, appName string, asJSON, noSelect bool) error {
-	view := ui.NewCreateView("app", asJSON)
+	view := ui.NewCreateView("app", asJSON, s.cfg.Interactive)
 	view.Start()
 	view.Update("creating app")
 	app, err := s.api.CreateApp(ctx, &models.ServiceCreateAppRequest{

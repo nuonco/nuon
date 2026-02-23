@@ -145,7 +145,11 @@ func (m ConfirmModel) Selected() bool {
 // High-level confirmation functions
 
 // Confirm shows a yes/no confirmation dialog
-func Confirm(prompt string) (bool, error) {
+func Confirm(prompt string, interactive bool) (bool, error) {
+	if !interactive {
+		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")
+	}
+
 	model := NewConfirmModel(prompt)
 
 	program := tea.NewProgram(model)
@@ -162,14 +166,14 @@ func Confirm(prompt string) (bool, error) {
 	return confirmModel.Result(), nil
 }
 
-// PromptWithAutoApprove prompts for confirmation unless auto-approved
-func PromptWithAutoApprove(autoApprove bool, msg string, vars ...interface{}) error {
-	if autoApprove {
+// PromptWithAutoApprove prompts for confirmation unless auto-approved or non-interactive
+func PromptWithAutoApprove(autoApprove, interactive bool, msg string, vars ...interface{}) error {
+	if autoApprove || !interactive {
 		return nil
 	}
 
 	prompt := fmt.Sprintf(msg, vars...)
-	result, err := Confirm(prompt)
+	result, err := Confirm(prompt, interactive)
 	if err != nil {
 		return err
 	}
@@ -182,7 +186,11 @@ func PromptWithAutoApprove(autoApprove bool, msg string, vars ...interface{}) er
 }
 
 // ConfirmWithDefault shows a confirmation with a default choice
-func ConfirmWithDefault(prompt string, defaultYes bool) (bool, error) {
+func ConfirmWithDefault(prompt string, defaultYes, interactive bool) (bool, error) {
+	if !interactive {
+		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")
+	}
+
 	model := NewConfirmModel(prompt)
 	if !defaultYes {
 		model.choice = 1 // Default to No
@@ -203,8 +211,7 @@ func ConfirmWithDefault(prompt string, defaultYes bool) (bool, error) {
 }
 
 // EvaluationConfirm shows a confirmation with evaluation journey styling
-func EvaluationConfirm(prompt string) (bool, error) {
-	// Add evaluation-specific styling or messaging
+func EvaluationConfirm(prompt string, interactive bool) (bool, error) {
 	evaluationPrompt := fmt.Sprintf("🚀 %s\n\n💡 This is part of your Nuon evaluation experience.", prompt)
-	return Confirm(evaluationPrompt)
+	return Confirm(evaluationPrompt, interactive)
 }

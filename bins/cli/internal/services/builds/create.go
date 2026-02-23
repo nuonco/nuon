@@ -41,7 +41,7 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 		return err
 	}
 
-	view := ui.NewCreateView("build", asJSON)
+	view := ui.NewCreateView("build", asJSON, s.cfg.Interactive)
 	view.Start()
 	view.Update("starting component build")
 	newBuild, err := s.api.CreateComponentBuild(

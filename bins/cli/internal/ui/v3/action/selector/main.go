@@ -382,6 +382,10 @@ func App(
 	installID string,
 	limit, offset int,
 ) (string, error) {
+	if !cfg.Interactive {
+		return "", fmt.Errorf("interactive terminal required for action selection; use --action-id flag")
+	}
+
 	m := initialModel(ctx, cfg, api, installID, limit, offset)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

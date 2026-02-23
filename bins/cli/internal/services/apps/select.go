@@ -34,7 +34,7 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 		}
 
 		// Show app selector
-		selectedAppID, err := bubbles.SelectApp(appOptions)
+		selectedAppID, err := bubbles.SelectApp(appOptions, s.cfg.Interactive)
 		if err != nil {
 			return view.Error(err)
 		}
