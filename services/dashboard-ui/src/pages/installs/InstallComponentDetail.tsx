@@ -1,39 +1,68 @@
 import { useParams } from 'react-router-dom'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
-import { Text } from '@/components/common/Text'
-import { PageLayout } from '@/components/layout/PageLayout'
-import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { usePolling } from '@/hooks/use-polling'
+import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { InstallComponentHeader } from '@/components/install-components/InstallComponentHeader'
+import { BackToTop } from '@/components/common/BackToTop'
+import { Loading } from '@/components/common/Loading'
+import { Text } from '@/components/common/Text'
+import type { TInstallComponent } from '@/types'
 
 export default function InstallComponentDetail() {
   const { org } = useOrg()
   const { install } = useInstall()
-  const { componentId } = useParams()
+  const { componentId, orgId, installId } = useParams()
+
+  const { data: installComponent, isLoading } = usePolling<TInstallComponent>({
+    path: `/api/ctl-api/v1/installs/${installId}/components/${componentId}`,
+    pollInterval: 20000,
+    shouldPoll: true,
+  })
+
+  if (isLoading) {
+    return (
+      <PageSection isScrollable>
+        <Loading variant="stack" loadingText="Loading component details..." />
+      </PageSection>
+    )
+  }
+
+  if (!installComponent) {
+    return (
+      <PageSection isScrollable>
+        <Text theme="neutral">Component not found.</Text>
+      </PageSection>
+    )
+  }
+
+  const latestDeploy = installComponent?.install_deploys?.[0]
 
   return (
-    <PageLayout isScrollable>
+    <PageSection isScrollable>
       <Breadcrumbs
         breadcrumbs={[
-          { path: `/${org?.id}`, text: org?.name || '' },
-          { path: `/${org?.id}/installs`, text: 'Installs' },
-          { path: `/${org?.id}/installs/${install?.id}`, text: install?.name || '' },
-          { path: `/${org?.id}/installs/${install?.id}/components`, text: 'Components' },
-          { path: `/${org?.id}/installs/${install?.id}/components/${componentId}`, text: 'Component Detail' },
+          { path: `/${orgId}`, text: org?.name || '' },
+          { path: `/${orgId}/installs`, text: 'Installs' },
+          { path: `/${orgId}/installs/${installId}`, text: install?.name || '' },
+          { path: `/${orgId}/installs/${installId}/components`, text: 'Components' },
+          {
+            path: `/${orgId}/installs/${installId}/components/${componentId}`,
+            text: installComponent?.component?.name || 'Component Detail',
+          },
         ]}
       />
-      <PageHeader>
-        <HeadingGroup>
-          <Text variant="h3" weight="stronger" level={1}>
-            Component Detail
-          </Text>
-        </HeadingGroup>
-      </PageHeader>
-      <PageContent>
-        <Text theme="neutral">Component detail content coming soon.</Text>
-      </PageContent>
-    </PageLayout>
+      {latestDeploy ? (
+        <InstallComponentHeader
+          initDeploy={latestDeploy}
+          installComponent={installComponent}
+          shouldPoll={true}
+        />
+      ) : (
+        <Text theme="neutral">No deploys found for this component.</Text>
+      )}
+      <BackToTop />
+    </PageSection>
   )
 }
