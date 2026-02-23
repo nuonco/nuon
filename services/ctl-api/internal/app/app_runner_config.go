@@ -38,7 +38,7 @@ func (a AppRunnerType) JobType() RunnerJobType {
 		return RunnerJobTypeRunnerTerraform
 	case AppRunnerTypeAWSEKS, AppRunnerTypeAzureAKS:
 		return RunnerJobTypeRunnerHelm
-	case AppRunnerTypeLocal, AppRunnerTypeAWS:
+	case AppRunnerTypeLocal, AppRunnerTypeAWS, AppRunnerTypeGCP:
 		return RunnerJobTypeRunnerLocal
 	default:
 	}

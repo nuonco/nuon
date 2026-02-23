@@ -42,6 +42,21 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 		}
 	}
 
+	if c.GCPAccount != nil {
+		if c.GCPAccount.ProjectID == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount project_id is required",
+				Err:         fmt.Errorf("GCPAccount project_id is required"),
+			}
+		}
+		if c.GCPAccount.Region == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount region is required",
+				Err:         fmt.Errorf("GCPAccount region is required"),
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -145,6 +160,21 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 			return stderr.ErrUser{
 				Description: "AWSAccount region is required",
 				Err:         fmt.Errorf("AWSAccount region is required"),
+			}
+		}
+	}
+
+	if c.GCPAccount != nil {
+		if c.GCPAccount.ProjectID == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount project_id is required",
+				Err:         fmt.Errorf("GCPAccount project_id is required"),
+			}
+		}
+		if c.GCPAccount.Region == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount region is required",
+				Err:         fmt.Errorf("GCPAccount region is required"),
 			}
 		}
 	}
