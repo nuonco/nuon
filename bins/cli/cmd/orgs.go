@@ -132,9 +132,10 @@ func (c *cli) orgsCmd() *cobra.Command {
 	orgsCmd.AddCommand(createCmd)
 
 	selectOrgCmd := &cobra.Command{
-		Use:   "select",
-		Short: "Select your current org",
-		Long:  "Select your current org from a list or by org ID",
+		Use:         "select",
+		Short:       "Select your current org",
+		Long:        "Select your current org from a list or by org ID",
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), id, offset, limit, PrintJSON)

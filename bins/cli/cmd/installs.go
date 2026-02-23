@@ -86,9 +86,10 @@ func (c *cli) installsCmd() *cobra.Command {
 	installsCmds.AddCommand(generateConfigCmd)
 
 	createCmd := &cobra.Command{
-		Use:   "create",
-		Short: "Create an install",
-		Long:  "Create a new install of your app",
+		Use:         "create",
+		Short:       "Create an install",
+		Long:        "Create a new install of your app",
+		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Create(cmd.Context(), appID, name, region, inputs, PrintJSON, noSelect)
@@ -221,9 +222,10 @@ func (c *cli) installsCmd() *cobra.Command {
 	installsCmds.AddCommand(createDeployCmd)
 
 	deployLogsCmd := &cobra.Command{
-		Use:   "deploy-logs",
-		Short: "View deploy logs",
-		Long:  "View deploy logs by install and deploy ID",
+		Use:         "deploy-logs",
+		Short:       "View deploy logs",
+		Long:        "View deploy logs by install and deploy ID",
+		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.DeployLogs(cmd.Context(), id, deployID, installCompID, PrintJSON)
@@ -295,9 +297,10 @@ func (c *cli) installsCmd() *cobra.Command {
 	installsCmds.AddCommand(currentInputs)
 
 	selectInstallCmd := &cobra.Command{
-		Use:   "select",
-		Short: "Select your current install",
-		Long:  "Select your current install from a list or by install ID",
+		Use:         "select",
+		Short:       "Select your current install",
+		Long:        "Select your current install from a list or by install ID",
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), appID, id, PrintJSON)
@@ -420,7 +423,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long: `Manage and view workflows by install ID.
 
 By default, launches an interactive TUI to view workflows.`,
-		Args: cobra.NoArgs,
+		Args:        cobra.NoArgs,
+		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.WorkflowsTUI(cmd.Context(), id, workflowID)
@@ -513,6 +517,7 @@ Examples:
 
   # Uses selected workflow from 'workflows select' if no flags provided
   nuon installs workflows watch`,
+		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmdWithExitCode(func(cmd *cobra.Command, _ []string) (int, error) {
 			svc := installs.New(c.apiClient, c.cfg)
 
@@ -703,9 +708,10 @@ Examples:
 
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
-		Use:   "actions",
-		Short: "View actions",
-		Long:  "View actions by install ID",
+		Use:         "actions",
+		Short:       "View actions",
+		Long:        "View actions by install ID",
+		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Actions(cmd.Context(), id, offset, limit, PrintJSON)

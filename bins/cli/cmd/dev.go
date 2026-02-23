@@ -21,6 +21,7 @@ A simple, guided experience for developing your app on Nuon.
 Select an app and a dev install, then run this command to sync, build, and deploy to it.
 `,
 		PersistentPreRunE: c.persistentPreRunE,
+		Annotations:       tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			var dirName string
 			if len(args) > 0 {
