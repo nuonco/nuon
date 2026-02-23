@@ -250,6 +250,13 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.adjustViewport()
 				}
 				return m, nil
+			case tea.KeySpace:
+				m.searchQuery += " "
+				if m.searchFn != nil {
+					return m, searchDebounceCmd(m.searchQuery)
+				}
+				m.filterItems()
+				return m, nil
 			default:
 				if msg.Type == tea.KeyRunes {
 					m.searchQuery += string(msg.Runes)
