@@ -48,7 +48,7 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 	}
 
 	// Show workflow selector
-	selectedWorkflowID, err := bubbles.SelectWorkflow(options)
+	selectedWorkflowID, err := bubbles.SelectWorkflow(options, s.cfg.Interactive)
 	if err != nil {
 		return view.Error(err)
 	}

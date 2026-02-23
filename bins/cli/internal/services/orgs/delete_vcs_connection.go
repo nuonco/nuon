@@ -33,7 +33,7 @@ func (s *Service) DeleteVCSConnection(ctx context.Context, connID string, asJSON
 		})
 		return nil
 	} else {
-		view := ui.NewDeleteView("github-connection", connID)
+		view := ui.NewDeleteView("github-connection", connID, s.cfg.Interactive)
 		view.Start()
 		err := s.api.DeleteVCSConnection(ctx, connID)
 		if err != nil {

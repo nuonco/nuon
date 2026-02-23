@@ -40,7 +40,13 @@ func Run(
 	width int,
 	height int,
 	run *models.AppInstallActionWorkflowRun,
+	interactive bool,
 ) {
+	if !interactive {
+		fmt.Fprintln(os.Stderr, "interactive terminal required; use --json flag for non-interactive output")
+		os.Exit(1)
+	}
+
 	// Initialize the model
 	app := New(ctx, api, width, height, run)
 	m := model{m: app}

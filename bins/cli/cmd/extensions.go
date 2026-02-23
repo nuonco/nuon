@@ -131,7 +131,7 @@ func (c *cli) extInstallCmd() *cobra.Command {
 				return err
 			}
 
-			spinner := ui.NewSpinnerView(PrintJSON)
+			spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
 			spinner.Start(fmt.Sprintf("Installing extension %s...", args[0]))
 
 			ext, err := mgr.Install(args[0])
@@ -165,7 +165,7 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 			mgr := extensions.New(extensionsDir())
 
 			if len(args) == 0 {
-				spinner := ui.NewSpinnerView(PrintJSON)
+				spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
 				spinner.Start("Upgrading all extensions...")
 
 				results, err := mgr.UpgradeAll()
@@ -198,7 +198,7 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 				return nil
 			}
 
-			spinner := ui.NewSpinnerView(PrintJSON)
+			spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
 			spinner.Start(fmt.Sprintf("Upgrading %s...", args[0]))
 
 			if err := mgr.Upgrade(args[0]); err != nil {
@@ -246,7 +246,7 @@ func (c *cli) extBrowseCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
 
-			spinner := ui.NewSpinnerView(PrintJSON)
+			spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
 			spinner.Start("Searching for extensions...")
 
 			exts, err := mgr.Browse(org)

@@ -334,6 +334,10 @@ func App(
 	api nuon.Client,
 	limit, offset int,
 ) (string, error) {
+	if !cfg.Interactive {
+		return "", fmt.Errorf("interactive terminal required for install selection; use --install-id flag")
+	}
+
 	m := initialModel(ctx, cfg, api, limit, offset)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

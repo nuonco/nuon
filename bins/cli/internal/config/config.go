@@ -36,6 +36,8 @@ type Config struct {
 	Debug            bool `mapstructure:"debug"`
 	Preview          bool `mapstructure:"preview"`
 
+	Interactive bool `mapstructure:"-"`
+
 	// internal configuration, not designed to be used by users
 	GitHubAppName   string        `mapstructure:"github_app_name"`
 	Env             string        `mapstructure:"-"`
@@ -89,6 +91,7 @@ func NewConfig(customFilepath string) (*Config, error) {
 		cfg.DisableTelemetry = cfg.GetBool("disable_telemetry")
 	}
 
+	cfg.Interactive = IsInteractive()
 	cfg.Env = cfg.envFromAPIURL(cfg.APIURL)
 	cfg.SegmentWriteKey = cfg.segmentWriteKey(cfg.Env)
 	cfg.SentryDSN = cfg.sentryDSN(cfg.Env)

@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Service) DeleteWorkflow(ctx context.Context, action_workflow_id string) error {
-	view := ui.NewDeleteView("action", action_workflow_id)
+	view := ui.NewDeleteView("action", action_workflow_id, s.cfg.Interactive)
 	view.Start()
 	view.Update("deleting action")
 

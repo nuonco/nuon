@@ -59,7 +59,7 @@ func (s *Service) Select(ctx context.Context, orgID string, offset, limit int, a
 			return toOrgOptions(results), nil
 		}
 
-		selectedOrgID, err := bubbles.SelectOrg(orgOptions, searchFn)
+		selectedOrgID, err := bubbles.SelectOrg(orgOptions, searchFn, s.cfg.Interactive)
 		if err != nil {
 			return view.Error(err)
 		}

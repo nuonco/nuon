@@ -353,6 +353,10 @@ func WatchApp(
 	api nuon.Client,
 	installID string,
 ) int {
+	if !cfg.Interactive {
+		return watchPlainText(ctx, api, installID)
+	}
+
 	m := initialModel(ctx, cfg, api, installID)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	finalModel, err := p.Run()
@@ -364,6 +368,31 @@ func WatchApp(
 	// Extract exit code from final model
 	if fm, ok := finalModel.(model); ok {
 		return fm.exitCode
+	}
+	return ExitCodeSuccess
+}
+
+// watchPlainText is the non-interactive fallback for WatchApp. It polls
+// workflows and prints a plain-text summary, similar to WorkflowsWatch.
+func watchPlainText(ctx context.Context, api nuon.Client, installID string) int {
+	workflows, _, err := api.GetWorkflows(ctx, installID, nil)
+	if err != nil {
+		fmt.Printf("Error fetching workflows: %v\n", err)
+		return ExitCodeFailed
+	}
+
+	if len(workflows) == 0 {
+		fmt.Println("No workflows found for this install.")
+		return ExitCodeSuccess
+	}
+
+	fmt.Printf("Workflows for install %s:\n\n", installID)
+	for _, wf := range workflows {
+		status := ""
+		if wf.Status != nil {
+			status = string(wf.Status.Status)
+		}
+		fmt.Printf("  %s  %-20s  %-12s  %s\n", wf.ID, wf.Name, status, string(wf.Type))
 	}
 	return ExitCodeSuccess
 }

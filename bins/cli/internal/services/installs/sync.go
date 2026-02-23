@@ -38,7 +38,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 		return ui.PrintError(fmt.Errorf("error listing installs for app %s: %w", appID, err))
 	}
 
-	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID)
+	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive)
 
 	for _, installCfg := range installCfgs {
 		var installID string

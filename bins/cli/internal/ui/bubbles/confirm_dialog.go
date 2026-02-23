@@ -139,7 +139,11 @@ func (m ConfirmDialogModel) Result() (bool, bool) {
 
 // Show displays the confirmation dialog and returns the result
 // This provides a pterm-compatible API for easy migration
-func ShowConfirmDialog(message string) (bool, error) {
+func ShowConfirmDialog(message string, interactive bool) (bool, error) {
+	if !interactive {
+		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")
+	}
+
 	model := NewConfirmDialog(message)
 
 	program := tea.NewProgram(model)
