@@ -78,7 +78,13 @@ func (s *DeviceCodePageTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	s.router = gin.New()
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
+	})
+
 	err := s.service.AuthService.RegisterAuthRoutes(s.router)
 	require.NoError(s.T(), err)
 }
@@ -336,7 +342,13 @@ func (s *DeviceCodeApproveTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	s.router = gin.New()
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
+	})
+
 	err := s.service.AuthService.RegisterAuthRoutes(s.router)
 	require.NoError(s.T(), err)
 }
@@ -630,7 +642,13 @@ func (s *DeviceCodeTokenTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	s.router = gin.New()
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
+	})
+
 	err := s.service.AuthService.RegisterAuthRoutes(s.router)
 	require.NoError(s.T(), err)
 }
