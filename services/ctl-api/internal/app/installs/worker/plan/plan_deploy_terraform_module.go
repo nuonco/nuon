@@ -101,7 +101,26 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	}
 
 	envVars := generics.ToStringMap(cfg.EnvVars)
-
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
+		awsAuth = &awscredentials.Config{
+			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+			AssumeRole: &awscredentials.AssumeRoleConfig{
+				SessionName: fmt.Sprintf("install-deploy-%s", req.InstallDeployID),
+				RoleARN:     roleARN,
+			},
+		}
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		azureAuth = &azurecredentials.Config{
+			UseDefault: true,
+		}
+		envVars["ARM_SUBSCRIPTION_ID"] = "{{.nuon.install_stack.outputs.subscription_id}}"
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		// GCP runner uses attached service account — set project/region env vars
+		envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
+		envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+	}
 	if err := render.RenderMap(&envVars, stateData); err != nil {
 		l.Error("error rendering env-vars",
 			zap.Any("env-vars", envVars),
