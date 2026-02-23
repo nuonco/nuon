@@ -7,7 +7,7 @@ import (
 )
 
 type CreateInstallActionWorkflowRunRequest struct {
-	ActionWorkFlowConfigID string            `json:"action_workflow_config_id"`
+	ActionWorkFlowConfigID string            `json:"action_workflow_config_id" validate:"required"`
 	RunEnvVars             map[string]string `json:"run_env_vars"`
 }
 
