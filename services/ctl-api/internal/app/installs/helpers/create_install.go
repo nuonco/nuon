@@ -126,6 +126,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				Data: generics.ToHstore(map[string]string{}),
 			},
 		}
+	case "gcp":
+		install.InstallStack = &app.InstallStack{
+			InstallStackOutputs: app.InstallStackOutputs{
+				Data: generics.ToHstore(map[string]string{}),
+			},
+		}
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)
