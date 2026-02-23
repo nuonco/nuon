@@ -29,6 +29,11 @@ type CreateInstallParams struct {
 		Location string `json:"location"`
 	} `json:"azure_account"`
 
+	GCPAccount *struct {
+		ProjectID string `json:"project_id"`
+		Region    string `json:"region"`
+	} `json:"gcp_account"`
+
 	Inputs map[string]*string `json:"inputs"`
 
 	InstallConfig *CreateInstallConfigParams `json:"install_config"`
@@ -91,6 +96,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if req.AzureAccount != nil {
 		install.AzureAccount = &app.AzureAccount{
 			Location: req.AzureAccount.Location,
+		}
+	}
+	if req.GCPAccount != nil {
+		install.GCPAccount = &app.GCPAccount{
+			ProjectID: req.GCPAccount.ProjectID,
+			Region:    req.GCPAccount.Region,
 		}
 	}
 	if len(parentApp.AppInputConfigs) > 0 {
