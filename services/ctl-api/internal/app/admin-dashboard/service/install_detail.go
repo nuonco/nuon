@@ -169,6 +169,7 @@ func (s *service) getInstall(c *gin.Context) (*app.Install, error) {
 
 	var install app.Install
 	err := s.db.
+		Unscoped().
 		Preload("Org").
 		Preload("App").
 		Preload("AppConfig").
