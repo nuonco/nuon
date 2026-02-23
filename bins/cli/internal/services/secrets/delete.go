@@ -28,7 +28,7 @@ func (s *Service) Delete(ctx context.Context, appID, secretID string, asJSON boo
 		return nil
 	}
 
-	view := ui.NewDeleteView("secret", secretID)
+	view := ui.NewDeleteView("secret", secretID, s.cfg.Interactive)
 	view.Start()
 	_, err = s.api.DeleteAppSecret(ctx, appID, secretID)
 	if err != nil {

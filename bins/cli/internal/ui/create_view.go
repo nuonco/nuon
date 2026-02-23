@@ -12,9 +12,9 @@ type CreateView struct {
 	model string
 }
 
-func NewCreateView(model string, json bool) *CreateView {
+func NewCreateView(model string, json, interactive bool) *CreateView {
 	return &CreateView{
-		*NewSpinnerView(json),
+		*NewSpinnerView(json, interactive),
 		model,
 	}
 }

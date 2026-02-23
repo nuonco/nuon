@@ -27,13 +27,15 @@ const defaultPollDuration = time.Second * 10
 type appInstallSyncer struct {
 	api          nuon.Client
 	appID, orgID string
+	interactive  bool
 }
 
-func newAppInstallSyncer(api nuon.Client, appID, orgID string) *appInstallSyncer {
+func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive bool) *appInstallSyncer {
 	return &appInstallSyncer{
-		api:   api,
-		appID: appID,
-		orgID: orgID,
+		api:         api,
+		appID:       appID,
+		orgID:       orgID,
+		interactive: interactive,
 	}
 }
 
@@ -314,7 +316,7 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 		return nil
 	}
 
-	spinner := ui.NewSpinnerView(false)
+	spinner := ui.NewSpinnerView(false, s.interactive)
 	spinner.Start("waiting for the workflow to complete")
 
 	for !workflow.Finished && workflow.Status.Status != models.AppStatusCancelled {

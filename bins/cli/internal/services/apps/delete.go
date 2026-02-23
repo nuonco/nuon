@@ -36,7 +36,7 @@ func (s *Service) Delete(ctx context.Context, appID string, asJSON bool) error {
 		return nil
 	}
 
-	view := ui.NewDeleteView("app", appID)
+	view := ui.NewDeleteView("app", appID, s.cfg.Interactive)
 	view.Start()
 
 	view.Update("removing all components from app config")
