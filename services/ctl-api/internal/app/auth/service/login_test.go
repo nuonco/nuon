@@ -70,8 +70,12 @@ func (s *LoginTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router without standard middlewares (auth endpoints don't use them)
-	s.router = gin.New()
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
+	})
 
 	// Register auth routes (includes HTML template loading)
 	err := s.service.AuthService.RegisterAuthRoutes(s.router)
