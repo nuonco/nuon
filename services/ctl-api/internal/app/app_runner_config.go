@@ -29,6 +29,7 @@ const (
 	// for independent runners
 	AppRunnerTypeAWS   AppRunnerType = "aws"
 	AppRunnerTypeAzure AppRunnerType = "azure"
+	AppRunnerTypeGCP   AppRunnerType = "gcp"
 )
 
 func (a AppRunnerType) JobType() RunnerJobType {
