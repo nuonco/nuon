@@ -136,7 +136,7 @@ const tmpl = `{
     },
     "google_service_account": {
       "runner": {
-        "account_id": "${local.prefix}-runner",
+        "account_id": "${substr(local.prefix, 0, 23)}-runner",
         "display_name": "Nuon runner for ${local.prefix}"
       }
     },
