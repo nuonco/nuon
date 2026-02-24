@@ -1,6 +1,6 @@
 package run
 
-import "github.com/charmbracelet/bubbles/key"
+import "charm.land/bubbles/v2/key"
 
 type keyMap struct {
 	Quit    key.Binding
@@ -39,8 +39,8 @@ var keys = keyMap{
 		key.WithHelp("esc", "back"),
 	),
 	Browser: key.NewBinding(
-		key.WithKeys("b"),
-		key.WithHelp("b", "open in browser"),
+		key.WithKeys("B"),
+		key.WithHelp("B", "open in browser"),
 	),
 	Tab: key.NewBinding(
 		key.WithKeys("tab"),

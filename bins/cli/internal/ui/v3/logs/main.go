@@ -12,14 +12,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/table"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"golang.design/x/clipboard"
 
@@ -124,7 +124,7 @@ func (m *model) setMessage(message string, level string) {
 
 func (m model) Init() tea.Cmd {
 	m.getLatestLogs()
-	return tea.Batch(tick, m.spinner.Tick)
+	return tea.Batch(common.TickCmd(common.DefaultRefreshInterval), m.spinner.Tick)
 }
 
 func (m *model) setLoading(v bool) {
@@ -140,7 +140,7 @@ func (m *model) resize() {
 	m.sidebarWidth = max(maxSidebarWidth, int(m.width/3)) - 4 // minus margin. stored here so we can access everywhere.
 
 	// header search input
-	m.searchInput.Width = m.width - hMargin - lipgloss.Width(m.spinner.View()) - 3 // 3 is the width of the caret
+	m.searchInput.SetWidth(m.width - hMargin - lipgloss.Width(m.spinner.View()) - 3) // 3 is the width of the caret
 
 	// logs table
 	m.table.SetHeight(m.height - vMargin)
@@ -152,9 +152,9 @@ func (m *model) resize() {
 	m.resizeTableColumns()
 
 	// 3 is the height of the modal header (8 and 6 are scaling factors)
-	m.details.Width = m.sidebarWidth
-	m.details.Height = m.height - vMargin
-	m.help.Width = m.width
+	m.details.SetWidth(m.sidebarWidth)
+	m.details.SetHeight(m.height - vMargin)
+	m.help.SetWidth(m.width)
 }
 
 func (m *model) handleResize(msg tea.WindowSizeMsg) {
@@ -193,17 +193,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	// handle tick: fetch data
-	case tickMsg:
+	case common.TickMsg:
 		m.setLoading(true)
 		m.getLatestLogs()
-		return m, tick
+		return m, common.TickCmd(common.DefaultRefreshInterval)
 
 	// handle re-size
 	case tea.WindowSizeMsg:
 		m.handleResize(msg)
 
 	// handle keys
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
 			return m, tea.Quit
@@ -303,7 +303,13 @@ func (m model) footerView() string {
 	return lipgloss.JoinVertical(lipgloss.Top, sections...)
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
+	v := tea.NewView(m.viewContent())
+	v.AltScreen = true
+	return v
+}
+
+func (m model) viewContent() string {
 	if m.width == 0 {
 		return ""
 
@@ -376,7 +382,7 @@ func LogStreamApp(
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, deploy_id, logstream_id)
 	// initialize the program
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)

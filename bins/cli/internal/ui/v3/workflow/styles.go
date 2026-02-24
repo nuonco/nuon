@@ -1,22 +1,17 @@
 package workflow
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-var appStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(styles.PrimaryColor)
+var (
+	appStyle      = styles.Pane
+	appStyleBlur  = styles.PaneBlur
+	appStyleFocus = styles.PaneFocus
+)
 
-var appStyleBlur = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(styles.BorderInactiveColor)
-
-var appStyleFocus = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(styles.BorderActiveColor)
-
+// Domain-specific styles for workflow policy violations.
 var policySectionStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(styles.BorderInactiveColor)

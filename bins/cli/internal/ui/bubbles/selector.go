@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -89,55 +89,41 @@ func (m *SelectorModel) filterItems() {
 
 	var filtered []SelectorItem
 	for _, item := range m.items {
-		// Create searchable text from title and description
 		searchText := item.Title()
 		if item.Description() != "" {
 			searchText += " " + item.Description()
 		}
-
 		if fuzzy.MatchFold(m.searchQuery, searchText) {
 			filtered = append(filtered, item)
 		}
 	}
 
 	m.filteredItems = filtered
-
-	// Reset cursor if it's out of bounds
 	if m.cursor >= len(m.filteredItems) {
 		m.cursor = len(m.filteredItems) - 1
 	}
 	if m.cursor < 0 {
 		m.cursor = 0
 	}
-
-	// Adjust viewport after filtering
 	m.adjustViewport()
 }
 
 // adjustViewport ensures the cursor is visible within the viewport
 func (m *SelectorModel) adjustViewport() {
 	visibleRows := m.getVisibleRows()
-
 	if visibleRows <= 0 || len(m.filteredItems) <= visibleRows {
-		// No scrolling needed
 		m.viewportOffset = 0
 		return
 	}
-
-	// Scroll down if cursor is below viewport
 	if m.cursor >= m.viewportOffset+visibleRows {
 		m.viewportOffset = m.cursor - visibleRows + 1
 	}
-
-	// Scroll up if cursor is above viewport
 	if m.cursor < m.viewportOffset {
 		m.viewportOffset = m.cursor
 	}
-
-	// Ensure viewport doesn't go beyond list bounds
 	maxOffset := len(m.filteredItems) - visibleRows
 	if m.viewportOffset > maxOffset {
-		m.viewportOffset = Max(0, maxOffset)
+		m.viewportOffset = max(0, maxOffset)
 	}
 }
 
@@ -146,17 +132,11 @@ func (m *SelectorModel) getVisibleRows() int {
 	if m.maxVisibleRows > 0 {
 		return m.maxVisibleRows
 	}
-
-	// Calculate based on terminal height
-	// Reserve space for: search box (3 lines), help text (2 lines), border/padding (4 lines)
 	reservedLines := 9
 	availableHeight := m.height - reservedLines
-
-	// Ensure at least 5 items are visible
 	if availableHeight < 5 {
 		availableHeight = 5
 	}
-
 	return availableHeight
 }
 
@@ -170,14 +150,13 @@ func searchDebounceCmd(query string) tea.Cmd {
 func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		// Update width and height for terminal size
 		if msg.Width > 64 {
 			m.width = 60
 		} else {
 			m.width = msg.Width - 4
 		}
 		m.height = msg.Height
-		m.adjustViewport() // Recalculate viewport with new height
+		m.adjustViewport()
 		return m, nil
 
 	case searchDebounceMsg:
@@ -204,16 +183,13 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewportOffset = 0
 		return m, nil
 
-	case tea.KeyMsg:
-		// Handle search mode key presses
+	case tea.KeyPressMsg:
 		if m.searchMode {
-			switch msg.Type {
-			case tea.KeyEsc:
-				// Exit search mode
+			switch msg.String() {
+			case "esc":
 				m.searchMode = false
 				return m, nil
-			case tea.KeyEnter:
-				// Exit search mode and process selection
+			case "enter":
 				m.searchMode = false
 				if m.cursor >= 0 && m.cursor < len(m.filteredItems) {
 					m.choice = m.filteredItems[m.cursor].Value()
@@ -222,7 +198,7 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 				return m, nil
-			case tea.KeyBackspace:
+			case "backspace":
 				if len(m.searchQuery) > 0 {
 					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
 					if m.searchFn != nil {
@@ -238,21 +214,28 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.filterItems()
 				}
 				return m, nil
-			case tea.KeyUp:
+			case "up":
 				if m.cursor > 0 {
 					m.cursor--
 					m.adjustViewport()
 				}
 				return m, nil
-			case tea.KeyDown:
+			case "down":
 				if m.cursor < len(m.filteredItems)-1 {
 					m.cursor++
 					m.adjustViewport()
 				}
 				return m, nil
+			case "space":
+				m.searchQuery += " "
+				if m.searchFn != nil {
+					return m, searchDebounceCmd(m.searchQuery)
+				}
+				m.filterItems()
+				return m, nil
 			default:
-				if msg.Type == tea.KeyRunes {
-					m.searchQuery += string(msg.Runes)
+				if text := msg.Key().Text; text != "" {
+					m.searchQuery += text
 					if m.searchFn != nil {
 						return m, searchDebounceCmd(m.searchQuery)
 					}
@@ -261,27 +244,23 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		} else {
-			// Handle normal navigation mode
-			switch msg.Type {
-			case tea.KeyCtrlC, tea.KeyEsc:
+			switch msg.String() {
+			case "ctrl+c", "esc":
 				m.quitting = true
 				return m, tea.Quit
-
-			case tea.KeyUp:
+			case "up":
 				if m.cursor > 0 {
 					m.cursor--
 					m.adjustViewport()
 				}
 				return m, nil
-
-			case tea.KeyDown:
+			case "down":
 				if m.cursor < len(m.filteredItems)-1 {
 					m.cursor++
 					m.adjustViewport()
 				}
 				return m, nil
-
-			case tea.KeyEnter:
+			case "enter":
 				if m.cursor >= 0 && m.cursor < len(m.filteredItems) {
 					m.choice = m.filteredItems[m.cursor].Value()
 					m.selected = true
@@ -289,24 +268,20 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 				return m, nil
-
-			case tea.KeyRunes:
-				// Start search mode when typing
-				if len(msg.Runes) > 0 {
-					if msg.Runes[0] == '/' {
-						// Start search mode with '/' key
+			default:
+				if text := msg.Key().Text; text != "" {
+					if text == "/" {
 						m.searchMode = true
 						return m, nil
 					}
-					// Start search with typed character
 					m.searchMode = true
-					m.searchQuery = string(msg.Runes)
+					m.searchQuery = text
 					if m.searchFn != nil {
 						return m, searchDebounceCmd(m.searchQuery)
 					}
 					m.filterItems()
+					return m, nil
 				}
-				return m, nil
 			}
 		}
 	}
@@ -315,29 +290,27 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the selector
-func (m SelectorModel) View() string {
+func (m SelectorModel) View() tea.View {
 	if m.quitting {
 		if m.selected {
-			// Find the selected item from filtered items
 			if m.cursor >= 0 && m.cursor < len(m.filteredItems) {
 				selectedItem := m.filteredItems[m.cursor]
 				successStyle := lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
-				return successStyle.Render(fmt.Sprintf("✓ Selected: %s", selectedItem.Title()))
+				return tea.NewView(successStyle.Render(fmt.Sprintf("✓ Selected: %s", selectedItem.Title())))
 			}
 		}
-		return ""
+		return tea.NewView("")
 	}
 
 	var b strings.Builder
 
-	// Search box
 	searchBoxStyle := lipgloss.NewStyle().
 		Foreground(styles.TextColor).
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(styles.SubtleColor).
 		Padding(0, 1).
 		Margin(0, 0, 1, 0).
-		Width(m.width - 2) // full-width minus padding
+		Width(m.width - 2)
 
 	searchPrompt := ">"
 	if m.searchMode {
@@ -360,7 +333,6 @@ func (m SelectorModel) View() string {
 	b.WriteString(searchBoxStyle.Render(fmt.Sprintf("%s %s", searchPrompt, searchText)))
 	b.WriteString("\n")
 
-	// Render filtered items
 	if len(m.filteredItems) == 0 {
 		noResultsStyle := lipgloss.NewStyle().
 			Foreground(styles.SubtleColor).
@@ -378,9 +350,8 @@ func (m SelectorModel) View() string {
 	} else {
 		visibleRows := m.getVisibleRows()
 		startIdx := m.viewportOffset
-		endIdx := Min(startIdx+visibleRows, len(m.filteredItems))
+		endIdx := min(startIdx+visibleRows, len(m.filteredItems))
 
-		// Show scroll indicator at top if there are items above
 		if startIdx > 0 {
 			scrollIndicatorStyle := lipgloss.NewStyle().
 				Foreground(styles.SubtleColor).
@@ -389,20 +360,17 @@ func (m SelectorModel) View() string {
 			b.WriteString("\n")
 		}
 
-		// Render visible items only
 		for i := startIdx; i < endIdx; i++ {
 			item := m.filteredItems[i]
 			var itemStyle lipgloss.Style
 			prefix := "  "
 
 			if i == m.cursor {
-				// Selected item
 				itemStyle = lipgloss.NewStyle().
 					Foreground(styles.PrimaryColor).
 					Bold(true)
 				prefix = "▶ "
 			} else {
-				// Normal item
 				itemStyle = lipgloss.NewStyle().
 					Foreground(styles.TextColor)
 			}
@@ -416,7 +384,6 @@ func (m SelectorModel) View() string {
 			b.WriteString("\n")
 		}
 
-		// Show scroll indicator at bottom if there are items below
 		if endIdx < len(m.filteredItems) {
 			scrollIndicatorStyle := lipgloss.NewStyle().
 				Foreground(styles.SubtleColor).
@@ -427,7 +394,6 @@ func (m SelectorModel) View() string {
 		}
 	}
 
-	// Show filtered results count if searching
 	if m.searchQuery != "" {
 		countStyle := lipgloss.NewStyle().
 			Foreground(styles.SubtleColor).
@@ -437,7 +403,6 @@ func (m SelectorModel) View() string {
 		b.WriteString("\n")
 	}
 
-	// Instructions
 	helpStyle := lipgloss.NewStyle().
 		Foreground(styles.SubtleColor).
 		Italic(true).
@@ -449,94 +414,67 @@ func (m SelectorModel) View() string {
 	}
 	b.WriteString(helpStyle.Render(helpText))
 
-	return BorderStyle.Render(b.String())
+	return tea.NewView(BorderStyle.Render(b.String()))
 }
 
 // Choice returns the selected choice value
-func (m SelectorModel) Choice() string {
-	return m.choice
-}
+func (m SelectorModel) Choice() string { return m.choice }
 
 // Selected returns whether a choice was made
-func (m SelectorModel) Selected() bool {
-	return m.selected
-}
+func (m SelectorModel) Selected() bool { return m.selected }
 
 // High-level selector functions
 
-// SelectFromOptions shows a selector with simple string options
 func SelectFromOptions(title string, options []string, interactive bool) (string, error) {
 	items := make([]SelectorItem, len(options))
 	for i, option := range options {
-		items[i] = SelectorItem{
-			title: option,
-			value: option,
-		}
+		items[i] = SelectorItem{title: option, value: option}
 	}
-
 	return SelectFromItems(title, items, interactive)
 }
 
-// SelectFromOptionsWithMaxRows shows a selector with simple string options and a specific max visible rows
 func SelectFromOptionsWithMaxRows(title string, options []string, maxVisibleRows int, interactive bool) (string, error) {
 	items := make([]SelectorItem, len(options))
 	for i, option := range options {
-		items[i] = SelectorItem{
-			title: option,
-			value: option,
-		}
+		items[i] = SelectorItem{title: option, value: option}
 	}
-
 	return SelectFromItemsWithMaxRows(title, items, maxVisibleRows, interactive)
 }
 
-// SelectFromItems shows a selector with SelectorItem structs
 func SelectFromItems(title string, items []SelectorItem, interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for selection; use the appropriate --id flag to specify directly")
 	}
-
 	model := NewSelectorModel(title, items)
-
-	// Run inline without full-screen mode
 	program := tea.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return "", err
 	}
-
 	selectorModel := finalModel.(SelectorModel)
 	if !selectorModel.Selected() {
 		return "", fmt.Errorf("selection cancelled")
 	}
-
 	return selectorModel.Choice(), nil
 }
 
-// SelectFromItemsWithMaxRows shows a selector with SelectorItem structs and a specific max visible rows
 func SelectFromItemsWithMaxRows(title string, items []SelectorItem, maxVisibleRows int, interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for selection; use the appropriate --id flag to specify directly")
 	}
-
 	model := NewSelectorModelWithMaxRows(title, items, maxVisibleRows)
-
-	// Run inline without full-screen mode
 	program := tea.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return "", err
 	}
-
 	selectorModel := finalModel.(SelectorModel)
 	if !selectorModel.Selected() {
 		return "", fmt.Errorf("selection cancelled")
 	}
-
 	return selectorModel.Choice(), nil
 }
 
-// SelectOrg shows an organization selector with evaluation journey support
 func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error), interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for selection; use --org-id flag to specify directly")
@@ -553,24 +491,16 @@ func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error), int
 		for i, org := range opts {
 			title := fmt.Sprintf("%s%s", org.Name, strings.Repeat(" ", maxWidth-len(org.Name)))
 			description := styles.TextDim.Render(fmt.Sprintf("ID: %s", org.ID))
-
 			if org.IsEvaluation {
 				title = fmt.Sprintf("🚀 %s (Evaluation)", org.Name)
 				description = fmt.Sprintf("ID: %s • Perfect for trying out Nuon", org.ID)
 			}
-
-			items[i] = SelectorItem{
-				title:        title,
-				description:  description,
-				value:        org.ID,
-				isEvaluation: org.IsEvaluation,
-			}
+			items[i] = SelectorItem{title: title, description: description, value: org.ID, isEvaluation: org.IsEvaluation}
 		}
 		return items
 	}
 
 	items := buildItems(orgs)
-
 	title := "Select an organization"
 	if hasEvaluationOrgs(orgs) {
 		title = "Select an organization (🚀 = Evaluation mode)"
@@ -590,27 +520,22 @@ func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error), int
 	model := NewSelectorModel(title, items)
 	model.originalItems = items
 	model.searchFn = selectorSearchFn
-
 	program := tea.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return "", err
 	}
-
 	selectorModel := finalModel.(SelectorModel)
 	if !selectorModel.Selected() {
 		return "", fmt.Errorf("selection cancelled")
 	}
-
 	return selectorModel.Choice(), nil
 }
 
-// SelectApp shows an application selector
 func SelectApp(apps []AppOption, interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for selection; use --app-id flag to specify directly")
 	}
-
 	items := make([]SelectorItem, len(apps))
 	maxAppNameWidth := 0
 	for _, app := range apps {
@@ -625,25 +550,20 @@ func SelectApp(apps []AppOption, interactive bool) (string, error) {
 			value:       app.ID,
 		}
 	}
-
 	return SelectFromItems("Select an application", items, interactive)
 }
 
-// SelectInstall shows an installation selector
 func SelectInstall(installs []InstallOption, interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for selection; use --install-id flag to specify directly")
 	}
-
 	items := make([]SelectorItem, len(installs))
-	// get some widths for padding
 	maxInstallNameWidth := 0
 	for _, install := range installs {
 		if len(install.Name) > maxInstallNameWidth {
 			maxInstallNameWidth = len(install.Name)
 		}
 	}
-
 	for i, install := range installs {
 		items[i] = SelectorItem{
 			title:       fmt.Sprintf("%s%s", install.Name, strings.Repeat(" ", maxInstallNameWidth-len(install.Name))),
@@ -651,25 +571,20 @@ func SelectInstall(installs []InstallOption, interactive bool) (string, error) {
 			value:       install.ID,
 		}
 	}
-
 	return SelectFromItems("Select an installation", items, interactive)
 }
 
-// SelectWorkflow shows a workflow selector
 func SelectWorkflow(workflows []WorkflowOption, interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for selection; use --workflow-id flag to specify directly")
 	}
-
 	items := make([]SelectorItem, len(workflows))
-	// get some widths for padding
 	maxWorkflowNameWidth := 0
 	for _, workflow := range workflows {
 		if len(workflow.Name) > maxWorkflowNameWidth {
 			maxWorkflowNameWidth = len(workflow.Name)
 		}
 	}
-
 	for i, workflow := range workflows {
 		desc := fmt.Sprintf("ID: %s", workflow.ID)
 		if workflow.Type != "" {
@@ -684,11 +599,9 @@ func SelectWorkflow(workflows []WorkflowOption, interactive bool) (string, error
 			value:       workflow.ID,
 		}
 	}
-
 	return SelectFromItems("Select a workflow", items, interactive)
 }
 
-// Helper types for the selector functions
 type OrgOption struct {
 	ID           string
 	Name         string
@@ -712,7 +625,6 @@ type WorkflowOption struct {
 	Status string
 }
 
-// Helper functions
 func hasEvaluationOrgs(orgs []OrgOption) bool {
 	for _, org := range orgs {
 		if org.IsEvaluation {
@@ -722,7 +634,6 @@ func hasEvaluationOrgs(orgs []OrgOption) bool {
 	return false
 }
 
-// ParseOrgSelection parses a "Name: ID" formatted string (for backward compatibility)
 func ParseOrgSelection(selection string) (name, id string) {
 	parts := strings.Split(selection, ":")
 	if len(parts) >= 2 {

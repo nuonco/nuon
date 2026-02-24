@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -97,8 +97,8 @@ func (m MultiSpinnerModel) Init() tea.Cmd {
 // Update handles messages for all spinners
 func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC || msg.Type == tea.KeyEsc {
+	case tea.KeyPressMsg:
+		if msg.String() == "ctrl+c" || msg.String() == "esc" {
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -154,9 +154,9 @@ func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders all spinners
-func (m MultiSpinnerModel) View() string {
+func (m MultiSpinnerModel) View() tea.View {
 	if len(m.spinners) == 0 {
-		return ""
+		return tea.NewView("")
 	}
 
 	var lines []string
@@ -169,7 +169,7 @@ func (m MultiSpinnerModel) View() string {
 	// empty new line for proper message rendering
 	lines = append(lines, "")
 
-	return strings.Join(lines, "\n")
+	return tea.NewView(strings.Join(lines, "\n"))
 }
 
 // renderSpinnerLine renders a single spinner line

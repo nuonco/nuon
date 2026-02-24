@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/generics"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	tfjson "github.com/hashicorp/terraform-json"
 )
 
@@ -60,7 +60,7 @@ func (m model) getTerraformDiff() string {
 
 	if len(creations) > 0 {
 		for _, rc := range creations {
-			row := createStyle.Width(m.stepDetail.Width - 4).Render(
+			row := createStyle.Width(m.stepDetail.Width() - 4).Render(
 				rc.Address,
 			)
 			changesSection = append(changesSection, row)
@@ -68,7 +68,7 @@ func (m model) getTerraformDiff() string {
 	}
 	if (len(updates)) > 0 {
 		for _, rc := range updates {
-			row := changeStyle.Width(m.stepDetail.Width - 4).Render(
+			row := changeStyle.Width(m.stepDetail.Width() - 4).Render(
 				rc.Address,
 			)
 			changesSection = append(changesSection, row)

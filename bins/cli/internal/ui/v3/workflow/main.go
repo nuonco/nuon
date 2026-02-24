@@ -10,18 +10,17 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/progress"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -32,9 +31,8 @@ import (
 )
 
 const (
-	minRequiredWidth    int           = 100
-	minRequiredHeight   int           = 20
-	dataRefreshInterval time.Duration = time.Second * 5
+	minRequiredWidth  int = 100
+	minRequiredHeight int = 20
 )
 
 type approvalContents struct {
@@ -147,10 +145,10 @@ func initialModel(
 		approvalContents: approvalContents,
 		policyNames:      map[string]string{},
 
-		header:     viewport.New(minRequiredWidth, 2),
+		header:     viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(2)),
 		stepsList:  stepsList,
-		stepDetail: viewport.New(minRequiredWidth, 30),
-		footer:     viewport.New(minRequiredWidth, 4),
+		stepDetail: viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(30)),
+		footer:     viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(4)),
 		focus:      "list",
 
 		help:     help.New(),
@@ -190,7 +188,7 @@ func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchWorkflowCmd,
 		m.fetchStackCmd,
-		tick,
+		common.TickCmd(common.DefaultRefreshInterval),
 		m.spinner.Tick,
 	)
 }
@@ -330,20 +328,22 @@ func (m *model) resize() {
 	m.listWidth = third
 	// horizonal margin is just 2 because of the padding of 1
 	hMargin := 2
-	m.header.Width = m.width - hMargin
-	m.progress.Width = third
-	m.footer.Width = m.width - hMargin
+	m.header.SetWidth(m.width - hMargin)
+	m.progress.SetWidth(third)
+	m.footer.SetWidth(m.width - hMargin)
 
 	// resize the list
 	stepsListHeight := m.height - vMarginHeight
 	m.stepsList.SetHeight(stepsListHeight)
-	m.stepsList.SetWidth(m.listWidth - 1) // minus one because of the padding we render the list with
+	// Width(listWidth) is total outer width including borders (2) and padding (1 right),
+	// so the list content area is listWidth - 3.
+	m.stepsList.SetWidth(m.listWidth - 3)
 
-	// make the detail viewport
-	vpWidth := m.width - (m.listWidth + 2) - 2 // actual width plus margin
+	// make the detail viewport: total width minus list pane (listWidth) minus detail borders (2)
+	vpWidth := m.width - m.listWidth - 2
 	vpHeight := m.height - vMarginHeight
-	m.stepDetail.Height = vpHeight
-	m.stepDetail.Width = vpWidth
+	m.stepDetail.SetHeight(vpHeight)
+	m.stepDetail.SetWidth(vpWidth)
 
 	// NOTE: called here to ensure proportions
 	m.populateStepDetailView(true)
@@ -367,7 +367,7 @@ func (m *model) toggleFocus() {
 
 // handle up and down
 
-func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *model) handleNav(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	if m.focus == "detail" { // m.selectedStep != nil
 		m.stepDetail, cmd = m.stepDetail.Update(msg)
@@ -384,15 +384,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	// handle tick: data refresh and ticks
-	case tickMsg:
+	case common.TickMsg:
 		return m, tea.Batch(
 			m.fetchWorkflowCmd,
 			m.fetchStackCmd,
-			tea.Tick(
-				dataRefreshInterval,
-				func(t time.Time) tea.Msg {
-					return tickMsg(t)
-				}),
+			common.TickCmd(common.DefaultRefreshInterval),
 		)
 
 	case workflowFetchedMsg:
@@ -419,7 +415,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	// handle keystrokes
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
 			m.setQuitting()
@@ -525,7 +521,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
+	v := tea.NewView(m.viewContent())
+	v.AltScreen = true
+	return v
+}
+
+func (m model) viewContent() string {
 	if m.quitting {
 		return "quitting " + m.spinner.View()
 	}
@@ -555,13 +557,13 @@ func (m model) View() string {
 		if m.error != nil { // likely a 404 but worth refining later
 			content = common.FullPageDialog(common.FullPageDialogRequest{
 				Width:   m.width,
-				Height:  m.stepDetail.Height,
+				Height:  m.stepDetail.Height(),
 				Padding: 1,
 				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(m.error.Error()),
 				Level:   "error",
 			})
 		} else {
-			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.stepDetail.Height, Padding: 1, Content: "  Loading  ", Level: "info"})
+			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.stepDetail.Height(), Padding: 1, Content: "  Loading  ", Level: "info"})
 		}
 
 	} else {
@@ -603,7 +605,7 @@ func WorkflowApp(
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, workflow_id)
 	// initialize the program
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)
