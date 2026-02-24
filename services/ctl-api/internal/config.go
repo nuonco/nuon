@@ -19,7 +19,7 @@ func init() {
 	config.RegisterDefault("internal_http_port", "8082")
 	config.RegisterDefault("runner_http_port", "8083")
 	config.RegisterDefault("auth_http_port", "8084")
-	config.RegisterDefault("admin_dashboard_http_port", "8087")
+	config.RegisterDefault("admin_dashboard_http_port", "8085")
 	config.RegisterDefault("worker_healthcheck_port", "8086")
 	config.RegisterDefault("worker_healthcheck_enabled", true)
 
