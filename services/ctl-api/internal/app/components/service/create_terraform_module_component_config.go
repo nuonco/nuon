@@ -156,7 +156,7 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	latestVersion, err := getLatestTerraformVersion()
+	latestVersion, err := s.getLatestTerraformVersion()
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to fetch latest terraform version: %w", err))
 		return
@@ -167,7 +167,7 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	}
 
 	if err := req.Validate(s.v, latestVersion); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
