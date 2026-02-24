@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"go.uber.org/zap"
@@ -24,13 +25,14 @@ type OpenIDProvider struct {
 
 // OpenIDDiscoveryConfig holds the discovered OIDC configuration from the well-known endpoint.
 type OpenIDDiscoveryConfig struct {
-	Issuer                string   `json:"issuer"`
-	AuthorizationEndpoint string   `json:"authorization_endpoint"`
-	TokenEndpoint         string   `json:"token_endpoint"`
-	UserinfoEndpoint      string   `json:"userinfo_endpoint"`
-	JwksURI               string   `json:"jwks_uri"`
-	ScopesSupported       []string `json:"scopes_supported"`
-	ClaimsSupported       []string `json:"claims_supported"`
+	Issuer                            string   `json:"issuer"`
+	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
+	TokenEndpoint                     string   `json:"token_endpoint"`
+	UserinfoEndpoint                  string   `json:"userinfo_endpoint"`
+	JwksURI                           string   `json:"jwks_uri"`
+	ScopesSupported                   []string `json:"scopes_supported"`
+	ClaimsSupported                   []string `json:"claims_supported"`
+	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
 }
 
 // NewOpenIDProvider creates a new OpenID Connect provider instance.
@@ -70,12 +72,19 @@ func (p *OpenIDProvider) Configure(cfg *ProviderConfig) error {
 			if cfg.UserInfoURL == "" && p.discoveryConfig != nil {
 				cfg.UserInfoURL = p.discoveryConfig.UserinfoEndpoint
 			}
+			// Set AuthStyle from discovered token endpoint auth methods
+			if cfg.AuthStyle == 0 && p.discoveryConfig != nil {
+				cfg.AuthStyle = resolveAuthStyle(p.discoveryConfig.TokenEndpointAuthMethodsSupported)
+			}
 		}
 	}
 
 	// Validate required configuration
 	if cfg.ClientID == "" {
 		return fmt.Errorf("openid: client_id is required")
+	}
+	if cfg.ClientSecret == "" {
+		return fmt.Errorf("openid: client_secret is required")
 	}
 	if cfg.AuthURL == "" {
 		return fmt.Errorf("openid: auth_url is required (or provide issuer_url for discovery)")
@@ -96,6 +105,7 @@ func (p *OpenIDProvider) Configure(cfg *ProviderConfig) error {
 		zap.String("auth_url", cfg.AuthURL),
 		zap.String("token_url", cfg.TokenURL),
 		zap.String("userinfo_url", cfg.UserInfoURL),
+		zap.String("auth_style", authStyleName(cfg.AuthStyle)),
 		zap.Strings("scopes", cfg.Scopes))
 
 	return nil
@@ -178,4 +188,31 @@ func (p *OpenIDProvider) GetDiscoveryConfig() *OpenIDDiscoveryConfig {
 // AuthCodeURL returns the URL to redirect the user to for authentication.
 func (p *OpenIDProvider) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string {
 	return p.oauth2Cfg.AuthCodeURL(state, opts...)
+}
+
+// resolveAuthStyle maps OIDC token_endpoint_auth_methods_supported to an oauth2.AuthStyle.
+func resolveAuthStyle(methods []string) oauth2.AuthStyle {
+	if len(methods) == 0 {
+		return oauth2.AuthStyleAutoDetect
+	}
+	// Prefer client_secret_post (most common for Auth0 and similar providers)
+	if slices.Contains(methods, "client_secret_post") {
+		return oauth2.AuthStyleInParams
+	}
+	if slices.Contains(methods, "client_secret_basic") {
+		return oauth2.AuthStyleInHeader
+	}
+	return oauth2.AuthStyleAutoDetect
+}
+
+// authStyleName returns a human-readable name for the auth style (for logging).
+func authStyleName(s oauth2.AuthStyle) string {
+	switch s {
+	case oauth2.AuthStyleInParams:
+		return "client_secret_post"
+	case oauth2.AuthStyleInHeader:
+		return "client_secret_basic"
+	default:
+		return "auto_detect"
+	}
 }
