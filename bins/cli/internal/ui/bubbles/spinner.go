@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -62,8 +62,8 @@ func (m SpinnerModel) Init() tea.Cmd {
 // Update handles messages for the spinner model
 func (m SpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC {
+	case tea.KeyPressMsg:
+		if msg.String() == "ctrl+c" {
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -93,22 +93,22 @@ func (m SpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the spinner
-func (m SpinnerModel) View() string {
+func (m SpinnerModel) View() tea.View {
 	if m.json {
-		return ""
+		return tea.NewView("")
 	}
 
 	if m.result != nil {
-		return m.renderResult()
+		return tea.NewView(m.renderResult())
 	}
 
 	if m.quitting && m.result == nil {
-		return ""
+		return tea.NewView("")
 	}
 
 	// Format message with consistent width
 	formattedMsg := m.formatText(m.message)
-	return fmt.Sprintf("%s %s", m.spinner.View(), formattedMsg)
+	return tea.NewView(fmt.Sprintf("%s %s", m.spinner.View(), formattedMsg))
 }
 
 // renderResult renders the final result (success or failure)

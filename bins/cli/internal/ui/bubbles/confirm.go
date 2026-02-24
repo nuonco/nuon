@@ -2,10 +2,9 @@ package bubbles
 
 import (
 	"fmt"
-	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -34,31 +33,28 @@ func (m ConfirmModel) Init() tea.Cmd {
 // Update handles messages for the confirmation model
 func (m ConfirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC:
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c":
 			m.quitting = true
 			return m, tea.Quit
 
-		case tea.KeyLeft, tea.KeyShiftTab:
+		case "left", "shift+tab":
 			if m.choice > 0 {
 				m.choice--
 			}
 
-		case tea.KeyRight, tea.KeyTab:
+		case "right", "tab":
 			if m.choice < 1 {
 				m.choice++
 			}
 
-		case tea.KeyEnter, tea.KeySpace:
+		case "enter", "space":
 			m.result = m.choice == 0 // Yes = true, No = false
 			m.selected = true
 			m.quitting = true
 			return m, tea.Quit
-		}
 
-		// Handle y/n key shortcuts
-		switch strings.ToLower(msg.String()) {
 		case "y":
 			m.choice = 0
 			m.result = true
@@ -78,16 +74,16 @@ func (m ConfirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the confirmation dialog
-func (m ConfirmModel) View() string {
+func (m ConfirmModel) View() tea.View {
 	if m.quitting {
 		if m.selected {
 			resultText := "No"
 			if m.result {
 				resultText = "Yes"
 			}
-			return SuccessStyle.Render(fmt.Sprintf("✓ %s", resultText))
+			return tea.NewView(SuccessStyle.Render(fmt.Sprintf("✓ %s", resultText)))
 		}
-		return ""
+		return tea.NewView("")
 	}
 
 	// Render the prompt
@@ -129,7 +125,7 @@ func (m ConfirmModel) View() string {
 		help,
 	)
 
-	return BorderStyle.Render(content)
+	return tea.NewView(BorderStyle.Render(content))
 }
 
 // Result returns the confirmation result

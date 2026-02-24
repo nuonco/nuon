@@ -1,7 +1,9 @@
 package common
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"image/color"
+
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -14,7 +16,7 @@ var dialogBoxStyle = lipgloss.NewStyle().
 	BorderForeground(styles.PrimaryColor).
 	BorderBottom(true)
 
-var levelStyleMap = map[string]lipgloss.CompleteAdaptiveColor{
+var levelStyleMap = map[string]color.Color{
 	"default": styles.SubtleColor,
 	"warning": styles.WarningColor,
 	"error":   styles.ErrorColor,
@@ -30,7 +32,7 @@ type FullPageDialogRequest struct {
 	Level   string
 }
 
-func (r FullPageDialogRequest) getLevelStyle() lipgloss.CompleteAdaptiveColor {
+func (r FullPageDialogRequest) getLevelStyle() color.Color {
 	style, ok := levelStyleMap[r.Level]
 	if ok {
 		return style
@@ -49,7 +51,7 @@ func FullPageDialog(req FullPageDialogRequest) string {
 			Height(lipgloss.Height(req.Content)).
 			Render(req.Content),
 		lipgloss.WithWhitespaceChars("⦾∙"),
-		lipgloss.WithWhitespaceForeground(styles.Ghost),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(styles.Ghost)),
 	)
 	return dialog
 }

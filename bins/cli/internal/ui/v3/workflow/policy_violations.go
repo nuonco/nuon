@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -66,7 +66,7 @@ func (m model) stepDetailViewPolicyViolations() string {
 	lookup := policyNameLookup(m)
 	sections := []string{header}
 
-	contentWidth := m.stepDetail.Width - 6
+	contentWidth := m.stepDetail.Width() - 6
 
 	if len(denyViolations) > 0 {
 		headerText := styles.TextError.Render(fmt.Sprintf("Deny violations (%d)", len(denyViolations)))
@@ -77,7 +77,7 @@ func (m model) stepDetailViewPolicyViolations() string {
 				lines = append(lines, "")
 			}
 		}
-		sections = append(sections, policyDenyStyle.Width(m.stepDetail.Width-2).Padding(1).Render(lipgloss.JoinVertical(lipgloss.Left, lines...)))
+		sections = append(sections, policyDenyStyle.Width(m.stepDetail.Width()-2).Padding(1).Render(lipgloss.JoinVertical(lipgloss.Left, lines...)))
 	}
 
 	if len(warnViolations) > 0 {
@@ -89,11 +89,11 @@ func (m model) stepDetailViewPolicyViolations() string {
 				lines = append(lines, "")
 			}
 		}
-		sections = append(sections, policyWarnStyle.Width(m.stepDetail.Width-2).Padding(1).Render(lipgloss.JoinVertical(lipgloss.Left, lines...)))
+		sections = append(sections, policyWarnStyle.Width(m.stepDetail.Width()-2).Padding(1).Render(lipgloss.JoinVertical(lipgloss.Left, lines...)))
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
-	return policySectionStyle.Width(m.stepDetail.Width).Padding(1).Margin(0, 0, 1).Render(content)
+	return policySectionStyle.Width(m.stepDetail.Width()).Padding(1).Margin(0, 0, 1).Render(content)
 }
 
 func formatPolicyViolationLine(violation policyViolation, lookup policyNameLookup, width int) string {

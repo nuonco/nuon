@@ -9,13 +9,12 @@ package run
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -26,13 +25,12 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"go.uber.org/zap"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 const (
-	minRequiredWidth    int           = 100
-	minRequiredHeight   int           = 20
-	dataRefreshInterval time.Duration = time.Second * 5
+	minRequiredWidth  int = 100
+	minRequiredHeight int = 20
 )
 
 type Model struct {
@@ -129,9 +127,9 @@ func initialModel(
 		actionWorkflowID: actionWorkflowID,
 		runID:            runID,
 
-		header:  viewport.New(minRequiredWidth, 4),
-		footer:  viewport.New(minRequiredWidth, 4),
-		sidebar: viewport.New(int(minRequiredWidth/3), 10),
+		header:  viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(4)),
+		footer:  viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(4)),
+		sidebar: viewport.New(viewport.WithWidth(int(minRequiredWidth/3)), viewport.WithHeight(10)),
 		spinner: s,
 		status:  common.StatusBarRequest{Message: ""},
 
@@ -151,7 +149,7 @@ func initialModel(
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchInstallActionWorkflowRunCmd,
-		tick,
+		common.TickCmd(common.DefaultRefreshInterval),
 		m.spinner.Tick,
 		m.stepsView.Init(),
 	)
@@ -179,14 +177,14 @@ func (m *Model) reflow() {
 	m.stepsHeight = m.height - vMarginHeight
 	m.stepsView.SetSize(m.stepsWidth, m.stepsHeight)
 
-	m.sidebar.Width = (m.width - m.stepsWidth) - 4
-	m.sidebar.Height = m.height - vMarginHeight
+	m.sidebar.SetWidth((m.width - m.stepsWidth) - 4)
+	m.sidebar.SetHeight(m.height - vMarginHeight)
 
 	// horizontal margin is just 2 because of the padding of 1
 	hMargin := 2
-	m.header.Width = m.width - hMargin
-	m.footer.Width = m.width - hMargin
-	m.help.Width = m.width - hMargin
+	m.header.SetWidth(m.width - hMargin)
+	m.footer.SetWidth(m.width - hMargin)
+	m.help.SetWidth(m.width - hMargin)
 }
 
 func (m *Model) setContent() {
@@ -220,14 +218,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	// handle tick: data refresh
-	case tickMsg:
+	case common.TickMsg:
 		return m, tea.Batch(
 			m.fetchInstallActionWorkflowRunCmd,
-			tea.Tick(
-				dataRefreshInterval,
-				func(t time.Time) tea.Msg {
-					return tickMsg(t)
-				}),
+			common.TickCmd(common.DefaultRefreshInterval),
 		)
 
 	case installActionWorkflowRunFetchedMsg:
@@ -239,7 +233,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	// handle keystrokes
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			m.setQuitting()

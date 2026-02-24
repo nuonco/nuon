@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/generics"
@@ -30,7 +30,7 @@ func (m model) stepIsApprovable() bool {
 
 func (m model) StepDetailApprovalRequiredBanner() string {
 	s := styles.ApprovalConfirmation.
-		Width(m.stepDetail.Width).Margin(0, 0, 1).
+		Width(m.stepDetail.Width()).Margin(0, 0, 1).
 		Render(lipgloss.JoinVertical(lipgloss.Center,
 			"approval required",
 			"",
@@ -45,7 +45,7 @@ func (m model) stepDetailViewApprovalConfirmationBanner() string {
 			lipgloss.Center,
 			m.spinner.View()+" Approving step...",
 		)
-		return styles.ApprovalConfirmation.Width(m.stepDetail.Width).Margin(0, 0, 1).Render(s)
+		return styles.ApprovalConfirmation.Width(m.stepDetail.Width()).Margin(0, 0, 1).Render(s)
 	}
 	s := lipgloss.JoinVertical(
 		lipgloss.Center,
@@ -57,7 +57,7 @@ func (m model) stepDetailViewApprovalConfirmationBanner() string {
 			lipgloss.NewStyle().Padding(0, 2).Render("[esc] Cancel"),
 		),
 	)
-	return styles.ApprovalConfirmation.Width(m.stepDetail.Width).Margin(0, 0, 1).Render(s)
+	return styles.ApprovalConfirmation.Width(m.stepDetail.Width()).Margin(0, 0, 1).Render(s)
 }
 
 func (m model) stepDetailViewStepJSON() string {
@@ -77,7 +77,7 @@ func (m model) stepDetailViewStepJSON() string {
 	style := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		Padding(1).Margin(0, 1).
-		Width(m.stepDetail.Width - 4)
+		Width(m.stepDetail.Width() - 4)
 	jsonBytes, err := json.MarshalIndent(m.selectedStep, "", "  ")
 	if err != nil {
 		return fmt.Sprintf("Error marshaling step JSON: %v", err)
@@ -157,7 +157,7 @@ func (m model) stepDetailViewInstallStackOutputs() string {
 func (m model) stepDetailViewInstallStack() string {
 	step := m.selectedStep
 	s := ""
-	s += lipgloss.NewStyle().Width(m.stepDetail.Width).Padding(1).Render(
+	s += lipgloss.NewStyle().Width(m.stepDetail.Width()).Padding(1).Render(
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			styles.TextBold.Render("Install stack is waiting to run"),
@@ -173,7 +173,7 @@ func (m model) stepDetailViewInstallStack() string {
 	stack := m.stack.Versions[0]
 	cliCreateCmd := fmt.Sprintf("aws cloudformation create-stack --stack-name [YOUR_STACK_NAME] --template-url %s", stack.TemplateURL)
 	cliUpdateCmd := fmt.Sprintf("aws cloudformation update-stack --stack-name [YOUR_STACK_NAME] --template-url %s", stack.TemplateURL)
-	s += lipgloss.NewStyle().Width(m.stepDetail.Width).Padding(1).Render(
+	s += lipgloss.NewStyle().Width(m.stepDetail.Width()).Padding(1).Render(
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			// install stack
@@ -183,27 +183,27 @@ func (m model) stepDetailViewInstallStack() string {
 				styles.TextSubtle.Render(" Install Quick Link"),
 				styles.TextSubtle.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenQuickLink.Help().Key)),
 			),
-			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.QuickLinkURL),
+			styles.Link.Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.QuickLinkURL),
 			// install template link
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
 				styles.TextSubtle.Render(" Install Template Link"),
 				styles.TextSubtle.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenTemplateLink.Help().Key)),
 			),
-			styles.Link.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.TemplateURL),
+			styles.Link.Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.TemplateURL),
 			// divider
-			styles.TextSubtle.Width(m.stepDetail.Width-6).Margin(0, 1, 1).Render(" --- or --- "),
+			styles.TextSubtle.Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Render(" --- or --- "),
 			// CLI cmd
 			styles.TextSubtle.Render(" Setup your install stack using CLI command"),
-			lipgloss.NewStyle().Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliCreateCmd),
+			lipgloss.NewStyle().Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliCreateCmd),
 			// CLI update cmd
 			styles.TextSubtle.Render(" Setup your install stack using CLI command"),
-			lipgloss.NewStyle().Width(m.stepDetail.Width-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliUpdateCmd),
+			lipgloss.NewStyle().Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliUpdateCmd),
 		),
 	)
 
 	if m.stack.InstallStackOutputs != nil {
-		s += lipgloss.NewStyle().Width(m.stepDetail.Width).Padding(1).Render(
+		s += lipgloss.NewStyle().Width(m.stepDetail.Width()).Padding(1).Render(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
 				styles.TextBold.Margin(0, 0, 1).Render("Stack Outputs"),
@@ -229,8 +229,8 @@ func (m *model) populateStepDetailView(goToTop bool) {
 			Padding(1, 3).
 			Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to cancel this workflow?", "", "Press [C] to confirm."))
 		dialog := common.FullPageDialog(common.FullPageDialogRequest{
-			Width:   m.stepDetail.Width,
-			Height:  m.stepDetail.Height,
+			Width:   m.stepDetail.Width(),
+			Height:  m.stepDetail.Height(),
 			Padding: 2,
 			Content: content,
 			Level:   "error",
@@ -247,7 +247,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 				lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to approve all?", "", "Press [A] to confirm."),
 			)
 		dialog := common.FullPageDialog(common.FullPageDialogRequest{
-			Width: m.stepDetail.Width, Height: m.stepDetail.Height,
+			Width: m.stepDetail.Width(), Height: m.stepDetail.Height(),
 			Padding: 2,
 			Content: content,
 			Level:   "warning",
@@ -270,7 +270,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	if step.Status.Status == models.AppStatusPending {
 		pendingMessage := lipgloss.NewStyle().
 			Padding(2).
-			Width(m.stepDetail.Width).
+			Width(m.stepDetail.Width()).
 			Render("nothing to see at the moment...")
 		sections = append(sections, pendingMessage)
 	}
@@ -288,7 +288,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		l1 := lipgloss.NewStyle().Bold(true).Render("Plan Approved") + "\n"
 		l1 += "These changes have been approved and changes will be applied."
 		banner := styles.SuccessBanner.
-			Width(m.stepDetail.Width).
+			Width(m.stepDetail.Width()).
 			Margin(0, 0, 1).
 			Render(l1)
 		sections = append(sections, banner)
@@ -302,7 +302,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	// title
 	style := styles.GetStatusStyle(step.Status.Status)
 	title := style.
-		Width(m.stepDetail.Width).
+		Width(m.stepDetail.Width()).
 		Bold(true).
 		Padding(1).
 		Render(

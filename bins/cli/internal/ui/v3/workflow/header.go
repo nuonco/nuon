@@ -1,7 +1,7 @@
 package workflow
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -89,7 +89,7 @@ func (m model) headerView() string {
 	m.progress.SetPercent(progress)
 
 	content = common.RenderHeader(common.HeaderConfig{
-		Width:         m.header.Width,
+		Width:         m.header.Width(),
 		Title:         m.workflow.Name,
 		Status:        m.workflow.Status.Status,
 		StepsTotal:    len(m.workflow.Steps),

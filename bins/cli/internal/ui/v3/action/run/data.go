@@ -3,7 +3,7 @@ package run
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/run/steps"
 )
 
