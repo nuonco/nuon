@@ -67,4 +67,3 @@ var (
 				Italic(true).
 				Padding(0, 1)
 )
-
