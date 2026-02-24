@@ -26,10 +26,10 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 		return validatorPkg.FormatValidationError(err)
 	}
 
-	if c.AWSAccount == nil && c.AzureAccount == nil {
+	if c.AWSAccount == nil && c.AzureAccount == nil && c.GCPAccount == nil {
 		return stderr.ErrUser{
-			Description: "either AWSAccount or AzureAccount must be provided",
-			Err:         fmt.Errorf("either AWSAccount or AzureAccount must be provided"),
+			Description: "one of AWSAccount, AzureAccount, or GCPAccount must be provided",
+			Err:         fmt.Errorf("one of AWSAccount, AzureAccount, or GCPAccount must be provided"),
 		}
 	}
 
@@ -38,6 +38,21 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 			return stderr.ErrUser{
 				Description: "AWSAccount region is required",
 				Err:         fmt.Errorf("AWSAccount region is required"),
+			}
+		}
+	}
+
+	if c.GCPAccount != nil {
+		if c.GCPAccount.ProjectID == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount project_id is required",
+				Err:         fmt.Errorf("GCPAccount project_id is required"),
+			}
+		}
+		if c.GCPAccount.Region == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount region is required",
+				Err:         fmt.Errorf("GCPAccount region is required"),
 			}
 		}
 	}
@@ -133,10 +148,10 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 		return validatorPkg.FormatValidationError(err)
 	}
 
-	if c.AWSAccount == nil && c.AzureAccount == nil {
+	if c.AWSAccount == nil && c.AzureAccount == nil && c.GCPAccount == nil {
 		return stderr.ErrUser{
-			Description: "either AWSAccount or AzureAccount must be provided",
-			Err:         fmt.Errorf("either AWSAccount or AzureAccount must be provided"),
+			Description: "one of AWSAccount, AzureAccount, or GCPAccount must be provided",
+			Err:         fmt.Errorf("one of AWSAccount, AzureAccount, or GCPAccount must be provided"),
 		}
 	}
 
@@ -145,6 +160,21 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 			return stderr.ErrUser{
 				Description: "AWSAccount region is required",
 				Err:         fmt.Errorf("AWSAccount region is required"),
+			}
+		}
+	}
+
+	if c.GCPAccount != nil {
+		if c.GCPAccount.ProjectID == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount project_id is required",
+				Err:         fmt.Errorf("GCPAccount project_id is required"),
+			}
+		}
+		if c.GCPAccount.Region == "" {
+			return stderr.ErrUser{
+				Description: "GCPAccount region is required",
+				Err:         fmt.Errorf("GCPAccount region is required"),
 			}
 		}
 	}
