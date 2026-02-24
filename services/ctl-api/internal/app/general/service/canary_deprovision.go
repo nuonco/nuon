@@ -23,6 +23,7 @@ type DeprovisionCanaryRequest struct {
 // @Accept					json
 // @Produce				json
 // @Success				201	{string}	ok
+// @Deprecated
 // @Router					/v1/general/deprovision-canary [post]
 func (c *service) DeprovisionCanary(ctx *gin.Context) {
 	var req DeprovisionCanaryRequest
