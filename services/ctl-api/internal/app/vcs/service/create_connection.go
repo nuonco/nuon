@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/go-github/v50/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -61,7 +60,7 @@ func (s *service) CreateConnection(ctx *gin.Context) {
 	}
 
 	// Fetch org name
-	ghAccount, err := s.getGithubAccount(ctx, req.GithubInstallID)
+	ghAccount, err := s.ghClient.GetInstallationAccount(ctx, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org name: %w", err))
 		return
@@ -98,24 +97,4 @@ func (s *service) createOrgConnection(
 	// NOTE(jm): when this is a duplicate, the returned ID is not actually valid, as it is set by the create hook in
 	// GORM, but then the conflict happens after.
 	return &vcsConn, nil
-}
-
-func (s *service) getGithubAccount(ctx context.Context, installId string) (*github.User, error) {
-	ghClient, err := s.helpers.GetJWTVCSConnectionClient()
-	if err != nil {
-		return nil, fmt.Errorf("unable to create jwt vcs connection client: %w", err)
-	}
-	iInstallId, err := strconv.ParseInt(installId, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("unable to convert github install ID to int: %w", err)
-	}
-
-	ghInstallation, _, err := ghClient.Apps.GetInstallation(ctx, iInstallId)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get github installation: %w", err)
-	}
-	if ghInstallation.Account == nil {
-		return nil, fmt.Errorf("github installation account is nil")
-	}
-	return ghInstallation.Account, nil
 }
