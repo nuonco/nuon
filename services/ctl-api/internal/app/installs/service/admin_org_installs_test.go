@@ -91,9 +91,10 @@ func (s *AdminOrgInstallsTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 }
 
 func (s *AdminOrgInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -142,9 +143,11 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 			name: "get installs for org with multiple installs",
 			setupFunc: func() string {
 				ctx := context.Background()
+				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
 				// Create 2 more installs for the same org
 				for i := 0; i < 2; i++ {
-					install := s.service.Seeder.CreateInstall(ctx, s.T())
+					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 					s.T().Cleanup(func() {
 						s.service.DB.Unscoped().Delete(install)
 					})
@@ -191,34 +194,11 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create another org with installs
-				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
-					SandboxMode: true,
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/other",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(org2).Error
-				require.NoError(s.T(), err)
-
-				app2 := &app.App{
-					ID:    domains.NewAppID(),
-					OrgID: org2.ID,
-					Name:  "other-app",
-				}
-				err = s.service.DB.WithContext(ctx).Create(app2).Error
-				require.NoError(s.T(), err)
-
-				install2 := &app.Install{
-					ID:    domains.NewInstallID(),
-					OrgID: org2.ID,
-					AppID: app2.ID,
-					Name:  "other-install",
-				}
-				err = s.service.DB.WithContext(ctx).Create(install2).Error
-				require.NoError(s.T(), err)
+				// Create another org with installs using seeder helpers
+				ctx, org2 := s.service.Seeder.EnsureOrg(ctx, s.T())
+				app2 := s.service.Seeder.CreateApp(ctx, s.T())
+				s.service.Seeder.CreateAppConfig(ctx, s.T(), app2.ID)
+				install2 := s.service.Seeder.CreateInstall(ctx, s.T(), app2)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(install2)

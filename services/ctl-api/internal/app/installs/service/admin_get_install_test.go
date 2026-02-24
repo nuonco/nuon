@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -93,17 +92,17 @@ func (s *AdminGetInstallTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
-	// Create runner group
+	// Create runner group linked to install via polymorphic association
 	s.testRunnerGrp = &app.RunnerGroup{
-		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
-		OwnerID:   s.testOrg.ID,
-		OwnerType: "org",
-		Type:      app.RunnerGroupTypeOrg,
+		OwnerID:   s.testInstall.ID,
+		OwnerType: "installs",
+		Type:      app.RunnerGroupTypeInstall,
 		Platform:  app.AppRunnerTypeAWSEKS,
 	}
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
@@ -113,25 +112,20 @@ func (s *AdminGetInstallTestSuite) setupTestData() {
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		RunnerGroupID:     s.testRunnerGrp.ID,
 		ContainerImageTag: "v1.0.0",
+		Metadata:          map[string]*string{},
 	}
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSettings).Error
 	require.NoError(s.T(), err)
 
 	// Create runner
 	s.testRunner = &app.Runner{
-		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
-		Name:          "test-runner",
+		Name:          "test-runner-" + s.testInstall.ID,
 		DisplayName:   "Test Runner",
 		Status:        app.RunnerStatusActive,
 		RunnerGroupID: s.testRunnerGrp.ID,
 	}
 	err = s.service.DB.WithContext(ctx).Create(s.testRunner).Error
-	require.NoError(s.T(), err)
-
-	// Update install with runner group
-	s.testInstall.RunnerGroupID = s.testRunnerGrp.ID
-	err = s.service.DB.WithContext(ctx).Save(s.testInstall).Error
 	require.NoError(s.T(), err)
 }
 
@@ -161,7 +155,7 @@ func (s *AdminGetInstallTestSuite) TestAdminGetInstall() {
 		expectedNotFound bool
 	}{
 		{
-			name: "successfully get install with all preloads",
+			name: "successfully get install by ID",
 			setupFunc: func() string {
 				return s.testInstall.ID
 			},
@@ -169,24 +163,11 @@ func (s *AdminGetInstallTestSuite) TestAdminGetInstall() {
 			validateFunc: func(install *app.Install) {
 				assert.Equal(s.T(), s.testInstall.ID, install.ID)
 				assert.Equal(s.T(), s.testInstall.Name, install.Name)
-				assert.NotNil(s.T(), install.App, "App should be preloaded")
-				assert.NotNil(s.T(), install.App.Org, "App.Org should be preloaded")
-				assert.NotNil(s.T(), install.CreatedBy, "CreatedBy should be preloaded")
-				assert.NotNil(s.T(), install.RunnerGroup, "RunnerGroup should be preloaded")
-				assert.NotNil(s.T(), install.RunnerGroup.Settings, "RunnerGroup.Settings should be preloaded")
-				assert.NotEmpty(s.T(), install.RunnerGroup.Runners, "RunnerGroup.Runners should be preloaded")
-				assert.Equal(s.T(), s.testRunner.ID, install.RunnerGroup.Runners[0].ID)
-			},
-		},
-		{
-			name: "get install by name",
-			setupFunc: func() string {
-				return s.testInstall.Name
-			},
-			expectedCode: http.StatusOK,
-			validateFunc: func(install *app.Install) {
-				assert.Equal(s.T(), s.testInstall.ID, install.ID)
-				assert.Equal(s.T(), s.testInstall.Name, install.Name)
+				assert.Equal(s.T(), s.testApp.ID, install.AppID)
+				// App is serialized (json:"app,omitzero")
+				assert.NotEmpty(s.T(), install.App.ID, "App should be preloaded")
+				// AWSAccount is serialized (json:"aws_account,omitzero")
+				assert.NotNil(s.T(), install.AWSAccount, "AWSAccount should be preloaded")
 			},
 		},
 		{

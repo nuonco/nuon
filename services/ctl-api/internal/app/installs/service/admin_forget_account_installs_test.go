@@ -19,10 +19,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -99,9 +97,10 @@ func (s *AdminForgetAccountInstallsTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 }
 
 func (s *AdminForgetAccountInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -134,53 +133,28 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 			name: "successfully forget installs for account with AWS account",
 			setupFunc: func() AdminForgetAccountInstallsRequest {
 				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org (non-sandbox to pass filter)
-				org := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "test-org-aws",
-					SandboxMode: false,
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/test",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(org).Error
-				require.NoError(s.T(), err)
+				// Must set account context before creating entities with created_by_id
+				ctx, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
+				ctx, org := s.service.Seeder.EnsureOrg(ctx, s.T())
+				testApp := s.service.Seeder.CreateApp(ctx, s.T())
+				s.service.Seeder.CreateAppConfig(ctx, s.T(), testApp.ID)
+				install := s.service.Seeder.CreateInstall(ctx, s.T(), testApp)
 
-				// Create app
-				testApp := &app.App{
-					ID:    domains.NewAppID(),
-					OrgID: org.ID,
-					Name:  "test-app",
-				}
-				err = s.service.DB.WithContext(ctx).Create(testApp).Error
-				require.NoError(s.T(), err)
-
-				// Create install first, then create AWS account linked to it
+				// Update the install's AWS account with specific IAMRoleARN
 				testAccountID := "123456789012"
-				install := &app.Install{
-					OrgID: org.ID,
-					AppID: testApp.ID,
-					Name:  "test-install-aws",
-				}
-				err = s.service.DB.WithContext(ctx).Create(install).Error
+				err := s.service.DB.WithContext(ctx).
+					Model(&app.AWSAccount{}).
+					Where("install_id = ?", install.ID).
+					Update("iam_role_arn", "arn:aws:iam::"+testAccountID+":role/test-role").Error
 				require.NoError(s.T(), err)
 
-				awsAcct := &app.AWSAccount{
-					OrgID:      org.ID,
-					InstallID:  install.ID,
-					IAMRoleARN: "arn:aws:iam::" + testAccountID + ":role/test-role",
-					Region:     "us-west-2",
-				}
-				err = s.service.DB.WithContext(ctx).Create(awsAcct).Error
-				require.NoError(s.T(), err)
-				err = s.service.DB.WithContext(ctx).Create(install).Error
+				// Toggle sandbox mode off so the handler's filter doesn't skip it
+				err = s.service.DB.WithContext(ctx).Model(org).Update("sandbox_mode", false).Error
 				require.NoError(s.T(), err)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(install)
-					s.service.DB.Unscoped().Delete(awsAcct)
 					s.service.DB.Unscoped().Delete(testApp)
 					s.service.DB.Unscoped().Delete(org)
 				})
@@ -220,7 +194,7 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 					AccountID: "",
 				}
 			},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusBadRequest,
 			expectedSignal:   false,
 			expectedNotFound: true,
 		},

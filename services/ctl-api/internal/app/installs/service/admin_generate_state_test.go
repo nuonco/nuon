@@ -97,9 +97,10 @@ func (s *AdminGenerateStateTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 }
 
 func (s *AdminGenerateStateTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -181,7 +182,7 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 				return "ins000000000000000000000000"
 			},
 			requestBody:      AdminInstallGenerateInstallStateRequest{},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusNotFound,
 			expectedSignal:   false,
 			expectedNotFound: true,
 		},

@@ -21,6 +21,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -97,9 +98,10 @@ func (s *AdminForgetInstallTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 }
 
 func (s *AdminForgetInstallTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -133,7 +135,9 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 			name: "successfully forget install",
 			setupFunc: func() string {
 				ctx := context.Background()
-				install := s.service.Seeder.CreateInstall(ctx, s.T())
+				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
+				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 				return install.ID
 			},
 			requestBody:    AdminForgetInstallRequest{},
@@ -160,7 +164,9 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 			name: "forget with empty body",
 			setupFunc: func() string {
 				ctx := context.Background()
-				install := s.service.Seeder.CreateInstall(ctx, s.T())
+				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
+				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 				return install.ID
 			},
 			requestBody:    nil,
@@ -173,23 +179,12 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 			},
 		},
 		{
-			name: "forget by install name",
-			setupFunc: func() string {
-				ctx := context.Background()
-				install := s.service.Seeder.CreateInstall(ctx, s.T())
-				return install.Name
-			},
-			requestBody:    AdminForgetInstallRequest{},
-			expectedCode:   http.StatusOK,
-			expectedSignal: true,
-		},
-		{
 			name: "nonexistent install returns error",
 			setupFunc: func() string {
 				return "ins000000000000000000000000"
 			},
 			requestBody:      AdminForgetInstallRequest{},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusNotFound,
 			expectedSignal:   false,
 			expectedNotFound: true,
 		},

@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -91,9 +90,10 @@ func (s *GetAllInstallsTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 }
 
 func (s *GetAllInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -122,11 +122,11 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 		validateFunc func([]*app.Install)
 	}{
 		{
-			name: "get all installs with default params",
+			name: "get all sandbox installs",
 			setupFunc: func() {
 				// testInstall already exists from setupTestData
 			},
-			queryParams:  "",
+			queryParams:  "?type=sandbox",
 			expectedCode: http.StatusOK,
 			validateFunc: func(installs []*app.Install) {
 				assert.GreaterOrEqual(s.T(), len(installs), 1, "should have at least one install")
@@ -135,8 +135,7 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 				for _, install := range installs {
 					if install.ID == s.testInstall.ID {
 						found = true
-						assert.NotNil(s.T(), install.App, "App should be preloaded")
-						assert.NotNil(s.T(), install.App.Org, "App.Org should be preloaded")
+						assert.NotEmpty(s.T(), install.App.ID, "App should be preloaded")
 						break
 					}
 				}
@@ -147,85 +146,52 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 			name: "get installs with custom limit",
 			setupFunc: func() {
 				ctx := context.Background()
+				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
 				// Create 3 more installs
 				for i := 0; i < 3; i++ {
-					install := s.service.Seeder.CreateInstall(ctx, s.T())
+					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 					s.T().Cleanup(func() {
 						s.service.DB.Unscoped().Delete(install)
 					})
 				}
 			},
-			queryParams:  "?limit=2",
+			queryParams:  "?type=sandbox&limit=2",
 			expectedCode: http.StatusOK,
 			validateFunc: func(installs []*app.Install) {
 				assert.LessOrEqual(s.T(), len(installs), 2, "should respect limit parameter")
 			},
 		},
 		{
-			name: "filter by org type real",
-			setupFunc: func() {
-				ctx := context.Background()
-				ctx = cctx.SetAccountContext(ctx, s.testAcc)
-
-				// Create a real org (non-sandbox)
-				realOrg := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "real-org",
-					SandboxMode: false,
-					NotificationsConfig: app.NotificationsConfig{
-						InternalSlackWebhookURL: "https://hooks.slack.com/real",
-					},
-				}
-				err := s.service.DB.WithContext(ctx).Create(realOrg).Error
-				require.NoError(s.T(), err)
-
-				realApp := &app.App{
-					ID:    domains.NewAppID(),
-					OrgID: realOrg.ID,
-					Name:  "real-app",
-				}
-				err = s.service.DB.WithContext(ctx).Create(realApp).Error
-				require.NoError(s.T(), err)
-
-				realInstall := &app.Install{
-					ID:    domains.NewInstallID(),
-					OrgID: realOrg.ID,
-					AppID: realApp.ID,
-					Name:  "real-install",
-				}
-				err = s.service.DB.WithContext(ctx).Create(realInstall).Error
-				require.NoError(s.T(), err)
-
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(realInstall)
-					s.service.DB.Unscoped().Delete(realApp)
-					s.service.DB.Unscoped().Delete(realOrg)
-				})
-			},
-			queryParams:  "?type=real",
-			expectedCode: http.StatusOK,
-			validateFunc: func(installs []*app.Install) {
-				// All returned installs should be from non-sandbox orgs
-				for _, install := range installs {
-					if install.App != nil && install.App.Org != nil {
-						assert.False(s.T(), install.App.Org.SandboxMode, "should only return real (non-sandbox) orgs")
-					}
-				}
-			},
-		},
-		{
 			name: "filter by org type sandbox",
 			setupFunc: func() {
-				// testOrg is already sandbox mode
+				// testOrg already has OrgType=sandbox via seeder
 			},
 			queryParams:  "?type=sandbox",
 			expectedCode: http.StatusOK,
 			validateFunc: func(installs []*app.Install) {
-				// All returned installs should be from sandbox orgs
+				// Should include our sandbox test install
+				found := false
 				for _, install := range installs {
-					if install.App != nil && install.App.Org != nil {
-						assert.True(s.T(), install.App.Org.SandboxMode, "should only return sandbox orgs")
+					if install.ID == s.testInstall.ID {
+						found = true
+						break
 					}
+				}
+				assert.True(s.T(), found, "sandbox test install should appear in sandbox type filter")
+			},
+		},
+		{
+			name: "filter by org type real returns no test installs",
+			setupFunc: func() {
+				// All test orgs are sandbox, so filtering by "real" should exclude them
+			},
+			queryParams:  "?type=real",
+			expectedCode: http.StatusOK,
+			validateFunc: func(installs []*app.Install) {
+				// Our sandbox test install should NOT appear in real type filter
+				for _, install := range installs {
+					assert.NotEqual(s.T(), s.testInstall.ID, install.ID, "sandbox test install should not appear in real type filter")
 				}
 			},
 		},

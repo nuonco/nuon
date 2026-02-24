@@ -21,6 +21,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -97,9 +98,10 @@ func (s *AdminForgetOrgInstallsTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 }
 
 func (s *AdminForgetOrgInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -133,11 +135,13 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			name: "successfully forget all installs for org",
 			setupFunc: func() string {
 				ctx := context.Background()
+				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
 
 				// Create 3 installs for the test org
 				var installIDs []string
 				for i := 0; i < 3; i++ {
-					install := s.service.Seeder.CreateInstall(ctx, s.T())
+					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 					installIDs = append(installIDs, install.ID)
 
 					s.T().Cleanup(func() {
@@ -166,7 +170,9 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			name: "forget with empty body",
 			setupFunc: func() string {
 				ctx := context.Background()
-				install := s.service.Seeder.CreateInstall(ctx, s.T())
+				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
+				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(install)
@@ -181,12 +187,12 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 		{
 			name: "org with no installs returns success",
 			setupFunc: func() string {
-				// testOrg has testInstall, but we'll use a different org
+				// Previous test cases already forgot all installs for testOrg
 				return s.testOrg.ID
 			},
 			requestBody:    AdminForgetOrgInstallsRequest{},
 			expectedCode:   http.StatusOK,
-			expectedSignal: true, // testInstall will be forgotten
+			expectedSignal: false,
 		},
 		{
 			name: "nonexistent org returns empty response",

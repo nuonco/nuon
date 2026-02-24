@@ -80,10 +80,12 @@ func (s *ReprovisionInstallTestSuite) SetupTest() {
 	s.mockEvClient.Reset()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
+	// ReprovisionInstall creates install_workflows which require created_by_id and org_id.
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -97,9 +99,10 @@ func (s *ReprovisionInstallTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 }
 
 func (s *ReprovisionInstallTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -210,7 +213,7 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 			requestBody: ReprovisionInstallRequest{
 				PlanOnly: false,
 			},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusNotFound,
 			expectedSignal:   false,
 			expectedNotFound: true,
 		},

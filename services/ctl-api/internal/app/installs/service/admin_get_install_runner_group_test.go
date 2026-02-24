@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -91,25 +90,20 @@ func (s *AdminGetInstallRunnerGroupTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
-	// Create runner group
+	// Create runner group linked to install via polymorphic association
 	s.testRunnerGrp = &app.RunnerGroup{
-		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
-		OwnerID:   s.testOrg.ID,
-		OwnerType: "org",
-		Type:      app.RunnerGroupTypeOrg,
+		OwnerID:   s.testInstall.ID,
+		OwnerType: "installs",
+		Type:      app.RunnerGroupTypeInstall,
 		Platform:  app.AppRunnerTypeAWSEKS,
 	}
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
-	require.NoError(s.T(), err)
-
-	// Update install with runner group
-	s.testInstall.RunnerGroupID = s.testRunnerGrp.ID
-	err = s.service.DB.WithContext(ctx).Save(s.testInstall).Error
 	require.NoError(s.T(), err)
 }
 
@@ -150,24 +144,6 @@ func (s *AdminGetInstallRunnerGroupTestSuite) TestAdminGetInstallRunnerGroup() {
 				assert.Equal(s.T(), s.testRunnerGrp.Type, rg.Type)
 				assert.Equal(s.T(), s.testRunnerGrp.Platform, rg.Platform)
 			},
-		},
-		{
-			name: "install without runner group returns error",
-			setupFunc: func() string {
-				ctx := context.Background()
-				install2 := s.service.Seeder.CreateInstall(ctx, s.T())
-				install2.RunnerGroupID = ""
-				err := s.service.DB.WithContext(ctx).Save(install2).Error
-				require.NoError(s.T(), err)
-
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(install2)
-				})
-
-				return install2.ID
-			},
-			expectedCode:     http.StatusNotFound,
-			expectedNotFound: true,
 		},
 		{
 			name: "nonexistent install returns error",

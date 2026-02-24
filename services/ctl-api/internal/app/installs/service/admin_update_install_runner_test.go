@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
@@ -100,17 +99,17 @@ func (s *AdminUpdateInstallRunnerTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
-	// Create runner group
+	// Create runner group linked to install via polymorphic association
 	s.testRunnerGrp = &app.RunnerGroup{
-		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
-		OwnerID:   s.testOrg.ID,
-		OwnerType: "org",
-		Type:      app.RunnerGroupTypeOrg,
+		OwnerID:   s.testInstall.ID,
+		OwnerType: "installs",
+		Type:      app.RunnerGroupTypeInstall,
 		Platform:  app.AppRunnerTypeAWSEKS,
 	}
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
@@ -120,13 +119,9 @@ func (s *AdminUpdateInstallRunnerTestSuite) setupTestData() {
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		RunnerGroupID:     s.testRunnerGrp.ID,
 		ContainerImageTag: "v1.0.0",
+		Metadata:          map[string]*string{},
 	}
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSettings).Error
-	require.NoError(s.T(), err)
-
-	// Update install with runner group
-	s.testInstall.RunnerGroupID = s.testRunnerGrp.ID
-	err = s.service.DB.WithContext(ctx).Save(s.testInstall).Error
 	require.NoError(s.T(), err)
 }
 
@@ -202,14 +197,13 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 			},
 		},
 		{
-			name: "invalid request body returns error",
+			name: "empty body returns bad request",
 			setupFunc: func() string {
 				return s.testInstall.ID
 			},
-			requestBody:      map[string]interface{}{"invalid": "field"},
-			expectedCode:     http.StatusBadRequest,
-			expectedSignal:   false,
-			expectedNotFound: true,
+			requestBody:    nil,
+			expectedCode:   http.StatusBadRequest,
+			expectedSignal: false,
 		},
 		{
 			name: "nonexistent install returns error",

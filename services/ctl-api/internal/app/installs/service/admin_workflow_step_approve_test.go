@@ -40,6 +40,7 @@ type AdminWorkflowStepApproveTestSuite struct {
 	app         *fxtest.App
 	service     AdminWorkflowStepApproveTestService
 	router      *gin.Engine
+	ctx         context.Context
 	testOrg     *app.Org
 	testAcc     *app.Account
 	testApp     *app.App
@@ -73,10 +74,11 @@ func (s *AdminWorkflowStepApproveTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
+	// Admin routes need account context for created_by_id on workflow-related records
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -87,12 +89,13 @@ func (s *AdminWorkflowStepApproveTestSuite) TearDownSuite() {
 }
 
 func (s *AdminWorkflowStepApproveTestSuite) setupTestData() {
-	ctx := context.Background()
+	s.ctx = context.Background()
 
-	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
-	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.ctx, s.testAcc = s.service.Seeder.EnsureAccount(s.ctx, s.T())
+	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
+	s.testApp = s.service.Seeder.CreateApp(s.ctx, s.T())
+	s.service.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
 }
 
 func (s *AdminWorkflowStepApproveTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -123,7 +126,7 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 		{
 			name: "successfully approve workflow step",
 			setupFunc: func() AdminWorkflowStepApproveRequest {
-				ctx := context.Background()
+				ctx := s.ctx
 
 				// Create workflow
 				workflow := &app.Workflow{
@@ -140,21 +143,20 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 
 				// Create workflow step
 				step := &app.WorkflowStep{
-					ID:         domains.NewWorkflowStepID(),
-					OrgID:      s.testOrg.ID,
-					WorkflowID: workflow.ID,
-					Name:       "test-step",
-					Status:     app.NewCompositeStatus(ctx, app.StatusPending),
+					ID:                domains.NewWorkflowStepID(),
+					OrgID:             s.testOrg.ID,
+					InstallWorkflowID: workflow.ID,
+					Name:              "test-step",
+					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 				}
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)
 
 				// Create approval
 				approval := &app.WorkflowStepApproval{
-					ID:               domains.NewWorkflowStepApprovalID(),
-					OrgID:            s.testOrg.ID,
-					WorkflowStepID:   step.ID,
-					ApprovalRequired: true,
+					OrgID:                 s.testOrg.ID,
+					InstallWorkflowStepID: step.ID,
+					Type:                  app.TerraformPlanApprovalType,
 				}
 				err = s.service.DB.WithContext(ctx).Create(approval).Error
 				require.NoError(s.T(), err)
@@ -180,7 +182,7 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 		{
 			name: "step already approved returns error",
 			setupFunc: func() AdminWorkflowStepApproveRequest {
-				ctx := context.Background()
+				ctx := s.ctx
 
 				// Create workflow
 				workflow := &app.Workflow{
@@ -197,21 +199,20 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 
 				// Create workflow step
 				step := &app.WorkflowStep{
-					ID:         domains.NewWorkflowStepID(),
-					OrgID:      s.testOrg.ID,
-					WorkflowID: workflow.ID,
-					Name:       "test-step",
-					Status:     app.NewCompositeStatus(ctx, app.StatusPending),
+					ID:                domains.NewWorkflowStepID(),
+					OrgID:             s.testOrg.ID,
+					InstallWorkflowID: workflow.ID,
+					Name:              "test-step",
+					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 				}
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)
 
 				// Create approval
 				approval := &app.WorkflowStepApproval{
-					ID:               domains.NewWorkflowStepApprovalID(),
-					OrgID:            s.testOrg.ID,
-					WorkflowStepID:   step.ID,
-					ApprovalRequired: true,
+					OrgID:                 s.testOrg.ID,
+					InstallWorkflowStepID: step.ID,
+					Type:                  app.TerraformPlanApprovalType,
 				}
 				err = s.service.DB.WithContext(ctx).Create(approval).Error
 				require.NoError(s.T(), err)
@@ -244,7 +245,7 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 		{
 			name: "step without approval returns error",
 			setupFunc: func() AdminWorkflowStepApproveRequest {
-				ctx := context.Background()
+				ctx := s.ctx
 
 				// Create workflow
 				workflow := &app.Workflow{
@@ -261,11 +262,11 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 
 				// Create workflow step without approval
 				step := &app.WorkflowStep{
-					ID:         domains.NewWorkflowStepID(),
-					OrgID:      s.testOrg.ID,
-					WorkflowID: workflow.ID,
-					Name:       "test-step",
-					Status:     app.NewCompositeStatus(ctx, app.StatusPending),
+					ID:                domains.NewWorkflowStepID(),
+					OrgID:             s.testOrg.ID,
+					InstallWorkflowID: workflow.ID,
+					Name:              "test-step",
+					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 				}
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)
@@ -289,17 +290,17 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 					StepID: "wks000000000000000000000000",
 				}
 			},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusNotFound,
 			expectedNotFound: true,
 		},
 		{
-			name: "invalid request body returns error",
+			name: "empty step ID returns not found",
 			setupFunc: func() AdminWorkflowStepApproveRequest {
 				return AdminWorkflowStepApproveRequest{
 					StepID: "",
 				}
 			},
-			expectedCode:     http.StatusBadRequest,
+			expectedCode:     http.StatusNotFound,
 			expectedNotFound: true,
 		},
 	}

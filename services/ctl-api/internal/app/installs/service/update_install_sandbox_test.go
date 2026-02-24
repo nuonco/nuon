@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -91,15 +90,16 @@ func (s *UpdateInstallSandboxTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	appConfig := s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
 	// Create sandbox config
 	s.testSandboxConfig = &app.AppSandboxConfig{
-		ID:    domains.NewAppSandboxConfigID(),
-		AppID: s.testApp.ID,
-		OrgID: s.testOrg.ID,
+		AppID:       s.testApp.ID,
+		AppConfigID: appConfig.ID,
+		OrgID:       s.testOrg.ID,
 	}
 	err := s.service.DB.WithContext(ctx).Create(s.testSandboxConfig).Error
 	require.NoError(s.T(), err)
@@ -155,35 +155,25 @@ func (s *UpdateInstallSandboxTestSuite) TestAdminUpdateSandbox() {
 		{
 			name: "install without sandbox config returns error",
 			setupFunc: func() string {
+				// Create a second app + install via seeder, then remove the sandbox config
 				ctx := context.Background()
+				ctx, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
+				ctx, _ = s.service.Seeder.EnsureOrg(ctx, s.T())
+				app2 := s.service.Seeder.CreateApp(ctx, s.T())
+				s.service.Seeder.CreateAppConfig(ctx, s.T(), app2.ID)
+				install2 := s.service.Seeder.CreateInstall(ctx, s.T(), app2)
 
-				// Create app without sandbox config
-				app2 := &app.App{
-					ID:    domains.NewAppID(),
-					OrgID: s.testOrg.ID,
-					Name:  "app-no-sandbox",
-				}
-				err := s.service.DB.WithContext(ctx).Create(app2).Error
+				// Clear the install's sandbox config FK, then delete sandbox configs
+				err := s.service.DB.Model(&app.Install{}).Where("id = ?", install2.ID).
+					Update("app_sandbox_config_id", nil).Error
 				require.NoError(s.T(), err)
-
-				install2 := &app.Install{
-					ID:    domains.NewInstallID(),
-					OrgID: s.testOrg.ID,
-					AppID: app2.ID,
-					Name:  "install-no-sandbox",
-				}
-				err = s.service.DB.WithContext(ctx).Create(install2).Error
+				err = s.service.DB.Unscoped().Where("app_id = ?", app2.ID).Delete(&app.AppSandboxConfig{}).Error
 				require.NoError(s.T(), err)
-
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(install2)
-					s.service.DB.Unscoped().Delete(app2)
-				})
 
 				return install2.ID
 			},
 			requestBody:      AdminUpdateSandboxRequest{},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusNotFound,
 			expectedNotFound: true,
 		},
 		{
@@ -192,7 +182,7 @@ func (s *UpdateInstallSandboxTestSuite) TestAdminUpdateSandbox() {
 				return "ins000000000000000000000000"
 			},
 			requestBody:      AdminUpdateSandboxRequest{},
-			expectedCode:     http.StatusInternalServerError,
+			expectedCode:     http.StatusNotFound,
 			expectedNotFound: true,
 		},
 	}

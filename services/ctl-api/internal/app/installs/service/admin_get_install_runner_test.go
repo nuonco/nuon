@@ -19,8 +19,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -92,37 +92,31 @@ func (s *AdminGetInstallRunnerTestSuite) setupTestData() {
 	ctx := context.Background()
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
-	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
+	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
-	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T())
+	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
+	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
-	// Create runner group
+	// Create runner group linked to install via polymorphic association
 	s.testRunnerGrp = &app.RunnerGroup{
-		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
-		OwnerID:   s.testOrg.ID,
-		OwnerType: "org",
-		Type:      app.RunnerGroupTypeOrg,
+		OwnerID:   s.testInstall.ID,
+		OwnerType: "installs",
+		Type:      app.RunnerGroupTypeInstall,
 		Platform:  app.AppRunnerTypeAWSEKS,
 	}
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
+	// Create runner in the runner group
 	s.testRunner = &app.Runner{
-		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
-		Name:          "test-runner",
+		Name:          "test-runner-" + s.testInstall.ID,
 		DisplayName:   "Test Runner",
 		Status:        app.RunnerStatusActive,
 		RunnerGroupID: s.testRunnerGrp.ID,
 	}
 	err = s.service.DB.WithContext(ctx).Create(s.testRunner).Error
-	require.NoError(s.T(), err)
-
-	// Update install with runner group
-	s.testInstall.RunnerGroupID = s.testRunnerGrp.ID
-	err = s.service.DB.WithContext(ctx).Save(s.testInstall).Error
 	require.NoError(s.T(), err)
 }
 
@@ -168,27 +162,25 @@ func (s *AdminGetInstallRunnerTestSuite) TestAdminGetInstallRunner() {
 			name: "install without runners returns error",
 			setupFunc: func() string {
 				ctx := context.Background()
+				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
 
-				// Create runner group without runners
+				// Create a second install with a runner group that has no runners
+				install2 := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+
 				rg2 := &app.RunnerGroup{
-					ID:        domains.NewRunnerGroupID(),
 					OrgID:     s.testOrg.ID,
-					OwnerID:   s.testOrg.ID,
-					OwnerType: "org",
-					Type:      app.RunnerGroupTypeOrg,
+					OwnerID:   install2.ID,
+					OwnerType: "installs",
+					Type:      app.RunnerGroupTypeInstall,
 					Platform:  app.AppRunnerTypeAWSEKS,
 				}
 				err := s.service.DB.WithContext(ctx).Create(rg2).Error
 				require.NoError(s.T(), err)
 
-				install2 := s.service.Seeder.CreateInstall(ctx, s.T())
-				install2.RunnerGroupID = rg2.ID
-				err = s.service.DB.WithContext(ctx).Save(install2).Error
-				require.NoError(s.T(), err)
-
 				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(install2)
 					s.service.DB.Unscoped().Delete(rg2)
+					s.service.DB.Unscoped().Delete(install2)
 				})
 
 				return install2.ID
