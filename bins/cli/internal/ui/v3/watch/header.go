@@ -76,7 +76,7 @@ func (m model) headerView() string {
 	m.progress.SetPercent(progress)
 
 	content = common.RenderHeader(common.HeaderConfig{
-		Width:         m.header.Width,
+		Width:         m.header.Width(),
 		Title:         fmt.Sprintf("Install Workflows (%d)", len(m.workflows)),
 		Status:        overallStatus,
 		StepsTotal:    stepsFinished + stepsPending,

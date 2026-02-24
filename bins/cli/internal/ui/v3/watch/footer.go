@@ -1,7 +1,7 @@
 package watch
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -15,12 +15,12 @@ func (m model) logMessageView() string {
 }
 
 func (m model) footerView() string {
-	if m.footer.Width == 0 {
+	if m.footer.Width() == 0 {
 		content := "\n" + m.help.View(m.keys)
 		m.footer.SetContent(content)
 		return m.footer.View()
 	}
-	footerMaxContentWidth := m.footer.Width - 3
+	footerMaxContentWidth := m.footer.Width() - 3
 	if footerMaxContentWidth < 0 {
 		content := "\n" + m.help.View(m.keys)
 		m.footer.SetContent(content)

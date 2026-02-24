@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -46,7 +46,7 @@ func (m *Model) setSidebarContent() string {
 	stepIDToName := m.getStepIDToNameMap()
 
 	// steps
-	stepStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Width(m.sidebar.Width - 2)
+	stepStyle := lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Width(m.sidebar.Width() - 2)
 	for _, step := range m.run.Steps {
 		status := styles.GetStatusStyle(models.AppStatus(step.Status)).Render(fmt.Sprintf("[%s]", step.Status))
 

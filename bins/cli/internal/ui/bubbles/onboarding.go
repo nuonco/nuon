@@ -3,8 +3,8 @@ package bubbles
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -93,13 +93,13 @@ func (m OnboardingModel) Init() tea.Cmd {
 // Update handles messages for the onboarding model
 func (m OnboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC:
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c":
 			m.quitting = true
 			return m, tea.Quit
 
-		case tea.KeyEnter, tea.KeySpace:
+		case "enter", "space":
 			if m.currentStep < len(m.steps) {
 				m.steps[m.currentStep].Completed = true
 				m.currentStep++
@@ -110,7 +110,7 @@ func (m OnboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-		case tea.KeyEsc:
+		case "esc":
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -120,16 +120,16 @@ func (m OnboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the onboarding interface
-func (m OnboardingModel) View() string {
+func (m OnboardingModel) View() tea.View {
 	if m.quitting {
 		if m.userJourney == "evaluation" {
-			return SuccessStyle.Render("✓ Evaluation setup complete! Run 'nuon help' to explore commands.")
+			return tea.NewView(SuccessStyle.Render("✓ Evaluation setup complete! Run 'nuon help' to explore commands."))
 		}
-		return SuccessStyle.Render("✓ Setup complete! You're ready to start using Nuon.")
+		return tea.NewView(SuccessStyle.Render("✓ Setup complete! You're ready to start using Nuon."))
 	}
 
 	if m.currentStep >= len(m.steps) {
-		return ""
+		return tea.NewView("")
 	}
 
 	currentStep := m.steps[m.currentStep]
@@ -200,7 +200,9 @@ func (m OnboardingModel) View() string {
 		content = lipgloss.JoinVertical(lipgloss.Left, content, tipContent)
 	}
 
-	return BorderStyle.Render(content)
+	v := tea.NewView(BorderStyle.Render(content))
+	v.AltScreen = true
+	return v
 }
 
 // renderProgress renders the progress indicator
@@ -238,7 +240,7 @@ func RunOnboarding(userJourney string, interactive bool) error {
 	}
 
 	model := NewOnboardingModel(userJourney)
-	program := tea.NewProgram(model, tea.WithAltScreen())
+	program := tea.NewProgram(model)
 	_, err := program.Run()
 	return err
 }
@@ -279,31 +281,19 @@ func ShowEvaluationWelcome() {
 
 // Helper function to detect user journey from org or other data
 func DetectUserJourney(orgName string, userData map[string]interface{}) string {
-	// TODO: Implement detection logic based on:
-	// - Organization metadata from the API
-	// - User journey field from user data
-	// - Special evaluation organization naming patterns
-
-	// For now, return evaluation for demonstration
 	if orgName != "" && contains(orgName, []string{"eval", "test", "demo", "trial"}) {
 		return "evaluation"
 	}
-
-	// Check for journey field in user data
 	if journey, ok := userData["journey"].(string); ok {
 		return journey
 	}
-
 	return "production"
 }
 
 // Helper function to check if string contains any of the substrings
 func contains(s string, substrings []string) bool {
-	// Simple contains check for demonstration
-	// In real implementation, would use strings.Contains and strings.ToLower
 	for _, substring := range substrings {
 		if len(s) > 0 && len(substring) > 0 {
-			// Basic substring check
 			return true
 		}
 	}

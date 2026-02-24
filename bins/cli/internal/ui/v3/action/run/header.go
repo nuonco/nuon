@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -52,14 +51,14 @@ func (m *Model) setHeaderContent() {
 	if runStatus == "in_progress" || runStatus == "running" {
 		title = m.spinner.View() + " " + title
 	} else {
-		icon := getStepStatusIcon(string(runStatus))
+		icon := styles.GetStepStatusIcon(string(runStatus))
 		title = statusStyle.Render(fmt.Sprintf("%s ", icon)) + title
 	}
 	status = statusStyle.Render(fmt.Sprintf(" [%s]", runStatus))
 
 	left := lipgloss.JoinHorizontal(lipgloss.Left, title, status)
 	right := lipgloss.JoinHorizontal(lipgloss.Left, prompt)
-	spacer := strings.Repeat(" ", common.Max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
+	spacer := strings.Repeat(" ", max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
 
 	// top row has two sections:
 	// [ title ] ... [ status ] with spacing between
@@ -81,5 +80,5 @@ func (m *Model) setHeaderContent() {
 
 	content = lipgloss.JoinVertical(lipgloss.Right, topRow, bottomRow)
 	m.header.SetContent(content)
-	m.header.Height = lipgloss.Height(content)
+	m.header.SetHeight(lipgloss.Height(content))
 }

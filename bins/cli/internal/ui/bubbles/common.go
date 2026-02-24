@@ -1,7 +1,7 @@
 package bubbles
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -67,18 +67,3 @@ var (
 				Italic(true).
 				Padding(0, 1)
 )
-
-// Helper functions
-func Max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func Min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

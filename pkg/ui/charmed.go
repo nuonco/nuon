@@ -10,11 +10,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 var (
-	special   = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
+	special   = lipgloss.Color("#73F59F")
 	checkMark = lipgloss.NewStyle().SetString("✓").
 			Foreground(special).
 			PaddingRight(1).
@@ -77,7 +77,7 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 		s := shellSymbol
 		s += k + strings.Repeat(" ", maxKLen-len(k)) + " = "
 		if redact {
-			s += lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#969B86", Dark: "#696969"}).Render(vp)
+			s += lipgloss.NewStyle().Foreground(lipgloss.Color("#696969")).Render(vp)
 		} else {
 			s += vp
 		}

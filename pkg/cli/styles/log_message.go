@@ -1,6 +1,6 @@
 package styles
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 var LogMessageStyle = lipgloss.NewStyle().Padding(0, 1).Foreground(lipgloss.Color("240"))
 

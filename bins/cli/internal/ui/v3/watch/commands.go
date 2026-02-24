@@ -1,18 +1,9 @@
 package watch
 
 import (
-	"time"
-
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
-
-type tickMsg time.Time
-
-func tick() tea.Msg {
-	time.Sleep(time.Second * 5)
-	return tickMsg{}
-}
 
 type workflowsFetchedMsg struct {
 	workflows []*models.AppWorkflow
