@@ -122,6 +122,10 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 			UseDefault: true,
 		}
 		envVars["ARM_SUBSCRIPTION_ID"] = "{{.nuon.install_stack.outputs.subscription_id}}"
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		// GCP runner uses attached service account — set project/region env vars
+		envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
+		envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
 	}
 	if err := render.RenderMap(&envVars, stateData); err != nil {
 		l.Error("error rendering env-vars",
