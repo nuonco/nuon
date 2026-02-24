@@ -51,19 +51,19 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Info("the plan has no ApplyPlanContents, intializing workspace without plan", zap.Int("plan.bytes.count", len(planBytes)))
 		wkspace, err = p.getWorkspace()
 	}
+	if err != nil {
+		p.writeErrorResult(ctx, "load terraform workspace", err)
+		return fmt.Errorf("unable to create workspace from config: %w", err)
+	}
+
+	l.Info(
+		"workspace acquired",
+		zap.String("root", wkspace.Root()),
+	)
 
 	// initialize
 	if err := wkspace.InitRoot(ctx); err != nil {
 		return errors.Wrap(err, "unable to initialize root")
-	}
-	if err != nil {
-		p.writeErrorResult(ctx, "load terraform workspace", err)
-		return fmt.Errorf("unable to create workspace from config: %w", err)
-	} else {
-		l.Info(
-			"workspace acquired",
-			zap.String("root", wkspace.Root()),
-		)
 	}
 
 	// assign workspace
