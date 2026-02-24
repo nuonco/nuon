@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v50/github"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -59,39 +58,13 @@ func (s *service) ListConnectionRepos(ctx *gin.Context) {
 		return
 	}
 
-	response, err := s.listGithubRepos(ctx, vcsConn)
+	repos, err := s.ghClient.ListInstallationRepos(ctx, vcsConn)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to list repositories: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, response)
-}
-
-func (s *service) listGithubRepos(ctx *gin.Context, vcsConn *app.VCSConnection) (*VCSConnectionReposResponse, error) {
-	ghClient, err := s.helpers.GetVCSConnectionClient(ctx, vcsConn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GitHub client: %w", err)
-	}
-
-	var allRepos []*github.Repository
-	opts := &github.ListOptions{PerPage: 100}
-
-	for {
-		repos, resp, err := ghClient.Apps.ListRepos(ctx, opts)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list GitHub repositories: %w", err)
-		}
-
-		allRepos = append(allRepos, repos.Repositories...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
-	}
-
-	return buildReposResponse(allRepos), nil
+	ctx.JSON(http.StatusOK, buildReposResponse(repos))
 }
 
 func buildReposResponse(ghRepos []*github.Repository) *VCSConnectionReposResponse {

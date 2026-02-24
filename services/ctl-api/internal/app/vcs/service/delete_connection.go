@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -43,7 +42,7 @@ func (s *service) DeleteConnection(ctx *gin.Context) {
 		return
 	}
 
-	err = s.deleteGithubAppInstallation(ctx, vcsConn.GithubInstallID)
+	err = s.ghClient.DeleteInstallation(ctx, vcsConn.GithubInstallID)
 	if err != nil {
 		// If we can't delete the Github App installation, we should still try
 		// to delete the connection from our DB.
@@ -66,22 +65,6 @@ func (s *service) deleteConnection(ctx context.Context, vcsConn *app.VCSConnecti
 	}
 	if res.RowsAffected != 1 {
 		return fmt.Errorf("connection not found: %w", gorm.ErrRecordNotFound)
-	}
-
-	return nil
-}
-
-func (s *service) deleteGithubAppInstallation(ctx context.Context, installId string) error {
-	ghClient, err := s.helpers.GetJWTVCSConnectionClient()
-
-	iInstallId, err := strconv.ParseInt(installId, 10, 64)
-	if err != nil {
-		return fmt.Errorf("unable to convert github install ID to int: %w", err)
-	}
-
-	_, err = ghClient.Apps.DeleteInstallation(ctx, iInstallId)
-	if err != nil {
-		return fmt.Errorf("unable to delete github app installation id: %d: %w", iInstallId, err)
 	}
 
 	return nil

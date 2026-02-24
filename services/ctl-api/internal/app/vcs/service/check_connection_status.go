@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -77,17 +76,7 @@ func (s *service) checkGithubInstallationStatus(
 ) (*VCSConnectionStatusResponse, error) {
 	checkedAt := time.Now().UTC()
 
-	ghClient, err := s.helpers.GetJWTVCSConnectionClient()
-	if err != nil {
-		return nil, fmt.Errorf("unable to create jwt vcs connection client: %w", err)
-	}
-
-	installID, err := strconv.ParseInt(vcsConn.GithubInstallID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("unable to convert github install ID to int: %w", err)
-	}
-
-	installation, _, err := ghClient.Apps.GetInstallation(ctx, installID)
+	installation, err := s.ghClient.GetInstallation(ctx, vcsConn.GithubInstallID)
 	if err != nil {
 		return &VCSConnectionStatusResponse{
 			Status:          "unknown",
