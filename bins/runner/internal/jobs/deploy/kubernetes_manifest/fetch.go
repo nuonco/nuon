@@ -46,8 +46,10 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 		return errors.Wrap(err, "unable to build plan auth for job")
 	}
 
-	h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
-	h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+	if h.state.plan.KubernetesManifestDeployPlan.ClusterInfo != nil {
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+	}
 
 	l.Info("fetching app config")
 	appCfg, err := h.apiClient.GetAppConfig(ctx, plan.AppID, plan.AppConfigID)

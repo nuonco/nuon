@@ -90,34 +90,6 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		Attrs:           attrs,
 	}
 
-	// this code is not being used anymore, we use compositeplan.planauth for all auth related information
-	// if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
-	// 	role := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
-	//
-	// 	if !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
-	// 		if run.TriggerType != app.ActionWorkflowTriggerTypeManual {
-	// 			return nil, fmt.Errorf("break glass role can only be used for manual action triggers")
-	// 		}
-	// 		roleArn, ok := stack.InstallStackOutputs.AWSStackOutputs.BreakGlassRoleARNs[run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString()]
-	// 		if !ok {
-	// 			l.Error(fmt.Sprintf(
-	// 				"break glass role %s not provisioned in install stack",
-	// 				run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString(),
-	// 			))
-	// 			return nil, fmt.Errorf("break glass role not provisioned in install stack")
-	// 		}
-	// 		role = roleArn
-	// 	}
-	//
-	// 	plan.AWSAuth = &awscredentials.Config{
-	// 		Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-	// 		AssumeRole: &awscredentials.AssumeRoleConfig{
-	// 			SessionName: fmt.Sprintf("install-action-workflow-%s", run.ID),
-	// 			RoleARN:     role,
-	// 		},
-	// 	}
-	// }
-
 	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
 	if err == nil {
 		plan.ClusterInfo = clusterInfo

@@ -45,6 +45,11 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 		return errors.Wrap(err, "unable to build plan auth for job")
 	}
 
+	if h.state.plan.ClusterInfo != nil {
+		h.state.plan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
+		h.state.plan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+	}
+
 	// fetch the run object
 	run, err := h.apiClient.GetInstallActionWorkflowRun(ctx,
 		plan.InstallID,
