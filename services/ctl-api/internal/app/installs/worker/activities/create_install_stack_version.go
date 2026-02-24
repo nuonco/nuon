@@ -30,8 +30,10 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	var templateURL, quickLinkURL string
 	switch app.AppRunnerType(req.Platform) {
 	case app.AppRunnerTypeGCP:
+		// GCS stores templates as zip files for Infrastructure Manager
+		gcsBucketKey := strings.TrimSuffix(bucketKey, ".json") + ".zip"
 		if a.cfg.GCPStackTemplateBaseURL != "" {
-			templateURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.GCPStackTemplateBaseURL, "/"), bucketKey)
+			templateURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.GCPStackTemplateBaseURL, "/"), gcsBucketKey)
 		} else {
 			templateURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
 		}

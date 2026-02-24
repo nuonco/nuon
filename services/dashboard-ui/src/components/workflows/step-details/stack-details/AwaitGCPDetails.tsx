@@ -35,20 +35,22 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
     }
   }
 
-  const setupCmd = `gcloud services enable config.googleapis.com cloudbuild.googleapis.com --project=${projectId} && \\
-gcloud iam service-accounts create nuon-deployer --project=${projectId} --display-name="Nuon Infrastructure Manager deployer" && \\
-gcloud projects add-iam-policy-binding ${projectId} \\
-  --member="serviceAccount:nuon-deployer@${projectId}.iam.gserviceaccount.com" \\
-  --role="roles/config.agent" && \\
-gcloud projects add-iam-policy-binding ${projectId} \\
-  --member="serviceAccount:nuon-deployer@${projectId}.iam.gserviceaccount.com" \\
-  --role="roles/editor"`
+  const enableApisCmd = `gcloud services enable config.googleapis.com cloudbuild.googleapis.com --project=${projectId}`
 
-  const deployCmd = `gcloud infra-manager deployments apply \\
-  projects/${projectId}/locations/${region}/deployments/nuon-${installId} \\
-  --service-account=projects/${projectId}/serviceAccounts/nuon-deployer@${projectId}.iam.gserviceaccount.com \\
-  --gcs-source=${templateUrl?.replace('https://storage.googleapis.com/', 'gs://')} \\
-  --project=${projectId}`
+  const createSaCmd = `gcloud iam service-accounts create nuon-deployer --project=${projectId} --display-name="Nuon Infrastructure Manager deployer"`
+
+  const grantRolesCmd = `gcloud projects add-iam-policy-binding ${projectId} --member="serviceAccount:nuon-deployer@${projectId}.iam.gserviceaccount.com" --role="roles/config.agent"
+
+gcloud projects add-iam-policy-binding ${projectId} --member="serviceAccount:nuon-deployer@${projectId}.iam.gserviceaccount.com" --role="roles/editor"
+
+gcloud projects add-iam-policy-binding ${projectId} --member="serviceAccount:nuon-deployer@${projectId}.iam.gserviceaccount.com" --role="roles/resourcemanager.projectIamAdmin"`
+
+  // Convert S3 URL to GCS URI if template is on GCS, otherwise use S3 URL as-is
+  const gcsSource = templateUrl?.includes('storage.googleapis.com')
+    ? templateUrl.replace('https://storage.googleapis.com/', 'gs://')
+    : templateUrl
+
+  const deployCmd = `gcloud infra-manager deployments apply projects/${projectId}/locations/${region}/deployments/nuon-${installId} --service-account=projects/${projectId}/serviceAccounts/nuon-deployer@${projectId}.iam.gserviceaccount.com --gcs-source=${gcsSource} --project=${projectId}`
 
   const terraformCmd = `mkdir -p nuon-stack && cd nuon-stack && curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
 
@@ -60,35 +62,38 @@ gcloud projects add-iam-policy-binding ${projectId} \\
         </Text>
 
         <Card>
+          <Text weight="strong">Step 1: Enable required APIs</Text>
           <span className="flex justify-between items-center">
-            <span className="flex flex-col gap-1">
-              <Text weight="strong">Step 1: One-time setup</Text>
-              <Text variant="subtext">
-                Enable APIs and create a service account for Infrastructure Manager (run once per project)
-              </Text>
-            </span>
-            <ClickToCopyButton
-              className="w-fit self-end"
-              textToCopy={setupCmd}
-            />
+            <Code className="flex-1">{enableApisCmd}</Code>
+            <ClickToCopyButton className="w-fit ml-2" textToCopy={enableApisCmd} />
           </span>
-          <Code>{setupCmd}</Code>
         </Card>
 
         <Card>
+          <Text weight="strong">Step 2: Create deployer service account</Text>
           <span className="flex justify-between items-center">
-            <span className="flex flex-col gap-1">
-              <Text weight="strong">Step 2: Deploy the stack</Text>
-              <Text variant="subtext">
-                Infrastructure Manager will provision VPC, runner, and all required resources
-              </Text>
-            </span>
-            <ClickToCopyButton
-              className="w-fit self-end"
-              textToCopy={deployCmd}
-            />
+            <Code className="flex-1">{createSaCmd}</Code>
+            <ClickToCopyButton className="w-fit ml-2" textToCopy={createSaCmd} />
           </span>
-          <Code>{deployCmd}</Code>
+        </Card>
+
+        <Card>
+          <Text weight="strong">Step 3: Grant permissions</Text>
+          <span className="flex justify-between items-center">
+            <Code className="flex-1">{grantRolesCmd}</Code>
+            <ClickToCopyButton className="w-fit ml-2" textToCopy={grantRolesCmd} />
+          </span>
+        </Card>
+
+        <Card>
+          <Text weight="strong">Step 4: Deploy the stack</Text>
+          <Text variant="subtext">
+            Infrastructure Manager will provision VPC, runner, and all required resources
+          </Text>
+          <span className="flex justify-between items-center">
+            <Code className="flex-1">{deployCmd}</Code>
+            <ClickToCopyButton className="w-fit ml-2" textToCopy={deployCmd} />
+          </span>
         </Card>
       </div>
 
