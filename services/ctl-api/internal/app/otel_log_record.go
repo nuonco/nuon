@@ -42,7 +42,7 @@ type OtelLogRecord struct {
 	SeverityText       string            `json:"severity_text,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"severity_text,omitzero,omitempty"`
 	SeverityNumber     int               `json:"severity_number,omitzero" gorm:"type:UInt8" temporaljson:"severity_number,omitzero,omitempty"`
 	ServiceName        string            `json:"service_name,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"service_name,omitzero,omitempty"`
-	Body               string            `json:"body,omitzero" gorm:"codecZSTD(1);index:idx_body,type:tokenbf_v1(32768\\,3\\,0),granularity:8;" temporaljson:"body,omitzero,omitempty"`
+	Body               string            `json:"body,omitzero" gorm:"codec:ZSTD(1);index:idx_body,type:tokenbf_v1(32768\\,3\\,0),granularity:8;" temporaljson:"body,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"resource_schema_url,omitzero,omitempty"`
 	ResourceAttributes map[string]string `json:"resource_attributes,omitzero" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ScopeSchemaURL     string            `json:"scope_schema_url,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"scope_schema_url,omitzero,omitempty"`
