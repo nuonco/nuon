@@ -59,6 +59,9 @@ type AppInstallActionWorkflowRun struct {
 	// outputs
 	Outputs any `json:"outputs,omitempty"`
 
+	// Role to be used when running this action
+	Role string `json:"role,omitempty"`
+
 	// run env vars
 	RunEnvVars map[string]string `json:"run_env_vars,omitempty"`
 

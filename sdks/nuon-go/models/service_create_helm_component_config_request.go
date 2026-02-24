@@ -53,6 +53,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
 
+	// operation roles
+	OperationRoles map[string]string `json:"operation_roles,omitempty"`
+
 	// public git vcs config
 	PublicGitVcsConfig *ServicePublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 

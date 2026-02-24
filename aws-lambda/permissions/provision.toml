@@ -1,0 +1,9 @@
+type = "provision"
+name = "{{.nuon.install.id}}-provision"
+description = "provision the sandbox and components; trigger actions."
+display_name = "provision role"
+permissions_boundary = "./provision_boundary.json"
+
+[[policies]]
+managed_policy_name = "AdministratorAccess"
+

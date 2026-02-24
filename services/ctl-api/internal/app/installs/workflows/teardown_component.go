@@ -62,6 +62,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: generics.FromPtrStr(componentID),
+				Role:        flw.Role,
 			},
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
@@ -73,6 +74,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			Type: signals.OperationExecuteTeardownComponentApplyPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: generics.FromPtrStr(componentID),
+				Role:        flw.Role,
 			},
 		}, flw.PlanOnly)
 		if err != nil {

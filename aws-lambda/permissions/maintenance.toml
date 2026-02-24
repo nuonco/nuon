@@ -1,0 +1,8 @@
+type = "maintenance"
+name                 = "{{ .nuon.install.id }}-maintenance"
+description          = "operate and remediate the app's components and use actions."
+display_name         = "maintenance role"
+permissions_boundary = "./maintenance_boundary.json"
+
+[[policies]]
+managed_policy_name = "AdministratorAccess"

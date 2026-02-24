@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -32,6 +33,22 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 		return errors.Wrap(err, "unable to parse action workflow run plan")
 	}
 	h.state.plan = &plan
+
+	l.Info("fetching composite plan for the job")
+	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job plan")
+	}
+
+	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)
+	if err != nil {
+		return errors.Wrap(err, "unable to build plan auth for job")
+	}
+
+	if h.state.plan.ClusterInfo != nil {
+		h.state.plan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
+		h.state.plan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+	}
 
 	// fetch the run object
 	run, err := h.apiClient.GetInstallActionWorkflowRun(ctx,

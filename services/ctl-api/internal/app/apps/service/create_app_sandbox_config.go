@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -27,6 +28,8 @@ type CreateAppSandboxConfigRequest struct {
 	Variables      map[string]*string `json:"variables" validate:"required"`
 	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
 
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
+
 	References []string `json:"references"`
 
 	AppConfigID string `json:"app_config_id"`
@@ -36,6 +39,15 @@ func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -150,6 +162,11 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get public git config: %w", err)
 	}
 
+	operationRoles := make(pgtype.Hstore)
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	appSandboxConfig := app.AppSandboxConfig{
 		AppID:                    appID,
 		AppConfigID:              req.AppConfigID,
@@ -160,6 +177,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 		TerraformVersion:         req.TerraformVersion,
 		References:               pq.StringArray(req.References),
+		OperationRoles:           operationRoles,
 	}
 
 	if req.DriftSchedule != nil {

@@ -8,11 +8,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -90,33 +88,6 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		BuiltinEnvVars:  builtInEnvVars,
 		OverrideEnvVars: overrideEnvVars,
 		Attrs:           attrs,
-	}
-
-	if !org.SandboxMode && stack.InstallStackOutputs.AWSStackOutputs != nil {
-		role := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
-
-		if !run.ActionWorkflowConfig.BreakGlassRoleARN.Empty() {
-			if run.TriggerType != app.ActionWorkflowTriggerTypeManual {
-				return nil, fmt.Errorf("break glass role can only be used for manual action triggers")
-			}
-			roleArn, ok := stack.InstallStackOutputs.AWSStackOutputs.BreakGlassRoleARNs[run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString()]
-			if !ok {
-				l.Error(fmt.Sprintf(
-					"break glass role %s not provisioned in install stack",
-					run.ActionWorkflowConfig.BreakGlassRoleARN.ValueString(),
-				))
-				return nil, fmt.Errorf("break glass role not provisioned in install stack")
-			}
-			role = roleArn
-		}
-
-		plan.AWSAuth = &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("install-action-workflow-%s", run.ID),
-				RoleARN:     role,
-			},
-		}
 	}
 
 	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)

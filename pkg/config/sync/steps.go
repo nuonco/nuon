@@ -45,6 +45,12 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 			},
 		},
 		{
+			Resource: "app-operations-roles",
+			Method: func(ctx context.Context) error {
+				return s.syncAppOperationRules(ctx, "operations-roles")
+			},
+		},
+		{
 			Resource: "app-policies",
 			Method: func(ctx context.Context) error {
 				return s.syncAppPolicies(ctx, "policies")

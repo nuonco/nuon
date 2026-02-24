@@ -98,7 +98,6 @@ func (r *RunnerJobExecutionResult) GetContentsB64String() (string, error) {
 	// base64 encode
 	planB64 := base64.StdEncoding.EncodeToString(r.ContentsGzip) // NOTE(fd): internally we can use StdEncoding
 	return planB64, nil
-
 }
 
 func (r *RunnerJobExecutionResult) GetContentsDecompressedBytes() ([]byte, error) {

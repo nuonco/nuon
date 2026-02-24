@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -28,14 +29,23 @@ type CreateDockerBuildComponentConfigRequest struct {
 	DeployTimeout string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	AppConfigID   string             `json:"app_config_id"`
 
-	Dependencies []string `json:"dependencies"`
-	References   []string `json:"references"`
-	Checksum     string   `json:"checksum"`
+	Dependencies   []string                      `json:"dependencies"`
+	References     []string                      `json:"references"`
+	Checksum       string                        `json:"checksum"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
 	}
 
 	if err := c.basicVCSConfigRequest.Validate(); err != nil {
@@ -168,6 +178,11 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		EnvVars:    pgtype.Hstore(req.EnvVars),
 	}
 
+	operationRoles := make(pgtype.Hstore)
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		DockerBuildComponentConfig: &cfg,
 		ComponentID:                parentCmp.ID,
@@ -177,6 +192,7 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		Checksum:                   req.Checksum,
 		BuildTimeout:               req.BuildTimeout,
 		DeployTimeout:              req.DeployTimeout,
+		OperationRoles:             operationRoles,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create docker build component config connection: %w", res.Error)

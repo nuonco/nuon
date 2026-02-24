@@ -29,6 +29,8 @@ type ConfigDir struct {
 	Permissions    *config.PermissionsConfig `name:"permissions"`
 	PermissionsDir []*config.AppAWSIAMRole   `name:"permissions"`
 
+	OperationRolesConfig *config.OperationRolesConfig `name:"operation_roles"`
+
 	BreakGlass    *config.BreakGlass      `name:"break_glass"`
 	BreakGlassDir []*config.AppAWSIAMRole `name:"break_glass"`
 
@@ -77,6 +79,14 @@ func (c *ConfigDir) getSecrets() (*config.SecretsConfig, error) {
 	return &config.SecretsConfig{
 		Secrets: c.SecretsDir,
 	}, nil
+}
+
+func (c *ConfigDir) getOperationRoles() (*config.OperationRolesConfig, error) {
+	if c.OperationRolesConfig == nil {
+		return &config.OperationRolesConfig{Type: config.OperationRuleConfigTypeMatrix}, nil
+	}
+
+	return c.OperationRolesConfig, nil
 }
 
 func (c *ConfigDir) getInputs() (*config.AppInputConfig, error) {
@@ -139,20 +149,25 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	operationRoles, err := c.getOperationRoles()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &config.AppConfig{
-		Components:  c.Components,
-		Actions:     c.Actions,
-		Installs:    c.Installs,
-		BreakGlass:  c.BreakGlass,
-		Secrets:     secrets,
-		Branch:      c.Branch,
-		Inputs:      inputs,
-		Sandbox:     c.Sandbox,
-		Runner:      c.Runner,
-		Permissions: permissions,
-		Stack:       c.Stack,
-		Policies:    policies,
+		Components:     c.Components,
+		Actions:        c.Actions,
+		Installs:       c.Installs,
+		BreakGlass:     c.BreakGlass,
+		Secrets:        secrets,
+		Branch:         c.Branch,
+		Inputs:         inputs,
+		Sandbox:        c.Sandbox,
+		Runner:         c.Runner,
+		Permissions:    permissions,
+		Stack:          c.Stack,
+		Policies:       policies,
+		OperationRoles: operationRoles,
 	}
 
 	if c.Metadata != nil {

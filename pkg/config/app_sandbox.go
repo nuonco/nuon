@@ -22,6 +22,7 @@ type AppSandboxConfig struct {
 	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 	VarsMap        map[string]string        `mapstructure:"vars,omitempty" toml:"vars,omitempty"`
 	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
+	OperationRoles []EntityOperationRole    `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 	References     []refs.Ref               `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 }
 
@@ -45,7 +46,9 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("vars").Short("Terraform variables").
 		Long("Map of Terraform input variables as key-value pairs. Supports templating").
 		Field("var_file").Short("Terraform variable files").
-		Long("Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git repositories (git::https://github.com/org/repo//path/to/vars.tfvars), file paths (file:///path/to/vars.tfvars), and relative paths (./vars.tfvars)")
+		Long("Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git repositories (git::https://github.com/org/repo//path/to/vars.tfvars), file paths (file:///path/to/vars.tfvars), and relative paths (./vars.tfvars)").
+		Field("operation_roles").Short("operation-specific IAM role assignments").
+		Long("Map of sandbox operations to IAM role names. Allows using different roles for different operations (provision, deprovision, reprovision). Roles must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, default roles are used based on operation type")
 }
 
 func (a *AppSandboxConfig) parse() error {

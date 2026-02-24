@@ -83,11 +83,14 @@ func (c *client) GetInstallComponentLatestDeploy(ctx context.Context, installID 
 	return resp.Payload, nil
 }
 
-func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string) error {
+func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) error {
 	resp, err := c.genClient.Operations.TeardownInstallComponent(&operations.TeardownInstallComponentParams{
 		InstallID:   installID,
 		ComponentID: componentID,
 		Context:     ctx,
+		Req: &models.ServiceTeardownInstallComponentRequest{
+			Role: roleName,
+		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
 		return err
@@ -118,12 +121,13 @@ func (c *client) TeardownInstallComponents(ctx context.Context, installID string
 	return nil
 }
 
-func (c *client) DeployInstallComponents(ctx context.Context, installID string, planOnly bool) error {
+func (c *client) DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) error {
 	resp, err := c.genClient.Operations.DeployInstallComponents(&operations.DeployInstallComponentsParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceDeployInstallComponentsRequest{
 			PlanOnly: planOnly,
+			Role:     roleName,
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {

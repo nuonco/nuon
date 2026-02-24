@@ -48,6 +48,7 @@ type WorkflowMetadataKey string
 
 const (
 	WorkflowMetadataKeyWorkflowNameSuffix = "workflow-name-suffix"
+	WorkflowMetadataKeyRole               = "role"
 )
 
 func (i WorkflowType) PastTenseName() string {
@@ -165,6 +166,8 @@ type Workflow struct {
 	Type     WorkflowType    `json:"type,omitzero" gorm:"not null;default null" temporaljson:"type,omitzero,omitempty"`
 	Metadata pgtype.Hstore   `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 	Status   CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+
+	Role string `json:"role,omitzero,omitempty" temporaljson:"role" gorm:"column:role"`
 
 	// DEPRECATED: for now we always abort on step errors
 	StepErrorBehavior StepErrorBehavior `json:"step_error_behavior,omitzero" temporaljson:"step_error_behavior,omitzero,omitempty" swaggertype:"string"`

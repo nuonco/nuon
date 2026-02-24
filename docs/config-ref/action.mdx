@@ -17,6 +17,7 @@ title: 'Action'
 | `steps` | `array` | ✅ Yes | steps to execute in this action Ordered list of steps to execute. Each step requires a command and can optionally load scripts from repositories | - | - |
 | `dependencies` | `array` | No | component dependencies referenced in this action Automatically extracted from template references in steps (e.g., \{\{.component.component_name\}\}) | - | - |
 | `break_glass_role` | `string` | No | IAM role for break-glass access to this action When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudForma... | - | `"bucket-operations-break-glass"` |
+| `role` | `string` | No | IAM role name for action execution Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specif... | - | - |
 
 ### Property Details
 

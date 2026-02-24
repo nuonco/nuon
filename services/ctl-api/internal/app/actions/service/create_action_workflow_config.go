@@ -93,6 +93,7 @@ type CreateActionWorkflowConfigRequest struct {
 	References   []string `json:"references"`
 
 	BreakGlassRoleARN string `json:"break_glass_role_arn"`
+	Role              string `json:"role,omitempty"`
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
@@ -295,6 +296,7 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		ComponentDependencyIDs: pq.StringArray(depIDs),
 		References:             pq.StringArray(req.References),
 		BreakGlassRoleARN:      generics.NewNullString(req.BreakGlassRoleARN),
+		Role:                   req.Role,
 	}
 
 	res := s.db.WithContext(ctx).

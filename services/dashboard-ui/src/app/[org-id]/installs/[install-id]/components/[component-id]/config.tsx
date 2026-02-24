@@ -1,4 +1,5 @@
 import { ComponentConfiguration, Text } from '@/components'
+import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { ValuesFileModal } from '@/components/old/InstallSandbox'
 import { getAppConfig } from '@/lib'
 import type { TInstall } from '@/types'
@@ -28,6 +29,17 @@ export const ComponentConfig = async ({
   ) : componentConfig ? (
     <>
       <ComponentConfiguration config={componentConfig} isNotTruncated />
+      {componentConfig?.operation_roles &&
+        Object.keys(componentConfig.operation_roles).length > 0 && (
+          <div className="flex flex-col gap-4">
+            <Text level={5}>
+              Operation Roles
+            </Text>
+            <OperationRolesList
+              operationRoles={componentConfig.operation_roles}
+            />
+          </div>
+        )}
       {componentConfig?.terraform_module?.variables_files?.length ? (
         <ValuesFileModal
           valuesFiles={componentConfig?.terraform_module?.variables_files}
