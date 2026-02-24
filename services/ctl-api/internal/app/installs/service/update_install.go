@@ -123,7 +123,6 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		Model(&currentInstall).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
-		Preload("GCPAccount").
 		Preload("AppSandboxConfig").
 		UpdateColumns(&updateObj)
 
