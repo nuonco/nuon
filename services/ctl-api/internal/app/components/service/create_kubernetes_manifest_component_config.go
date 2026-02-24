@@ -158,7 +158,7 @@ func (s *service) CreateKubernetesManifestComponentConfig(ctx *gin.Context) {
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

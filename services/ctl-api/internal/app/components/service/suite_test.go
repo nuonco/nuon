@@ -1,0 +1,182 @@
+package service
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
+)
+
+// ComponentsTestDeps holds all fx-injected dependencies for components service tests.
+type ComponentsTestDeps struct {
+	fx.In
+
+	DB     *gorm.DB `name:"psql"`
+	CHDB   *gorm.DB `name:"ch"`
+	V      *validator.Validate
+	L      *zap.Logger
+	MW     metrics.Writer
+	Seeder *testseed.Seeder
+}
+
+// ComponentsServiceTestSuite is the shared testify suite for all components service endpoint tests.
+type ComponentsServiceTestSuite struct {
+	tests.BaseDBTestSuite
+
+	fxApp             *fxtest.App
+	deps              ComponentsTestDeps
+	componentsService *service
+	router            *gin.Engine
+	ctx               context.Context
+	testOrg           *app.Org
+	testAcc           *app.Account
+	testApp           *app.App
+	testAppConfig     *app.AppConfig
+	mockEvClient      *tests.FakeEventLoopClient
+}
+
+func TestComponentsServiceSuite(t *testing.T) {
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+		return
+	}
+
+	suite.Run(t, new(ComponentsServiceTestSuite))
+}
+
+func (s *ComponentsServiceTestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
+	gin.SetMode(gin.TestMode)
+
+	// Create fake event loop client for testing
+	s.mockEvClient = tests.NewFakeEventLoopClient()
+
+	options := append(
+		tests.CtlApiFXOptions(),
+		// Override eventloop.Client with mock
+		fx.Decorate(func() eventloop.Client {
+			return s.mockEvClient
+		}),
+		// Service under test
+		fx.Provide(New),
+		fx.Populate(&s.deps, &s.componentsService),
+	)
+
+	s.fxApp = fxtest.New(s.T(), options...)
+	s.fxApp.RequireStart()
+
+	// Mock external calls
+	s.componentsService.getLatestTerraformVersion = func() (string, error) {
+		return "1.12.0", nil
+	}
+
+	// Store DB reference for automatic truncation
+	s.SetDB(s.deps.DB)
+}
+
+func (s *ComponentsServiceTestSuite) SetupTest() {
+	s.BaseDBTestSuite.SetupTest()
+
+	// Reset mock before each test
+	s.mockEvClient.Reset()
+
+	s.setupTestData()
+
+	// Create test router with standard middlewares
+	s.router = tests.NewTestRouter(tests.RouterOptions{
+		L:       s.deps.L,
+		DB:      s.deps.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
+	})
+
+	err := s.componentsService.RegisterPublicRoutes(s.router)
+	require.NoError(s.T(), err)
+}
+
+func (s *ComponentsServiceTestSuite) TearDownSuite() {
+	s.fxApp.RequireStop()
+}
+
+func (s *ComponentsServiceTestSuite) setupTestData() {
+	s.ctx = context.Background()
+	s.ctx, s.testAcc = s.deps.Seeder.EnsureAccount(s.ctx, s.T())
+	s.ctx, s.testOrg = s.deps.Seeder.EnsureOrg(s.ctx, s.T())
+	s.testApp = s.deps.Seeder.CreateApp(s.ctx, s.T())
+	s.testAppConfig = s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
+}
+
+// makeRequest sends an HTTP request through the test router and returns the recorder.
+// Pass nil for body on requests that have no body (GET, no-body POST).
+func (s *ComponentsServiceTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
+	var reqBody *bytes.Buffer
+	if body != nil {
+		jsonBytes, err := json.Marshal(body)
+		require.NoError(s.T(), err)
+		reqBody = bytes.NewBuffer(jsonBytes)
+	} else {
+		reqBody = bytes.NewBuffer(nil)
+	}
+
+	req, err := http.NewRequest(method, path, reqBody)
+	require.NoError(s.T(), err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	s.router.ServeHTTP(rr, req)
+	return rr
+}
+
+// makeRawRequest sends a raw string body through the test router, bypassing json.Marshal.
+// Useful for testing malformed JSON.
+func (s *ComponentsServiceTestSuite) makeRawRequest(method, path string, rawBody string) *httptest.ResponseRecorder {
+	req, err := http.NewRequest(method, path, bytes.NewBufferString(rawBody))
+	require.NoError(s.T(), err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	s.router.ServeHTTP(rr, req)
+	return rr
+}
+
+// getSeededComponent returns the first seeded component of the given type from testAppConfig.
+func (s *ComponentsServiceTestSuite) getSeededComponent(componentType app.ComponentType) *app.Component {
+	for _, ccc := range s.testAppConfig.ComponentConfigConnections {
+		var cmp app.Component
+		res := s.deps.DB.First(&cmp, "id = ?", ccc.ComponentID)
+		if res.Error == nil && cmp.Type == componentType {
+			return &cmp
+		}
+	}
+	s.T().Fatalf("no seeded component of type %s", componentType)
+	return nil
+}
+
+// getSeededConfigConnection returns the ComponentConfigConnection for the given component ID.
+func (s *ComponentsServiceTestSuite) getSeededConfigConnection(componentID string) *app.ComponentConfigConnection {
+	for _, ccc := range s.testAppConfig.ComponentConfigConnections {
+		if ccc.ComponentID == componentID {
+			return &ccc
+		}
+	}
+	s.T().Fatalf("no seeded config connection for component %s", componentID)
+	return nil
+}
