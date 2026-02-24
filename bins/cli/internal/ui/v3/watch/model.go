@@ -161,12 +161,15 @@ func (m *model) resize() {
 	contentHeight := m.height - headerHeight - footerHeight
 
 	listWidth := int(float64(m.width) * 0.4)
-	detailWidth := m.width - listWidth - 4
+	// Width(listWidth) is total outer width including borders (2) and padding (1 right),
+	// so the list content area is listWidth - 3.
+	listContentWidth := listWidth - 3
+	detailWidth := m.width - listWidth - 2
 
 	m.header.SetWidth(m.width - 2)
 	m.header.SetHeight(headerHeight)
 
-	m.workflowsList.SetSize(listWidth, contentHeight-2)
+	m.workflowsList.SetSize(listContentWidth, contentHeight-2)
 	m.workflowDetail.SetWidth(detailWidth)
 	m.workflowDetail.SetHeight(contentHeight - 2)
 

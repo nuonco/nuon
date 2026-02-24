@@ -296,8 +296,9 @@ func (m *Model) submitExecuteForm() tea.Cmd {
 		}
 
 		// Create the request
+		configID := m.latestConfig.ID
 		req := &models.ServiceCreateInstallActionWorkflowRunRequest{
-			ActionWorkflowConfigID: &m.latestConfig.ID,
+			ActionWorkflowConfigID: &configID,
 			RunEnvVars:             envVars,
 		}
 
@@ -342,14 +343,16 @@ func (m *Model) resize() {
 	// resize the runs list
 	runsListHeight := m.height - vMarginHeight
 	m.runsList.SetHeight(runsListHeight)
-	m.runsList.SetWidth(m.runsWidth - 1) // minus one because of the padding we render the list with
+	// Width(runsWidth) is total outer width including borders (2) and padding (1 right),
+	// so the list content area is runsWidth - 3.
+	m.runsList.SetWidth(m.runsWidth - 3)
 
-	// resize the form viewport (same height as runs list)
+	// resize the form viewport (same height as runs list, same content width)
 	m.formViewport.SetHeight(runsListHeight)
-	m.formViewport.SetWidth(m.runsWidth - 4) // account for padding
+	m.formViewport.SetWidth(m.runsWidth - 3)
 
-	// make the steps detail viewport
-	vpWidth := m.width - (m.runsWidth + 2) - 2 // actual width plus margin
+	// make the steps detail viewport: total width minus runs pane (runsWidth) minus detail borders (2)
+	vpWidth := m.width - m.runsWidth - 2
 	vpHeight := m.height - vMarginHeight
 	m.actionConfig.SetHeight(vpHeight)
 	m.actionConfig.SetWidth(vpWidth)

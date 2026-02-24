@@ -335,10 +335,12 @@ func (m *model) resize() {
 	// resize the list
 	stepsListHeight := m.height - vMarginHeight
 	m.stepsList.SetHeight(stepsListHeight)
-	m.stepsList.SetWidth(m.listWidth - 1) // minus one because of the padding we render the list with
+	// Width(listWidth) is total outer width including borders (2) and padding (1 right),
+	// so the list content area is listWidth - 3.
+	m.stepsList.SetWidth(m.listWidth - 3)
 
-	// make the detail viewport
-	vpWidth := m.width - (m.listWidth + 2) - 2 // actual width plus margin
+	// make the detail viewport: total width minus list pane (listWidth) minus detail borders (2)
+	vpWidth := m.width - m.listWidth - 2
 	vpHeight := m.height - vMarginHeight
 	m.stepDetail.SetHeight(vpHeight)
 	m.stepDetail.SetWidth(vpWidth)
