@@ -109,6 +109,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		AppConfigID:    cfg.ID,
 		StackName:      cfg.StackConfig.Name,
 		Region:         region,
+		Platform:       string(cfg.RunnerConfig.Type),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
@@ -198,16 +199,25 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		}
 	}
 
-	// AWS and Azure converge here, after template generation is complete.
-	// We upload both types of stacks to S3.
-	// Even though Azure cannot use the AWS Quickcreate flow, the Azure CLI can still pull a bicep template file via HTTP.
+	// All platforms converge here, after template generation is complete.
+	// Upload to S3 (used by AWS/Azure) and optionally GCS (used by GCP Infrastructure Manager).
 
-	// upload and publish the stack
+	// upload to S3
 	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
 		BucketKey: stackVersion.AWSBucketKey,
 		Template:  tmplByts,
 	}); err != nil {
 		return errors.Wrap(err, "unable to upload cloudformation stack")
+	}
+
+	// upload to GCS for GCP installs
+	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
+		if err := activities.AwaitUploadGCPStackTemplate(ctx, &activities.UploadGCPStackTemplateRequest{
+			BucketKey: stackVersion.AWSBucketKey,
+			Template:  tmplByts,
+		}); err != nil {
+			return errors.Wrap(err, "unable to upload gcp stack to GCS")
+		}
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
