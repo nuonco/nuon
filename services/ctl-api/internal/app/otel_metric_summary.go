@@ -61,26 +61,21 @@ type OtelMetricSummary struct {
 	ValueAtQuantiles map[float64]float64 `json:"value_at_quantiles,omitzero" gorm:"type:Nested(Quantile Float64,Value Float64);codec:ZSTD(1)" temporaljson:"value_at_quantiles,omitzero,omitempty"`
 }
 
-func (m OtelMetricSummary) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_summary', '{replica}')
+func (m OtelMetricSummary) GetTableOptions() string {
+	return `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_summary', '{replica}')
 	TTL toDateTime("time_unix") + toIntervalDay(720)
 	PARTITION BY toDate(time_unix)
 	PRIMARY KEY (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
 	ORDER BY    (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, toUnixTimestamp64Nano(time_unix), metric_name, attributes)
 	SETTINGS index_granularity=8192, ttl_only_drop_parts = 1;`
-	return opts, true
+}
+
+func (m OtelMetricSummary) GetTableClusterOptions() string {
+	return "on cluster simple"
 }
 
 func (m OtelMetricSummary) TableName() string {
 	return "otel_metrics_summary"
-}
-
-func (m OtelMetricSummary) MigrateDB(db *gorm.DB) *gorm.DB {
-	opts, hasOpts := m.GetTableOptions()
-	if !hasOpts {
-		return db
-	}
-	return db.Set("gorm:table_options", opts).Set("gorm:table_cluster_options", "on cluster simple")
 }
 
 func (m *OtelMetricSummary) BeforeCreate(tx *gorm.DB) error {

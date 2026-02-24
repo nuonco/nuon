@@ -75,14 +75,17 @@ type OtelMetricExponentialHistogram struct {
 	Exemplars []OtelMetricExponentialHistogramExemplar `json:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);" temporaljson:"exemplars,omitzero,omitempty"`
 }
 
-func (m OtelMetricExponentialHistogram) GetTableOptions() (string, bool) {
-	opts := `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_exponential_histogram', '{replica}')
+func (m OtelMetricExponentialHistogram) GetTableOptions() string {
+	return `ENGINE = ReplicatedMergeTree('/var/lib/clickhouse/{cluster}/tables/{shard}/{uuid}/otel_metrics_exponential_histogram', '{replica}')
 	TTL toDateTime("time_unix") + toIntervalDay(720)
 	PARTITION BY toDate(time_unix)
 	PRIMARY KEY (runner_id, runner_job_id, runner_group_id, runner_job_execution_id)
 	ORDER BY    (runner_id, runner_job_id, runner_group_id, runner_job_execution_id, toUnixTimestamp64Nano(time_unix), metric_name, attributes)
 	SETTINGS index_granularity=8192, ttl_only_drop_parts = 1;`
-	return opts, true
+}
+
+func (m OtelMetricExponentialHistogram) GetTableClusterOptions() string {
+	return "on cluster simple"
 }
 
 func (m OtelMetricExponentialHistogram) TableName() string {
