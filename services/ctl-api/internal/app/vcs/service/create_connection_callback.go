@@ -59,7 +59,7 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 	}
 
 	// Fetch org name
-	ghAccount, err := s.getGithubAccount(ctx, req.GithubInstallID)
+	ghAccount, err := s.ghClient.GetInstallationAccount(ctx, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org name: %w", err))
 		return
