@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"sort"
 
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -39,8 +40,9 @@ func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bo
 			data = append(data, []string{k, inp.RedactedValues[k]})
 		}
 		fmt.Println("")
-		fmt.Println("inputs ID: " + bubbles.StyleHighlight(inp.ID))
-		fmt.Println("modified at: " + bubbles.StyleHighlight(inp.CreatedAt))
+		highlight := lipgloss.NewStyle().Foreground(styles.AccentColor).Bold(true)
+		fmt.Println("inputs ID: " + highlight.Render(inp.ID))
+		fmt.Println("modified at: " + highlight.Render(inp.CreatedAt))
 		view.Render(data)
 	}
 	return nil
