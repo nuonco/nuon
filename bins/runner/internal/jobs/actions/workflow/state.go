@@ -15,4 +15,6 @@ type handlerState struct {
 
 	// state that must be reset before each run
 	workspace workspace.Workspace
+
+	auth *plantypes.PlanAuth
 }

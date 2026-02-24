@@ -1,0 +1,25 @@
+# terraform
+name              = "certificate"
+type              = "terraform_module"
+terraform_version = "1.11.4"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "aws-lambda/src/components/certificate"
+branch    = "main"
+
+[vars]
+zone_id     = "{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.zone_id}}"
+domain_name = "*.{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}"
+install_id  = "{{.nuon.install.id}}"
+region      = "{{.nuon.install_stack.outputs.region}}"
+
+# https://registry.terraform.io/modules/terraform-aws-modules/acm/aws/latest
+
+[[operation_roles]]
+operation = "deploy"
+role = "{{.nuon.install.id}}-maintenance"
+
+[[operation_roles]]
+operation = "teardown"
+role = "{{.nuon.install.id}}-custom-role-2"

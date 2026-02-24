@@ -27,6 +27,9 @@ const (
 	// used for break-glass by the vendor
 	AWSIAMRoleTypeBreakGlass AWSIAMRoleType = "breakglass"
 
+	// used for various app operations the vendor
+	AWSIAMRoleTypeCustom AWSIAMRoleType = "custom"
+
 	// used for break glass mode where the runner is given elevated permissions
 	//
 	// NOTE(jm): at some point, we probably need break glass actions
@@ -72,9 +75,12 @@ func (a *AppAWSIAMRoleConfig) Indexes(db *gorm.DB) []migrations.Index {
 }
 
 func (a *AppAWSIAMRoleConfig) AfterQuery(tx *gorm.DB) error {
-	cfnName := strcase.ToCamel(string(a.Type))
-	if a.Type == AWSIAMRoleTypeRunnerBreakGlass || a.Type == AWSIAMRoleTypeBreakGlass {
+	var cfnName string
+	switch a.Type {
+	case AWSIAMRoleTypeRunnerBreakGlass, AWSIAMRoleTypeBreakGlass, AWSIAMRoleTypeCustom:
 		cfnName = strcase.ToCamel(fmt.Sprintf("%s%s", a.Type, a.Name))
+	default:
+		cfnName = strcase.ToCamel(string(a.Type))
 	}
 
 	a.CloudFormationStackName = cfnName

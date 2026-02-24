@@ -29,6 +29,7 @@ func (w *Workflows) DeprovisionSandboxPlan(ctx workflow.Context, sreq signals.Re
 		InstallID:  install.ID,
 		RunType:    app.SandboxRunTypeDeprovision,
 		WorkflowID: sreq.FlowID,
+		Role:       sreq.SandboxSubSignal.Role,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create install: %w", err)

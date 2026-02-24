@@ -1,0 +1,8 @@
+type = "custom"
+name = "{{.nuon.install.id}}-custom-role-2"
+description = "custom role for testing dynamic permissions on specific operations"
+display_name = "custom role 2"
+permissions_boundary = "./custom_role_2_boundary.json"
+
+[[policies]]
+managed_policy_name = "AdministratorAccess"

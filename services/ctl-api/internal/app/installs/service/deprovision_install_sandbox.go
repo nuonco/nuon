@@ -15,7 +15,8 @@ import (
 )
 
 type DeprovisionInstallSandboxRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 func (c *DeprovisionInstallSandboxRequest) Validate(v *validator.Validate) error {
@@ -57,11 +58,12 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeDeprovisionSandbox,
 		map[string]string{},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)

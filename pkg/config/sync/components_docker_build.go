@@ -48,6 +48,13 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 
 	configRequest.EnvVars = obj.EnvVarMap
 
+	if len(comp.OperationRoles) > 0 {
+		configRequest.OperationRoles = make(map[string]string)
+		for _, opRole := range comp.OperationRoles {
+			configRequest.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
+	}
+
 	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
 	if err != nil {
 		return "", "", err

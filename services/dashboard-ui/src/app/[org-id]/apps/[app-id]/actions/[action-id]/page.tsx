@@ -181,6 +181,21 @@ export default async function AppActionPage({ params }) {
               </Text>
             </Section>
           ) : null}
+          {action.configs?.[0]?.role && (
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-4"
+              heading="Execution Role"
+            >
+              <Text variant="body" level={5}>
+                Configured Role
+              </Text>
+              <Text variant="subtext">
+                IAM role used when executing this action.
+              </Text>
+              <Code variant="inline">{action.configs[0].role}</Code>
+            </Section>
+          )}
         </div>
       </div>
       {/* old page layout */}

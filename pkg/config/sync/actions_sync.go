@@ -65,6 +65,7 @@ func (s *sync) syncAction(ctx context.Context, resource string, action *config.A
 		Timeout:           timeout.Nanoseconds(),
 		Dependencies:      action.Dependencies,
 		BreakGlassRoleArn: action.BreakGlassRole,
+		Role:              action.Role,
 	}
 
 	for _, ref := range action.References {

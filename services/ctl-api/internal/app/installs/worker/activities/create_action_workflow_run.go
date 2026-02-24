@@ -21,6 +21,7 @@ type CreateActionWorkflowRunRequest struct {
 	TriggeredByType string                        `json:"triggered_by_type"`
 
 	RunEnvVars map[string]*string `json:"run_env_vars"`
+	Role       string             `json:"role,omitempty"`
 }
 
 // @temporal-gen activity
@@ -34,6 +35,7 @@ func (a *Activities) CreateActionWorkflowRun(ctx context.Context, req *CreateAct
 		req.TriggeredByID,
 		req.TriggeredByType,
 		req.RunEnvVars,
+		req.Role,
 	)
 }
 
@@ -46,6 +48,7 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	triggeredByID string,
 	triggeredByType string,
 	runEnvVars map[string]*string,
+	role string,
 ) (*app.InstallActionWorkflowRun, error) {
 	if triggerType == app.ActionWorkflowTriggerTypeAdHoc {
 		var existingRun app.InstallActionWorkflowRun
@@ -88,6 +91,7 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 		RunEnvVars:              pgtype.Hstore(runEnvVars),
 		TriggeredByID:           triggeredByID,
 		TriggeredByType:         triggeredByType,
+		Role:                    role,
 	}
 
 	if installWorkflowID != "" {

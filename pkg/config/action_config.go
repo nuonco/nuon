@@ -20,6 +20,7 @@ type ActionConfig struct {
 	References     []refs.Ref `mapstructure:"-" jsonschema:"-"`
 	Dependencies   []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 	BreakGlassRole string     `mapstructure:"break_glass_role,omitempty" toml:"break_glass_role,omitempty"`
+	Role           string     `mapstructure:"role,omitempty" toml:"role,omitempty"`
 }
 
 type ActionTriggerConfig struct {
@@ -63,7 +64,9 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("break_glass_role").Short("IAM role for break-glass access to this action").
 		Long("When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudFormation stacks deployed to the customer's AWS account and provide temporary elevated access for emergency situations, migrations, or customer-initiated opt-in operations. See https://docs.nuon.co/updates/020-break-glass-actions for configuration details").
 		Example("bucket-operations-break-glass").
-		Example("database-migration-break-glass")
+		Example("database-migration-break-glass").
+		Field("role").Short("IAM role name for action execution").
+		Long("Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, the default maintenance role is used. This is the preferred way to specify custom roles; break_glass_role is deprecated")
 }
 
 func (a ActionTriggerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

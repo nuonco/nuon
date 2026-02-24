@@ -21,6 +21,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		runID         string
 		installCompID string
 		componentID   string
+		roleName      string
 		inputs        []string
 		noSelect      bool
 		deployDeps    bool
@@ -366,13 +367,14 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Teardown all deployed components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.TeardownComponent(cmd.Context(), id, componentID, PrintJSON)
+			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
 		}),
 	}
 	teardownInstallComponentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	teardownInstallComponentCmd.MarkFlagRequired("install-id")
 	teardownInstallComponentCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component you want to teardown")
 	teardownInstallComponentCmd.MarkFlagRequired("component-id")
+	teardownInstallComponentCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component teardown")
 	installsCmds.AddCommand(teardownInstallComponentCmd)
 
 	deployInstallComponentsCmd := &cobra.Command{
@@ -381,12 +383,13 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Deploy all components to an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.DeployComponents(cmd.Context(), id, planOnly, PrintJSON)
+			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, PrintJSON)
 		}),
 	}
 	deployInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	deployInstallComponentsCmd.MarkFlagRequired("install-id")
 	deployInstallComponentsCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan, do not actually deploy")
+	deployInstallComponentsCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component deploys")
 	installsCmds.AddCommand(deployInstallComponentsCmd)
 
 	updateInputCmd := &cobra.Command{

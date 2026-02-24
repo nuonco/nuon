@@ -73,6 +73,9 @@ type Client interface {
 	GetLatestAppPermissionsConfig(ctx context.Context, appID string) (*models.AppAppPermissionsConfig, error)
 	GetAppPermissionsConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppPermissionsConfig, error)
 
+	// app operation roles
+	CreateAppOperationRoleConfig(ctx context.Context, appID string, req *models.ServiceCreateAppOperationRoleConfigRequest) (*models.AppAppOperationRoleConfig, error)
+
 	// app cloudformation stack config methods
 	CreateAppStackConfig(ctx context.Context, appID string, req *models.ServiceCreateAppStackConfigRequest) (*models.AppAppStackConfig, error)
 	GetAppStackConfig(ctx context.Context, appID, appStackConfigID string) (*models.AppAppStackConfig, error)
@@ -137,9 +140,9 @@ type Client interface {
 
 	// install components
 	GetInstallComponents(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallComponent, bool, error)
-	TeardownInstallComponent(ctx context.Context, installID, componentID string) error
+	TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) error
 	TeardownInstallComponents(ctx context.Context, installID string) error
-	DeployInstallComponents(ctx context.Context, installID string, planOnly bool) error
+	DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) error
 	GetInstallComponentDeploys(ctx context.Context, installID, componentID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error)
 	GetInstallComponentLatestDeploy(ctx context.Context, installID, componentID string) (*models.AppInstallDeploy, error)
 

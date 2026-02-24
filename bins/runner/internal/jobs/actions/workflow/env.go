@@ -36,8 +36,8 @@ func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkfl
 		env[hasKubeConfigEnvVar] = "false"
 	}
 
-	if h.state.plan.AWSAuth != nil {
-		awsEnv, err := credentials.FetchEnv(ctx, h.state.plan.AWSAuth)
+	if h.state.auth.AWSAuth != nil {
+		awsEnv, err := credentials.FetchEnv(ctx, h.state.auth.AWSAuth)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get AWS credentials")
 		}

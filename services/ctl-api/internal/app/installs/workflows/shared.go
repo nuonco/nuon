@@ -226,6 +226,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				Type: signals.OperationExecuteDeployComponentSyncImage,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
+					Role:        flw.Role,
 				},
 			}, flw.PlanOnly)
 			if err != nil {
@@ -242,6 +243,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				Type: signals.OperationExecuteDeployComponentSyncAndPlan,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
+					Role:        flw.Role,
 				},
 			}, flw.PlanOnly, WithSkippable(false))
 			if err != nil {
@@ -252,6 +254,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				Type: signals.OperationExecuteDeployComponentApplyPlan,
 				ExecuteDeployComponentSubSignal: signals.DeployComponentSubSignal{
 					ComponentID: comp.ID,
+					Role:        flw.Role,
 				},
 			}, flw.PlanOnly)
 			if err != nil {

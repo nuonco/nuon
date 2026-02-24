@@ -17,6 +17,12 @@ func PreloadAppBreakGlassConfig(db *gorm.DB) *gorm.DB {
 		Preload("BreakGlassConfig.Roles.Policies")
 }
 
+// component role config
+func PreloadAppOperationRoleConfig(db *gorm.DB) *gorm.DB {
+	return db.Preload("OperationRoleConfig").
+		Preload("OperationRoleConfig.Rules")
+}
+
 // cloudformation stack config
 func PreloadAppConfigStackConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("StackConfig")

@@ -76,6 +76,9 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 	sg.nextGroup() // provision sandbox plan + apply
 	step, err = sg.installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionSandboxPlan,
+		SandboxSubSignal: signals.SandboxSubSignal{
+			Role: flw.Role,
+		},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err
@@ -86,6 +89,9 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 	if !flw.PlanOnly {
 		step, err = sg.installSignalStep(ctx, installID, "provision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationProvisionSandboxApplyPlan,
+			SandboxSubSignal: signals.SandboxSubSignal{
+				Role: flw.Role,
+			},
 		}, flw.PlanOnly)
 		if err != nil {
 			return nil, err
