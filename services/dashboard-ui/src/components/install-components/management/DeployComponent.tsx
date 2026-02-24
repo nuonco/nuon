@@ -7,6 +7,7 @@ import { deployComponent } from '@/actions/installs/deploy-component'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
+import { RoleSelector } from '@/components/common/form/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -70,6 +71,7 @@ export const DeployComponentModal = ({
   const [buildId, setBuildId] = useState<string>()
   const [deployDependents, setDeployDependents] = useState(false)
   const [buildSelected, setBuildSelected] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<string>('')
 
   const {
     data: deploy,
@@ -162,6 +164,7 @@ export const DeployComponentModal = ({
             build_id: buildId!,
             deploy_dependents: deployDependents,
             plan_only: false,
+            ...(selectedRole && { role: selectedRole }),
           },
           installId: install.id,
           orgId: org.id,
@@ -230,6 +233,15 @@ export const DeployComponentModal = ({
           currentDeployStatus={currentDeployStatus}
           onSelectBuild={handleBuildSelect}
           onClose={handleClose}
+        />
+
+        <RoleSelector
+          installId={install?.id}
+          operationType="deploy"
+          principalType="component"
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          name="role"
         />
       </div>
     </Modal>

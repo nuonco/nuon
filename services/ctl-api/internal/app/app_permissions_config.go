@@ -30,10 +30,11 @@ type AppPermissionsConfig struct {
 	Roles []AppAWSIAMRoleConfig `json:"aws_iam_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;polymorphic:Owner" temporaljson:"roles,omitzero,omitempty"`
 
 	// loaded via an after query
-	ProvisionRole   AppAWSIAMRoleConfig `json:"provision_aws_iam_role,omitzero" gorm:"-" temporaljson:"provision_role,omitzero,omitempty"`
-	MaintenanceRole AppAWSIAMRoleConfig `json:"maintenance_aws_iam_role,omitzero" gorm:"-" temporaljson:"maintenance_role,omitzero,omitempty"`
-	DeprovisionRole AppAWSIAMRoleConfig `json:"deprovision_aws_iam_role,omitzero" gorm:"-" temporaljson:"deprovision_role,omitzero,omitempty"`
-	BreakGlassRole  AppAWSIAMRoleConfig `json:"break_glass_aws_iam_role,omitzero" gorm:"-" temporaljson:"break_glass_role,omitzero,omitempty"`
+	ProvisionRole   AppAWSIAMRoleConfig   `json:"provision_aws_iam_role,omitzero" gorm:"-" temporaljson:"provision_role,omitzero,omitempty"`
+	MaintenanceRole AppAWSIAMRoleConfig   `json:"maintenance_aws_iam_role,omitzero" gorm:"-" temporaljson:"maintenance_role,omitzero,omitempty"`
+	DeprovisionRole AppAWSIAMRoleConfig   `json:"deprovision_aws_iam_role,omitzero" gorm:"-" temporaljson:"deprovision_role,omitzero,omitempty"`
+	BreakGlassRole  AppAWSIAMRoleConfig   `json:"break_glass_aws_iam_role,omitzero" gorm:"-" temporaljson:"break_glass_role,omitzero,omitempty"`
+	CustomRoles     []AppAWSIAMRoleConfig `json:"custom_aws_iam_roles,omitzero" gorm:"-" temporaljson:"custom_aws_iam_roles,omitzero,omitempty"`
 }
 
 func (a *AppPermissionsConfig) Indexes(db *gorm.DB) []migrations.Index {
@@ -71,6 +72,8 @@ func (a *AppPermissionsConfig) AfterQuery(tx *gorm.DB) error {
 			a.MaintenanceRole = role
 		case AWSIAMRoleTypeBreakGlass:
 			a.BreakGlassRole = role
+		case AWSIAMRoleTypeCustom:
+			a.CustomRoles = append(a.CustomRoles, role)
 		default:
 		}
 	}

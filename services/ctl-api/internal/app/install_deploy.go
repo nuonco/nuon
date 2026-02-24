@@ -73,6 +73,9 @@ type InstallDeploy struct {
 	ComponentReleaseStepID *string               `json:"release_id,omitzero" temporaljson:"component_release_step_id,omitzero,omitempty"`
 	ComponentReleaseStep   *ComponentReleaseStep `json:"-" temporaljson:"component_release_step,omitzero,omitempty"`
 
+	// Role to be used when running this component
+	Role string `json:"role,omitempty" gorm:"column:role"`
+
 	Status            InstallDeployStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	Type              InstallDeployType   `json:"install_deploy_type,omitzero" temporaljson:"type,omitzero,omitempty"`

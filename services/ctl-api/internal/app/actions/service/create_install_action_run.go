@@ -9,6 +9,7 @@ import (
 type CreateInstallActionWorkflowRunRequest struct {
 	ActionWorkFlowConfigID string            `json:"action_workflow_config_id" validate:"required"`
 	RunEnvVars             map[string]string `json:"run_env_vars"`
+	Role                   string            `json:"role,omitempty"`
 }
 
 func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) error {

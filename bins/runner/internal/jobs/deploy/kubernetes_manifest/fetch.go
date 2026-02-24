@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
@@ -33,6 +34,22 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 		return errors.Wrap(err, "unable to parse sandbox workflow run plan")
 	}
 	h.state.plan = &plan
+
+	l.Info("fetching composite plan for the job")
+	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job composite plan")
+	}
+
+	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)
+	if err != nil {
+		return errors.Wrap(err, "unable to build plan auth for job")
+	}
+
+	if h.state.plan.KubernetesManifestDeployPlan.ClusterInfo != nil {
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+	}
 
 	l.Info("fetching app config")
 	appCfg, err := h.apiClient.GetAppConfig(ctx, plan.AppID, plan.AppConfigID)

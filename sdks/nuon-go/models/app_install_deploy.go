@@ -80,6 +80,9 @@ type AppInstallDeploy struct {
 	// release id
 	ReleaseID string `json:"release_id,omitempty"`
 
+	// Role to be used when running this component
+	Role string `json:"role,omitempty"`
+
 	// runner details
 	RunnerJobs []*AppRunnerJob `json:"runner_jobs"`
 

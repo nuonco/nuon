@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -34,10 +35,11 @@ type CreateTerraformModuleComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies  []string `json:"dependencies"`
-	References    []string `json:"references"`
-	Checksum      string   `json:"checksum"`
-	DriftSchedule *string  `json:"drift_schedule,omitempty"`
+	Dependencies   []string                      `json:"dependencies"`
+	References     []string                      `json:"references"`
+	Checksum       string                        `json:"checksum"`
+	DriftSchedule  *string                       `json:"drift_schedule,omitempty"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 type LatestTerraformVersion struct {
@@ -50,6 +52,14 @@ const MinTerraformVersion = "1.8.0"
 func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Validate, latestVersion string) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
 	}
 
 	if c.Version != "" {
@@ -126,7 +136,6 @@ func (s *service) CreateAppTerraformModuleComponentConfig(ctx *gin.Context) {
 
 	// reuse the same logic as non-app scoped endpoint
 	s.CreateTerraformModuleComponentConfig(ctx)
-
 }
 
 // @ID						CreateTerraformModuleComponentConfig
@@ -219,6 +228,14 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		VariablesFiles:           pq.StringArray(req.VariablesFiles),
 	}
 
+	var operationRoles pgtype.Hstore
+	if req.OperationRoles != nil {
+		operationRoles = make(pgtype.Hstore)
+		for operation, role := range req.OperationRoles {
+			operationRoles[string(operation)] = role
+		}
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		TerraformModuleComponentConfig: &cfg,
 		ComponentID:                    parentCmp.ID,
@@ -228,6 +245,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		Checksum:                       req.Checksum,
 		BuildTimeout:                   req.BuildTimeout,
 		DeployTimeout:                  req.DeployTimeout,
+		OperationRoles:                 operationRoles,
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)

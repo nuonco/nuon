@@ -1,0 +1,19 @@
+# inputs
+[[group]]
+name         = "dns"
+description  = "DNS Configrations"
+display_name = "Configurations for the root domain for Route53"
+
+[[input]]
+name         = "domain"
+description  = "domain for the AWS API Gateway e.g., nuon.run or stage.nuon.run"
+default      = "nuon.run"
+display_name = "Domain"
+group        = "dns"
+
+[[input]]
+name         = "sub_domain"
+description  = "The sub domain for the AWS API Gateway"
+default      = "api"
+display_name = "Sub Domain"
+group        = "dns"

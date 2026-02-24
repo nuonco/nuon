@@ -50,6 +50,13 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 		configRequest.VariablesFiles = append(configRequest.VariablesFiles, v.Contents)
 	}
 
+	if len(comp.OperationRoles) > 0 {
+		configRequest.OperationRoles = make(map[string]string)
+		for _, opRole := range comp.OperationRoles {
+			configRequest.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
+	}
+
 	if obj.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
 			Branch:    generics.ToPtr(obj.PublicRepo.Branch),

@@ -71,6 +71,7 @@ type InstallActionWorkflowTriggerSubSignal struct {
 	TriggeredByID           string                        `json:"triggered-by-id"`
 	TriggeredByType         string                        `json:"triggered-by-type"`
 	RunEnvVars              map[string]string             `json:"run-env-vars"`
+	Role                    string                        `json:"role,omitempty"`
 }
 
 type DeployComponentSubSignal struct {
@@ -82,6 +83,9 @@ type DeployComponentSubSignal struct {
 
 	// used to consume an existing plan-id
 	PlanID string
+
+	// Role override for this deploy operation
+	Role string
 }
 
 type TeardownComponentSubSignal struct {
@@ -92,6 +96,9 @@ type TeardownComponentSubSignal struct {
 
 	// used to consume an existing plan-id
 	PlanID string
+
+	// Role override for this teardown operation
+	Role string
 }
 
 type SandboxSubSignal struct {
@@ -102,6 +109,9 @@ type SandboxSubSignal struct {
 
 	// used to consume an existing plan-id
 	PlanID string
+
+	// Role override for this sandbox operation
+	Role string
 }
 
 type SkipStepSubSignal struct {

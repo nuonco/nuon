@@ -1,0 +1,28 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "Route53:*",
+        "acm:*",
+        "apigateway:*",
+        "cloudwatch:*",
+        "dynamodb:*",
+        "ec2:*",
+        "ecr:*",
+        "eks:*",
+        "iam:*",
+        "kms:*",
+        "lambda:*",
+        "logs:*",
+        "rds:*",
+        "s3:*",
+        "secretsmanager:*",
+        "sqs:*",
+        "organizations:DescribeOrganization"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

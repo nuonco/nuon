@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -41,17 +42,21 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 		req.DriftSchedule = *s.cfg.Sandbox.DriftSchedule
 	}
 
-	for k, v := range s.cfg.Sandbox.VarsMap {
-		req.Variables[k] = v
-	}
-	for k, v := range s.cfg.Sandbox.EnvVarMap {
-		req.EnvVars[k] = v
-	}
+	maps.Copy(req.Variables, s.cfg.Sandbox.VarsMap)
+	maps.Copy(req.EnvVars, s.cfg.Sandbox.EnvVarMap)
+
 	for _, v := range s.cfg.Sandbox.VariablesFiles {
 		req.VariablesFiles = append(req.VariablesFiles, v.Contents)
 	}
 	for _, ref := range s.cfg.Sandbox.References {
 		req.References = append(req.References, ref.String())
+	}
+
+	if len(s.cfg.Sandbox.OperationRoles) > 0 {
+		req.OperationRoles = make(map[string]string)
+		for _, opRole := range s.cfg.Sandbox.OperationRoles {
+			req.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
 	}
 
 	if s.cfg.Sandbox.ConnectedRepo != nil {

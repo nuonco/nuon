@@ -7,6 +7,7 @@ import { deprovisionSandbox } from '@/actions/installs/deprovision-sandbox'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Input } from '@/components/common/form/Input'
+import { RoleSelector } from '@/components/common/form/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -48,6 +49,7 @@ export const DeprovisionSandboxModal = ({
   const { removeModal } = useSurfaces()
 
   const [confirm, setConfirm] = useState<string>('')
+  const [selectedRole, setSelectedRole] = useState<string>('')
 
   const {
     data,
@@ -74,6 +76,7 @@ export const DeprovisionSandboxModal = ({
       body: {
         plan_only: false,
         error_behavior: 'abort',
+        ...(selectedRole && { role: selectedRole }),
       },
       installId: install.id,
       orgId: org.id,
@@ -184,6 +187,15 @@ export const DeprovisionSandboxModal = ({
             />
           </label>
         </div>
+
+        <RoleSelector
+          installId={install?.id}
+          operationType="deprovision"
+          principalType='sandbox'
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          name="role"
+        />
 
       </div>
     </Modal>

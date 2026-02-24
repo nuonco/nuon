@@ -28,6 +28,9 @@ type ServiceCreateAppPermissionsConfigRequest struct {
 	// break glass roles
 	BreakGlassRoles []*ServiceAppAWSIAMRoleConfig `json:"break_glass_roles"`
 
+	// custom roles
+	CustomRoles []*ServiceAppAWSIAMRoleConfig `json:"custom_roles"`
+
 	// deprovision role
 	// Required: true
 	DeprovisionRole *ServiceAppAWSIAMRoleConfig `json:"deprovision_role"`
@@ -50,6 +53,10 @@ func (m *ServiceCreateAppPermissionsConfigRequest) Validate(formats strfmt.Regis
 	}
 
 	if err := m.validateBreakGlassRoles(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCustomRoles(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -99,6 +106,36 @@ func (m *ServiceCreateAppPermissionsConfigRequest) validateBreakGlassRoles(forma
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("break_glass_roles" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateAppPermissionsConfigRequest) validateCustomRoles(formats strfmt.Registry) error {
+	if swag.IsZero(m.CustomRoles) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.CustomRoles); i++ {
+		if swag.IsZero(m.CustomRoles[i]) { // not required
+			continue
+		}
+
+		if m.CustomRoles[i] != nil {
+			if err := m.CustomRoles[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_roles" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_roles" + "." + strconv.Itoa(i))
 				}
 
 				return err
@@ -190,6 +227,10 @@ func (m *ServiceCreateAppPermissionsConfigRequest) ContextValidate(ctx context.C
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCustomRoles(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateDeprovisionRole(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -226,6 +267,35 @@ func (m *ServiceCreateAppPermissionsConfigRequest) contextValidateBreakGlassRole
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("break_glass_roles" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateAppPermissionsConfigRequest) contextValidateCustomRoles(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CustomRoles); i++ {
+
+		if m.CustomRoles[i] != nil {
+
+			if swag.IsZero(m.CustomRoles[i]) { // not required
+				return nil
+			}
+
+			if err := m.CustomRoles[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_roles" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_roles" + "." + strconv.Itoa(i))
 				}
 
 				return err

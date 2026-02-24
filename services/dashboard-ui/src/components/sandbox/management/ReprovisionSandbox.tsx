@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { reprovisionSandbox } from '@/actions/installs/reprovision-sandbox'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { RoleSelector } from '@/components/common/form/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -45,6 +46,8 @@ export const ReprovisionSandboxModal = ({
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
 
+  const [selectedRole, setSelectedRole] = useState<string>('')
+
   const {
     data,
     error,
@@ -67,7 +70,10 @@ export const ReprovisionSandboxModal = ({
 
   const handleReprovision = () => {
     execute({
-      body: { plan_only: false },
+      body: {
+        plan_only: false,
+        ...(selectedRole && { role: selectedRole }),
+      },
       installId: install.id,
       orgId: org.id,
     })
@@ -137,6 +143,15 @@ export const ReprovisionSandboxModal = ({
         <Text variant="body" className="leading-relaxed">
           Are you sure you want to reprovision this sandbox?
         </Text>
+
+        <RoleSelector
+          installId={install?.id}
+          operationType="reprovision"
+          principalType="sandbox"
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          name="role"
+        />
       </div>
     </Modal>
   )

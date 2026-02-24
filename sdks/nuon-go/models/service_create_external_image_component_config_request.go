@@ -42,6 +42,9 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	// Required: true
 	ImageURL *string `json:"image_url"`
 
+	// operation roles
+	OperationRoles map[string]string `json:"operation_roles,omitempty"`
+
 	// references
 	References []string `json:"references"`
 

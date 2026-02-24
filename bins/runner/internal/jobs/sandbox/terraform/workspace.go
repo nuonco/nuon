@@ -62,8 +62,8 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	}
 
 	authVars, err := authvars.New(h.v,
-		authvars.WithAWSAuth(plan.AWSAuth),
-		authvars.WithAzureAuth(plan.AzureAuth),
+		authvars.WithAWSAuth(h.state.auth.AWSAuth),
+		authvars.WithAzureAuth(h.state.auth.AzureAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)
@@ -91,7 +91,6 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		workspace.WithVariables(authVars),
 		workspace.WithControlCache(true),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
 	}
@@ -146,8 +145,8 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 	}
 
 	authVars, err := authvars.New(h.v,
-		authvars.WithAWSAuth(plan.AWSAuth),
-		authvars.WithAzureAuth(plan.AzureAuth),
+		authvars.WithAWSAuth(h.state.auth.AWSAuth),
+		authvars.WithAzureAuth(h.state.auth.AzureAuth),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create auth vars: %w", err)
@@ -176,7 +175,6 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 		workspace.WithControlCache(true),
 		workspace.WithPlanBytes(planBytes),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
 	}

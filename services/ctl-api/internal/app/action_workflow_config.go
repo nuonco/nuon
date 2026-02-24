@@ -55,6 +55,7 @@ type ActionWorkflowConfig struct {
 	LifecycleTriggers []ActionWorkflowTriggerConfig `json:"-" temporaljson:"lifecycle_triggers,omitzero,omitempty"`
 
 	BreakGlassRoleARN generics.NullString `json:"break_glass_role_arn,omitzero" gorm:"default:null" temporaljson:"break_glass_role_arn,omitzero,omitempty" swaggertype:"string"`
+	Role              string              `json:"role,omitzero" gorm:"default:null" temporaljson:"role,omitzero,omitempty"`
 }
 
 func (a *ActionWorkflowConfig) Indexes(db *gorm.DB) []migrations.Index {

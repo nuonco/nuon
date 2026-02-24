@@ -14,6 +14,7 @@ type CreateSandboxRunRequest struct {
 	InstallID  string             `validate:"required"`
 	RunType    app.SandboxRunType `validate:"required"`
 	WorkflowID string             `validate:"required"`
+	Role       string
 }
 
 // @temporal-gen activity
@@ -49,6 +50,7 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 		AppSandboxConfigID: appCfg.SandboxConfig.ID,
 		Status:             status,
 		InstallWorkflowID:  generics.ToPtr(req.WorkflowID),
+		Role:               req.Role,
 	}
 
 	resCreateRun := a.db.WithContext(ctx).Create(&run)
