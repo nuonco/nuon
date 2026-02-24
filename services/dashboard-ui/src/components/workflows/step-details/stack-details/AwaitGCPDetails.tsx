@@ -18,6 +18,9 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
   const templateUrl = stack?.versions?.at(0)?.template_url
   const [isDownloading, setIsDownloading] = useState(false)
 
+  const isReprovision = (stack?.versions?.length ?? 0) > 1
+  const initFlag = isReprovision ? ' -reconfigure' : ''
+
   const handleDownload = async () => {
     if (!templateUrl) return
     setIsDownloading(true)
@@ -32,7 +35,7 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
     }
   }
 
-  const terraformCmd = `mkdir -p nuon-${install?.id} && cd nuon-${install?.id} && curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
+  const terraformCmd = `mkdir -p nuon-${install?.id} && cd nuon-${install?.id} && curl -o main.tf.json "${templateUrl}" && terraform init${initFlag} && terraform apply`
 
   return (
     <>
