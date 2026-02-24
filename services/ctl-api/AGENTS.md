@@ -958,6 +958,61 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return n
 - Example: `GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest`
 - These names appear in generated SDK code but don't affect functionality
 
+## CloudFormation IAM Role Architecture
+
+### EnableRunner* Parameters
+
+Nuon's CloudFormation stacks create IAM roles for three operations: provision, deprovision, and maintenance. Each role
+has an `EnableRunner*` boolean parameter (e.g., `EnableRunnerProvision`, `EnableRunnerDeprovision`,
+`EnableRunnerMaintenance`) that customers can set to `false` to disable that role. This is a security feature allowing
+customers to reduce their attack surface after initial provisioning.
+
+**Key files:**
+- `internal/pkg/stacks/cloudformation/resource_role.go` — Parameter definitions, conditions, conditional role resources
+- `internal/pkg/stacks/cloudformation/resource_runner_phone_home_lambda.go` — Conditional ARN references
+- `internal/app/app_aws_iam_role_config.go` — Parameter name derivation (`AfterQuery` hook)
+
+**How it works:**
+1. Parameters defined with `AllowedValues: ["true", "false"]`, default `"true"`
+2. CloudFormation Conditions check if parameter equals `"true"`
+3. IAM Role resources use `AWSCloudFormationCondition` — only created when enabled
+4. Phone-home lambda uses `Fn::If` to return real ARN or `""` when disabled
+
+```yaml
+# Generated CloudFormation pattern
+provision_iam_role_arn: !If [EnableRunnerProvision, !GetAtt RunnerProvision.Arn, ""]
+```
+
+### Role ARN Flow: CloudFormation → Database → Role Selection
+
+1. Phone-home lambda POSTs stack outputs (including conditional ARNs) to ctl-api
+2. `InstallPhoneHome` endpoint stores data as PostgreSQL HSTORE in `install_stack_outputs`
+3. `AWSStackOutputs.AfterQuery` hook decodes HSTORE into typed struct
+4. `ProvisionIAMRoleARN`, `DeprovisionIAMRoleARN`, `MaintenanceIAMRoleARN` are plain strings — empty when disabled
+
+**Important:** Roles are ALWAYS defined in the app config (`pkg/config/app_permissions.go` — all three required). Only
+the ARNs can be empty (when disabled in CloudFormation). Do not confuse empty ARNs with undefined roles.
+
+### Operation Roles System (PR #252)
+
+When a default role's ARN is empty (role disabled), the operation_roles system provides the mechanism to select an
+alternative role. The precedence chain in `selectRole()`:
+
+1. Runtime override (`--role` flag)
+2. Break glass role
+3. Entity-level config (component/sandbox/action `operation_roles`)
+4. Matrix rules (app-level `operation_roles` config)
+5. Default role (provision/maintenance/deprovision)
+
+If the selected role's ARN is empty (not in the available roles map), `resolveRoleARN` returns "role not found" and the
+caller's fallback mechanism is invoked.
+
+**Key files:**
+- `internal/pkg/operation-roles/selector.go` — Role selection engine
+- `internal/app/installs/worker/sandbox/execute_plan.go` — Sandbox role selection (`getRoleForSandbox`)
+- `internal/app/installs/worker/components/shared_execute_deploy.go` — Deploy role selection (`getRoleForDeploy`)
+- `internal/app/installs/worker/plan/auth.go` — `CreatePlanAuth` validates non-empty ARN
+
 ## Query Path Optimization
 
 Before adding multi-step lookups or separate Temporal activity calls, trace the GORM model relationships to find the most direct query path. Prefer a single query with `Preload()` chains over multiple activity round-trips when the data model supports it (e.g., `ComponentBuild → ComponentConfigConnection.AppConfigID → AppConfig.PoliciesConfig.Policies` instead of fetching the build then separately fetching policies config). Also prefer pinned foreign keys (e.g., `ComponentConfigConnection.AppConfigID`) over re-deriving associations via `ORDER BY created_at DESC LIMIT 1`.
