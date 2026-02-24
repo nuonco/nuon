@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -126,10 +126,16 @@ func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, inst
 		{Title: "FINISHED AT", Width: 20},
 	}
 
+	totalWidth := 0
+	for _, col := range columns {
+		totalWidth += col.Width + 2 // +2 for cell padding
+	}
+
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithFocused(true),
 		table.WithHeight(20+1),
+		table.WithWidth(totalWidth),
 	)
 
 	s := table.DefaultStyles()
@@ -177,7 +183,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.help.Width = msg.Width
+		m.table.SetWidth(msg.Width)
+		m.table.SetHeight(msg.Height - 6) // leave room for pagination + help
+		m.help.SetWidth(msg.Width)
 		return m, nil
 
 	case workflowsLoadedMsg:
@@ -221,7 +229,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.table.SetRows(rows)
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
@@ -281,7 +289,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
+	return tea.NewView(m.viewContent())
+}
+
+func (m model) viewContent() string {
 	if m.quitting {
 		if m.selectedID != "" {
 			return ""
@@ -353,7 +365,7 @@ func WorkflowSelectorApp(
 	}
 
 	m := initialModel(ctx, cfg, api, installID)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()
 	if err != nil {

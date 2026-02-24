@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/sync"
@@ -35,9 +34,9 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	defer func() {
 		fmt.Println()
 		if err != nil {
-			bubbles.PrintStyledError("Dev workflow failed")
+			ui.PrintWarning("Dev workflow failed")
 		} else {
-			bubbles.PrintStyledSuccess("Dev workflow complete")
+			ui.PrintSuccess("Dev workflow complete")
 		}
 	}()
 
@@ -48,7 +47,7 @@ func (s *Service) Dev(ctx context.Context, dir, installID string, autoApprove bo
 	//
 
 	fmt.Println()
-	bubbles.PrintStyledInfo("Checking that you are ready to create a new app version...")
+	ui.PrintLn("Checking that you are ready to create a new app version...")
 	fmt.Println()
 
 	ui.PrintLn("checking git branch...")

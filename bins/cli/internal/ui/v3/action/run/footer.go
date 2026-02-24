@@ -1,7 +1,7 @@
 package run
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 
 	// "github.com/nuonco/nuon/pkg/cli/styles"
@@ -27,7 +27,7 @@ func (m *Model) setFooterContent() {
 
 	// we have to handle this base case since the element widths are zero on init and we use the footer width
 	// to determine some content widthS
-	if m.footer.Width == 0 {
+	if m.footer.Width() == 0 {
 		content := "\n" + m.help.View(m.keys)
 		m.footer.SetContent(content)
 		return
@@ -35,7 +35,7 @@ func (m *Model) setFooterContent() {
 
 	// TODO(fd): refine
 	// this catches the case where the footer is not wide enough to hold the content
-	footerMaxContentWidth := m.footer.Width - 3
+	footerMaxContentWidth := m.footer.Width() - 3
 	if footerMaxContentWidth < 0 {
 		content := "\n" + m.help.View(m.keys)
 		m.footer.SetContent(content)
@@ -44,7 +44,7 @@ func (m *Model) setFooterContent() {
 
 	// happy path
 	// set help width
-	m.help.Width = m.footer.Width
+	m.help.SetWidth(m.footer.Width())
 
 	sections := []string{}
 
@@ -62,7 +62,7 @@ func (m *Model) setFooterContent() {
 
 	// set the content and adjust the footer height
 	m.footer.SetContent(content)
-	m.footer.Height = lipgloss.Height(content)
+	m.footer.SetHeight(lipgloss.Height(content))
 
 	m.log.Info(
 		"setting footer content",

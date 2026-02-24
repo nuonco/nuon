@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -29,8 +29,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() string {
-	return m.m.View()
+func (m model) View() tea.View {
+	v := tea.NewView(m.m.View())
+	v.AltScreen = true
+	return v
 }
 
 // NOTE(fd): for the storybook or any other scenario where you want to run as a standalone bubbletea program
@@ -52,10 +54,7 @@ func Run(
 	m := model{m: app}
 
 	// Initialize the program
-	p := tea.NewProgram(
-		m,
-		tea.WithAltScreen(),
-	)
+	p := tea.NewProgram(m)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running steps app: %v", err)

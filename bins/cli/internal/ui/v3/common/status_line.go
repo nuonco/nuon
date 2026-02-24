@@ -1,9 +1,10 @@
 package common
 
 import (
+	"image/color"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -16,7 +17,7 @@ type StatusBarRequest struct {
 	Level   string
 }
 
-func (r StatusBarRequest) getLevelColor() lipgloss.CompleteAdaptiveColor {
+func (r StatusBarRequest) getLevelColor() color.Color {
 	style, ok := levelStyleMap[r.Level]
 	if ok {
 		return style

@@ -4,22 +4,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
-	tea "github.com/charmbracelet/bubbletea"
-)
-
-const (
-	dataRefreshInterval time.Duration = time.Second * 5
+	tea "charm.land/bubbletea/v2"
 )
 
 // Model represents the steps list and detail view
@@ -84,8 +79,8 @@ func New(
 		logsCursor:        "0",
 		selectedStepIndex: 0,
 		expandedStepIndex: -1,
-		stepsViewport:     viewport.New(width, height),
-		logsViewport:      viewport.New(width, height-headerHeight),
+		stepsViewport:     viewport.New(viewport.WithWidth(width), viewport.WithHeight(height)),
+		logsViewport:      viewport.New(viewport.WithWidth(width), viewport.WithHeight(height-headerHeight)),
 
 		help: help.New(),
 		keys: keys,
@@ -111,10 +106,10 @@ func (m *Model) SetSize(width, height int) {
 	headerHeight := 3
 
 	// Update both viewports
-	m.stepsViewport.Width = width
-	m.stepsViewport.Height = height
-	m.logsViewport.Width = width
-	m.logsViewport.Height = height - headerHeight
+	m.stepsViewport.SetWidth(width)
+	m.stepsViewport.SetHeight(height)
+	m.logsViewport.SetWidth(width)
+	m.logsViewport.SetHeight(height - headerHeight)
 
 	m.setContent()
 }
@@ -166,7 +161,7 @@ func (m *Model) updateStepItems() {
 // Init initializes the model
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		tick,
+		common.TickCmd(common.DefaultRefreshInterval),
 		m.fetchLogsCmd,
 	)
 }
@@ -177,19 +172,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tickMsg:
+	case common.TickMsg:
 		// Refresh logs periodically
 		return m, tea.Batch(
 			m.fetchLogsCmd,
-			tea.Tick(dataRefreshInterval, func(t time.Time) tea.Msg {
-				return tickMsg(t)
-			}),
+			common.TickCmd(common.DefaultRefreshInterval),
 		)
 
 	case logsFetchedMsg:
 		m.handleLogsFetched(msg)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// If a step is expanded, handle logs viewport scrolling or collapsing
 		if m.expandedStepIndex >= 0 {
 			switch {
@@ -307,10 +300,9 @@ func (m Model) renderStepItem(index int, item stepItem, selected bool) string {
 	duration := item.getExecutionDuration()
 
 	// Get the style based on status and selection
-	stepStyle := getStepStyle(status, selected)
+	stepStyle := styles.GetStepStyle(status, selected)
 
 	// Build the content
-	// icon := getStepStatusIcon(status)
 	statusStyle := styles.GetStatusStyle(models.AppStatus(status))
 	statusText := statusStyle.Render(fmt.Sprintf("[%s] ", status))
 

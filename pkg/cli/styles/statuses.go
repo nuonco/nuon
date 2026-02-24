@@ -1,7 +1,7 @@
 package styles
 
 import (
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -34,6 +34,38 @@ func GetStatusStyle(status models.AppStatus) lipgloss.Style {
 		return style
 	}
 	return TextDim
+}
+
+// GetRunStatusIcon returns a unicode icon for an action run status string.
+func GetRunStatusIcon(status string) string {
+	switch status {
+	case "success", "finished":
+		return "✓"
+	case "error", "failed", "cancelled":
+		return "✗"
+	case "in_progress", "pending":
+		return "⟳"
+	default:
+		return "○"
+	}
+}
+
+// GetRunStatusStyle returns a lipgloss style for an action run status string.
+func GetRunStatusStyle(status string) lipgloss.Style {
+	switch status {
+	case "success", "finished":
+		return TextSuccess
+	case "error", "failed":
+		return TextError
+	case "in_progress":
+		return TextInfo
+	case "pending":
+		return TextDim
+	case "cancelled":
+		return TextWarning
+	default:
+		return TextDim
+	}
 }
 
 func IsActionableStatus(status models.AppStatus) bool {

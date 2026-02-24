@@ -3,7 +3,7 @@ package detail
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/list"
+	"charm.land/bubbles/v2/list"
 )
 
 func (m *Model) handleInstallActionWorkflowFetched(msg installActionWorkflowFetchedMsg) {

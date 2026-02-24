@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/table"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -30,13 +30,18 @@ func (m model) initTable() table.Model {
 	rows := []table.Row{
 		{"id", "index", "", "", "", ""},
 	}
+	totalWidth := 0
+	for _, col := range columns {
+		totalWidth += col.Width + 2 // +2 for cell padding
+	}
+
 	table := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithHeight(15),
 		table.WithFocused(true),
 		table.WithStyles(logTableStyles),
-		// table.WithWidth(30),
+		table.WithWidth(totalWidth),
 	)
 	return table
 }

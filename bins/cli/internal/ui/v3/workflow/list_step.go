@@ -2,10 +2,7 @@ package workflow
 
 import (
 	"fmt"
-	"math"
-	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/generics"
@@ -18,7 +15,8 @@ import (
 // it just holds a step and we implement the list item interface
 // +some niecities
 type listStep struct {
-	step *models.AppWorkflowStep
+	step        *models.AppWorkflowStep
+	spinnerView string
 }
 
 func (i listStep) Title() string {
@@ -35,15 +33,7 @@ func (i listStep) Description() string {
 
 	color := styles.GetStatusStyle(step.Status.Status)
 	if i.step.Status.Status == models.AppStatusInDashProgress {
-
-		// this is super duper fucked up
-		s := spinner.New()
-		s.Spinner = spinner.Line
-		now := int(math.Mod(float64(time.Now().Second()), 6))
-		for range now {
-			s, _ = s.Update(s.Tick())
-		}
-		return s.View() + " " + color.Render(string(step.Status.Status))
+		return i.spinnerView + " " + color.Render(string(step.Status.Status))
 	}
 
 	return color.Render(string(step.Status.Status))

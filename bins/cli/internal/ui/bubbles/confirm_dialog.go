@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -34,19 +34,19 @@ func (m ConfirmDialogModel) Init() tea.Cmd {
 // Update handles messages for the confirmation dialog
 func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c", "esc":
 			m.cancelled = true
 			m.quitting = true
 			return m, tea.Quit
 
-		case tea.KeyLeft, tea.KeyRight, tea.KeyTab:
+		case "left", "right", "tab":
 			// Toggle between Yes/No
 			m.cursor = 1 - m.cursor
 			return m, nil
 
-		case tea.KeyEnter, tea.KeySpace:
+		case "enter", "space":
 			if m.cursor == 0 {
 				m.confirmed = true
 			} else {
@@ -55,9 +55,9 @@ func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 
-		case tea.KeyRunes:
-			if len(msg.Runes) > 0 {
-				switch strings.ToLower(string(msg.Runes)) {
+		default:
+			if text := msg.Key().Text; text != "" {
+				switch strings.ToLower(text) {
 				case "y", "yes":
 					m.confirmed = true
 					m.quitting = true
@@ -75,13 +75,13 @@ func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the confirmation dialog
-func (m ConfirmDialogModel) View() string {
+func (m ConfirmDialogModel) View() tea.View {
 	if m.quitting {
 		if m.confirmed {
 			successStyle := lipgloss.NewStyle().Foreground(styles.SuccessColor).Bold(true)
-			return successStyle.Render("✓ Confirmed")
+			return tea.NewView(successStyle.Render("✓ Confirmed"))
 		}
-		return ""
+		return tea.NewView("")
 	}
 
 	var b strings.Builder
@@ -99,7 +99,7 @@ func (m ConfirmDialogModel) View() string {
 		Padding(0, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.SubtleColor)
-	noStyle := yesStyle.Copy()
+	noStyle := yesStyle
 
 	if m.cursor == 0 {
 		// Yes is selected
@@ -129,7 +129,7 @@ func (m ConfirmDialogModel) View() string {
 		Margin(1, 0, 0, 0)
 	b.WriteString(helpStyle.Render("Use ←/→ to navigate, Enter to confirm, Esc to cancel, or type y/n"))
 
-	return BorderStyle.Render(b.String())
+	return tea.NewView(BorderStyle.Render(b.String()))
 }
 
 // Result returns whether the dialog was confirmed
