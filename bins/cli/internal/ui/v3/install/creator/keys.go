@@ -17,12 +17,12 @@ type keyMap struct {
 
 var keys = keyMap{
 	Up: key.NewBinding(
-		key.WithKeys("up", "k"),
-		key.WithHelp("up/k", "scroll up"),
+		key.WithKeys("up"),
+		key.WithHelp("up", "scroll up"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down", "j"),
-		key.WithHelp("down/j", "scroll down"),
+		key.WithKeys("down"),
+		key.WithHelp("down", "scroll down"),
 	),
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
