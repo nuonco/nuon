@@ -5,9 +5,7 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-var appStyle = lipgloss.NewStyle().
-	BorderStyle(lipgloss.NormalBorder()).
-	BorderForeground(styles.PrimaryColor)
+var appStyle = styles.Pane
 
 // header holds a "title card" for the view or the search box
 var headerStyle = lipgloss.NewStyle().
