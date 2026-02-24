@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/acr"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/docker"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/ecr"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/gar"
 	"github.com/nuonco/nuon/pkg/oci/dockerhub"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
@@ -30,8 +29,6 @@ func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*
 		accessInfo, err = acr.FetchAccessInfo(ctx, cfg)
 	case configs.OCIRegistryTypeECR:
 		accessInfo, err = ecr.FetchAccessInfo(ctx, cfg)
-	case configs.OCIRegistryTypeGAR:
-		accessInfo, err = gar.FetchAccessInfo(ctx, cfg)
 	case configs.OCIRegistryTypePublicOCI, configs.OCIRegistryTypePrivateOCI:
 		accessInfo, err = docker.FetchAccessInfo(ctx, cfg)
 	default:

@@ -58,7 +58,6 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string) ([]app.Insta
 		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
-		Preload("GCPAccount").
 		Preload("AppRunnerConfig").
 		Preload("App").
 		Preload("App.AppRunnerConfigs").

@@ -74,13 +74,6 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 				UseDefault: true,
 			},
 		}
-	case stack.InstallStackOutputs.GCPStackOutputs != nil:
-		obj = &kube.ClusterInfo{
-			ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
-			Endpoint: "{{.nuon.sandbox.outputs.cluster.endpoint}}",
-			CAData:   "{{.nuon.sandbox.outputs.cluster.certificate_authority_data}}",
-			GCPAuth:  true,
-		}
 	}
 	if err := render.RenderStruct(obj, stateData); err != nil {
 		l.Error("error rendering cluster info",

@@ -10,7 +10,6 @@ type OCIRegistryType string
 const (
 	OCIRegistryTypeECR        OCIRegistryType = "ecr"
 	OCIRegistryTypeACR        OCIRegistryType = "acr"
-	OCIRegistryTypeGAR        OCIRegistryType = "gar"
 	OCIRegistryTypePrivateOCI OCIRegistryType = "private_oci"
 	OCIRegistryTypePublicOCI  OCIRegistryType = "public_oci"
 )
