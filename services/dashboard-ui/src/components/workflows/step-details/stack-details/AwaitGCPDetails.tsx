@@ -16,6 +16,9 @@ import type { IStackDetails } from './types'
 export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
   const { install } = useInstall()
   const templateUrl = stack?.versions?.at(0)?.template_url
+  const projectId = install?.gcp_account?.project_id
+  const region = install?.gcp_account?.region || 'us-central1'
+  const installId = install?.id
   const [isDownloading, setIsDownloading] = useState(false)
 
   const handleDownload = async () => {
@@ -32,30 +35,73 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
     }
   }
 
+  const setupCmd = `gcloud services enable config.googleapis.com cloudbuild.googleapis.com --project=${projectId} && \\
+gcloud iam service-accounts create nuon-deployer --project=${projectId} --display-name="Nuon Infrastructure Manager deployer" && \\
+gcloud projects add-iam-policy-binding ${projectId} \\
+  --member="serviceAccount:nuon-deployer@${projectId}.iam.gserviceaccount.com" \\
+  --role="roles/config.agent" && \\
+gcloud projects add-iam-policy-binding ${projectId} \\
+  --member="serviceAccount:nuon-deployer@${projectId}.iam.gserviceaccount.com" \\
+  --role="roles/editor"`
+
+  const deployCmd = `gcloud infra-manager deployments apply \\
+  projects/${projectId}/locations/${region}/deployments/nuon-${installId} \\
+  --service-account=projects/${projectId}/serviceAccounts/nuon-deployer@${projectId}.iam.gserviceaccount.com \\
+  --gcs-source=${templateUrl?.replace('https://storage.googleapis.com/', 'gs://')} \\
+  --project=${projectId}`
+
   const terraformCmd = `mkdir -p nuon-stack && cd nuon-stack && curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
-  const gcpConsoleUrl = `https://console.cloud.google.com/infra-manager/deployments?project=${install?.gcp_account?.project_id}`
 
   return (
     <>
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Provision the install stack using Terraform
+          Deploy using GCP Infrastructure Manager
         </Text>
 
         <Card>
           <span className="flex justify-between items-center">
-            <Text>1. Authenticate to GCP</Text>
+            <span className="flex flex-col gap-1">
+              <Text weight="strong">Step 1: One-time setup</Text>
+              <Text variant="subtext">
+                Enable APIs and create a service account for Infrastructure Manager (run once per project)
+              </Text>
+            </span>
             <ClickToCopyButton
               className="w-fit self-end"
-              textToCopy={`gcloud auth application-default login --project=${install?.gcp_account?.project_id}`}
+              textToCopy={setupCmd}
             />
           </span>
-          <Code>{`gcloud auth application-default login --project=${install?.gcp_account?.project_id}`}</Code>
+          <Code>{setupCmd}</Code>
         </Card>
 
         <Card>
           <span className="flex justify-between items-center">
-            <Text>2. Download and apply the stack</Text>
+            <span className="flex flex-col gap-1">
+              <Text weight="strong">Step 2: Deploy the stack</Text>
+              <Text variant="subtext">
+                Infrastructure Manager will provision VPC, runner, and all required resources
+              </Text>
+            </span>
+            <ClickToCopyButton
+              className="w-fit self-end"
+              textToCopy={deployCmd}
+            />
+          </span>
+          <Code>{deployCmd}</Code>
+        </Card>
+      </div>
+
+      <Divider dividerWord="or" />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          Deploy using Terraform CLI
+        </Text>
+
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Download and apply with Terraform</Text>
             <ClickToCopyButton
               className="w-fit self-end"
               textToCopy={terraformCmd}
@@ -69,15 +115,14 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Download and deploy manually
+          Download template
         </Text>
-
         <Card>
           <span className="flex justify-between items-center">
             <span className="flex flex-col gap-1">
               <Text weight="strong">Terraform configuration</Text>
               <Text variant="subtext">
-                Download the pre-configured Terraform JSON and apply it in your GCP project
+                Download and deploy manually
               </Text>
             </span>
             <Button
@@ -89,38 +134,6 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
               {isDownloading ? 'Downloading...' : 'Download main.tf.json'}
             </Button>
           </span>
-        </Card>
-
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text weight="strong">GCP Console</Text>
-            <Link
-              href={gcpConsoleUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button size="sm" variant="secondary">
-                Open Infrastructure Manager
-              </Button>
-            </Link>
-          </span>
-          <Text variant="subtext">
-            Upload the downloaded template in GCP Infrastructure Manager to deploy
-          </Text>
-        </Card>
-
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>Template URL</Text>
-            <ClickToCopyButton textToCopy={templateUrl} />
-          </span>
-          <Link
-            href={templateUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Code>{templateUrl}</Code>
-          </Link>
         </Card>
       </div>
     </>
@@ -134,21 +147,29 @@ export const AwaitGCPDetailsSkeleton = () => {
 
       <Card>
         <Skeleton height="17px" width="100px" />
-        <Skeleton height="52px" width="100%" />
+        <Skeleton height="72px" width="100%" />
       </Card>
 
       <Card>
         <Skeleton height="17px" width="120px" />
+        <Skeleton height="72px" width="100%" />
+      </Card>
+
+      <Divider dividerWord="or" />
+
+      <Skeleton height="24px" width="200px" />
+
+      <Card>
+        <Skeleton height="17px" width="200px" />
         <Skeleton height="52px" width="100%" />
       </Card>
 
       <Divider dividerWord="or" />
 
-      <Skeleton height="24px" width="325px" />
+      <Skeleton height="24px" width="175px" />
 
       <Card>
-        <Skeleton height="17px" width="219px" />
-        <Skeleton height="72px" width="100%" />
+        <Skeleton height="17px" width="150px" />
       </Card>
     </>
   )
