@@ -32,7 +32,8 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
     }
   }
 
-  const terraformCmd = `curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
+  const terraformCmd = `mkdir -p nuon-stack && cd nuon-stack && curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
+  const gcpConsoleUrl = `https://console.cloud.google.com/infra-manager/deployments?project=${install?.gcp_account?.project_id}`
 
   return (
     <>
@@ -68,8 +69,9 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Download the stack template
+          Download and deploy manually
         </Text>
+
         <Card>
           <span className="flex justify-between items-center">
             <span className="flex flex-col gap-1">
@@ -87,6 +89,24 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
               {isDownloading ? 'Downloading...' : 'Download main.tf.json'}
             </Button>
           </span>
+        </Card>
+
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text weight="strong">GCP Console</Text>
+            <Link
+              href={gcpConsoleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button size="sm" variant="secondary">
+                Open Infrastructure Manager
+              </Button>
+            </Link>
+          </span>
+          <Text variant="subtext">
+            Upload the downloaded template in GCP Infrastructure Manager to deploy
+          </Text>
         </Card>
 
         <Card>
