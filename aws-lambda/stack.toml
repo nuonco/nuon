@@ -1,7 +1,0 @@
-type        = "aws-cloudformation"
-name        = "nuon-demos-lambda-{{.nuon.install.id}}"
-description = "QuickLink to install runner for Lambda app config: Install {{.nuon.install.id}}"
-
-# nested stack
-vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.12/vpc/eks/default/stack.yaml"
-runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.1.12/runner/asg/stack.yaml"

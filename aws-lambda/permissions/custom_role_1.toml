@@ -1,8 +1,0 @@
-type = "custom"
-name = "{{.nuon.install.id}}-custom-role-1"
-description = "custom role for testing dynamic permissions on component operations"
-display_name = "custom role 1"
-permissions_boundary = "./custom_role_1_boundary.json"
-
-[[policies]]
-managed_policy_name = "AdministratorAccess"
