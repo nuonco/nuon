@@ -16,7 +16,7 @@ func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID str
 	}
 
 	req := &models.ServiceCreateInstallActionWorkflowRunRequest{
-		ActionWorkflowConfigID: awc.ID,
+		ActionWorkflowConfigID: &awc.ID,
 	}
 
 	err = s.api.CreateInstallActionWorkflowRun(ctx, installID, req)
