@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -59,7 +58,7 @@ func (m *Model) setHeaderContent() {
 
 	left := lipgloss.JoinHorizontal(lipgloss.Left, title, status)
 	right := lipgloss.JoinHorizontal(lipgloss.Left, prompt)
-	spacer := strings.Repeat(" ", common.Max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
+	spacer := strings.Repeat(" ", max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
 
 	// top row has two sections:
 	// [ title ] ... [ status ] with spacing between

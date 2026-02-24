@@ -305,7 +305,7 @@ func (m *model) prevInput() {
 // updateViewportContent builds the form content and sets it in the viewport
 // This should be called whenever the form content changes (not in View())
 func (m *model) updateViewportContent() {
-	width := common.Min(m.width, maxWidth) - 4
+	width := min(m.width, maxWidth) - 4
 	sections := []string{}
 
 	titleStyle := lipgloss.NewStyle().

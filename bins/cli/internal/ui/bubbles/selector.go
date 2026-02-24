@@ -123,7 +123,7 @@ func (m *SelectorModel) adjustViewport() {
 	}
 	maxOffset := len(m.filteredItems) - visibleRows
 	if m.viewportOffset > maxOffset {
-		m.viewportOffset = Max(0, maxOffset)
+		m.viewportOffset = max(0, maxOffset)
 	}
 }
 
@@ -350,7 +350,7 @@ func (m SelectorModel) View() tea.View {
 	} else {
 		visibleRows := m.getVisibleRows()
 		startIdx := m.viewportOffset
-		endIdx := Min(startIdx+visibleRows, len(m.filteredItems))
+		endIdx := min(startIdx+visibleRows, len(m.filteredItems))
 
 		if startIdx > 0 {
 			scrollIndicatorStyle := lipgloss.NewStyle().
