@@ -101,6 +101,7 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	}
 
 	envVars := generics.ToStringMap(cfg.EnvVars)
+
 	if err := render.RenderMap(&envVars, stateData); err != nil {
 		l.Error("error rendering env-vars",
 			zap.Any("env-vars", envVars),

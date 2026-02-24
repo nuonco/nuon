@@ -63,6 +63,10 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		return config, nil
 	}
 
+	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil {
+		return nil, fmt.Errorf("missing auth configuration")
+	}
+
 	u, err := url.Parse(cInfo.Endpoint)
 	if err != nil {
 		return nil, err

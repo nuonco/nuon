@@ -315,6 +315,17 @@ func TestGetRoleForDeploy(t *testing.T) {
 			description:        "Should fallback to default when matrix role is missing from stack outputs",
 		},
 		{
+			name:               "runtime_role_missing_fallback_to_default",
+			installDeployType:  app.InstallDeployTypeApply,
+			installDeployRole:  "MissingRuntimeRole", // This role won't be in stack outputs
+			componentRoles:     map[app.OperationType]string{},
+			matrixRules:        nil,
+			expectedOperation:  app.OperationDeploy,
+			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Should fallback to default when runtime role is missing from stack outputs",
+		},
+		{
 			name:              "matrix_role_missing_teardown_fallback",
 			installDeployType: app.InstallDeployTypeTeardown,
 			installDeployRole: "",
