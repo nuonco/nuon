@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -20,6 +22,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -146,7 +149,6 @@ func (s *InstallsServiceTestSuite) makeRequest(method, path string, body interfa
 }
 
 // makeRawRequest sends a raw string body through the test router, bypassing json.Marshal.
-// Useful for testing malformed JSON.
 func (s *InstallsServiceTestSuite) makeRawRequest(method, path string, rawBody string) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(method, path, bytes.NewBufferString(rawBody))
 	require.NoError(s.T(), err)
@@ -155,4 +157,44 @@ func (s *InstallsServiceTestSuite) makeRawRequest(method, path string, rawBody s
 	rr := httptest.NewRecorder()
 	s.router.ServeHTTP(rr, req)
 	return rr
+}
+
+type testInstallWithWorkflow struct {
+	Install    *app.Install
+	WorkflowID string
+}
+
+func (s *InstallsServiceTestSuite) createTestInstallViaAPI() testInstallWithWorkflow {
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name: fmt.Sprintf("api-install-%d", time.Now().UnixNano()),
+			AWSAccount: &struct {
+				Region string `json:"region"`
+			}{Region: "us-west-2"},
+		},
+	}
+
+	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+	require.Equal(s.T(), http.StatusCreated, rr.Code)
+
+	var install app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
+
+	return testInstallWithWorkflow{
+		Install:    &install,
+		WorkflowID: rr.Header().Get(app.HeaderInstallWorkflowID),
+	}
+}
+
+func (s *InstallsServiceTestSuite) getSeededComponent(componentType app.ComponentType) *app.Component {
+	for _, ccc := range s.testAppConfig.ComponentConfigConnections {
+		var cmp app.Component
+		res := s.deps.DB.First(&cmp, "id = ?", ccc.ComponentID)
+		if res.Error == nil && cmp.Type == componentType {
+			return &cmp
+		}
+	}
+	s.T().Fatalf("no seeded component of type %s", componentType)
+	return nil
 }
