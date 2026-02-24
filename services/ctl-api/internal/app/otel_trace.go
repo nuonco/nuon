@@ -42,7 +42,7 @@ type OtelTrace struct {
 	TimestampDate time.Time `json:"timestamp_date,omitzero" gorm:"type:Date;default:toDate(timestamp);" temporaljson:"timestamp_date,omitzero,omitempty"`
 	TimestampTime time.Time `json:"timestamp_time,omitzero" gorm:"type:DateTime;default:toDateTime(timestamp);" temporaljson:"timestamp_time,omitzero,omitempty"`
 
-	ResourceAttributes map[string]string `json:"resource_attributes,omitzero" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
+	ResourceAttributes map[string]string `json:"resource_attributes,omitzero" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1);" temporaljson:"resource_schema_url,omitzero,omitempty"`
 
 	ScopeName             string            `json:"scope_name,omitzero" gorm:"codec:ZSTD(1);" temporaljson:"scope_name,omitzero,omitempty"`
@@ -115,7 +115,7 @@ type OtelTraceIngestion struct {
 	TimestampDate time.Time `json:"timestamp_date" gorm:"type:Date;default:toDate(timestamp);" temporaljson:"timestamp_date,omitzero,omitempty"`
 	TimestampTime time.Time `json:"timestamp_time" gorm:"type:DateTime;default:toDateTime(timestamp);" temporaljson:"timestamp_time,omitzero,omitempty"`
 
-	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
+	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1);" temporaljson:"resource_schema_url,omitzero,omitempty"`
 
 	ScopeName             string            `json:"scope_name" gorm:"codec:ZSTD(1);" temporaljson:"scope_name,omitzero,omitempty"`

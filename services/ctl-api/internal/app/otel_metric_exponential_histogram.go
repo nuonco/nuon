@@ -37,7 +37,7 @@ type OtelMetricExponentialHistogram struct {
 	RunnerJobExecutionStep string `json:"runner_job_execution_step,omitzero" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
 	// OTEL log message attributes
-	ResourceAttributes map[string]string `json:"resource_attributes,omitzero" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
+	ResourceAttributes map[string]string `json:"resource_attributes,omitzero" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"resource_schema_url,omitzero,omitempty"`
 
 	ScopeName             string            `json:"scope_name,omitzero" gorm:"codec:ZSTD(1)" temporaljson:"scope_name,omitzero,omitempty"`
@@ -52,7 +52,7 @@ type OtelMetricExponentialHistogram struct {
 	MetricDescription string `json:"metric_description,omitzero" gorm:"codec:ZSTD(1)" temporaljson:"metric_description,omitzero,omitempty"`
 	MetricUnit        string `json:"metric_unit,omitzero" gorm:"codec:ZSTD(1)" temporaljson:"metric_unit,omitzero,omitempty"`
 
-	Attributes map[string]string `json:"attributes,omitzero" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"attributes,omitzero,omitempty"`
+	Attributes map[string]string `json:"attributes,omitzero" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"attributes,omitzero,omitempty"`
 
 	StartTimeUnix time.Time `json:"start_time_unix,omitzero" gorm:"type:DateTime64(9); codec:Delta, ZSTD(1)" temporaljson:"start_time_unix,omitzero,omitempty"`
 	TimeUnix      time.Time `json:"time_unix,omitzero" gorm:"type:DateTime64(9);codec:ZSTD(1)" temporaljson:"time_unix,omitzero,omitempty"`
@@ -120,7 +120,7 @@ type OtelMetricExponentialHistogramIngestion struct {
 	RunnerJobExecutionStep string `json:"runner_job_execution_step" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
 	// OTEL log message attributes
-	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
+	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"resource_schema_url,omitzero,omitempty"`
 
 	ScopeName             string            `json:"scope_name" gorm:"codec:ZSTD(1)" temporaljson:"scope_name,omitzero,omitempty"`
@@ -135,7 +135,7 @@ type OtelMetricExponentialHistogramIngestion struct {
 	MetricDescription string `json:"metric_description" gorm:"codec:ZSTD(1)" temporaljson:"metric_description,omitzero,omitempty"`
 	MetricUnit        string `json:"metric_unit" gorm:"codec:ZSTD(1)" temporaljson:"metric_unit,omitzero,omitempty"`
 
-	Attributes map[string]string `json:"attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"attributes,omitzero,omitempty"`
+	Attributes map[string]string `json:"attributes" gorm:"type:Map(LowCardinality(String), String);codec:ZSTD(1); index:idx_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"attributes,omitzero,omitempty"`
 
 	StartTimeUnix time.Time `json:"start_time_unix" gorm:"type:DateTime64(9); codec:Delta, ZSTD(1)" temporaljson:"start_time_unix,omitzero,omitempty"`
 	TimeUnix      time.Time `json:"time_unix" gorm:"type:DateTime64(9);codec:ZSTD(1)" temporaljson:"time_unix,omitzero,omitempty"`
