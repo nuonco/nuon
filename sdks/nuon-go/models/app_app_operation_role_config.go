@@ -39,7 +39,7 @@ type AppAppOperationRoleConfig struct {
 	OrgID string `json:"org_id,omitempty"`
 
 	// rules
-	Rules []*AppOperationRoleRule `json:"rules"`
+	Rules []*AppAppOperationRoleRule `json:"rules"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
