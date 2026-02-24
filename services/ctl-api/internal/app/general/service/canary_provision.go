@@ -26,6 +26,7 @@ type ProvisionCanaryRequest struct {
 // @Accept					json
 // @Produce				json
 // @Success				201	{string}	ok
+// @Deprecated
 // @Router					/v1/general/provision-canary [post]
 func (c *service) ProvisionCanary(ctx *gin.Context) {
 	var req ProvisionCanaryRequest
