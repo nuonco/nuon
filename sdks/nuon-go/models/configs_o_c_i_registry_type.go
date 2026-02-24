@@ -36,9 +36,6 @@ const (
 	// ConfigsOCIRegistryTypeAcr captures enum value "acr"
 	ConfigsOCIRegistryTypeAcr ConfigsOCIRegistryType = "acr"
 
-	// ConfigsOCIRegistryTypeGar captures enum value "gar"
-	ConfigsOCIRegistryTypeGar ConfigsOCIRegistryType = "gar"
-
 	// ConfigsOCIRegistryTypePrivateOci captures enum value "private_oci"
 	ConfigsOCIRegistryTypePrivateOci ConfigsOCIRegistryType = "private_oci"
 
@@ -51,7 +48,7 @@ var configsOCIRegistryTypeEnum []any
 
 func init() {
 	var res []ConfigsOCIRegistryType
-	if err := json.Unmarshal([]byte(`["ecr","acr","gar","private_oci","public_oci"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["ecr","acr","private_oci","public_oci"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

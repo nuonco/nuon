@@ -3,7 +3,7 @@ package watch
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/list"
+	"charm.land/bubbles/v2/list"
 )
 
 func (m *model) getWorkflowItems() []list.Item {

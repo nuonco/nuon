@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
+	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -38,12 +37,12 @@ func (m Model) headerView() string {
 	if len(m.installActionWorkflow.Runs) > 0 {
 		latestRun := m.installActionWorkflow.Runs[0]
 		latestStatus = latestRun.Status
-		statusStyle := getRunStatusStyle(latestStatus)
+		statusStyle := styles.GetRunStatusStyle(latestStatus)
 
 		if latestStatus == "in_progress" {
 			title = m.spinner.View() + " " + title
 		} else {
-			icon := getRunStatusIcon(latestStatus)
+			icon := styles.GetRunStatusIcon(latestStatus)
 			title = statusStyle.Render(fmt.Sprintf("%s ", icon)) + title
 		}
 		status = statusStyle.Render(fmt.Sprintf(" [%s]", latestStatus))
@@ -51,7 +50,7 @@ func (m Model) headerView() string {
 
 	left := lipgloss.JoinHorizontal(lipgloss.Left, title, status)
 	right := lipgloss.JoinHorizontal(lipgloss.Left, prompt)
-	spacer := strings.Repeat(" ", common.Max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
+	spacer := strings.Repeat(" ", max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
 
 	// top row has two sections:
 	// [ title ] ... [ status ] with spacing between

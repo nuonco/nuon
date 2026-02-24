@@ -16,7 +16,6 @@ type StackType string
 
 const (
 	StackTypeAWS StackType = "aws-cloudformation"
-	StackTypeGCP StackType = "gcp-terraform"
 )
 
 type AppStackConfig struct {

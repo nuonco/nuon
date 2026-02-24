@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/progress"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/lipgloss/v2"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -57,7 +57,7 @@ func RenderHeader(cfg HeaderConfig) string {
 	details += styles.TextDim.Render("total:  ") + fmt.Sprintf("%02d ", cfg.StepsTotal)
 	details += styles.TextDim.Render("completed: ") + fmt.Sprintf("%02d", cfg.StepsFinished)
 	spacerBottom := ""
-	spacerBottomCount := cfg.Width - (lipgloss.Width(details) + cfg.ProgressBar.Width)
+	spacerBottomCount := cfg.Width - (lipgloss.Width(details) + cfg.ProgressBar.Width())
 	if spacerBottomCount > 0 {
 		spacerBottom = strings.Repeat(" ", spacerBottomCount)
 	}

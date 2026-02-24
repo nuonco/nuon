@@ -3,17 +3,16 @@ package watch
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/progress"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/viewport"
+	"charm.land/lipgloss/v2"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
@@ -23,9 +22,8 @@ import (
 )
 
 const (
-	minRequiredWidth    int           = 100
-	minRequiredHeight   int           = 20
-	dataRefreshInterval time.Duration = time.Second * 5
+	minRequiredWidth  int = 100
+	minRequiredHeight int = 20
 )
 
 // Exit codes for watch TUI - matches workflows_watch.go constants
@@ -95,10 +93,10 @@ func initialModel(
 		api:       api,
 		installID: installID,
 
-		header:         viewport.New(minRequiredWidth, 2),
+		header:         viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(2)),
 		workflowsList:  workflowsList,
-		workflowDetail: viewport.New(minRequiredWidth, 30),
-		footer:         viewport.New(minRequiredWidth, 4),
+		workflowDetail: viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(30)),
+		footer:         viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(4)),
 		focus:          "list",
 
 		help:     help.New(),
@@ -121,7 +119,7 @@ func (m *model) setLogMessage(message string, level string) {
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchWorkflowsCmd,
-		tick,
+		common.TickCmd(common.DefaultRefreshInterval),
 		m.spinner.Tick,
 	)
 }
@@ -163,17 +161,20 @@ func (m *model) resize() {
 	contentHeight := m.height - headerHeight - footerHeight
 
 	listWidth := int(float64(m.width) * 0.4)
-	detailWidth := m.width - listWidth - 4
+	// Width(listWidth) is total outer width including borders (2) and padding (1 right),
+	// so the list content area is listWidth - 3.
+	listContentWidth := listWidth - 3
+	detailWidth := m.width - listWidth - 2
 
-	m.header.Width = m.width - 2
-	m.header.Height = headerHeight
+	m.header.SetWidth(m.width - 2)
+	m.header.SetHeight(headerHeight)
 
-	m.workflowsList.SetSize(listWidth, contentHeight-2)
-	m.workflowDetail.Width = detailWidth
-	m.workflowDetail.Height = contentHeight - 2
+	m.workflowsList.SetSize(listContentWidth, contentHeight-2)
+	m.workflowDetail.SetWidth(detailWidth)
+	m.workflowDetail.SetHeight(contentHeight - 2)
 
-	m.footer.Width = m.width - 2
-	m.footer.Height = footerHeight
+	m.footer.SetWidth(m.width - 2)
+	m.footer.SetHeight(footerHeight)
 }
 
 func (m *model) handleResize(msg tea.WindowSizeMsg) {
@@ -190,7 +191,7 @@ func (m *model) toggleFocus() {
 	}
 }
 
-func (m *model) handleNav(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *model) handleNav(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	if m.focus == "detail" {
 		m.workflowDetail, cmd = m.workflowDetail.Update(msg)
@@ -205,14 +206,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tickMsg:
+	case common.TickMsg:
 		return m, tea.Batch(
 			m.fetchWorkflowsCmd,
-			tea.Tick(
-				dataRefreshInterval,
-				func(t time.Time) tea.Msg {
-					return tickMsg(t)
-				}),
+			common.TickCmd(common.DefaultRefreshInterval),
 		)
 
 	case workflowsFetchedMsg:
@@ -222,7 +219,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.handleResize(msg)
 		return m, tea.Batch(cmds...)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
@@ -281,7 +278,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
+	v := tea.NewView(m.viewContent())
+	v.AltScreen = true
+	return v
+}
+
+func (m model) viewContent() string {
 	if m.quitting {
 		return "quitting " + m.spinner.View()
 	}
@@ -308,7 +311,7 @@ func (m model) View() string {
 		if m.error != nil {
 			content = common.FullPageDialog(common.FullPageDialogRequest{
 				Width:   m.width,
-				Height:  m.workflowDetail.Height,
+				Height:  m.workflowDetail.Height(),
 				Padding: 1,
 				Content: lipgloss.NewStyle().Width(int(m.width/8) * 5).Padding(1).Render(m.error.Error()),
 				Level:   "error",
@@ -316,7 +319,7 @@ func (m model) View() string {
 		} else {
 			content = common.FullPageDialog(common.FullPageDialogRequest{
 				Width:   m.width,
-				Height:  m.workflowDetail.Height,
+				Height:  m.workflowDetail.Height(),
 				Padding: 1,
 				Content: "  Loading  ",
 				Level:   "info",
@@ -358,7 +361,7 @@ func WatchApp(
 	}
 
 	m := initialModel(ctx, cfg, api, installID)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 	finalModel, err := p.Run()
 	if err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
