@@ -23,6 +23,7 @@ type StopCanaryCronRequest struct {
 // @Accept			json
 // @Produce		json
 // @Success		201	{string}	ok
+// @Deprecated
 // @Router			/v1/general/stop-canary-cron [post]
 func (c *service) StopCanaryCron(ctx *gin.Context) {
 	var req StopCanaryCronRequest

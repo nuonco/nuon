@@ -36,6 +36,7 @@ type StartCanaryCronRequest struct {
 // @Accept					json
 // @Produce				json
 // @Success				201	{string}	ok
+// @Deprecated
 // @Router					/v1/general/start-canary-cron [post]
 func (c *service) StartCanaryCron(ctx *gin.Context) {
 	var req StartCanaryCronRequest
