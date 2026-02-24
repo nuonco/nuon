@@ -141,6 +141,12 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			Region: installCfg.AWSAccount.Region,
 		}
 	}
+	if installCfg.GCPAccount != nil {
+		req.GcpAccount = &models.ServiceCreateInstallRequestGcpAccount{
+			ProjectID: installCfg.GCPAccount.ProjectID,
+			Region:    installCfg.GCPAccount.Region,
+		}
+	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 		req.InstallConfig = &models.HelpersCreateInstallConfigParams{
 			ApprovalOption: installCfg.ApprovalOption.APIType(),

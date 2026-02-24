@@ -32,6 +32,9 @@ const (
 
 	// AppStackTypeAwsDashCloudformation captures enum value "aws-cloudformation"
 	AppStackTypeAwsDashCloudformation AppStackType = "aws-cloudformation"
+
+	// AppStackTypeGcpDashTerraform captures enum value "gcp-terraform"
+	AppStackTypeGcpDashTerraform AppStackType = "gcp-terraform"
 )
 
 // for schema
@@ -39,7 +42,7 @@ var appStackTypeEnum []any
 
 func init() {
 	var res []AppStackType
-	if err := json.Unmarshal([]byte(`["aws-cloudformation"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["aws-cloudformation","gcp-terraform"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

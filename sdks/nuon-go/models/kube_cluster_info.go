@@ -37,6 +37,9 @@ type KubeClusterInfo struct {
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
+	// gcp auth
+	GcpAuth bool `json:"gcp_auth,omitempty"`
+
 	// ID is the ID of the EKS cluster
 	ID string `json:"id,omitempty"`
 

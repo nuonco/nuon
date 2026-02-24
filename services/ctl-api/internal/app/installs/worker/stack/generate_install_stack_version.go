@@ -13,12 +13,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const (
 	DefaultAzureRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#azure"
 	DefaultAWSRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#default"
+	DefaultGCPRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
 )
 
 // @temporal-gen workflow
@@ -41,6 +43,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	if !generics.SliceContains(cfg.RunnerConfig.Type, []app.AppRunnerType{
 		app.AppRunnerTypeAWS,
 		app.AppRunnerTypeAzure,
+		app.AppRunnerTypeGCP,
 	}) {
 		return nil
 	}
@@ -97,6 +100,8 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		region = install.AWSAccount.Region
 	case install.AzureAccount != nil:
 		region = install.AzureAccount.Location
+	case install.GCPAccount != nil:
+		region = install.GCPAccount.Region
 	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
 		InstallID:      install.ID,
@@ -104,6 +109,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		AppConfigID:    cfg.ID,
 		StackName:      cfg.StackConfig.Name,
 		Region:         region,
+		Platform:       string(cfg.RunnerConfig.Type),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
@@ -179,18 +185,39 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		if err != nil {
 			return errors.Wrap(err, "unable to create bicep template")
 		}
+
+	case app.AppRunnerTypeGCP:
+		if cfg.RunnerConfig.InitScriptURL != "" {
+			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
+		} else {
+			inp.RunnerInitScriptURL = DefaultGCPRunnerInitScript
+		}
+
+		tmplByts, checksum, err = gcp.Render(inp)
+		if err != nil {
+			return errors.Wrap(err, "unable to create gcp terraform template")
+		}
 	}
 
-	// AWS and Azure converge here, after template generation is complete.
-	// We upload both types of stacks to S3.
-	// Even though Azure cannot use the AWS Quickcreate flow, the Azure CLI can still pull a bicep template file via HTTP.
+	// All platforms converge here, after template generation is complete.
+	// Upload to S3 (used by AWS/Azure) and optionally GCS (used by GCP Infrastructure Manager).
 
-	// upload and publish the stack
+	// upload to S3
 	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
 		BucketKey: stackVersion.AWSBucketKey,
 		Template:  tmplByts,
 	}); err != nil {
 		return errors.Wrap(err, "unable to upload cloudformation stack")
+	}
+
+	// upload to GCS for GCP installs
+	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
+		if err := activities.AwaitUploadGCPStackTemplate(ctx, &activities.UploadGCPStackTemplateRequest{
+			BucketKey: stackVersion.AWSBucketKey,
+			Template:  tmplByts,
+		}); err != nil {
+			return errors.Wrap(err, "unable to upload gcp stack to GCS")
+		}
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
