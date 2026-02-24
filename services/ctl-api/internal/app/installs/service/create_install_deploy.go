@@ -20,6 +20,7 @@ import (
 type CreateInstallComponentDeployRequest struct {
 	BuildID          string `json:"build_id"`
 	DeployDependents bool   `json:"deploy_dependents"`
+	Role             string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -75,7 +76,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		installID,
 		app.WorkflowTypeManualDeploy,
 		map[string]string{
@@ -84,6 +85,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 		},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -108,6 +110,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 type CreateInstallDeployRequest struct {
 	BuildID          string `json:"build_id"`
 	DeployDependents bool   `json:"deploy_dependents"`
+	Role             string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -158,7 +161,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		installID,
 		app.WorkflowTypeManualDeploy,
 		map[string]string{
@@ -167,6 +170,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
 		},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -240,6 +244,7 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		ComponentBuildID:   req.BuildID,
 		InstallComponentID: installCmp.ID,
 		Type:               typ,
+		Role:               req.Role,
 	}
 
 	res = s.db.WithContext(ctx).Create(&deploy)

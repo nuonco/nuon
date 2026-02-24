@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	pkgplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -129,12 +130,81 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
+	// Get app config for role selection
+	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get app config")
+		return fmt.Errorf("unable to get app config: %w", err)
+	}
+
+	// Get install stack for auth configuration
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
+	if err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get install stack")
+		return errors.Wrap(err, "unable to get install stack")
+	}
+
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
+	// Create composite plan
+	compositePlan := plantypes.CompositePlan{
+		DeployPlan: plan,
+	}
+
+	// Select role for this deploy operation
+	roleSelection, opn, err := w.getRoleForDeploy(
+		l,
+		appConfig,
+		installDeploy,
+		build,
+		&build.ComponentConfigConnection.Component,
+		stack,
+		installState,
+	)
+	if err != nil {
+		l.Error("unable to evaluate role for component operation", zap.Error(err))
+		w.updateDeployStatus(
+			ctx,
+			installDeploy.ID,
+			app.InstallDeployStatusError,
+			"unable to select role",
+		)
+		return errors.Wrap(err, "unable to evaluate role for component deploy")
+	}
+
+	l.Info("selected role for component deploy apply",
+		zap.String("component_name", build.ComponentConfigConnection.Component.Name),
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("operation", string(opn)),
+		zap.String("deploy_type", string(installDeploy.Type)),
+	)
+
+	// Create auth configuration for the plan
+	planAuth, err := pkgplan.CreatePlanAuth(
+		stack.InstallStackOutputs,
+		roleSelection.RoleARN,
+		fmt.Sprintf("install-deploy-%s", installDeploy.ID),
+	)
+	if err != nil {
+		l.Error("unable to build plan auth for component operation", zap.Error(err))
+		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create auth config")
+		return errors.Wrap(err, "unable to create plan auth")
+	}
+	compositePlan.Auth = planAuth
+
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:    runnerJob.ID,
-		PlanJSON: string(planJSON),
-		CompositePlan: plantypes.CompositePlan{
-			DeployPlan: plan,
-		},
+		JobID:         runnerJob.ID,
+		PlanJSON:      string(planJSON),
+		CompositePlan: compositePlan,
 	}); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)

@@ -109,6 +109,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 			zap.Int("contents.bytes.compressed.b64", len(applyPlanContents)),
 		)
 		runPlan.ApplyPlanContents = applyPlanContents
+
 		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayDecompressedBytes()
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents display bytes")
@@ -121,13 +122,69 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return errors.Wrap(err, "unable to create json")
 	}
 
+	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to get app config")
+		return fmt.Errorf("unable to get app config: %w", err)
+	}
+
+	// Get install stack for auth configuration
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to get install stack")
+		return errors.Wrap(err, "unable to get install stack")
+	}
+
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
+	compositePlan := plantypes.CompositePlan{
+		SandboxRunPlan: runPlan,
+	}
+
+	roleSelection, op, err := w.getRoleForSandbox(l, appConfig, installRun, stack, installState)
+	if err != nil {
+		l.Error("unable to evaluate role for sandbox operation", zap.Error(err))
+		w.updateRunStatus(
+			ctx,
+			installRun.ID,
+			app.SandboxRunStatusError,
+			"unable to select role",
+		)
+		return errors.Wrap(err, "unable to evaluate role for sandbox run")
+	}
+
+	l.Info("selected role for sandbox apply",
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("operation", string(op)),
+		zap.String("run_type", string(installRun.RunType)),
+	)
+
+	planAuth, err := plan.CreatePlanAuth(
+		stack.InstallStackOutputs,
+		roleSelection.RoleARN,
+		fmt.Sprintf("sandbox-apply-%s", installRun.ID),
+	)
+	if err != nil {
+		l.Error("unable to build plan auth for sandbox operation", zap.Error(err))
+		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create auth config")
+		return errors.Wrap(err, "unable to create plan auth")
+	}
+	compositePlan.Auth = planAuth
+
 	// Deprecated: for now we dual write both the plan json and the composite plan
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:    runnerJob.ID,
-		PlanJSON: string(planJSON),
-		CompositePlan: plantypes.CompositePlan{
-			SandboxRunPlan: runPlan,
-		},
+		JobID:         runnerJob.ID,
+		PlanJSON:      string(planJSON),
+		CompositePlan: compositePlan,
 	}); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)

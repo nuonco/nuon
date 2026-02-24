@@ -1,0 +1,18 @@
+# terraform
+name              = "api_gateway"
+type              = "terraform_module"
+terraform_version = "1.11.4"
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "aws-lambda/src/components/api-gateway"
+branch    = "main"
+
+[vars]
+install_id                  = "{{.nuon.install.id}}"
+region                      = "{{.nuon.install_stack.outputs.region}}"
+name                        = "{{.nuon.inputs.inputs.sub_domain}}"
+domain_name                 = "{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name }}"
+domain_name_certificate_arn = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}} "
+lambda_function_arn         = "{{.nuon.components.lambda_function.outputs.lambda_function.lambda_function_arn}}"
+zone_id                     = "{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.zone_id}}"

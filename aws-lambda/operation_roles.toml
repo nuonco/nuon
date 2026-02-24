@@ -1,0 +1,34 @@
+type = "matrix"
+
+# Component-specific rules with custom roles
+[[rules]]
+principal = "nuon::component:lambda_function"
+operation = "deploy"
+role = "{{.nuon.install.id}}-custom-role-1"
+
+[[rules]]
+principal = "nuon::component:lambda_function"
+operation = "teardown"
+role = "{{.nuon.install.id}}-custom-role-2"
+
+# sample wildcard example
+[[rules]]
+principal = "nuon::component:*"
+operation = "teardown"
+role = "{{.nuon.install.id}}-custom-role-2"
+
+# Sandbox operations using different roles
+[[rules]]
+principal = "nuon::sandbox"
+operation = "provision"
+role = "{{.nuon.install.id}}-provision"
+
+[[rules]]
+principal = "nuon::sandbox"
+operation = "reprovision"
+role = "{{.nuon.install.id}}-custom-role-1"
+
+[[rules]]
+principal = "nuon::sandbox"
+operation = "deprovision"
+role = "{{.nuon.install.id}}-custom-role-2"

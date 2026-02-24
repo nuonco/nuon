@@ -240,7 +240,7 @@ type RunnerJob struct {
 	Operation RunnerJobOperationType `json:"operation,omitzero" gorm:"default:null;not null" temporaljson:"operation,omitzero,omitempty"`
 
 	Executions []RunnerJobExecution `json:"executions,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"executions,omitzero,omitempty"`
-	Plan       RunnerJobPlan        `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"plan,omitzero,omitempty"`
+	Plan       RunnerJobPlan        `json:"json" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"plan,omitzero,omitempty"`
 
 	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`

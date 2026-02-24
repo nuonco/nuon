@@ -1,0 +1,26 @@
+[[role]]
+name                 = "{{.nuon.install.id}}-aws-lambda-sandbox-break-glass"
+description          = "grants access to the sandbox for install {{.nuon.install.id}}."
+display_name         = "break glass role"
+permissions_boundary = ""
+
+[[role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[[role.policies]]
+name = "remove-secrets-manager"
+contents = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenySecretsManagerAccess",
+            "Effect": "Deny",
+            "Action": [
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+"""

@@ -28,6 +28,7 @@ type Client interface {
 	GetJobs(ctx context.Context, grp models.AppRunnerJobGroup, status models.AppRunnerJobStatus, limit *int64) ([]*models.AppRunnerJob, error)
 	GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error)
 	GetJobPlanJSON(ctx context.Context, jobID string) (string, error)
+	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
 	UpdateJob(ctx context.Context, jobID string, req *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error)
 
 	// job executions

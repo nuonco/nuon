@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
@@ -32,10 +34,11 @@ type CreateHelmComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies  []string `json:"dependencies"`
-	References    []string `json:"references"`
-	Checksum      string   `json:"checksum"`
-	DriftSchedule *string  `json:"drift_schedule,omitempty"`
+	Dependencies   []string                      `json:"dependencies"`
+	References     []string                      `json:"references"`
+	Checksum       string                        `json:"checksum"`
+	DriftSchedule  *string                       `json:"drift_schedule,omitempty"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 type HelmRepoConfigRequest struct {
@@ -47,6 +50,14 @@ type HelmRepoConfigRequest struct {
 func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
 	}
 
 	if err := c.basicVCSConfigRequest.Validate(); err != nil {
@@ -195,6 +206,12 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 			TakeOwnership:  req.TakeOwnership,
 		},
 	}
+
+	operationRoles := make(pgtype.Hstore)
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		HelmComponentConfig:    &cfg,
 		ComponentID:            parentCmp.ID,
@@ -204,6 +221,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		Checksum:               req.Checksum,
 		BuildTimeout:           req.BuildTimeout,
 		DeployTimeout:          req.DeployTimeout,
+		OperationRoles:         operationRoles,
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)

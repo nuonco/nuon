@@ -23,6 +23,7 @@ type CreateAdHocActionRequest struct {
 	EnvVars        map[string]string `json:"env_vars"`
 	Timeout        int               `json:"timeout,omitempty" validate:"omitempty,min=1,max=3600"`
 	Name           string            `json:"name" validate:"max=255"`
+	Role           string            `json:"role"`
 }
 
 func (c *CreateAdHocActionRequest) Validate(v *validator.Validate) error {
@@ -138,6 +139,7 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeActionWorkflowRun,
 		prependRunEnvVars,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -173,7 +175,6 @@ func (s *service) createAdHocActionRun(
 	accountID string,
 	req *CreateAdHocActionRequest,
 ) (*app.InstallActionWorkflowRun, error) {
-
 	stepConfig := app.ActionWorkflowStepConfig{
 		InlineContents: req.InlineContents,
 		Command:        req.Command,

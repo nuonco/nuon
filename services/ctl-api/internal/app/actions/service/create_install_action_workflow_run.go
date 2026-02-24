@@ -81,19 +81,28 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	}
 
 	prependRunEnvVars := PrependRunEnvPrefix(req.RunEnvVars)
-	prependRunEnvVars["install_action_workflow_id"] = installActionWorkflow.ID
-	prependRunEnvVars["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
+
+	workflowMetadata := make(map[string]string)
+	workflowMetadata["install_action_workflow_id"] = installActionWorkflow.ID
+	workflowMetadata["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
+
 	account, err := cctx.AccountFromContext(ctx)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get account from context: %w", err))
 		return
 	}
-	prependRunEnvVars["triggerred_by_id"] = account.ID
+	workflowMetadata["triggerred_by_id"] = account.ID
+
+	// Merge the prepended run env vars into workflow metadata
+	for k, v := range prependRunEnvVars {
+		workflowMetadata[k] = v
+	}
 
 	workflow, err := s.CreateWorkflow(ctx,
 		installActionWorkflow.InstallID,
 		app.WorkflowTypeActionWorkflowRun,
-		prependRunEnvVars,
+		workflowMetadata,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -123,7 +132,7 @@ func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 	return result
 }
 
-func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string) (*app.Workflow, error) {
+func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string, role string) (*app.Workflow, error) {
 	installWorkflow := app.Workflow{
 		Type:              workflowType,
 		OwnerID:           installID,
@@ -131,6 +140,7 @@ func (s *service) CreateWorkflow(ctx context.Context, installID string, workflow
 		Metadata:          generics.ToHstore(metadata),
 		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
+		Role:              role,
 	}
 
 	res := s.db.WithContext(ctx).Create(&installWorkflow)

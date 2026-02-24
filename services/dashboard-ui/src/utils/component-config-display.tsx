@@ -24,6 +24,7 @@ export interface IConfigDisplayData {
   }
   typeSpecificFields: IConfigDisplayItem[]
   vcsInfo: IConfigVCSInfo | null
+  operationRoles?: Record<string, string> | null
 }
 
 function formatTimeout(timeout?: string): string | undefined {
@@ -173,5 +174,6 @@ export function getComponentConfigDisplayData(
     commonFields,
     typeSpecificFields: typeSpecificFields.filter((field) => field.value),
     vcsInfo,
+    operationRoles: config.operation_roles,
   }
 }

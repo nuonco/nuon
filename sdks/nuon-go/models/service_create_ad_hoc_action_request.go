@@ -32,6 +32,9 @@ type ServiceCreateAdHocActionRequest struct {
 	// Max Length: 255
 	Name string `json:"name,omitempty"`
 
+	// role
+	Role string `json:"role,omitempty"`
+
 	// timeout
 	// Maximum: 3600
 	// Minimum: 1

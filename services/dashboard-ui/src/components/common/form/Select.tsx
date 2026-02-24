@@ -3,6 +3,7 @@
 import { type SelectHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
+import { Badge, type IBadge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { cn } from '@/utils/classnames'
@@ -12,6 +13,10 @@ export interface SelectOption {
   value: string
   label: string
   disabled?: boolean
+  badge?: {
+    label: string
+    theme?: IBadge['theme']
+  }
 }
 
 export interface ISelect
@@ -225,15 +230,22 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             className
           )}
         >
-          <span className={cn("truncate", { "text-cool-grey-500 dark:text-cool-grey-400": !currentValue })}>
-            {currentValue?.label || placeholder || 'Select an option...'}
-          </span>
-          <Icon 
-            variant="CaretDown" 
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className={cn("truncate", { "text-cool-grey-500 dark:text-cool-grey-400": !currentValue })}>
+              {currentValue?.label || placeholder || 'Select an option...'}
+            </span>
+            {currentValue?.badge && (
+              <Badge size="sm" theme={currentValue.badge.theme}>
+                {currentValue.badge.label}
+              </Badge>
+            )}
+          </div>
+          <Icon
+            variant="CaretDown"
             className={cn(
-              'ml-2 transition-transform',
+              'ml-2 transition-transform flex-shrink-0',
               { 'rotate-180': isOpen }
-            )} 
+            )}
           />
         </button>
 
@@ -250,7 +262,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                 onClick={() => handleOptionSelect(option)}
                 disabled={option.disabled}
                 className={cn(
-                  'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none truncate rounded text-sm font-mono text-left',
+                  'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-mono text-left flex items-center justify-between gap-2',
                   {
                     'text-white bg-primary-600': currentValue?.value === option.value,
                     'hover:bg-black/5 dark:hover:bg-white/5': currentValue?.value !== option.value && !option.disabled,
@@ -258,7 +270,12 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                   }
                 )}
               >
-                {option.label}
+                <span className="truncate flex-1">{option.label}</span>
+                {option.badge && (
+                  <Badge size="sm" theme={option.badge.theme}>
+                    {option.badge.label}
+                  </Badge>
+                )}
               </button>
             ))}
           </div>

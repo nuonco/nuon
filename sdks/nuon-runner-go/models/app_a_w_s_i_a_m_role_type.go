@@ -42,6 +42,9 @@ const (
 	// AppAWSIAMRoleTypeBreakglass captures enum value "breakglass"
 	AppAWSIAMRoleTypeBreakglass AppAWSIAMRoleType = "breakglass"
 
+	// AppAWSIAMRoleTypeCustom captures enum value "custom"
+	AppAWSIAMRoleTypeCustom AppAWSIAMRoleType = "custom"
+
 	// AppAWSIAMRoleTypeRunnerBreakglass captures enum value "runner_breakglass"
 	AppAWSIAMRoleTypeRunnerBreakglass AppAWSIAMRoleType = "runner_breakglass"
 )
@@ -51,7 +54,7 @@ var appAWSIAMRoleTypeEnum []any
 
 func init() {
 	var res []AppAWSIAMRoleType
-	if err := json.Unmarshal([]byte(`["runner_provision","runner_deprovision","runner_maintenance","breakglass","runner_breakglass"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["runner_provision","runner_deprovision","runner_maintenance","breakglass","custom","runner_breakglass"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

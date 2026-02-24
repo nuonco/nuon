@@ -21,6 +21,9 @@ type handlerState struct {
 	appCfg       *models.AppAppConfig
 	terraformCfg *models.AppTerraformModuleComponentConfig
 
+	// cloud auth information
+	auth *plantypes.PlanAuth
+
 	srcCfg  *configs.OCIRegistryRepository
 	srcTag  string
 	timeout time.Duration

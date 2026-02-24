@@ -62,7 +62,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 	}
 
 	for _, compID := range componentIDs {
-		sg.nextGroup()
+		sg.nextGroup() // new group for each component
 		comp, has := components[compID]
 		if !has {
 			return nil, errors.Errorf("component %s not found in app config", compID)
@@ -118,16 +118,24 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) 
 			Type: signals.OperationExecuteTeardownComponentSyncAndPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
+				Role:        flw.Role,
 			},
 		}, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
 		steps = append(steps, deployStep)
 
 		deployStep, err = sg.installSignalStep(ctx, installID, "teardown "+comp.Name, pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationExecuteTeardownComponentApplyPlan,
 			ExecuteTeardownComponentSubSignal: signals.TeardownComponentSubSignal{
 				ComponentID: compID,
+				Role:        flw.Role,
 			},
 		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
 		steps = append(steps, deployStep)
 
 		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg)

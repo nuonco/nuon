@@ -60,6 +60,20 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		func() error {
 			return ValidateCustomNestedStackOutputs(a)
 		},
+		//
+		func() error {
+			if err := a.OperationRoles.Validate(); err != nil {
+				return err
+			}
+			if err := a.OperationRoles.ValidateWithConfig(
+				a.Components,
+				a.Actions,
+				a.Permissions,
+				a.BreakGlass); err != nil {
+				return err
+			}
+			return nil
+		},
 	}
 
 	for _, fn := range fns {

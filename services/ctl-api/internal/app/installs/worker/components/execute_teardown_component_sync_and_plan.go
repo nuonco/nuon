@@ -55,6 +55,7 @@ func (w *Workflows) ExecuteTeardownComponentSyncAndPlan(ctx workflow.Context, sr
 		BuildID:     build.ID,
 		Type:        app.InstallDeployTypeTeardown,
 		WorkflowID:  sreq.FlowID,
+		Role:        sreq.ExecuteTeardownComponentSubSignal.Role,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create install deploy: %w", err)

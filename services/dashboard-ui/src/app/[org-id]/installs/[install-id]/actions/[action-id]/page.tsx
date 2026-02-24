@@ -9,6 +9,7 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Code } from '@/components/common/Code'
+import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -253,6 +254,23 @@ export default async function InstallActionPage({
             }
             </Section>
           ) : null}
+          {installAction.action_workflow?.configs?.[0]?.role && (
+            <Section
+              className="flex-initial"
+              childrenClassName="flex flex-col gap-4"
+              heading="Execution Role"
+            >
+              <Text variant="body" level={5}>
+                Configured Role
+              </Text>
+              <Text variant="subtext">
+                IAM role used when executing this action.
+              </Text>
+              <Code variant="inline">
+                {installAction.action_workflow.configs[0].role}
+              </Code>
+            </Section>
+          )}
           <Section className="flex-initial" heading="Latest configured steps">
             <div className="flex flex-col gap-2">
               {installAction?.action_workflow?.configs?.[0]?.steps

@@ -26,6 +26,9 @@ type handlerState struct {
 	// add validated manifest here
 	kubeClient *kubernetesClient
 
+	// cloud auth information
+	auth *plantypes.PlanAuth
+
 	// OCI artifact archive (for pulling manifest from registry)
 	arch   ociarchive.Archive
 	srcCfg *configs.OCIRegistryRepository

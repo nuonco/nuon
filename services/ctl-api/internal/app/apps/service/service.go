@@ -135,6 +135,12 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			permissionsConfigs.GET("/:config_id", s.GetAppPermissionsConfig)
 		}
 
+		operationRoleConfigs := app.Group("/operation-role-configs")
+		{
+			operationRoleConfigs.POST("", s.CreateAppOperationRoleConfig)
+			operationRoleConfigs.GET("/:app_operations_config_id", s.GetAppOperationRoleConfigs)
+		}
+
 		// app runner management
 		runnerConfigs := app.Group("/runner-configs")
 		{

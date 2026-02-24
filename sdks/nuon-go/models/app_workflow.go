@@ -71,6 +71,9 @@ type AppWorkflow struct {
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
 
+	// role
+	Role string `json:"role,omitempty"`
+
 	// started at
 	StartedAt string `json:"started_at,omitempty"`
 

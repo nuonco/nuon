@@ -29,6 +29,10 @@ func (t *Templates) getRoleConditions(inp *stacks.TemplateInput) map[string]any 
 		conditions[role.CloudFormationStackParamName] = cloudformation.Equals(cloudformation.Ref(t.roleConditionName(role)), "true")
 	}
 
+	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
+		conditions[role.CloudFormationStackParamName] = cloudformation.Equals(cloudformation.Ref(t.roleConditionName(role)), "true")
+	}
+
 	return conditions
 }
 
@@ -38,6 +42,9 @@ func (a *Templates) getRolesParamLabels(inp *stacks.TemplateInput) map[string]an
 		paramLabels[role.CloudFormationStackParamName] = role.DisplayName
 	}
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
+		paramLabels[role.CloudFormationStackParamName] = role.DisplayName
+	}
+	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
 		paramLabels[role.CloudFormationStackParamName] = role.DisplayName
 	}
 
@@ -126,6 +133,11 @@ func (a *Templates) getRolesResources(inp *stacks.TemplateInput, t tagBuilder) m
 		maps.Copy(rsrcs, resources)
 	}
 
+	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
+		resources := a.getRoleResources(role, t)
+		maps.Copy(rsrcs, resources)
+	}
+
 	return rsrcs
 }
 
@@ -167,6 +179,9 @@ func (a *Templates) getRolesParameters(inp *stacks.TemplateInput) map[string]clo
 		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, true)
 	}
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, false)
+	}
+	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
 		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, false)
 	}
 
