@@ -61,6 +61,8 @@ func init() {
 	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
+	config.RegisterDefault("gcp_stack_template_bucket", "nuon-install-templates-gcp")
+	config.RegisterDefault("gcp_stack_template_base_url", "https://storage.googleapis.com/nuon-install-templates-gcp")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
 
@@ -204,6 +206,8 @@ type Config struct {
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
 	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`
 	AWSCloudFormationStackTemplateBaseURL      string `config:"aws_cloudformation_stack_template_base_url"`
+	GCPStackTemplateBucket                     string `config:"gcp_stack_template_bucket"`
+	GCPStackTemplateBaseURL                    string `config:"gcp_stack_template_base_url"`
 	RunnerEnableSupport                        bool   `config:"runner_enable_support"`
 	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn" validate:"required"`
 
