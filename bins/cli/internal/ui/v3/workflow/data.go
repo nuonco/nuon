@@ -40,7 +40,7 @@ func (m *model) getFlatSteps() []list.Item {
 	stepsList := []list.Item{}
 	for _, innerStepList := range m.steps {
 		for _, step := range innerStepList {
-			stepItem := listStep{step: step}
+			stepItem := listStep{step: step, spinnerView: m.spinner.View()}
 			stepsList = append(stepsList, stepItem)
 		}
 	}
