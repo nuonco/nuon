@@ -38,6 +38,7 @@ type CreateCanaryUserResponse struct {
 // @Accept					json
 // @Produce				json
 // @Success				201	{object}	CreateCanaryUserResponse
+// @Deprecated
 // @Router					/v1/general/canary-user [post]
 func (s *service) CreateCanaryUser(ctx *gin.Context) {
 	var req CreateCanaryUserRequest
