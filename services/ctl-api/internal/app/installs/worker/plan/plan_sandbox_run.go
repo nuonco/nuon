@@ -215,13 +215,11 @@ func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string 
 		envVars[k] = v
 	}
 
-	switch appCfg.RunnerConfig.Type {
-	case app.AppRunnerTypeAWS:
-		envVars["AWS_REGION"] = "{{.nuon.install_stack.outputs.region}}"
-	case app.AppRunnerTypeGCP:
-		envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
-		envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
+		return envVars
 	}
+
+	envVars["AWS_REGION"] = "{{.nuon.install_stack.outputs.region}}"
 
 	return envVars
 }
@@ -233,37 +231,22 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 		vars[k] = v
 	}
 
-	var builtin map[string]any
-	switch appCfg.RunnerConfig.Type {
-	case app.AppRunnerTypeAWS:
-		builtin = map[string]any{
-			"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
-			"nuon_id":                  "{{.nuon.install.id}}",
-			"region":                   "{{.nuon.install_stack.outputs.region}}",
-			"public_root_domain":       fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
-			"internal_root_domain":     fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
-			"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
-			"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
-			"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
-			"tags": map[string]string{
-				"NUON_INSTALL_ID": "{{.nuon.install.id}}",
-			},
-		}
-	case app.AppRunnerTypeGCP:
-		builtin = map[string]any{
-			"nuon_id":              "{{.nuon.install.id}}",
-			"project_id":           "{{.nuon.install_stack.outputs.project_id}}",
-			"region":               "{{.nuon.install_stack.outputs.region}}",
-			"network":              "{{.nuon.install_stack.outputs.network_name}}",
-			"subnetwork":           "{{.nuon.install_stack.outputs.private_subnet_name}}",
-			"public_root_domain":   fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
-			"internal_root_domain": fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
-			"labels": map[string]string{
-				"nuon-install-id": "{{.nuon.install.id}}",
-			},
-		}
-	default:
+	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
 		return vars, nil
+	}
+
+	builtin := map[string]any{
+		"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
+		"nuon_id":                  "{{.nuon.install.id}}",
+		"region":                   "{{.nuon.install_stack.outputs.region}}",
+		"public_root_domain":       fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
+		"internal_root_domain":     fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
+		"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
+		"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
+		"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
+		"tags": map[string]string{
+			"NUON_INSTALL_ID": "{{.nuon.install.id}}",
+		},
 	}
 
 	for k, v := range builtin {
@@ -301,9 +284,6 @@ func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandb
 			},
 			UseDefault: true,
 		}, nil
-	case outputs.GCPStackOutputs != nil:
-		// GCP runner uses attached service account on GCE instance — no explicit credentials needed
-		return nil, nil, nil
 	}
 
 	return nil, nil, errors.New("unable to get auth data from stack outputs")

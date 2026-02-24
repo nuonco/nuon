@@ -11,7 +11,7 @@ import (
 
 type UpdateRunnerGroupSettings struct {
 	RunnerID           string `json:"runner_id" validate:"required"`
-	LocalAWSIAMRoleARN string `json:"runner_iam_role_arn"`
+	LocalAWSIAMRoleARN string `json:"runner_iam_role_arn" validate:"required"`
 }
 
 // @temporal-gen activity

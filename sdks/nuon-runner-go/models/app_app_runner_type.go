@@ -53,9 +53,6 @@ const (
 
 	// AppAppRunnerTypeAzure captures enum value "azure"
 	AppAppRunnerTypeAzure AppAppRunnerType = "azure"
-
-	// AppAppRunnerTypeGcp captures enum value "gcp"
-	AppAppRunnerTypeGcp AppAppRunnerType = "gcp"
 )
 
 // for schema
@@ -63,7 +60,7 @@ var appAppRunnerTypeEnum []any
 
 func init() {
 	var res []AppAppRunnerType
-	if err := json.Unmarshal([]byte(`["unknown","aws-ecs","aws-eks","azure-aks","azure-acs","local","aws","azure","gcp"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["unknown","aws-ecs","aws-eks","azure-aks","azure-acs","local","aws","azure"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

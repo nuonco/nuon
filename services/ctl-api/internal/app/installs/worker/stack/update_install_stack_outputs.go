@@ -46,7 +46,7 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 
 	switch appCfg.RunnerConfig.Type {
 	// we only support these
-	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeGCP:
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure:
 		break
 	default:
 		return nil
@@ -56,7 +56,6 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	outputs := app.InstallStackOutputs{
 		AWSStackOutputs:   nil,
 		AzureStackOutputs: nil,
-		GCPStackOutputs:   nil,
 	}
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
@@ -105,18 +104,6 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 
 		if err := w.v.Struct(outputs); err != nil {
 			return errors.Wrap(err, "invalid outputs")
-		}
-	case app.AppRunnerTypeGCP:
-		decoderConfig := &mapstructure.DecoderConfig{
-			WeaklyTypedInput: true,
-			Result:           &outputs.GCPStackOutputs,
-		}
-		decoder, err := mapstructure.NewDecoder(decoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create gcp decoder")
-		}
-		if err := decoder.Decode(run.Data); err != nil {
-			return errors.Wrap(err, "unable to parse gcp install outputs")
 		}
 	}
 
@@ -187,10 +174,6 @@ func validateRegion(install app.Install, outputs app.InstallStackOutputs) error 
 		}
 	case install.AzureAccount != nil:
 		if install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
-			return errors.New("install stack was run for a different region than the install was configured for")
-		}
-	case install.GCPAccount != nil:
-		if outputs.GCPStackOutputs != nil && install.GCPAccount.Region != outputs.GCPStackOutputs.Region {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	}
