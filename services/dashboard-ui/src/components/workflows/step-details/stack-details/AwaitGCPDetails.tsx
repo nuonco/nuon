@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
@@ -7,11 +8,31 @@ import { Divider } from '@/components/common/Divider'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { Button } from '@/components/common/Button'
 import { useInstall } from '@/hooks/use-install'
+import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from './types'
 
 export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
   const { install } = useInstall()
+  const templateUrl = stack?.versions?.at(0)?.template_url
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    if (!templateUrl) return
+    setIsDownloading(true)
+    try {
+      const response = await fetch(templateUrl)
+      const data = await response.arrayBuffer()
+      createFileDownload(data, 'main.tf.json', 'application/json')
+    } catch (error) {
+      console.error('Error downloading template:', error)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
+  const terraformCmd = `curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
 
   return (
     <>
@@ -22,9 +43,7 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
 
         <Card>
           <span className="flex justify-between items-center">
-            <Text>
-              Ensure you are authenticated to GCP
-            </Text>
+            <Text>1. Authenticate to GCP</Text>
             <ClickToCopyButton
               className="w-fit self-end"
               textToCopy={`gcloud auth application-default login --project=${install?.gcp_account?.project_id}`}
@@ -35,13 +54,13 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
 
         <Card>
           <span className="flex justify-between items-center">
-            <Text>Download and apply the stack template</Text>
+            <Text>2. Download and apply the stack</Text>
             <ClickToCopyButton
               className="w-fit self-end"
-              textToCopy={`curl -o stack.tf.json "${stack?.versions?.at(0)?.template_url}" && terraform init && terraform apply`}
+              textToCopy={terraformCmd}
             />
           </span>
-          <Code>{`curl -o stack.tf.json "${stack?.versions?.at(0)?.template_url}" && terraform init && terraform apply`}</Code>
+          <Code>{terraformCmd}</Code>
         </Card>
       </div>
 
@@ -49,21 +68,38 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Download the install stack template
+          Download the stack template
         </Text>
         <Card>
           <span className="flex justify-between items-center">
-            <Text>Install template link</Text>
-            <ClickToCopyButton
-              textToCopy={stack?.versions?.at(0)?.template_url}
-            />
+            <span className="flex flex-col gap-1">
+              <Text weight="strong">Terraform configuration</Text>
+              <Text variant="subtext">
+                Download the pre-configured Terraform JSON and apply it in your GCP project
+              </Text>
+            </span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleDownload}
+              disabled={isDownloading}
+            >
+              {isDownloading ? 'Downloading...' : 'Download main.tf.json'}
+            </Button>
+          </span>
+        </Card>
+
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Template URL</Text>
+            <ClickToCopyButton textToCopy={templateUrl} />
           </span>
           <Link
-            href={stack?.versions?.at(0)?.template_url}
+            href={templateUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Code>{stack?.versions?.at(0)?.template_url}</Code>
+            <Code>{templateUrl}</Code>
           </Link>
         </Card>
       </div>
