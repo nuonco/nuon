@@ -299,7 +299,7 @@ func (m *Model) submitExecuteForm() tea.Cmd {
 
 		// Create the request
 		req := &models.ServiceCreateInstallActionWorkflowRunRequest{
-			ActionWorkflowConfigID: m.latestConfig.ID,
+			ActionWorkflowConfigID: &m.latestConfig.ID,
 			RunEnvVars:             envVars,
 		}
 
