@@ -1,0 +1,54 @@
+package service
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func (s *GeneralInternalTestSuite) TestCreateSeedUser() {
+	testCases := []struct {
+		name           string
+		expectedStatus int
+		validateFunc   func(resp CreateSeedUserResponse)
+	}{
+		{
+			name:           "creates seed user successfully",
+			expectedStatus: http.StatusCreated,
+			validateFunc: func(resp CreateSeedUserResponse) {
+				assert.NotEmpty(s.T(), resp.APIToken, "api_token should not be empty")
+			},
+		},
+		{
+			name:           "idempotent - creates or returns existing seed user",
+			expectedStatus: http.StatusCreated,
+			validateFunc: func(resp CreateSeedUserResponse) {
+				assert.NotEmpty(s.T(), resp.APIToken, "api_token should not be empty")
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			// Make request
+			rr := s.makeRequest(http.MethodPost, "/v1/general/seed-user", map[string]interface{}{})
+
+			if rr.Code != tc.expectedStatus {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), tc.expectedStatus, rr.Code)
+
+			// Unmarshal response
+			var resp CreateSeedUserResponse
+			err := json.Unmarshal(rr.Body.Bytes(), &resp)
+			require.NoError(s.T(), err)
+
+			// Validate response
+			if tc.validateFunc != nil {
+				tc.validateFunc(resp)
+			}
+		})
+	}
+}
