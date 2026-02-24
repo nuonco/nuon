@@ -64,7 +64,10 @@ func (s *service) GetAppComponentDependents(ctx *gin.Context) {
 	}
 
 	if !generics.SliceContains(component.ID, appCfg.ComponentIDs) {
-		ctx.Error(errors.Wrap(err, "component does not belong to a current app config"))
+		ctx.Error(stderr.ErrNotFound{
+			Err:         errors.New("component does not belong to a current app config"),
+			Description: "Component is not in the active app configuration",
+		})
 		return
 	}
 
@@ -123,7 +126,10 @@ func (s *service) GetComponentDependents(ctx *gin.Context) {
 	}
 
 	if !generics.SliceContains(component.ID, appCfg.ComponentIDs) {
-		ctx.Error(errors.Wrap(err, "component does not belong to a current app config"))
+		ctx.Error(stderr.ErrNotFound{
+			Err:         errors.New("component does not belong to a current app config"),
+			Description: "Component is not in the active app configuration",
+		})
 		return
 	}
 

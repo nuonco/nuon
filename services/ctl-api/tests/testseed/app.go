@@ -45,3 +45,33 @@ func (s *Seeder) CreateApp(ctx context.Context, t *testing.T) *app.App {
 	require.NoError(t, res.Error)
 	return a
 }
+
+// BuildComponent creates an app.Component with fake defaults for the given app.
+func BuildComponent(appID string) *app.Component {
+	id := domains.NewComponentID()
+	acct := BuildAccount()
+	return &app.Component{
+		ID:                id,
+		Name:              fmt.Sprintf("component_%s", id),
+		AppID:             appID,
+		CreatedByID:       acct.ID,
+		Status:            "queued",
+		StatusDescription: "waiting for event loop to start for component",
+	}
+}
+
+// CreateComponent persists a Component for the given app to the database.
+// OrgID and CreatedByID are populated by the BeforeCreate hook from context.
+// Pass a componentType to set the type column (in production this is done by create-config handlers).
+func (s *Seeder) CreateComponent(ctx context.Context, t *testing.T, appID string, componentType app.ComponentType) *app.Component {
+	c := &app.Component{
+		Name:              fmt.Sprintf("component_%s", domains.NewComponentID()),
+		AppID:             appID,
+		Type:              componentType,
+		Status:            "queued",
+		StatusDescription: "waiting for event loop to start for component",
+	}
+	res := s.db.WithContext(ctx).Create(c)
+	require.NoError(t, res.Error)
+	return c
+}

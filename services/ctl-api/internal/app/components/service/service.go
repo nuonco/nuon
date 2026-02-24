@@ -40,6 +40,8 @@ type service struct {
 	vcsHelpers  *vcshelpers.Helpers
 	appsHelpers *appshelpers.Helpers
 	evClient    eventloop.Client
+
+	getLatestTerraformVersion func() (string, error)
 }
 
 var _ api.Service = (*service)(nil)
@@ -180,5 +182,7 @@ func New(params Params) *service {
 		vcsHelpers:  params.VcsHelpers,
 		appsHelpers: params.AppsHelpers,
 		evClient:    params.EvClient,
+
+		getLatestTerraformVersion: getLatestTerraformVersion,
 	}
 }
