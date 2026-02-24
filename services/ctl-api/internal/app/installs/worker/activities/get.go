@@ -32,7 +32,6 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		Preload("App.Org").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
-		Preload("GCPAccount").
 		Preload("AppSandboxConfig").
 		Preload("InstallSandbox").
 		Preload("InstallSandbox.TerraformWorkspace").

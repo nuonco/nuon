@@ -2,7 +2,7 @@ import type { TAppInputConfig, TInstall } from '@/types'
 
 export interface ICreateInstallForm {
   appId: string
-  platform: 'aws' | 'azure' | 'gcp'
+  platform: 'aws' | 'azure'
   inputConfig?: TAppInputConfig
   onSubmit?: (formData: FormData) => Promise<any>
   onSuccess?: (result: any) => void
@@ -14,7 +14,7 @@ export interface ICreateInstallForm {
 
 export interface IUpdateInstallForm {
   install: TInstall
-  platform?: 'aws' | 'azure' | 'gcp'
+  platform?: 'aws' | 'azure'
   inputConfig?: TAppInputConfig
   onSubmit?: (formData: FormData) => Promise<any>
   onSuccess?: (result: any) => void
@@ -26,7 +26,7 @@ export interface IUpdateInstallForm {
 }
 
 export interface IPlatformFields {
-  platform: 'aws' | 'azure' | 'gcp'
+  platform: 'aws' | 'azure'
   draftValues?: Record<string, string> | null
 }
 

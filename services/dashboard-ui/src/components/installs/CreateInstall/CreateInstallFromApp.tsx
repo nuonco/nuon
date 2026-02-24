@@ -157,7 +157,7 @@ export const CreateInstallFromApp = ({
       <CreateInstallForm
         ref={formRef}
         appId={app.id}
-        platform={app.runner_config.app_runner_type as 'aws' | 'azure' | 'gcp'}
+        platform={app.runner_config.app_runner_type as 'aws' | 'azure'}
         inputConfig={{
           ...config.input,
           input_groups: nestInputsUnderGroups(
