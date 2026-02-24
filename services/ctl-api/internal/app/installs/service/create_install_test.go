@@ -163,7 +163,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2InvalidAppID() {
 	}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallDeprecatedRoute() {

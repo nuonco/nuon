@@ -32,5 +32,5 @@ func (s *InstallsServiceTestSuite) TestGetInstallStackByStackIDSuccess() {
 
 func (s *InstallsServiceTestSuite) TestGetInstallStackByStackIDNotFound() {
 	rr := s.makeRequest(http.MethodGet, "/v1/installs/stacks/stk_nonexistent_00000000", nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

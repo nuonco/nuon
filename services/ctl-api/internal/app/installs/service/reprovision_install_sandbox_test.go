@@ -36,5 +36,5 @@ func (s *InstallsServiceTestSuite) TestReprovisionSandboxSuccess() {
 
 func (s *InstallsServiceTestSuite) TestReprovisionSandboxNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/installs/ins_nonexistent_00000000/reprovision-sandbox", nil)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

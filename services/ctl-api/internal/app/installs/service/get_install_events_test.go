@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +20,7 @@ func (s *InstallsServiceTestSuite) TestGetInstallEventsEmpty() {
 
 func (s *InstallsServiceTestSuite) TestGetInstallEventsNotFound() {
 	rr := s.makeRequest(http.MethodGet, "/v1/installs/ins_nonexistent_00000000/events", nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
 
 func (s *InstallsServiceTestSuite) TestGetInstallEventNotFound() {
@@ -29,5 +28,5 @@ func (s *InstallsServiceTestSuite) TestGetInstallEventNotFound() {
 
 	path := fmt.Sprintf("/v1/installs/%s/events/iev_nonexistent_00000000", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

@@ -38,5 +38,5 @@ func (s *InstallsServiceTestSuite) TestDeleteInstallSuccess() {
 
 func (s *InstallsServiceTestSuite) TestDeleteInstallNotFound() {
 	rr := s.makeRequest(http.MethodDelete, "/v1/installs/ins_nonexistent_00000000", nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

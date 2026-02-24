@@ -32,5 +32,5 @@ func (s *InstallsServiceTestSuite) TestReprovisionInstallSuccess() {
 
 func (s *InstallsServiceTestSuite) TestReprovisionInstallNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/installs/ins_nonexistent_00000000/reprovision", nil)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

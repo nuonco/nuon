@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,5 +23,5 @@ func (s *InstallsServiceTestSuite) TestGetInstallSandboxRunNotFound() {
 
 	path := fmt.Sprintf("/v1/installs/%s/sandbox-runs/isr_nonexistent_00000000", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

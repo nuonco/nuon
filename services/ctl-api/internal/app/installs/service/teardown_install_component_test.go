@@ -41,5 +41,5 @@ func (s *InstallsServiceTestSuite) TestTeardownInstallComponentNotFound() {
 
 	path := fmt.Sprintf("/v1/installs/%s/components/cmp_nonexistent_00000000/teardown", install.ID)
 	rr := s.makeRequest(http.MethodPost, path, nil)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

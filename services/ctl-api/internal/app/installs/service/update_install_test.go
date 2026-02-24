@@ -43,5 +43,5 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallNotFound() {
 	}
 
 	rr := s.makeRequest(http.MethodPatch, "/v1/installs/ins_nonexistent_00000000", body)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

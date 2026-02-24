@@ -53,5 +53,5 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallConfigNotFound() {
 
 	path := fmt.Sprintf("/v1/installs/%s/configs/icfg_nonexistent_00000000", install.ID)
 	rr := s.makeRequest(http.MethodPatch, path, body)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

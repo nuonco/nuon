@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,5 +21,5 @@ func (s *InstallsServiceTestSuite) TestCancelWorkflowSuccess() {
 
 func (s *InstallsServiceTestSuite) TestCancelWorkflowNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/workflows/iwf_nonexistent_00000000/cancel", nil)
-	assert.NotEqual(s.T(), http.StatusAccepted, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

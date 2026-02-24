@@ -46,5 +46,5 @@ func (s *InstallsServiceTestSuite) TestTeardownInstallComponentsNoComponents() {
 
 func (s *InstallsServiceTestSuite) TestTeardownInstallComponentsNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/installs/ins_nonexistent_00000000/components/teardown-all", nil)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

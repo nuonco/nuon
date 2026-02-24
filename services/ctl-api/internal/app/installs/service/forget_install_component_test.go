@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -25,5 +24,5 @@ func (s *InstallsServiceTestSuite) TestForgetInstallComponentNotFound() {
 
 	path := fmt.Sprintf("/v1/installs/%s/components/cmp_nonexistent_00000000/forget", install.ID)
 	rr := s.makeRequest(http.MethodPost, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

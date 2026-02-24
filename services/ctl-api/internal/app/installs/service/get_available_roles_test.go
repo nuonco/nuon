@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +20,7 @@ func (s *InstallsServiceTestSuite) TestGetAvailableRolesEmptyOutputs() {
 
 	var resp AvailableRolesResponse
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
-	assert.Empty(s.T(), resp.Roles)
+	require.Empty(s.T(), resp.Roles)
 }
 
 func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingPrincipalType() {
@@ -29,7 +28,7 @@ func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingPrincipalType() {
 
 	path := fmt.Sprintf("/v1/installs/%s/available-roles?operation_type=deploy", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 
 func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingOperationType() {
@@ -37,7 +36,7 @@ func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingOperationType() {
 
 	path := fmt.Sprintf("/v1/installs/%s/available-roles?principal_type=component", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 
 func (s *InstallsServiceTestSuite) TestGetAvailableRolesInvalidPrincipalType() {
@@ -45,5 +44,5 @@ func (s *InstallsServiceTestSuite) TestGetAvailableRolesInvalidPrincipalType() {
 
 	path := fmt.Sprintf("/v1/installs/%s/available-roles?principal_type=invalid&operation_type=deploy", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }

@@ -29,10 +29,10 @@ func (s *InstallsServiceTestSuite) TestForgetInstallSuccess() {
 	// Verify the install is gone
 	getPath := fmt.Sprintf("/v1/installs/%s", install.ID)
 	getRR := s.makeRequest(http.MethodGet, getPath, nil)
-	assert.NotEqual(s.T(), http.StatusOK, getRR.Code)
+	require.Equal(s.T(), http.StatusNotFound, getRR.Code)
 }
 
 func (s *InstallsServiceTestSuite) TestForgetInstallNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/installs/ins_nonexistent_00000000/forget", nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

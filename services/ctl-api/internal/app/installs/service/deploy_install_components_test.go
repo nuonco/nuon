@@ -49,5 +49,5 @@ func (s *InstallsServiceTestSuite) TestDeployInstallComponentsPlanOnly() {
 
 func (s *InstallsServiceTestSuite) TestDeployInstallComponentsNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/installs/ins_nonexistent_00000000/components/deploy-all", nil)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

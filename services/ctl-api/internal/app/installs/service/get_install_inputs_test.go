@@ -28,5 +28,5 @@ func (s *InstallsServiceTestSuite) TestGetInstallInputsCurrentNoInputs() {
 
 	path := fmt.Sprintf("/v1/installs/%s/inputs/current", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

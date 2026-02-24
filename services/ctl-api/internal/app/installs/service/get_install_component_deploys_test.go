@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -24,7 +25,7 @@ func (s *InstallsServiceTestSuite) TestGetInstallComponentDeploysComponentNotFou
 
 	path := fmt.Sprintf("/v1/installs/%s/components/cmp_nonexistent_00000000/deploys", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
 
 func (s *InstallsServiceTestSuite) TestGetInstallComponentLatestDeployNoDeploys() {

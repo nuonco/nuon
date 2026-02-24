@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -34,5 +33,5 @@ func (s *InstallsServiceTestSuite) TestUpdateWorkflowNotFound() {
 	}
 
 	rr := s.makeRequest(http.MethodPatch, "/v1/workflows/iwf_nonexistent_00000000", body)
-	assert.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

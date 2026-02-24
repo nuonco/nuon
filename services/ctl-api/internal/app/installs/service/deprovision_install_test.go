@@ -46,5 +46,5 @@ func (s *InstallsServiceTestSuite) TestDeprovisionInstallPlanOnly() {
 
 func (s *InstallsServiceTestSuite) TestDeprovisionInstallNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/installs/ins_nonexistent_00000000/deprovision", nil)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
