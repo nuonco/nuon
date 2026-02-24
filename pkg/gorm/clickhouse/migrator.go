@@ -576,10 +576,8 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		currentDefaultNotNull := field.HasDefaultValue && (field.DefaultValueInterface != nil || !strings.EqualFold(field.DefaultValue, "NULL"))
 		dv, dvNotNull := columnType.DefaultValue()
 		if dvNotNull && !currentDefaultNotNull {
-			// default value -> null
-			log.Printf("[Migrator.MigrateColumn] [%s] dv=%t: default value has changed (\"%s\" -> null) - currentDefaultNotNull=%t dvNotNull=%t\n", field.DBName, field.HasDefaultValue, dv, currentDefaultNotNull, dvNotNull)
-			// explicit override: we do nothing in this case because we do not want to support this mutation
-			log.Printf("[Migrator.MigrateColumn] [%s] politely refusing to alter this column", field.DBName)
+			// ClickHouse always reports non-null defaults (empty string for String, 0 for Int, etc.)
+			// but our struct tags don't declare defaults. This is expected — skip silently.
 			alterColumn = false
 		} else if !dvNotNull && currentDefaultNotNull {
 			// null -> default value
