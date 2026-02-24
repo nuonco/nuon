@@ -114,7 +114,7 @@ func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
