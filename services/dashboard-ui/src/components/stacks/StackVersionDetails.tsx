@@ -144,7 +144,9 @@ const StackVersionOutputs = ({ version }: { version: TStackVersion }) => {
               />
             </Text>
             <div className="overflow-auto max-h-[600px]">
-              <KeyValueList values={objectToKeyValueArray(run?.data || {})} />
+              <KeyValueList
+                values={objectToKeyValueArray(run?.data_contents || {})}
+              />
             </div>
           </div>
         ))
