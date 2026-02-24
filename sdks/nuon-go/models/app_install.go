@@ -59,9 +59,6 @@ type AppInstall struct {
 	// drifted objects
 	DriftedObjects []*AppDriftedObject `json:"drifted_objects"`
 
-	// gcp account
-	GcpAccount *AppGCPAccount `json:"gcp_account,omitempty"`
-
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -156,10 +153,6 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDriftedObjects(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateGcpAccount(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -326,29 +319,6 @@ func (m *AppInstall) validateDriftedObjects(formats strfmt.Registry) error {
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *AppInstall) validateGcpAccount(formats strfmt.Registry) error {
-	if swag.IsZero(m.GcpAccount) { // not required
-		return nil
-	}
-
-	if m.GcpAccount != nil {
-		if err := m.GcpAccount.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("gcp_account")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("gcp_account")
-			}
-
-			return err
-		}
 	}
 
 	return nil
@@ -657,10 +627,6 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateGcpAccount(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateInstallActionWorkflows(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -831,31 +797,6 @@ func (m *AppInstall) contextValidateDriftedObjects(ctx context.Context, formats 
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *AppInstall) contextValidateGcpAccount(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.GcpAccount != nil {
-
-		if swag.IsZero(m.GcpAccount) { // not required
-			return nil
-		}
-
-		if err := m.GcpAccount.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("gcp_account")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("gcp_account")
-			}
-
-			return err
-		}
 	}
 
 	return nil

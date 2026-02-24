@@ -1,6 +1,6 @@
 # Runner Binary
 
-The **Runner** is a critical binary that executes deployment operations in customer infrastructure. Unlike other binaries, it runs as an executable in both Kubernetes containers and cloud VMs (AWS, Azure, GCP), providing secure execution of deployments in customer environments.
+The **Runner** is a critical binary that executes deployment operations in customer infrastructure. Unlike other binaries, it runs as an executable in both Kubernetes containers and cloud VMs (AWS, Azure, with more platforms planned), providing secure execution of deployments in customer environments.
 
 ## Binary Overview
 
@@ -9,7 +9,7 @@ The Runner is the execution engine that runs within customer infrastructure to p
 ## Architecture
 
 - **Language**: Go
-- **Deployment**: Kubernetes containers and cloud VMs (AWS, Azure, GCP)
+- **Deployment**: Kubernetes containers and cloud VMs (AWS, Azure, future: GCP, etc.)
 - **Execution Model**: Job-based execution with lifecycle management
 - **Security**: Operates within customer security boundaries
 - **Communication**: Secure API communication with Nuon control plane
@@ -152,7 +152,7 @@ Pre-configured deployment templates:
 - **Kubernetes**: Runs as containerized workloads
 - **AWS VMs**: Native EC2 instance execution
 - **Azure VMs**: Azure Virtual Machine execution
-- **GCP VMs**: Google Compute Engine execution
+- **Future Platforms**: Designed for GCP and other cloud providers
 
 ### Job Execution Engine
 - **Job Processing**: Processes jobs from the control plane queue
@@ -262,7 +262,6 @@ docker build -t nuon-runner .
 ### Cloud Integration
 - **AWS SDK**: Amazon Web Services integration
 - **Azure SDK**: Microsoft Azure integration
-- **GCP SDK**: Google Cloud Platform integration (gcloud CLI + gke-gcloud-auth-plugin)
 - **Docker**: Container runtime and registry
 - **OCI**: Open Container Initiative standards
 

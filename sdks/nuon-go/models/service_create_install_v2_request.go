@@ -30,9 +30,6 @@ type ServiceCreateInstallV2Request struct {
 	// azure account
 	AzureAccount *ServiceCreateInstallV2RequestAzureAccount `json:"azure_account,omitempty"`
 
-	// gcp account
-	GcpAccount *ServiceCreateInstallV2RequestGcpAccount `json:"gcp_account,omitempty"`
-
 	// inputs
 	Inputs map[string]string `json:"inputs,omitempty"`
 
@@ -60,10 +57,6 @@ func (m *ServiceCreateInstallV2Request) Validate(formats strfmt.Registry) error 
 	}
 
 	if err := m.validateAzureAccount(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateGcpAccount(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -140,29 +133,6 @@ func (m *ServiceCreateInstallV2Request) validateAzureAccount(formats strfmt.Regi
 	return nil
 }
 
-func (m *ServiceCreateInstallV2Request) validateGcpAccount(formats strfmt.Registry) error {
-	if swag.IsZero(m.GcpAccount) { // not required
-		return nil
-	}
-
-	if m.GcpAccount != nil {
-		if err := m.GcpAccount.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("gcp_account")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("gcp_account")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *ServiceCreateInstallV2Request) validateInstallConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.InstallConfig) { // not required
 		return nil
@@ -230,10 +200,6 @@ func (m *ServiceCreateInstallV2Request) ContextValidate(ctx context.Context, for
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateGcpAccount(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateInstallConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -289,31 +255,6 @@ func (m *ServiceCreateInstallV2Request) contextValidateAzureAccount(ctx context.
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_account")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ServiceCreateInstallV2Request) contextValidateGcpAccount(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.GcpAccount != nil {
-
-		if swag.IsZero(m.GcpAccount) { // not required
-			return nil
-		}
-
-		if err := m.GcpAccount.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("gcp_account")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("gcp_account")
 			}
 
 			return err
@@ -458,46 +399,6 @@ func (m *ServiceCreateInstallV2RequestAzureAccount) MarshalBinary() ([]byte, err
 // UnmarshalBinary interface implementation
 func (m *ServiceCreateInstallV2RequestAzureAccount) UnmarshalBinary(b []byte) error {
 	var res ServiceCreateInstallV2RequestAzureAccount
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// ServiceCreateInstallV2RequestGcpAccount service create install v2 request gcp account
-//
-// swagger:model ServiceCreateInstallV2RequestGcpAccount
-type ServiceCreateInstallV2RequestGcpAccount struct {
-
-	// project id
-	ProjectID string `json:"project_id,omitempty"`
-
-	// region
-	Region string `json:"region,omitempty"`
-}
-
-// Validate validates this service create install v2 request gcp account
-func (m *ServiceCreateInstallV2RequestGcpAccount) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// ContextValidate validates this service create install v2 request gcp account based on context it is used
-func (m *ServiceCreateInstallV2RequestGcpAccount) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *ServiceCreateInstallV2RequestGcpAccount) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *ServiceCreateInstallV2RequestGcpAccount) UnmarshalBinary(b []byte) error {
-	var res ServiceCreateInstallV2RequestGcpAccount
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
