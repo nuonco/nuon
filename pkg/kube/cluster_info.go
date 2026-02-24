@@ -63,7 +63,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		return config, nil
 	}
 
-	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil && !cInfo.GCPAuth {
+	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil {
 		return nil, fmt.Errorf("missing auth configuration")
 	}
 
