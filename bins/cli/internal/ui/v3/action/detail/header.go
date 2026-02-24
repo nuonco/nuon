@@ -37,12 +37,12 @@ func (m Model) headerView() string {
 	if len(m.installActionWorkflow.Runs) > 0 {
 		latestRun := m.installActionWorkflow.Runs[0]
 		latestStatus = latestRun.Status
-		statusStyle := getRunStatusStyle(latestStatus)
+		statusStyle := styles.GetRunStatusStyle(latestStatus)
 
 		if latestStatus == "in_progress" {
 			title = m.spinner.View() + " " + title
 		} else {
-			icon := getRunStatusIcon(latestStatus)
+			icon := styles.GetRunStatusIcon(latestStatus)
 			title = statusStyle.Render(fmt.Sprintf("%s ", icon)) + title
 		}
 		status = statusStyle.Render(fmt.Sprintf(" [%s]", latestStatus))
