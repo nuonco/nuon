@@ -1,5 +1,0 @@
-version = "v2"
-
-description = "AWS Lambda app"
-display_name = "AWS Lambda app"
-readme       = "./README.md"
