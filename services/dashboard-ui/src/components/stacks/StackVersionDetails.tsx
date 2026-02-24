@@ -228,10 +228,16 @@ export const StackVersionMetadata = ({
         }
       >
         <div className="border-t">
-          <JSONViewer
-            className="!border-none !rounded-none"
-            data={atob(version?.contents)}
-          />
+          {version?.contents ? (
+            <JSONViewer
+              className="!border-none !rounded-none"
+              data={atob(version?.contents)}
+            />
+          ) : (
+            <div className="px-4 py-6">
+              <Text theme="neutral">No version contents to show</Text>
+            </div>
+          )}
         </div>
       </Expand>
 
