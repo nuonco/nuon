@@ -6,9 +6,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/option"
 )
 
 type Uploader struct {
@@ -19,10 +21,16 @@ func New(bucketName string) *Uploader {
 	return &Uploader{bucketName: bucketName}
 }
 
-// UploadAsZip packages the data as a zip file containing main.tf.json and uploads to GCS.
+// Upload packages the data as a zip file containing main.tf.json and uploads to GCS.
 // Infrastructure Manager requires a zip or directory, not a single file.
+// Credentials are resolved in order: GCP_CREDENTIALS_JSON env var, then Application Default Credentials.
 func (u *Uploader) Upload(ctx context.Context, data []byte, objectName string) error {
-	client, err := storage.NewClient(ctx)
+	var opts []option.ClientOption
+	if credsJSON := os.Getenv("GCP_CREDENTIALS_JSON"); credsJSON != "" {
+		opts = append(opts, option.WithCredentialsJSON([]byte(credsJSON)))
+	}
+
+	client, err := storage.NewClient(ctx, opts...)
 	if err != nil {
 		return fmt.Errorf("unable to create GCS client: %w", err)
 	}
