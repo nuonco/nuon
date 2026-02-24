@@ -14,17 +14,19 @@ import (
 type Params struct {
 	fx.In
 
-	L       *zap.Logger
-	DB      *gorm.DB `name:"psql"`
-	V       *validator.Validate
-	Helpers *helpers.Helpers
+	L        *zap.Logger
+	DB       *gorm.DB `name:"psql"`
+	V        *validator.Validate
+	Helpers  *helpers.Helpers
+	GhClient helpers.GithubClient `optional:"true"`
 }
 
 type service struct {
-	l       *zap.Logger
-	db      *gorm.DB
-	v       *validator.Validate
-	helpers *helpers.Helpers
+	l        *zap.Logger
+	db       *gorm.DB
+	v        *validator.Validate
+	helpers  *helpers.Helpers
+	ghClient helpers.GithubClient
 }
 
 var _ api.Service = (*service)(nil)
@@ -65,10 +67,18 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 }
 
 func New(params Params) *service {
+	var ghClient helpers.GithubClient
+	if params.GhClient != nil {
+		ghClient = params.GhClient
+	} else {
+		ghClient = params.Helpers
+	}
+
 	return &service{
-		v:       params.V,
-		l:       params.L,
-		db:      params.DB,
-		helpers: params.Helpers,
+		v:        params.V,
+		l:        params.L,
+		db:       params.DB,
+		helpers:  params.Helpers,
+		ghClient: ghClient,
 	}
 }
