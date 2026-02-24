@@ -16,8 +16,9 @@ import type { IStackDetails } from './types'
 export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
   const { install } = useInstall()
   const templateUrl = stack?.versions?.at(0)?.template_url
-  const projectId = install?.gcp_account?.project_id
-  const region = install?.gcp_account?.region || 'us-central1'
+  const gcpAccount = (install as any)?.gcp_account as { project_id?: string; region?: string } | undefined
+  const projectId = gcpAccount?.project_id
+  const region = gcpAccount?.region || 'us-central1'
   const installId = install?.id
   const [isDownloading, setIsDownloading] = useState(false)
 
