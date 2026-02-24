@@ -14,6 +14,7 @@ func AllModels() []any {
 		&app.OtelMetricGauge{},
 		&app.OtelMetricHistogram{},
 		&app.OtelMetricExponentialHistogram{},
+		&app.OtelMetricSummary{},
 
 		&app.CHTableSize{},
 
