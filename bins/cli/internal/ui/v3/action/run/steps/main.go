@@ -300,10 +300,9 @@ func (m Model) renderStepItem(index int, item stepItem, selected bool) string {
 	duration := item.getExecutionDuration()
 
 	// Get the style based on status and selection
-	stepStyle := getStepStyle(status, selected)
+	stepStyle := styles.GetStepStyle(status, selected)
 
 	// Build the content
-	// icon := getStepStatusIcon(status)
 	statusStyle := styles.GetStatusStyle(models.AppStatus(status))
 	statusText := statusStyle.Render(fmt.Sprintf("[%s] ", status))
 

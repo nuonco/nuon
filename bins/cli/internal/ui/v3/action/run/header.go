@@ -51,7 +51,7 @@ func (m *Model) setHeaderContent() {
 	if runStatus == "in_progress" || runStatus == "running" {
 		title = m.spinner.View() + " " + title
 	} else {
-		icon := getStepStatusIcon(string(runStatus))
+		icon := styles.GetStepStatusIcon(string(runStatus))
 		title = statusStyle.Render(fmt.Sprintf("%s ", icon)) + title
 	}
 	status = statusStyle.Render(fmt.Sprintf(" [%s]", runStatus))
