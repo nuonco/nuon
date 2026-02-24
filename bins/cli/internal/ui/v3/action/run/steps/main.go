@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
@@ -16,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	tea "charm.land/bubbletea/v2"
-)
-
-const (
-	dataRefreshInterval time.Duration = time.Second * 5
 )
 
 // Model represents the steps list and detail view
@@ -166,7 +161,7 @@ func (m *Model) updateStepItems() {
 // Init initializes the model
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		tick,
+		common.TickCmd(common.DefaultRefreshInterval),
 		m.fetchLogsCmd,
 	)
 }
@@ -177,13 +172,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tickMsg:
+	case common.TickMsg:
 		// Refresh logs periodically
 		return m, tea.Batch(
 			m.fetchLogsCmd,
-			tea.Tick(dataRefreshInterval, func(t time.Time) tea.Msg {
-				return tickMsg(t)
-			}),
+			common.TickCmd(common.DefaultRefreshInterval),
 		)
 
 	case logsFetchedMsg:

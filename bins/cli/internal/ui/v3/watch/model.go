@@ -3,7 +3,6 @@ package watch
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
@@ -23,9 +22,8 @@ import (
 )
 
 const (
-	minRequiredWidth    int           = 100
-	minRequiredHeight   int           = 20
-	dataRefreshInterval time.Duration = time.Second * 5
+	minRequiredWidth  int = 100
+	minRequiredHeight int = 20
 )
 
 // Exit codes for watch TUI - matches workflows_watch.go constants
@@ -121,7 +119,7 @@ func (m *model) setLogMessage(message string, level string) {
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchWorkflowsCmd,
-		tick,
+		common.TickCmd(common.DefaultRefreshInterval),
 		m.spinner.Tick,
 	)
 }
@@ -205,14 +203,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case tickMsg:
+	case common.TickMsg:
 		return m, tea.Batch(
 			m.fetchWorkflowsCmd,
-			tea.Tick(
-				dataRefreshInterval,
-				func(t time.Time) tea.Msg {
-					return tickMsg(t)
-				}),
+			common.TickCmd(common.DefaultRefreshInterval),
 		)
 
 	case workflowsFetchedMsg:

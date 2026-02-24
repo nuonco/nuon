@@ -9,7 +9,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
@@ -30,9 +29,8 @@ import (
 )
 
 const (
-	minRequiredWidth    int           = 100
-	minRequiredHeight   int           = 20
-	dataRefreshInterval time.Duration = time.Second * 5
+	minRequiredWidth  int = 100
+	minRequiredHeight int = 20
 )
 
 type Model struct {
@@ -151,7 +149,7 @@ func initialModel(
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.fetchInstallActionWorkflowRunCmd,
-		tick,
+		common.TickCmd(common.DefaultRefreshInterval),
 		m.spinner.Tick,
 		m.stepsView.Init(),
 	)
@@ -220,14 +218,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	// handle tick: data refresh
-	case tickMsg:
+	case common.TickMsg:
 		return m, tea.Batch(
 			m.fetchInstallActionWorkflowRunCmd,
-			tea.Tick(
-				dataRefreshInterval,
-				func(t time.Time) tea.Msg {
-					return tickMsg(t)
-				}),
+			common.TickCmd(common.DefaultRefreshInterval),
 		)
 
 	case installActionWorkflowRunFetchedMsg:

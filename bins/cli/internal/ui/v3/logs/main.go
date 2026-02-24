@@ -124,7 +124,7 @@ func (m *model) setMessage(message string, level string) {
 
 func (m model) Init() tea.Cmd {
 	m.getLatestLogs()
-	return tea.Batch(tick, m.spinner.Tick)
+	return tea.Batch(common.TickCmd(common.DefaultRefreshInterval), m.spinner.Tick)
 }
 
 func (m *model) setLoading(v bool) {
@@ -193,10 +193,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	// handle tick: fetch data
-	case tickMsg:
+	case common.TickMsg:
 		m.setLoading(true)
 		m.getLatestLogs()
-		return m, tick
+		return m, common.TickCmd(common.DefaultRefreshInterval)
 
 	// handle re-size
 	case tea.WindowSizeMsg:
