@@ -161,10 +161,16 @@ func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, inst
 		{Title: "TRIGGERS", Width: triggerWidth},
 	}
 
+	totalWidth := 0
+	for _, col := range columns {
+		totalWidth += col.Width + 2 // +2 for cell padding
+	}
+
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithFocused(true),
 		table.WithHeight(20+1),
+		table.WithWidth(totalWidth),
 	)
 
 	s := table.DefaultStyles()
@@ -213,6 +219,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.table.SetWidth(msg.Width)
+		m.table.SetHeight(msg.Height - 6) // leave room for pagination + help
 		m.help.SetWidth(msg.Width)
 		return m, nil
 
@@ -235,6 +243,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			{Title: "TRIGGERS", Width: triggerWidth},
 		}
 		m.table.SetColumns(columns)
+
+		// Recalculate width from updated columns
+		totalWidth := 0
+		for _, col := range columns {
+			totalWidth += col.Width + 2
+		}
+		m.table.SetWidth(totalWidth)
 
 		// Convert actions to table rows with truncated names
 		rows := []table.Row{}
