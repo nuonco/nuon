@@ -16,7 +16,7 @@ import (
 )
 
 // createActionWorkflowStep creates a workflow step for executing an action workflow
-func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.InstallActionWorkflow, triggeredByID string, runEnvVars map[string]string, sg *stepGroup) (*app.WorkflowStep, error) {
+func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.InstallActionWorkflow, triggeredByID string, runEnvVars map[string]string, role string, sg *stepGroup) (*app.WorkflowStep, error) {
 	sig := &signals.Signal{
 		Type: signals.OperationExecuteActionWorkflow,
 		InstallActionWorkflowTrigger: signals.InstallActionWorkflowTriggerSubSignal{
@@ -25,6 +25,7 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 			TriggeredByID:           triggeredByID,
 			TriggeredByType:         string(app.ActionWorkflowTriggerTypeManual),
 			RunEnvVars:              runEnvVars,
+			Role:                    role,
 		},
 	}
 
@@ -79,7 +80,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
 	sg.nextGroup()
-	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, sg)
+	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, flw.Role, sg)
 	if err != nil {
 		return nil, err
 	}

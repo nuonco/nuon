@@ -54,6 +54,9 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	sg.nextGroup() // sandbox plan + apply
 	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandboxPlan,
+		SandboxSubSignal: signals.SandboxSubSignal{
+			Role: flw.Role,
+		},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err
@@ -66,6 +69,9 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 
 	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox apply", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandboxApplyPlan,
+		SandboxSubSignal: signals.SandboxSubSignal{
+			Role: flw.Role,
+		},
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err

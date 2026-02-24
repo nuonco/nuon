@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -57,6 +58,9 @@ type ComponentConfigConnection struct {
 	DriftSchedule                     string                             `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
 	BuildTimeout                      string                             `json:"build_timeout,omitempty" gorm:"default:null" temporaljson:"build_timeout,omitzero,omitempty"`   // Duration string for build operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout                     string                             `json:"deploy_timeout,omitempty" gorm:"default:null" temporaljson:"deploy_timeout,omitzero,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
+
+	// Operation roles map: operation type -> role name
+	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
 
 	// loaded via after query
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`

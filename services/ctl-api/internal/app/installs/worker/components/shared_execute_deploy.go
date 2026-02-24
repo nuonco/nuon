@@ -9,11 +9,14 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	pkgplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -30,6 +33,12 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 	if err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
 		return fmt.Errorf("unable to get build: %w", err)
+	}
+
+	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get app config")
+		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, build.ComponentID)
@@ -70,7 +79,13 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
-	plan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
+	if err != nil {
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get install stack")
+		return errors.Wrap(err, "unable to get install stack")
+	}
+
+	plan, err := pkgplan.AwaitCreateDeployPlan(ctx, &pkgplan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
 		InstallID:       install.ID,
 		WorkflowID:      fmt.Sprintf("%s-create-deploy-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
@@ -86,12 +101,61 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
+	// Get install state for role name rendering
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
+	compositePlan := plantypes.CompositePlan{
+		DeployPlan: plan,
+	}
+
+	roleSelection, operation, err := w.getRoleForDeploy(l, appConfig, installDeploy, build, comp, stack, installState)
+	if err != nil {
+		l.Error("unable to evaluate role for component operation", zap.Error(err))
+		w.updateDeployStatusWithoutStatusSync(
+			ctx,
+			installDeploy.ID,
+			app.InstallDeployStatusError,
+			"unable to select role",
+		)
+		return errors.Wrap(err, "unable to evaluate role for component deploy")
+	}
+
+	l.Info("selected role for component deploy",
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("component", comp.Name),
+		zap.String("operation", string(operation)),
+	)
+
+	planAuth, err := pkgplan.CreatePlanAuth(
+		stack.InstallStackOutputs,
+		roleSelection.RoleARN,
+		fmt.Sprintf("install-deploy-%s", installDeploy.ID),
+	)
+	if err != nil {
+		l.Error("unable to build plan auth for component operation", zap.Error(err))
+		w.updateDeployStatusWithoutStatusSync(
+			ctx,
+			installDeploy.ID,
+			app.InstallDeployStatusError,
+			"unable to create auth config",
+		)
+		return fmt.Errorf("unable to create plan auth: %w", err)
+	}
+
+	compositePlan.Auth = planAuth
+
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:    runnerJob.ID,
-		PlanJSON: string(planJSON),
-		CompositePlan: plantypes.CompositePlan{
-			DeployPlan: plan,
-		},
+		JobID:         runnerJob.ID,
+		PlanJSON:      string(planJSON),
+		CompositePlan: compositePlan,
 	}); err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
@@ -159,4 +223,55 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 	}
 
 	return nil
+}
+
+func (w *Workflows) getRoleForDeploy(
+	l *zap.Logger,
+	appConfig *app.AppConfig,
+	installDeploy *app.InstallDeploy,
+	build *app.ComponentBuild,
+	comp *app.Component,
+	stack *app.InstallStack,
+	installState *state.State,
+) (*operationroles.RoleSelection, app.OperationType, error) {
+	operation := app.OperationDeploy
+	if installDeploy.Type == app.InstallDeployTypeTeardown {
+		operation = app.OperationTeardown
+	}
+
+	selectionCtx := &operationroles.SelectionContext{
+		Operation:     operation,
+		PrincipalType: principal.TypeComponent,
+		PrincipalName: comp.Name,
+		RuntimeRole:   installDeploy.Role,
+		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
+			build.ComponentConfigConnection.OperationRoles,
+		),
+		MatrixRules:  appConfig.OperationRoleConfig.Rules,
+		DefaultRole:  appConfig.PermissionsConfig.MaintenanceRole.Name,
+		AppConfig:    appConfig,
+		StackOutputs: &stack.InstallStackOutputs,
+		InstallState: installState,
+	}
+
+	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+	if err != nil {
+		l.Warn("dynamic role selection failed, falling back to default role",
+			zap.Error(err),
+			zap.String("default_role", selectionCtx.DefaultRole),
+		)
+
+		var fallbackErr error
+		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
+		if fallbackErr != nil {
+			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+		}
+
+		l.Warn("using default role for component deploy",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+		)
+	}
+
+	return roleSelection, operation, nil
 }

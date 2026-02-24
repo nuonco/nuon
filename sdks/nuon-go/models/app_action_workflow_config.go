@@ -50,6 +50,9 @@ type AppActionWorkflowConfig struct {
 	// refs
 	Refs []*RefsRef `json:"refs"`
 
+	// role
+	Role string `json:"role,omitempty"`
+
 	// steps
 	Steps []*AppActionWorkflowStepConfig `json:"steps"`
 

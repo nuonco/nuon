@@ -50,6 +50,9 @@ type InstallActionWorkflowRun struct {
 	InstallActionWorkflowID generics.NullString   `json:"install_action_workflow_id,omitzero" gorm:"index:idx_install_action_runs_query,priority:2" swaggertype:"string" temporaljson:"install_action_workflow_id,omitzero,omitempty"`
 	InstallActionWorkflow   InstallActionWorkflow `json:"install_action_workflow,omitzero" temporaljson:"install_action_workflow,omitzero,omitempty"`
 
+	// Role to be used when running this action
+	Role string `json:"role,omitempty" gorm:"column:role"`
+
 	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus                `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`

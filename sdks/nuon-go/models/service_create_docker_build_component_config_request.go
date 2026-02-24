@@ -48,6 +48,9 @@ type ServiceCreateDockerBuildComponentConfigRequest struct {
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
+	// operation roles
+	OperationRoles map[string]string `json:"operation_roles,omitempty"`
+
 	// public git vcs config
 	PublicGitVcsConfig *ServicePublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 

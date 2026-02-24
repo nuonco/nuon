@@ -55,6 +55,13 @@ func (s *sync) createKubernetesManifestComponentConfig(
 		configRequest.References = append(configRequest.References, ref.String())
 	}
 
+	if len(comp.OperationRoles) > 0 {
+		configRequest.OperationRoles = make(map[string]string)
+		for _, opRole := range comp.OperationRoles {
+			configRequest.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
+	}
+
 	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
 	if err != nil {
 		return "", "", err

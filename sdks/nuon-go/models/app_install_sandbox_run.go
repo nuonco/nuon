@@ -56,6 +56,9 @@ type AppInstallSandboxRun struct {
 	// policy reports
 	PolicyReports []*AppPolicyReport `json:"policy_reports"`
 
+	// Role to be used when planning and applying sandbox runs
+	Role string `json:"role,omitempty"`
+
 	// run type
 	RunType AppSandboxRunType `json:"run_type,omitempty"`
 

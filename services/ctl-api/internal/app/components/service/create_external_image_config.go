@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
@@ -42,15 +44,25 @@ type CreateExternalImageComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies []string `json:"dependencies"`
-	References   []string `json:"references"`
-	Checksum     string   `json:"checksum"`
+	Dependencies   []string                      `json:"dependencies"`
+	References     []string                      `json:"references"`
+	Checksum       string                        `json:"checksum"`
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
+	}
+
 	if c.BuildTimeout != "" {
 		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
@@ -162,6 +174,11 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		AWSECRImageConfig: req.AWSECRImageConfig.getAWSECRImageConfig(),
 	}
 
+	operationRoles := make(pgtype.Hstore)
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		ExternalImageComponentConfig: &cfg,
 		ComponentID:                  parentCmp.ID,
@@ -171,6 +188,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		Checksum:                     req.Checksum,
 		BuildTimeout:                 req.BuildTimeout,
 		DeployTimeout:                req.DeployTimeout,
+		OperationRoles:               operationRoles,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create external image component config connection: %w", res.Error)

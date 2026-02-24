@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, asJSON bool) error {
+func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, roleName string, asJSON bool) error {
 	awc, err := s.api.GetActionWorkflowLatestConfig(ctx, actionWorkflowID)
 	if err != nil {
 		ui.PrintError(fmt.Errorf("error getting action workflow config: %w", err))
@@ -17,6 +17,7 @@ func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID str
 
 	req := &models.ServiceCreateInstallActionWorkflowRunRequest{
 		ActionWorkflowConfigID: &awc.ID,
+		Role:                   roleName,
 	}
 
 	err = s.api.CreateInstallActionWorkflowRun(ctx, installID, req)

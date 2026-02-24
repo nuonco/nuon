@@ -35,6 +35,13 @@ func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource
 		configRequest.Tag = generics.ToPtr(containerImage.PublicImageConfig.Tag)
 	}
 
+	if len(comp.OperationRoles) > 0 {
+		configRequest.OperationRoles = make(map[string]string)
+		for _, opRole := range comp.OperationRoles {
+			configRequest.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
+	}
+
 	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
 	if err != nil {
 		return "", "", err

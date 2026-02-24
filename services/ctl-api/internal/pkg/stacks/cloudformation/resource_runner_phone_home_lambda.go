@@ -11,10 +11,19 @@ import (
 
 func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudformation.CustomResource {
 	breakGlassRoleArns := make(map[string]interface{})
+	customRoleArns := make(map[string]interface{})
 
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
 		// cloudformation has parameter called role.CloudFormationStackParamName
 		breakGlassRoleArns[role.Name] = cloudformation.If(
+			role.CloudFormationStackParamName,
+			generics.FromPtrStr(cloudformation.GetAttPtr(role.CloudFormationStackName, "Arn")),
+			cloudformation.Ref("AWS::NoValue"),
+		)
+	}
+
+	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
+		customRoleArns[role.Name] = cloudformation.If(
 			role.CloudFormationStackParamName,
 			generics.FromPtrStr(cloudformation.GetAttPtr(role.CloudFormationStackName, "Arn")),
 			cloudformation.Ref("AWS::NoValue"),
@@ -53,8 +62,9 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudfor
 		"deprovision_iam_role_arn": roleArnByType[string(app.AWSIAMRoleTypeRunnerDeprovision)],
 		"runner_iam_role_arn":      cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole"),
 
-		"break_glass_role_arns": breakGlassRoleArns,
 		"install_inputs":        installInputValues,
+		"break_glass_role_arns": breakGlassRoleArns,
+		"custom_role_arns":      customRoleArns,
 
 		// from the nested VPC Cloudformation Template (we want its outputs)
 		"vpc_id":          cloudformation.GetAtt("VPC", "Outputs.VPC"),

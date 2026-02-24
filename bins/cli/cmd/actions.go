@@ -38,6 +38,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 
 	installID := ""
 	actionWorkflowID := ""
+	roleName := ""
 	recentRunsCmd := &cobra.Command{
 		Use:   "recent-runs",
 		Short: "Get action's most recent runs",
@@ -90,7 +91,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Long:  "Run an action by Install ID and Action Workflow ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := actions.New(c.v, c.apiClient, c.cfg)
-			return svc.CreateRun(cmd.Context(), installID, actionWorkflowID, PrintJSON)
+			return svc.CreateRun(cmd.Context(), installID, actionWorkflowID, roleName, PrintJSON)
 		}),
 	}
 
@@ -98,6 +99,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 	runCmd.MarkFlagRequired("install-id")
 	runCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
 	runCmd.MarkFlagRequired("action-workflow-id")
+	runCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for action workflow")
 	actionsCmd.AddCommand(runCmd)
 
 	return actionsCmd

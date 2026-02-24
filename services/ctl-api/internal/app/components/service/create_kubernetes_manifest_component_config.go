@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
@@ -36,6 +38,8 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 
 	// VCS configuration for kustomize sources
 	basicVCSConfigRequest
+
+	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
 // KustomizeConfigRequest defines kustomize options in API requests
@@ -55,6 +59,14 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	if c.OperationRoles != nil {
+		for operation := range c.OperationRoles {
+			if !slices.Contains(app.ValidOperations, operation) {
+				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
+			}
+		}
 	}
 
 	// Exactly one of manifest or kustomize must be set
@@ -221,6 +233,11 @@ func (s *service) createKubernetesManifestComponentConfig(
 		}
 	}
 
+	operationRoles := make(pgtype.Hstore)
+	for operation, role := range req.OperationRoles {
+		operationRoles[string(operation)] = role
+	}
+
 	componentConfigConnection := app.ComponentConfigConnection{
 		KubernetesManifestComponentConfig: &cfg,
 		ComponentID:                       parentCmp.ID,
@@ -230,6 +247,7 @@ func (s *service) createKubernetesManifestComponentConfig(
 		ComponentDependencyIDs:            pq.StringArray(depIDs),
 		BuildTimeout:                      req.BuildTimeout,
 		DeployTimeout:                     req.DeployTimeout,
+		OperationRoles:                    operationRoles,
 	}
 
 	if req.DriftSchedule != nil {

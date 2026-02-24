@@ -38,6 +38,9 @@ type AppAppPermissionsConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// custom aws iam roles
+	CustomAwsIamRoles []*AppAppAWSIAMRoleConfig `json:"custom_aws_iam_roles"`
+
 	// deprovision aws iam role
 	DeprovisionAwsIamRole *AppAppAWSIAMRoleConfig `json:"deprovision_aws_iam_role,omitempty"`
 
@@ -68,6 +71,10 @@ func (m *AppAppPermissionsConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateBreakGlassAwsIamRole(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCustomAwsIamRoles(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -142,6 +149,36 @@ func (m *AppAppPermissionsConfig) validateBreakGlassAwsIamRole(formats strfmt.Re
 	return nil
 }
 
+func (m *AppAppPermissionsConfig) validateCustomAwsIamRoles(formats strfmt.Registry) error {
+	if swag.IsZero(m.CustomAwsIamRoles) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.CustomAwsIamRoles); i++ {
+		if swag.IsZero(m.CustomAwsIamRoles[i]) { // not required
+			continue
+		}
+
+		if m.CustomAwsIamRoles[i] != nil {
+			if err := m.CustomAwsIamRoles[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_aws_iam_roles" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_aws_iam_roles" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppAppPermissionsConfig) validateDeprovisionAwsIamRole(formats strfmt.Registry) error {
 	if swag.IsZero(m.DeprovisionAwsIamRole) { // not required
 		return nil
@@ -205,6 +242,10 @@ func (m *AppAppPermissionsConfig) ContextValidate(ctx context.Context, formats s
 	}
 
 	if err := m.contextValidateBreakGlassAwsIamRole(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCustomAwsIamRoles(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -275,6 +316,35 @@ func (m *AppAppPermissionsConfig) contextValidateBreakGlassAwsIamRole(ctx contex
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppAppPermissionsConfig) contextValidateCustomAwsIamRoles(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CustomAwsIamRoles); i++ {
+
+		if m.CustomAwsIamRoles[i] != nil {
+
+			if swag.IsZero(m.CustomAwsIamRoles[i]) { // not required
+				return nil
+			}
+
+			if err := m.CustomAwsIamRoles[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_aws_iam_roles" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_aws_iam_roles" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

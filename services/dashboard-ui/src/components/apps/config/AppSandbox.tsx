@@ -1,6 +1,7 @@
 import { GitRepo } from '@/components/common/GitRepo'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
+import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Text } from '@/components/common/Text'
 import type { TAppConfig } from '@/types'
 import { objectToKeyValueArray } from '@/utils/data-utils'
@@ -40,6 +41,17 @@ export const AppSandbox = ({ appConfig }: IAppSandbox) => {
           />
         </div>
       ) : null}
+      {sandboxConfig?.operation_roles &&
+        Object.keys(sandboxConfig.operation_roles).length > 0 && (
+          <div>
+            <Text variant="subtext" weight="strong">
+              Operation Roles
+            </Text>
+            <OperationRolesList
+              operationRoles={sandboxConfig.operation_roles}
+            />
+          </div>
+        )}
     </div>
   )
 }
