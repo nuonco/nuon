@@ -61,7 +61,7 @@ func (s *AdminGetInstallTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

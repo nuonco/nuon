@@ -61,7 +61,7 @@ func (s *GetRunnerJobPlanPublicTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -532,7 +532,7 @@ func (s *GetRunnerJobPlanV2TestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

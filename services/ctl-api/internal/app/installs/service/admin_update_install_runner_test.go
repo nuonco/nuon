@@ -21,7 +21,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -47,7 +46,7 @@ type AdminUpdateInstallRunnerTestSuite struct {
 	testInstall           *app.Install
 	testRunnerGrp         *app.RunnerGroup
 	testRunnerGrpSettings *app.RunnerGroupSettings
-	mockEvClient          *tests.FakeEventLoopClient
+	mockEvClient          *tests.MockEventLoopClient
 }
 
 func TestAdminUpdateInstallRunnerSuite(t *testing.T) {
@@ -62,11 +61,12 @@ func (s *AdminUpdateInstallRunnerTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
-		tests.CtlApiFXOptions(),
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T:               s.T(),
+			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
+			CustomValidator: true,
 		}),
 		fx.Provide(New),
 		fx.Populate(&s.service),

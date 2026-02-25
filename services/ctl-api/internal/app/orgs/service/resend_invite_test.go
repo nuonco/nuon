@@ -27,7 +27,6 @@ import (
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -53,7 +52,7 @@ type ResendOrgInviteTestSuite struct {
 	router       *gin.Engine
 	testOrg      *app.Org
 	testAcc      *app.Account
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 	orgsService  *service
 }
 
@@ -71,13 +70,15 @@ func (s *ResendOrgInviteTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		// service under test
 		fx.Provide(New),
