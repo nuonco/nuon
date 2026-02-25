@@ -9,10 +9,12 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Button } from '@/components/common/Button'
+import { useInstall } from '@/hooks/use-install'
 import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from './types'
 
 export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
+  const { install } = useInstall()
   const templateUrl = stack?.versions?.at(0)?.template_url
   const [isDownloading, setIsDownloading] = useState(false)
 
@@ -30,7 +32,7 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
     }
   }
 
-  const terraformCmd = `mkdir -p nuon-stack && cd nuon-stack && curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
+  const terraformCmd = `mkdir -p nuon-${install?.id} && cd nuon-${install?.id} && curl -o main.tf.json "${templateUrl}" && terraform init && terraform apply`
 
   return (
     <>
