@@ -191,15 +191,6 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
       >
         {error && <Banner theme="error">{error?.error}</Banner>}
 
-        <RoleSelector
-          installId={install?.id}
-          operationType="trigger"
-          principalType="action"
-          value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
-          name="role"
-        />
-
         <input type="hidden" name="inputMode" value={inputMode} />
         <input type="hidden" name="scriptContent" value={scriptContent} />
 
@@ -281,6 +272,15 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
             Execution timeout (1-3600 seconds, default: 300)
           </Text>
         </label>
+
+        <RoleSelector
+          installId={install?.id}
+          operationType="trigger"
+          principalType="action"
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          name="role"
+        />
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
