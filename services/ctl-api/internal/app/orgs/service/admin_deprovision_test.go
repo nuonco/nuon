@@ -77,10 +77,11 @@ func (s *AdminDeprovisionOrgTestSuite) SetupSuite() {
 	s.mockEvClient = tests.NewFakeEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+
+			Mocks: &tests.TestMocks{FakeEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		// service under test
 		fx.Provide(New),

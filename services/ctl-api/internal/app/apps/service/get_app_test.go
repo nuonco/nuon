@@ -20,7 +20,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -53,10 +52,11 @@ func (s *AppCRUDTestSuite) SetupSuite() {
 	s.mockEvClient = tests.NewFakeEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+
+			Mocks: &tests.TestMocks{FakeEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		fx.Provide(New),
 		fx.Populate(&s.service),

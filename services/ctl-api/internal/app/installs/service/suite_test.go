@@ -22,8 +22,11 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+<<<<<<< Updated upstream
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+=======
+>>>>>>> Stashed changes
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -73,10 +76,9 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 	s.mockEvClient = tests.NewFakeEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			Mocks:           &tests.TestMocks{FakeEv: s.mockEvClient},
+			CustomValidator: true,
 		}),
 		// Service under test
 		fx.Provide(New),
