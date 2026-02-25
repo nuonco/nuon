@@ -206,6 +206,7 @@ func (s *service) createAdHocActionRun(
 		StatusDescription: "Queued for execution",
 		Steps:             []app.InstallActionWorkflowRunStep{runStep},
 		RunEnvVars:        dbgenerics.ToHstore(req.EnvVars),
+		Role:              req.Role,
 	}
 
 	if err := s.db.WithContext(ctx).Create(&run).Error; err != nil {
