@@ -103,6 +103,10 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 }
 
 func GetDefaultRoleSelection(ctx *SelectionContext) (*RoleSelection, error) {
+	if ctx.DefaultRole == "" {
+		return nil, fmt.Errorf("no default role configured for operation")
+	}
+
 	renderedDefaultRole, err := renderRoleName(ctx.DefaultRole, ctx.InstallState)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render default role name: %w", err)
@@ -199,6 +203,10 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			RoleName: renderedMatrixRole,
 			Source:   RoleSelectionSourceMatrix,
 		}, nil
+	}
+
+	if renderedDefaultRole == "" {
+		return nil, fmt.Errorf("no role configured for operation %s: role is not defined and no operation_roles rule matched", ctx.Operation)
 	}
 
 	return &RoleSelection{
@@ -321,23 +329,32 @@ func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs, ins
 		return nil, fmt.Errorf("unable to convert install state to map: %w", err)
 	}
 
-	renderedProvisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.ProvisionRole.Name, err)
+	// Any role may have an empty ARN when disabled in CloudFormation via EnableRunner*
+	// parameters (e.g., EnableRunnerProvision=false). Skip adding roles with empty ARNs
+	// to prevent resolveRoleARN from returning an empty string.
+	if appCfg.PermissionsConfig.ProvisionRole.Name != "" && stackOutputs.ProvisionIAMRoleARN != "" {
+		renderedProvisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.ProvisionRole.Name, err)
+		}
+		availableRoles[renderedProvisionRoleName] = stackOutputs.ProvisionIAMRoleARN
 	}
-	availableRoles[renderedProvisionRoleName] = stackOutputs.ProvisionIAMRoleARN
 
-	renderedDeprovisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.DeprovisionRole.Name, err)
+	if appCfg.PermissionsConfig.DeprovisionRole.Name != "" && stackOutputs.DeprovisionIAMRoleARN != "" {
+		renderedDeprovisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.DeprovisionRole.Name, err)
+		}
+		availableRoles[renderedDeprovisionRoleName] = stackOutputs.DeprovisionIAMRoleARN
 	}
-	availableRoles[renderedDeprovisionRoleName] = stackOutputs.DeprovisionIAMRoleARN
 
-	renderedMaintenanceRoleName, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.MaintenanceRole.Name, err)
+	if appCfg.PermissionsConfig.MaintenanceRole.Name != "" && stackOutputs.MaintenanceIAMRoleARN != "" {
+		renderedMaintenanceRoleName, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.MaintenanceRole.Name, err)
+		}
+		availableRoles[renderedMaintenanceRoleName] = stackOutputs.MaintenanceIAMRoleARN
 	}
-	availableRoles[renderedMaintenanceRoleName] = stackOutputs.MaintenanceIAMRoleARN
 
 	return availableRoles, nil
 }
