@@ -1,0 +1,25 @@
+package fxmodules
+
+import (
+	"github.com/gin-gonic/gin"
+	"go.uber.org/fx"
+
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/handlers"
+)
+
+// Service is the interface that handler groups implement to register routes.
+type Service interface {
+	RegisterRoutes(*gin.Engine) error
+}
+
+func asService(f any) any {
+	return fx.Annotate(
+		f,
+		fx.As(new(Service)),
+		fx.ResultTags(`group:"services"`),
+	)
+}
+
+var ServicesModule = fx.Module("services",
+	fx.Provide(asService(handlers.NewHealthHandler)),
+)
