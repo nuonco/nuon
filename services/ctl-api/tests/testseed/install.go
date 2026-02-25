@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 
 	fakegenerics "github.com/nuonco/nuon/pkg/generics"
@@ -94,4 +95,50 @@ func (s *Seeder) CreateInstallComponent(ctx context.Context, t *testing.T, insta
 	res := s.db.WithContext(ctx).Create(ic)
 	require.NoError(t, res.Error)
 	return ic
+}
+
+// CreateInstallDeploy persists an InstallDeploy linked to an InstallComponent and ComponentBuild.
+func (s *Seeder) CreateInstallDeploy(ctx context.Context, t *testing.T, installComponentID, componentBuildID string) *app.InstallDeploy {
+	deploy := &app.InstallDeploy{
+		InstallComponentID: installComponentID,
+		ComponentBuildID:   componentBuildID,
+		Status:             app.InstallDeployStatusActive,
+		StatusV2:           app.NewCompositeStatus(ctx, app.StatusSuccess),
+		Type:               app.InstallDeployTypeApply,
+	}
+	res := s.db.WithContext(ctx).Create(deploy)
+	require.NoError(t, res.Error)
+	return deploy
+}
+
+// CreateInstallInputs persists an InstallInputs record for the given install.
+func (s *Seeder) CreateInstallInputs(ctx context.Context, t *testing.T, installID, appInputConfigID string, values map[string]*string) *app.InstallInputs {
+	hstore := pgtype.Hstore{}
+	for k, v := range values {
+		hstore[k] = v
+	}
+	inputs := &app.InstallInputs{
+		InstallID:        installID,
+		AppInputConfigID: appInputConfigID,
+		Values:           hstore,
+	}
+	res := s.db.WithContext(ctx).Create(inputs)
+	require.NoError(t, res.Error)
+	return inputs
+}
+
+// CreateInstallStackVersion persists an InstallStackVersion with a generated PhoneHomeID.
+func (s *Seeder) CreateInstallStackVersion(ctx context.Context, t *testing.T, installID, installStackID, appConfigID string) *app.InstallStackVersion {
+	sv := &app.InstallStackVersion{
+		InstallID:      installID,
+		InstallStackID: installStackID,
+		AppConfigID:    appConfigID,
+		PhoneHomeID:    domains.NewInstallStackVersionID(),
+		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
+		Checksum:       "test-checksum",
+		Contents:       []byte("{}"),
+	}
+	res := s.db.WithContext(ctx).Create(sv)
+	require.NoError(t, res.Error)
+	return sv
 }
