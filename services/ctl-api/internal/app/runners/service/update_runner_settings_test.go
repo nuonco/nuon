@@ -44,7 +44,7 @@ type UpdateRunnerSettingsTestSuite struct {
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
 	testSettings  *app.RunnerGroupSettings
-	mockEvClient  *tests.FakeEventLoopClient
+	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestUpdateRunnerSettingsSuite(t *testing.T) {
@@ -60,12 +60,12 @@ func (s *UpdateRunnerSettingsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 
-			Mocks: &tests.TestMocks{FakeEv: s.mockEvClient},
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),

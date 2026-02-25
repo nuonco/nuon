@@ -32,7 +32,7 @@ type AppBranchesTestSuite struct {
 	testOrg      *app.Org
 	testAcc      *app.Account
 	testApp      *app.App
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestAppBranchesSuite(t *testing.T) {
@@ -49,12 +49,12 @@ func (s *AppBranchesTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 
-			Mocks: &tests.TestMocks{FakeEv: s.mockEvClient},
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),

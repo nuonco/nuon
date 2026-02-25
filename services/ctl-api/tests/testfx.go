@@ -46,7 +46,7 @@ func NopFxLogger() fxevent.Logger { return fxevent.NopLogger }
 // TestMocks holds optional mock/fake clients that tests can supply to CtlApiFXOptionsWithMocks.
 // Tests create their own mock instances and pass them in; FX registers them as the interface types.
 type TestMocks struct {
-	FakeEv *FakeEventLoopClient
+	MockEv eventloop.Client
 	MockTC temporalclient.Client
 	MockGH vcshelpers.GithubClient
 }
@@ -78,9 +78,9 @@ func CtlApiFXOptionsWithValidator() []fx.Option {
 //
 // Usage:
 //
-//	mockEv := tests.NewFakeEventLoopClient()
+//	mockEv := tests.NewMockEventLoopClient()
 //	opts := tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-//	    Mocks: &tests.TestMocks{FakeEv: mockEv},
+//	    Mocks: &tests.TestMocks{MockEv: mockEv},
 //	    CustomValidator: true,
 //	})
 //	app := fxtest.New(t, append(opts, fx.Provide(MyService), fx.Populate(&svc))...)
@@ -151,8 +151,8 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 	// Mock/fake client overrides
 	if opts.Mocks != nil {
-		if opts.Mocks.FakeEv != nil {
-			options = append(options, fx.Supply(fx.Annotate(opts.Mocks.FakeEv, fx.As(new(eventloop.Client)))))
+		if opts.Mocks.MockEv != nil {
+			options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockEv, fx.As(new(eventloop.Client)))))
 		}
 		if opts.Mocks.MockTC != nil {
 			options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockTC, fx.As(new(temporalclient.Client)))))

@@ -44,7 +44,7 @@ type ReprovisionInstallTestSuite struct {
 	testAcc      *app.Account
 	testApp      *app.App
 	testInstall  *app.Install
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestReprovisionInstallSuite(t *testing.T) {
@@ -59,10 +59,10 @@ func (s *ReprovisionInstallTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-			Mocks:           &tests.TestMocks{FakeEv: s.mockEvClient},
+			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),

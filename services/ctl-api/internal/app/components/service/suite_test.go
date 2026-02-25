@@ -49,7 +49,7 @@ type ComponentsServiceTestSuite struct {
 	testAcc           *app.Account
 	testApp           *app.App
 	testAppConfig     *app.AppConfig
-	mockEvClient      *tests.FakeEventLoopClient
+	mockEvClient      *tests.MockEventLoopClient
 }
 
 func TestComponentsServiceSuite(t *testing.T) {
@@ -66,11 +66,11 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-			Mocks:           &tests.TestMocks{FakeEv: s.mockEvClient},
+			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		// Service under test

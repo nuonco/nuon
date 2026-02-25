@@ -84,7 +84,7 @@ func (s *GeneralTemporalTestSuite) SetupSuite() {
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			Mocks: &tests.TestMocks{
 				MockTC: s.mockTC,
-				FakeEv: tests.NewFakeEventLoopClient(),
+				MockEv: tests.NewMockEventLoopClient(),
 			},
 			CustomValidator: true,
 		}),

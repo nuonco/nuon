@@ -31,7 +31,7 @@ type CreateOrgTestSuite struct {
 	service      TestService
 	router       *gin.Engine
 	testAcc      *app.Account
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 	orgsService  *service
 }
 
@@ -49,12 +49,12 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 
-			Mocks: &tests.TestMocks{FakeEv: s.mockEvClient},
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),

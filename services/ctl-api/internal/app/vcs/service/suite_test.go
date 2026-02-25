@@ -72,7 +72,7 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			Mocks: &tests.TestMocks{
 				MockGH: s.mockGH,
-				FakeEv: tests.NewFakeEventLoopClient(),
+				MockEv: tests.NewMockEventLoopClient(),
 			},
 			CustomValidator: true,
 		}),

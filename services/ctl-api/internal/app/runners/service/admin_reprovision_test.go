@@ -46,7 +46,7 @@ type AdminReprovisionTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.FakeEventLoopClient
+	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminReprovisionSuite(t *testing.T) {
@@ -62,12 +62,12 @@ func (s *AdminReprovisionTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 
-			Mocks: &tests.TestMocks{FakeEv: s.mockEvClient},
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
