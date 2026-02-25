@@ -26,7 +26,6 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	cctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -54,7 +53,7 @@ type GetInstallActionWorkflowTestSuite struct {
 	testOrg      *app.Org
 	testAcc      *app.Account
 	testApp      *app.App
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestGetInstallActionWorkflowSuite(t *testing.T) {
@@ -68,10 +67,15 @@ func TestGetInstallActionWorkflowSuite(t *testing.T) {
 func (s *GetInstallActionWorkflowTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
-		tests.CtlApiFXOptions(),
-		fx.Decorate(func() eventloop.Client { return s.mockEvClient }),
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
+		}),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

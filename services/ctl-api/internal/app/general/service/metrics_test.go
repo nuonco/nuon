@@ -102,6 +102,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_InvalidBody() {
 	s.router.ServeHTTP(rr, req)
 
 	// Should return error response
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 	s.T().Logf("Invalid body error - Status: %d, Body: %s", rr.Code, rr.Body.String())
 }

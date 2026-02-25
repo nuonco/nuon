@@ -62,7 +62,7 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -267,7 +267,7 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionO
 
 	// Expect error due to authz check (CanCreate requires account context)
 	// OR CreatedByID constraint (RunnerJobExecutionOutputs has CreatedByID NOT NULL)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code,
+	require.Equal(s.T(), http.StatusInternalServerError, rr.Code,
 		"should fail due to missing account context for authz or CreatedByID")
 	s.T().Logf("Expected error due to authz/CreatedByID - Status: %d, Body: %s", rr.Code, rr.Body.String())
 

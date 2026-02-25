@@ -24,7 +24,6 @@ import (
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -56,7 +55,7 @@ type CreateAppActionDeprecatedTestSuite struct {
 	testOrg      *app.Org
 	testAcc      *app.Account
 	testApp      *app.App
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestCreateAppActionDeprecatedSuite(t *testing.T) {
@@ -73,13 +72,15 @@ func (s *CreateAppActionDeprecatedTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		// service under test
 		fx.Provide(New),

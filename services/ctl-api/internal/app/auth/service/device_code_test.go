@@ -64,7 +64,7 @@ func (s *DeviceCodePageTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -328,7 +328,7 @@ func (s *DeviceCodeApproveTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -628,7 +628,7 @@ func (s *DeviceCodeTokenTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

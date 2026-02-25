@@ -89,7 +89,7 @@ func (s *GeneralTemporalTestSuite) TestInfraTestsDeprovision_TemporalError() {
 	if rr.Code == http.StatusCreated {
 		s.T().Logf("Expected error but got success. Status: %d, Body: %s", rr.Code, rr.Body.String())
 	}
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 	assert.Contains(s.T(), rr.Body.String(), "unable to provision infra-tests")
 }
 
@@ -105,7 +105,7 @@ func (s *GeneralTemporalTestSuite) TestInfraTestsDeprovision_MalformedJSON() {
 	s.router.ServeHTTP(rr, req)
 
 	// Assert error response (should be 400 Bad Request or similar)
-	assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 
 func (s *GeneralTemporalTestSuite) TestInfraTestsDeprovision_MinimalFields() {
