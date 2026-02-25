@@ -190,7 +190,7 @@ func validateRegion(install app.Install, outputs app.InstallStackOutputs) error 
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	case install.GCPAccount != nil:
-		if outputs.GCPStackOutputs != nil && install.GCPAccount.Region != outputs.GCPStackOutputs.Region {
+		if outputs.GCPStackOutputs != nil && install.GCPAccount.Region != "" && install.GCPAccount.Region != outputs.GCPStackOutputs.Region {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	}

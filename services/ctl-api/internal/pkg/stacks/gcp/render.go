@@ -44,7 +44,14 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to execute gcp template")
 	}
-	res := buf.Bytes()
+
+	// Wrap tfvars in a JSON envelope so it can be stored in the jsonb column.
+	// The raw tfvars text is HCL, not valid JSON.
+	envelope := map[string]string{"tfvars": buf.String()}
+	res, err := json.Marshal(envelope)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to marshal gcp tfvars envelope")
+	}
 
 	hash := sha256.Sum256(res)
 	checksum := hex.EncodeToString(hash[:])

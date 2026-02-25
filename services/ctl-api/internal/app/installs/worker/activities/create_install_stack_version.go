@@ -15,8 +15,8 @@ type CreateInstallStackVersionRequest struct {
 	InstallID      string `validate:"required"`
 	InstallStackID string `validate:"required"`
 	AppConfigID    string `validate:"required"`
-	Region         string `validate:"required"`
-	StackName      string `validate:"required"`
+	Region         string `json:"region"`
+	StackName      string `json:"stack_name"`
 	Platform       string `json:"platform"`
 }
 
@@ -24,13 +24,6 @@ type CreateInstallStackVersionRequest struct {
 func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateInstallStackVersionRequest) (*app.InstallStackVersion, error) {
 	phoneHomeID := domains.NewAWSAccountID()
 	id := domains.NewInstallStackID()
-	bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
-
-	// compute template URL and quick link
-	templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
-	quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
-		req.Region, req.Region, templateURL, req.StackName,
-	)
 
 	obj := app.InstallStackVersion{
 		ID:             id,
@@ -44,11 +37,22 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			req.InstallID,
 			phoneHomeID,
 		),
-		AWSBucketName: a.cfg.AWSCloudFormationStackTemplateBucket,
-		AWSBucketKey:  bucketKey,
-		TemplateURL:   templateURL,
-		QuickLinkURL:  quickLinkURL,
-		Status:        app.NewCompositeStatus(ctx, app.InstallStackVersionStatusGenerating),
+		Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusGenerating),
+	}
+
+	// GCP uses static Terraform modules with tfvars, no S3 upload needed.
+	// AWS/Azure still use S3-hosted templates with quick links.
+	if req.Platform != "gcp" {
+		bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
+		templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
+		quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
+			req.Region, req.Region, templateURL, req.StackName,
+		)
+
+		obj.AWSBucketName = a.cfg.AWSCloudFormationStackTemplateBucket
+		obj.AWSBucketKey = bucketKey
+		obj.TemplateURL = templateURL
+		obj.QuickLinkURL = quickLinkURL
 	}
 
 	if res := a.db.WithContext(ctx).Create(&obj); res.Error != nil {

@@ -122,17 +122,6 @@ const GCPFields = ({
         </Text>
       </legend>
 
-      <FieldWrapper labelText="GCP Project ID">
-        <input
-          name="project_id"
-          type="text"
-          placeholder="my-gcp-project"
-          required
-          defaultValue={draftValues?.project_id || ''}
-          className="border rounded px-3 py-2 text-sm"
-        />
-      </FieldWrapper>
-
       <FieldWrapper labelText="Select GCP region">
         <Select
           name="gcp_region"

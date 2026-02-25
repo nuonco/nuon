@@ -157,6 +157,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// phone home
 		installs.POST("/phone-home/:phone_home_id", s.InstallPhoneHome)
 
+		// runner bootstrap token
+		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)
+
 		// install stacks
 		installs.GET("/stack", s.GetInstallStackByInstallID)
 		installs.GET("/stack-runs", s.GetInstallStackRuns)
