@@ -48,6 +48,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	if h.state.plan.ClusterInfo != nil {
 		h.state.plan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
 		h.state.plan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+		h.state.plan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
 	}
 
 	// fetch the run object

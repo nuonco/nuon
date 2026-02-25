@@ -56,6 +56,10 @@ func (c *ClusterInfo) WithAzureAuth(auth *azurecredentials.Config) {
 	c.AzureAuth = auth
 }
 
+func (c *ClusterInfo) WithGCPAuth(enabled bool) {
+	c.GCPAuth = enabled
+}
+
 func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, error) {
 	if cInfo.KubeConfig != "" {
 		config, err := clientcmd.RESTConfigFromKubeConfig([]byte(cInfo.KubeConfig))
@@ -66,7 +70,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		return config, nil
 	}
 
-	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil {
+	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil && !cInfo.GCPAuth {
 		return nil, fmt.Errorf("missing auth configuration")
 	}
 
