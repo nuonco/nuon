@@ -47,7 +47,7 @@ type RunnerLifecycleSignalsTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.FakeEventLoopClient
+	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestRunnerLifecycleSignalsSuite(t *testing.T) {
@@ -63,12 +63,15 @@ func (s *RunnerLifecycleSignalsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -245,7 +248,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
 			// Should return error (not 201)
-			assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent
@@ -335,7 +338,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
 			// Should return error due to cross-org isolation
-			assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent

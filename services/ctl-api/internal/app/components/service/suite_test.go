@@ -20,7 +20,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -50,7 +49,7 @@ type ComponentsServiceTestSuite struct {
 	testAcc           *app.Account
 	testApp           *app.App
 	testAppConfig     *app.AppConfig
-	mockEvClient      *tests.FakeEventLoopClient
+	mockEvClient      *tests.MockEventLoopClient
 }
 
 func TestComponentsServiceSuite(t *testing.T) {
@@ -67,13 +66,13 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T:               s.T(),
+			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
+			CustomValidator: true,
 		}),
 		// Service under test
 		fx.Provide(New),

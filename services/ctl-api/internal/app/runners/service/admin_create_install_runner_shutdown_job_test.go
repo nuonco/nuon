@@ -20,7 +20,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -42,7 +41,7 @@ type AdminCreateInstallRunnerShutdownJobTestSuite struct {
 	router       *gin.Engine
 	testOrg      *app.Org
 	testAcc      *app.Account
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestAdminCreateInstallRunnerShutdownJobSuite(t *testing.T) {
@@ -57,14 +56,18 @@ func (s *AdminCreateInstallRunnerShutdownJobTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		fx.Provide(New),
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
+
+		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 

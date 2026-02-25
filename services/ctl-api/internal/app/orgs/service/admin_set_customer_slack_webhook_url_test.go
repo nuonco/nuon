@@ -68,7 +68,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),

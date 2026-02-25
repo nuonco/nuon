@@ -64,8 +64,19 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
+	// Create gomock controller and mock GitHub client
+	s.ctrl = gomock.NewController(s.T())
+	s.mockGH = vcshelpers.NewMockGithubClient(s.ctrl)
+
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+			Mocks: &tests.TestMocks{
+				MockGH: s.mockGH,
+				MockEv: tests.NewMockEventLoopClient(),
+			},
+			CustomValidator: true,
+		}),
 		fx.Populate(&s.service),
 	)
 
@@ -79,10 +90,6 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 func (s *VCSServiceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-
-	// Create gomock controller and mock
-	s.ctrl = gomock.NewController(s.T())
-	s.mockGH = vcshelpers.NewMockGithubClient(s.ctrl)
 
 	// Default mock expectations (overridden in individual tests as needed)
 	s.mockGH.EXPECT().GetInstallationAccount(gomock.Any(), gomock.Any()).Return(&github.User{

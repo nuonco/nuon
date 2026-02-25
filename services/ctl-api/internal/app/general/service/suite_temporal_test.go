@@ -76,8 +76,19 @@ func (s *GeneralTemporalTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
+	// Create gomock controller and mock temporal client
+	s.ctrl = gomock.NewController(s.T())
+	s.mockTC = temporal.NewMockClient(s.ctrl)
+
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+			Mocks: &tests.TestMocks{
+				MockTC: s.mockTC,
+				MockEv: tests.NewMockEventLoopClient(),
+			},
+			CustomValidator: true,
+		}),
 		fx.Populate(&s.deps),
 	)
 
@@ -91,10 +102,6 @@ func (s *GeneralTemporalTestSuite) SetupSuite() {
 func (s *GeneralTemporalTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-
-	// Create gomock controller and mock temporal client
-	s.ctrl = gomock.NewController(s.T())
-	s.mockTC = temporal.NewMockClient(s.ctrl)
 
 	// Manually create the service with the mock temporal client
 	svc := &service{
