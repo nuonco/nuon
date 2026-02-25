@@ -9,13 +9,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -34,9 +37,11 @@ type TestService struct {
 type HealthTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app     *fxtest.App
-	service TestService
-	router  *gin.Engine
+	app                *fxtest.App
+	service            TestService
+	router             *gin.Engine
+	mockCtrl           *gomock.Controller
+	mockTemporalClient *temporalclient.MockClient
 }
 
 func TestHealthSuite(t *testing.T) {
@@ -52,8 +57,24 @@ func (s *HealthTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
+	// Create mock controller and temporal client
+	s.mockCtrl = gomock.NewController(s.T())
+	s.mockTemporalClient = temporalclient.NewMockClient(s.mockCtrl)
+
+	// Set up expectation for CheckHealth - can be called multiple times in tests
+	s.mockTemporalClient.EXPECT().
+		CheckHealth(gomock.Any(), gomock.Any()).
+		Return(&client.CheckHealthResponse{}, nil).
+		AnyTimes()
+
 	options := append(
-		tests.CtlApiFXOptionsWithValidator(s.T()),
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+			Mocks: &tests.TestMocks{
+				MockTC: s.mockTemporalClient,
+			},
+			CustomValidator: false,
+		}),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -74,6 +95,7 @@ func (s *HealthTestSuite) SetupSuite() {
 
 func (s *HealthTestSuite) TearDownSuite() {
 	s.app.RequireStop()
+	s.mockCtrl.Finish()
 }
 
 func (s *HealthTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
