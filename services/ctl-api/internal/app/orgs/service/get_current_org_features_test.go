@@ -48,7 +48,7 @@ func (s *GetCurrentOrgFeaturesTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
@@ -109,7 +109,7 @@ func (s *GetCurrentOrgFeaturesTestSuite) TestGetCurrentOrgFeaturesWithoutOrgCont
 	router.ServeHTTP(rr, req)
 
 	// Should fail without org context
-	require.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 	s.T().Logf("Status without org context: %d, Body: %s", rr.Code, rr.Body.String())
 }
 

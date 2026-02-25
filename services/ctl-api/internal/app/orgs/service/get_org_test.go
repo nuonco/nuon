@@ -46,7 +46,7 @@ func (s *GetOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
@@ -239,5 +239,5 @@ func (s *GetOrgTestSuite) TestGetOrgWithoutOrgContext() {
 	router.ServeHTTP(rr, req)
 
 	// Should fail without org context
-	require.NotEqual(s.T(), http.StatusOK, rr.Code)
+	require.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 }

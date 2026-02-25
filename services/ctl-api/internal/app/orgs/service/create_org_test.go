@@ -20,7 +20,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -32,7 +31,7 @@ type CreateOrgTestSuite struct {
 	service      TestService
 	router       *gin.Engine
 	testAcc      *app.Account
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 	orgsService  *service
 }
 
@@ -50,13 +49,15 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		// service under test
 		fx.Provide(New),
@@ -328,7 +329,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	router.ServeHTTP(rr, req)
 
 	// Should fail for service accounts
-	require.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 	require.Contains(s.T(), rr.Body.String(), "not allowed to create new orgs")
 }
 
@@ -483,16 +484,16 @@ func (s *CreateOrgTestSuite) TestCreateOrgDuplicateName() {
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs", request)
 
 	// Should fail with conflict/error
-	require.NotEqual(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusConflict, rr.Code)
 	s.T().Logf("Duplicate org creation status: %d, Body: %s", rr.Code, rr.Body.String())
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrgWithoutAccountContext() {
 	// Create router without account context
-	router := gin.New()
-	router.Use(func(c *gin.Context) {
-		// No account context set
-		c.Next()
+	router := tests.NewTestRouter(tests.RouterOptions{
+		L:  s.service.L,
+		DB: s.service.DB,
+		// TestAcc intentionally omitted
 	})
 
 	err := s.orgsService.RegisterPublicRoutes(router)
@@ -511,9 +512,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgWithoutAccountContext() {
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 
-	// Should not successfully create org without account context
-	// Note: Actual behavior varies - may return 200 with empty response or error
-	// The key is that it should NOT return 201 Created
-	require.NotEqual(s.T(), http.StatusCreated, rr.Code, "should not successfully create org without account context")
+	require.Equal(s.T(), http.StatusInternalServerError, rr.Code, "should not successfully create org without account context")
 	s.T().Logf("Status without account context: %d, Body: %s", rr.Code, rr.Body.String())
 }
