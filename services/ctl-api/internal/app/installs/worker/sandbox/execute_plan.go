@@ -196,7 +196,7 @@ func (w *Workflows) getRoleForSandbox(
 		PrincipalName: "", // Sandboxes don't have names
 		RuntimeRole:   sandboxRun.Role,
 		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			sandboxRun.AppSandboxConfig.OperationRoles,
+			appConfig.SandboxConfig.OperationRoles,
 		),
 		MatrixRules:  appConfig.OperationRoleConfig.Rules,
 		DefaultRole:  defaultRole,
