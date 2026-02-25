@@ -1,6 +1,37 @@
 ---
 name: product-engineer
-description: Use this agent when the user needs help with product engineering tasks that span the entire Nuon BYOC platform. This includes cross-service feature development, architectural decisions, understanding system interactions, debugging complex issues across multiple services, implementing new features that touch both frontend and backend, or working on infrastructure and deployment concerns. The agent is particularly valuable for tasks that require understanding of the monorepo structure, service interactions, and platform-wide patterns.\n\nExamples:\n\n<example>\nContext: User is implementing a new feature that requires changes across multiple services.\nuser: "I need to add a new field to track deployment metrics. This will need changes to the API, database schema, and dashboard UI."\nassistant: "Let me use the Task tool to launch the product-engineer agent to help architect this cross-service feature."\n<commentary>\nSince this involves multiple services and requires architectural understanding, use the product-engineer agent to provide comprehensive guidance.\n</commentary>\n</example>\n\n<example>\nContext: User is debugging an issue that spans the runner and ctl-api services.\nuser: "Builds are succeeding but artifacts aren't showing up in ECR. The runner logs look fine but installs are failing."\nassistant: "I'll use the Task tool to launch the product-engineer agent to help debug this cross-service issue."\n<commentary>\nThis requires understanding of the build pipeline, ECR integration, and service interactions - perfect for the product-engineer agent.\n</commentary>\n</example>\n\n<example>\nContext: User is working on local development environment setup.\nuser: "I'm getting errors when running the full stack locally. The ctl-api won't start and I'm seeing temporal connection issues."\nassistant: "Let me use the Task tool to launch the product-engineer agent to help troubleshoot your local development setup."\n<commentary>\nLocal stack orchestration issues require understanding of the full system architecture and dependencies.\n</commentary>\n</example>\n\n<example>\nContext: User needs to understand how a system component works.\nuser: "Can you explain how the user journey system tracks onboarding progress across the API and dashboard?"\nassistant: "I'll use the Task tool to launch the product-engineer agent to explain the user journey architecture."\n<commentary>\nThis requires deep platform knowledge spanning multiple services and architectural patterns.\n</commentary>\n</example>\n\n<example>\nContext: User is planning a new feature that affects the permission system.\nuser: "We need to add a new role type for read-only access across all installs in an organization."\nassistant: "Let me use the Task tool to launch the product-engineer agent to help design this permission system enhancement."\n<commentary>\nPermission system changes require understanding of the three-layer RBAC architecture and cross-service implications.\n</commentary>\n</example>
+description: |
+  Use this agent when the user needs help with product engineering tasks that span the entire Nuon BYOC platform. This includes cross-service feature development, architectural decisions, understanding system interactions, debugging complex issues across multiple services, implementing new features that touch both frontend and backend, or working on infrastructure and deployment concerns. The agent is particularly valuable for tasks that require understanding of the monorepo structure, service interactions, and platform-wide patterns.
+
+  <example>
+  Context: User is implementing a new feature that requires changes across multiple services.
+  user: "I need to add a new field to track deployment metrics. This will need changes to the API, database schema, and dashboard UI."
+  assistant: "Let me use the Task tool to launch the product-engineer agent to help architect this cross-service feature."
+  </example>
+
+  <example>
+  Context: User is debugging an issue that spans the runner and ctl-api services.
+  user: "Builds are succeeding but artifacts aren't showing up in ECR. The runner logs look fine but installs are failing."
+  assistant: "I'll use the Task tool to launch the product-engineer agent to help debug this cross-service issue."
+  </example>
+
+  <example>
+  Context: User is working on local development environment setup.
+  user: "I'm getting errors when running the full stack locally. The ctl-api won't start and I'm seeing temporal connection issues."
+  assistant: "Let me use the Task tool to launch the product-engineer agent to help troubleshoot your local development setup."
+  </example>
+
+  <example>
+  Context: User needs to understand how a system component works.
+  user: "Can you explain how the user journey system tracks onboarding progress across the API and dashboard?"
+  assistant: "I'll use the Task tool to launch the product-engineer agent to explain the user journey architecture."
+  </example>
+
+  <example>
+  Context: User is planning a new feature that affects the permission system.
+  user: "We need to add a new role type for read-only access across all installs in an organization."
+  assistant: "Let me use the Task tool to launch the product-engineer agent to help design this permission system enhancement."
+  </example>
 model: opus
 color: blue
 ---
