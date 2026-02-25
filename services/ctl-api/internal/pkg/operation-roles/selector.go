@@ -3,6 +3,7 @@ package operationroles
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
@@ -103,6 +104,10 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 }
 
 func GetDefaultRoleSelection(ctx *SelectionContext) (*RoleSelection, error) {
+	if ctx.DefaultRole == "" {
+		return nil, fmt.Errorf("no default role configured for %s", ctx.Operation)
+	}
+
 	renderedDefaultRole, err := renderRoleName(ctx.DefaultRole, ctx.InstallState)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render default role name: %w", err)
@@ -133,6 +138,10 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			RoleARN:  "azure-placeholder-arn",
 			Source:   RoleSelectionSourceDefault,
 		}, nil
+	}
+
+	if ctx.DefaultRole == "" {
+		return nil, fmt.Errorf("no default role configured for %s", ctx.Operation)
 	}
 
 	// Render default role name with install state (fixes template rendering in sandbox and default paths)
@@ -293,7 +302,7 @@ func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, stackOutputs
 
 	roleARN, ok := availableRoles[renderedRoleName]
 	if !ok {
-		return "", fmt.Errorf("role %q not found in install stack outputs", renderedRoleName)
+		return "", fmt.Errorf("role %s not found in install stack outputs, please enable it in install stack", renderedRoleName)
 	}
 
 	return roleARN, nil
@@ -309,13 +318,9 @@ func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs, ins
 	}
 
 	availableRoles := make(map[string]string)
-	for role, roleARN := range stackOutputs.CustomRoleARNs {
-		availableRoles[role] = roleARN
-	}
-	for role, roleARN := range stackOutputs.BreakGlassRoleARNs {
-		availableRoles[role] = roleARN
-	}
 
+	maps.Copy(availableRoles, stackOutputs.CustomRoleARNs)
+	maps.Copy(availableRoles, stackOutputs.BreakGlassRoleARNs)
 	stateMap, err := installState.AsMap()
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert install state to map: %w", err)

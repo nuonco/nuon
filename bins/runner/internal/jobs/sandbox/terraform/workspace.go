@@ -74,7 +74,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		hooks = noop.New()
 	} else {
 		hooks, err = shell.New(h.v,
-			shell.WithRunAuth(&plan.Hooks.RunAuth),
+			shell.WithRunAuth(h.state.auth.AWSAuth),
 			shell.WithEnvVars(plan.Hooks.EnvVars),
 		)
 		if err != nil {
@@ -157,7 +157,7 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 		hooks = noop.New()
 	} else {
 		hooks, err = shell.New(h.v,
-			shell.WithRunAuth(&plan.Hooks.RunAuth),
+			shell.WithRunAuth(h.state.auth.AWSAuth),
 			shell.WithEnvVars(plan.Hooks.EnvVars),
 		)
 		if err != nil {
