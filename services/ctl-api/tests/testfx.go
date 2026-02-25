@@ -1,7 +1,10 @@
 package tests
 
 import (
+	"testing"
+
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"gorm.io/gorm"
@@ -53,7 +56,9 @@ type TestMocks struct {
 
 // TestOpts configures the FX options for integration tests.
 type TestOpts struct {
-	// Mocks to inject. Nil fields use real implementations.
+	// T is required for creating default gomock-based mock clients.
+	T testing.TB
+	// Mocks to inject. Nil fields use default mocks.
 	Mocks *TestMocks
 	// CustomValidator uses the custom entity_name validator when true,
 	// standard validator when false.
@@ -62,15 +67,15 @@ type TestOpts struct {
 
 // CtlApiFXOptions returns the common FX options used across all ctl-api integration tests.
 // For tests that need mocks, use CtlApiFXOptionsWithMocks instead.
-func CtlApiFXOptions() []fx.Option {
-	return CtlApiFXOptionsWithMocks(TestOpts{CustomValidator: true})
+func CtlApiFXOptions(t testing.TB) []fx.Option {
+	return CtlApiFXOptionsWithMocks(TestOpts{T: t, CustomValidator: true})
 }
 
 // CtlApiFXOptionsWithValidator returns common test options with the standard validator.
 //
 // Deprecated: Use CtlApiFXOptionsWithMocks(tests.TestOpts{}) instead.
-func CtlApiFXOptionsWithValidator() []fx.Option {
-	return CtlApiFXOptionsWithMocks(TestOpts{CustomValidator: false})
+func CtlApiFXOptionsWithValidator(t testing.TB) []fx.Option {
+	return CtlApiFXOptionsWithMocks(TestOpts{T: t, CustomValidator: false})
 }
 
 // CtlApiFXOptionsWithMocks returns FX options for integration tests with configurable
@@ -150,16 +155,23 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 	}
 
 	// Mock/fake client overrides
-	if opts.Mocks != nil {
-		if opts.Mocks.MockEv != nil {
-			options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockEv, fx.As(new(eventloop.Client)))))
-		}
-		if opts.Mocks.MockTC != nil {
-			options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockTC, fx.As(new(temporalclient.Client)))))
-		}
-		if opts.Mocks.MockGH != nil {
-			options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockGH, fx.As(new(vcshelpers.GithubClient)))))
-		}
+	if opts.Mocks != nil && opts.Mocks.MockEv != nil {
+		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockEv, fx.As(new(eventloop.Client)))))
+	} else {
+		// Always provide an eventloop.Client (required by account.New)
+		options = append(options, fx.Supply(fx.Annotate(NewFakeEventLoopClient(), fx.As(new(eventloop.Client)))))
+	}
+
+	if opts.Mocks != nil && opts.Mocks.MockTC != nil {
+		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockTC, fx.As(new(temporalclient.Client)))))
+	} else if opts.T != nil {
+		ctrl := gomock.NewController(opts.T)
+		mockTC := temporalclient.NewMockClient(ctrl)
+		options = append(options, fx.Supply(fx.Annotate(mockTC, fx.As(new(temporalclient.Client)))))
+	}
+
+	if opts.Mocks != nil && opts.Mocks.MockGH != nil {
+		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockGH, fx.As(new(vcshelpers.GithubClient)))))
 	}
 
 	return options

@@ -78,6 +78,7 @@ func (s *DeleteAppActionTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
 
 			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
@@ -183,11 +184,13 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 		{
 			name: "delete action by name returns 200",
 			setupFunc: func() string {
+				// Use unique name per test run to avoid conflicts
+				uniqueName := "action-by-name-delete-" + domains.NewActionWorkflowID()
 				action := &app.ActionWorkflow{
 					ID:     domains.NewActionWorkflowID(),
 					AppID:  s.testApp.ID,
 					OrgID:  s.testOrg.ID,
-					Name:   "action-by-name-delete",
+					Name:   uniqueName,
 					Status: app.ActionWorkflowStatusActive,
 				}
 				err := s.service.DB.WithContext(s.ctx).Create(action).Error
@@ -203,7 +206,7 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			validateFunc: func(actionName string) {
 				// Verify action status was updated
 				var dbAction app.ActionWorkflow
-				err := s.service.DB.Where("name = ?", actionName).First(&dbAction).Error
+				err := s.service.DB.Where("name = ? AND org_id = ?", actionName, s.testOrg.ID).First(&dbAction).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), app.ActionWorkflowStatusDeleteQueued, dbAction.Status)
 			},
@@ -212,6 +215,7 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			s.mockEvClient.Reset()
 			actionIdentifier := tc.setupFunc()
 			rr := s.makeRequest(http.MethodDelete, "/v1/apps/"+s.testApp.ID+"/actions/"+actionIdentifier, nil)
 

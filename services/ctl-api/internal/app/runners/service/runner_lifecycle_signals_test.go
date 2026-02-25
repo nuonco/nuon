@@ -67,6 +67,7 @@ func (s *RunnerLifecycleSignalsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
 
 			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
@@ -247,7 +248,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
 			// Should return error (not 201)
-			assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent
@@ -337,7 +338,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
 			// Should return error due to cross-org isolation
-			assert.NotEqual(s.T(), http.StatusCreated, rr.Code)
+			require.Equal(s.T(), http.StatusNotFound, rr.Code)
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent

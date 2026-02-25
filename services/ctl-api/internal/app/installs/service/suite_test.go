@@ -22,11 +22,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-<<<<<<< Updated upstream
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-=======
->>>>>>> Stashed changes
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -77,6 +73,7 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T:               s.T(),
 			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),

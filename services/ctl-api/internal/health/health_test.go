@@ -32,7 +32,7 @@ type TestService struct {
 
 // HealthTestSuite is the testify suite for health endpoints.
 type HealthTestSuite struct {
-	suite.Suite
+	tests.BaseDBTestSuite
 
 	app     *fxtest.App
 	service TestService
@@ -49,10 +49,11 @@ func TestHealthSuite(t *testing.T) {
 }
 
 func (s *HealthTestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
 	options := append(
-		tests.CtlApiFXOptionsWithValidator(),
+		tests.CtlApiFXOptionsWithValidator(s.T()),
 		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -61,6 +62,9 @@ func (s *HealthTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 
 	s.app.RequireStart()
+
+	// Store DB reference for automatic truncation
+	s.SetDB(s.service.DB)
 
 	// Create test router and register routes
 	s.router = gin.New()

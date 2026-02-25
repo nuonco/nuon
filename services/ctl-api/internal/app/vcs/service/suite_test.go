@@ -70,6 +70,7 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
 			Mocks: &tests.TestMocks{
 				MockGH: s.mockGH,
 				MockEv: tests.NewMockEventLoopClient(),

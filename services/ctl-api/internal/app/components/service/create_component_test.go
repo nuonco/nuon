@@ -257,11 +257,7 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentNonexistentDependency() 
 	path := fmt.Sprintf("/v1/apps/%s/components", s.testApp.ID)
 	rr := s.makeRequest(http.MethodPost, path, reqBody)
 
-	// Should not return 201 - should error
-	if rr.Code == http.StatusCreated {
-		s.T().Logf("Expected error but got 201. Body: %s", rr.Body.String())
-	}
-	require.NotEqual(s.T(), http.StatusCreated, rr.Code, "should not successfully create component with nonexistent dependency")
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, "should not successfully create component with nonexistent dependency")
 }
 
 // ---------------------------------------------------------------------------

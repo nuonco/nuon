@@ -63,6 +63,7 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupSuite() {
 	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T:               s.T(),
 			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),

@@ -80,6 +80,7 @@ func (s *CreateAppActionConfigTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
 
 			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 

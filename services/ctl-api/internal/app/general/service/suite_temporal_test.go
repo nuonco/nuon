@@ -82,6 +82,7 @@ func (s *GeneralTemporalTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
 			Mocks: &tests.TestMocks{
 				MockTC: s.mockTC,
 				MockEv: tests.NewMockEventLoopClient(),
