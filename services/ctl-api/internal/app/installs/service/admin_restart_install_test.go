@@ -45,7 +45,7 @@ type AdminRestartInstallTestSuite struct {
 	testAcc      *app.Account
 	testApp      *app.App
 	testInstall  *app.Install
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestAdminRestartInstallSuite(t *testing.T) {
@@ -60,7 +60,7 @@ func (s *AdminRestartInstallTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptions(),
 		fx.Decorate(func() eventloop.Client {

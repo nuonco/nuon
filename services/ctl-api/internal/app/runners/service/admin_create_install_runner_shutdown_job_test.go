@@ -42,7 +42,7 @@ type AdminCreateInstallRunnerShutdownJobTestSuite struct {
 	router       *gin.Engine
 	testOrg      *app.Org
 	testAcc      *app.Account
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestAdminCreateInstallRunnerShutdownJobSuite(t *testing.T) {
@@ -57,7 +57,7 @@ func (s *AdminCreateInstallRunnerShutdownJobTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptions(),

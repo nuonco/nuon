@@ -47,7 +47,7 @@ type AdminUpdateInstallRunnerTestSuite struct {
 	testInstall           *app.Install
 	testRunnerGrp         *app.RunnerGroup
 	testRunnerGrpSettings *app.RunnerGroupSettings
-	mockEvClient          *tests.FakeEventLoopClient
+	mockEvClient          *tests.MockEventLoopClient
 }
 
 func TestAdminUpdateInstallRunnerSuite(t *testing.T) {
@@ -62,7 +62,7 @@ func (s *AdminUpdateInstallRunnerTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptions(),
 		fx.Decorate(func() eventloop.Client {

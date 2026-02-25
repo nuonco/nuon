@@ -47,7 +47,7 @@ type RunnerLifecycleSignalsTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.FakeEventLoopClient
+	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestRunnerLifecycleSignalsSuite(t *testing.T) {
@@ -63,7 +63,7 @@ func (s *RunnerLifecycleSignalsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptions(),

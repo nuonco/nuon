@@ -9,8 +9,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
-// FakeEventLoopClient is a test implementation of eventloop.Client that records signals.
-type FakeEventLoopClient struct {
+// MockEventLoopClient is a test implementation of eventloop.Client that records signals.
+type MockEventLoopClient struct {
 	mu      sync.Mutex
 	signals []CapturedSignal
 }
@@ -21,15 +21,15 @@ type CapturedSignal struct {
 	Signal eventloop.Signal
 }
 
-// NewFakeEventLoopClient creates a new fake event loop client for testing.
-func NewFakeEventLoopClient() *FakeEventLoopClient {
-	return &FakeEventLoopClient{
+// NewMockEventLoopClient creates a new mock event loop client for testing.
+func NewMockEventLoopClient() *MockEventLoopClient {
+	return &MockEventLoopClient{
 		signals: make([]CapturedSignal, 0),
 	}
 }
 
 // Send implements eventloop.Client by recording the signal.
-func (f *FakeEventLoopClient) Send(ctx context.Context, id string, signal eventloop.Signal) {
+func (f *MockEventLoopClient) Send(ctx context.Context, id string, signal eventloop.Signal) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.signals = append(f.signals, CapturedSignal{
@@ -39,33 +39,33 @@ func (f *FakeEventLoopClient) Send(ctx context.Context, id string, signal eventl
 }
 
 // Cancel implements eventloop.Client (no-op for testing).
-func (f *FakeEventLoopClient) Cancel(ctx context.Context, namespace, id string) error {
+func (f *MockEventLoopClient) Cancel(ctx context.Context, namespace, id string) error {
 	return nil
 }
 
 // GetWorkflowStatus implements eventloop.Client (returns completed for testing).
-func (f *FakeEventLoopClient) GetWorkflowStatus(ctx context.Context, namespace string, workflowID string) (enumsv1.WorkflowExecutionStatus, error) {
+func (f *MockEventLoopClient) GetWorkflowStatus(ctx context.Context, namespace string, workflowID string) (enumsv1.WorkflowExecutionStatus, error) {
 	return enumsv1.WORKFLOW_EXECUTION_STATUS_COMPLETED, nil
 }
 
 // GetWorkflowCount implements eventloop.Client (returns 1 for testing).
-func (f *FakeEventLoopClient) GetWorkflowCount(ctx context.Context, namespace string, workflowID string) (int64, error) {
+func (f *MockEventLoopClient) GetWorkflowCount(ctx context.Context, namespace string, workflowID string) (int64, error) {
 	return 1, nil
 }
 
 // GetSignals returns all captured signals.
-func (f *FakeEventLoopClient) GetSignals() []CapturedSignal {
+func (f *MockEventLoopClient) GetSignals() []CapturedSignal {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.signals
 }
 
 // Reset clears all captured signals.
-func (f *FakeEventLoopClient) Reset() {
+func (f *MockEventLoopClient) Reset() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.signals = make([]CapturedSignal, 0)
 }
 
-// Verify FakeEventLoopClient implements eventloop.Client
-var _ eventloop.Client = (*FakeEventLoopClient)(nil)
+// Verify MockEventLoopClient implements eventloop.Client
+var _ eventloop.Client = (*MockEventLoopClient)(nil)

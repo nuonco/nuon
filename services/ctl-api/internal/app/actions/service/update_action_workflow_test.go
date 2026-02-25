@@ -57,7 +57,7 @@ type UpdateAppActionDeprecatedTestSuite struct {
 	testOrg      *app.Org
 	testAcc      *app.Account
 	testApp      *app.App
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestUpdateAppActionDeprecatedSuite(t *testing.T) {
@@ -74,7 +74,7 @@ func (s *UpdateAppActionDeprecatedTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptions(),

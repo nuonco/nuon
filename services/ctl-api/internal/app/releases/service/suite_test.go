@@ -57,7 +57,7 @@ type ReleasesServiceTestSuite struct {
 	testAcc         *app.Account
 	testApp         *app.App
 	testAppConfig   *app.AppConfig
-	mockEvClient    *tests.FakeEventLoopClient
+	mockEvClient    *tests.MockEventLoopClient
 }
 
 func TestReleasesServiceSuite(t *testing.T) {
@@ -74,7 +74,7 @@ func (s *ReleasesServiceTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptions(),
