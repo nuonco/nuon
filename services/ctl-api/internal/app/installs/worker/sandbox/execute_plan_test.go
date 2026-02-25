@@ -448,6 +448,9 @@ func TestGetRoleForSandbox(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup test data
 			appConfig := &app.AppConfig{
+				SandboxConfig: app.AppSandboxConfig{
+					OperationRoles: tt.sandboxEntityRoles,
+				},
 				PermissionsConfig: app.AppPermissionsConfig{
 					ProvisionRole: app.AppAWSIAMRoleConfig{
 						Name: "ProvisionRole",
@@ -482,9 +485,6 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRun := &app.InstallSandboxRun{
 				RunType: tt.sandboxRunType,
 				Role:    tt.sandboxRuntimeRole,
-				AppSandboxConfig: app.AppSandboxConfig{
-					OperationRoles: tt.sandboxEntityRoles,
-				},
 			}
 
 			stack := &app.InstallStack{
