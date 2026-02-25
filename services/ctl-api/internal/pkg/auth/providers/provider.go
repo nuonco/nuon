@@ -33,6 +33,10 @@ type ProviderConfig struct {
 	TokenURL    string
 	UserInfoURL string
 
+	// AuthStyle specifies how the client credentials are sent to the token endpoint.
+	// 0 = auto-detect (default), 1 = in params (POST body), 2 = in header (HTTP Basic).
+	AuthStyle oauth2.AuthStyle
+
 	// For OIDC providers
 	IssuerURL string
 
