@@ -14,6 +14,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
 type Params struct {
@@ -28,6 +29,7 @@ type Params struct {
 	VcsHelpers  *vcshelpers.Helpers
 	AppsHelpers *appshelpers.Helpers
 	EvClient    eventloop.Client
+	TfClient    terraform.Client
 }
 
 type service struct {
@@ -40,8 +42,7 @@ type service struct {
 	vcsHelpers  *vcshelpers.Helpers
 	appsHelpers *appshelpers.Helpers
 	evClient    eventloop.Client
-
-	getLatestTerraformVersion func() (string, error)
+	tfClient    terraform.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -182,7 +183,6 @@ func New(params Params) *service {
 		vcsHelpers:  params.VcsHelpers,
 		appsHelpers: params.AppsHelpers,
 		evClient:    params.EvClient,
-
-		getLatestTerraformVersion: getLatestTerraformVersion,
+		tfClient:    params.TfClient,
 	}
 }
