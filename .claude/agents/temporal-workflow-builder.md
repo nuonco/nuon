@@ -1,6 +1,31 @@
 ---
 name: temporal-workflow-builder
-description: Use this agent when you need to create new Temporal workflows, signals, or activities for the Nuon platform. This includes: building background job workflows, creating async task orchestration, implementing complex multi-step operations that require reliability and retry logic, adding new worker queues, or extending existing workflow functionality. Examples:\n\n<example>\nContext: User needs to create a workflow for provisioning customer infrastructure.\nuser: "I need to create a workflow that provisions an EKS cluster, installs Helm charts, and configures networking. Can you help me build this?"\nassistant: "I'll use the temporal-workflow-builder agent to create this multi-step infrastructure provisioning workflow."\n<task_call>temporal-workflow-builder</task_call>\n<commentary>Since this requires creating a new Temporal workflow with multiple activities, the temporal-workflow-builder agent should handle the workflow definition, activity creation using gen-v2 patterns, and queue configuration.</commentary>\n</example>\n\n<example>\nContext: User wants to add a new signal to an existing workflow.\nuser: "The install deployment workflow needs a pause/resume capability. How do I add signals for that?"\nassistant: "Let me use the temporal-workflow-builder agent to add pause and resume signals to the existing workflow."\n<task_call>temporal-workflow-builder</task_call>\n<commentary>This requires adding signal definitions and handlers to an existing workflow, which is within the temporal-workflow-builder's domain expertise.</commentary>\n</example>\n\n<example>\nContext: After implementing a new feature that requires async processing.\nuser: "I just added a new component sync feature. Now I need it to run asynchronously in the background."\nassistant: "This new feature should be implemented as a Temporal workflow for reliability. Let me use the temporal-workflow-builder agent to create the workflow structure."\n<task_call>temporal-workflow-builder</task_call>\n<commentary>The agent should proactively suggest Temporal workflows for async operations and help implement them using the established patterns.</commentary>\n</example>
+description: |
+  Use this agent when you need to create new Temporal workflows, signals, or activities for the Nuon platform. This includes: building background job workflows, creating async task orchestration, implementing complex multi-step operations that require reliability and retry logic, adding new worker queues, or extending existing workflow functionality. Examples:
+
+  <example>
+  Context: User needs to create a workflow for provisioning customer infrastructure.
+  user: "I need to create a workflow that provisions an EKS cluster, installs Helm charts, and configures networking. Can you help me build this?"
+  assistant: "I'll use the temporal-workflow-builder agent to create this multi-step infrastructure provisioning workflow."
+  <task_call>temporal-workflow-builder</task_call>
+  <commentary>Since this requires creating a new Temporal workflow with multiple activities, the temporal-workflow-builder agent should handle the workflow definition, activity creation using gen-v2 patterns, and queue configuration.</commentary>
+  </example>
+
+  <example>
+  Context: User wants to add a new signal to an existing workflow.
+  user: "The install deployment workflow needs a pause/resume capability. How do I add signals for that?"
+  assistant: "Let me use the temporal-workflow-builder agent to add pause and resume signals to the existing workflow."
+  <task_call>temporal-workflow-builder</task_call>
+  <commentary>This requires adding signal definitions and handlers to an existing workflow, which is within the temporal-workflow-builder's domain expertise.</commentary>
+  </example>
+
+  <example>
+  Context: After implementing a new feature that requires async processing.
+  user: "I just added a new component sync feature. Now I need it to run asynchronously in the background."
+  assistant: "This new feature should be implemented as a Temporal workflow for reliability. Let me use the temporal-workflow-builder agent to create the workflow structure."
+  <task_call>temporal-workflow-builder</task_call>
+  <commentary>The agent should proactively suggest Temporal workflows for async operations and help implement them using the established patterns.</commentary>
+  </example>
 model: sonnet
 color: blue
 ---
