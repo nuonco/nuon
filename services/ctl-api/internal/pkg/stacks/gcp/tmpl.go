@@ -174,6 +174,11 @@ const tmpl = `{
         "project": "{{.Install.GCPAccount.ProjectID}}",
         "role": "roles/compute.securityAdmin",
         "member": "serviceAccount:${google_service_account.runner.email}"
+      },
+      "runner_storage_admin": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role": "roles/storage.admin",
+        "member": "serviceAccount:${google_service_account.runner.email}"
       }
     },
     "google_compute_instance": {
