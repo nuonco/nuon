@@ -24,6 +24,9 @@ type PlantypesPlanAuth struct {
 
 	// azure auth
 	AzureAuth *GithubComNuoncoNuonPkgAzureCredentialsConfig `json:"azure_auth,omitempty"`
+
+	// gcp auth
+	GcpAuth *GithubComNuoncoNuonPkgGcpCredentialsConfig `json:"gcp_auth,omitempty"`
 }
 
 // Validate validates this plantypes plan auth
@@ -35,6 +38,10 @@ func (m *PlantypesPlanAuth) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzureAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -90,6 +97,29 @@ func (m *PlantypesPlanAuth) validateAzureAuth(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *PlantypesPlanAuth) validateGcpAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpAuth) { // not required
+		return nil
+	}
+
+	if m.GcpAuth != nil {
+		if err := m.GcpAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this plantypes plan auth based on the context it is used
 func (m *PlantypesPlanAuth) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -99,6 +129,10 @@ func (m *PlantypesPlanAuth) ContextValidate(ctx context.Context, formats strfmt.
 	}
 
 	if err := m.contextValidateAzureAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGcpAuth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -149,6 +183,31 @@ func (m *PlantypesPlanAuth) contextValidateAzureAuth(ctx context.Context, format
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesPlanAuth) contextValidateGcpAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpAuth != nil {
+
+		if swag.IsZero(m.GcpAuth) { // not required
+			return nil
+		}
+
+		if err := m.GcpAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
 			}
 
 			return err

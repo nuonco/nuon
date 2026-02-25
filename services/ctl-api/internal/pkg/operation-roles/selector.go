@@ -140,6 +140,15 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		}, nil
 	}
 
+	// early exit for GCP — runner uses attached service account, no IAM role selection needed
+	if ctx.StackOutputs.GCPStackOutputs != nil {
+		return &RoleSelection{
+			RoleName: "gcp-attached-service-account",
+			RoleARN:  "gcp-attached-service-account",
+			Source:   RoleSelectionSourceDefault,
+		}, nil
+	}
+
 	if ctx.DefaultRole == "" {
 		return nil, fmt.Errorf("no default role configured for %s", ctx.Operation)
 	}
