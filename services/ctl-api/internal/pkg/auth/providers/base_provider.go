@@ -32,8 +32,9 @@ func (b *BaseProvider) SetupOAuth2Config(cfg *ProviderConfig) {
 		RedirectURL:  cfg.RedirectURL,
 		Scopes:       cfg.Scopes,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  cfg.AuthURL,
-			TokenURL: cfg.TokenURL,
+			AuthURL:   cfg.AuthURL,
+			TokenURL:  cfg.TokenURL,
+			AuthStyle: cfg.AuthStyle,
 		},
 	}
 	b.userInfoURL = cfg.UserInfoURL
