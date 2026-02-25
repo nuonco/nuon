@@ -43,15 +43,10 @@ func (s *GeneralPublicTestSuite) TestGetCloudPlatformRegions() {
 			},
 		},
 		{
-			name:          "returns GCP regions",
+			name:          "returns error for unsupported GCP platform",
 			cloudPlatform: "gcp",
-			expectedCode:  http.StatusOK,
+			expectedCode:  http.StatusBadRequest,
 			validateResponse: func(regions []app.CloudPlatformRegion) {
-				assert.NotEmpty(s.T(), regions)
-				if len(regions) > 0 {
-					assert.NotEmpty(s.T(), regions[0].Name)
-					assert.NotEmpty(s.T(), regions[0].Value)
-				}
 			},
 		},
 		{

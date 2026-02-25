@@ -69,3 +69,11 @@ func (f *FakeEventLoopClient) Reset() {
 
 // Verify FakeEventLoopClient implements eventloop.Client
 var _ eventloop.Client = (*FakeEventLoopClient)(nil)
+
+// MockEventLoopClient is an alias for FakeEventLoopClient for backward compatibility.
+type MockEventLoopClient = FakeEventLoopClient
+
+// NewMockEventLoopClient is an alias for NewFakeEventLoopClient for backward compatibility.
+func NewMockEventLoopClient() *FakeEventLoopClient {
+	return NewFakeEventLoopClient()
+}

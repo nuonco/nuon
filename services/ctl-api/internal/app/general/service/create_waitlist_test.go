@@ -68,9 +68,8 @@ func (s *GeneralPublicTestSuite) TestCreateWaitlist() {
 					s.T().Logf("Expected error but got success. Status: %d, Body: %s", rr.Code, rr.Body.String())
 				}
 
-				// Should return an error status (400 or 500)
-				assert.NotEqual(s.T(), http.StatusCreated, rr.Code, tc.description)
-				assert.Contains(s.T(), []int{http.StatusBadRequest, http.StatusInternalServerError}, rr.Code)
+				// Should return an error status (400)
+				require.Equal(s.T(), http.StatusBadRequest, rr.Code, tc.description)
 			})
 		}
 	})

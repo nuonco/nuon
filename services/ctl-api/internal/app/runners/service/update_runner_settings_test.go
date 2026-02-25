@@ -22,7 +22,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
@@ -45,7 +44,7 @@ type UpdateRunnerSettingsTestSuite struct {
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
 	testSettings  *app.RunnerGroupSettings
-	mockEvClient  *tests.FakeEventLoopClient
+	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestUpdateRunnerSettingsSuite(t *testing.T) {
@@ -61,12 +60,15 @@ func (s *UpdateRunnerSettingsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		fx.Provide(New),
 		fx.Populate(&s.service),

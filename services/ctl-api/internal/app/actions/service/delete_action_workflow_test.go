@@ -26,7 +26,6 @@ import (
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -58,7 +57,7 @@ type DeleteAppActionTestSuite struct {
 	testOrg      *app.Org
 	testAcc      *app.Account
 	testApp      *app.App
-	mockEvClient *tests.FakeEventLoopClient
+	mockEvClient *tests.MockEventLoopClient
 }
 
 func TestDeleteAppActionSuite(t *testing.T) {
@@ -75,13 +74,15 @@ func (s *DeleteAppActionTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewFakeEventLoopClient()
+	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
-		tests.CtlApiFXOptions(),
-		// Override eventloop.Client with mock
-		fx.Decorate(func() eventloop.Client {
-			return s.mockEvClient
+		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+			T: s.T(),
+
+			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
+
+			CustomValidator: true,
 		}),
 		// service under test
 		fx.Provide(New),
@@ -183,11 +184,13 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 		{
 			name: "delete action by name returns 200",
 			setupFunc: func() string {
+				// Use unique name per test run to avoid conflicts
+				uniqueName := "action-by-name-delete-" + domains.NewActionWorkflowID()
 				action := &app.ActionWorkflow{
 					ID:     domains.NewActionWorkflowID(),
 					AppID:  s.testApp.ID,
 					OrgID:  s.testOrg.ID,
-					Name:   "action-by-name-delete",
+					Name:   uniqueName,
 					Status: app.ActionWorkflowStatusActive,
 				}
 				err := s.service.DB.WithContext(s.ctx).Create(action).Error
@@ -203,7 +206,7 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			validateFunc: func(actionName string) {
 				// Verify action status was updated
 				var dbAction app.ActionWorkflow
-				err := s.service.DB.Where("name = ?", actionName).First(&dbAction).Error
+				err := s.service.DB.Where("name = ? AND org_id = ?", actionName, s.testOrg.ID).First(&dbAction).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), app.ActionWorkflowStatusDeleteQueued, dbAction.Status)
 			},
@@ -212,6 +215,7 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			s.mockEvClient.Reset()
 			actionIdentifier := tc.setupFunc()
 			rr := s.makeRequest(http.MethodDelete, "/v1/apps/"+s.testApp.ID+"/actions/"+actionIdentifier, nil)
 
