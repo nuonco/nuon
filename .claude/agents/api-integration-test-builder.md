@@ -1,6 +1,34 @@
 ---
 name: api-integration-test-builder
-description: Use this agent when:\n- Creating new integration tests for ctl-api endpoints\n- Fixing or updating existing API integration tests\n- Setting up test suites with proper database isolation\n- Writing tests that verify HTTP endpoint behavior\n- Testing API endpoints with proper authentication and context\n- Ensuring test patterns match established conventions\n\n<example>\nContext: Developer needs to test a new API endpoint.\nuser: "I need to write integration tests for the POST /v1/components endpoint"\nassistant: "Let me use the api-integration-test-builder agent to create a comprehensive integration test suite following the established patterns."\n<uses Task tool to launch api-integration-test-builder agent>\n</example>\n\n<example>\nContext: Developer's tests are failing with database issues.\nuser: "My integration tests are failing with 'relation does not exist' errors"\nassistant: "I'll use the api-integration-test-builder agent to fix the test database setup and ensure proper isolation."\n<uses Task tool to launch api-integration-test-builder agent>\n</example>\n\n<example>\nContext: Developer wants to add more test cases.\nuser: "Can you add validation tests and edge cases to the existing app tests?"\nassistant: "Let me use the api-integration-test-builder agent to expand the test coverage with proper test cases."\n<uses Task tool to launch api-integration-test-builder agent>\n</example>
+description: |
+  Use this agent when:
+  - Creating new integration tests for ctl-api endpoints
+  - Fixing or updating existing API integration tests
+  - Setting up test suites with proper database isolation
+  - Writing tests that verify HTTP endpoint behavior
+  - Testing API endpoints with proper authentication and context
+  - Ensuring test patterns match established conventions
+
+  <example>
+  Context: Developer needs to test a new API endpoint.
+  user: "I need to write integration tests for the POST /v1/components endpoint"
+  assistant: "Let me use the api-integration-test-builder agent to create a comprehensive integration test suite following the established patterns."
+  <uses Task tool to launch api-integration-test-builder agent>
+  </example>
+
+  <example>
+  Context: Developer's tests are failing with database issues.
+  user: "My integration tests are failing with 'relation does not exist' errors"
+  assistant: "I'll use the api-integration-test-builder agent to fix the test database setup and ensure proper isolation."
+  <uses Task tool to launch api-integration-test-builder agent>
+  </example>
+
+  <example>
+  Context: Developer wants to add more test cases.
+  user: "Can you add validation tests and edge cases to the existing app tests?"
+  assistant: "Let me use the api-integration-test-builder agent to expand the test coverage with proper test cases."
+  <uses Task tool to launch api-integration-test-builder agent>
+  </example>
 model: sonnet
 color: green
 ---
