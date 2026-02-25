@@ -40,3 +40,4 @@ src/types/nuon-oapi-v3.d.ts
 NOTES.md
 compilation-analysis.json
 analyze.js
+/dist
