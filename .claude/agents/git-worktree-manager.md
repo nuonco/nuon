@@ -1,6 +1,28 @@
 ---
 name: git-worktree-manager
-description: Use this agent when the user wants to work on code changes in isolation using git worktrees, particularly when they want an ephemeral workspace that will be automatically cleaned up after pushing changes. Examples:\n\n<example>\nContext: User wants to make changes without affecting their main working directory.\nuser: "I need to fix a bug but don't want to mess up my current branch. Can you set up a separate workspace?"\nassistant: "I'll use the git-worktree-manager agent to create an isolated git worktree for your bug fix."\n<commentary>The user needs an isolated workspace for changes, which is exactly what this agent handles.</commentary>\n</example>\n\n<example>\nContext: User has completed work in a worktree and pushed their changes.\nuser: "I've pushed my feature branch. Let's clean up."\nassistant: "I'll use the git-worktree-manager agent to remove the worktree now that your changes are pushed."\n<commentary>The agent should proactively handle cleanup after detecting a successful push.</commentary>\n</example>\n\n<example>\nContext: User mentions they want to work on a feature in isolation.\nuser: "I want to start working on the authentication feature"\nassistant: "I'll use the git-worktree-manager agent to set up a dedicated worktree for the authentication feature work."\n<commentary>When users indicate they want to start new work, proactively offer worktree isolation.</commentary>\n</example>
+description: |
+  Use this agent when the user wants to work on code changes in isolation using git worktrees, particularly when they want an ephemeral workspace that will be automatically cleaned up after pushing changes. Examples:
+
+  <example>
+  Context: User wants to make changes without affecting their main working directory.
+  user: "I need to fix a bug but don't want to mess up my current branch. Can you set up a separate workspace?"
+  assistant: "I'll use the git-worktree-manager agent to create an isolated git worktree for your bug fix."
+  <commentary>The user needs an isolated workspace for changes, which is exactly what this agent handles.</commentary>
+  </example>
+
+  <example>
+  Context: User has completed work in a worktree and pushed their changes.
+  user: "I've pushed my feature branch. Let's clean up."
+  assistant: "I'll use the git-worktree-manager agent to remove the worktree now that your changes are pushed."
+  <commentary>The agent should proactively handle cleanup after detecting a successful push.</commentary>
+  </example>
+
+  <example>
+  Context: User mentions they want to work on a feature in isolation.
+  user: "I want to start working on the authentication feature"
+  assistant: "I'll use the git-worktree-manager agent to set up a dedicated worktree for the authentication feature work."
+  <commentary>When users indicate they want to start new work, proactively offer worktree isolation.</commentary>
+  </example>
 model: sonnet
 color: red
 ---
