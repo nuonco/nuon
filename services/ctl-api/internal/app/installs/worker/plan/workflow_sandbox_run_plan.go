@@ -12,6 +12,13 @@ type CreateSandboxRunPlanRequest struct {
 	RootDomain string
 
 	WorkflowID string
+
+	// RoleARN is the pre-selected IAM role ARN to use for the plan's auth
+	// (both AWSAuth and Hooks.RunAuth). When set, it overrides the default
+	// derivation from stack outputs in getAuth. This is required when the
+	// default operation role (provision/deprovision) is disabled via
+	// EnableRunner* CloudFormation parameters.
+	RoleARN string
 }
 
 // @temporal-gen workflow

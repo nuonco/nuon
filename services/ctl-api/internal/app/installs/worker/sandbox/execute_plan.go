@@ -31,6 +31,50 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		op = app.RunnerJobOperationTypeCreateTeardownPlan
 	}
 
+	// Fetch config, stack, and state first so role selection can run before
+	// the sandbox plan is created. The selected RoleARN is threaded into the
+	// plan request so that getAuth uses it for both AWSAuth and Hooks.RunAuth,
+	// avoiding a mismatch when the default operation role is disabled.
+	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get app config")
+		return fmt.Errorf("unable to get app config: %w", err)
+	}
+
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
+	if err != nil {
+		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get install stack")
+		return errors.Wrap(err, "unable to get install stack")
+	}
+
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get install state")
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+
+	roleSelection, operation, err := w.getRoleForSandbox(l, appConfig, sandboxRun, stack, installState)
+	if err != nil {
+		l.Error("unable to evaluate role for sandbox operation", zap.Error(err))
+		w.updateRunStatusWithoutStatusSync(
+			ctx,
+			sandboxRun.ID,
+			app.SandboxRunStatusError,
+			"unable to select role",
+		)
+		return errors.Wrap(err, "unable to evaluate role for sandbox run ")
+	}
+
+	l.Info("selected role for sandbox run",
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("operation", string(operation)),
+		zap.String("run_type", string(sandboxRun.RunType)),
+	)
+
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,
 		RunnerID:  install.RunnerID,
@@ -53,6 +97,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		InstallID:  install.ID,
 		RootDomain: w.cfg.DNSRootDomain,
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		RoleARN:    roleSelection.RoleARN,
 	})
 	if err != nil {
 		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
@@ -64,51 +109,9 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return errors.Wrap(err, "unable to create json")
 	}
 
-	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-	if err != nil {
-		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get app config")
-		return fmt.Errorf("unable to get app config: %w", err)
-	}
-
-	// Get install stack for auth configuration
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
-	if err != nil {
-		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get install stack")
-		return errors.Wrap(err, "unable to get install stack")
-	}
-
-	// Get install state for role name rendering
-	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
-	if err != nil {
-		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get install state")
-		return fmt.Errorf("unable to get install state: %w", err)
-	}
-
 	compositePlan := plantypes.CompositePlan{
 		SandboxRunPlan: runPlan,
 	}
-
-	roleSelection, operation, err := w.getRoleForSandbox(l, appConfig, sandboxRun, stack, installState)
-	if err != nil {
-		l.Error("unable to evaluate role for sandbox operation", zap.Error(err))
-		w.updateRunStatusWithoutStatusSync(
-			ctx,
-			sandboxRun.ID,
-			app.SandboxRunStatusError,
-			"unable to select role",
-		)
-		return errors.Wrap(err, "unable to evaluate role for sandbox run ")
-	}
-
-	l.Info("selected role for sandbox run",
-		zap.String("role_name", roleSelection.RoleName),
-		zap.String("role_arn", roleSelection.RoleARN),
-		zap.String("source", string(roleSelection.Source)),
-		zap.String("operation", string(operation)),
-		zap.String("run_type", string(sandboxRun.RunType)),
-	)
 
 	planAuth, err := plan.CreatePlanAuth(
 		stack.InstallStackOutputs,
@@ -208,18 +211,29 @@ func (w *Workflows) getRoleForSandbox(
 	// Select role using operation roles engine
 	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
 	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
+		// The operation-specific role (provision/deprovision) may be disabled via
+		// EnableRunner* CloudFormation parameters, leaving an empty ARN. Fall back
+		// to the maintenance role, which is typically available and sufficient for
+		// sandbox plan-only operations.
+		//
+		// TODO: maintenance may also be disabled. In that case we should either
+		// surface a clearer error to the user or attempt any available role from
+		// the stack outputs.
+		maintenanceCtx := *selectionCtx
+		maintenanceCtx.DefaultRole = appConfig.PermissionsConfig.MaintenanceRole.Name
+		l.Warn("sandbox role selection failed, falling back to maintenance role",
 			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
+			zap.String("failed_role", selectionCtx.DefaultRole),
+			zap.String("maintenance_role", appConfig.PermissionsConfig.MaintenanceRole.Name),
 		)
 
 		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
+		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(&maintenanceCtx)
 		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+			return nil, "", fmt.Errorf("unable to get role for sandbox (operation role unavailable, maintenance fallback also failed): %w", fallbackErr)
 		}
 
-		l.Warn("using default role for sandbox",
+		l.Warn("using maintenance role as fallback for sandbox",
 			zap.String("role_name", roleSelection.RoleName),
 			zap.String("role_arn", roleSelection.RoleARN),
 		)

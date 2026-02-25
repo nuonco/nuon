@@ -123,7 +123,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	l.Info("getting auth")
-	awsAuth, azureAuth, err := p.getAuth(stack.InstallStackOutputs, run)
+	awsAuth, azureAuth, err := p.getAuth(stack.InstallStackOutputs, run, req.RoleARN)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get sandbox run auth")
 	}
@@ -256,16 +256,24 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 	return vars, nil
 }
 
-func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
+// getAuth returns the AWS/Azure auth config for a sandbox run plan.
+// overrideRoleARN, when non-empty, is used directly instead of deriving the
+// role from stack outputs. This is needed when the default role (provision/
+// deprovision) is disabled via EnableRunner* CloudFormation parameters and
+// role selection has already picked a fallback (e.g. maintenance).
+func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun, overrideRoleARN string) (*awscredentials.Config, *azurecredentials.Config, error) {
 	switch {
 	case outputs.AWSStackOutputs != nil:
 		awsOutputs := outputs.AWSStackOutputs
-		roleARN := awsOutputs.ProvisionIAMRoleARN
-		switch run.RunType {
-		case app.SandboxRunTypeReprovision:
-			roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
-		case app.SandboxRunTypeDeprovision:
-			roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
+		roleARN := overrideRoleARN
+		if roleARN == "" {
+			roleARN = awsOutputs.ProvisionIAMRoleARN
+			switch run.RunType {
+			case app.SandboxRunTypeReprovision:
+				roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
+			case app.SandboxRunTypeDeprovision:
+				roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
+			}
 		}
 
 		return &awscredentials.Config{
