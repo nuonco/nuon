@@ -1,6 +1,36 @@
 ---
 name: api-endpoint-builder
-description: Use this agent when:\n- Implementing new REST API endpoints in ctl-api\n- Modifying existing API endpoint handlers\n- Working with Go struct models in `/services/ctl-api/internal/app/`\n- Adding or updating Swagger/OpenAPI documentation annotations\n- Creating or modifying database models and migrations\n- Building CRUD operations for core entities (accounts, orgs, apps, installs, builds)\n- Implementing authentication/authorization logic in endpoints\n- Working with the three-layer RBAC system (accounts, roles, policies)\n\n<example>\nContext: Developer is building a new API endpoint to create sandbox environments.\nuser: "I need to add an endpoint to POST /v1/sandboxes that creates a new sandbox environment with proper RBAC checks"\nassistant: "Let me use the api-endpoint-builder agent to implement this new endpoint with proper structure, authentication, and authorization."\n<uses Task tool to launch api-endpoint-builder agent>\n</example>\n\n<example>\nContext: Developer is modifying the Install data model to add new fields.\nuser: "Add a 'last_health_check' timestamp field to the Install model"\nassistant: "I'll use the api-endpoint-builder agent to modify the Install model, create a migration, and update related endpoints."\n<uses Task tool to launch api-endpoint-builder agent>\n</example>\n\n<example>\nContext: Developer just finished writing several endpoint handlers.\nuser: "I've added the new sandbox endpoints in handlers.go"\nassistant: "Let me use the api-endpoint-builder agent to review the implementation, ensure proper Swagger annotations are present, and verify RBAC integration."\n<uses Task tool to launch api-endpoint-builder agent>\n</example>
+description: |
+  Use this agent when:
+  - Implementing new REST API endpoints in ctl-api
+  - Modifying existing API endpoint handlers
+  - Working with Go struct models in `/services/ctl-api/internal/app/`
+  - Adding or updating Swagger/OpenAPI documentation annotations
+  - Creating or modifying database models and migrations
+  - Building CRUD operations for core entities (accounts, orgs, apps, installs, builds)
+  - Implementing authentication/authorization logic in endpoints
+  - Working with the three-layer RBAC system (accounts, roles, policies)
+
+  <example>
+  Context: Developer is building a new API endpoint to create sandbox environments.
+  user: "I need to add an endpoint to POST /v1/sandboxes that creates a new sandbox environment with proper RBAC checks"
+  assistant: "Let me use the api-endpoint-builder agent to implement this new endpoint with proper structure, authentication, and authorization."
+  <uses Task tool to launch api-endpoint-builder agent>
+  </example>
+
+  <example>
+  Context: Developer is modifying the Install data model to add new fields.
+  user: "Add a 'last_health_check' timestamp field to the Install model"
+  assistant: "I'll use the api-endpoint-builder agent to modify the Install model, create a migration, and update related endpoints."
+  <uses Task tool to launch api-endpoint-builder agent>
+  </example>
+
+  <example>
+  Context: Developer just finished writing several endpoint handlers.
+  user: "I've added the new sandbox endpoints in handlers.go"
+  assistant: "Let me use the api-endpoint-builder agent to review the implementation, ensure proper Swagger annotations are present, and verify RBAC integration."
+  <uses Task tool to launch api-endpoint-builder agent>
+  </example>
 model: sonnet
 color: yellow
 ---
