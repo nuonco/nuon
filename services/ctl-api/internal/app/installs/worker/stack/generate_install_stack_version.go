@@ -200,24 +200,13 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	}
 
 	// All platforms converge here, after template generation is complete.
-	// Upload to S3 (used by AWS/Azure) and optionally GCS (used by GCP Infrastructure Manager).
 
-	// upload to S3
+	// upload stack template
 	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
 		BucketKey: stackVersion.AWSBucketKey,
 		Template:  tmplByts,
 	}); err != nil {
 		return errors.Wrap(err, "unable to upload cloudformation stack")
-	}
-
-	// upload to GCS for GCP installs
-	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
-		if err := activities.AwaitUploadGCPStackTemplate(ctx, &activities.UploadGCPStackTemplateRequest{
-			BucketKey: stackVersion.AWSBucketKey,
-			Template:  tmplByts,
-		}); err != nil {
-			return errors.Wrap(err, "unable to upload gcp stack to GCS")
-		}
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{

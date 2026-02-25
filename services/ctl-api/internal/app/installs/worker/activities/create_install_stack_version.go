@@ -26,24 +26,11 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	id := domains.NewInstallStackID()
 	bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
 
-	// compute template URL and quick link based on platform
-	var templateURL, quickLinkURL string
-	switch app.AppRunnerType(req.Platform) {
-	case app.AppRunnerTypeGCP:
-		// GCS stores templates as zip files for Infrastructure Manager
-		gcsBucketKey := strings.TrimSuffix(bucketKey, ".json") + ".zip"
-		if a.cfg.GCPStackTemplateBaseURL != "" {
-			templateURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.GCPStackTemplateBaseURL, "/"), gcsBucketKey)
-		} else {
-			templateURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
-		}
-		quickLinkURL = templateURL
-	default:
-		templateURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
-		quickLinkURL = fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
-			req.Region, req.Region, templateURL, req.StackName,
-		)
-	}
+	// compute template URL and quick link
+	templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
+	quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
+		req.Region, req.Region, templateURL, req.StackName,
+	)
 
 	obj := app.InstallStackVersion{
 		ID:             id,

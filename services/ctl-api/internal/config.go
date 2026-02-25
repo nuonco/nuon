@@ -206,8 +206,6 @@ type Config struct {
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
 	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`
 	AWSCloudFormationStackTemplateBaseURL      string `config:"aws_cloudformation_stack_template_base_url"`
-	GCPStackTemplateBucket                     string `config:"gcp_stack_template_bucket"`
-	GCPStackTemplateBaseURL                    string `config:"gcp_stack_template_base_url"`
 	RunnerEnableSupport                        bool   `config:"runner_enable_support"`
 	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn" validate:"required"`
 
