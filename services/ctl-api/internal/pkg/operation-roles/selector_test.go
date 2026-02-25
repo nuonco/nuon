@@ -1388,3 +1388,294 @@ func TestRenderRoleName(t *testing.T) {
 		})
 	}
 }
+
+// TestDisabledRoles tests behavior when IAM roles are disabled in CloudFormation
+// via EnableRunner* parameters (e.g. EnableRunnerProvision=false), which causes
+// the stack outputs to contain empty ARNs for those roles.
+func TestDisabledRoles(t *testing.T) {
+	baseInstallState := &state.State{
+		Install: &state.InstallState{
+			Name: "test-install",
+			ID:   "1234",
+		},
+	}
+
+	baseAppConfig := &app.AppConfig{
+		PermissionsConfig: app.AppPermissionsConfig{
+			ProvisionRole: app.AppAWSIAMRoleConfig{
+				Name: "{{.nuon.install.name}}-provision",
+			},
+			MaintenanceRole: app.AppAWSIAMRoleConfig{
+				Name: "{{.nuon.install.name}}-maintenance",
+			},
+			DeprovisionRole: app.AppAWSIAMRoleConfig{
+				Name: "{{.nuon.install.name}}-deprovision",
+			},
+			CustomRoles: []app.AppAWSIAMRoleConfig{
+				{Name: "{{.nuon.install.id}}-custom-db-role"},
+			},
+		},
+		BreakGlassConfig: app.AppBreakGlassConfig{
+			Roles: []app.AppAWSIAMRoleConfig{
+				{Name: "emergency-access"},
+			},
+		},
+	}
+
+	t.Run("getAWSRoleMap skips provision role with empty ARN", func(t *testing.T) {
+		outputs := &app.AWSStackOutputs{
+			ProvisionIAMRoleARN:   "",
+			MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-maintenance",
+			DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-deprovision",
+			CustomRoleARNs:        map[string]string{},
+			BreakGlassRoleARNs:    map[string]string{},
+		}
+		roleMap, err := getAWSRoleMap(baseAppConfig, outputs, baseInstallState)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := roleMap["test-install-provision"]; ok {
+			t.Error("expected provision role to be absent from role map when ARN is empty")
+		}
+		if _, ok := roleMap["test-install-maintenance"]; !ok {
+			t.Error("expected maintenance role to be present")
+		}
+		if _, ok := roleMap["test-install-deprovision"]; !ok {
+			t.Error("expected deprovision role to be present")
+		}
+	})
+
+	t.Run("getAWSRoleMap skips deprovision role with empty ARN", func(t *testing.T) {
+		outputs := &app.AWSStackOutputs{
+			ProvisionIAMRoleARN:   "arn:aws:iam::123456789012:role/test-install-provision",
+			MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-maintenance",
+			DeprovisionIAMRoleARN: "",
+			CustomRoleARNs:        map[string]string{},
+			BreakGlassRoleARNs:    map[string]string{},
+		}
+		roleMap, err := getAWSRoleMap(baseAppConfig, outputs, baseInstallState)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := roleMap["test-install-deprovision"]; ok {
+			t.Error("expected deprovision role to be absent from role map when ARN is empty")
+		}
+		if _, ok := roleMap["test-install-provision"]; !ok {
+			t.Error("expected provision role to be present")
+		}
+	})
+
+	t.Run("getAWSRoleMap skips maintenance role with empty ARN", func(t *testing.T) {
+		outputs := &app.AWSStackOutputs{
+			ProvisionIAMRoleARN:   "arn:aws:iam::123456789012:role/test-install-provision",
+			MaintenanceIAMRoleARN: "",
+			DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-deprovision",
+			CustomRoleARNs:        map[string]string{},
+			BreakGlassRoleARNs:    map[string]string{},
+		}
+		roleMap, err := getAWSRoleMap(baseAppConfig, outputs, baseInstallState)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := roleMap["test-install-maintenance"]; ok {
+			t.Error("expected maintenance role to be absent from role map when ARN is empty")
+		}
+		if _, ok := roleMap["test-install-provision"]; !ok {
+			t.Error("expected provision role to be present")
+		}
+	})
+
+	t.Run("getAWSRoleMap skips all roles with empty ARNs", func(t *testing.T) {
+		outputs := &app.AWSStackOutputs{
+			ProvisionIAMRoleARN:   "",
+			MaintenanceIAMRoleARN: "",
+			DeprovisionIAMRoleARN: "",
+			CustomRoleARNs:        map[string]string{},
+			BreakGlassRoleARNs:    map[string]string{},
+		}
+		roleMap, err := getAWSRoleMap(baseAppConfig, outputs, baseInstallState)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(roleMap) != 0 {
+			t.Errorf("expected empty role map when all ARNs are empty, got %d entries: %v", len(roleMap), roleMap)
+		}
+	})
+
+	t.Run("SelectRole fails when default role ARN is empty and no alternatives", func(t *testing.T) {
+		stackOutputs := &app.InstallStackOutputs{
+			AWSStackOutputs: &app.AWSStackOutputs{
+				ProvisionIAMRoleARN:   "",
+				MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-maintenance",
+				DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-deprovision",
+				CustomRoleARNs:        map[string]string{},
+				BreakGlassRoleARNs:    map[string]string{},
+			},
+		}
+		ctx := &SelectionContext{
+			Operation:     app.OperationProvision,
+			PrincipalType: principal.TypeComponent,
+			PrincipalName: "api",
+			DefaultRole:   "{{.nuon.install.name}}-provision",
+			AppConfig:     baseAppConfig,
+			StackOutputs:  stackOutputs,
+			InstallState:  baseInstallState,
+		}
+		_, err := SelectRole(ctx, zap.NewNop())
+		if err == nil {
+			t.Fatal("expected error when default role ARN is empty and no alternatives")
+		}
+		if !strings.Contains(err.Error(), "not found in install stack outputs") {
+			t.Errorf("expected 'not found in install stack outputs' error, got: %v", err)
+		}
+	})
+
+	t.Run("SelectRole uses entity role as fallback when default role ARN is empty", func(t *testing.T) {
+		stackOutputs := &app.InstallStackOutputs{
+			AWSStackOutputs: &app.AWSStackOutputs{
+				ProvisionIAMRoleARN:   "",
+				MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-maintenance",
+				DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-deprovision",
+				CustomRoleARNs:        map[string]string{},
+				BreakGlassRoleARNs:    map[string]string{},
+			},
+		}
+		ctx := &SelectionContext{
+			Operation:     app.OperationProvision,
+			PrincipalType: principal.TypeComponent,
+			PrincipalName: "api",
+			EntityRoles: EntityOperationRoleMap{
+				app.OperationProvision: "{{.nuon.install.name}}-maintenance",
+			},
+			DefaultRole:  "{{.nuon.install.name}}-provision",
+			AppConfig:    baseAppConfig,
+			StackOutputs: stackOutputs,
+			InstallState: baseInstallState,
+		}
+		result, err := SelectRole(ctx, zap.NewNop())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.RoleName != "test-install-maintenance" {
+			t.Errorf("expected role name %q, got %q", "test-install-maintenance", result.RoleName)
+		}
+		if result.Source != RoleSelectionSourceEntity {
+			t.Errorf("expected source %q, got %q", RoleSelectionSourceEntity, result.Source)
+		}
+		if result.RoleARN != "arn:aws:iam::123456789012:role/test-install-maintenance" {
+			t.Errorf("expected ARN %q, got %q", "arn:aws:iam::123456789012:role/test-install-maintenance", result.RoleARN)
+		}
+	})
+
+	t.Run("SelectRole uses matrix rule as fallback when default role ARN is empty", func(t *testing.T) {
+		stackOutputs := &app.InstallStackOutputs{
+			AWSStackOutputs: &app.AWSStackOutputs{
+				ProvisionIAMRoleARN:   "",
+				MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-maintenance",
+				DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-deprovision",
+				CustomRoleARNs:        map[string]string{},
+				BreakGlassRoleARNs:    map[string]string{},
+			},
+		}
+		ctx := &SelectionContext{
+			Operation:     app.OperationProvision,
+			PrincipalType: principal.TypeComponent,
+			PrincipalName: "api",
+			MatrixRules: []*app.AppOperationRoleRule{
+				{PrincipalType: "component", PrincipalName: "api", Operation: app.OperationProvision, Role: "{{.nuon.install.name}}-deprovision"},
+			},
+			DefaultRole:  "{{.nuon.install.name}}-provision",
+			AppConfig:    baseAppConfig,
+			StackOutputs: stackOutputs,
+			InstallState: baseInstallState,
+		}
+		result, err := SelectRole(ctx, zap.NewNop())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.RoleName != "test-install-deprovision" {
+			t.Errorf("expected role name %q, got %q", "test-install-deprovision", result.RoleName)
+		}
+		if result.Source != RoleSelectionSourceMatrix {
+			t.Errorf("expected source %q, got %q", RoleSelectionSourceMatrix, result.Source)
+		}
+	})
+
+	t.Run("SelectRole uses runtime role when default role ARN is empty", func(t *testing.T) {
+		stackOutputs := &app.InstallStackOutputs{
+			AWSStackOutputs: &app.AWSStackOutputs{
+				ProvisionIAMRoleARN:   "",
+				MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/test-install-maintenance",
+				DeprovisionIAMRoleARN: "",
+				CustomRoleARNs:        map[string]string{},
+				BreakGlassRoleARNs: map[string]string{
+					"emergency-access": "arn:aws:iam::123456789012:role/emergency",
+				},
+			},
+		}
+		ctx := &SelectionContext{
+			Operation:     app.OperationProvision,
+			PrincipalType: principal.TypeComponent,
+			PrincipalName: "api",
+			RuntimeRole:   "emergency-access",
+			DefaultRole:   "{{.nuon.install.name}}-provision",
+			AppConfig:     baseAppConfig,
+			StackOutputs:  stackOutputs,
+			InstallState:  baseInstallState,
+		}
+		result, err := SelectRole(ctx, zap.NewNop())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.RoleName != "emergency-access" {
+			t.Errorf("expected role name %q, got %q", "emergency-access", result.RoleName)
+		}
+		if result.Source != RoleSelectionSourceRuntime {
+			t.Errorf("expected source %q, got %q", RoleSelectionSourceRuntime, result.Source)
+		}
+		if result.RoleARN != "arn:aws:iam::123456789012:role/emergency" {
+			t.Errorf("expected ARN %q, got %q", "arn:aws:iam::123456789012:role/emergency", result.RoleARN)
+		}
+	})
+
+	t.Run("GetDefaultRoleSelection fails when default role is empty", func(t *testing.T) {
+		ctx := &SelectionContext{
+			DefaultRole: "",
+		}
+		_, err := GetDefaultRoleSelection(ctx)
+		if err == nil {
+			t.Fatal("expected error when default role is empty")
+		}
+		if !strings.Contains(err.Error(), "no default role configured") {
+			t.Errorf("expected 'no default role configured' error, got: %v", err)
+		}
+	})
+
+	t.Run("selectRole returns error when default role is empty and no rules match", func(t *testing.T) {
+		stackOutputs := &app.InstallStackOutputs{
+			AWSStackOutputs: &app.AWSStackOutputs{
+				ProvisionIAMRoleARN:   "",
+				MaintenanceIAMRoleARN: "",
+				DeprovisionIAMRoleARN: "",
+				CustomRoleARNs:        map[string]string{},
+				BreakGlassRoleARNs:    map[string]string{},
+			},
+		}
+		ctx := &SelectionContext{
+			Operation:     app.OperationProvision,
+			PrincipalType: principal.TypeComponent,
+			PrincipalName: "api",
+			DefaultRole:   "",
+			AppConfig:     baseAppConfig,
+			StackOutputs:  stackOutputs,
+			InstallState:  baseInstallState,
+		}
+		_, err := selectRole(ctx)
+		if err == nil {
+			t.Fatal("expected error when default role is empty and no rules match")
+		}
+		if !strings.Contains(err.Error(), "no role configured for operation") {
+			t.Errorf("expected 'no role configured for operation' error, got: %v", err)
+		}
+	})
+}
