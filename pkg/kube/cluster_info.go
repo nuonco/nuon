@@ -14,8 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"golang.org/x/oauth2/google"
-
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
@@ -167,16 +165,11 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 	}
 
 	if cInfo.GCPAuth {
-		creds, err := google.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/cloud-platform")
-		if err != nil {
-			return nil, fmt.Errorf("unable to find GCP default credentials: %w", err)
+		cfg.ExecProvider = &clientcmdapi.ExecConfig{
+			APIVersion:      "client.authentication.k8s.io/v1beta1",
+			Command:         "gke-gcloud-auth-plugin",
+			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
 		}
-		tok, err := creds.TokenSource.Token()
-		if err != nil {
-			return nil, fmt.Errorf("unable to get GCP access token: %w", err)
-		}
-		cfg.BearerToken = tok.AccessToken
-		cfg.ExecProvider = nil
 	}
 
 	return cfg, nil
