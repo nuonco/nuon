@@ -240,7 +240,7 @@ func TestResolveRoleARN(t *testing.T) {
 			installState:  installState,
 			expectedARN:   "",
 			expectError:   true,
-			errorContains: "role \"nonexistent-role\" not found in install stack outputs",
+			errorContains: "role nonexistent-role not found in install stack outputs",
 		},
 		{
 			name:     "custom role in config but not in stack outputs",
@@ -273,7 +273,7 @@ func TestResolveRoleARN(t *testing.T) {
 			installState:  installState,
 			expectedARN:   "",
 			expectError:   true,
-			errorContains: "role \"custom-missing-role\" not found in install stack outputs",
+			errorContains: "role custom-missing-role not found in install stack outputs",
 		},
 	}
 
@@ -520,7 +520,7 @@ func TestSelectRole(t *testing.T) {
 				InstallState:  baseInstallState,
 			},
 			expectError:   true,
-			errorContains: "role \"nonexistent-role\" not found",
+			errorContains: "role nonexistent-role not found",
 		},
 		{
 			name: "error when runtime role not found",
@@ -537,7 +537,7 @@ func TestSelectRole(t *testing.T) {
 				InstallState:  baseInstallState,
 			},
 			expectError:   true,
-			errorContains: "role \"invalid-role\" not found",
+			errorContains: "role invalid-role not found",
 		},
 		{
 			name: "wildcard matrix rule matches component",
@@ -883,7 +883,7 @@ func TestSelectRole(t *testing.T) {
 				InstallState:   baseInstallState,
 			},
 			expectError:   true,
-			errorContains: "role \"nonexistent-break-glass\" not found",
+			errorContains: "role nonexistent-break-glass not found",
 		},
 		{
 			name: "break glass role with all other rules present",
