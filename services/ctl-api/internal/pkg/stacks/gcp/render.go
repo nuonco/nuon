@@ -62,7 +62,8 @@ func extractGCPPermissions(appCfg *app.AppConfig) (provision, maintenance, depro
 		return
 	}
 
-	for _, role := range appCfg.PermissionsConfig.Roles {
+	allRoles := append(appCfg.PermissionsConfig.Roles, appCfg.BreakGlassConfig.Roles...)
+	for _, role := range allRoles {
 		if role.CloudPlatform != "gcp" {
 			continue
 		}
