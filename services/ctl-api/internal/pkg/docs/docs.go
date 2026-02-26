@@ -42,35 +42,13 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
 	g.GET("/oapi/v3", r.getOAPI3publicSpec)
 	g.GET("/oapi/v2", r.getOAPI2PublicSpec)
 
-	// Redoc - faster alternative to Swagger UI for large specs
-	g.GET("/redoc", func(c *gin.Context) {
-		c.Header("Content-Type", "text/html")
-		c.String(200, `<!DOCTYPE html>
-<html>
-<head>
-    <title>Nuon API Documentation</title>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { margin: 0; padding: 0; }
-    </style>
-</head>
-<body>
-    <redoc spec-url='/oapi/v2' hide-download-button></redoc>
-    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
-</body>
-</html>`)
-	})
-
-	// Custom fast Swagger UI with all performance optimizations
-	g.GET("/swagger-fast", func(c *gin.Context) {
-		c.Header("Content-Type", "text/html")
-		c.String(200, `<!DOCTYPE html>
+	// Fast Swagger UI HTML
+	fastSwaggerHTML := `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nuon API - Fast Swagger UI</title>
+    <title>Nuon API Documentation</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
 </head>
 <body>
@@ -100,17 +78,29 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
         };
     </script>
 </body>
-</html>`)
-	})
+</html>`
 
-	// Keep original Swagger UI for compatibility
-	g.GET("/docs/*any", swagger.WrapHandler(
+	// Create wrapped handler that intercepts index.html but passes through other assets
+	originalSwaggerHandler := swagger.WrapHandler(
 		swaggerfiles.Handler,
 		swagger.PersistAuthorization(true),
 		swagger.DocExpansion("none"),
 		swagger.DeepLinking(false),
 		swagger.DefaultModelsExpandDepth(-1),
-	))
+	)
+
+	customDocsHandler := func(c *gin.Context) {
+		// Intercept index.html requests and serve fast version
+		if c.Request.URL.Path == "/docs/" || c.Request.URL.Path == "/docs/index.html" {
+			c.Header("Content-Type", "text/html")
+			c.String(200, fastSwaggerHTML)
+			return
+		}
+		// Pass through to original handler for CSS, JS, and other assets
+		originalSwaggerHandler(c)
+	}
+
+	g.GET("/docs/*any", customDocsHandler)
 
 	return nil
 }
