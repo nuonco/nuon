@@ -78,6 +78,12 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.Wrap(err, "unable to get cluster information")
 	}
 
+	if stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN == "" {
+		err := fmt.Errorf("provision role not enabled in install stack")
+		l.Error("provision role not enabled in install stack", zap.Error(err))
+		return nil, err
+	}
+
 	plan := &plantypes.SyncSecretsPlan{
 		ClusterInfo: clusterInfo,
 		AWSAuth: &awscredentials.Config{
