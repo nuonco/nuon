@@ -296,7 +296,7 @@ func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string)
 	if c.Writer.Status() >= 500 {
 		fields := []zap.Field{
 			zap.String("method", c.Request.Method),
-			zap.Int("status", c.Writer.Status()),
+			zap.Int("status_code", c.Writer.Status()),
 			zap.String("host", c.Request.Host),
 			zap.String("url", c.Request.URL.String()),
 			zap.String("path", c.FullPath()),
