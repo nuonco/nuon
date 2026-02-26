@@ -838,7 +838,9 @@ This global endpoint system enables account-level operations while maintaining t
 
 ## Service Registration Pattern (FX + Route Registration)
 
-The ctl-api uses **FX dependency injection** combined with a service interface pattern to automatically register HTTP routes. Understanding this pattern is critical when adding new endpoints or moving routes between authentication contexts.
+The ctl-api uses **FX dependency injection** combined with a service interface pattern to automatically register HTTP
+routes. Understanding this pattern is critical when adding new endpoints or moving routes between authentication
+contexts.
 
 ### How Route Registration Works
 
@@ -867,7 +869,9 @@ fx.Provide(api.AsService(myservice.New))
 1. Imported in `fxmodules/services.go`
 2. Registered via `fx.Provide(api.AsService(...))`
 
-If you add routes to an existing service's `Register*Routes()` method but that service isn't properly wired for that route type, **the routes won't be registered**. The solution is to create a dedicated service package for the new domain.
+If you add routes to an existing service's `Register*Routes()` method but that service isn't properly wired for that
+route type, **the routes won't be registered**. The solution is to create a dedicated service package for the new
+domain.
 
 ### When to Create a New Service Package
 
@@ -924,20 +928,21 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return n
 
 ### The Five Route Contexts
 
-| Method                          | Auth Required    | Use Case                           |
-| ------------------------------- | ---------------- | ---------------------------------- |
-| `RegisterPublicRoutes`          | None             | Health checks, public endpoints    |
-| `RegisterRunnerRoutes`          | Runner token     | Runner-to-API communication        |
-| `RegisterAuthRoutes`            | User API key+Org | Standard authenticated API         |
-| `RegisterInternalRoutes`        | Internal/admin   | Admin operations                   |
-| `RegisterAdminDashboardRoutes`  | Dashboard session| Dashboard-specific endpoints       |
+| Method                         | Auth Required     | Use Case                        |
+| ------------------------------ | ----------------- | ------------------------------- |
+| `RegisterPublicRoutes`         | None              | Health checks, public endpoints |
+| `RegisterRunnerRoutes`         | Runner token      | Runner-to-API communication     |
+| `RegisterAuthRoutes`           | User API key+Org  | Standard authenticated API      |
+| `RegisterInternalRoutes`       | Internal/admin    | Admin operations                |
+| `RegisterAdminDashboardRoutes` | Dashboard session | Dashboard-specific endpoints    |
 
 ### After Creating a New Service
 
 1. Add import to `internal/fxmodules/services.go`
 2. Add `fx.Provide(api.AsService(yourservice.New))` to `sharedServices`
 3. Run `nctl scripts reset-generated-code` to regenerate swagger docs
-4. The ugly long model names in generated SDKs (e.g., `GithubComNuoncoNuon...`) are expected — swagger uses full package paths
+4. The ugly long model names in generated SDKs (e.g., `GithubComNuoncoNuon...`) are expected — swagger uses full package
+   paths
 
 ### Common Pitfalls
 
@@ -960,14 +965,18 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return n
 
 ## Query Path Optimization
 
-Before adding multi-step lookups or separate Temporal activity calls, trace the GORM model relationships to find the most direct query path. Prefer a single query with `Preload()` chains over multiple activity round-trips when the data model supports it (e.g., `ComponentBuild → ComponentConfigConnection.AppConfigID → AppConfig.PoliciesConfig.Policies` instead of fetching the build then separately fetching policies config). Also prefer pinned foreign keys (e.g., `ComponentConfigConnection.AppConfigID`) over re-deriving associations via `ORDER BY created_at DESC LIMIT 1`.
+Before adding multi-step lookups or separate Temporal activity calls, trace the GORM model relationships to find the
+most direct query path. Prefer a single query with `Preload()` chains over multiple activity round-trips when the data
+model supports it (e.g., `ComponentBuild → ComponentConfigConnection.AppConfigID → AppConfig.PoliciesConfig.Policies`
+instead of fetching the build then separately fetching policies config). Also prefer pinned foreign keys (e.g.,
+`ComponentConfigConnection.AppConfigID`) over re-deriving associations via `ORDER BY created_at DESC LIMIT 1`.
 
 ## Logging Conventions
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.
 
-| Context | Logger |
-|---------|--------|
-| HTTP Services | `*zap.Logger` via FX injection (`s.l`) |
-| Temporal Workflows | `log.WorkflowLogger(ctx)` from `internal/pkg/log` |
-| Temporal Activities | Logger from activity context |
+| Context             | Logger                                            |
+| ------------------- | ------------------------------------------------- |
+| HTTP Services       | `*zap.Logger` via FX injection (`s.l`)            |
+| Temporal Workflows  | `log.WorkflowLogger(ctx)` from `internal/pkg/log` |
+| Temporal Activities | Logger from activity context                      |
