@@ -1,0 +1,54 @@
+---
+title: '031 - Operation Roles'
+description:
+  'Assign different roles to different operations across sandbox, components, and actions for least-privilege access control.'
+---
+
+_Feb 26, 2026_
+
+## Operation Roles
+
+Nuon now supports **operation roles** — a flexible system for assigning distinct roles to individual
+operations across your app's sandbox, components, and actions. Instead of relying on a single maintenance
+role for everything, you can grant exactly the permissions each operation needs and nothing more.
+
+### What's New
+
+- **Entity-level roles**: Assign specific roles inline on `sandbox.toml`, component configs, and action
+  configs. Entity roles take precedence over app-wide matrix rules
+- **App-wide matrix rules** (`operation_roles.toml`): Define a central lookup table that maps entity
+  principals and operations to role names, with support for wildcards (`nuon::component:*`,
+  `nuon::action:*`)
+- **Runtime role override**: Pass `--role <name>` via the CLI or use the role selector in the dashboard to
+  override the role for a single run without changing any config
+- **Break-glass role for actions**: The existing `break_glass_role` field on actions is now part of the
+  formal precedence chain, sitting above entity roles for emergency elevated access
+- **Role name templating**: All role name fields support Go template syntax
+  (e.g., `{{.nuon.install.id}}-deploy-role`) for per-install role isolation
+
+### Role Selection Precedence
+
+When the runner selects a role for an operation it uses the first match from:
+
+1. Runtime override (CLI `--role` flag or dashboard selection)
+2. Break-glass role (actions only)
+3. Entity role (inline `operation_roles` block or `role` field)
+4. Matrix rule (`operation_roles.toml`)
+5. Default role (`permissions.toml`)
+
+### Valid Operations by Entity
+
+| Entity | Operations |
+|--------|------------|
+| Sandbox | `provision`, `reprovision`, `deprovision` |
+| Component | `deploy`, `teardown` |
+| Action | `trigger` |
+
+### Learn More
+
+- [Operation Roles Concepts](/concepts/operation-roles): Understand the mental model, precedence chain, and
+  role name resolution
+- [Operation Roles Guide](/guides/operation-roles): Step-by-step configuration for entity roles, matrix
+  rules, CLI overrides, and templating
+- [Operation Roles Config Reference](/config-ref/operation-roles): Full schema reference for
+  `operation_roles.toml`
