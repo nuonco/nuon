@@ -24,8 +24,8 @@ type Docs struct {
 
 var _ api.Service = (*Docs)(nil)
 
-// getFastSwaggerHTML returns optimized Swagger UI HTML with custom title
-func getFastSwaggerHTML(title string) string {
+// getOverrideSwaggerHTML returns optimized Swagger UI HTML with custom title
+func getOverrideSwaggerHTML(title string) string {
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,15 +83,15 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
 	g.GET("/oapi/v3", r.getOAPI3publicSpec)
 	g.GET("/oapi/v2", r.getOAPI2PublicSpec)
 
-	// Create handler that serves fast HTML for index.html, passes through for other assets
+	// Create handler that serves override HTML for index.html, passes through for other assets
 	swaggerAssetsHandler := swagger.WrapHandler(swaggerfiles.Handler)
-	fastSwaggerHTML := getFastSwaggerHTML("Nuon API Documentation")
+	overrideSwaggerHTML := getOverrideSwaggerHTML("Nuon API Documentation")
 
 	customDocsHandler := func(c *gin.Context) {
-		// Intercept index.html requests and serve fast version
+		// Intercept index.html requests and serve override version
 		if c.Request.URL.Path == "/docs/" || c.Request.URL.Path == "/docs/index.html" {
 			c.Header("Content-Type", "text/html")
-			c.String(200, fastSwaggerHTML)
+			c.String(200, overrideSwaggerHTML)
 			return
 		}
 		// Pass through to original handler for CSS, JS, and other assets
@@ -127,12 +127,12 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 
 	// Handler for admin docs
 	adminAssetsHandler := swagger.WrapHandler(swaggerfiles.Handler, swagger.InstanceName("admin"))
-	fastAdminHTML := getFastSwaggerHTML("Nuon Admin API Documentation")
+	overrideAdminHTML := getOverrideSwaggerHTML("Nuon Admin API Documentation")
 
 	customAdminDocsHandler := func(c *gin.Context) {
 		if c.Request.URL.Path == "/docs/" || c.Request.URL.Path == "/docs/index.html" {
 			c.Header("Content-Type", "text/html")
-			c.String(200, fastAdminHTML)
+			c.String(200, overrideAdminHTML)
 			return
 		}
 		adminAssetsHandler(c)
@@ -166,12 +166,12 @@ func (r *Docs) RegisterRunnerRoutes(g *gin.Engine) error {
 
 	// Handler for runner docs
 	runnerAssetsHandler := swagger.WrapHandler(swaggerfiles.Handler, swagger.InstanceName("runner"))
-	fastRunnerHTML := getFastSwaggerHTML("Nuon Runner API Documentation")
+	overrideRunnerHTML := getOverrideSwaggerHTML("Nuon Runner API Documentation")
 
 	customRunnerDocsHandler := func(c *gin.Context) {
 		if c.Request.URL.Path == "/docs/" || c.Request.URL.Path == "/docs/index.html" {
 			c.Header("Content-Type", "text/html")
-			c.String(200, fastRunnerHTML)
+			c.String(200, overrideRunnerHTML)
 			return
 		}
 		runnerAssetsHandler(c)
