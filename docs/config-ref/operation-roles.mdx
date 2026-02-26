@@ -6,7 +6,7 @@ description: "JSON Schema reference for operation_roles.toml"
 # Operation Roles
 
 The `operation_roles.toml` file defines an app-level matrix of rules that map entity principals and
-operations to IAM role names. It is placed at the root of your app config directory and synced via
+operations to role names. It is placed at the root of your app config directory and synced via
 `nuon apps sync`.
 
 <Note>
@@ -30,7 +30,7 @@ Each element of the `rules` array must have the following fields:
 |----------|------|----------|-------------|
 | `principal` | `string` | ✅ Yes | Identifies which entity the rule applies to. See [Principal Format](#principal-format) below |
 | `operation` | `string` | ✅ Yes | The operation the rule applies to. See [Valid Operations](#valid-operations-by-entity) below |
-| `role` | `string` | ✅ Yes | The IAM role name to use. Must match a role defined in `permissions.toml`. Supports Go template syntax |
+| `role` | `string` | ✅ Yes | The role name to use. Must match a role defined in `permissions.toml`. Supports Go template syntax |
 
 ## Principal Format
 
@@ -57,7 +57,7 @@ The `nuon::sandbox` principal has no name suffix — there is only one sandbox p
 ## Role Name Templating
 
 The `role` field supports Go template syntax. The template is rendered at runtime with the install's state
-variables before looking up the role in the CloudFormation stack outputs.
+variables before looking up the role in the stack outputs.
 
 Common variables:
 
@@ -66,7 +66,7 @@ Common variables:
 | `{{.nuon.install.id}}` | The install ID — ensures per-install role isolation |
 | `{{.nuon.install.sandbox.outputs.<key>.name}}` | Sandbox stack output values |
 
-The rendered role name must match a role provisioned in the customer's CloudFormation stack. Roles that are
+The rendered role name must match a role provisioned in the customer's stack. Roles that are
 not the standard `provision_role`, `deprovision_role`, or `maintenance_role` must be declared as
 `custom_roles` in `permissions.toml`.
 

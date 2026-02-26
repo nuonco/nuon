@@ -4,9 +4,9 @@ description: "Assign different roles to different operations across sandbox, com
 icon: "shield"
 ---
 
-Operation roles let you assign a specific role to each individual operation the Nuon runner performs —
-provisioning your sandbox, deploying a component, running an action — instead of relying on a single
-all-purpose maintenance role. The result is granular, least-privilege access control with no changes
+Operation roles let you assign a specific role to each individual operation the Nuon runner performs,
+such as provisioning your sandbox, deploying a component, or running an action, instead of relying on a
+single all-purpose maintenance role. The result is granular, least-privilege access control with no changes
 required to your customers' cloud accounts.
 
 ## Why Use Operation Roles?
@@ -17,13 +17,13 @@ present; with operation roles each workflow gets exactly what it needs.
 
 Some concrete use cases:
 
-- **Separate deploy vs teardown** — prevent accidental deletion by ensuring your deploy role cannot delete
+- **Separate deploy vs teardown:** prevent accidental deletion by ensuring your deploy role cannot delete
   resources
-- **Tighter sandbox permissions** — provision with a broad Terraform role; deprovision with a narrow
+- **Tighter sandbox permissions:** provision with a broad Terraform role and deprovision with a narrow
   destroy-only role
-- **Emergency break-glass** — run a privileged action role for incident response without elevating all
+- **Emergency break-glass:** run a privileged action role for incident response without elevating all
   action runs
-- **Audit-friendly access** — separate CloudTrail events per role make it easy to see which operation
+- **Audit-friendly access:** separate CloudTrail events per role make it easy to see which operation
   touched which resource
 
 ## Role Selection Precedence
@@ -33,10 +33,10 @@ When a run starts, the runner selects a role by walking this chain from highest 
 | Priority | Source | Scope |
 |----------|--------|-------|
 | 1 (highest) | Runtime override (`--role` flag / dashboard selection) | Any operation |
-| 2 | Break-glass role (`break_glass_role` field on action config) | Actions only |
+| 2 | Break-glass role (`break_glass_role` field on action config, deprecated) | Actions only |
 | 3 | Entity role (inline `operation_roles` block or `role` field) | Single entity |
 | 4 | Matrix rule (`operation_roles.toml` principal + operation) | App-wide |
-| 5 (lowest) | Default role (`permissions.toml` `provision_role` / `deprovision_role` / `maintenance_role`) | App-wide |
+| 5 (lowest) | Default role (`permissions.toml` `provision_role`, `deprovision_role`, or `maintenance_role`) | App-wide |
 
 The first match wins. If nothing matches the run fails.
 
@@ -89,7 +89,7 @@ operation = "deprovision"
 role      = "{{.nuon.install.id}}-destroy-role"
 ```
 
-Valid operations for sandbox: `provision`, `reprovision`, `deprovision`.
+Valid operations for sandbox: `provision`, `reprovision`, and `deprovision`.
 
 ### Components (`components/<name>.toml`)
 
@@ -105,7 +105,7 @@ operation = "teardown"
 role      = "{{.nuon.install.id}}-teardown-role"
 ```
 
-Valid operations for components: `deploy`, `teardown`.
+Valid operations for components: `deploy` and `teardown`.
 
 ### Actions (`actions/<name>.toml`)
 
@@ -116,9 +116,6 @@ longer be used.
 name    = "db_migration"
 timeout = "10m"
 role    = "{{.nuon.install.id}}-migration-role"
-
-# Optional: elevated role for emergency use
-break_glass_role = "break-glass-dba-role"
 
 [[triggers]]
 type = "manual"
@@ -191,8 +188,8 @@ Common template variables:
 
 | Variable | Description |
 |----------|-------------|
-| `{{.nuon.install.id}}` | Install ID — ensures each install gets its own role |
-| `{{.nuon.install.sandbox.outputs.<key>.name}}` | Stack output values |
+| `{{.nuon.install.id}}` | Install ID, ensures each install gets its own role |
+| `{{.nuon.install.sandbox.outputs.<key>.name}}` | Sandbox stack output values |
 
 The rendered role name must match a role defined in `permissions.toml` (either a standard role or a
 `custom_roles` entry).
@@ -205,8 +202,7 @@ After adding or changing operation role config, sync your app to push the update
 nuon apps sync
 ```
 
-This sync all the configs with control plane — including `operation_roles.toml` and any inline `operation_roles` blocks —
-to the Nuon control plane.
+This syncs all the configs with the control plane, including `operation_roles.toml` and any inline `operation_roles` blocks.
 
 ## Runtime Role Override
 
@@ -229,12 +225,12 @@ alternative role from those available in the install's CloudFormation stack.
 ## Viewing Configured Roles
 
 In the Nuon dashboard, navigate to your install and open the **Components** or **Actions** tab. Each entity
-shows the currently configured role. 
+shows the currently configured role.
 
 ## Next Steps
 
-- [Operation Roles Concepts](/concepts/operation-roles) — understand the mental model and precedence chain
-- [Operation Roles Config Reference](/config-ref/operation-roles) — full schema for `operation_roles.toml`
-- [Permissions Config Reference](/config-ref/permissions) — defining `provision_role`, `maintenance_role`,
+- [Operation Roles Concepts](/concepts/operation-roles): understand the mental model and precedence chain
+- [Operation Roles Config Reference](/config-ref/operation-roles): full schema for `operation_roles.toml`
+- [Permissions Config Reference](/config-ref/permissions): defining `provision_role`, `maintenance_role`,
   and `custom_roles`
-- [Install Access Permissions](/guides/install-access-permissions) — how runner IAM permissions work
+- [Install Access Permissions](/guides/install-access-permissions): how runner IAM permissions work
