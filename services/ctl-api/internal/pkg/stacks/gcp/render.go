@@ -20,6 +20,7 @@ type GCPTemplateInput struct {
 	MaintenancePermissions string
 	DeprovisionPermissions string
 	BreakGlassPermissions  string
+	HasBreakGlass          bool
 }
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
@@ -35,6 +36,7 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		MaintenancePermissions: maint,
 		DeprovisionPermissions: deprov,
 		BreakGlassPermissions:  bg,
+		HasBreakGlass:          bg != "[]",
 	}
 
 	var buf bytes.Buffer

@@ -154,11 +154,11 @@ const tmpl = `{
       "deprovision": {
         "account_id": "${substr(local.prefix, 0, 20)}-dep",
         "display_name": "Nuon deprovision for ${local.prefix}"
-      },
+      }{{if .HasBreakGlass}},
       "break_glass": {
         "account_id": "${substr(local.prefix, 0, 20)}-bg",
         "display_name": "Nuon break glass for ${local.prefix}"
-      }
+      }{{end}}
     },
     "google_project_iam_custom_role": {
       "provision": {
@@ -178,13 +178,13 @@ const tmpl = `{
         "role_id": "${local.prefix}_dep_role",
         "title": "Nuon Deprovision for ${local.prefix}",
         "permissions": {{.DeprovisionPermissions}}
-      },
+      }{{if .HasBreakGlass}},
       "break_glass": {
         "project": "{{.Install.GCPAccount.ProjectID}}",
         "role_id": "${local.prefix}_bg_role",
         "title": "Nuon Break Glass for ${local.prefix}",
         "permissions": {{.BreakGlassPermissions}}
-      }
+      }{{end}}
     },
     "google_project_iam_member": {
       "runner_container_admin": {
@@ -206,12 +206,12 @@ const tmpl = `{
         "project": "{{.Install.GCPAccount.ProjectID}}",
         "role": "${google_project_iam_custom_role.deprovision.id}",
         "member": "serviceAccount:${google_service_account.deprovision.email}"
-      },
+      }{{if .HasBreakGlass}},
       "break_glass_role_binding": {
         "project": "{{.Install.GCPAccount.ProjectID}}",
         "role": "${google_project_iam_custom_role.break_glass.id}",
         "member": "serviceAccount:${google_service_account.break_glass.email}"
-      }
+      }{{end}}
     },
     "google_service_account_iam_member": {
       "provision_token_creator": {
@@ -228,12 +228,12 @@ const tmpl = `{
         "service_account_id": "${google_service_account.deprovision.name}",
         "role": "roles/iam.serviceAccountTokenCreator",
         "member": "serviceAccount:${google_service_account.runner.email}"
-      },
+      }{{if .HasBreakGlass}},
       "break_glass_token_creator": {
         "service_account_id": "${google_service_account.break_glass.name}",
         "role": "roles/iam.serviceAccountTokenCreator",
         "member": "serviceAccount:${google_service_account.runner.email}"
-      }
+      }{{end}}
     },
     "google_compute_instance": {
       "runner": {
@@ -277,8 +277,8 @@ const tmpl = `{
           "google_service_account.runner",
           "google_service_account.provision",
           "google_service_account.maintenance",
-          "google_service_account.deprovision",
-          "google_service_account.break_glass",
+          "google_service_account.deprovision"{{if .HasBreakGlass}},
+          "google_service_account.break_glass"{{end}},
           "google_compute_network.main",
           "google_compute_subnetwork.public",
           "google_compute_subnetwork.private",
@@ -289,7 +289,7 @@ const tmpl = `{
         },
         "provisioner": {
           "local-exec": {
-            "command": "curl -sf -X POST '{{.CloudFormationStackVersion.PhoneHomeURL}}' -H 'Content-Type: application/json' -d '{\"request_type\":\"Create\",\"phone_home_type\":\"gcp\",\"project_id\":\"{{.Install.GCPAccount.ProjectID}}\",\"region\":\"{{.Install.GCPAccount.Region}}\",\"network_name\":\"${google_compute_network.main.name}\",\"network_id\":\"${google_compute_network.main.id}\",\"public_subnet_name\":\"${google_compute_subnetwork.public.name}\",\"private_subnet_name\":\"${google_compute_subnetwork.private.name}\",\"runner_subnet_name\":\"${google_compute_subnetwork.runner.name}\",\"runner_service_account_email\":\"${google_service_account.runner.email}\",\"provision_sa_email\":\"${google_service_account.provision.email}\",\"maintenance_sa_email\":\"${google_service_account.maintenance.email}\",\"deprovision_sa_email\":\"${google_service_account.deprovision.email}\",\"break_glass_sa_email\":\"${google_service_account.break_glass.email}\"}'"
+            "command": "curl -sf -X POST '{{.CloudFormationStackVersion.PhoneHomeURL}}' -H 'Content-Type: application/json' -d '{\"request_type\":\"Create\",\"phone_home_type\":\"gcp\",\"project_id\":\"{{.Install.GCPAccount.ProjectID}}\",\"region\":\"{{.Install.GCPAccount.Region}}\",\"network_name\":\"${google_compute_network.main.name}\",\"network_id\":\"${google_compute_network.main.id}\",\"public_subnet_name\":\"${google_compute_subnetwork.public.name}\",\"private_subnet_name\":\"${google_compute_subnetwork.private.name}\",\"runner_subnet_name\":\"${google_compute_subnetwork.runner.name}\",\"runner_service_account_email\":\"${google_service_account.runner.email}\",\"provision_sa_email\":\"${google_service_account.provision.email}\",\"maintenance_sa_email\":\"${google_service_account.maintenance.email}\",\"deprovision_sa_email\":\"${google_service_account.deprovision.email}\"{{if .HasBreakGlass}},\"break_glass_sa_email\":\"${google_service_account.break_glass.email}\"{{end}}}'"
           }
         }
       }
@@ -328,9 +328,9 @@ const tmpl = `{
     },
     "deprovision_sa_email": {
       "value": "${google_service_account.deprovision.email}"
-    },
+    }{{if .HasBreakGlass}},
     "break_glass_sa_email": {
       "value": "${google_service_account.break_glass.email}"
-    }
+    }{{end}}
   }
 }`
