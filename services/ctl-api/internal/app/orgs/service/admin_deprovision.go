@@ -2,11 +2,13 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
@@ -37,6 +39,24 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 	var req AdminDeprovisionOrgRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+
+	// Validate that all apps have been deprovisioned before allowing org deprovision
+	var orgWithApps app.Org
+	if err := s.db.WithContext(ctx).Preload("Apps").First(&orgWithApps, "id = ?", org.ID).Error; err != nil {
+		ctx.Error(stderr.ErrInternal{
+			Err:         err,
+			Description: "unable to check org apps",
+		})
+		return
+	}
+
+	if len(orgWithApps.Apps) > 0 && !req.Force {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("cannot deprovision org with active apps"),
+			Description: fmt.Sprintf("organization has %d app(s) that must be deleted before the organization can be deprovisioned", len(orgWithApps.Apps)),
+		})
 		return
 	}
 
