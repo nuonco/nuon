@@ -22,5 +22,6 @@ export async function getComponents({
   return api<TComponent[]>({
     orgId,
     path: `apps/${appId}/components${buildQueryParams({ limit, offset, q, types, component_ids })}`,
+    paginated: true,
   })
 }

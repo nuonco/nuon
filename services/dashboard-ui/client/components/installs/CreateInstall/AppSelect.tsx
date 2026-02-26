@@ -52,17 +52,18 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
 
   useEffect(() => {
     if (apps) {
+      const appData = apps.data
       if (currentPage === 0) {
-        setAllApps(apps)
+        setAllApps(appData)
       } else {
         setAllApps((prev) => {
           const existingIds = new Set(prev.map((app) => app.id))
-          const newApps = apps.filter((app) => !existingIds.has(app.id))
+          const newApps = appData.filter((app) => !existingIds.has(app.id))
           return [...prev, ...newApps]
         })
       }
 
-      setHasMorePages(apps.length === limit)
+      setHasMorePages(appData.length === limit)
 
       if (isLoadingMore) {
         setTimeout(() => setIsLoadingMore(false), 800)
