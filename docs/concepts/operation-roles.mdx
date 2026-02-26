@@ -1,0 +1,103 @@
+---
+title: "Operation Roles"
+description: "Assign different IAM roles to different operations for least-privilege access across sandbox, components, and actions."
+---
+
+## The Install Lifecycle
+
+An install in a customer's cloud account is not a single event — it passes through several distinct phases
+over its lifetime, each with different infrastructure activity and different permission requirements:
+
+- **Provision** — The sandbox is created: foundational infrastructure are stood up via Terraform. This phase needs broad write access to create resources.
+- **Deploy** — Application components (Lambda functions, Helm charts, Kubernetes manifests, Terraform
+  modules) are deployed into the provisioned sandbox. Each component deploy writes only to its own slice of
+  infrastructure.
+- **Maintenance and updates** — Components are redeployed with new builds, inputs are changed, drift is
+  corrected, and reprovision runs update the sandbox itself. These writes are narrower than initial
+  provisioning but still require resource-modification permissions.
+- **Debug sessions** — Actions are triggered manually or on a schedule to run scripts, collect diagnostics,
+  or execute operational runbooks. Most debug actions need only read and exec access, but some (break-glass
+  scenarios) temporarily require elevated permissions.
+- **Deprovision** — The install is torn down. Components are removed, the sandbox is destroyed, and all
+  customer-account resources are cleaned up. This phase needs delete permissions but not create permissions.
+
+Using a single/limited set of role across all these phases means that role must hold the union of every permission
+needed at any point in the lifecycle. Operation roles let you assign a different role to each phase, so
+each one gets only what it needs.
+
+## What Are Operation Roles?
+
+Every operation that the Nuon runner performs in a customer's account requires a role. By default,
+Nuon uses three roles:
+
+- `provision_role` — used when creating the install sandbox
+- `deprovision_role` — used when deprovisioning the install sandbox
+- `maintenance_role` — used for component deploys, teardowns, and action runs
+
+Operation roles allow you to override these defaults at multiple levels of granularity:
+
+- **Per entity** — assign a specific role inline on a sandbox, component, or action config
+- **App-wide matrix** — define a central lookup table (`operation_roles.toml`) that maps principals and
+  operations to roles
+- **At runtime** — override the role via the CLI or dashboard just before a run
+
+## Why Least-Privilege Per Operation Matters
+
+A single maintenance role that covers both "deploy a Lambda function" and "delete a Lambda function" must hold
+`lambda:CreateFunction` _and_ `lambda:DeleteFunction`. Ideally we'd want them to be seprate so that customer knows
+what goes in and out of the system and can control the same.
+
+With operation roles you can instead create:
+
+- A **deploy role** with only `lambda:CreateFunction`, `lambda:UpdateFunctionCode`
+- A **teardown role** with only `lambda:DeleteFunction`
+
+Neither role can do what the other can, limiting change radius during maintenance windows.
+
+The same principle applies across your entire app:
+
+- Sandbox provisioning may need broad Terraform permissions; deprovision needs only destroy permissions
+- Component deploys need write access; component teardowns need delete access
+- Routine action runs need minimal read/exec access; break-glass actions can use a separate elevated role
+
+## Entity Types and Their Operations
+
+Each entity type in a Nuon app supports a specific set of operations:
+
+| Entity | Operations |
+|--------|------------|
+| Sandbox | `provision`, `reprovision`, `deprovision` |
+| Component | `deploy`, `teardown` |
+| Action | `trigger` |
+
+## The Precedence Chain
+
+When a operation is triggered, control plane builds the plan for the operation for the runner to work with,
+it walks the following chain from highest to lowest priority and uses the first match:
+
+1. **Runtime override** — a role passed explicitly via the `--role` CLI flag or selected in the dashboard
+   before triggering a run
+2. **Break-glass role** _(actions only)_ — the `break_glass_role` field on an action config; used for
+   emergency elevated access // deprecated
+3. **Entity role** — the `operation_roles` block on a sandbox or component config, or the `role` field on
+   an action config
+4. **Matrix rule** — a matching rule in `operation_roles.toml` (the app-level principal + operation lookup
+   table)
+5. **Default role** — the standard role from `permissions.toml` for the operation type
+
+If no match is found at any level, the operation fails.
+
+**Custom roles** — Nuon previously supported three built-in role types: `provision`, `deprovision`, and
+`maintenance` (plus `break_glass` for emergency access). Custom roles extend this with `type = "custom"`,
+letting you define additional roles beyond those three and use them in operation role assignments. Any role
+referenced in an operation role assignment must be declared in the app config with `type = "custom"` so
+that it is provisioned in the customer's CloudFormation stack.
+
+## Next Steps
+
+- [Operation Roles Guide](/guides/operation-roles) — step-by-step configuration for entity roles, matrix
+  rules, CLI overrides, and more
+- [Operation Roles Config Reference](/config-ref/operation-roles) — full schema reference for
+  `operation_roles.toml`
+- [Permissions Config Reference](/config-ref/permissions) — defining `custom_roles` in `permissions.toml`
+- [Install Access Permissions Guide](/guides/install-access-permissions) — how Nuon runner permissions work
