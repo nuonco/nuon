@@ -1,4 +1,3 @@
-'use client'
 import { useContext } from 'react'
 import { AutoRefreshContext } from '@/providers/auto-refresh-provider'
 

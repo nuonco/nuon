@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useEffect, useState } from 'react'
 import { useConfig } from '@/hooks/use-config'
 import type { TMe } from '@/types/ctl-api.types'

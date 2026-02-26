@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { UnifiedLogsContext } from '@/providers/unified-logs-provider-temp'
 import { LogViewerContext } from '@/providers/log-viewer-provider-temp'

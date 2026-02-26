@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -44,10 +42,11 @@ export const BreadcrumbNav = () => {
 
 export const Breadcrumbs = ({ breadcrumbs }: { breadcrumbs: TNavLink[] }) => {
   const { updateBreadcrumb } = useBreadcrumb()
+  const key = JSON.stringify(breadcrumbs)
 
   useEffect(() => {
     updateBreadcrumb(breadcrumbs)
-  }, [])
+  }, [key])
 
   return <></>
 }

@@ -1,5 +1,3 @@
-'use client'
-
 import cronstrue from 'cronstrue'
 import { Text, type IText } from './Text'
 import { Tooltip } from './Tooltip'

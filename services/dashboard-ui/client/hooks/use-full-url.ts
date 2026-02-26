@@ -1,11 +1,9 @@
-'use client'
-
-import { usePathname, useSearchParams } from 'next/navigation'
+import { useLocation, useSearchParams } from 'react-router'
 import { useEffect, useState } from 'react'
 
 export function useFullUrl() {
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const { pathname } = useLocation()
+  const [searchParams] = useSearchParams()
   const [fullUrl, setFullUrl] = useState<string>('')
 
   useEffect(() => {

@@ -1,5 +1,3 @@
-'use client'
-
 import { forwardRef } from 'react'
 import CodeEditor from '@uiw/react-textarea-code-editor'
 import { useSystemTheme } from '@/hooks/use-system-theme'

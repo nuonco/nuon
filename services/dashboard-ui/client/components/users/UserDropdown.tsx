@@ -1,13 +1,11 @@
-'use client'
-
 import { useAuth } from '@/hooks/use-auth'
-import { AdminPanel } from '@/components/admin/AdminPanel'
+// import { AdminPanel } from '@/components/admin/AdminPanel'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { InviteUserButton } from "@/components/team/InviteUser"
+// import { InviteUserButton } from "@/components/team/InviteUser"
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
 import { UserProfile } from './UserProfile'
@@ -24,7 +22,7 @@ export const UserDropdown = ({
   hideOrgSettings,
   ...props
 }: IUserDropdown) => {
-  const { isAdmin, useAuthService, authServiceUrl } = useAuth()
+//  const { isAdmin, useAuthService, authServiceUrl } = useAuth()
   const { addPanel } = useSurfaces()
 
   return (
@@ -41,24 +39,24 @@ export const UserDropdown = ({
             Org settings
           </Text>
         )}
-        {!hideOrgSettings && <InviteUserButton isMenuButton />}
+        {/* {!hideOrgSettings && <InviteUserButton isMenuButton />} */}
         {!hideOrgSettings && (
           <Link href="/onboarding">
             Re-open onboarding <Icon variant="Signpost" />
           </Link>
         )}
-        {!hideOrgSettings && isAdmin ? (
-          <Button
+        {/* {!hideOrgSettings && isAdmin ? (
+            <Button
             onClick={() => {
-              addPanel(<AdminPanel />)
+            addPanel(<AdminPanel />)
             }}
-          >
+            >
             Admin panel <Icon variant="Sliders" />
-          </Button>
-        ) : null}
+            </Button>
+            ) : null} */}
         {!hideOrgSettings && <hr />}
         <Link
-          href={useAuthService ? `${authServiceUrl}/logout` : "/api/auth/logout"}
+          href={"/api/auth/logout"}
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
           isExternal

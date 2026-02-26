@@ -1,5 +1,3 @@
-'use client'
-
 import { useMemo, useState } from 'react'
 
 // Default selected actions (all except read and noop)

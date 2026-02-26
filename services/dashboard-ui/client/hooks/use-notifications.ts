@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { NotificationContext } from '@/providers/notification-provider'
 

@@ -1,6 +1,3 @@
-'use client'
-
-import React from 'react'
 import { useSidebar } from '@/hooks/use-sidebar'
 import { Icon } from '@/components/common/Icon'
 import { SidebarLogo } from '@/components/common/Logo/Logo'
@@ -58,10 +55,10 @@ export const MainSidebar = ({
           />
         </div>
       </div>
-      {isSidebarOpen ? (
+      {true ? (
         <TransitionDiv
           className="flex flex-col gap-0 items-end p-4 fade"
-          isVisible={isSidebarOpen}
+          isVisible={true}
         >
           <Text variant="label" theme="neutral">
             API: <b>{versions?.api?.version}</b>

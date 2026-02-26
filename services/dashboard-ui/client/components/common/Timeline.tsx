@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useEffect } from 'react'
 import { PaginationProvider } from '@/providers/pagination-provider'
 import { usePagination } from '@/hooks/use-pagination'

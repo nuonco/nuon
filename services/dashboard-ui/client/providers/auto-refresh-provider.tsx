@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useEffect, useRef, useState, ReactNode } from 'react'
 
 interface IAutoRefreshContextType {

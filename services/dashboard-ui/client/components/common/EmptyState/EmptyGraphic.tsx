@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import type { TEmptyVariant } from '@/types'
 import { cn } from '@/utils/classnames'
 
@@ -21,7 +20,7 @@ export const EmptyGraphic = ({
 
   return (
     <>
-      <Image
+      <img
         className={cn('w-auto relative block', {
           hidden: isDarkModeOnly,
           'dark:hidden': !isDarkModeOnly,
@@ -31,9 +30,8 @@ export const EmptyGraphic = ({
         height={90}
         width={150}
         draggable={false}
-        priority
       />
-      <Image
+      <img
         className={cn('w-auto relative dark:block', {
           block: isDarkModeOnly,
           hidden: !isDarkModeOnly,
@@ -43,7 +41,6 @@ export const EmptyGraphic = ({
         height={90}
         width={150}
         draggable={false}
-        priority
       />
     </>
   )

@@ -1,11 +1,7 @@
-'use client'
-
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createOrg } from '@/actions/orgs/create-org'
+import { useNavigate } from 'react-router'
 import { useAccount } from '@/hooks/use-account'
 import type { TUserJourney } from '@/types'
-import { addSupportUsersToOrg } from '@/components/old/admin-actions'
 
 export const useAutoOrgCreation = ({
   sfData,
@@ -16,9 +12,8 @@ export const useAutoOrgCreation = ({
 }) => {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { account, refreshAccount } = useAccount()
-
-  const router = useRouter()
+  const { account } = useAccount()
+  const navigate = useNavigate()
 
   // Check if user needs org created automatically
   const shouldAutoCreate = () => {
@@ -45,37 +40,9 @@ export const useAutoOrgCreation = ({
     setError(null)
 
     try {
-      const { name, ...restSfData } = sfData || {}
-      const { data: newOrg, error: createError } = await createOrg({
-        body: {
-          name: name || `${account.email}-trial`,
-          use_sandbox_mode: false,
-          ...restSfData,
-        },
-      })
-
-      if (createError !== null) {
-        setError(createError?.error || 'Failed to create organization')
-        setIsCreating(false)
-      } else {
-        // Add support users so we can see trial orgs.
-        try {
-          // We don't need to do anything with the response.
-          await addSupportUsersToOrg(newOrg.id)
-        } catch (err) {
-          // If this fails, just move on.
-          // We don't want to block the user.
-        }
-
-        // Success - refresh account to get updated journey
-        await refreshAccount()
-        setIsCreating(false)
-
-        // Navigate to the new org (unless skipNavigation is true)
-        if (newOrg?.id && !skipNavigation) {
-          router.push(`/${newOrg.id}/apps`)
-        }
-      }
+      // TODO: replace with direct API call via @/lib once org creation is wired up
+      setError('Org creation not yet supported in SPA mode')
+      setIsCreating(false)
     } catch (err) {
       setError('An unexpected error occurred')
       setIsCreating(false)

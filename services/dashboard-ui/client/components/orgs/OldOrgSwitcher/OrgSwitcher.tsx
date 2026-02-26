@@ -1,5 +1,3 @@
-'use client'
-
 import classNames from 'classnames'
 import React, { type FC } from 'react'
 import { FaGithub } from 'react-icons/fa'

@@ -30,7 +30,6 @@ export async function api<T>({
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'X-Nuon-Org-ID': orgId || '',
-        'x-nuon-pagination-enabled': 'true',
         ...headers,
       },
       signal: AbortSignal.timeout(abortTimeout),

@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useEffect, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
 import { Button, type IButtonAsButton } from './Button'

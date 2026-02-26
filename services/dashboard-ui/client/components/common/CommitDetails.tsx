@@ -1,5 +1,3 @@
-'use client'
-
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ID } from '@/components/common/ID'

@@ -1,6 +1,4 @@
-'use client'
-
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { startTransition } from 'react'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/utils/classnames'
@@ -22,9 +20,9 @@ export const Pagination = ({
   param = 'offset',
   position = 'center',
 }: IPagination) => {
-  const pathname = usePathname()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { isPaginating, setIsPaginating } = usePagination()
 
   // Helper to update the offset param, preserving others
@@ -43,7 +41,7 @@ export const Pagination = ({
     setIsPaginating(true)
     startTransition(() => {
       const newOffset = Math.max(offset - limit, 0)
-      router.push(buildPathWithOffset(newOffset))
+      navigate(buildPathWithOffset(newOffset))
     })
   }
 
@@ -51,7 +49,7 @@ export const Pagination = ({
     setIsPaginating(true)
     startTransition(() => {
       const newOffset = offset + limit
-      router.push(buildPathWithOffset(newOffset))
+      navigate(buildPathWithOffset(newOffset))
     })
   }
 

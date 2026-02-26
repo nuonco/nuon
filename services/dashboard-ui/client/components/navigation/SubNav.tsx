@@ -1,5 +1,3 @@
-'use client'
-
 import { useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
 import { Icon } from '@/components/common/Icon'

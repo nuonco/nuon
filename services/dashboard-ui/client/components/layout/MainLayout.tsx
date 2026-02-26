@@ -1,5 +1,3 @@
-'use client'
-
 import React from 'react'
 import { useSidebar } from '@/hooks/use-sidebar'
 import type { TNuonVersion } from '@/types'
@@ -17,7 +15,7 @@ export const MainLayout = ({
   versions,
   hideOrgContent,
 }: IMainLayout) => {
-  const { isSidebarOpen } = useSidebar()
+//  const { isSidebarOpen } = useSidebar()
 
   return (
     <div className="w-screen overflow-hidden">
@@ -25,7 +23,7 @@ export const MainLayout = ({
         className={cn(
           'flex h-screen w-[200vw] transition-transform duration-fast ease-cubic md:w-screen md:transition-none',
           {
-            'md:translate-x-0 -translate-x-[100vw]': isSidebarOpen,
+            'md:translate-x-0 -translate-x-[100vw]': true,
           }
         )}
       >

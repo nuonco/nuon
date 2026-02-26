@@ -1,6 +1,4 @@
-'use client'
-
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useNavigate, useSearchParams } from 'react-router'
 import {
   useState,
   useEffect,
@@ -30,8 +28,8 @@ export const DebouncedSearchInput = ({
   labelClassName,
   onDebouncedChange,
 }: IDebouncedSearchInput) => {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { setIsPaginating } = usePagination()
   const valFromUrl = searchParams?.get(searchParamKey) || ''
 
@@ -97,13 +95,13 @@ export const DebouncedSearchInput = ({
         // Only call router.replace if the router API differs from the current URL
         // (it will still replace even if same, but this check reduces unnecessary navigations)
         // router.replace expects a URL (string). This will update app router state.
-        router.replace(newUrl)
+        navigate(newUrl, { replace: true })
       })
 
       // Mark pagination state after scheduling the nav (keeps your existing behavior)
       //setIsPaginating(true)
     },
-    [buildUrlForValue, onDebouncedChange, router, setIsPaginating]
+    [buildUrlForValue, onDebouncedChange, navigate, setIsPaginating]
   )
 
   // Debounce effect: schedule URL update + router navigation when user pauses typing.
@@ -175,12 +173,12 @@ export const DebouncedSearchInput = ({
     // Replace history and trigger router so the search results clear
     window.history.replaceState({}, '', newUrl)
     startTransition(() => {
-      router.replace(newUrl)
+      navigate(newUrl, { replace: true })
     })
 
     //setIsPaginating(true)
     onDebouncedChange?.('')
-  }, [onDebouncedChange, router, searchParamKey, setIsPaginating])
+  }, [onDebouncedChange, navigate, searchParamKey, setIsPaginating])
 
   return (
     <SearchInput

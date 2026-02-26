@@ -1,5 +1,3 @@
-'use client'
-
 import { Prism } from 'react-syntax-highlighter'
 import {
   oneDark,

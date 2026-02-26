@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { RunnerContext } from '@/providers/runner-provider'
 

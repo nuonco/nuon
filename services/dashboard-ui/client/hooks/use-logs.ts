@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { LogsContext } from '@/providers/logs-provider'
 

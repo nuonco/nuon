@@ -1,5 +1,3 @@
-'use client'
-
 import { useSidebar } from '@/hooks/use-sidebar'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'

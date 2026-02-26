@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState } from 'react'
 import { Select, type SelectOption } from '@/components/common/form/Select'
 import { Text } from '@/components/common/Text'

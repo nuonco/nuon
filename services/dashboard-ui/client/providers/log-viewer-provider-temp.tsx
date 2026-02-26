@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { LogPanel } from '@/components/log-stream/LogPanel'
 import { useArrowKeys } from '@/hooks/use-arrow-keys'

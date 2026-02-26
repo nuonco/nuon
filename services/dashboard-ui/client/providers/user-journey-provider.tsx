@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, type ReactNode } from 'react'
 
 interface UserJourneyContextValue {

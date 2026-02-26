@@ -1,5 +1,3 @@
-'use client'
-
 import { DateTime, Duration as LuxonDuration, type DurationUnits } from 'luxon'
 import { Icon } from './Icon'
 import { Text, type IText } from './Text'

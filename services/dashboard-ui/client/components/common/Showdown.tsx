@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState, useMemo } from 'react'
 import showdown from 'showdown'
 import { cn } from '@/utils/classnames'

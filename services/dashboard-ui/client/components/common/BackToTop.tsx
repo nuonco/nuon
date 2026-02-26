@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState } from 'react'
 import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import { cn } from '@/utils/classnames'

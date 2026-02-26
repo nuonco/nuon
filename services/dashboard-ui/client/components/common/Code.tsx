@@ -1,5 +1,3 @@
-'use client'
-
 import { cn } from '@/utils/classnames'
 
 export interface ICode extends React.HTMLAttributes<HTMLSpanElement> {

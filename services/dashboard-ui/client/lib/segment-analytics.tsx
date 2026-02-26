@@ -1,16 +1,11 @@
-// @ts-nocheck
-'use client'
-
 import React, { type FC, useEffect } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
-import Script from 'next/script'
+import { useLocation, useSearchParams } from 'react-router'
 import { useAuth } from '@/hooks/use-auth'
 import { AnalyticsBrowser } from '@segment/analytics-next'
 import type { TOrg } from '@/types'
 import type { IUser } from '@/types/dashboard.types'
 
 export const SegmentAnalyticsIdentify: FC = () => {
-  // Identify user if we haven't already.
   const { user, error, isLoading } = useAuth()
 
   useEffect(() => {
@@ -23,9 +18,8 @@ export const SegmentAnalyticsIdentify: FC = () => {
     }
   }, [user, error, isLoading])
 
-  // Track page load.
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const { pathname } = useLocation()
+  const [searchParams] = useSearchParams()
   useEffect(() => {
     if (window['analytics']) window['analytics']?.page(pathname)
   }, [pathname, searchParams])
@@ -57,8 +51,7 @@ export const InitSegmentAnalytics: FC<{ writeKey: string }> = ({
     })
   }, [])
 
-  // eslint-disable-next-line
-  return <Script id="load-env"></Script>
+  return null
 }
 
 interface ITrackEvent {

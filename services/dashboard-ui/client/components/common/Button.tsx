@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router'
 import { cn } from '@/utils/classnames'
 
 export type TButtonSize = 'lg' | 'md' | 'sm' | 'xs'
@@ -130,11 +130,9 @@ export const Button = forwardRef<
 
       const isInternal = href.startsWith('/')
       if (isInternal) {
-        // Next.js 13+ Link: no legacyBehavior, no <a> inside
         return (
           <Link
-            prefetch={false}
-            href={href}
+            to={href}
             className={classes}
             ref={ref as React.Ref<HTMLAnchorElement>}
             {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}

@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react'
 
 interface NotificationOptions {

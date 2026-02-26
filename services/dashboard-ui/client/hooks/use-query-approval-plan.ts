@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState } from 'react'
 import type { TWorkflowStep } from '@/types'
 import { useOrg } from './use-org'

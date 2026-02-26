@@ -1,6 +1,4 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'react-router'
 import { createContext, useState, type ReactNode } from 'react'
 import type { TNavLink } from '@/types'
 
@@ -15,7 +13,7 @@ export const BreadcrumbContext = createContext<
 >(undefined)
 
 export function BreadcrumbProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
+  const { pathname } = useLocation()
   const segments = pathname.split('/').filter(Boolean)
   const [breadcrumbLinks, setBreadcrumbLinks] = useState<TNavLink[]>(
     segments?.map((s) => ({ path: `/${s}`, text: s }))

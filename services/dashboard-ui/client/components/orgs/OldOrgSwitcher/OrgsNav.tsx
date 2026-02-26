@@ -1,9 +1,7 @@
-'use client'
-
 import classNames from 'classnames'
 import React, { type FC, useState } from 'react'
 import { TestTubeIcon } from '@phosphor-icons/react'
-import NextLink from 'next/link'
+import { Link } from 'react-router'
 import { Button } from '@/components/old/Button'
 import { StatusBadge } from '@/components/old/Status'
 import { Skeleton } from '@/components/old/Skeleton'
@@ -63,10 +61,10 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs: initOrgs }) => {
           />
         ) : orgs?.length ? (
           orgs.map((org) => (
-            <NextLink
+            <Link
               className="flex items-center justify-start gap-4 rounded-md p-2 hover:bg-cool-grey-600/20"
               key={org.id}
-              href={`/${org.id}/apps`}
+              to={`/${org.id}/apps`}
             >
               <OrgAvatar name={org.name} logoURL={org.logo_url} />
               <span>
@@ -87,7 +85,7 @@ export const OrgsNav: FC<IOrgsNav> = ({ orgs: initOrgs }) => {
                 </Text>
                 <StatusBadge status={org.status} isWithoutBorder />
               </span>
-            </NextLink>
+            </Link>
           ))
         ) : (
           <div className="flex flex-col gap-2 items-center text-center w-full px-2 py-4">

@@ -1,6 +1,4 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'react-router'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
@@ -21,7 +19,7 @@ export const MainNavLink = ({
   isExternal,
 }: IMainNavLink) => {
   const { isSidebarOpen } = useSidebar()
-  const pathName = usePathname()
+  const { pathname: pathName } = useLocation()
   const normalizePath = (path: string) =>
     path.endsWith('/') ? path.slice(0, -1) : path
   const normalizedPathName = normalizePath(pathName)

@@ -1,5 +1,3 @@
-'use client'
-
 import { ClickToCopyButton } from './ClickToCopy'
 import { Text, type IText } from './Text'
 

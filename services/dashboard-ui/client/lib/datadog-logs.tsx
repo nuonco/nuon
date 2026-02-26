@@ -1,5 +1,3 @@
-'use client'
-
 import { datadogLogs } from '@datadog/browser-logs'
 import { type FC, useEffect } from 'react'
 

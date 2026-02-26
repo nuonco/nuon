@@ -1,6 +1,4 @@
-'use client'
-
-import { useRouter, usePathname } from 'next/navigation'
+import { useNavigate, useLocation } from 'react-router'
 import React, {
   createContext,
   useState,
@@ -49,8 +47,8 @@ export const SurfacesContext = createContext<TSurfacesContext | undefined>(
 export function SurfacesProvider({ children }: { children: ReactNode }) {
   // Panels
   const [panels, setPanels] = useState<TPanels>([])
-  const router = useRouter()
-  const pathname = usePathname()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
 
   useEffect(() => {
     setPanels([])
@@ -66,11 +64,11 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       if (panelKey) {
         const params = new URLSearchParams(window.location.search)
         params.set('panel', panelKey)
-        router.replace(`?${params.toString()}`, { scroll: false })
+        navigate(`?${params.toString()}`, { replace: true })
       }
       return id
     },
-    [router]
+    [navigate]
   )
 
   const removePanel = useCallback(
@@ -83,11 +81,11 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         if (panelKey) {
           const params = new URLSearchParams(window.location.search)
           params.delete('panel')
-          router.replace(`?${params.toString()}`, { scroll: false })
+          navigate(`?${params.toString()}`, { replace: true })
         }
       }, 160)
     },
-    [router]
+    [navigate]
   )
 
   const clearPanels = useCallback(() => {
@@ -96,9 +94,9 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       setPanels([])
       const params = new URLSearchParams(window.location.search)
       params.delete('panel')
-      router.replace(`?${params.toString()}`, { scroll: false })
+      navigate(`?${params.toString()}`, { replace: true })
     }, 160)
-  }, [router])
+  }, [navigate])
 
   // Modals
   const [modals, setModals] = useState<TModals>([])
@@ -113,11 +111,11 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       if (modalKey) {
         const params = new URLSearchParams(window.location.search)
         params.set('modal', modalKey)
-        router.replace(`?${params.toString()}`, { scroll: false })
+        navigate(`?${params.toString()}`, { replace: true })
       }
       return id
     },
-    [router]
+    [navigate]
   )
 
   const removeModal = useCallback(
@@ -130,11 +128,11 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         if (modalKey) {
           const params = new URLSearchParams(window.location.search)
           params.delete('modal')
-          router.replace(`?${params.toString()}`, { scroll: false })
+          navigate(`?${params.toString()}`, { replace: true })
         }
       }, 160)
     },
-    [router]
+    [navigate]
   )
 
   return (

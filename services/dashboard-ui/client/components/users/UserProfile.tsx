@@ -1,16 +1,10 @@
-'use client'
-
-import { redirect } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { Avatar } from '@/components/common/Avatar'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 
 export const UserProfile = () => {
-  const { user, error, isLoading } = useAuth()
-  if (error) {
-    redirect('/')
-  }
+  const { user,  isLoading } = useAuth()
 
   return (
     <div className="flex gap-4 items-center min-w-40">

@@ -1,5 +1,3 @@
-'use client'
-
 import { type TextareaHTMLAttributes, forwardRef, useState } from 'react'
 import CodeEditor from '@uiw/react-textarea-code-editor'
 import { Label, type ILabel } from '@/components/common/form/Label'

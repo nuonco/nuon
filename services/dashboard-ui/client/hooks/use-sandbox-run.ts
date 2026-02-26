@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { SandboxRunContext } from '@/providers/sandbox-run-provider'
 

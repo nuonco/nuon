@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useCallback } from 'react'
 import JSConfetti from 'js-confetti'
 

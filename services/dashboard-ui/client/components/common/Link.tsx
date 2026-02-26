@@ -1,15 +1,14 @@
 import React from 'react'
-import NextLink, { type LinkProps as NextLinkProps } from 'next/link'
+import { Link as RouterLink } from 'react-router'
 import { cn } from '@/utils/classnames'
 
 export type TLinkVariant = 'default' | 'ghost' | 'nav' | 'breadcrumb'
 
-export interface ILink
-  extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>,
-    Partial<NextLinkProps> {
+export interface ILink extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   isActive?: boolean
   isExternal?: boolean
   variant?: TLinkVariant
+  href?: string
 }
 
 const VARIANT_CLASSES: Record<TLinkVariant, string> = {
@@ -58,12 +57,10 @@ export const Link = ({
     'link',
     'font-sans',
     'transition-colors w-fit',
-    // focus-visible for all variants
     'focus-visible:outline',
     'focus-visible:outline-1',
     'focus-visible:outline-offset-0',
     'focus-visible:outline-primary-400/80',
-    // inherit font/size/spacing
     'text-inherit font-inherit text-[inherit] leading-[inherit] tracking-[inherit]',
     'has-[svg]:flex has-[svg]:items-center has-[svg]:gap-1.5',
   ].join(' ')
@@ -97,8 +94,8 @@ export const Link = ({
       {children}
     </a>
   ) : (
-    <NextLink className={classes} href={href} prefetch={false} {...props}>
+    <RouterLink className={classes} to={href ?? ''} {...(props as any)}>
       {children}
-    </NextLink>
+    </RouterLink>
   )
 }

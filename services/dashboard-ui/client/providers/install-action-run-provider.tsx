@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, type ReactNode } from 'react'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'

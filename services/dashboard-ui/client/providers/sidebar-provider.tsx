@@ -1,5 +1,3 @@
-'use client'
-
 import {
   createContext,
   useState,
@@ -7,7 +5,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
-import { setSidebarCookie } from '@/actions/layout/main-sidebar-cookie'
+import { setSidebarOpen } from '@/lib/cookies'
 
 interface ISidebarContext {
   isSidebarOpen?: boolean
@@ -20,7 +18,7 @@ export const SidebarContext = createContext<ISidebarContext>({})
 
 export const SidebarProvider = ({
   children,
-  initIsSidebarOpen = false,
+  initIsSidebarOpen = true,
 }: {
   children: ReactNode
   initIsSidebarOpen?: boolean
@@ -28,24 +26,24 @@ export const SidebarProvider = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(initIsSidebarOpen)
 
   const closeSidebar = useCallback(() => {
-    setSidebarCookie(false)
+    setSidebarOpen(false)
     setIsSidebarOpen(false)
   }, [])
 
   const openSidebar = useCallback(() => {
-    setSidebarCookie(true)
+    setSidebarOpen(true)
     setIsSidebarOpen(true)
   }, [])
 
   const toggleSidebar = useCallback(() => {
-    setSidebarCookie(!isSidebarOpen)
-    setIsSidebarOpen((prev) => !prev)
-  }, [isSidebarOpen])
+    setIsSidebarOpen((prev) => {
+      setSidebarOpen(!prev)
+      return !prev
+    })
+  }, [])
 
-  // Add keyboard shortcut for Alt+S to toggle sidebar
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Alt+S (no Ctrl/Shift/Meta)
       if (
         e.altKey &&
         !e.shiftKey &&
@@ -63,12 +61,7 @@ export const SidebarProvider = ({
 
   return (
     <SidebarContext.Provider
-      value={{
-        closeSidebar,
-        isSidebarOpen,
-        openSidebar,
-        toggleSidebar,
-      }}
+      value={{ closeSidebar, isSidebarOpen, openSidebar, toggleSidebar }}
     >
       {children}
     </SidebarContext.Provider>

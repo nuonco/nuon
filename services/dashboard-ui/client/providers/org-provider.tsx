@@ -1,52 +1,42 @@
-'use client'
-
-import { createContext, useEffect, type ReactNode } from 'react'
-import { setOrgCookie } from '@/actions/orgs/org-session-cookie'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { createContext, useEffect } from 'react'
+import { useParams } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { getOrg } from '@/lib/ctl-api/orgs'
+import { setOrgSession } from '@/lib/cookies'
 import type { TOrg } from '@/types'
 
 type OrgContextValue = {
   org: TOrg | null
   isLoading: boolean
-  error: any
+  error: unknown
   refresh: () => void
 }
 
 export const OrgContext = createContext<OrgContextValue | undefined>(undefined)
 
-export function OrgProvider({
-  children,
-  initOrg,
-  pollInterval = 30000,
-  shouldPoll = false,
-}: {
-  children: ReactNode
-  initOrg: TOrg
-} & IPollingProps) {
-  const {
-    data: org,
-    error,
-    isLoading,
-  } = usePolling<TOrg>({
-    initData: initOrg,
-    path: `/api/orgs/${initOrg.id}`,
-    pollInterval,
-    shouldPoll,
+export function OrgProvider({ children }: { children: React.ReactNode }) {
+  const { orgId } = useParams<{ orgId: string }>()
+
+  const { data: org, isLoading, error, refetch } = useQuery({
+    queryKey: ['org', orgId],
+    queryFn: () => getOrg({ orgId: orgId! }),
+    refetchInterval: 30_000,
+    enabled: !!orgId,
   })
 
   useEffect(() => {
-    setOrgCookie(initOrg?.id)
-  }, [initOrg?.id])
+    if (orgId) {
+      setOrgSession(orgId)
+    }
+  }, [orgId])
 
   return (
     <OrgContext.Provider
       value={{
-        org,
+        org: org ?? null,
         isLoading,
         error,
-        refresh: () => {
-          /* implement if needed */
-        },
+        refresh: refetch,
       }}
     >
       {children}

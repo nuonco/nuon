@@ -1,5 +1,3 @@
-'use client'
-
 import { type SelectHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'

@@ -1,12 +1,10 @@
-'use client'
-
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router'
 import { useCallback } from 'react'
 import { useSurfaces } from './use-surfaces'
 
 export function useRemovePanelByKey() {
   const { panels, removePanel } = useSurfaces()
-  const router = useRouter()
+  const navigate = useNavigate()
 
   return useCallback(
     (key: string) => {
@@ -14,10 +12,10 @@ export function useRemovePanelByKey() {
       if (panel) {
         const params = new URLSearchParams(window.location.search)
         params.delete('panel')
-        router.replace(`?${params.toString()}`, { scroll: false })
+        navigate(`?${params.toString()}`, { replace: true })
         removePanel(panel.id)
       }
     },
-    [panels, removePanel, router]
+    [panels, removePanel, navigate]
   )
 }

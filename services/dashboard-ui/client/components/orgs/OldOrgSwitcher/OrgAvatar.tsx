@@ -1,8 +1,5 @@
-'use client'
-
 import classNames from 'classnames'
 import React, { type FC } from 'react'
-import Image from 'next/image'
 import { initialsFromString } from '@/utils'
 
 export const OrgAvatar: FC<{
@@ -22,7 +19,7 @@ export const OrgAvatar: FC<{
       )}
     >
       {logoURL ? (
-        <Image
+        <img
           className="rounded-md"
           height={isSmall ? 30 : 40}
           width={isSmall ? 30 : 40}

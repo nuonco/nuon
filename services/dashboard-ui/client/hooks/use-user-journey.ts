@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { UserJourneyContext } from '@/providers/user-journey-provider'
 

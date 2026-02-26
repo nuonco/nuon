@@ -1,5 +1,3 @@
-'use client'
-
 import { ComponentProps, ElementType } from 'react'
 import { FaAws, FaGithub } from 'react-icons/fa'
 import {

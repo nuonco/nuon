@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useState } from 'react'
 import { useQuery, } from '@/hooks/use-query'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'

@@ -1,6 +1,4 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'react-router'
 import { Button } from '@/components/common/Button'
 import type { TNavLink } from '@/types'
 
@@ -10,7 +8,7 @@ export interface ITabNav {
 }
 
 export const TabNav = ({ basePath, tabs }: ITabNav) => {
-  const pathname = usePathname()
+  const { pathname } = useLocation()
 
   return (
     <nav

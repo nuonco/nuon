@@ -1,6 +1,4 @@
-'use client'
-
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'react-router'
 import React, { useEffect, useRef } from 'react'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -141,7 +139,7 @@ export const ModalBase = ({
 
 export const Modal = ({ triggerButton, ...props }: IModal) => {
   const { addModal } = useSurfaces()
-  const searchParams = useSearchParams()
+  const [searchParams] = useSearchParams()
   const modal = <ModalBase {...props} />
 
   const handleAddModal = () => {

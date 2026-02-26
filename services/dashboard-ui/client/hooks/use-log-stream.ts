@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { LogStreamContext } from '@/providers/log-stream-provider'
 

@@ -1,6 +1,4 @@
-'use client'
-
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'react-router'
 import React, { useEffect, useRef, useState } from 'react'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -153,7 +151,7 @@ const PanelBase = ({
 
 export const Panel = ({ triggerButton, ...props }: IPanel) => {
   const { addPanel } = useSurfaces()
-  const searchParams = useSearchParams()
+  const [searchParams] = useSearchParams()
   const panel = <PanelBase {...props} />
 
   const handleAddPanel = () => {

@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, type ReactNode } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'

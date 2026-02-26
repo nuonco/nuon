@@ -1,8 +1,8 @@
 import { Text } from '@/components/common/Text'
-import { CUSTOMER_PORTAL_URL } from '@/configs/app'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSidebar } from '@/hooks/use-sidebar'
-import { useUserJourney } from '@/hooks/use-user-journey'
+//import { useUserJourney } from '@/hooks/use-user-journey'
 import { cn } from '@/utils/classnames'
 import { MainNavLink } from './MainNavLink'
 import { MAIN_LINKS, SETTINGS_LINKS, SUPPORT_LINKS } from './main-nav-links'
@@ -39,14 +39,22 @@ const Divider = () => {
 
 export const MainNav = () => {
   const { org } = useOrg()
-  const { isCustomerPortalEnabled } = useUserJourney()
+  const { datadogEnv } = useConfig()
+//  const { isCustomerPortalEnabled } = useUserJourney()
+  if (!org) return null
   const basePath = `/${org.id}`
-  const mainLinks = isCustomerPortalEnabled
+  const customerPortalUrl =
+    datadogEnv === 'stage'
+      ? 'https://customers.stage.nuon.co'
+      : datadogEnv === 'local'
+        ? 'http://localhost:8080'
+        : 'https://customers.nuon.co'
+  const mainLinks = false
     ? [
         ...MAIN_LINKS,
         {
           iconVariant: 'Users' as const,
-          path: CUSTOMER_PORTAL_URL,
+          path: customerPortalUrl,
           text: 'Customer Portal',
           isExternal: true,
         },

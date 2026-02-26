@@ -1,5 +1,3 @@
-'use client'
-
 import { useState } from 'react'
 import { Avatar } from '@/components/common/Avatar'
 import { Button } from '@/components/common/Button'
@@ -12,10 +10,10 @@ import { Menu } from '@/components/common/Menu'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { useQuery } from '@tanstack/react-query'
 import { useSidebar } from '@/hooks/use-sidebar'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
-import { useQuery } from '@/hooks/use-query'
+import { getOrgs } from '@/lib/ctl-api/orgs'
 import type { TOrg } from '@/types'
 import { cn } from '@/utils/classnames'
 import './OrgAvatar.css'
@@ -29,6 +27,7 @@ interface IOrgSwitcher
 export const OrgSwitcher = ({}: IOrgSwitcher) => {
   const { isSidebarOpen } = useSidebar()
   const { org } = useOrg()
+  if (!org) return null
   return (
     <Dropdown
       alignment="overlay"
@@ -173,14 +172,9 @@ const OrgsNav = ({}: IOrgsNav) => {
   const [limit, setLimit] = useState<number>(10)
   const [searchTerm, setSearchTerm] = useState<string>('')
 
-  const params = useQueryParams({ offset, limit, q: searchTerm })
-  const {
-    data: orgs,
-    error,
-    headers,
-    isLoading,
-  } = useQuery<TOrg[]>({
-    path: `/api/orgs${params}`,
+  const { data: orgs, isLoading } = useQuery({
+    queryKey: ['orgs', { offset, limit, q: searchTerm }],
+    queryFn: () => getOrgs({ offset, limit, q: searchTerm }),
   })
 
   return (
@@ -221,8 +215,7 @@ const OrgsNav = ({}: IOrgsNav) => {
           </Text>
         </div>
       )}
-      {orgs?.length > enablePaginationCount &&
-      headers?.['x-nuon-page-next'] !== 'false' ? (
+      {orgs?.length > enablePaginationCount && orgs?.length === limit ? (
         <Button
           className="w-full justify-center mt-4"
           onClick={() => {

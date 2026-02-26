@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, type ReactNode } from 'react'
 import { usePolling, type IPollingProps } from '@/hooks/use-polling'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'

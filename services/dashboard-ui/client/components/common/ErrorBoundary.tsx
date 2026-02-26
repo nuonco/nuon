@@ -1,5 +1,3 @@
-'use client'
-
 import React, { Component, ErrorInfo, ReactNode } from 'react'
 
 type FallbackRender = (props: { error: Error }) => ReactNode

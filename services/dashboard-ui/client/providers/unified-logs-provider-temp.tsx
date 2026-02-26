@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useEffect, useState, useRef, type ReactNode } from 'react'
 import { useLogStream } from '@/hooks/use-log-stream'
 import { useOrg } from '@/hooks/use-org'

@@ -1,5 +1,3 @@
-'use client'
-
 import { forwardRef, useEffect, useRef, type HTMLAttributes } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'

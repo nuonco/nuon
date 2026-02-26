@@ -1,5 +1,3 @@
-'use client'
-
 import { useContext } from 'react'
 import { InstallActionRunContext } from '@/providers/install-action-run-provider'
 

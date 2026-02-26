@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useEffect, useState, useCallback } from 'react'
 import { Icon } from './Icon'
 import { cn } from '@/utils/classnames'

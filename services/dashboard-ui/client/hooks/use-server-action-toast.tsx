@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect } from 'react'
 import { Toast, TToastTheme } from '@/components/surfaces/Toast'
 import { useToast } from './use-toast'

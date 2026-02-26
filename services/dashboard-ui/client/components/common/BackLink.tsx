@@ -1,6 +1,4 @@
-'use client'
-
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router'
 import { cn } from '@/utils/classnames'
 import { Icon } from './Icon'
 import { Text, type IText } from './Text'
@@ -18,7 +16,7 @@ export const BackLink = ({
   weight = 'strong',
   ...props
 }: IBackLink) => {
-  const router = useRouter()
+  const navigate = useNavigate()
 
   return (
     <Text
@@ -32,7 +30,7 @@ export const BackLink = ({
         className
       )}
       onClick={() => {
-        router.back()
+        navigate(-1)
       }}
       variant={variant}
       weight={weight}

@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import { cn } from '@/utils/classnames'
 import { getInitials } from '@/utils/string-utils'
 
@@ -59,7 +58,7 @@ export const Avatar = ({
       {...props}
     >
       {isLoading ? null : src ? (
-        <Image
+        <img
           height={sizeConf.px}
           width={sizeConf.px}
           src={src}

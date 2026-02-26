@@ -1,5 +1,3 @@
-'use client'
-
 import { DateTime, type DateTimeFormatOptions } from 'luxon'
 import { Text, type IText } from './Text'
 import { Tooltip, type ITooltip } from './Tooltip'

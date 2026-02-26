@@ -1,5 +1,3 @@
-'use client'
-
 import React, { forwardRef, useEffect, useState } from 'react'
 import { cn } from '@/utils/classnames'
 

@@ -1,5 +1,3 @@
-'use client'
-
 import { useMemo, useState } from 'react'
 
 // Default selected actions for Helm (all actions selected by default)
