@@ -41,9 +41,75 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
 
 	g.GET("/oapi/v3", r.getOAPI3publicSpec)
 	g.GET("/oapi/v2", r.getOAPI2PublicSpec)
+
+	// Redoc - faster alternative to Swagger UI for large specs
+	g.GET("/redoc", func(c *gin.Context) {
+		c.Header("Content-Type", "text/html")
+		c.String(200, `<!DOCTYPE html>
+<html>
+<head>
+    <title>Nuon API Documentation</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+    <redoc spec-url='/oapi/v2' hide-download-button></redoc>
+    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+</body>
+</html>`)
+	})
+
+	// Custom fast Swagger UI with all performance optimizations
+	g.GET("/swagger-fast", func(c *gin.Context) {
+		c.Header("Content-Type", "text/html")
+		c.String(200, `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nuon API - Fast Swagger UI</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = () => {
+            window.ui = SwaggerUIBundle({
+                url: '/oapi/v2',
+                dom_id: '#swagger-ui',
+                deepLinking: false,
+                displayRequestDuration: true,
+                docExpansion: 'none',
+                defaultModelsExpandDepth: -1,
+                defaultModelExpandDepth: 0,
+                filter: true,
+                syntaxHighlight: false,
+                tryItOutEnabled: false,
+                persistAuthorization: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                layout: "BaseLayout"
+            });
+        };
+    </script>
+</body>
+</html>`)
+	})
+
+	// Keep original Swagger UI for compatibility
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 		swagger.PersistAuthorization(true),
+		swagger.DocExpansion("none"),
+		swagger.DeepLinking(false),
+		swagger.DefaultModelsExpandDepth(-1),
 	))
 
 	return nil
@@ -74,6 +140,9 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 		swaggerfiles.Handler,
 		swagger.InstanceName("admin"),
 		swagger.PersistAuthorization(true),
+		swagger.DocExpansion("none"),
+		swagger.DeepLinking(false),
+		swagger.DefaultModelsExpandDepth(-1),
 	))
 
 	return nil
@@ -103,6 +172,9 @@ func (r *Docs) RegisterRunnerRoutes(g *gin.Engine) error {
 		swaggerfiles.Handler,
 		swagger.PersistAuthorization(true),
 		swagger.InstanceName("runner"),
+		swagger.DocExpansion("none"),
+		swagger.DeepLinking(false),
+		swagger.DefaultModelsExpandDepth(-1),
 	))
 
 	return nil

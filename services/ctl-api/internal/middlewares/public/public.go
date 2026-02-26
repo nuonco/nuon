@@ -15,6 +15,8 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/readyz"}:                   {},
 	{"OPTIONS", "*"}:                     {},
 	{"GET", "/docs/*any"}:                {},
+	{"GET", "/swagger-fast"}:             {},
+	{"GET", "/redoc"}:                    {},
 	{"GET", "/oapi/v2"}:                  {},
 	{"GET", "/oapi/v3"}:                  {},
 	{"GET", "/v1/general/config-schema"}: {},
