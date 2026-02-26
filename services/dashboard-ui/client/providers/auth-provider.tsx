@@ -1,11 +1,13 @@
-import { createContext, useEffect, useState } from 'react'
-import { useConfig } from '@/hooks/use-config'
-import type { TMe } from '@/types/ctl-api.types'
-import type { IUser } from '@/types/dashboard.types'
+import { createContext } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getMe } from '@/lib/ctl-api/auth/get-me'
+import { isNuonSession } from '@/utils/session-utils'
+import type { IUser, TMe } from '@/types'
 
 interface IAuthContext {
   user: IUser | null
   isAuthenticated: boolean
+  isAdmin: boolean
   isLoading: boolean
 }
 
@@ -22,31 +24,20 @@ function meToUser(me: TMe): IUser {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { apiUrl } = useConfig()
-  const [user, setUser] = useState<IUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: me, isLoading } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: getMe,
+    retry: false,
+  })
 
-  useEffect(() => {
-    fetch(`${apiUrl}/v1/auth/me`, {
-      credentials: 'include',
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((me: TMe | null) => {
-        setUser(me ? meToUser(me) : null)
-      })
-      .catch(() => {
-        setUser(null)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [apiUrl])
+  const user = me ? meToUser(me) : null
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
+        isAdmin: !!user && isNuonSession(user),
         isLoading,
       }}
     >

@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router'
+import { getOrgSession } from '@/lib/cookies'
 import { useConfig } from '@/hooks/use-config'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -7,8 +8,8 @@ export const Login = () => {
   const { isAuthenticated, isLoading } = useAuth()
 
   if (!isLoading && isAuthenticated) {
-    window.location.replace('/')
-    return null
+    const orgId = getOrgSession()
+    return <Navigate to={orgId ? `/${orgId}/apps` : '/onboarding'} replace />
   }
 
   return (

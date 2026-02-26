@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from "@/hooks/use-config"
 // import { AdminPanel } from '@/components/admin/AdminPanel'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
@@ -22,7 +23,8 @@ export const UserDropdown = ({
   hideOrgSettings,
   ...props
 }: IUserDropdown) => {
-//  const { isAdmin, useAuthService, authServiceUrl } = useAuth()
+  //  const { isAdmin, useAuthService, authServiceUrl } = useAuth()
+  const { authServiceUrl } = useConfig()
   const { addPanel } = useSurfaces()
 
   return (
@@ -56,7 +58,7 @@ export const UserDropdown = ({
             ) : null} */}
         {!hideOrgSettings && <hr />}
         <Link
-          href={"/api/auth/logout"}
+          href={`${authServiceUrl}/logout`}
           className="!text-red-800 dark:!text-red-500"
           title="Sign out"
           isExternal
