@@ -17,6 +17,15 @@ import (
 // swagger:model app.GCPStackOutputs
 type AppGCPStackOutputs struct {
 
+	// break glass sa email
+	BreakGlassSaEmail string `json:"break_glass_sa_email,omitempty"`
+
+	// deprovision sa email
+	DeprovisionSaEmail string `json:"deprovision_sa_email,omitempty"`
+
+	// maintenance sa email
+	MaintenanceSaEmail string `json:"maintenance_sa_email,omitempty"`
+
 	// network id
 	NetworkID string `json:"network_id,omitempty"`
 
@@ -28,6 +37,9 @@ type AppGCPStackOutputs struct {
 
 	// project id
 	ProjectID string `json:"project_id,omitempty"`
+
+	// provision sa email
+	ProvisionSaEmail string `json:"provision_sa_email,omitempty"`
 
 	// public subnet name
 	PublicSubnetName string `json:"public_subnet_name,omitempty"`

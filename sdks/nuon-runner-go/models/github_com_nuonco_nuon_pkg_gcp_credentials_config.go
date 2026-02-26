@@ -17,6 +17,9 @@ import (
 // swagger:model github_com_nuonco_nuon_pkg_gcp_credentials.Config
 type GithubComNuoncoNuonPkgGcpCredentialsConfig struct {
 
+	// impersonate service account
+	ImpersonateServiceAccount string `json:"impersonate_service_account,omitempty"`
+
 	// project id
 	ProjectID string `json:"project_id,omitempty"`
 
