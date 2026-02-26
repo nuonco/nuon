@@ -3,13 +3,19 @@ package credentials
 import "context"
 
 // FetchEnv returns environment variables needed for Terraform to operate in a GCP project.
-// GCP runners use an attached service account, so no credentials are needed — only project context.
-func FetchEnv(ctx context.Context, cfg *Config) (map[string]string, error) {
+// When ImpersonateServiceAccount is set, GOOGLE_IMPERSONATE_SERVICE_ACCOUNT is exported so the
+// Terraform google provider calls iamcredentials.generateAccessToken on demand and handles token
+// refresh automatically — avoiding the 1-hour static-token expiry problem.
+func FetchEnv(_ context.Context, cfg *Config) (map[string]string, error) {
 	if cfg == nil {
 		return map[string]string{}, nil
 	}
-	return map[string]string{
+	env := map[string]string{
 		"GOOGLE_PROJECT": cfg.ProjectID,
 		"GOOGLE_REGION":  cfg.Region,
-	}, nil
+	}
+	if cfg.ImpersonateServiceAccount != "" {
+		env["GOOGLE_IMPERSONATE_SERVICE_ACCOUNT"] = cfg.ImpersonateServiceAccount
+	}
+	return env, nil
 }

@@ -41,8 +41,9 @@ func CreatePlanAuth(stackOutputs app.InstallStackOutputs, roleARN, sessionName s
 
 	case stackOutputs.GCPStackOutputs != nil:
 		planAuth.GCPAuth = &gcpcredentials.Config{
-			ProjectID: stackOutputs.GCPStackOutputs.ProjectID,
-			Region:    stackOutputs.GCPStackOutputs.Region,
+			ProjectID:                 stackOutputs.GCPStackOutputs.ProjectID,
+			Region:                    stackOutputs.GCPStackOutputs.Region,
+			ImpersonateServiceAccount: roleARN,
 		}
 
 	default:

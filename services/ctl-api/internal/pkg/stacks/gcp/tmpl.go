@@ -142,6 +142,163 @@ const tmpl = `{
       "runner": {
         "account_id": "${substr(local.prefix, 0, 23)}-runner",
         "display_name": "Nuon runner for ${local.prefix}"
+      },
+      "provision": {
+        "account_id": "${substr(local.prefix, 0, 20)}-prov",
+        "display_name": "Nuon provision for ${local.prefix}"
+      },
+      "maintenance": {
+        "account_id": "${substr(local.prefix, 0, 20)}-maint",
+        "display_name": "Nuon maintenance for ${local.prefix}"
+      },
+      "deprovision": {
+        "account_id": "${substr(local.prefix, 0, 20)}-dep",
+        "display_name": "Nuon deprovision for ${local.prefix}"
+      },
+      "break_glass": {
+        "account_id": "${substr(local.prefix, 0, 20)}-bg",
+        "display_name": "Nuon break glass for ${local.prefix}"
+      }
+    },
+    "google_project_iam_custom_role": {
+      "provision": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role_id": "${local.prefix}_prov_role",
+        "title": "Nuon Provision for ${local.prefix}",
+        "permissions": [
+          "artifactregistry.repositories.create", "artifactregistry.repositories.delete",
+          "artifactregistry.repositories.get", "artifactregistry.repositories.list",
+          "artifactregistry.repositories.update",
+          "container.clusters.create", "container.clusters.delete",
+          "container.clusters.get", "container.clusters.list", "container.clusters.update",
+          "container.operations.get", "container.operations.list",
+          "compute.addresses.create", "compute.addresses.delete", "compute.addresses.get", "compute.addresses.list",
+          "compute.firewalls.create", "compute.firewalls.delete", "compute.firewalls.get", "compute.firewalls.list", "compute.firewalls.update",
+          "compute.forwardingRules.create", "compute.forwardingRules.delete", "compute.forwardingRules.get", "compute.forwardingRules.list",
+          "compute.globalOperations.get",
+          "compute.instances.create", "compute.instances.delete", "compute.instances.get", "compute.instances.list", "compute.instances.setServiceAccount",
+          "compute.networks.create", "compute.networks.delete", "compute.networks.get", "compute.networks.list", "compute.networks.updatePolicy",
+          "compute.regionOperations.get",
+          "compute.routers.create", "compute.routers.delete", "compute.routers.get", "compute.routers.list", "compute.routers.update",
+          "compute.subnetworks.create", "compute.subnetworks.delete", "compute.subnetworks.get", "compute.subnetworks.list", "compute.subnetworks.update", "compute.subnetworks.use",
+          "dns.changes.create", "dns.changes.get", "dns.changes.list",
+          "dns.managedZones.create", "dns.managedZones.delete", "dns.managedZones.get", "dns.managedZones.list", "dns.managedZones.update",
+          "dns.resourceRecordSets.create", "dns.resourceRecordSets.delete", "dns.resourceRecordSets.get", "dns.resourceRecordSets.list",
+          "iam.roles.create", "iam.roles.delete", "iam.roles.get", "iam.roles.list", "iam.roles.update",
+          "iam.serviceAccounts.actAs", "iam.serviceAccounts.create", "iam.serviceAccounts.delete",
+          "iam.serviceAccounts.get", "iam.serviceAccounts.getIamPolicy", "iam.serviceAccounts.list", "iam.serviceAccounts.setIamPolicy",
+          "resourcemanager.projects.get", "resourcemanager.projects.getIamPolicy", "resourcemanager.projects.setIamPolicy",
+          "secretmanager.secrets.get", "secretmanager.secrets.list",
+          "secretmanager.versions.access", "secretmanager.versions.get", "secretmanager.versions.list",
+          "serviceusage.services.disable", "serviceusage.services.enable", "serviceusage.services.get", "serviceusage.services.list",
+          "storage.buckets.create", "storage.buckets.delete", "storage.buckets.get",
+          "storage.buckets.getIamPolicy", "storage.buckets.list", "storage.buckets.setIamPolicy", "storage.buckets.update",
+          "storage.objects.create", "storage.objects.delete", "storage.objects.get", "storage.objects.list", "storage.objects.update"
+        ]
+      },
+      "maintenance": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role_id": "${local.prefix}_maint_role",
+        "title": "Nuon Maintenance for ${local.prefix}",
+        "permissions": [
+          "artifactregistry.repositories.get", "artifactregistry.repositories.list",
+          "container.clusters.get", "container.clusters.list", "container.clusters.update",
+          "container.operations.get", "container.operations.list",
+          "compute.addresses.get", "compute.addresses.list",
+          "compute.firewalls.get", "compute.firewalls.list",
+          "compute.globalOperations.get",
+          "compute.instances.get", "compute.instances.list",
+          "compute.networks.get", "compute.networks.list",
+          "compute.regionOperations.get",
+          "compute.routers.get", "compute.routers.list",
+          "compute.subnetworks.get", "compute.subnetworks.list",
+          "dns.changes.create", "dns.changes.get", "dns.changes.list",
+          "dns.managedZones.get", "dns.managedZones.list", "dns.managedZones.update",
+          "dns.resourceRecordSets.create", "dns.resourceRecordSets.delete", "dns.resourceRecordSets.get", "dns.resourceRecordSets.list",
+          "iam.roles.get", "iam.roles.list",
+          "iam.serviceAccounts.actAs", "iam.serviceAccounts.get", "iam.serviceAccounts.getIamPolicy", "iam.serviceAccounts.list",
+          "resourcemanager.projects.get", "resourcemanager.projects.getIamPolicy",
+          "secretmanager.secrets.get", "secretmanager.secrets.list",
+          "secretmanager.versions.access", "secretmanager.versions.get", "secretmanager.versions.list",
+          "serviceusage.services.get", "serviceusage.services.list",
+          "storage.buckets.get", "storage.buckets.getIamPolicy", "storage.buckets.list",
+          "storage.objects.get", "storage.objects.list"
+        ]
+      },
+      "deprovision": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role_id": "${local.prefix}_dep_role",
+        "title": "Nuon Deprovision for ${local.prefix}",
+        "permissions": [
+          "artifactregistry.repositories.create", "artifactregistry.repositories.delete",
+          "artifactregistry.repositories.get", "artifactregistry.repositories.list",
+          "artifactregistry.repositories.update",
+          "artifactregistry.packages.delete", "artifactregistry.packages.get", "artifactregistry.packages.list",
+          "artifactregistry.versions.delete", "artifactregistry.versions.get", "artifactregistry.versions.list",
+          "container.clusters.create", "container.clusters.delete",
+          "container.clusters.get", "container.clusters.list", "container.clusters.update",
+          "container.operations.get", "container.operations.list",
+          "compute.addresses.create", "compute.addresses.delete", "compute.addresses.get", "compute.addresses.list",
+          "compute.firewalls.create", "compute.firewalls.delete", "compute.firewalls.get", "compute.firewalls.list", "compute.firewalls.update",
+          "compute.forwardingRules.create", "compute.forwardingRules.delete", "compute.forwardingRules.get", "compute.forwardingRules.list",
+          "compute.globalOperations.get",
+          "compute.instances.create", "compute.instances.delete", "compute.instances.get", "compute.instances.list", "compute.instances.setServiceAccount",
+          "compute.networks.create", "compute.networks.delete", "compute.networks.get", "compute.networks.list", "compute.networks.updatePolicy",
+          "compute.regionOperations.get",
+          "compute.routers.create", "compute.routers.delete", "compute.routers.get", "compute.routers.list", "compute.routers.update",
+          "compute.subnetworks.create", "compute.subnetworks.delete", "compute.subnetworks.get", "compute.subnetworks.list", "compute.subnetworks.update", "compute.subnetworks.use",
+          "dns.changes.create", "dns.changes.get", "dns.changes.list",
+          "dns.managedZones.create", "dns.managedZones.delete", "dns.managedZones.get", "dns.managedZones.list", "dns.managedZones.update",
+          "dns.resourceRecordSets.create", "dns.resourceRecordSets.delete", "dns.resourceRecordSets.get", "dns.resourceRecordSets.list",
+          "iam.roles.create", "iam.roles.delete", "iam.roles.get", "iam.roles.list", "iam.roles.update",
+          "iam.serviceAccounts.actAs", "iam.serviceAccounts.create", "iam.serviceAccounts.delete",
+          "iam.serviceAccounts.get", "iam.serviceAccounts.getIamPolicy", "iam.serviceAccounts.list", "iam.serviceAccounts.setIamPolicy",
+          "resourcemanager.projects.get", "resourcemanager.projects.getIamPolicy", "resourcemanager.projects.setIamPolicy",
+          "secretmanager.secrets.get", "secretmanager.secrets.list",
+          "secretmanager.versions.access", "secretmanager.versions.get", "secretmanager.versions.list",
+          "serviceusage.services.disable", "serviceusage.services.enable", "serviceusage.services.get", "serviceusage.services.list",
+          "storage.buckets.create", "storage.buckets.delete", "storage.buckets.get",
+          "storage.buckets.getIamPolicy", "storage.buckets.list", "storage.buckets.setIamPolicy", "storage.buckets.update",
+          "storage.objects.create", "storage.objects.delete", "storage.objects.get", "storage.objects.list", "storage.objects.update"
+        ]
+      }
+    },
+      "break_glass": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role_id": "${local.prefix}_bg_role",
+        "title": "Nuon Break Glass for ${local.prefix}",
+        "permissions": [
+          "artifactregistry.repositories.create", "artifactregistry.repositories.delete",
+          "artifactregistry.repositories.get", "artifactregistry.repositories.list",
+          "artifactregistry.repositories.update",
+          "artifactregistry.packages.delete", "artifactregistry.packages.get", "artifactregistry.packages.list",
+          "artifactregistry.versions.delete", "artifactregistry.versions.get", "artifactregistry.versions.list",
+          "container.clusters.create", "container.clusters.delete",
+          "container.clusters.get", "container.clusters.list", "container.clusters.update",
+          "container.operations.get", "container.operations.list",
+          "compute.addresses.create", "compute.addresses.delete", "compute.addresses.get", "compute.addresses.list",
+          "compute.firewalls.create", "compute.firewalls.delete", "compute.firewalls.get", "compute.firewalls.list", "compute.firewalls.update",
+          "compute.forwardingRules.create", "compute.forwardingRules.delete", "compute.forwardingRules.get", "compute.forwardingRules.list",
+          "compute.globalOperations.get",
+          "compute.instances.create", "compute.instances.delete", "compute.instances.get", "compute.instances.list", "compute.instances.setServiceAccount",
+          "compute.networks.create", "compute.networks.delete", "compute.networks.get", "compute.networks.list", "compute.networks.updatePolicy",
+          "compute.regionOperations.get",
+          "compute.routers.create", "compute.routers.delete", "compute.routers.get", "compute.routers.list", "compute.routers.update",
+          "compute.subnetworks.create", "compute.subnetworks.delete", "compute.subnetworks.get", "compute.subnetworks.list", "compute.subnetworks.update", "compute.subnetworks.use",
+          "dns.changes.create", "dns.changes.get", "dns.changes.list",
+          "dns.managedZones.create", "dns.managedZones.delete", "dns.managedZones.get", "dns.managedZones.list", "dns.managedZones.update",
+          "dns.resourceRecordSets.create", "dns.resourceRecordSets.delete", "dns.resourceRecordSets.get", "dns.resourceRecordSets.list",
+          "iam.roles.create", "iam.roles.delete", "iam.roles.get", "iam.roles.list", "iam.roles.update",
+          "iam.serviceAccounts.actAs", "iam.serviceAccounts.create", "iam.serviceAccounts.delete",
+          "iam.serviceAccounts.get", "iam.serviceAccounts.getIamPolicy", "iam.serviceAccounts.list", "iam.serviceAccounts.setIamPolicy",
+          "resourcemanager.projects.get", "resourcemanager.projects.getIamPolicy", "resourcemanager.projects.setIamPolicy",
+          "secretmanager.secrets.create", "secretmanager.secrets.delete", "secretmanager.secrets.get", "secretmanager.secrets.list",
+          "secretmanager.versions.access", "secretmanager.versions.add", "secretmanager.versions.destroy", "secretmanager.versions.get", "secretmanager.versions.list",
+          "serviceusage.services.disable", "serviceusage.services.enable", "serviceusage.services.get", "serviceusage.services.list",
+          "storage.buckets.create", "storage.buckets.delete", "storage.buckets.get",
+          "storage.buckets.getIamPolicy", "storage.buckets.list", "storage.buckets.setIamPolicy", "storage.buckets.update",
+          "storage.objects.create", "storage.objects.delete", "storage.objects.get", "storage.objects.list", "storage.objects.update"
+        ]
       }
     },
     "google_project_iam_member": {
@@ -150,34 +307,46 @@ const tmpl = `{
         "role": "roles/container.admin",
         "member": "serviceAccount:${google_service_account.runner.email}"
       },
-      "runner_compute_admin": {
+      "provision_role_binding": {
         "project": "{{.Install.GCPAccount.ProjectID}}",
-        "role": "roles/compute.networkAdmin",
+        "role": "${google_project_iam_custom_role.provision.id}",
+        "member": "serviceAccount:${google_service_account.provision.email}"
+      },
+      "maintenance_role_binding": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role": "${google_project_iam_custom_role.maintenance.id}",
+        "member": "serviceAccount:${google_service_account.maintenance.email}"
+      },
+      "deprovision_role_binding": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role": "${google_project_iam_custom_role.deprovision.id}",
+        "member": "serviceAccount:${google_service_account.deprovision.email}"
+      },
+      "break_glass_role_binding": {
+        "project": "{{.Install.GCPAccount.ProjectID}}",
+        "role": "${google_project_iam_custom_role.break_glass.id}",
+        "member": "serviceAccount:${google_service_account.break_glass.email}"
+      }
+    },
+    "google_service_account_iam_member": {
+      "provision_token_creator": {
+        "service_account_id": "${google_service_account.provision.name}",
+        "role": "roles/iam.serviceAccountTokenCreator",
         "member": "serviceAccount:${google_service_account.runner.email}"
       },
-      "runner_artifact_registry": {
-        "project": "{{.Install.GCPAccount.ProjectID}}",
-        "role": "roles/artifactregistry.admin",
+      "maintenance_token_creator": {
+        "service_account_id": "${google_service_account.maintenance.name}",
+        "role": "roles/iam.serviceAccountTokenCreator",
         "member": "serviceAccount:${google_service_account.runner.email}"
       },
-      "runner_dns_admin": {
-        "project": "{{.Install.GCPAccount.ProjectID}}",
-        "role": "roles/dns.admin",
+      "deprovision_token_creator": {
+        "service_account_id": "${google_service_account.deprovision.name}",
+        "role": "roles/iam.serviceAccountTokenCreator",
         "member": "serviceAccount:${google_service_account.runner.email}"
       },
-      "runner_sa_user": {
-        "project": "{{.Install.GCPAccount.ProjectID}}",
-        "role": "roles/iam.serviceAccountUser",
-        "member": "serviceAccount:${google_service_account.runner.email}"
-      },
-      "runner_security_admin": {
-        "project": "{{.Install.GCPAccount.ProjectID}}",
-        "role": "roles/compute.securityAdmin",
-        "member": "serviceAccount:${google_service_account.runner.email}"
-      },
-      "runner_storage_admin": {
-        "project": "{{.Install.GCPAccount.ProjectID}}",
-        "role": "roles/storage.admin",
+      "break_glass_token_creator": {
+        "service_account_id": "${google_service_account.break_glass.name}",
+        "role": "roles/iam.serviceAccountTokenCreator",
         "member": "serviceAccount:${google_service_account.runner.email}"
       }
     },
@@ -261,6 +430,18 @@ const tmpl = `{
     },
     "runner_service_account_email": {
       "value": "${google_service_account.runner.email}"
+    },
+    "provision_sa_email": {
+      "value": "${google_service_account.provision.email}"
+    },
+    "maintenance_sa_email": {
+      "value": "${google_service_account.maintenance.email}"
+    },
+    "deprovision_sa_email": {
+      "value": "${google_service_account.deprovision.email}"
+    },
+    "break_glass_sa_email": {
+      "value": "${google_service_account.break_glass.email}"
     }
   }
 }`

@@ -85,6 +85,10 @@ type GCPStackOutputs struct {
 	PrivateSubnetName         string `json:"private_subnet_name,omitzero" mapstructure:"private_subnet_name" temporaljson:"private_subnet_name,omitzero,omitempty"`
 	RunnerSubnetName          string `json:"runner_subnet_name,omitzero" mapstructure:"runner_subnet_name" temporaljson:"runner_subnet_name,omitzero,omitempty"`
 	RunnerServiceAccountEmail string `json:"runner_service_account_email,omitzero" mapstructure:"runner_service_account_email" temporaljson:"runner_service_account_email,omitzero,omitempty"`
+	ProvisionSAEmail          string `json:"provision_sa_email,omitzero" mapstructure:"provision_sa_email" temporaljson:"provision_sa_email,omitzero,omitempty"`
+	MaintenanceSAEmail        string `json:"maintenance_sa_email,omitzero" mapstructure:"maintenance_sa_email" temporaljson:"maintenance_sa_email,omitzero,omitempty"`
+	DeprovisionSAEmail        string `json:"deprovision_sa_email,omitzero" mapstructure:"deprovision_sa_email" temporaljson:"deprovision_sa_email,omitzero,omitempty"`
+	BreakGlassSAEmail         string `json:"break_glass_sa_email,omitzero" mapstructure:"break_glass_sa_email" temporaljson:"break_glass_sa_email,omitzero,omitempty"`
 }
 
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
