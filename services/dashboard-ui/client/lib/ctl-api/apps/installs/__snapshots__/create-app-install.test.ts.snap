@@ -1,0 +1,41 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createAppInstall should handle response status codes from POST apps/:appId/installs endpoint > 400 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createAppInstall should handle response status codes from POST apps/:appId/installs endpoint > 401 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createAppInstall should handle response status codes from POST apps/:appId/installs endpoint > 403 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createAppInstall should handle response status codes from POST apps/:appId/installs endpoint > 404 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`createAppInstall should handle response status codes from POST apps/:appId/installs endpoint > 500 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;

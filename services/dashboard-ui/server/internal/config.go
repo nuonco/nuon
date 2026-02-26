@@ -18,18 +18,36 @@ func init() {
 	config.RegisterDefault("middlewares", []string{
 		"cors",
 	})
+	config.RegisterDefault("nuon_api_url", "https://api.nuon.co")
+	config.RegisterDefault("nuon_app_url", "http://localhost:4000")
+	config.RegisterDefault("github_app_name", "nuon-connect")
 }
 
 type Config struct {
-	HTTPPort    string   `config:"http_port" validate:"required"`
-	LogLevel    string   `config:"log_level"`
-	DashboardDev bool    `config:"dashboard_dev"`
-	ServiceName string   `config:"service_name"`
-	Version     string   `config:"version"`
-	GitRef      string   `config:"git_ref"`
-	Middlewares []string `config:"middlewares"`
-	DistDir     string   `config:"dist_dir"`
-	PublicDir   string   `config:"public_dir"`
+	HTTPPort     string   `config:"http_port" validate:"required"`
+	LogLevel     string   `config:"log_level"`
+	DashboardDev bool     `config:"dashboard_dev"`
+	ServiceName  string   `config:"service_name"`
+	Version      string   `config:"version"`
+	GitRef       string   `config:"git_ref"`
+	Middlewares  []string `config:"middlewares"`
+	DistDir      string   `config:"dist_dir"`
+	PublicDir    string   `config:"public_dir"`
+
+	APIUrl                string `config:"nuon_api_url"`
+	AdminAPIUrl           string `config:"nuon_admin_api_url"`
+	TemporalUIUrl         string `config:"nuon_temporal_ui_url"`
+	AuthServiceUrl        string `config:"nuon_auth_service_url"`
+	AppUrl                string `config:"nuon_app_url"`
+	GithubAppName         string `config:"github_app_name"`
+	PylonAppID            string `config:"pylon_app_id"`
+	DatadogEnv            string `config:"datadog_env"`
+	DatadogAPIKey         string `config:"datadog_api_key"`
+	DatadogApplicationKey string `config:"datadog_application_key"`
+	DatadogTraceDebug     bool   `config:"datadog_trace_debug"`
+	DatadogAPIUrl         string `config:"datadog_api_url"`
+	IsBYOC                bool   `config:"nuon_byoc"`
+	SFTrialEndpoint       string `config:"sf_trial_access_endpoint"`
 }
 
 func NewConfig() (*Config, error) {

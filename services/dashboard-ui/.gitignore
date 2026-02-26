@@ -41,3 +41,5 @@ NOTES.md
 compilation-analysis.json
 analyze.js
 /dist
+config.yml
+config.json

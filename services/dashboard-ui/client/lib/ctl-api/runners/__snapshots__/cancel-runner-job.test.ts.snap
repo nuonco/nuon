@@ -1,0 +1,41 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cancelRunnerJob should handle response status codes from POST runner-jobs/:id/cancel endpoint > 400 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`cancelRunnerJob should handle response status codes from POST runner-jobs/:id/cancel endpoint > 401 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`cancelRunnerJob should handle response status codes from POST runner-jobs/:id/cancel endpoint > 403 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`cancelRunnerJob should handle response status codes from POST runner-jobs/:id/cancel endpoint > 404 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;
+
+exports[`cancelRunnerJob should handle response status codes from POST runner-jobs/:id/cancel endpoint > 500 status 1`] = `
+{
+  "description": Any<String>,
+  "error": Any<String>,
+  "user_error": Any<Boolean>,
+}
+`;

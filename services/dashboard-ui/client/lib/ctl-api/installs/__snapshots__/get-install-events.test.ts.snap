@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`getInstallEvents should handle response status codes from GET installs/:id/events endpoint > 400 status 1`] = `[Error: Unable to retrieve install events.]`;
+
+exports[`getInstallEvents should handle response status codes from GET installs/:id/events endpoint > 401 status 1`] = `[Error: Unable to retrieve install events.]`;
+
+exports[`getInstallEvents should handle response status codes from GET installs/:id/events endpoint > 403 status 1`] = `[Error: Unable to retrieve install events.]`;
+
+exports[`getInstallEvents should handle response status codes from GET installs/:id/events endpoint > 404 status 1`] = `[Error: Unable to retrieve install events.]`;
+
+exports[`getInstallEvents should handle response status codes from GET installs/:id/events endpoint > 500 status 1`] = `[Error: Unable to retrieve install events.]`;

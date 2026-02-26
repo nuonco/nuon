@@ -22,7 +22,9 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "OPTIONS"},
 		AllowHeaders: []string{
 			"Authorization",

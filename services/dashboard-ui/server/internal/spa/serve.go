@@ -1,6 +1,9 @@
 package spa
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -11,12 +14,54 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+	authmw "github.com/nuonco/nuon/services/dashboard-ui/server/internal/middlewares/auth"
 )
+
+type clientConfig struct {
+	APIUrl                string `json:"apiUrl"`
+	AdminAPIUrl           string `json:"adminApiUrl,omitempty"`
+	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
+	AuthServiceUrl        string `json:"authServiceUrl,omitempty"`
+	AppUrl                string `json:"appUrl"`
+	GithubAppName         string `json:"githubAppName"`
+	PylonAppID            string `json:"pylonAppId,omitempty"`
+	DatadogEnv            string `json:"datadogEnv,omitempty"`
+	DatadogAPIKey         string `json:"datadogApiKey,omitempty"`
+	DatadogApplicationKey string `json:"datadogApplicationKey,omitempty"`
+	DatadogTraceDebug     bool   `json:"datadogTraceDebug,omitempty"`
+	DatadogAPIUrl         string `json:"datadogApiUrl,omitempty"`
+	Version               string `json:"version,omitempty"`
+	GitRef                string `json:"gitRef,omitempty"`
+	IsBYOC                bool   `json:"isByoc"`
+	SFTrialEndpoint       string `json:"sfTrialEndpoint,omitempty"`
+}
+
+func buildClientConfig(cfg *internal.Config) clientConfig {
+	return clientConfig{
+		APIUrl:                cfg.APIUrl,
+		AdminAPIUrl:           cfg.AdminAPIUrl,
+		TemporalUIUrl:         cfg.TemporalUIUrl,
+		AuthServiceUrl:        cfg.AuthServiceUrl,
+		AppUrl:                cfg.AppUrl,
+		GithubAppName:         cfg.GithubAppName,
+		PylonAppID:            cfg.PylonAppID,
+		DatadogEnv:            cfg.DatadogEnv,
+		DatadogAPIKey:         cfg.DatadogAPIKey,
+		DatadogApplicationKey: cfg.DatadogApplicationKey,
+		DatadogTraceDebug:     cfg.DatadogTraceDebug,
+		DatadogAPIUrl:         cfg.DatadogAPIUrl,
+		Version:               cfg.Version,
+		GitRef:                cfg.GitRef,
+		IsBYOC:                cfg.IsBYOC,
+		SFTrialEndpoint:       cfg.SFTrialEndpoint,
+	}
+}
 
 // Handler serves SPA static assets and the index.html fallback.
 type Handler struct {
-	cfg *internal.Config
-	l   *zap.Logger
+	cfg       *internal.Config
+	l         *zap.Logger
+	indexHTML []byte
 }
 
 func NewHandler(cfg *internal.Config, l *zap.Logger) *Handler {
@@ -70,6 +115,17 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 			h.l.Warn("no index.html in dist — SPA fallback disabled", zap.String("dist_dir", distDir))
 		} else {
 			hasSPAFallback = true
+			raw, err := fs.ReadFile(distFS, "index.html")
+			if err != nil {
+				h.l.Error("failed to read index.html at startup", zap.Error(err))
+				hasSPAFallback = false
+			} else {
+				cc := buildClientConfig(h.cfg)
+				b, _ := json.Marshal(cc)
+				h.l.Info("injecting client config into index.html", zap.String("apiUrl", cc.APIUrl), zap.String("appUrl", cc.AppUrl))
+				script := fmt.Sprintf(`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script>`, b)
+				h.indexHTML = bytes.Replace(raw, []byte("</head>"), []byte(script+"</head>"), 1)
+			}
 		}
 	}
 
@@ -83,6 +139,7 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 	}
 
 	publicFS := h.publicFS()
+	authHandler := authmw.New(h.cfg, h.l).Handler()
 
 	e.NoRoute(func(c *gin.Context) {
 		if c.Request.Method != http.MethodGet {
@@ -91,6 +148,11 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 		}
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+
+		authHandler(c)
+		if c.IsAborted() {
 			return
 		}
 
@@ -116,18 +178,7 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 		}
 
 		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
-		c.Header("Content-Type", "text/html; charset=utf-8")
-
-		f, err := distFS.Open("index.html")
-		if err != nil {
-			h.l.Error("failed to open index.html", zap.Error(err))
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-		defer f.Close()
-
-		c.Status(http.StatusOK)
-		io.Copy(c.Writer, f)
+		c.Data(http.StatusOK, "text/html; charset=utf-8", h.indexHTML)
 	})
 
 	return nil
@@ -137,10 +188,16 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 // Static files from the public directory are served directly without proxying.
 func (h *Handler) registerDevProxy(e *gin.Engine) error {
 	publicFS := h.publicFS()
+	authHandler := authmw.New(h.cfg, h.l).Handler()
 
 	e.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+
+		authHandler(c)
+		if c.IsAborted() {
 			return
 		}
 
