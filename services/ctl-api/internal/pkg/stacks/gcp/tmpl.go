@@ -261,8 +261,7 @@ const tmpl = `{
           "storage.buckets.getIamPolicy", "storage.buckets.list", "storage.buckets.setIamPolicy", "storage.buckets.update",
           "storage.objects.create", "storage.objects.delete", "storage.objects.get", "storage.objects.list", "storage.objects.update"
         ]
-      }
-    },
+      },
       "break_glass": {
         "project": "{{.Install.GCPAccount.ProjectID}}",
         "role_id": "${local.prefix}_bg_role",
