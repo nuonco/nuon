@@ -1,0 +1,162 @@
+---
+title: "Operation Roles"
+description: "JSON Schema reference for operation_roles.toml"
+---
+
+# Operation Roles
+
+The `operation_roles.toml` file defines an app-level matrix of rules that map entity principals and
+operations to role names. It is placed at the root of your app config directory and synced via
+`nuon apps sync`.
+
+<Note>
+  Entity-level role overrides (inline `[[operation_roles]]` blocks on `sandbox.toml` and component configs,
+  or the `role` field on action configs) take precedence over matrix rules. See the
+  [Operation Roles Guide](/guides/operation-roles) for the full precedence chain.
+</Note>
+
+## Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `type` | `string` | ✅ Yes | Must be `"matrix"` |
+| `rules` | `array` | No | Array of operation role rules |
+
+## Rule Properties
+
+Each element of the `rules` array must have the following fields:
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `principal` | `string` | ✅ Yes | Identifies which entity the rule applies to. See [Principal Format](#principal-format) below |
+| `operation` | `string` | ✅ Yes | The operation the rule applies to. See [Valid Operations](#valid-operations-by-entity) below |
+| `role` | `string` | ✅ Yes | The role name to use. Must match a role defined in `permissions.toml`. Supports Go template syntax |
+
+## Principal Format
+
+The `principal` field identifies the entity that is performing the operation.
+
+| Entity | Principal Format | Example |
+|--------|-----------------|---------|
+| Specific component | `nuon::component:<name>` | `nuon::component:my_lambda` |
+| All components | `nuon::component:*` | `nuon::component:*` |
+| Sandbox | `nuon::sandbox` | `nuon::sandbox` |
+| Specific action | `nuon::action:<name>` | `nuon::action:db_migration` |
+| All actions | `nuon::action:*` | `nuon::action:*` |
+
+The `nuon::sandbox` principal has no name suffix — there is only one sandbox per install.
+
+## Valid Operations by Entity
+
+| Entity | Valid Operations |
+|--------|-----------------|
+| `component` | `deploy`, `teardown` |
+| `sandbox` | `provision`, `reprovision`, `deprovision` |
+| `action` | `trigger` |
+
+## Role Name Templating
+
+The `role` field supports Go template syntax. The template is rendered at runtime with the install's state
+variables before looking up the role in the stack outputs.
+
+Common variables:
+
+| Variable | Description |
+|----------|-------------|
+| `{{.nuon.install.id}}` | The install ID — ensures per-install role isolation |
+| `{{.nuon.install.sandbox.outputs.<key>.name}}` | Sandbox stack output values |
+
+The rendered role name must match a role provisioned in the customer's stack. Roles that are
+not the standard `provision_role`, `deprovision_role`, or `maintenance_role` must be declared as
+`custom_roles` in `permissions.toml`.
+
+## Examples
+
+### Full `operation_roles.toml`
+
+```toml operation_roles.toml
+type = "matrix"
+
+# Per-component roles
+[[rules]]
+principal = "nuon::component:my_lambda"
+operation = "deploy"
+role      = "{{.nuon.install.id}}-lambda-deploy-role"
+
+[[rules]]
+principal = "nuon::component:my_lambda"
+operation = "teardown"
+role      = "{{.nuon.install.id}}-lambda-teardown-role"
+
+# All components share the same deploy role
+[[rules]]
+principal = "nuon::component:*"
+operation = "deploy"
+role      = "{{.nuon.install.id}}-shared-deploy-role"
+
+# Sandbox operations
+[[rules]]
+principal = "nuon::sandbox"
+operation = "provision"
+role      = "{{.nuon.install.id}}-provision-role"
+
+[[rules]]
+principal = "nuon::sandbox"
+operation = "reprovision"
+role      = "{{.nuon.install.id}}-provision-role"
+
+[[rules]]
+principal = "nuon::sandbox"
+operation = "deprovision"
+role      = "{{.nuon.install.id}}-destroy-role"
+
+# Action roles
+[[rules]]
+principal = "nuon::action:db_migration"
+operation = "trigger"
+role      = "{{.nuon.install.id}}-migration-role"
+```
+
+### Entity-Level Role in `sandbox.toml`
+
+```toml sandbox.toml
+[[operation_roles]]
+operation = "provision"
+role      = "{{.nuon.install.id}}-provision-role"
+
+[[operation_roles]]
+operation = "deprovision"
+role      = "{{.nuon.install.id}}-destroy-role"
+```
+
+### Entity-Level Role in a Component Config
+
+```toml components/my_lambda.toml
+[[operation_roles]]
+operation = "deploy"
+role      = "{{.nuon.install.id}}-deploy-role"
+
+[[operation_roles]]
+operation = "teardown"
+role      = "{{.nuon.install.id}}-teardown-role"
+```
+
+### Action Role
+
+```toml actions/db_migration.toml
+name             = "db_migration"
+timeout          = "10m"
+role             = "{{.nuon.install.id}}-migration-role"
+break_glass_role = "break-glass-dba-role"
+
+[[triggers]]
+type = "manual"
+```
+
+## Related
+
+- [Operation Roles Guide](/guides/operation-roles) — full configuration walkthrough
+- [Operation Roles Concepts](/concepts/operation-roles) — mental model and precedence chain
+- [Permissions Config Reference](/config-ref/permissions) — defining `custom_roles`
+- [Action Config Reference](/config-ref/action) — `role` and `break_glass_role` fields
+- [Sandbox Config Reference](/config-ref/sandbox) — `operation_roles` array on sandbox
