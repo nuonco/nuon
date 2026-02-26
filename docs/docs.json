@@ -49,6 +49,7 @@
                     "pages": [
                       "config-ref/inputs",
                       "config-ref/metadata",
+                      "config-ref/operation-roles",
                       "config-ref/permissions",
                       "config-ref/policies",
                       "config-ref/secrets"
@@ -90,6 +91,7 @@
         "tab": "Changelog",
         "pages": [
           "updates/updates",
+          "updates/031-operation-roles",
           "updates/030-policies",
           "updates/029-auth-inputs-better-nested-templates",
           "updates/028-open-source",
@@ -135,6 +137,7 @@
           "concepts/components",
           "concepts/installs",
           "concepts/actions",
+          "concepts/operation-roles",
           "concepts/workflows",
           "concepts/policies",
           "concepts/runners",
@@ -160,6 +163,7 @@
               "guides/kubernetes-manifest-components",
               "guides/component-dependencies",
               "guides/actions",
+              "guides/operation-roles",
               "guides/ai-and-apps"
             ]
           },
