@@ -7,7 +7,8 @@ export const Login = () => {
   const { isAuthenticated, isLoading } = useAuth()
 
   if (!isLoading && isAuthenticated) {
-    return <Navigate to="/" replace />
+    window.location.replace('/')
+    return null
   }
 
   return (
