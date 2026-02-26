@@ -93,6 +93,61 @@ letting you define additional roles beyond those three and use them in operation
 referenced in an operation role assignment must be declared in the app config with `type = "custom"` so
 that it is provisioned in the customer's CloudFormation stack.
 
+## Elevated Access and Break-Glass Operations
+
+Some operations are too sensitive for day-to-day role permissions but still need to run occasionally under
+controlled conditions. Operation roles support this through two complementary mechanisms: roles that exist
+in the stack but are not provisioned by default, it can be enabled and provisioned by the customer in case there's 
+a requirement for it.
+
+### Roles Defined But Disabled by Default
+
+A custom role can be declared in the app config and provisioned into the customer's CloudFormation stack,
+but marked as disabled. In this state the role exists but cannot be assumed by the runner, so it has no
+effect during normal operations. When an elevated operation is required the role is enabled, the operation
+runs, and the role is disabled again by the customer. This means:
+
+- The role is already present in the install stack from day one — no stack update or reprovisioning is
+  needed at the moment of use
+- Under normal conditions the role is disabled, so it cannot be assumed accidentally or without explicit
+  intent
+- Enabling and disabling the role is a deliberate, auditable action scoped to the window of use
+
+The customer retains full control: they can see the role in their install stack, enable or disable
+it at any time, and audit every assumption via audit logs.
+
+### Introducing New Components with New Permission Sets
+
+As an app evolves, new components may require permissions that the existing maintenance role never had. For
+example, adding a component that manages RDS clusters needs `rds:CreateDBInstance` and related permissions
+— permissions that would be inappropriate to add to a maintenance role shared with other components.
+
+With operation roles you can introduce the new component with its own `type = "custom"` role scoped
+exclusively to RDS operations. Existing installs receive the new role the next time their CloudFormation
+stack is updated (triggered by a reprovision), without any change to the permissions
+of existing roles. Each component's blast radius stays bounded to its own role.
+
+### Example: EKS Cluster Upgrade
+
+EKS version upgrades are a concrete case where normal operational permissions are insufficient. A routine
+deploy role might have permission to update workloads running on the cluster, but upgrading the cluster
+control plane itself requires `eks:UpdateClusterVersion` and related permissions that should never be
+available during a standard deploy.
+
+The pattern with operation roles:
+
+1. Define a `type = "custom"` role (e.g. `{{.nuon.install.id}}-eks-upgrade-role`) with the permissions
+   needed for a cluster upgrade. The role is provisioned into the install stack but disabled by default.
+2. When an upgrade is needed, the customer enables the role in their install stack.
+3. An operator triggers the upgrade operation via the CLI or dashboard, selecting the upgrade role as a
+   runtime override: `--role {{install-id}}-eks-upgrade-role`.
+4. The runner assumes the elevated role, performs the upgrade, and exits.
+5. The customer disables the role again, returning it to its default inactive state.
+
+The upgrade is fully auditable — audit trail records show exactly which role was assumed, when, and by
+which operation — and the elevated permissions exist in the customer's account for only as long as
+necessary.
+
 ## Next Steps
 
 - [Operation Roles Guide](/guides/operation-roles) — step-by-step configuration for entity roles, matrix
