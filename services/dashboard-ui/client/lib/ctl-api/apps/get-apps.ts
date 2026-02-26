@@ -11,4 +11,5 @@ export const getApps = ({
   api<TApp[]>({
     path: `apps${buildQueryParams({ limit, offset, q })}`,
     orgId,
+    paginated: true,
   })

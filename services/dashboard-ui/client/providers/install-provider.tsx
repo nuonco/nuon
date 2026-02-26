@@ -1,6 +1,7 @@
 import { createContext, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { getInstall } from '@/lib'
 import type { TInstall } from '@/types'
 
 type InstallContextValue = {
@@ -22,18 +23,15 @@ export function InstallProvider({
 }: {
   children: ReactNode
   initInstall: TInstall
-} & IPollingProps) {
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { org } = useOrg()
-  const {
-    data: install,
-    error,
-    isLoading,
-  } = usePolling<TInstall>({
-    dependencies: [initInstall],
-    initData: initInstall,
-    path: `/api/orgs/${org.id}/installs/${initInstall.id}`,
-    pollInterval,
-    shouldPoll,
+  const { data: install = initInstall, error, isLoading, refetch } = useQuery({
+    queryKey: ['install', org.id, initInstall.id],
+    queryFn: () => getInstall({ orgId: org.id, installId: initInstall.id }),
+    initialData: initInstall,
+    refetchInterval: shouldPoll ? pollInterval : false,
   })
 
   return (
@@ -42,9 +40,7 @@ export function InstallProvider({
         install,
         isLoading,
         error,
-        refresh: () => {
-          /* implement if needed */
-        },
+        refresh: refetch,
       }}
     >
       {children}

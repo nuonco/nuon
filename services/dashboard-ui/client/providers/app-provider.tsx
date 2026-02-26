@@ -1,6 +1,7 @@
 import { createContext, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { getApp } from '@/lib'
 import type { TApp } from '@/types'
 
 type AppContextValue = {
@@ -20,17 +21,15 @@ export function AppProvider({
 }: {
   children: ReactNode
   initApp: TApp
-} & IPollingProps) {
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { org } = useOrg()
-  const {
-    data: app,
-    error,
-    isLoading,
-  } = usePolling<TApp>({
-    initData: initApp,
-    path: `/api/orgs/${org.id}/apps/${initApp.id}`,
-    pollInterval,
-    shouldPoll,
+  const { data: app = initApp, error, isLoading, refetch } = useQuery({
+    queryKey: ['app', org.id, initApp.id],
+    queryFn: () => getApp({ orgId: org.id, appId: initApp.id }),
+    initialData: initApp,
+    refetchInterval: shouldPoll ? pollInterval : false,
   })
 
   return (
@@ -39,9 +38,7 @@ export function AppProvider({
         app,
         isLoading,
         error,
-        refresh: () => {
-          /* implement if needed */
-        },
+        refresh: refetch,
       }}
     >
       {children}

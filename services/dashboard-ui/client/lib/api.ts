@@ -1,6 +1,17 @@
 import { API_URL } from '@/configs/api'
 import type { TAPIError } from '@/types'
 
+export type TPaginationMeta = {
+  hasNext: boolean
+  offset: number
+  limit: number
+}
+
+export type TPaginatedResult<T> = {
+  data: T
+  pagination: TPaginationMeta
+}
+
 interface IAPIData {
   abortTimeout?: number
   headers?: Record<string, unknown>
@@ -9,8 +20,11 @@ interface IAPIData {
   pathVersion?: '/v1' | ''
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: any
+  paginated?: boolean
 }
 
+export async function api<T>(opts: IAPIData & { paginated: true }): Promise<TPaginatedResult<T>>
+export async function api<T>(opts: IAPIData & { paginated?: false }): Promise<T>
 export async function api<T>({
   abortTimeout = 10000,
   headers = {},
@@ -19,7 +33,8 @@ export async function api<T>({
   pathVersion = '/v1',
   method = 'GET',
   body,
-}: IAPIData): Promise<T> {
+  paginated,
+}: IAPIData): Promise<T | TPaginatedResult<T>> {
   let response: Response | undefined
   try {
     const fetchOpts: RequestInit = {
@@ -60,7 +75,9 @@ export async function api<T>({
     if (
       contentLength !== '0' &&
       (contentType?.includes('text/csv') ||
-        contentType?.includes('application/octet-stream'))
+        contentType?.includes('application/octet-stream') ||
+        contentType?.includes('text/plain') ||
+        contentType?.includes('application/toml'))
     ) {
       const content = await response.text()
       let filename = contentType?.includes('text/csv')
@@ -75,6 +92,16 @@ export async function api<T>({
     }
 
     if (response.ok) {
+      if (paginated) {
+        return {
+          data: data as T,
+          pagination: {
+            hasNext: response.headers.get('X-Nuon-Page-Next') === 'true',
+            offset: Number(response.headers.get('X-Nuon-Page-Offset') ?? 0),
+            limit: Number(response.headers.get('X-Nuon-Page-Limit') ?? 20),
+          },
+        }
+      }
       return data as T
     } else {
       if (response.status === 401) {

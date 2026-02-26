@@ -31,7 +31,7 @@ export interface ITable<TData extends object> {
   enableSearch?: boolean
   filterActions?: ReactNode
   isLoading?: boolean
-  pagination: Omit<IPagination, 'position'>
+  pagination?: Omit<IPagination, 'position'>
   searchPlaceholder?: string
   skeletonRows?: number
 }

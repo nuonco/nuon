@@ -18,5 +18,6 @@ export async function getAppInstalls({
   return api<TInstall[]>({
     orgId,
     path: `apps/${appId}/installs${buildQueryParams({ limit, offset, q })}`,
+    paginated: true,
   })
 }

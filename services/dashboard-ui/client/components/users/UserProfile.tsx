@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 
 export const UserProfile = () => {
-  const { user,  isLoading } = useAuth()
+  const { user, isLoading } = useAuth()
 
   return (
     <div className="flex gap-4 items-center min-w-40">

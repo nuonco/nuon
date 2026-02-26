@@ -11,4 +11,5 @@ export const getInstalls = ({
   api<TInstall[]>({
     path: `installs${buildQueryParams({ limit, offset, q })}`,
     orgId,
+    paginated: true,
   })
