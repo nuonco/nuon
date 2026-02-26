@@ -1,5 +1,5 @@
 import { API_URL } from '@/configs/api'
-import type { TAPIResponse } from '@/types'
+import type { TAPIError } from '@/types'
 
 interface IAPIData {
   abortTimeout?: number
@@ -19,7 +19,7 @@ export async function api<T>({
   pathVersion = '/v1',
   method = 'GET',
   body,
-}: IAPIData): Promise<TAPIResponse<T>> {
+}: IAPIData): Promise<T> {
   let response: Response | undefined
   try {
     const fetchOpts: RequestInit = {
@@ -40,8 +40,6 @@ export async function api<T>({
     }
 
     response = await fetch(`${API_URL}${pathVersion}/${path}`, fetchOpts)
-
-    const headersObj = Object.fromEntries(response.headers.entries())
 
     let data = null
     const contentType = response.headers.get('content-type')
@@ -78,84 +76,52 @@ export async function api<T>({
     }
 
     if (response.ok) {
-      return {
-        data,
-        error: null,
-        status: response.status,
-        headers: headersObj,
-      }
+      return data as T
     } else {
       if (response.status === 401) {
         window.location.href = '/login'
-        return {
-          data: null,
-          error: { description: 'Unauthorized', error: 'Unauthorized', user_error: true },
-          status: 401,
-          headers: headersObj,
-        }
       }
 
       if (response.status === 502) {
         console.warn('Received 502 Bad Gateway from API')
-        return {
-          data: null,
-          error: {
-            description:
-              'The server is temporarily unavailable. Please try again later.',
-            error: 'Bad Gateway',
-            user_error: true,
-          },
-          status: response.status,
-          headers: headersObj,
-        }
+        throw {
+          description:
+            'The server is temporarily unavailable. Please try again later.',
+          error: 'Bad Gateway',
+          user_error: true,
+        } satisfies TAPIError
       }
 
-      return {
-        data: null,
-        error: data || {
-          error: 'Unknown error',
-          description: 'No error details provided',
-        },
-        status: response.status,
-        headers: headersObj,
-      }
+      throw (data ?? {
+        error: 'Unknown error',
+        description: 'No error details provided',
+        user_error: false,
+      }) as TAPIError
     }
   } catch (error) {
-    let timeoutError = false
-    if (error instanceof DOMException && error.name === 'TimeoutError') {
-      timeoutError = true
-    } else if (error instanceof Error && error.name === 'AbortError') {
-      timeoutError = true
+    if (error && typeof error === 'object' && 'error' in error) {
+      throw error
     }
 
-    const errorHeadersObj = response
-      ? Object.fromEntries(response.headers.entries())
-      : {}
+    const isTimeout =
+      (error instanceof DOMException && error.name === 'TimeoutError') ||
+      (error instanceof Error && error.name === 'AbortError')
 
-    const errorResponse = {
-      data: null,
-      error: timeoutError
-        ? {
-            description:
-              'The request timed out. Please check your connection and try again.',
-            error: 'Timeout',
-            user_error: true,
-          }
-        : {
-            description: 'An unexpected error occurred while fetching data.',
-            error: error instanceof Error ? error.message : 'Unknown Error',
-            user_error: false,
-          },
-      status: timeoutError ? 408 : 500,
-      headers: errorHeadersObj,
-    }
-
-    if (timeoutError) {
+    if (isTimeout) {
       console.warn('API request timed out:', error)
-    } else {
-      console.error('Error fetching data:', error)
+      throw {
+        description:
+          'The request timed out. Please check your connection and try again.',
+        error: 'Timeout',
+        user_error: true,
+      } satisfies TAPIError
     }
 
-    return errorResponse
+    console.error('Error fetching data:', error)
+    throw {
+      description: 'An unexpected error occurred while fetching data.',
+      error: error instanceof Error ? error.message : 'Unknown Error',
+      user_error: false,
+    } satisfies TAPIError
   }
 }
