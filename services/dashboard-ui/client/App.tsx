@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router'
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AuthLayout } from '@/components/layout/AuthLayout'
@@ -25,6 +25,15 @@ const Onboarding = () => {
   return <>Onboarding</>
 }
 
+const AppLayout = () => {
+  return (
+    <div className="flex flex-col gap-4">
+      <span>App layout</span>
+      <Outlet />
+    </div>
+  )
+}
+
 export const App = () => {
   return (
     <ConfigProvider>
@@ -41,6 +50,17 @@ export const App = () => {
                   <Route path=":orgId/installs" element={<Installs />} />
                   <Route path=":orgId/runner" element={<BuildRunner />} />
                   <Route path=":orgId/team" element={<Team />} />
+
+                  <Route element={<AppLayout />}>
+                    <Route
+                      path=":orgId/apps/:appId"
+                      element={<>App overview</>}
+                    />
+                    <Route
+                      path=":orgId/apps/:appId/components"
+                      element={<>App components</>}
+                    />
+                  </Route>
                 </Route>
               </Route>
             </Routes>
