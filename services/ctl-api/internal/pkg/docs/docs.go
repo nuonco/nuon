@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
@@ -23,32 +24,14 @@ type Docs struct {
 
 var _ api.Service = (*Docs)(nil)
 
-func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
-	public.SwaggerInfo.Schemes = []string{"https"}
-	public.SwaggerInfo.Version = r.cfg.Version
-
-	switch r.cfg.Env {
-	case config.Development:
-		public.SwaggerInfo.Host = "localhost:8081"
-		public.SwaggerInfo.Schemes = []string{"http"}
-	default:
-		u, err := url.Parse(r.cfg.PublicAPIURL)
-		if err != nil {
-			return errors.Wrap(err, "unable to parse public api url")
-		}
-		public.SwaggerInfo.Host = u.Host
-	}
-
-	g.GET("/oapi/v3", r.getOAPI3publicSpec)
-	g.GET("/oapi/v2", r.getOAPI2PublicSpec)
-
-	// Fast Swagger UI HTML
-	fastSwaggerHTML := `<!DOCTYPE html>
+// getFastSwaggerHTML returns optimized Swagger UI HTML with custom title
+func getFastSwaggerHTML(title string) string {
+	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nuon API Documentation</title>
+    <title>%s</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
 </head>
 <body>
@@ -78,16 +61,31 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
         };
     </script>
 </body>
-</html>`
+</html>`, title)
+}
 
-	// Create wrapped handler that intercepts index.html but passes through other assets
-	originalSwaggerHandler := swagger.WrapHandler(
-		swaggerfiles.Handler,
-		swagger.PersistAuthorization(true),
-		swagger.DocExpansion("none"),
-		swagger.DeepLinking(false),
-		swagger.DefaultModelsExpandDepth(-1),
-	)
+func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
+	public.SwaggerInfo.Schemes = []string{"https"}
+	public.SwaggerInfo.Version = r.cfg.Version
+
+	switch r.cfg.Env {
+	case config.Development:
+		public.SwaggerInfo.Host = "localhost:8081"
+		public.SwaggerInfo.Schemes = []string{"http"}
+	default:
+		u, err := url.Parse(r.cfg.PublicAPIURL)
+		if err != nil {
+			return errors.Wrap(err, "unable to parse public api url")
+		}
+		public.SwaggerInfo.Host = u.Host
+	}
+
+	g.GET("/oapi/v3", r.getOAPI3publicSpec)
+	g.GET("/oapi/v2", r.getOAPI2PublicSpec)
+
+	// Create handler that serves fast HTML for index.html, passes through for other assets
+	swaggerAssetsHandler := swagger.WrapHandler(swaggerfiles.Handler)
+	fastSwaggerHTML := getFastSwaggerHTML("Nuon API Documentation")
 
 	customDocsHandler := func(c *gin.Context) {
 		// Intercept index.html requests and serve fast version
@@ -97,7 +95,7 @@ func (r *Docs) RegisterPublicRoutes(g *gin.Engine) error {
 			return
 		}
 		// Pass through to original handler for CSS, JS, and other assets
-		originalSwaggerHandler(c)
+		swaggerAssetsHandler(c)
 	}
 
 	g.GET("/docs/*any", customDocsHandler)
@@ -126,14 +124,21 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 
 	g.GET("/oapi/v3", r.getOAPI3AdminSpec)
 	g.GET("/oapi/v2", r.getOAPI2AdminSpec)
-	g.GET("/docs/*any", swagger.WrapHandler(
-		swaggerfiles.Handler,
-		swagger.InstanceName("admin"),
-		swagger.PersistAuthorization(true),
-		swagger.DocExpansion("none"),
-		swagger.DeepLinking(false),
-		swagger.DefaultModelsExpandDepth(-1),
-	))
+
+	// Handler for admin docs
+	adminAssetsHandler := swagger.WrapHandler(swaggerfiles.Handler, swagger.InstanceName("admin"))
+	fastAdminHTML := getFastSwaggerHTML("Nuon Admin API Documentation")
+
+	customAdminDocsHandler := func(c *gin.Context) {
+		if c.Request.URL.Path == "/docs/" || c.Request.URL.Path == "/docs/index.html" {
+			c.Header("Content-Type", "text/html")
+			c.String(200, fastAdminHTML)
+			return
+		}
+		adminAssetsHandler(c)
+	}
+
+	g.GET("/docs/*any", customAdminDocsHandler)
 
 	return nil
 }
@@ -158,14 +163,21 @@ func (r *Docs) RegisterRunnerRoutes(g *gin.Engine) error {
 
 	g.GET("/oapi/v3", r.getOAPI3RunnerSpec)
 	g.GET("/oapi/v2", r.getOAPI2RunnerSpec)
-	g.GET("/docs/*any", swagger.WrapHandler(
-		swaggerfiles.Handler,
-		swagger.PersistAuthorization(true),
-		swagger.InstanceName("runner"),
-		swagger.DocExpansion("none"),
-		swagger.DeepLinking(false),
-		swagger.DefaultModelsExpandDepth(-1),
-	))
+
+	// Handler for runner docs
+	runnerAssetsHandler := swagger.WrapHandler(swaggerfiles.Handler, swagger.InstanceName("runner"))
+	fastRunnerHTML := getFastSwaggerHTML("Nuon Runner API Documentation")
+
+	customRunnerDocsHandler := func(c *gin.Context) {
+		if c.Request.URL.Path == "/docs/" || c.Request.URL.Path == "/docs/index.html" {
+			c.Header("Content-Type", "text/html")
+			c.String(200, fastRunnerHTML)
+			return
+		}
+		runnerAssetsHandler(c)
+	}
+
+	g.GET("/docs/*any", customRunnerDocsHandler)
 
 	return nil
 }
