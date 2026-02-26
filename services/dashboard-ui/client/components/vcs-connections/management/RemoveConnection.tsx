@@ -1,14 +1,15 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { useServerAction } from '@/hooks/use-server-action'
-import { useServerActionToast } from '@/hooks/use-server-action-toast'
+import { useToast } from '@/hooks/use-toast'
 import { removeVCSConnection } from '@/lib/ctl-api/vcs-connections'
 import type { TVCSConnection } from '@/types'
 
@@ -21,7 +22,8 @@ export const RemoveConnectionModal = ({
   ...props
 }: IRemoveConnection & IModal) => {
   const { removeModal } = useSurfaces()
-  const { org } = useOrg()
+  const { addToast } = useToast()
+  const { org, refresh: refreshOrg } = useOrg()
 
   const connectionName =
     vcs_connection?.github_account_name ||
@@ -30,28 +32,28 @@ export const RemoveConnectionModal = ({
 
   const [confirmName, setConfirmName] = useState('')
 
-  const { data, error, isLoading, execute } = useServerAction({
-    action: removeVCSConnection,
-  })
-
-  useServerActionToast({
-    data,
-    error,
-    errorContent: (
-      <Text>Unable to remove connection for {connectionName}.</Text>
-    ),
-    errorHeading: 'Removal failed',
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: removeVCSConnection,
     onSuccess: () => {
+      refreshOrg()
+      addToast(
+        <Toast theme="info" heading="Connection removed">
+          <Text>GitHub connection {connectionName} has been removed.</Text>
+        </Toast>
+      )
       removeModal(props.modalId)
     },
-    successContent: (
-      <Text>GitHub connection {connectionName} has been removed.</Text>
-    ),
-    successHeading: 'Connection removed',
+    onError: (err) => {
+      addToast(
+        <Toast theme="error" heading="Removal failed">
+          <Text>Unable to remove connection for {connectionName}.</Text>
+        </Toast>
+      )
+    },
   })
 
   const isConfirmValid = confirmName === connectionName
-  const canRemove = isConfirmValid && !isLoading
+  const canRemove = isConfirmValid && !isPending
 
   return (
     <Modal
@@ -67,7 +69,7 @@ export const RemoveConnectionModal = ({
         </Text>
       }
       primaryActionTrigger={{
-        children: isLoading ? (
+        children: isPending ? (
           <span className="flex items-center gap-2">
             <Icon variant="Loading" /> Disconnecting...
           </span>
@@ -78,10 +80,7 @@ export const RemoveConnectionModal = ({
           </span>
         ),
         onClick: () => {
-          execute({
-            connectionId: vcs_connection.id,
-            orgId: org.id,
-          })
+          mutate({ connectionId: vcs_connection.id, orgId: org.id })
         },
         disabled: !canRemove,
         variant: 'danger',
@@ -178,4 +177,3 @@ export const RemoveConnectionButton = ({
     </Button>
   )
 }
-

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useMutation } from '@tanstack/react-query'
 import { FaGithub } from 'react-icons/fa'
 import { XCircleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/old/Button'
@@ -9,7 +10,6 @@ import { Modal } from '@/components/old/Modal'
 import { Notice } from '@/components/old/Notice'
 import { Text } from '@/components/old/Typography'
 import { removeVCSConnection } from '@/lib/ctl-api/vcs-connections'
-import { useServerAction } from '@/hooks/use-server-action'
 import type { TVCSConnection } from '@/types'
 import { useOrg } from '@/hooks/use-org'
 
@@ -25,20 +25,16 @@ export const RemoveVCSConnection = ({
 
   const connectionName =
     connection?.github_account_name || connection?.github_install_id
-  const { data, error, isLoading, execute, status } = useServerAction({
-    action: removeVCSConnection,
-  })
 
   const handleClose = () => {
     setIsKickedOff(false)
     setIsOpen(false)
   }
 
-  useEffect(() => {
-    if (status === 204) {
-      handleClose()
-    }
-  }, [data, error, status])
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: removeVCSConnection,
+    onSuccess: handleClose,
+  })
 
   return (
     <>
@@ -130,18 +126,18 @@ export const RemoveVCSConnection = ({
                 <Button
                   className="text-sm flex items-center gap-2 font-medium"
                   disabled={
-                    confirm !== connectionName || isLoading || isKickedOff
+                    confirm !== connectionName || isPending || isKickedOff
                   }
                   variant="danger"
                   onClick={() => {
                     setIsKickedOff(true)
-                    execute({
+                    mutate({
                       connectionId: connection?.id,
                       orgId: org?.id,
                     })
                   }}
                 >
-                  {isLoading ? (
+                  {isPending ? (
                     <>
                       <SpinnerSVG /> Disconnecting GitHub...
                     </>

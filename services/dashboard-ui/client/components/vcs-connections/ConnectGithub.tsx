@@ -1,4 +1,5 @@
 import React, { useRef, useState, type FormEvent } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -7,53 +8,48 @@ import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { Toast } from '@/components/surfaces/Toast'
 import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
-import { useServerAction } from '@/hooks/use-server-action'
-import { useServerActionToast } from '@/hooks/use-server-action-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { useToast } from '@/hooks/use-toast'
 import { createVCSConnection } from '@/lib/ctl-api/vcs-connections'
 
 interface IConnectGithubModal extends IModal {}
 
 export const ConnectGithubModal = (props: IConnectGithubModal) => {
   const { githubAppName } = useConfig()
-  const { org } = useOrg()
+  const { org, refresh: refreshOrg } = useOrg()
   const { removeModal } = useSurfaces()
+  const { addToast } = useToast()
   const [isManualMode, setIsManualMode] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
-  const { data, error, isLoading, execute } = useServerAction({
-    action: createVCSConnection,
-  })
-
-  useServerActionToast({
-    data,
-    error,
-    successHeading: 'GitHub connected',
-    successContent: <Text>Your GitHub connection has been added.</Text>,
-    errorHeading: 'Failed to connect GitHub',
-    errorContent: (
-      <>
-        <Text>Unable to create VCS connection.</Text>
-        <Text variant="subtext">{error?.error}</Text>
-      </>
-    ),
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: createVCSConnection,
     onSuccess: () => {
+      refreshOrg()
+      addToast(
+        <Toast theme="info" heading="GitHub connected">
+          <Text>Your GitHub connection has been added.</Text>
+        </Toast>
+      )
       removeModal(props.modalId)
-      setIsManualMode(false)
+    },
+    onError: (err) => {
+      addToast(
+        <Toast theme="error" heading="Failed to connect GitHub">
+          <Text variant="subtext">{err?.error}</Text>
+        </Toast>
+      )
     },
   })
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-
     const formData = Object.fromEntries(new FormData(e.currentTarget))
-
-    execute({
-      body: {
-        github_install_id: formData.github_install_id as string,
-      },
+    mutate({
+      body: { github_install_id: formData.github_install_id as string },
       orgId: org.id,
     })
   }
@@ -61,7 +57,7 @@ export const ConnectGithubModal = (props: IConnectGithubModal) => {
   const modalProps = isManualMode
     ? {
         primaryActionTrigger: {
-          children: isLoading ? (
+          children: isPending ? (
             <span className="flex items-center gap-2">
               <Icon variant="Loading" />
               Adding GitHub connection...
@@ -73,7 +69,7 @@ export const ConnectGithubModal = (props: IConnectGithubModal) => {
             </span>
           ),
           onClick: () => formRef.current?.requestSubmit(),
-          disabled: isLoading,
+          disabled: isPending,
           variant: 'primary' as const,
         },
       }
