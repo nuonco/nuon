@@ -182,3 +182,28 @@ jobs:
     with:
       tag: ${{ needs.tag.outputs.semver }}
     secrets: inherit
+
+  notify_cancellation:
+    name: notify cancellation
+    if: always() && (cancelled() || contains(needs.*.result, 'cancelled'))
+    needs:
+      - merged_pr
+      - tag
+      - services
+      - bump_tag
+      - update_statuses
+      - promote_success
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: warning
+          SLACK_MESSAGE: |
+            ⚠️ Promotion workflow was cancelled
+            *ref* - `${{ needs.tag.outputs.git_ref || github.sha }}`
+            *version* - `${{ needs.tag.outputs.semver || 'not determined' }}`
+            *status* - cancelled
