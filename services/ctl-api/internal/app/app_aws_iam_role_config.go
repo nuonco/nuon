@@ -49,10 +49,11 @@ type AppAWSIAMRoleConfig struct {
 
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	Type        AWSIAMRoleType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
-	Name        string         `json:"name,omitzero" features:"template" temporaljson:"name,omitzero,omitempty"`
-	Description string         `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
-	DisplayName string         `json:"display_name,omitzero" features:"template" temporaljson:"display_name,omitzero,omitempty"`
+	CloudPlatform string         `json:"cloud_platform,omitzero" gorm:"default:'aws'" temporaljson:"cloud_platform,omitzero,omitempty"`
+	Type          AWSIAMRoleType `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	Name          string         `json:"name,omitzero" features:"template" temporaljson:"name,omitzero,omitempty"`
+	Description   string         `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
+	DisplayName   string         `json:"display_name,omitzero" features:"template" temporaljson:"display_name,omitzero,omitempty"`
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`

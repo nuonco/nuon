@@ -11,6 +11,8 @@ type AppAWSIAMPolicy struct {
 	Name              string `mapstructure:"name" toml:"name" jsonschema:"required"`
 
 	Contents string `mapstructure:"contents" toml:"contents" features:"template,get"`
+
+	GCPPermissions []string `mapstructure:"gcp_permissions,omitempty" toml:"gcp_permissions,omitempty"`
 }
 
 func (a AppAWSIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {

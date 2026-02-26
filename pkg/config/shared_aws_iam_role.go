@@ -5,7 +5,8 @@ import (
 )
 
 type AppAWSIAMRole struct {
-	Type string `mapstructure:"type" toml:"type"`
+	Type          string `mapstructure:"type" toml:"type"`
+	CloudPlatform string `mapstructure:"cloud_platform,omitempty" toml:"cloud_platform,omitempty"`
 
 	Name        string            `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
 	Description string            `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`

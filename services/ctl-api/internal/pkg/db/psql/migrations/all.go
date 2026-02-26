@@ -49,6 +49,10 @@ func (m *Migrations) All() []migrations.Migration {
 			Fn:   m.Migration093AddAdhocActions,
 		},
 		{
+			Name: "094-gcp-iam-permissions",
+			Fn:   m.Migration094GCPIAMPermissions,
+		},
+		{
 			Name: "094-vcs-commit-polymorphic-ownership",
 			Fn:   m.Migration094VCSCommitPolymorphicOwnership,
 		},

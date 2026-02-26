@@ -21,6 +21,9 @@ import (
 // swagger:model service.AppAWSIAMRoleConfig
 type ServiceAppAWSIAMRoleConfig struct {
 
+	// cloud platform
+	CloudPlatform string `json:"cloud_platform,omitempty"`
+
 	// description
 	// Required: true
 	Description *string `json:"description"`
