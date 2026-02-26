@@ -18,6 +18,7 @@ func Execute() {
 	c.registerAdminDashboardAPI()
 	c.registerWorker()
 	c.registerStartup()
+	c.registerPreflight()
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(2)
